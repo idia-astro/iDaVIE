@@ -34,6 +34,13 @@
 			#include "UnityCG.cginc"
 			
 			#define NUM_COLOR_MAP_STEPS 256
+			
+			#define LINEAR 0
+			#define LOG 1
+			#define SQRT 2
+			#define SQUARED 3
+			#define EXP 4
+			
 
             // This matches the structure defined on the CPU. Structured buffers are awesome
 			struct DataPoint
@@ -72,21 +79,43 @@
 			uniform float pointScale;
 			uniform float4x4 datasetMatrix;
 			uniform int numDataPoints;
-			
+			uniform int scalingTypeX;
+			uniform int scalingTypeY;
+			uniform int scalingTypeZ;
+            uniform int scalingTypeColorMap;
+
 			// Color maps
 			uniform float4 colorMapData[NUM_COLOR_MAP_STEPS];
 			
 			// Actual data buffer for positions and values
-			StructuredBuffer<DataPoint> dataBuffer;
-                       
+			Buffer<float> dataX;
+			Buffer<float> dataY;
+			Buffer<float> dataZ;
+            Buffer<float> dataVal;
+            
+            
+            float applyScaling(float input, int type)
+            {
+                switch (type)
+				{
+				    case LOG:
+				        return log(input);
+                    case SQRT:
+                        return sqrt(input);
+                    case SQUARED:
+                        return input * input;
+                    case EXP:
+                        return exp(input);
+                    default:
+                        return input;                        
+				}
+            }
+            
 			// Vertex shader
 			VertexShaderOutput vertexShaderBufferLookup(uint id : SV_VertexID)
 			{
 				VertexShaderOutput output = (VertexShaderOutput) 0;
-				DataPoint dataPoint = dataBuffer[id];
-				
-				// Billboard calculations
-				float3 inputPos = dataPoint.position;
+				float3 inputPos = float3(applyScaling(dataX[id], scalingTypeX), applyScaling(dataY[id], scalingTypeY), applyScaling(dataZ[id], scalingTypeZ));
 				// Transform position from local space to world space
 				float4 worldPos = mul(datasetMatrix, float4(inputPos, 1.0));
 				// Get per-vertex camera direction
@@ -100,7 +129,7 @@
 				output.position = worldPos;
 				
 				// Look up color from the uniform
-				uint colorMapIndex = clamp(dataPoint.value * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
+				uint colorMapIndex = clamp(applyScaling(dataVal[id], scalingTypeColorMap) * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
 				output.color = colorMapData[colorMapIndex];
 				return output;
 			}

@@ -25,36 +25,48 @@ public class PointDataSet : MonoBehaviour
     public Texture2D colorMapTexture;
     public Material material;
 
-    private ComputeBuffer particleBuffer;
+    private ComputeBuffer[] buffers;
+    private float[][] columns;
+    
     private Color[] colorMapData;
     private const int NumColorMapStops = 256;
-
-    struct DataPoint
-    {
-        public Vector3 position;
-        public float value;
-    }
-
+    private const int NumColumns = 5;
+  
     void Start()
     {
         Random.InitState(seed);
         particleCount = Math.Max(particleCount, 1);
 
         // Generate random points in a sphere, with random values correlated with radial value
-        DataPoint[] particleArray = new DataPoint[particleCount];
+        columns = new float[NumColumns][];
+        for (var i = 0; i < NumColumns; i++)
+        {
+            columns[i] = new float[particleCount];
+        }
+        
         for (var i = 0; i < particleCount; ++i)
         {
-            particleArray[i].position = Random.insideUnitSphere * 0.5f * (1.0f + Random.value * 0.5f);
-            particleArray[i].value = particleArray[i].position.magnitude * 2 + (Random.value - 0.5f) * 0.5f;
+            Vector3 position = Random.insideUnitSphere * 0.5f * (1.0f + Random.value * 0.5f);
+            columns[0][i] = position.x;
+            columns[1][i] = position.y;
+            columns[2][i] = position.z;
+            columns[3][i] = position.magnitude * 2 + (Random.value - 0.5f) * 0.5f;
+            columns[4][i] = 1.0f - position.magnitude * 2 + (Random.value - 0.5f) * 0.5f;
         }
-
-        // Construct a compute buffer on the GPU with 16 bytes (3 x 4 + 4) per particle
-        particleBuffer = new ComputeBuffer(particleCount, 16);
-        particleBuffer.SetData(particleArray);
+        
+        buffers = new ComputeBuffer[NumColumns];
+        for (var i = 0; i < NumColumns; i++)
+        {
+            buffers[i] = new ComputeBuffer(particleCount, 4);
+            buffers[i].SetData(columns[i]);
+        }
 
         // Create an instance of the material, so that each data set can have different material parameters
         material = Instantiate(material);
-        material.SetBuffer("dataBuffer", particleBuffer);
+        material.SetBuffer("dataX", buffers[0]);
+        material.SetBuffer("dataY", buffers[1]);
+        material.SetBuffer("dataZ", buffers[2]);
+        material.SetBuffer("dataVal", buffers[3]);
         material.SetInt("numDataPoints", particleCount);
 
         colorMapData = new Color[NumColorMapStops];
@@ -116,6 +128,10 @@ public class PointDataSet : MonoBehaviour
         // Update the object transform and point scale on the GPU
         material.SetMatrix("datasetMatrix", transform.localToWorldMatrix);
         material.SetFloat("pointScale", transform.localScale.x);
+        material.SetInt("scalingTypeX", 0);
+        material.SetInt("scalingTypeY", 0);
+        material.SetInt("scalingTypeZ", 0);
+        material.SetInt("scalingTypeColorMap", 0);
         material.SetPass(0);
         // Render points on the GPU using vertex pulling
         Graphics.DrawProcedural(MeshTopology.Points, particleCount);
@@ -123,7 +139,12 @@ public class PointDataSet : MonoBehaviour
 
     void OnDestroy()
     {
-        if (particleBuffer != null)
-            particleBuffer.Release();
+        foreach (var buffer in buffers)
+        {
+            if (buffer != null)
+            {
+                buffer.Release();                
+            }
+        }
     }
 }
