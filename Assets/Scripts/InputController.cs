@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngineInternal;
@@ -16,7 +17,9 @@ public class InputController : MonoBehaviour
 
     public SteamVR_TrackedController[] TrackedControllers;
     public bool InPlaceScaling = true;
-    private PointDataSet[] _dataSets;
+    private PointDataSet[] _pointDataSets;
+    private VolumeDataSet[] _volumeDataSets;
+    private List<MonoBehaviour> _allDataSets;
     private float[] _startDataSetScales;
     private Vector3[] _previousGripPositions;
     private Vector3[] _currentGripPositions;
@@ -27,11 +30,23 @@ public class InputController : MonoBehaviour
 
     protected void Start()
     {
+        _allDataSets = new List<MonoBehaviour>();
         // Connect this behaviour component to others
-        _dataSets = FindObjectsOfType<PointDataSet>();
+        var pointDataSetManager = GameObject.Find("PointDataSetManager");
+        if (pointDataSetManager)
+        {
+            _pointDataSets = pointDataSetManager.GetComponentsInChildren<PointDataSet>();
+            _allDataSets.AddRange(_pointDataSets);
+        }
+        var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
+        if (volumeDataSetManager)
+        {
+            _volumeDataSets = volumeDataSetManager.GetComponentsInChildren<VolumeDataSet>();
+            _allDataSets.AddRange(_volumeDataSets);
+        }
         _lineRenderer = GetComponent<LineRenderer>();
 
-        _startDataSetScales = new float[_dataSets.Length];
+        _startDataSetScales = new float[_allDataSets.Count];
         _previousGripPositions = new Vector3[TrackedControllers.Length];
         _currentGripPositions = new Vector3[TrackedControllers.Length];
         _startGripSeparation = Vector3.zero;
@@ -51,7 +66,7 @@ public class InputController : MonoBehaviour
     {
         // Shift color map forward for Controller #1, backward for #2
         int delta = ((SteamVR_TrackedController)sender == TrackedControllers[0]) ? 1 : -1;
-        foreach (var dataSet in _dataSets)
+        foreach (var dataSet in _pointDataSets)
         {
             dataSet.ShiftColorMap(delta);
         }
@@ -120,10 +135,10 @@ public class InputController : MonoBehaviour
         _inputState = InputState.Scaling;
         _startGripSeparation = TrackedControllers[0].transform.position - TrackedControllers[1].transform.position;
         _startGripCenter = (TrackedControllers[0].transform.position + TrackedControllers[1].transform.position) / 2.0f;
-        for (var i = 0; i < _dataSets.Length; i++)
+        for (var i = 0; i < _allDataSets.Count; i++)
         {
-            _startDataSetScales[i] = _dataSets[i].transform.localScale.magnitude;
-        }
+            _startDataSetScales[i] = _allDataSets[i].transform.localScale.magnitude;
+        }       
 
         if (_lineRenderer)
         {
@@ -189,10 +204,10 @@ public class InputController : MonoBehaviour
         float currentGripDistance = currentGripSeparation.magnitude;
         float scalingFactor = currentGripDistance / Mathf.Max(startGripDistance, 1.0e-6f);
 
-        // Each dataSet needs to be updated separately, as they can have different initial scales.
-        for (var i = 0; i < _dataSets.Length; i++)
+        // Each dataSet needs to be updated separately, as they can have different initial scales.        
+        for (var i = 0; i < _allDataSets.Count; i++)
         {
-            var dataSet = _dataSets[i];
+            var dataSet = _allDataSets[i];
             float initialScale = _startDataSetScales[i];
             float currentScale = dataSet.transform.localScale.magnitude;
             float newScale = Mathf.Max(1e-6f, initialScale * scalingFactor);
@@ -243,7 +258,7 @@ public class InputController : MonoBehaviour
             if (controller.gripped)
             {
                 var delta = _currentGripPositions[i] - _previousGripPositions[i];
-                foreach (var dataSet in _dataSets)
+                foreach (var dataSet in _allDataSets)
                 {
                     dataSet.transform.position += delta;
                 }
