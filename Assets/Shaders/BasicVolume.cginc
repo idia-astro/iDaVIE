@@ -69,9 +69,6 @@ float dataLookup(float3 uvw)
     float scaleRange = _ScaleMax - _ScaleMin;
     // transform from texture values to 0 -> 1
     data = (data - _ScaleMin) / scaleRange;
-    // apply spatial threshold
-    float3 sliceStep = step(_SliceMin, uvw) * step(uvw, _SliceMax);
-    data *= sliceStep.x * sliceStep.y * sliceStep.z;
     // apply value threshold
     float thresholdStep = step(_ThresholdMin, data) * step(data, _ThresholdMax);
     data *= thresholdStep;
@@ -96,22 +93,21 @@ float nrand(float2 uv)
 fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
 {
     input.ray.direction = normalize(input.ray.direction);
-    float3 boxMin = { -0.5, -0.5, -0.5 };
-    float3 boxMax = {  0.5,  0.5,  0.5 };
+    float3 boxMin = _SliceMin;
+    float3 boxMax = _SliceMax;    
+        
     float tNear, tFar;
     bool hit = IntersectBox(input.ray, boxMin, boxMax, tNear, tFar);
     // Early exit of pixels missing the bounding box
-    // In future, the bounding box could be dynamic, based on the slice values
-    // It's not clear whether discard is the right method, since we're not writing to the z-buffer
     if (!hit)
     {
-        discard;
+        return float4(0, 0, 0, 0);
     }
-    tNear = max(0, tNear);
     
+    tNear = max(0, tNear);    
     // calculate intersection points
-    float3 pNear = input.ray.origin + input.ray.direction*tNear;
-    float3 pFar  = input.ray.origin + input.ray.direction*tFar;
+    float3 pNear = input.ray.origin + input.ray.direction * tNear;
+    float3 pFar  = input.ray.origin + input.ray.direction * tFar;
     // convert to texture space
     pNear = pNear + 0.5;
     pFar  = pFar + 0.5;
@@ -153,7 +149,7 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
     // rayValue /= totalLength;
     rayValue *= _PostScaling;
     // Apply color mapping
-    float colorMapOffset = 1.0 - (0.5 +_ColorMapIndex)/_NumColorMaps;
+    float colorMapOffset = 1.0 - (0.5 + _ColorMapIndex) / _NumColorMaps;
     
     float thresholdRange = _ThresholdMax - _ThresholdMin;
     // transform from texture values to 0 -> 1

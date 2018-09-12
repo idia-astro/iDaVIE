@@ -70,6 +70,10 @@ public class InputController : MonoBehaviour
         {
             dataSet.ShiftColorMap(delta);
         }
+        foreach (var dataSet in _volumeDataSets)
+        {
+            dataSet.ShiftColorMap(delta);
+        }
     }
 
     private void OnControllerGripped(object sender, ClickedEventArgs e)
