@@ -72,16 +72,16 @@ public class InputController : MonoBehaviour
     private void OnTriggerClicked(object sender, ClickedEventArgs e)
     {
         // Shift color map forward for Controller #1, backward for #2
-        int delta = ((SteamVR_TrackedController) sender == TrackedControllers[0]) ? 1 : -1;
-        foreach (var dataSet in _pointDataSets)
-        {
-            dataSet.ShiftColorMap(delta);
-        }
-
-        foreach (var dataSet in _volumeDataSets)
-        {
-            dataSet.ShiftColorMap(delta);
-        }
+//        int delta = ((SteamVR_TrackedController) sender == TrackedControllers[0]) ? 1 : -1;
+//        foreach (var dataSet in _pointDataSets)
+//        {
+//            dataSet.ShiftColorMap(delta);
+//        }
+//
+//        foreach (var dataSet in _volumeDataSets)
+//        {
+//            dataSet.ShiftColorMap(delta);
+//        }
     }
 
     private void OnControllerGripped(object sender, ClickedEventArgs e)
