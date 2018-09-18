@@ -69,6 +69,8 @@ public class PointerController : MonoBehaviour
         if (overlappedButton != null)
         {
             overlappedButton.Select();
+            var rectTransform = overlappedButton.GetComponent<RectTransform>();
+            rectTransform.anchoredPosition3D = new Vector3(rectTransform.anchoredPosition3D.x, rectTransform.anchoredPosition3D.y, -10);
             _button = overlappedButton;
         }
     }
@@ -81,6 +83,8 @@ public class PointerController : MonoBehaviour
             EventSystem.current.SetSelectedGameObject(null);
             if (_button == overlappedButton)
             {
+                var rectTransform = overlappedButton.GetComponent<RectTransform>();
+                rectTransform.anchoredPosition3D = new Vector3(rectTransform.anchoredPosition3D.x, rectTransform.anchoredPosition3D.y, -1);
                 _button = null;
             }
         }

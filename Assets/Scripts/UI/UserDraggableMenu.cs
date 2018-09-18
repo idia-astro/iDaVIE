@@ -6,9 +6,9 @@ namespace UI
     {
         private bool _isDragging;
         public bool CanThumbstickTranslate = true;
-        public float TranslateSpeed = 30000.0f;
+        public float TranslateSpeed = 300.0f;
         public bool CanThumbstickScale = true;
-        public float ScaleSpeed = 50.0f;
+        public float ScaleSpeed = 0.5f;
 
         public void OnDragStarted(PointerController parent)
         {
