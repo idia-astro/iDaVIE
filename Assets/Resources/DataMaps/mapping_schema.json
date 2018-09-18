@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "DisplayShape": {
+      "enum": [
+        "Billboard",
+        "Cube",
+        "Sphere"
+      ],
+      "type": "string"
+    },
+    "MapFloatEntry": {
+      "properties": {
+        "Clamped": {
+          "type": "boolean"
+        },
+        "MinVal": {
+          "type": "number"
+        },
+        "MaxVal": {
+          "type": "number"
+        },
+        "Offset": {
+          "type": "number"
+        },
+        "Scale": {
+          "type": "number"
+        },
+        "ScalingType": {
+          "$ref": "#/definitions/ScalingType"
+        },
+        "Source": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "Source"
+      ],
+      "type": "object"
+    },
+    "ScalingType": {
+      "enum": [
+        "Linear",
+        "Log",
+        "Sqrt",
+        "Squared",
+        "Exp"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "Colormap": {
+      "type": "string"
+    },
+    "Defaults": {
+      "properties": {
+        "Color": {
+          "type": "string"
+        },
+        "Scale": {
+          "type": "number"
+        },
+        "PointSize": {
+          "type": "number"
+        },
+        "Shape": {
+          "$ref": "#/definitions/DisplayShape"
+        }
+      },
+      "type": "object"
+    },
+    "Mapping": {
+      "properties": {
+        "X": {
+          "$ref": "#/definitions/MapFloatEntry"
+        },
+        "Y": {
+          "$ref": "#/definitions/MapFloatEntry"
+        },
+        "Z": {
+          "$ref": "#/definitions/MapFloatEntry"
+        },
+        "Lat": {
+          "$ref": "#/definitions/MapFloatEntry"
+        },
+        "Long": {
+          "$ref": "#/definitions/MapFloatEntry"
+        },
+        "R": {
+          "$ref": "#/definitions/MapFloatEntry"
+        },
+        "Size": {
+          "$ref": "#/definitions/MapFloatEntry"
+        },
+        "Cmap": {
+          "$ref": "#/definitions/MapFloatEntry"
+        },
+        "Opacity": {
+          "$ref": "#/definitions/MapFloatEntry"
+        }
+      },
+      "type": "object"
+    },
+    "metaMapping": {
+      "properties": {
+        "Name": {
+          "properties": {
+            "Source": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "Source"
+          ],
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "required": [
+    "Mapping"
+  ],
+  "type": "object"
+}
+

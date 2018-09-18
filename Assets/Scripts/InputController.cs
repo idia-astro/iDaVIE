@@ -5,6 +5,8 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngineInternal;
+using PointData;
+using TMPro;
 
 public class InputController : MonoBehaviour
 {
@@ -27,6 +29,7 @@ public class InputController : MonoBehaviour
     private Vector3 _startGripCenter;
     private InputState _inputState;
     private LineRenderer _lineRenderer;
+    private TextMeshPro _scalingTextComponent;
 
     protected void Start()
     {
@@ -38,12 +41,14 @@ public class InputController : MonoBehaviour
             _pointDataSets = pointDataSetManager.GetComponentsInChildren<PointDataSet>();
             _allDataSets.AddRange(_pointDataSets);
         }
+
         var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
         if (volumeDataSetManager)
         {
             _volumeDataSets = volumeDataSetManager.GetComponentsInChildren<VolumeDataSet>();
             _allDataSets.AddRange(_volumeDataSets);
         }
+
         _lineRenderer = GetComponent<LineRenderer>();
 
         _startDataSetScales = new float[_allDataSets.Count];
@@ -59,17 +64,20 @@ public class InputController : MonoBehaviour
             controller.TriggerClicked += OnTriggerClicked;
         }
 
+        _scalingTextComponent = TrackedControllers[0].GetComponentInChildren<TextMeshPro>();
+
         _inputState = InputState.Idle;
     }
 
     private void OnTriggerClicked(object sender, ClickedEventArgs e)
     {
         // Shift color map forward for Controller #1, backward for #2
-        int delta = ((SteamVR_TrackedController)sender == TrackedControllers[0]) ? 1 : -1;
+        int delta = ((SteamVR_TrackedController) sender == TrackedControllers[0]) ? 1 : -1;
         foreach (var dataSet in _pointDataSets)
         {
             dataSet.ShiftColorMap(delta);
         }
+
         foreach (var dataSet in _volumeDataSets)
         {
             dataSet.ShiftColorMap(delta);
@@ -83,7 +91,7 @@ public class InputController : MonoBehaviour
         for (var i = 0; i < TrackedControllers.Length; i++)
         {
             var controller = TrackedControllers[i];
-            if ((SteamVR_TrackedController)sender == controller)
+            if ((SteamVR_TrackedController) sender == controller)
             {
                 _previousGripPositions[i] = controller.transform.position;
             }
@@ -142,7 +150,7 @@ public class InputController : MonoBehaviour
         for (var i = 0; i < _allDataSets.Count; i++)
         {
             _startDataSetScales[i] = _allDataSets[i].transform.localScale.magnitude;
-        }       
+        }
 
         if (_lineRenderer)
         {
@@ -151,6 +159,11 @@ public class InputController : MonoBehaviour
             _lineRenderer.startWidth = 2e-3f;
             _lineRenderer.endWidth = 2e-3f;
             _lineRenderer.SetPositions(new[] {TrackedControllers[0].transform.position, _startGripCenter, TrackedControllers[1].transform.position});
+        }
+
+        if (_scalingTextComponent)
+        {
+            _scalingTextComponent.enabled = true;
         }
     }
 
@@ -166,6 +179,11 @@ public class InputController : MonoBehaviour
         if (_lineRenderer)
         {
             _lineRenderer.positionCount = 0;
+        }
+
+        if (_scalingTextComponent)
+        {
+            _scalingTextComponent.enabled = false;
         }
     }
 
@@ -244,11 +262,27 @@ public class InputController : MonoBehaviour
                 dataSet.transform.localScale = dataSet.transform.localScale.normalized * newScale;
                 dataSet.transform.Rotate(Vector3.up, angle * Mathf.Rad2Deg);
             }
+
+            UpdateScalingText(dataSet);
         }
 
         if (_lineRenderer)
         {
             _lineRenderer.SetPositions(new[] {TrackedControllers[0].transform.position, InPlaceScaling ? _startGripCenter : currentGripCenter, TrackedControllers[1].transform.position});
+        }
+    }
+
+    private void UpdateScalingText(MonoBehaviour dataSet)
+    {
+        PointDataSet pointDataSet = dataSet as PointDataSet;
+        if (pointDataSet != null)
+        {
+            string scalingString = pointDataSet.ScalingString;
+            if (_scalingTextComponent != null)
+            {
+                _scalingTextComponent.enabled = true;
+                _scalingTextComponent.text = scalingString;
+            }
         }
     }
 

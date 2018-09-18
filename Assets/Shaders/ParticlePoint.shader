@@ -79,10 +79,21 @@
 			uniform float pointScale;
 			uniform float4x4 datasetMatrix;
 			uniform int numDataPoints;
+			// Scaling types
 			uniform int scalingTypeX;
 			uniform int scalingTypeY;
 			uniform int scalingTypeZ;
             uniform int scalingTypeColorMap;
+            // Scaling sizes
+            uniform float scalingX;
+            uniform float scalingY;
+            uniform float scalingZ;            
+            uniform float scaleColorMap;           
+            // Scaling offsets
+            uniform float offsetX;
+            uniform float offsetY;
+            uniform float offsetZ;
+            uniform float offsetColorMap;
 
 			// Color maps
 			uniform float4 colorMapData[NUM_COLOR_MAP_STEPS];
@@ -94,7 +105,7 @@
             Buffer<float> dataVal;
             
             
-            float applyScaling(float input, int type)
+            float applyScaling(float input, int type, float scale, float offset)
             {
                 switch (type)
 				{
@@ -107,7 +118,7 @@
                     case EXP:
                         return exp(input);
                     default:
-                        return input;                        
+                        return input * scale + offset;                        
 				}
             }
             
@@ -115,7 +126,7 @@
 			VertexShaderOutput vertexShaderBufferLookup(uint id : SV_VertexID)
 			{
 				VertexShaderOutput output = (VertexShaderOutput) 0;
-				float3 inputPos = float3(applyScaling(dataX[id], scalingTypeX), applyScaling(dataY[id], scalingTypeY), applyScaling(dataZ[id], scalingTypeZ));
+				float3 inputPos = float3(applyScaling(dataX[id], scalingTypeX, scalingX, offsetX), applyScaling(dataY[id], scalingTypeY, scalingY, offsetY), applyScaling(dataZ[id], scalingTypeZ, scalingZ, offsetZ));
 				// Transform position from local space to world space
 				float4 worldPos = mul(datasetMatrix, float4(inputPos, 1.0));
 				// Get per-vertex camera direction
@@ -129,7 +140,7 @@
 				output.position = worldPos;
 				
 				// Look up color from the uniform
-				uint colorMapIndex = clamp(applyScaling(dataVal[id], scalingTypeColorMap) * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
+				uint colorMapIndex = clamp(applyScaling(dataVal[id], scalingTypeColorMap, scaleColorMap, offsetColorMap) * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
 				output.color = colorMapData[colorMapIndex];
 				return output;
 			}
