@@ -8,6 +8,7 @@ namespace PointData
     public class DataMapping
     {
         public string Colormap;
+        public bool Spherical;
         public Defaults Defaults;
         public Mapping Mapping;
         public MetaMapping MetaMapping;
@@ -34,6 +35,7 @@ namespace PointData
             {
                 DataMapping mapping = new DataMapping
                 {
+                    Spherical = false,
                     Defaults = new Defaults
                     {
                         Shape = DisplayShape.Billboard,
@@ -51,6 +53,49 @@ namespace PointData
                             Source = "Kmag",
                             Offset = -2,
                             Scale = 0.25f,
+                            ScalingType = ScalingType.Linear,
+                            Clamped = false
+                        },
+                        Size = new MapFloatEntry
+                        {
+                            Source = "Dm",
+                            Offset = 1,
+                            Scale = 0.01f,
+                            ScalingType = ScalingType.Linear,
+                            Clamped = false,
+                            MinVal = 0.1f,
+                            MaxVal = 4
+                        }
+                    }
+                };
+                return mapping;
+            }
+        }
+
+        public static DataMapping DefaultSphericalMapping
+        {
+            get
+            {
+                DataMapping mapping = new DataMapping
+                {
+                    Spherical = true,
+                    Defaults = new Defaults
+                    {
+                        Shape = DisplayShape.Billboard,
+                        Color = "#FF0000",
+                        Scale = 0.001f,
+                        PointSize = 1f
+                    },
+                    Mapping = new Mapping
+                    {
+                        Lat = new MapFloatEntry {Source = "glon"},
+                        Long = new MapFloatEntry {Source = "glat"},
+                        R = new MapFloatEntry {Source = "Dm"},
+                        Cmap = new MapFloatEntry
+                        {
+                            Source = "Kmag",
+                            Offset = -6,
+                            Scale = 0.5f,
                             ScalingType = ScalingType.Linear,
                             Clamped = false
                         },

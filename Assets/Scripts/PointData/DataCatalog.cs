@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 
 namespace PointData
 {
+    [Serializable]
     public class DataCatalog
     {
         public ColumnInfo[] ColumnDefinitions { get; private set; }
@@ -41,9 +43,10 @@ namespace PointData
             return new ColumnInfo();
         }
 
-        public DataCatalog(string fileName)
+        public static DataCatalog LoadIpacTable(string fileName)
         {
-            FileName = fileName;
+            DataCatalog catalog = new DataCatalog();
+            catalog.FileName = fileName;
             string[] lines = File.ReadAllLines(fileName);
 
             bool hasNameDefinition = false;
@@ -75,30 +78,30 @@ namespace PointData
 
                 if (!hasNameDefinition)
                 {
-                    ColumnDefinitions = new ColumnInfo[numSplits];
+                    catalog.ColumnDefinitions = new ColumnInfo[numSplits];
                     int startPosition = 0;
                     for (var j = 0; j < numSplits; j++)
                     {
                         string nameEntry = splitLines[j];
-                        ColumnDefinitions[j] = new ColumnInfo {Name = nameEntry.Trim(), Index = j, StartPosition = startPosition};
+                        catalog.ColumnDefinitions[j] = new ColumnInfo {Name = nameEntry.Trim(), Index = j, StartPosition = startPosition};
                         startPosition += 1 + nameEntry.Length;
 
                         // Specify the previous column's length 
                         if (j > 0)
                         {
-                            ColumnDefinitions[j - 1].TextLength = ColumnDefinitions[j].StartPosition - ColumnDefinitions[j - 1].StartPosition;
+                            catalog.ColumnDefinitions[j - 1].TextLength = catalog.ColumnDefinitions[j].StartPosition - catalog.ColumnDefinitions[j - 1].StartPosition;
                         }
 
                         // Update the final column's length
                         if (j == numSplits - 1)
                         {
-                            ColumnDefinitions[j].TextLength = startPosition - ColumnDefinitions[j].StartPosition;
+                            catalog.ColumnDefinitions[j].TextLength = startPosition - catalog.ColumnDefinitions[j].StartPosition;
                         }
                     }
 
                     hasNameDefinition = true;
                 }
-                else if (numSplits == ColumnDefinitions.Length)
+                else if (numSplits == catalog.ColumnDefinitions.Length)
                 {
                     if (!hasTypeDefinition)
                     {
@@ -109,14 +112,14 @@ namespace PointData
                             string typeEntry = splitLines[j].Trim().ToLower();
                             if (numericColumnTypes.Contains(typeEntry))
                             {
-                                ColumnDefinitions[j].Type = ColumnType.NUMERIC;
-                                ColumnDefinitions[j].NumericIndex = dataColumnCounter;
+                                catalog.ColumnDefinitions[j].Type = ColumnType.NUMERIC;
+                                catalog.ColumnDefinitions[j].NumericIndex = dataColumnCounter;
                                 dataColumnCounter++;
                             }
                             else
                             {
-                                ColumnDefinitions[j].Type = ColumnType.STRING;
-                                ColumnDefinitions[j].MetaIndex = metaColumnCounter;
+                                catalog.ColumnDefinitions[j].Type = ColumnType.STRING;
+                                catalog.ColumnDefinitions[j].MetaIndex = metaColumnCounter;
                                 metaColumnCounter++;
                             }
                         }
@@ -128,7 +131,7 @@ namespace PointData
                         for (var j = 0; j < numSplits; j++)
                         {
                             string unitEntry = splitLines[j].Trim().Trim('-');
-                            ColumnDefinitions[j].Unit = unitEntry;
+                            catalog.ColumnDefinitions[j].Unit = unitEntry;
                         }
 
                         hasUnitDefinition = true;
@@ -137,27 +140,27 @@ namespace PointData
                 else
                 {
                     Debug.Log("Issue reading table");
-                    break;
+                    return catalog;
                 }
             }
 
             // Parse the rest of the table
             if (hasNameDefinition && hasTypeDefinition && firstDataLine > 0)
             {
-                int numDataColumns = ColumnDefinitions.Count(c => c.Type == ColumnType.NUMERIC);
-                int numMetaColumns = ColumnDefinitions.Count(c => c.Type == ColumnType.STRING);
-                N = 0;
+                int numDataColumns = catalog.ColumnDefinitions.Count(c => c.Type == ColumnType.NUMERIC);
+                int numMetaColumns = catalog.ColumnDefinitions.Count(c => c.Type == ColumnType.STRING);
+                catalog.N = 0;
                 int maxDataEntries = lines.Length - firstDataLine + 1;
-                MetaColumns = new string[numMetaColumns][];
+                catalog.MetaColumns = new string[numMetaColumns][];
                 for (var i = 0; i < numMetaColumns; i++)
                 {
-                    MetaColumns[i] = new string[maxDataEntries];
+                    catalog.MetaColumns[i] = new string[maxDataEntries];
                 }
 
-                DataColumns = new float[numDataColumns][];
+                catalog.DataColumns = new float[numDataColumns][];
                 for (var i = 0; i < numDataColumns; i++)
                 {
-                    DataColumns[i] = new float[maxDataEntries];
+                    catalog.DataColumns[i] = new float[maxDataEntries];
                 }
 
                 Debug.Log("Parsing data");
@@ -165,7 +168,7 @@ namespace PointData
                 {
                     var line = lines[i];
                     bool canParse = true;
-                    foreach (var column in ColumnDefinitions)
+                    foreach (var column in catalog.ColumnDefinitions)
                     {
                         if (line.Length < column.StartPosition + column.TextLength)
                         {
@@ -176,7 +179,7 @@ namespace PointData
                         var subString = line.Substring(column.StartPosition, column.TextLength);
                         if (column.Type == ColumnType.STRING)
                         {
-                            MetaColumns[column.MetaIndex][N] = subString.Trim();
+                            catalog.MetaColumns[column.MetaIndex][catalog.N] = subString.Trim();
                         }
                         else
                         {
@@ -188,28 +191,28 @@ namespace PointData
                                 break;
                             }
 
-                            DataColumns[column.NumericIndex][N] = val;
+                            catalog.DataColumns[column.NumericIndex][catalog.N] = val;
                         }
                     }
 
                     if (canParse)
                     {
-                        N++;
+                        catalog.N++;
                     }
                 }
 
                 // Resize the column arrays to get rid of wasted contents
                 for (var i = 0; i < numMetaColumns; i++)
                 {
-                    Array.Resize(ref MetaColumns[i], N);
+                    Array.Resize(ref catalog.MetaColumns[i], catalog.N);
                 }
 
                 for (var i = 0; i < numDataColumns; i++)
                 {
-                    Array.Resize(ref DataColumns[i], N);
+                    Array.Resize(ref catalog.DataColumns[i], catalog.N);
                 }
 
-                Debug.Log($"Parsed and added {N} data points ({numDataColumns} data columns and {numMetaColumns} metadata columns)");
+                Debug.Log($"Parsed and added {catalog.N} data points ({numDataColumns} data columns and {numMetaColumns} metadata columns)");
             }
             else
             {
@@ -227,6 +230,26 @@ namespace PointData
                 {
                     Debug.Log("Table is missing data");
                 }
+            }
+
+            return catalog;
+        }
+
+        public static DataCatalog LoadCacheFile(string fileName)
+        {
+            using (var stream = File.Open($"{fileName}.cache", FileMode.Open))
+            {
+                BinaryFormatter binaryFormatter = new BinaryFormatter();
+                return (DataCatalog) binaryFormatter.Deserialize(stream);
+            }
+        }
+
+        public void WriteCacheFile()
+        {
+            using (var stream = File.Open($"{FileName}.cache", FileMode.Create))
+            {
+                BinaryFormatter binaryFormatter = new BinaryFormatter();
+                binaryFormatter.Serialize(stream, this);
             }
         }
     }
