@@ -16,9 +16,9 @@ public class InputController : MonoBehaviour
     }
 
     public bool InPlaceScaling = true;
-
     private Player _player;
     private Hand[] _hands;
+    private Transform[] _handTransforms;
     private SteamVR_Action_Boolean _grabGripAction;
     private SteamVR_Action_Boolean _grabPinchAction;
     private PointDataSet[] _pointDataSets;
@@ -38,6 +38,15 @@ public class InputController : MonoBehaviour
         {
             _player = GetComponent<Player>();
             _hands = new[] {_player.leftHand, _player.rightHand};
+
+            // Set hand transforms to laser pointer position if it exists
+            _handTransforms = new Transform[2];
+            for (var i = 0; i < 2; i++)
+            {
+                var laserPointer = _hands[i].GetComponentInChildren<LaserPointer>();
+                _handTransforms[i] = (laserPointer != null) ? laserPointer.transform : _hands[i].transform;
+            }
+
             _grabGripAction = _player.leftHand.grabGripAction;
             _grabPinchAction = _player.leftHand.grabPinchAction;
         }
@@ -88,7 +97,7 @@ public class InputController : MonoBehaviour
 
         for (var i = 0; i < 2; i++)
         {
-            _currentGripPositions[i] = _hands[i].transform.position;
+            _currentGripPositions[i] = _handTransforms[i].position;
         }
 
         switch (gripCount)
@@ -133,8 +142,8 @@ public class InputController : MonoBehaviour
     private void StateTransitionMovingToScaling()
     {
         _inputState = InputState.Scaling;
-        _startGripSeparation = _hands[0].transform.position - _hands[1].transform.position;
-        _startGripCenter = (_hands[0].transform.position + _hands[1].transform.position) / 2.0f;
+        _startGripSeparation = _handTransforms[0].position - _handTransforms[1].position;
+        _startGripCenter = (_handTransforms[0].position + _handTransforms[1].position) / 2.0f;
         for (var i = 0; i < _allDataSets.Count; i++)
         {
             _startDataSetScales[i] = _allDataSets[i].transform.localScale.magnitude;
@@ -146,7 +155,7 @@ public class InputController : MonoBehaviour
         _lineRenderer.endWidth = 2e-3f;
         _lineRenderer.SetPositions(new[] {_currentGripPositions[0], _startGripCenter, _currentGripPositions[1]});
         _lineRenderer.enabled = true;
-        
+
         if (_scalingTextComponent)
         {
             _scalingTextComponent.enabled = true;
@@ -157,7 +166,7 @@ public class InputController : MonoBehaviour
     {
         _inputState = InputState.Moving;
         _lineRenderer.enabled = false;
-    
+
         if (_scalingTextComponent)
         {
             _scalingTextComponent.enabled = false;
@@ -186,7 +195,7 @@ public class InputController : MonoBehaviour
         Vector3 previousGripSeparation = _currentGripPositions[0] - _currentGripPositions[1];
         for (var i = 0; i < 2; i++)
         {
-            _currentGripPositions[i] = _hands[i].transform.position;
+            _currentGripPositions[i] = _handTransforms[i].position;
         }
 
         // Adjusting the scaling based on the ratio between the initial grip separation and the current grip separation is more accurate
@@ -246,7 +255,7 @@ public class InputController : MonoBehaviour
         for (var i = 0; i < 2; i++)
         {
             var previousPosition = _currentGripPositions[i];
-            _currentGripPositions[i] = _hands[i].transform.position;
+            _currentGripPositions[i] = _handTransforms[i].position;
             if (_grabGripAction.GetState(_hands[i].handType))
             {
                 var delta = _currentGripPositions[i] - previousPosition;
@@ -261,9 +270,8 @@ public class InputController : MonoBehaviour
     // (Placeholder) Update function for FSM Idle state
     private void UpdateIdle()
     {
-        
     }
-    
+
     private void UpdateScalingText(MonoBehaviour dataSet)
     {
         PointDataSet pointDataSet = dataSet as PointDataSet;
