@@ -1,106 +1,100 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using UI;
+﻿using UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Valve.VR;
+using Valve.VR.InteractionSystem;
 
-[RequireComponent(typeof(SteamVR_LaserPointer))]
+[RequireComponent(typeof(LaserPointer))]
 public class PointerController : MonoBehaviour
 {
-    private SteamVR_LaserPointer _laserPointer;
-    private SteamVR_TrackedController _trackedController;
-    private Button _button;
+    private LaserPointer _laserPointer;
+    public Hand Hand;
+    private Button _hoveredElement;
     private UserDraggableMenu _draggingMenu;
 
     private void OnEnable()
     {
-        _laserPointer = GetComponent<SteamVR_LaserPointer>();
-        _trackedController = GetComponentInParent<SteamVR_TrackedController>();
+        _laserPointer = GetComponent<LaserPointer>();
+        Hand = GetComponentInParent<Hand>();
 
         _laserPointer.PointerIn -= OnPointerOverlayBegin;
         _laserPointer.PointerIn += OnPointerOverlayBegin;
         _laserPointer.PointerOut -= OnPointerOverlayEnd;
         _laserPointer.PointerOut += OnPointerOverlayEnd;
-        _trackedController.TriggerClicked += OnPointerTriggerDown;
-        _trackedController.TriggerUnclicked += OnPointerTriggerUp;
+        Hand.uiInteractAction.AddOnChangeListener(OnUiInteractionChanged, Hand.handType);
     }
 
-    private void OnPointerTriggerDown(object sender, ClickedEventArgs e)
+    private void OnUiInteractionChanged(SteamVR_Action_In actionIn)
     {
-        if (_button)
+        // Mouse down
+        if (Hand.uiInteractAction.GetState(Hand.handType))
         {
-            UserSelectableItem selectableItem = _button.GetComponent<UserSelectableItem>();
-            if (selectableItem)
+            if (_hoveredElement)
             {
-                if (selectableItem.IsDragHandle && selectableItem.MenuRoot != null)
+                UserSelectableItem selectableItem = _hoveredElement.GetComponent<UserSelectableItem>();
+                if (selectableItem)
                 {
-                    _draggingMenu = selectableItem.MenuRoot;
-                    _draggingMenu.OnDragStarted(this);
-                    _laserPointer.pointer.SetActive(false);
-                }
-                else
-                {
-                    // Process clicks
+                    if (selectableItem.IsDragHandle && selectableItem.MenuRoot != null)
+                    {
+                        _draggingMenu = selectableItem.MenuRoot;
+                        _draggingMenu.OnDragStarted(this);
+                    }
+                    else
+                    {
+                        // Process clicks
+                    }
                 }
             }
+
+            if (EventSystem.current.currentSelectedGameObject != null)
+            {
+                ExecuteEvents.Execute(EventSystem.current.currentSelectedGameObject, new PointerEventData(EventSystem.current), ExecuteEvents.submitHandler);
+            }
         }
-        
+        // Mouse up
+        else
+        {
+            if (_draggingMenu)
+            {
+                _draggingMenu.OnDragEnded();
+                _draggingMenu = null;
+            }
+
+            if (_hoveredElement)
+            {
+                // Process mouse up
+            }
+        }
+
+
         if (EventSystem.current.currentSelectedGameObject != null)
         {
             ExecuteEvents.Execute(EventSystem.current.currentSelectedGameObject, new PointerEventData(EventSystem.current), ExecuteEvents.submitHandler);
         }
     }
 
-    private void OnPointerTriggerUp(object sender, ClickedEventArgs e)
-    {
-        if (_draggingMenu)
-        {
-            _draggingMenu.OnDragEnded();
-            _draggingMenu = null;
-            _laserPointer.pointer.SetActive(true);
-        }
-
-        if (_button)
-        {
-            // Process mouse up
-        }
-    }
 
     private void OnPointerOverlayBegin(object sender, PointerEventArgs e)
     {
-        var overlappedButton = e.target.GetComponent<Button>();
+        var overlappedButton = e.Target.GetComponent<Button>();
         if (overlappedButton != null)
         {
             overlappedButton.Select();
-            var rectTransform = overlappedButton.GetComponent<RectTransform>();
-            rectTransform.anchoredPosition3D = new Vector3(rectTransform.anchoredPosition3D.x, rectTransform.anchoredPosition3D.y, -10);
-            _button = overlappedButton;
+            _hoveredElement = overlappedButton;
         }
     }
 
     private void OnPointerOverlayEnd(object sender, PointerEventArgs e)
     {
-        var overlappedButton = e.target.GetComponent<Button>();
+        var overlappedButton = e.Target.GetComponent<Button>();
         if (overlappedButton != null)
         {
             EventSystem.current.SetSelectedGameObject(null);
-            if (_button == overlappedButton)
+            if (_hoveredElement == overlappedButton)
             {
-                var rectTransform = overlappedButton.GetComponent<RectTransform>();
-                rectTransform.anchoredPosition3D = new Vector3(rectTransform.anchoredPosition3D.x, rectTransform.anchoredPosition3D.y, -1);
-                _button = null;
+                _hoveredElement = null;
             }
         }
-    }
-
-    void Start()
-    {
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
     }
 }

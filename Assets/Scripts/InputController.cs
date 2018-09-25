@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-using UnityEngine.Assertions;
-using UnityEngineInternal;
+﻿using System.Collections.Generic;
 using PointData;
 using TMPro;
+using UnityEngine;
+using Valve.VR;
+using Valve.VR.InteractionSystem;
 
+[RequireComponent(typeof(Player), typeof(LineRenderer))]
 public class InputController : MonoBehaviour
 {
     private enum InputState
@@ -17,13 +15,16 @@ public class InputController : MonoBehaviour
         Scaling
     }
 
-    public SteamVR_TrackedController[] TrackedControllers;
     public bool InPlaceScaling = true;
+
+    private Player _player;
+    private Hand[] _hands;
+    private SteamVR_Action_Boolean _grabGripAction;
+    private SteamVR_Action_Boolean _grabPinchAction;
     private PointDataSet[] _pointDataSets;
     private VolumeDataSet[] _volumeDataSets;
     private List<MonoBehaviour> _allDataSets;
     private float[] _startDataSetScales;
-    private Vector3[] _previousGripPositions;
     private Vector3[] _currentGripPositions;
     private Vector3 _startGripSeparation;
     private Vector3 _startGripCenter;
@@ -31,8 +32,20 @@ public class InputController : MonoBehaviour
     private LineRenderer _lineRenderer;
     private TextMeshPro _scalingTextComponent;
 
-    protected void Start()
+    private void OnEnable()
     {
+        if (_player == null)
+        {
+            _player = GetComponent<Player>();
+            _hands = new[] {_player.leftHand, _player.rightHand};
+            _grabGripAction = _player.leftHand.grabGripAction;
+            _grabPinchAction = _player.leftHand.grabPinchAction;
+        }
+
+        _grabGripAction.AddOnChangeListener(OnGripChanged, SteamVR_Input_Sources.LeftHand);
+        _grabGripAction.AddOnChangeListener(OnGripChanged, SteamVR_Input_Sources.RightHand);
+        _grabPinchAction.AddOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.Any);
+
         _allDataSets = new List<MonoBehaviour>();
         // Connect this behaviour component to others
         var pointDataSetManager = GameObject.Find("PointDataSetManager");
@@ -50,91 +63,61 @@ public class InputController : MonoBehaviour
         }
 
         _lineRenderer = GetComponent<LineRenderer>();
-
+        _scalingTextComponent = _hands[0].GetComponentInChildren<TextMeshPro>();
         _startDataSetScales = new float[_allDataSets.Count];
-        _previousGripPositions = new Vector3[TrackedControllers.Length];
-        _currentGripPositions = new Vector3[TrackedControllers.Length];
+        _currentGripPositions = new Vector3[2];
         _startGripSeparation = Vector3.zero;
         _startGripCenter = Vector3.zero;
-
-        foreach (var controller in TrackedControllers)
-        {
-            controller.Gripped += OnControllerGripped;
-            controller.Ungripped += OnControllerUngripped;
-            controller.TriggerClicked += OnTriggerClicked;
-        }
-
-        _scalingTextComponent = TrackedControllers[0].GetComponentInChildren<TextMeshPro>();
 
         _inputState = InputState.Idle;
     }
 
-    private void OnTriggerClicked(object sender, ClickedEventArgs e)
+    private void OnDisable()
     {
-        // Shift color map forward for Controller #1, backward for #2
-//        int delta = ((SteamVR_TrackedController) sender == TrackedControllers[0]) ? 1 : -1;
-//        foreach (var dataSet in _pointDataSets)
-//        {
-//            dataSet.ShiftColorMap(delta);
-//        }
-//
-//        foreach (var dataSet in _volumeDataSets)
-//        {
-//            dataSet.ShiftColorMap(delta);
-//        }
+        if (_player != null)
+        {
+            _grabGripAction.RemoveOnChangeListener(OnGripChanged, SteamVR_Input_Sources.LeftHand);
+            _grabGripAction.RemoveOnChangeListener(OnGripChanged, SteamVR_Input_Sources.RightHand);
+            _grabPinchAction.RemoveOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.Any);
+        }
     }
 
-    private void OnControllerGripped(object sender, ClickedEventArgs e)
+    private void OnGripChanged(SteamVR_Action_In actionIn)
     {
-        int gripCount = 0;
+        int gripCount = (_grabGripAction.GetState(SteamVR_Input_Sources.LeftHand) ? 1 : 0) + (_grabGripAction.GetState(SteamVR_Input_Sources.RightHand) ? 1 : 0);
 
-        for (var i = 0; i < TrackedControllers.Length; i++)
+        for (var i = 0; i < 2; i++)
         {
-            var controller = TrackedControllers[i];
-            if ((SteamVR_TrackedController) sender == controller)
-            {
-                _previousGripPositions[i] = controller.transform.position;
-            }
-
-            if (controller.gripped)
-            {
-                gripCount++;
-            }
+            _currentGripPositions[i] = _hands[i].transform.position;
         }
 
-        // State transitions are handled by specific transition functions. A more explicitly enforced FSM should be used in future to manage state transition rules
-        // At this point, they may appear a bit verbose, but they are useful for managing states and side-effects of transitions
         switch (gripCount)
         {
+            case 0:
+                StateTransitionMovingToIdle();
+                break;
+            case 1:
+                // Can do a transition either from Idle or Scaling to Moving
+                if (_inputState == InputState.Idle)
+                {
+                    StateTransitionIdleToMoving();
+                }
+                else
+                {
+                    StateTransitionScalingToMoving();
+                }
+
+                break;
             case 2:
                 StateTransitionMovingToScaling();
                 break;
-            case 1:
-                StateTransitionIdleToMoving();
-                break;
-            default:
-                Debug.LogError("This state transition should not be possible");
-                break;
         }
     }
 
-    private void OnControllerUngripped(object sender, ClickedEventArgs e)
-    {
-        int gripCount = 0;
-        foreach (var controller in TrackedControllers)
-        {
-            gripCount += controller.gripped ? 1 : 0;
-        }
 
-        switch (gripCount)
-        {
-            case 1:
-                StateTransitionScalingToMoving();
-                break;
-            default:
-                StateTransitionMovingToIdle();
-                break;
-        }
+    private void OnPinchChanged(SteamVR_Action_In actionIn)
+    {
+        Debug.Log("Pinch changed!");
     }
 
     private void StateTransitionMovingToIdle()
@@ -142,52 +125,45 @@ public class InputController : MonoBehaviour
         _inputState = InputState.Idle;
     }
 
+    private void StateTransitionIdleToMoving()
+    {
+        _inputState = InputState.Moving;
+    }
+
     private void StateTransitionMovingToScaling()
     {
         _inputState = InputState.Scaling;
-        _startGripSeparation = TrackedControllers[0].transform.position - TrackedControllers[1].transform.position;
-        _startGripCenter = (TrackedControllers[0].transform.position + TrackedControllers[1].transform.position) / 2.0f;
+        _startGripSeparation = _hands[0].transform.position - _hands[1].transform.position;
+        _startGripCenter = (_hands[0].transform.position + _hands[1].transform.position) / 2.0f;
         for (var i = 0; i < _allDataSets.Count; i++)
         {
             _startDataSetScales[i] = _allDataSets[i].transform.localScale.magnitude;
         }
 
-        if (_lineRenderer)
-        {
-            // World space: 2 mm lines
-            _lineRenderer.positionCount = 3;
-            _lineRenderer.startWidth = 2e-3f;
-            _lineRenderer.endWidth = 2e-3f;
-            _lineRenderer.SetPositions(new[] {TrackedControllers[0].transform.position, _startGripCenter, TrackedControllers[1].transform.position});
-        }
-
+        // World space: 2 mm lines
+        _lineRenderer.positionCount = 3;
+        _lineRenderer.startWidth = 2e-3f;
+        _lineRenderer.endWidth = 2e-3f;
+        _lineRenderer.SetPositions(new[] {_currentGripPositions[0], _startGripCenter, _currentGripPositions[1]});
+        _lineRenderer.enabled = true;
+        
         if (_scalingTextComponent)
         {
             _scalingTextComponent.enabled = true;
         }
     }
 
-    private void StateTransitionIdleToMoving()
-    {
-        _inputState = InputState.Moving;
-    }
-
-
     private void StateTransitionScalingToMoving()
     {
         _inputState = InputState.Moving;
-        if (_lineRenderer)
-        {
-            _lineRenderer.positionCount = 0;
-        }
-
+        _lineRenderer.enabled = false;
+    
         if (_scalingTextComponent)
         {
             _scalingTextComponent.enabled = false;
         }
     }
 
-    // Update is called once per frame
     private void Update()
     {
         switch (_inputState)
@@ -208,14 +184,9 @@ public class InputController : MonoBehaviour
     private void UpdateScaling()
     {
         Vector3 previousGripSeparation = _currentGripPositions[0] - _currentGripPositions[1];
-        for (var i = 0; i < TrackedControllers.Length; i++)
+        for (var i = 0; i < 2; i++)
         {
-            var controller = TrackedControllers[i];
-            _currentGripPositions[i] = controller.transform.position;
-            if (controller.gripped)
-            {
-                _previousGripPositions[i] = _currentGripPositions[i];
-            }
+            _currentGripPositions[i] = _hands[i].transform.position;
         }
 
         // Adjusting the scaling based on the ratio between the initial grip separation and the current grip separation is more accurate
@@ -266,12 +237,33 @@ public class InputController : MonoBehaviour
             UpdateScalingText(dataSet);
         }
 
-        if (_lineRenderer)
+        _lineRenderer.SetPositions(new[] {_currentGripPositions[0], InPlaceScaling ? _startGripCenter : currentGripCenter, _currentGripPositions[1]});
+    }
+
+    // Update function for FSM Moving state
+    private void UpdateMoving()
+    {
+        for (var i = 0; i < 2; i++)
         {
-            _lineRenderer.SetPositions(new[] {TrackedControllers[0].transform.position, InPlaceScaling ? _startGripCenter : currentGripCenter, TrackedControllers[1].transform.position});
+            var previousPosition = _currentGripPositions[i];
+            _currentGripPositions[i] = _hands[i].transform.position;
+            if (_grabGripAction.GetState(_hands[i].handType))
+            {
+                var delta = _currentGripPositions[i] - previousPosition;
+                foreach (var dataSet in _allDataSets)
+                {
+                    dataSet.transform.position += delta;
+                }
+            }
         }
     }
 
+    // (Placeholder) Update function for FSM Idle state
+    private void UpdateIdle()
+    {
+        
+    }
+    
     private void UpdateScalingText(MonoBehaviour dataSet)
     {
         PointDataSet pointDataSet = dataSet as PointDataSet;
@@ -284,30 +276,5 @@ public class InputController : MonoBehaviour
                 _scalingTextComponent.text = scalingString;
             }
         }
-    }
-
-    // Update function for FSM Moving state
-    private void UpdateMoving()
-    {
-        for (var i = 0; i < TrackedControllers.Length; i++)
-        {
-            var controller = TrackedControllers[i];
-            _currentGripPositions[i] = controller.transform.position;
-            if (controller.gripped)
-            {
-                var delta = _currentGripPositions[i] - _previousGripPositions[i];
-                foreach (var dataSet in _allDataSets)
-                {
-                    dataSet.transform.position += delta;
-                }
-
-                _previousGripPositions[i] = _currentGripPositions[i];
-            }
-        }
-    }
-
-    // (Placeholder) Update function for FSM Idle state
-    private void UpdateIdle()
-    {
     }
 }

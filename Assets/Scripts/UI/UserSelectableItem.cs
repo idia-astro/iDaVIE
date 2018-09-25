@@ -10,30 +10,25 @@ namespace UI
         public bool IsDragHandle = false;
         public UserDraggableMenu MenuRoot;
 
-        private void OnEnable()
-        {
-            ValidateCollider();
-        }
+        private void Start()
+        {            
+            if (MenuRoot == null)
+            {
+                MenuRoot = GetComponentInParent<UserDraggableMenu>();
+            }
 
-        private void OnValidate()
-        {
-            ValidateCollider();
-        }
-
-        // TODO: This needs fixing for transforms with different offsets.
-        private void ValidateCollider()
-        {
             _rectTransform = GetComponent<RectTransform>();
-
             _boxCollider = GetComponent<BoxCollider>();
             if (_boxCollider == null)
             {
                 _boxCollider = gameObject.AddComponent<BoxCollider>();
             }
 
-            _boxCollider.size = _rectTransform.sizeDelta;
+            Debug.Log(_rectTransform.rect);
+            var rect = _rectTransform.rect;
+            Vector2 pivot = _rectTransform.pivot;
+            _boxCollider.size = new Vector3(rect.width, rect.height, 1f);
+            _boxCollider.center = new Vector3(rect.width / 2 - rect.width * pivot.x, rect.height / 2 - rect.height * pivot.y, _rectTransform.anchoredPosition3D.z);
         }
-
-        
     }
 }
