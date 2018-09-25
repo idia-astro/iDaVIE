@@ -20,6 +20,7 @@ namespace UI
             ValidateCollider();
         }
 
+        // TODO: This needs fixing for transforms with different offsets.
         private void ValidateCollider()
         {
             _rectTransform = GetComponent<RectTransform>();

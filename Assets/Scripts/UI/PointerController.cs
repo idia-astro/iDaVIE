@@ -11,7 +11,7 @@ public class PointerController : MonoBehaviour
 {
     private SteamVR_LaserPointer _laserPointer;
     private SteamVR_TrackedController _trackedController;
-    private Dropdown _button;
+    private Button _button;
     private UserDraggableMenu _draggingMenu;
 
     private void OnEnable()
@@ -70,7 +70,7 @@ public class PointerController : MonoBehaviour
 
     private void OnPointerOverlayBegin(object sender, PointerEventArgs e)
     {
-        var overlappedButton = e.target.GetComponent<Dropdown>();
+        var overlappedButton = e.target.GetComponent<Button>();
         if (overlappedButton != null)
         {
             overlappedButton.Select();
@@ -82,7 +82,7 @@ public class PointerController : MonoBehaviour
 
     private void OnPointerOverlayEnd(object sender, PointerEventArgs e)
     {
-        var overlappedButton = e.target.GetComponent<Dropdown>();
+        var overlappedButton = e.target.GetComponent<Button>();
         if (overlappedButton != null)
         {
             EventSystem.current.SetSelectedGameObject(null);
