@@ -88,7 +88,7 @@
       "/actions/default/in/SkeletonLeftHand": "Skeleton (Left)",
       "/actions/default/in/SkeletonRightHand": "Skeleton (Right)",
       "/actions/default/in/Pose": "Pose",
-      "/actions/default/out/Haptic": "Haptic",      
+      "/actions/default/out/Haptic": "Haptic",
       "/actions/default/in/MenuDown": "Menu Down",
       "/actions/default/in/MenuUp": "Menu Up",
       "/actions/default/in/MenuLeft": "Menu Left",

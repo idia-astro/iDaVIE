@@ -11,7 +11,7 @@ namespace UI
         public UserDraggableMenu MenuRoot;
 
         private void Start()
-        {            
+        {
             if (MenuRoot == null)
             {
                 MenuRoot = GetComponentInParent<UserDraggableMenu>();
@@ -24,7 +24,6 @@ namespace UI
                 _boxCollider = gameObject.AddComponent<BoxCollider>();
             }
 
-            Debug.Log(_rectTransform.rect);
             var rect = _rectTransform.rect;
             Vector2 pivot = _rectTransform.pivot;
             _boxCollider.size = new Vector3(rect.width, rect.height, 1f);
