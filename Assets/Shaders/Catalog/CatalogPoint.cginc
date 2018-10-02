@@ -1,17 +1,13 @@
-#define NUM_COLOR_MAP_STEPS 256
+#include "Common.cginc"
 
-#define LINEAR 0
-#define LOG 1
-#define SQRT 2
-#define SQUARED 3
-#define EXP 4
+// Sprites
+uniform sampler2D _SpriteSheet;
+uniform int _NumSprites;			
+uniform int _ShapeIndex;
 
-// This matches the structure defined on the CPU. Structured buffers are awesome
-struct DataPoint
-{
-    float3 position;
-    float value;
-};
+// Data transforms
+uniform float _PointSize;
+uniform float pointScale;
 
 // Points -> <VS> -> VertexShaderOutput -> <GS> -> PixelShaderInput -> <PS> -> Pixels 
 struct VertexShaderOutput
@@ -29,65 +25,8 @@ struct FragmentShaderInput
     float2 uv : TEXCOORD0;
 };
 
-// Properties variables
-uniform float4 _Color;			
-uniform float _Opacity;
-
-// Sprites
-uniform sampler2D _SpriteSheet;
-uniform int _NumSprites;			
-uniform int _ShapeIndex;
-
-// Data transforms
-uniform float _PointSize;
-uniform float pointScale;
-uniform float4x4 datasetMatrix;
-uniform int numDataPoints;
-// Scaling types
-uniform int scalingTypeX;
-uniform int scalingTypeY;
-uniform int scalingTypeZ;
-uniform int scalingTypeColorMap;
-// Scaling sizes
-uniform float scalingX;
-uniform float scalingY;
-uniform float scalingZ;            
-uniform float scaleColorMap;           
-// Scaling offsets
-uniform float offsetX;
-uniform float offsetY;
-uniform float offsetZ;
-uniform float offsetColorMap;
-
-// Color maps
-uniform float4 colorMapData[NUM_COLOR_MAP_STEPS];
-
-// Actual data buffer for positions and values
-Buffer<float> dataX;
-Buffer<float> dataY;
-Buffer<float> dataZ;
-Buffer<float> dataVal;
-
-
-float applyScaling(float input, int type, float scale, float offset)
-{
-    switch (type)
-    {
-        case LOG:
-            return log(input);
-        case SQRT:
-            return sqrt(input);
-        case SQUARED:
-            return input * input;
-        case EXP:
-            return exp(input);
-        default:
-            return input * scale + offset;                        
-    }
-}
-
 // Vertex shader
-VertexShaderOutput vertexShaderBufferLookup(uint id : SV_VertexID)
+VertexShaderOutput vsPointBillboard(uint id : SV_VertexID)
 {
     VertexShaderOutput output = (VertexShaderOutput) 0;
     float3 inputPos = float3(applyScaling(dataX[id], scalingTypeX, scalingX, offsetX), applyScaling(dataY[id], scalingTypeY, scalingY, offsetY), applyScaling(dataZ[id], scalingTypeZ, scalingZ, offsetZ));
@@ -109,8 +48,8 @@ VertexShaderOutput vertexShaderBufferLookup(uint id : SV_VertexID)
     return output;
 }
 
-// Vertex shader
-VertexShaderOutput vertexShaderBufferLookupSpherical(uint id : SV_VertexID)
+// Same as above, wiith spherical coordinates
+VertexShaderOutput vsPointBillboardSpherical(uint id : SV_VertexID)
 {
     VertexShaderOutput output = (VertexShaderOutput) 0;
     float gLat = applyScaling(dataX[id], scalingTypeX, scalingX, offsetX);
@@ -137,11 +76,9 @@ VertexShaderOutput vertexShaderBufferLookupSpherical(uint id : SV_VertexID)
     return output;
 }
 
-
-
 // Geometry shader is limited to a fixed output. In future, this stage could be used for culling
 [maxvertexcount(4)]
-void geometryShaderBillboard(point VertexShaderOutput input[1], inout TriangleStream<FragmentShaderInput> outputStream) {
+void gsBillboard(point VertexShaderOutput input[1], inout TriangleStream<FragmentShaderInput> outputStream) {
     // Offsets for the four corners of the quad
     float2 offsets[4] = { float2(-0.5, 0.5), float2(-0.5,-0.5), float2(0.5,0.5), float2(0.5,-0.5) };
     // Shift UV coordinates based on shape index
@@ -166,7 +103,7 @@ void geometryShaderBillboard(point VertexShaderOutput input[1], inout TriangleSt
     }
 }
 
-float4 fragmentShaderSprite(FragmentShaderInput input) : COLOR
+float4 fsSprite(FragmentShaderInput input) : COLOR
 {
     float4 pointColor = input.color;
     float opacityFactor = tex2D(_SpriteSheet, input.uv).a * _Opacity; 				               

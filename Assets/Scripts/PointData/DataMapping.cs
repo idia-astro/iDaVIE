@@ -41,7 +41,7 @@ namespace PointData
                         Shape = DisplayShape.Billboard,
                         Color = "#FF0000",
                         Scale = 0.001f,
-                        PointSize = 1f
+                        PointSize = 0.3f
                     },
                     Mapping = new Mapping
                     {
@@ -84,7 +84,7 @@ namespace PointData
                         Shape = DisplayShape.Billboard,
                         Color = "#FF0000",
                         Scale = 0.001f,
-                        PointSize = 1f
+                        PointSize = 0.3f
                     },
                     Mapping = new Mapping
                     {
@@ -114,6 +114,37 @@ namespace PointData
                 return mapping;
             }
         }
+
+        public static DataMapping DefaultXyzLineMapping
+        {
+            get
+            {
+                DataMapping mapping = new DataMapping
+                {
+                    Spherical = false,
+                    Defaults = new Defaults
+                    {
+                        Shape = DisplayShape.Line,
+                        Color = "#FF0000",
+                        Scale = 0.001f
+                    },
+                    Mapping = new Mapping
+                    {
+                        X = new MapFloatEntry {Source = "X1"},
+                        Y = new MapFloatEntry {Source = "Y1"},
+                        Z = new MapFloatEntry {Source = "Z1"},
+                        X2 = new MapFloatEntry {Source = "X2"},
+                        Y2 = new MapFloatEntry {Source = "Y2"},
+                        Z2 = new MapFloatEntry {Source = "Z2"},
+                        Cmap = new MapFloatEntry
+                        {
+                            Source = "Weight"
+                        }                        
+                    }
+                };
+                return mapping;
+            }
+        }
     }
 
     [Serializable]
@@ -137,6 +168,9 @@ namespace PointData
         public MapFloatEntry X;
         public MapFloatEntry Y;
         public MapFloatEntry Z;
+        public MapFloatEntry X2;
+        public MapFloatEntry Y2;
+        public MapFloatEntry Z2;
     }
 
     [Serializable]
@@ -167,8 +201,7 @@ namespace PointData
     public enum DisplayShape
     {
         Billboard,
-        Cube,
-        Sphere
+        Line
     };
 
     [Serializable]

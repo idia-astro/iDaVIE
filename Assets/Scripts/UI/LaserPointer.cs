@@ -51,12 +51,12 @@ public class LaserPointer : MonoBehaviour
         _pointer.transform.localScale = new Vector3(Thickness, Thickness, RayDistance);
         _pointer.transform.localPosition = new Vector3(0f, 0f, RayDistance / 2.0f);
         _pointer.transform.localRotation = Quaternion.identity;
-        BoxCollider collider = _pointer.GetComponent<BoxCollider>();
+        BoxCollider boxCollider = _pointer.GetComponent<BoxCollider>();
         if (AddRigidBody)
         {
-            if (collider)
+            if (boxCollider)
             {
-                collider.isTrigger = true;
+                boxCollider.isTrigger = true;
             }
 
             Rigidbody rigidBody = _pointer.AddComponent<Rigidbody>();
@@ -64,9 +64,9 @@ public class LaserPointer : MonoBehaviour
         }
         else
         {
-            if (collider)
+            if (boxCollider)
             {
-                Object.Destroy(collider);
+                Object.Destroy(boxCollider);
             }
         }
 

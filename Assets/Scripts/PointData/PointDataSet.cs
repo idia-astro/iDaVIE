@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -14,9 +15,9 @@ namespace PointData
         public string TableFileName;
         public string MappingFileName;
         public bool SphericalCoordinates;
+        public bool LineData;
         public ColorMapEnum ColorMap = ColorMapEnum.Inferno;
         public Texture2D ColorMapTexture;
-        public Material BillboardMaterial;
 
         private ComputeBuffer[] _buffers;
 
@@ -25,6 +26,7 @@ namespace PointData
 
         private DataCatalog _dataCatalog;
         private DataMapping _dataMapping;
+        private Material _catalogMaterial;
 
         void Start()
         {
@@ -44,7 +46,7 @@ namespace PointData
                 sw.Start();
                 _dataCatalog = DataCatalog.LoadCacheFile(TableFileName);
                 sw.Stop();
-                Debug.Log($"Cached file read in {sw.Elapsed.TotalSeconds} seconds");                
+                Debug.Log($"Cached file read in {sw.Elapsed.TotalSeconds} seconds");
             }
             else
             {
@@ -59,9 +61,13 @@ namespace PointData
                 Debug.Log($"Cached file written in {sw.Elapsed.TotalSeconds} seconds");
             }
 
-
-            _dataMapping = SphericalCoordinates ? DataMapping.DefaultSphericalMapping : DataMapping.DefaultXyzMapping;
-
+            // Spherical coordinates are not currently supported for line data
+            if (LineData)
+            {
+                SphericalCoordinates = false;
+            }
+            _dataMapping = LineData ? DataMapping.DefaultXyzLineMapping : (SphericalCoordinates ? DataMapping.DefaultSphericalMapping : DataMapping.DefaultXyzMapping);
+            
             if (_dataCatalog.DataColumns.Length == 0 || _dataCatalog.DataColumns[0].Length == 0)
             {
                 Debug.Log($"Problem loading data catalog file {TableFileName}");
@@ -77,10 +83,23 @@ namespace PointData
                     _buffers[i].SetData(_dataCatalog.DataColumns[i]);
                 }
 
-                // Create an instance of the material, so that each data set can have different material parameters
-                BillboardMaterial = Instantiate(BillboardMaterial);
-                BillboardMaterial.SetInt("numDataPoints", _dataCatalog.N);
-                BillboardMaterial.SetFloat("_PointSize", _dataMapping.Defaults.PointSize);
+                // Load instance of the material, so that each data set can have different material parameters
+                if (LineData)
+                {
+                    _catalogMaterial = new Material(Shader.Find("IDIA/CatalogLine"));
+                    _catalogMaterial.SetInt("numDataPoints", _dataCatalog.N);
+                }
+                else
+                {
+                    _catalogMaterial = new Material(Shader.Find("IDIA/CatalogPoint"));
+                    _catalogMaterial.SetInt("numDataPoints", _dataCatalog.N);
+                    _catalogMaterial.SetFloat("_PointSize", _dataMapping.Defaults.PointSize);
+                    Texture2D spriteSheetTexture = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets/Textures/billboard_textures.TGA", typeof(Texture2D));
+                    _catalogMaterial.SetTexture("_SpriteSheet", spriteSheetTexture);
+                    _catalogMaterial.SetInt("_NumSprites", 8);
+                    _catalogMaterial.SetInt("_ShapeIndex", 2);
+                }
+                
                 // Apply scaling from data set space to world space
                 transform.localScale *= _dataMapping.Defaults.Scale;
                 Debug.Log($"Scaling from data set space to world space: {ScalingString}");
@@ -93,16 +112,16 @@ namespace PointData
                     if (gLatColumnIndex >= 0 && gLongColumnIndex >= 0 && rColumnIndex >= 0)
                     {
                         // Spatial mapping and scaling
-                        BillboardMaterial.SetBuffer("dataX", _buffers[gLatColumnIndex]);
-                        BillboardMaterial.SetBuffer("dataY", _buffers[gLongColumnIndex]);
-                        BillboardMaterial.SetBuffer("dataZ", _buffers[rColumnIndex]);
+                        _catalogMaterial.SetBuffer("dataX", _buffers[gLatColumnIndex]);
+                        _catalogMaterial.SetBuffer("dataY", _buffers[gLongColumnIndex]);
+                        _catalogMaterial.SetBuffer("dataZ", _buffers[rColumnIndex]);
                         // Spherical coordinate input assumes degrees for XY, while the shader assumes radians
-                        BillboardMaterial.SetFloat("scalingX", _dataMapping.Mapping.Lat.Scale * Mathf.Deg2Rad);
-                        BillboardMaterial.SetFloat("scalingY", _dataMapping.Mapping.Long.Scale * Mathf.Deg2Rad);
-                        BillboardMaterial.SetFloat("scalingZ", _dataMapping.Mapping.R.Scale);
-                        BillboardMaterial.SetFloat("offsetX", _dataMapping.Mapping.Lat.Offset * Mathf.Deg2Rad);
-                        BillboardMaterial.SetFloat("offsetY", _dataMapping.Mapping.Long.Offset * Mathf.Deg2Rad);
-                        BillboardMaterial.SetFloat("offsetZ", _dataMapping.Mapping.R.Offset);
+                        _catalogMaterial.SetFloat("scalingX", _dataMapping.Mapping.Lat.Scale * Mathf.Deg2Rad);
+                        _catalogMaterial.SetFloat("scalingY", _dataMapping.Mapping.Long.Scale * Mathf.Deg2Rad);
+                        _catalogMaterial.SetFloat("scalingZ", _dataMapping.Mapping.R.Scale);
+                        _catalogMaterial.SetFloat("offsetX", _dataMapping.Mapping.Lat.Offset * Mathf.Deg2Rad);
+                        _catalogMaterial.SetFloat("offsetY", _dataMapping.Mapping.Long.Offset * Mathf.Deg2Rad);
+                        _catalogMaterial.SetFloat("offsetZ", _dataMapping.Mapping.R.Offset);
                     }
                 }
                 else
@@ -113,15 +132,29 @@ namespace PointData
                     if (xColumnIndex >= 0 && yColumnIndex >= 0 && zColumnIndex >= 0)
                     {
                         // Spatial mapping and scaling
-                        BillboardMaterial.SetBuffer("dataX", _buffers[xColumnIndex]);
-                        BillboardMaterial.SetBuffer("dataY", _buffers[yColumnIndex]);
-                        BillboardMaterial.SetBuffer("dataZ", _buffers[zColumnIndex]);
-                        BillboardMaterial.SetFloat("scalingX", _dataMapping.Mapping.X.Scale);
-                        BillboardMaterial.SetFloat("scalingY", _dataMapping.Mapping.Y.Scale);
-                        BillboardMaterial.SetFloat("scalingZ", _dataMapping.Mapping.Z.Scale);
-                        BillboardMaterial.SetFloat("offsetX", _dataMapping.Mapping.X.Offset);
-                        BillboardMaterial.SetFloat("offsetY", _dataMapping.Mapping.Y.Offset);
-                        BillboardMaterial.SetFloat("offsetZ", _dataMapping.Mapping.Z.Offset);
+                        _catalogMaterial.SetBuffer("dataX", _buffers[xColumnIndex]);
+                        _catalogMaterial.SetBuffer("dataY", _buffers[yColumnIndex]);
+                        _catalogMaterial.SetBuffer("dataZ", _buffers[zColumnIndex]);
+                        _catalogMaterial.SetFloat("scalingX", _dataMapping.Mapping.X.Scale);
+                        _catalogMaterial.SetFloat("scalingY", _dataMapping.Mapping.Y.Scale);
+                        _catalogMaterial.SetFloat("scalingZ", _dataMapping.Mapping.Z.Scale);
+                        _catalogMaterial.SetFloat("offsetX", _dataMapping.Mapping.X.Offset);
+                        _catalogMaterial.SetFloat("offsetY", _dataMapping.Mapping.Y.Offset);
+                        _catalogMaterial.SetFloat("offsetZ", _dataMapping.Mapping.Z.Offset);
+                    }
+
+                    if (LineData)
+                    {
+                        int x2ColumnIndex = _dataCatalog.GetDataColumnIndex(_dataMapping.Mapping.X2.Source);
+                        int y2ColumnIndex = _dataCatalog.GetDataColumnIndex(_dataMapping.Mapping.Y2.Source);
+                        int z2ColumnIndex = _dataCatalog.GetDataColumnIndex(_dataMapping.Mapping.Z2.Source);
+                        if (x2ColumnIndex >= 0 && y2ColumnIndex >= 0 && z2ColumnIndex >= 0)
+                        {
+                            // Spatial mapping for the end points
+                            _catalogMaterial.SetBuffer("dataX2", _buffers[x2ColumnIndex]);
+                            _catalogMaterial.SetBuffer("dataY2", _buffers[y2ColumnIndex]);
+                            _catalogMaterial.SetBuffer("dataZ2", _buffers[z2ColumnIndex]);                            
+                        }
                     }
                 }
 
@@ -129,9 +162,9 @@ namespace PointData
                 if (cmapColumnIndex >= 0)
                 {
                     // Color map mapping and scaling
-                    BillboardMaterial.SetBuffer("dataVal", _buffers[cmapColumnIndex]);
-                    BillboardMaterial.SetFloat("scaleColorMap", _dataMapping.Mapping.Cmap.Scale);
-                    BillboardMaterial.SetFloat("offsetColorMap", _dataMapping.Mapping.Cmap.Offset);
+                    _catalogMaterial.SetBuffer("dataVal", _buffers[cmapColumnIndex]);
+                    _catalogMaterial.SetFloat("scaleColorMap", _dataMapping.Mapping.Cmap.Scale);
+                    _catalogMaterial.SetFloat("offsetColorMap", _dataMapping.Mapping.Cmap.Offset);
                 }
             }
 
@@ -144,7 +177,7 @@ namespace PointData
             get
             {
                 string unitString = _dataCatalog.GetColumnDefinition(SphericalCoordinates ? _dataMapping.Mapping.R.Source : _dataMapping.Mapping.X.Source).Unit;
-                if (unitString.Length == 0)
+                if (string.IsNullOrEmpty(unitString))
                 {
                     unitString = "units";
                 }
@@ -179,7 +212,7 @@ namespace PointData
                 _colorMapData[i] = ColorMapTexture.GetPixel((int) (i * colorMapPixelDeltaX), (int) (colorMapIndex * colorMapPixelDeltaY));
             }
 
-            BillboardMaterial.SetColorArray("colorMapData", _colorMapData);
+            _catalogMaterial.SetColorArray("colorMapData", _colorMapData);
         }
 
         public void ShiftColorMap(int delta)
@@ -203,14 +236,14 @@ namespace PointData
         void OnRenderObject()
         {
             // Update the object transform and point scale on the GPU
-            BillboardMaterial.SetMatrix("datasetMatrix", transform.localToWorldMatrix);
-            BillboardMaterial.SetFloat("pointScale", transform.localScale.x);
-            BillboardMaterial.SetInt("scalingTypeX", 0);
-            BillboardMaterial.SetInt("scalingTypeY", 0);
-            BillboardMaterial.SetInt("scalingTypeZ", 0);
-            BillboardMaterial.SetInt("scalingTypeColorMap", 0);
+            _catalogMaterial.SetMatrix("datasetMatrix", transform.localToWorldMatrix);
+            _catalogMaterial.SetFloat("pointScale", transform.localScale.x);
+            _catalogMaterial.SetInt("scalingTypeX", 0);
+            _catalogMaterial.SetInt("scalingTypeY", 0);
+            _catalogMaterial.SetInt("scalingTypeZ", 0);
+            _catalogMaterial.SetInt("scalingTypeColorMap", 0);
             // Shader defines two passes: Pass #0 uses cartesian coordinates and Pass #1 uses spherical coordinates
-            BillboardMaterial.SetPass(_dataMapping.Spherical ? 1 : 0);
+            _catalogMaterial.SetPass(_dataMapping.Spherical ? 1 : 0);
             // Render points on the GPU using vertex pulling
             Graphics.DrawProcedural(MeshTopology.Points, _dataCatalog.N);
         }

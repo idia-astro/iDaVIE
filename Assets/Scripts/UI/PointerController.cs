@@ -66,12 +66,6 @@ public class PointerController : MonoBehaviour
                 // Process mouse up
             }
         }
-
-
-        if (EventSystem.current.currentSelectedGameObject != null)
-        {
-            ExecuteEvents.Execute(EventSystem.current.currentSelectedGameObject, new PointerEventData(EventSystem.current), ExecuteEvents.submitHandler);
-        }
     }
 
 

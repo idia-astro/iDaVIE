@@ -126,7 +126,7 @@ public class InputController : MonoBehaviour
 
     private void OnPinchChanged(SteamVR_Action_In actionIn)
     {
-        Debug.Log("Pinch changed!");
+        
     }
 
     private void StateTransitionMovingToIdle()

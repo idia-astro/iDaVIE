@@ -1,4 +1,4 @@
-﻿Shader "VRTest/Data point billboard"
+﻿Shader "IDIA/CatalogPoint"
 {
 	Properties
 	{
@@ -27,12 +27,12 @@
             // 2) Vertex shader transforms point positions to world space, passes through color and opacity, as well as per-vertex camera-facing axes 
             // 3) Geometry shader explodes a single point to a billboarded 4-vertex triangle strip, based on the camera-facing axes, assigns texture coordinates based on sprite sheet and selected sprite index
             // 4) fragment shader shades each pixel after looking up the shape texture            
-			#pragma vertex vertexShaderBufferLookup
-			#pragma geometry geometryShaderBillboard
-			#pragma fragment fragmentShaderSprite
+			#pragma vertex vsPointBillboard
+			#pragma geometry gsBillboard
+			#pragma fragment fsSprite
 
 			#include "UnityCG.cginc"
-			#include "ParticlePoint.cginc"
+			#include "CatalogPoint.cginc"
 	ENDCG
 		}
 		
@@ -45,12 +45,12 @@
 			#pragma target 5.0
             
             // Identical to above, but the vertex shader uses spherical coordinates for position lookup
-			#pragma vertex vertexShaderBufferLookupSpherical
-			#pragma geometry geometryShaderBillboard
-			#pragma fragment fragmentShaderSprite
+			#pragma vertex vsPointBillboardSpherical
+			#pragma geometry gsBillboard
+			#pragma fragment fsSprite
 
 			#include "UnityCG.cginc"
-			#include "ParticlePoint.cginc"			
+			#include "CatalogPoint.cginc"			
 	ENDCG
 		}
 	}
