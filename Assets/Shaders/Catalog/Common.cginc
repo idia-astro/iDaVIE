@@ -27,7 +27,9 @@ uniform float offsetX;
 uniform float offsetY;
 uniform float offsetZ;
 uniform float offsetColorMap;
-
+// Filtering
+uniform float cutoffMin;
+uniform float cutoffMax;
 // Color maps
 uniform float4 colorMapData[NUM_COLOR_MAP_STEPS];
 

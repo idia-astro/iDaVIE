@@ -11,6 +11,7 @@ struct VertexShaderOutput
     float4 startPoint : SV_POSITION;
     float4 color : COLOR;
     float4 endPoint: TEXCOORD0;
+    float value: TEXCOORD1;
 };
 
 struct FragmentShaderInput
@@ -28,8 +29,9 @@ VertexShaderOutput vsLine(uint id : SV_VertexID)
     // Transform positions from local space to screen space    
     output.startPoint = mul(UNITY_MATRIX_VP, mul(datasetMatrix, float4(startPointLocalSpace, 1.0)));
     output.endPoint =  mul(UNITY_MATRIX_VP, mul(datasetMatrix, float4(endPointLocalSpace, 1.0)));      
+    output.value = applyScaling(dataVal[id], scalingTypeColorMap, scaleColorMap, offsetColorMap);
     // Look up color from the uniform
-    uint colorMapIndex = clamp(applyScaling(dataVal[id], scalingTypeColorMap, scaleColorMap, offsetColorMap) * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
+    uint colorMapIndex = clamp(output.value * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
     output.color = colorMapData[colorMapIndex];
     return output;
 }
@@ -49,17 +51,22 @@ VertexShaderOutput vsLineSpherical(uint id : SV_VertexID)
     // Transform positions from local space to world space    
     output.startPoint = mul(UNITY_MATRIX_VP, mul(datasetMatrix, float4(startPointLocalSpace, 1.0)));
     output.endPoint =  mul(UNITY_MATRIX_VP, mul(datasetMatrix, float4(endPointLocalSpace, 1.0)));            
+    output.value = applyScaling(dataVal[id], scalingTypeColorMap, scaleColorMap, offsetColorMap);
     // Look up color from the uniform
-    uint colorMapIndex = clamp(applyScaling(dataVal[id], scalingTypeColorMap, scaleColorMap, offsetColorMap) * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
+    uint colorMapIndex = clamp(output.value * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
     output.color = colorMapData[colorMapIndex];
     return output;
 }
 
-
-
 // Geometry shader is limited to a fixed output. In future, this stage could be used for culling
 [maxvertexcount(2)]
 void gsLine(point VertexShaderOutput input[1], inout LineStream<FragmentShaderInput> outputStream) {
+    // Filtering based on min/max value    
+    if (input[0].value < cutoffMin || input[0].value > cutoffMax)
+    {
+        return;
+    }
+    
     FragmentShaderInput output;
     // First vertex and common properties
     output.position = input[0].startPoint;

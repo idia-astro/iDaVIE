@@ -16,6 +16,8 @@ namespace PointData
         public string MappingFileName;
         public bool SphericalCoordinates;
         public bool LineData;
+        [Range(0.0f, 1.0f)] public float ValueCutoffMin = 0;
+        [Range(0.0f, 1.0f)] public float ValueCutoffMax = 1;
         public ColorMapEnum ColorMap = ColorMapEnum.Inferno;
         public Texture2D ColorMapTexture;
 
@@ -27,6 +29,49 @@ namespace PointData
         private DataCatalog _dataCatalog;
         private DataMapping _dataMapping;
         private Material _catalogMaterial;
+
+        // Material property IDs
+        private int _idNumDataPoints, _idPointSize, _idSpriteSheet, _idNumSprites, _idShapeIndex, _idColorMapData;
+        private int _idDataX, _idDataY, _idDataZ, _idDataX2, _idDataY2, _idDataZ2, _dataVal;
+        private int _idScalingX, _idScalingY, _idScalingZ, _idOffsetX, _idOffsetY, _idOffsetZ, _idScaleColorMap, _idOffsetColorMap;
+        private int _idScalingTypeX, _idScalingTypeY, _idScalingTypeZ, _idScalingTypeColorMap, _idDataSetMatrix, _idPointScale;
+        private int _idCutoffMin, _idCutoffMax;
+
+        private void GetPropertyIds()
+        {
+            _idNumDataPoints = Shader.PropertyToID("numDataPoints");
+            _idPointSize = Shader.PropertyToID("_PointSize");
+            _idSpriteSheet = Shader.PropertyToID("_SpriteSheet");
+            _idNumSprites = Shader.PropertyToID("_NumSprites");
+            _idShapeIndex = Shader.PropertyToID("_ShapeIndex");
+            _idColorMapData = Shader.PropertyToID("colorMapData");
+
+            _idDataX = Shader.PropertyToID("dataX");
+            _idDataY = Shader.PropertyToID("dataY");
+            _idDataZ = Shader.PropertyToID("dataZ");
+            _idDataX2 = Shader.PropertyToID("dataX2");
+            _idDataY2 = Shader.PropertyToID("dataY2");
+            _idDataZ2 = Shader.PropertyToID("dataZ2");
+            _dataVal = Shader.PropertyToID("dataVal");
+
+            _idScalingX = Shader.PropertyToID("scalingX");
+            _idScalingY = Shader.PropertyToID("scalingY");
+            _idScalingZ = Shader.PropertyToID("scalingZ");
+            _idOffsetX = Shader.PropertyToID("offsetX");
+            _idOffsetY = Shader.PropertyToID("offsetY");
+            _idOffsetZ = Shader.PropertyToID("offsetZ");
+            _idScaleColorMap = Shader.PropertyToID("scaleColorMap");
+            _idOffsetColorMap = Shader.PropertyToID("offsetColorMap");
+
+            _idScalingTypeX = Shader.PropertyToID("scalingTypeX");
+            _idScalingTypeY = Shader.PropertyToID("scalingTypeY");
+            _idScalingTypeZ = Shader.PropertyToID("scalingTypeZ");
+            _idScalingTypeColorMap = Shader.PropertyToID("numDataPoints");
+            _idDataSetMatrix = Shader.PropertyToID("datasetMatrix");
+            _idPointScale = Shader.PropertyToID("pointScale");
+            _idCutoffMin = Shader.PropertyToID("cutoffMin");
+            _idCutoffMax = Shader.PropertyToID("cutoffMax");
+        }
 
         void Start()
         {
@@ -66,8 +111,9 @@ namespace PointData
             {
                 SphericalCoordinates = false;
             }
+
             _dataMapping = LineData ? DataMapping.DefaultXyzLineMapping : (SphericalCoordinates ? DataMapping.DefaultSphericalMapping : DataMapping.DefaultXyzMapping);
-            
+
             if (_dataCatalog.DataColumns.Length == 0 || _dataCatalog.DataColumns[0].Length == 0)
             {
                 Debug.Log($"Problem loading data catalog file {TableFileName}");
@@ -84,22 +130,23 @@ namespace PointData
                 }
 
                 // Load instance of the material, so that each data set can have different material parameters
+                GetPropertyIds();
                 if (LineData)
                 {
                     _catalogMaterial = new Material(Shader.Find("IDIA/CatalogLine"));
-                    _catalogMaterial.SetInt("numDataPoints", _dataCatalog.N);
                 }
                 else
                 {
                     _catalogMaterial = new Material(Shader.Find("IDIA/CatalogPoint"));
-                    _catalogMaterial.SetInt("numDataPoints", _dataCatalog.N);
-                    _catalogMaterial.SetFloat("_PointSize", _dataMapping.Defaults.PointSize);
-                    Texture2D spriteSheetTexture = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets/Textures/billboard_textures.TGA", typeof(Texture2D));
-                    _catalogMaterial.SetTexture("_SpriteSheet", spriteSheetTexture);
-                    _catalogMaterial.SetInt("_NumSprites", 8);
-                    _catalogMaterial.SetInt("_ShapeIndex", 2);
+                    _catalogMaterial.SetFloat(_idPointSize, _dataMapping.Defaults.PointSize);
+                    Texture2D spriteSheetTexture = (Texture2D) AssetDatabase.LoadAssetAtPath("Assets/Textures/billboard_textures.TGA", typeof(Texture2D));
+                    _catalogMaterial.SetTexture(_idSpriteSheet, spriteSheetTexture);
+                    _catalogMaterial.SetInt(_idNumSprites, 8);
+                    _catalogMaterial.SetInt(_idShapeIndex, 2);
                 }
-                
+
+                _catalogMaterial.SetInt(_idNumDataPoints, _dataCatalog.N);
+
                 // Apply scaling from data set space to world space
                 transform.localScale *= _dataMapping.Defaults.Scale;
                 Debug.Log($"Scaling from data set space to world space: {ScalingString}");
@@ -112,16 +159,16 @@ namespace PointData
                     if (gLatColumnIndex >= 0 && gLongColumnIndex >= 0 && rColumnIndex >= 0)
                     {
                         // Spatial mapping and scaling
-                        _catalogMaterial.SetBuffer("dataX", _buffers[gLatColumnIndex]);
-                        _catalogMaterial.SetBuffer("dataY", _buffers[gLongColumnIndex]);
-                        _catalogMaterial.SetBuffer("dataZ", _buffers[rColumnIndex]);
+                        _catalogMaterial.SetBuffer(_idDataX, _buffers[gLatColumnIndex]);
+                        _catalogMaterial.SetBuffer(_idDataY, _buffers[gLongColumnIndex]);
+                        _catalogMaterial.SetBuffer(_idDataZ, _buffers[rColumnIndex]);
                         // Spherical coordinate input assumes degrees for XY, while the shader assumes radians
-                        _catalogMaterial.SetFloat("scalingX", _dataMapping.Mapping.Lat.Scale * Mathf.Deg2Rad);
-                        _catalogMaterial.SetFloat("scalingY", _dataMapping.Mapping.Long.Scale * Mathf.Deg2Rad);
-                        _catalogMaterial.SetFloat("scalingZ", _dataMapping.Mapping.R.Scale);
-                        _catalogMaterial.SetFloat("offsetX", _dataMapping.Mapping.Lat.Offset * Mathf.Deg2Rad);
-                        _catalogMaterial.SetFloat("offsetY", _dataMapping.Mapping.Long.Offset * Mathf.Deg2Rad);
-                        _catalogMaterial.SetFloat("offsetZ", _dataMapping.Mapping.R.Offset);
+                        _catalogMaterial.SetFloat(_idScalingX, _dataMapping.Mapping.Lat.Scale * Mathf.Deg2Rad);
+                        _catalogMaterial.SetFloat(_idScalingY, _dataMapping.Mapping.Long.Scale * Mathf.Deg2Rad);
+                        _catalogMaterial.SetFloat(_idScalingZ, _dataMapping.Mapping.R.Scale);
+                        _catalogMaterial.SetFloat(_idOffsetX, _dataMapping.Mapping.Lat.Offset * Mathf.Deg2Rad);
+                        _catalogMaterial.SetFloat(_idOffsetY, _dataMapping.Mapping.Long.Offset * Mathf.Deg2Rad);
+                        _catalogMaterial.SetFloat(_idOffsetZ, _dataMapping.Mapping.R.Offset);
                     }
                 }
                 else
@@ -132,15 +179,15 @@ namespace PointData
                     if (xColumnIndex >= 0 && yColumnIndex >= 0 && zColumnIndex >= 0)
                     {
                         // Spatial mapping and scaling
-                        _catalogMaterial.SetBuffer("dataX", _buffers[xColumnIndex]);
-                        _catalogMaterial.SetBuffer("dataY", _buffers[yColumnIndex]);
-                        _catalogMaterial.SetBuffer("dataZ", _buffers[zColumnIndex]);
-                        _catalogMaterial.SetFloat("scalingX", _dataMapping.Mapping.X.Scale);
-                        _catalogMaterial.SetFloat("scalingY", _dataMapping.Mapping.Y.Scale);
-                        _catalogMaterial.SetFloat("scalingZ", _dataMapping.Mapping.Z.Scale);
-                        _catalogMaterial.SetFloat("offsetX", _dataMapping.Mapping.X.Offset);
-                        _catalogMaterial.SetFloat("offsetY", _dataMapping.Mapping.Y.Offset);
-                        _catalogMaterial.SetFloat("offsetZ", _dataMapping.Mapping.Z.Offset);
+                        _catalogMaterial.SetBuffer(_idDataX, _buffers[xColumnIndex]);
+                        _catalogMaterial.SetBuffer(_idDataY, _buffers[yColumnIndex]);
+                        _catalogMaterial.SetBuffer(_idDataZ, _buffers[zColumnIndex]);
+                        _catalogMaterial.SetFloat(_idScalingX, _dataMapping.Mapping.X.Scale);
+                        _catalogMaterial.SetFloat(_idScalingY, _dataMapping.Mapping.Y.Scale);
+                        _catalogMaterial.SetFloat(_idScalingZ, _dataMapping.Mapping.Z.Scale);
+                        _catalogMaterial.SetFloat(_idOffsetX, _dataMapping.Mapping.X.Offset);
+                        _catalogMaterial.SetFloat(_idOffsetY, _dataMapping.Mapping.Y.Offset);
+                        _catalogMaterial.SetFloat(_idOffsetZ, _dataMapping.Mapping.Z.Offset);
                     }
 
                     if (LineData)
@@ -151,9 +198,9 @@ namespace PointData
                         if (x2ColumnIndex >= 0 && y2ColumnIndex >= 0 && z2ColumnIndex >= 0)
                         {
                             // Spatial mapping for the end points
-                            _catalogMaterial.SetBuffer("dataX2", _buffers[x2ColumnIndex]);
-                            _catalogMaterial.SetBuffer("dataY2", _buffers[y2ColumnIndex]);
-                            _catalogMaterial.SetBuffer("dataZ2", _buffers[z2ColumnIndex]);                            
+                            _catalogMaterial.SetBuffer(_idDataX2, _buffers[x2ColumnIndex]);
+                            _catalogMaterial.SetBuffer(_idDataY2, _buffers[y2ColumnIndex]);
+                            _catalogMaterial.SetBuffer(_idDataZ2, _buffers[z2ColumnIndex]);
                         }
                     }
                 }
@@ -162,9 +209,9 @@ namespace PointData
                 if (cmapColumnIndex >= 0)
                 {
                     // Color map mapping and scaling
-                    _catalogMaterial.SetBuffer("dataVal", _buffers[cmapColumnIndex]);
-                    _catalogMaterial.SetFloat("scaleColorMap", _dataMapping.Mapping.Cmap.Scale);
-                    _catalogMaterial.SetFloat("offsetColorMap", _dataMapping.Mapping.Cmap.Offset);
+                    _catalogMaterial.SetBuffer(_dataVal, _buffers[cmapColumnIndex]);
+                    _catalogMaterial.SetFloat(_idScaleColorMap, _dataMapping.Mapping.Cmap.Scale);
+                    _catalogMaterial.SetFloat(_idOffsetColorMap, _dataMapping.Mapping.Cmap.Offset);
                 }
             }
 
@@ -212,7 +259,7 @@ namespace PointData
                 _colorMapData[i] = ColorMapTexture.GetPixel((int) (i * colorMapPixelDeltaX), (int) (colorMapIndex * colorMapPixelDeltaY));
             }
 
-            _catalogMaterial.SetColorArray("colorMapData", _colorMapData);
+            _catalogMaterial.SetColorArray(_idColorMapData, _colorMapData);
         }
 
         public void ShiftColorMap(int delta)
@@ -225,6 +272,11 @@ namespace PointData
 
         void Update()
         {
+            if (_catalogMaterial != null)
+            {
+                _catalogMaterial.SetFloat(_idCutoffMin, ValueCutoffMin);
+                _catalogMaterial.SetFloat(_idCutoffMax, ValueCutoffMax);
+            }
         }
 
         void OnDrawGizmosSelected()
@@ -236,12 +288,12 @@ namespace PointData
         void OnRenderObject()
         {
             // Update the object transform and point scale on the GPU
-            _catalogMaterial.SetMatrix("datasetMatrix", transform.localToWorldMatrix);
-            _catalogMaterial.SetFloat("pointScale", transform.localScale.x);
-            _catalogMaterial.SetInt("scalingTypeX", 0);
-            _catalogMaterial.SetInt("scalingTypeY", 0);
-            _catalogMaterial.SetInt("scalingTypeZ", 0);
-            _catalogMaterial.SetInt("scalingTypeColorMap", 0);
+            _catalogMaterial.SetMatrix(_idDataSetMatrix, transform.localToWorldMatrix);
+            _catalogMaterial.SetFloat(_idPointScale, transform.localScale.x);
+            _catalogMaterial.SetInt(_idScalingTypeX, 0);
+            _catalogMaterial.SetInt(_idScalingTypeY, 0);
+            _catalogMaterial.SetInt(_idScalingTypeZ, 0);
+            _catalogMaterial.SetInt(_idScalingTypeColorMap, 0);
             // Shader defines two passes: Pass #0 uses cartesian coordinates and Pass #1 uses spherical coordinates
             _catalogMaterial.SetPass(_dataMapping.Spherical ? 1 : 0);
             // Render points on the GPU using vertex pulling
