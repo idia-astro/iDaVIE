@@ -2606,6 +2606,8 @@ MonoBehaviour:
   MappingFileName: Assets/Resources/DataMaps/basicxyz.json
   SphericalCoordinates: 0
   LineData: 1
+  ValueCutoffMin: 0
+  ValueCutoffMax: 1
   ColorMap: 45
   ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
 --- !u!1 &1314198636
@@ -3400,7 +3402,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1894848104
 Transform:
   m_ObjectHideFlags: 0
@@ -3431,6 +3433,8 @@ MonoBehaviour:
   MappingFileName: Assets/Resources/DataMaps/basicxyz.json
   SphericalCoordinates: 0
   LineData: 0
+  ValueCutoffMin: 0
+  ValueCutoffMax: 1
   ColorMap: 3
   ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
 --- !u!1 &1974559755
