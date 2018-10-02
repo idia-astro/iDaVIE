@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using UnityEngine;
 
-namespace PointData
+namespace CatalogData
 {
     [Serializable]
     public class DataMapping

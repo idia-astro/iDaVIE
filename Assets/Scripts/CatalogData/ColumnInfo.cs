@@ -1,11 +1,11 @@
 using System;
 
-namespace PointData
+namespace CatalogData
 {
     public enum ColumnType
     {
-        NUMERIC,
-        STRING
+        Numeric,
+        String
     }
 
     [Serializable]

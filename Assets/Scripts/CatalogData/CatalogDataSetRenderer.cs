@@ -8,10 +8,12 @@ using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace PointData
+namespace CatalogData
 {
-    public class PointDataSet : MonoBehaviour
+    public class CatalogDataSetRenderer : MonoBehaviour
     {
+        public ColorMapDelegate OnColorMapChanged;
+
         public string TableFileName;
         public string MappingFileName;
         public bool SphericalCoordinates;
@@ -21,12 +23,13 @@ namespace PointData
         public ColorMapEnum ColorMap = ColorMapEnum.Inferno;
         public Texture2D ColorMapTexture;
 
+
         private ComputeBuffer[] _buffers;
 
         private Color[] _colorMapData;
         private const int NumColorMapStops = 256;
 
-        private DataCatalog _dataCatalog;
+        private CatalogDataSet _dataSet;
         private DataMapping _dataMapping;
         private Material _catalogMaterial;
 
@@ -89,7 +92,7 @@ namespace PointData
             {
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
-                _dataCatalog = DataCatalog.LoadCacheFile(TableFileName);
+                _dataSet = CatalogDataSet.LoadCacheFile(TableFileName);
                 sw.Stop();
                 Debug.Log($"Cached file read in {sw.Elapsed.TotalSeconds} seconds");
             }
@@ -97,11 +100,11 @@ namespace PointData
             {
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
-                _dataCatalog = DataCatalog.LoadIpacTable(TableFileName);
+                _dataSet = CatalogDataSet.LoadIpacTable(TableFileName);
                 sw.Stop();
                 Debug.Log($"IPAC table read in {sw.Elapsed.TotalSeconds} seconds");
                 sw.Restart();
-                _dataCatalog.WriteCacheFile();
+                _dataSet.WriteCacheFile();
                 sw.Stop();
                 Debug.Log($"Cached file written in {sw.Elapsed.TotalSeconds} seconds");
             }
@@ -114,19 +117,19 @@ namespace PointData
 
             _dataMapping = LineData ? DataMapping.DefaultXyzLineMapping : (SphericalCoordinates ? DataMapping.DefaultSphericalMapping : DataMapping.DefaultXyzMapping);
 
-            if (_dataCatalog.DataColumns.Length == 0 || _dataCatalog.DataColumns[0].Length == 0)
+            if (_dataSet.DataColumns.Length == 0 || _dataSet.DataColumns[0].Length == 0)
             {
                 Debug.Log($"Problem loading data catalog file {TableFileName}");
             }
             else
             {
-                int numDataColumns = _dataCatalog.DataColumns.Length;
+                int numDataColumns = _dataSet.DataColumns.Length;
                 _buffers = new ComputeBuffer[numDataColumns];
 
                 for (var i = 0; i < numDataColumns; i++)
                 {
-                    _buffers[i] = new ComputeBuffer(_dataCatalog.N, 4);
-                    _buffers[i].SetData(_dataCatalog.DataColumns[i]);
+                    _buffers[i] = new ComputeBuffer(_dataSet.N, 4);
+                    _buffers[i].SetData(_dataSet.DataColumns[i]);
                 }
 
                 // Load instance of the material, so that each data set can have different material parameters
@@ -145,7 +148,7 @@ namespace PointData
                     _catalogMaterial.SetInt(_idShapeIndex, 2);
                 }
 
-                _catalogMaterial.SetInt(_idNumDataPoints, _dataCatalog.N);
+                _catalogMaterial.SetInt(_idNumDataPoints, _dataSet.N);
 
                 // Apply scaling from data set space to world space
                 transform.localScale *= _dataMapping.Defaults.Scale;
@@ -153,9 +156,9 @@ namespace PointData
 
                 if (SphericalCoordinates)
                 {
-                    int gLatColumnIndex = _dataCatalog.GetDataColumnIndex(_dataMapping.Mapping.Lat.Source);
-                    int gLongColumnIndex = _dataCatalog.GetDataColumnIndex(_dataMapping.Mapping.Long.Source);
-                    int rColumnIndex = _dataCatalog.GetDataColumnIndex(_dataMapping.Mapping.R.Source);
+                    int gLatColumnIndex = _dataSet.GetDataColumnIndex(_dataMapping.Mapping.Lat.Source);
+                    int gLongColumnIndex = _dataSet.GetDataColumnIndex(_dataMapping.Mapping.Long.Source);
+                    int rColumnIndex = _dataSet.GetDataColumnIndex(_dataMapping.Mapping.R.Source);
                     if (gLatColumnIndex >= 0 && gLongColumnIndex >= 0 && rColumnIndex >= 0)
                     {
                         // Spatial mapping and scaling
@@ -173,9 +176,9 @@ namespace PointData
                 }
                 else
                 {
-                    int xColumnIndex = _dataCatalog.GetDataColumnIndex(_dataMapping.Mapping.X.Source);
-                    int yColumnIndex = _dataCatalog.GetDataColumnIndex(_dataMapping.Mapping.Y.Source);
-                    int zColumnIndex = _dataCatalog.GetDataColumnIndex(_dataMapping.Mapping.Z.Source);
+                    int xColumnIndex = _dataSet.GetDataColumnIndex(_dataMapping.Mapping.X.Source);
+                    int yColumnIndex = _dataSet.GetDataColumnIndex(_dataMapping.Mapping.Y.Source);
+                    int zColumnIndex = _dataSet.GetDataColumnIndex(_dataMapping.Mapping.Z.Source);
                     if (xColumnIndex >= 0 && yColumnIndex >= 0 && zColumnIndex >= 0)
                     {
                         // Spatial mapping and scaling
@@ -192,9 +195,9 @@ namespace PointData
 
                     if (LineData)
                     {
-                        int x2ColumnIndex = _dataCatalog.GetDataColumnIndex(_dataMapping.Mapping.X2.Source);
-                        int y2ColumnIndex = _dataCatalog.GetDataColumnIndex(_dataMapping.Mapping.Y2.Source);
-                        int z2ColumnIndex = _dataCatalog.GetDataColumnIndex(_dataMapping.Mapping.Z2.Source);
+                        int x2ColumnIndex = _dataSet.GetDataColumnIndex(_dataMapping.Mapping.X2.Source);
+                        int y2ColumnIndex = _dataSet.GetDataColumnIndex(_dataMapping.Mapping.Y2.Source);
+                        int z2ColumnIndex = _dataSet.GetDataColumnIndex(_dataMapping.Mapping.Z2.Source);
                         if (x2ColumnIndex >= 0 && y2ColumnIndex >= 0 && z2ColumnIndex >= 0)
                         {
                             // Spatial mapping for the end points
@@ -205,7 +208,7 @@ namespace PointData
                     }
                 }
 
-                int cmapColumnIndex = _dataCatalog.GetDataColumnIndex(_dataMapping.Mapping.Cmap.Source);
+                int cmapColumnIndex = _dataSet.GetDataColumnIndex(_dataMapping.Mapping.Cmap.Source);
                 if (cmapColumnIndex >= 0)
                 {
                     // Color map mapping and scaling
@@ -223,7 +226,7 @@ namespace PointData
         {
             get
             {
-                string unitString = _dataCatalog.GetColumnDefinition(SphericalCoordinates ? _dataMapping.Mapping.R.Source : _dataMapping.Mapping.X.Source).Unit;
+                string unitString = _dataSet.GetColumnDefinition(SphericalCoordinates ? _dataMapping.Mapping.R.Source : _dataMapping.Mapping.X.Source).Unit;
                 if (string.IsNullOrEmpty(unitString))
                 {
                     unitString = "units";
@@ -268,6 +271,7 @@ namespace PointData
             int currentIndex = ColorMap.GetHashCode();
             int newIndex = (currentIndex + delta + numColorMaps) % numColorMaps;
             SetColorMap(ColorMapUtils.FromHashCode(newIndex));
+            OnColorMapChanged?.Invoke(ColorMap);
         }
 
         void Update()
@@ -297,7 +301,7 @@ namespace PointData
             // Shader defines two passes: Pass #0 uses cartesian coordinates and Pass #1 uses spherical coordinates
             _catalogMaterial.SetPass(_dataMapping.Spherical ? 1 : 0);
             // Render points on the GPU using vertex pulling
-            Graphics.DrawProcedural(MeshTopology.Points, _dataCatalog.N);
+            Graphics.DrawProcedural(MeshTopology.Points, _dataSet.N);
         }
 
         void OnDestroy()

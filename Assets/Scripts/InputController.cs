@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using PointData;
+using CatalogData;
 using TMPro;
 using UnityEngine;
 using Valve.VR;
@@ -16,12 +16,13 @@ public class InputController : MonoBehaviour
     }
 
     public bool InPlaceScaling = true;
+    public CatalogDataSetManager CatalogDataSetManager;
     private Player _player;
     private Hand[] _hands;
     private Transform[] _handTransforms;
     private SteamVR_Action_Boolean _grabGripAction;
     private SteamVR_Action_Boolean _grabPinchAction;
-    private PointDataSet[] _pointDataSets;
+    private CatalogDataSetRenderer[] _catalogDataSets;
     private VolumeDataSet[] _volumeDataSets;
     private List<MonoBehaviour> _allDataSets;
     private float[] _startDataSetScales;
@@ -56,12 +57,11 @@ public class InputController : MonoBehaviour
         _grabPinchAction.AddOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.Any);
 
         _allDataSets = new List<MonoBehaviour>();
-        // Connect this behaviour component to others
-        var pointDataSetManager = GameObject.Find("PointDataSetManager");
-        if (pointDataSetManager)
+        // Connect this behaviour component to others        
+        if (CatalogDataSetManager)
         {
-            _pointDataSets = pointDataSetManager.GetComponentsInChildren<PointDataSet>();
-            _allDataSets.AddRange(_pointDataSets);
+            _catalogDataSets = CatalogDataSetManager.GetComponentsInChildren<CatalogDataSetRenderer>();
+            _allDataSets.AddRange(_catalogDataSets);
         }
 
         var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
@@ -274,10 +274,10 @@ public class InputController : MonoBehaviour
 
     private void UpdateScalingText(MonoBehaviour dataSet)
     {
-        PointDataSet pointDataSet = dataSet as PointDataSet;
-        if (pointDataSet != null)
+        CatalogDataSetRenderer catalogDataSetRenderer = dataSet as CatalogDataSetRenderer;
+        if (catalogDataSetRenderer != null)
         {
-            string scalingString = pointDataSet.ScalingString;
+            string scalingString = catalogDataSetRenderer.ScalingString;
             if (_scalingTextComponent != null)
             {
                 _scalingTextComponent.enabled = true;

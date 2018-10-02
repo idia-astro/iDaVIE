@@ -1,12 +1,16 @@
 ﻿using UnityEngine;
 
-namespace PointData
+namespace CatalogData
 {
-    public class PointDataSetManager : MonoBehaviour
+    public class CatalogDataSetManager : MonoBehaviour
     {
         public bool DisplaySingleDataSet;
 
-        public PointDataSet ActiveDataSet
+        public CatalogDataSetRendererDelegate OnActiveDataSetChanged;
+
+        public ColorMapDelegate OnColorMapChanged;
+
+        public CatalogDataSetRenderer ActiveDataSet
         {
             get
             {
@@ -19,13 +23,13 @@ namespace PointData
             }
         }
 
-        private PointDataSet[] _dataSets;
+        private CatalogDataSetRenderer[] _dataSets;
 
-        private int _activeDataSetIndex;
+        private int _activeDataSetIndex = -1;
 
         private void Start()
         {
-            _dataSets = GetComponentsInChildren<PointDataSet>();
+            _dataSets = GetComponentsInChildren<CatalogDataSetRenderer>();
             if (_dataSets == null || _dataSets.Length == 0)
             {
                 _activeDataSetIndex = -1;
@@ -50,6 +54,11 @@ namespace PointData
 
         public void SelectSet(int index)
         {
+            if (ActiveDataSet)
+            {
+                ActiveDataSet.OnColorMapChanged -= HandleColorMapChanged;
+            }
+
             if (_dataSets != null && index >= 0 && index < _dataSets.Length)
             {
                 _activeDataSetIndex = index;
@@ -62,6 +71,8 @@ namespace PointData
                 }
 
                 _dataSets[_activeDataSetIndex].enabled = true;
+                _dataSets[_activeDataSetIndex].OnColorMapChanged += HandleColorMapChanged;
+                OnActiveDataSetChanged?.Invoke(_dataSets[_activeDataSetIndex]);
             }
         }
 
@@ -71,6 +82,11 @@ namespace PointData
             {
                 ActiveDataSet.ShiftColorMap(delta);
             }
+        }
+
+        private void HandleColorMapChanged(ColorMapEnum colorMap)
+        {
+            OnColorMapChanged?.Invoke(colorMap);
         }
     }
 }
