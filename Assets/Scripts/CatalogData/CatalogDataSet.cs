@@ -11,6 +11,7 @@ namespace CatalogData
     [Serializable]
     public class CatalogDataSet
     {
+
         public ColumnInfo[] ColumnDefinitions { get; private set; }
         public string FileName { get; private set; }
         public string[][] MetaColumns { get; private set; }
@@ -54,8 +55,8 @@ namespace CatalogData
             bool hasUnitDefinition = false;
             int firstDataLine = -1;
 
-            HashSet<string> numericColumnTypes = new HashSet<string> {"int", "i", "long", "l", "float", "f", "double", "d", "real", "r"};
-            string[] metaColumnTypes = {"char", "c", "date"};
+            HashSet<string> numericColumnTypes = new HashSet<string> { "int", "i", "long", "l", "float", "f", "double", "d", "real", "r" };
+            string[] metaColumnTypes = { "char", "c", "date" };
             // Parse lines for the column info 
             for (var i = 0; i < lines.Length; i++)
             {
@@ -83,7 +84,7 @@ namespace CatalogData
                     for (var j = 0; j < numSplits; j++)
                     {
                         string nameEntry = splitLines[j];
-                        dataSet.ColumnDefinitions[j] = new ColumnInfo {Name = nameEntry.Trim(), Index = j, StartPosition = startPosition};
+                        dataSet.ColumnDefinitions[j] = new ColumnInfo { Name = nameEntry.Trim(), Index = j, StartPosition = startPosition };
                         startPosition += 1 + nameEntry.Length;
 
                         // Specify the previous column's length 
@@ -235,12 +236,60 @@ namespace CatalogData
             return dataSet;
         }
 
+        public static CatalogDataSet LoadFitsTable(string fileName)
+        {
+            CatalogDataSet dataSet = new CatalogDataSet();
+            IntPtr fptr; // pointer to the FITS file, defined in fitsio.h
+            int status, hdunum, hdutype, anynull, ncols;
+            long nrows;
+            status = 0;
+
+            if (FitsReader.FitsOpenFile(out fptr, fileName) != 0)
+            {
+                //UE_LOG(LogTemp, Error, TEXT("Fits Open & Read error #%i"), status);
+                //delete filename;
+                Debug.Log("Fits Failure");
+
+                return dataSet;
+            }
+            Debug.Log("Fits Success: " + fptr.ToString());
+
+            /*
+            long frow, felem, longnull;
+            float floatnull;
+            hdunum = 2;
+            // move to the HDU
+            if (fits_movabs_hdu(fptr, hdunum, &hdutype, &status))
+            {
+                UE_LOG(LogTemp, Error, TEXT("Fits HDU Read error #%i"), status);
+                fits_close_file(fptr, &status);
+                delete filename;
+                return dataCatalog;
+            }
+            // Need to specify which table??
+            if (fits_get_num_rows(fptr, &nrows, &status) || fits_get_num_cols(fptr, &ncols, &status))
+            {
+                UE_LOG(LogTemp, Error, TEXT("Fits Read table size error #%i"), status);
+                fits_close_file(fptr, &status);
+                delete filename;
+                return dataCatalog;
+            }
+            if (hdutype != ASCII_TBL && hdutype != BINARY_TBL)
+            {
+                UE_LOG(LogTemp, Error, TEXT("Error: this HDU is not an ASCII or binary table\n"));
+                UE_LOG(LogTemp, Error, TEXT("Fits Read error #%i"), status);
+                fits_close_file(fptr, &status);
+                delete filename;
+                */
+            return dataSet;
+        }
+
         public static CatalogDataSet LoadCacheFile(string fileName)
         {
             using (var stream = File.Open($"{fileName}.cache", FileMode.Open))
             {
                 BinaryFormatter binaryFormatter = new BinaryFormatter();
-                return (CatalogDataSet) binaryFormatter.Deserialize(stream);
+                return (CatalogDataSet)binaryFormatter.Deserialize(stream);
             }
         }
 

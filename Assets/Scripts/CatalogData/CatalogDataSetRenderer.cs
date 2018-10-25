@@ -10,14 +10,19 @@ using Debug = UnityEngine.Debug;
 
 namespace CatalogData
 {
+    public enum FileTypes { Ipac, Fits };
     public class CatalogDataSetRenderer : MonoBehaviour
     {
+
+        
+
         public ColorMapDelegate OnColorMapChanged;
 
         public string TableFileName;
         public string MappingFileName;
         public bool SphericalCoordinates;
         public bool LineData;
+        public FileTypes FileType = FileTypes.Ipac;
         [Range(0.0f, 1.0f)] public float ValueCutoffMin = 0;
         [Range(0.0f, 1.0f)] public float ValueCutoffMax = 1;
         public ColorMapEnum ColorMap = ColorMapEnum.Inferno;
@@ -100,9 +105,20 @@ namespace CatalogData
             {
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
-                _dataSet = CatalogDataSet.LoadIpacTable(TableFileName);
+                switch (FileType)
+                {
+                    case FileTypes.Ipac:
+                        _dataSet = CatalogDataSet.LoadIpacTable(TableFileName);
+                        break;
+                    case FileTypes.Fits:
+                        _dataSet = CatalogDataSet.LoadFitsTable(TableFileName);
+                        break;
+                    default:
+                        Debug.Log($"Unrecognized file type!");
+                        break;
+                }
                 sw.Stop();
-                Debug.Log($"IPAC table read in {sw.Elapsed.TotalSeconds} seconds");
+                Debug.Log($"Table read in {sw.Elapsed.TotalSeconds} seconds");
                 sw.Restart();
                 _dataSet.WriteCacheFile();
                 sw.Stop();
