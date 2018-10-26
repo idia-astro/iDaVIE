@@ -278,7 +278,7 @@ namespace CatalogData
             dataSet.ColumnDefinitions = new ColumnInfo[ncols];
             StringBuilder keyword = new StringBuilder(75);
             StringBuilder colname = new StringBuilder(71);
-
+            dataSet.N = 0;
 
             dataSet.DataColumns = new float[ncols][];
             for (var i = 0; i < ncols; i++)
@@ -306,7 +306,10 @@ namespace CatalogData
 
                 Marshal.Copy(ptrDataFromColumn, dataFromColumn, 0, (int)nrows);
 
+                Marshal.FreeHGlobal(ptrDataFromColumn);
+
                 dataSet.DataColumns[col] = dataFromColumn;
+                dataSet.N++;
             }
             /*
      	if (hdutype != ASCII_TBL && hdutype != BINARY_TBL)
