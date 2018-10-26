@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
+using System.Text;
 
 namespace CatalogData
 {
@@ -242,45 +244,151 @@ namespace CatalogData
             IntPtr fptr; // pointer to the FITS file, defined in fitsio.h
             int status, hdunum, hdutype, anynull, ncols;
             long nrows;
-            status = 0;
-
-            if (FitsReader.FitsOpenFile(out fptr, fileName) != 0)
+            if (FitsReader.FitsOpenFile(out fptr, fileName, out status) != 0)
             {
                 //UE_LOG(LogTemp, Error, TEXT("Fits Open & Read error #%i"), status);
                 //delete filename;
-                Debug.Log("Fits Failure");
+                Debug.Log("Fits Failure... cfits code #" + status.ToString());
 
                 return dataSet;
             }
-            Debug.Log("Fits Success: " + fptr.ToString());
+            Debug.Log("Fits open Success! Memory address: " + fptr.ToString());
 
-            /*
-            long frow, felem, longnull;
-            float floatnull;
+            long frow = 1;
+            long felem = 1;
+            long longnull = 0;
+            float floatnull = 0;
+            
             hdunum = 2;
             // move to the HDU
-            if (fits_movabs_hdu(fptr, hdunum, &hdutype, &status))
+            if (FitsReader.FitsMovabsHdu(fptr, hdunum, out hdutype, out status) != 0)
             {
-                UE_LOG(LogTemp, Error, TEXT("Fits HDU Read error #%i"), status);
-                fits_close_file(fptr, &status);
-                delete filename;
-                return dataCatalog;
+                Debug.Log("Fits HDU Read error #" + status.ToString());
+                FitsReader.FitsCloseFile(fptr, out status);
+                return dataSet;
             }
+
             // Need to specify which table??
-            if (fits_get_num_rows(fptr, &nrows, &status) || fits_get_num_cols(fptr, &ncols, &status))
+            if (FitsReader.FitsGetNumRows(fptr, out nrows, out status) != 0 || FitsReader.FitsGetNumCols(fptr, out ncols, out status) != 0)
             {
-                UE_LOG(LogTemp, Error, TEXT("Fits Read table size error #%i"), status);
-                fits_close_file(fptr, &status);
-                delete filename;
-                return dataCatalog;
+                Debug.Log("Fits Read table size error #" + status.ToString());
+                FitsReader.FitsCloseFile(fptr, out status);
+                return dataSet;
             }
-            if (hdutype != ASCII_TBL && hdutype != BINARY_TBL)
+            dataSet.ColumnDefinitions = new ColumnInfo[ncols];
+            StringBuilder keyword = new StringBuilder(75);
+            StringBuilder colname = new StringBuilder(71);
+
+
+            dataSet.DataColumns = new float[ncols][];
+            for (var i = 0; i < ncols; i++)
             {
-                UE_LOG(LogTemp, Error, TEXT("Error: this HDU is not an ASCII or binary table\n"));
-                UE_LOG(LogTemp, Error, TEXT("Fits Read error #%i"), status);
-                fits_close_file(fptr, &status);
-                delete filename;
+                dataSet.DataColumns[i] = new float[nrows];
+            }
+                for (int col = 0; col < ncols; col++)
+            {
+
+                FitsReader.FitsMakeKeyN("TTYPE", col + 1, keyword, out status);
+                FitsReader.FitsReadKey(fptr, 16, keyword.ToString(), colname, IntPtr.Zero, out status);
+                dataSet.ColumnDefinitions[col] = new ColumnInfo { Name = colname.ToString() };
+                float[] dataFromColumn = null;
+                IntPtr ptrDataFromColumn = Marshal.AllocHGlobal((int)nrows);
+                if (FitsReader.FitsReadCol(fptr, 42, col + 1, frow, felem, nrows,  ref ptrDataFromColumn,   out status ) != 0)
+                {
+                    Debug.Log("Fits Read column data error #" + status.ToString());
+                    FitsReader.FitsCloseFile(fptr, out status);
+                    return dataSet;
+                }
+                Debug.Log("Mem address #" + ptrDataFromColumn.ToString());
+
+                dataFromColumn = new float[nrows];
+
+
+                Marshal.Copy(ptrDataFromColumn, dataFromColumn, 0, (int)nrows);
+
+                dataSet.DataColumns[col] = dataFromColumn;
+            }
+            /*
+     	if (hdutype != ASCII_TBL && hdutype != BINARY_TBL)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Error: this HDU is not an ASCII or binary table\n"));
+		UE_LOG(LogTemp, Error, TEXT("Fits Read error #%i"), status);
+		fits_close_file(fptr, &status);
+		delete filename;
+		return dataCatalog;
+	}
+        // read the column names from the TTYPEn keywords
+        frow = 1;
+        felem = 1;
+        longnull = 0;
+        floatnull = 0.;
+        // read the columns
+        dataCatalog.numFloatColumns = ncols;
+        std::vector<std::vector<float>> dataFromColumns(ncols);
+        for (int i = 0; i < ncols; i++)
+        {
+            dataFromColumns[i].resize(nrows);
+        }
+        char keyword[FLEN_KEYWORD], colname[FLEN_VALUE];
+        for (int col = 0; col < ncols; col++)
+        {
+            fits_make_keyn("TTYPE", col+1, keyword, &status);
+            fits_read_key(fptr, TSTRING, keyword, colname, NULL, &status);
+            FString columnName = colname;
+            dataCatalog.columns.Push({ EColumnType::Real, col, col, columnName, "" });
+            if (fits_read_col(fptr, TFLOAT, col + 1, frow, felem, nrows, &floatnull, dataFromColumns[col].data(), &anynull, &status))
+            {
+                UE_LOG(LogTemp, Error, TEXT("Fits Read column error #%i"), status);
+            }
+        }
+        dataCatalog.data.Reserve(nrows);
+        for (int row = 0; row < nrows; row++) 
+        {
+            DataEntry dataEntry;
+            dataEntry.floatData.SetNum(dataCatalog.numFloatColumns);
+            for (int col = 0; col < ncols; col++)
+            {
+                dataEntry.floatData[col] = dataFromColumns[col][row];
+            }
+            dataCatalog.data.Push(dataEntry);
+        }
+        if (fits_close_file(fptr, &status))
+        {
+            UE_LOG(LogTemp, Error, TEXT("Cannot close file... Fits Read error #%i"), status);
+        }
+        delete filename;
+
+        FDateTime endTimePreCache = FDateTime::Now();
+        float deltaTime = (endTimePreCache - startTime).GetTotalSeconds();
+        UE_LOG(LogTemp, Log, TEXT("Fits File '%s' loaded in %f seconds"), *FileNameString, deltaTime);
+        
+        // Cache file if there is no existing file (or it's older than the data file)
+        FString filePathCache = FileNameString + ".cache";
+        FFileManagerGeneric fileManager;
+        if (!fileManager.FileExists(*filePathCache) || fileManager.GetTimeStamp(*filePathCache) < fileManager.GetTimeStamp(*FileNameString))
+        {
+            dataCatalog.WriteToArchive(filePathCache, false);
+
+            FDateTime endTimePostCache = FDateTime::Now();
+            float deltaTimeCache = (endTimePostCache - endTimePreCache).GetTotalSeconds();
+            UE_LOG(LogTemp, Log, TEXT("File '%s' cached in %f seconds"), *FileNameString, deltaTimeCache);
+        }
+        
+        if (shuffle)
+        {
+            int32 N = dataCatalog.data.Num();
+            for (auto i = N - 1; i > 0; --i)
+            {
+                auto d = FMath::RandRange(0, i);
+                dataCatalog.data.SwapMemory(i, d);
+            }
+        }
+
+        return dataCatalog;
                 */
+            FitsReader.FitsCloseFile(fptr, out status);
+
+
             return dataSet;
         }
 

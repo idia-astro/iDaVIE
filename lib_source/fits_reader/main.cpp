@@ -5,13 +5,9 @@
 
 extern "C"
 {
-	DllExport int FitsOpenFile(fitsfile **fptr, char* filename, int mode)
+	DllExport int FitsOpenFile(fitsfile **fptr, char* filename,  int *status)
 	{
-		int status;
-		//fitsfile *fptr2;
-		fits_open_file(fptr, filename, READONLY, &status);
-		//fptr = &fptr2;
-		return status;
+		return fits_open_file(fptr, filename, READONLY, status);
 	}
 
 	DllExport int FitsCloseFile(fitsfile *fptr, int *status)
@@ -19,7 +15,7 @@ extern "C"
 		return fits_close_file(fptr, status);
 	}
 
-	/*
+	
 	DllExport int FitsMovabsHdu(fitsfile *fptr, int hdunum, int *hdutype, int *status)
 	{
 		return fits_movabs_hdu(fptr, hdunum, hdutype, status);
@@ -28,13 +24,11 @@ extern "C"
 	DllExport int FitsGetNumRows(fitsfile *fptr, long *nrows, int *status)
 	{
 		return fits_get_num_rows(fptr, nrows, status);
-
 	}
 
 	DllExport int FitsGetNumCols(fitsfile *fptr, int  *ncols, int *status)
 	{
 		return fits_get_num_cols(fptr, ncols, status);
-
 	}
 
 	DllExport int FitsMakeKeyN(const char *keyroot, int value, char *keyname, int *status)
@@ -48,14 +42,20 @@ extern "C"
 		return fits_read_key(fptr, datatype, keyname, value, comm, status);
 
 	}
-	DllExport int FitsReadCol(fitsfile *fptr, int datatype, int colnum, LONGLONG firstrow,
-		LONGLONG firstelem, LONGLONG nelem, void *nulval, void *array, int *anynul,
-		int  *status)
+	DllExport int FitsReadCol(fitsfile *fptr, int datatype, int colnum, long firstrow,
+		long firstelem, long nelem, float **array, int  *status)
 	{
-		return fits_read_col(fptr, datatype, colnum, firstrow, firstelem, nelem, nulval, array, anynul, status);
+		int anynul;
+		float nulval = 0;
+		float *dataArray = new float[nelem];
+		int success = fits_read_col(fptr, datatype, colnum, firstrow, firstelem, nelem, &nulval, dataArray, &anynul, status);
+		array = &dataArray;
+		delete[] dataArray;
+		return success;
+
 
 	}
-	*/
+	
 
 
 }
