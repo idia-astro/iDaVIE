@@ -49,13 +49,18 @@ extern "C"
 		float nulval = 0;
 		float *dataArray = new float[nelem];
 		int success = fits_read_col(fptr, datatype, colnum, firstrow, firstelem, nelem, &nulval, dataArray, &anynul, status);
-		array = &dataArray;
-		delete[] dataArray;
+		*array = dataArray;
+		//delete[] dataArray;
 		return success;
 
 
 	}
-	
 
+
+	DllExport int FreeMemory(float* ptrToDelete)
+	{
+		delete[] ptrToDelete;
+		return 0;
+	}
 
 }

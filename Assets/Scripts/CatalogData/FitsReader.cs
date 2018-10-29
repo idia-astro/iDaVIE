@@ -33,5 +33,9 @@ public class FitsReader {
 
     [DllImport("fits_reader")]
     public static extern int FitsReadCol(IntPtr fptr, int datatype, int colnum, long firstrow,
-        long firstelem, long nelem,  ref IntPtr array,  out int status);
+        long firstelem, long nelem,  out IntPtr array,  out int status);
+
+
+    [DllImport("fits_reader")]
+    public static extern int FreeMemory(IntPtr pointerToDelete);
 }
