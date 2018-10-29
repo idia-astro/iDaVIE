@@ -289,6 +289,7 @@ namespace CatalogData
                 FitsReader.FitsReadKey(fptr, 16, keyword.ToString(), colname, IntPtr.Zero, out status);
                 dataSet.ColumnDefinitions[col] = new ColumnInfo { Name = colname.ToString() , Index = col };
                 dataSet.ColumnDefinitions[col].Type = ColumnType.Numeric;
+                dataSet.ColumnDefinitions[col].NumericIndex = col;
                 if (FitsReader.FitsReadCol(fptr, 42, col + 1, frow, felem, nrows, out ptrDataFromColumn, out status) != 0)
                 {
                    
