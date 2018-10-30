@@ -7,26 +7,36 @@
 #define EXP 4
 
 // Properties variables
-uniform float4 _Color;			
-uniform float _Opacity;
+uniform int useUniformColor;
+uniform int useUniformOpacity;
 
+// Uniform values;
+uniform float opacity;
+uniform float4 color;
 uniform float4x4 datasetMatrix;
-uniform int numDataPoints;
+
 // Scaling types
 uniform int scalingTypeX;
 uniform int scalingTypeY;
 uniform int scalingTypeZ;
 uniform int scalingTypeColorMap;
+uniform int scalingTypePointSize;
+uniform int scalingTypeOpacity;
 // Scaling sizes
 uniform float scalingX;
 uniform float scalingY;
 uniform float scalingZ;            
-uniform float scaleColorMap;           
+uniform float scalingColorMap;
+uniform float scalingPointSize;
+uniform float scalingOpacity;        
 // Scaling offsets
 uniform float offsetX;
 uniform float offsetY;
 uniform float offsetZ;
 uniform float offsetColorMap;
+uniform float offsetPointSize;
+uniform float offsetOpacity;
+
 // Filtering
 uniform float cutoffMin;
 uniform float cutoffMax;
@@ -37,7 +47,7 @@ uniform float4 colorMapData[NUM_COLOR_MAP_STEPS];
 Buffer<float> dataX;
 Buffer<float> dataY;
 Buffer<float> dataZ;
-Buffer<float> dataVal;
+Buffer<float> dataCmap;
 
 float applyScaling(float input, int type, float scale, float offset)
 {

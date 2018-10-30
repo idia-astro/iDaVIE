@@ -5,9 +5,10 @@ uniform sampler2D _SpriteSheet;
 uniform int _NumSprites;			
 uniform int _ShapeIndex;
 
-// Data transforms
-uniform float _PointSize;
-uniform float pointScale;
+// Points
+uniform float pointSize;
+uniform int useUniformPointSize;
+uniform float scalingFactor;
 
 // Points -> <VS> -> VertexShaderOutput -> <GS> -> PixelShaderInput -> <PS> -> Pixels 
 struct VertexShaderOutput
@@ -38,13 +39,18 @@ VertexShaderOutput vsPointBillboard(uint id : SV_VertexID)
     // Find two basis vectors that are perpendicular to the camera direction 
     float3 basisX = normalize(cross(cameraUp, cameraDirection));
     float3 basisY = normalize(cross(basisX, cameraDirection));
-    output.upVector = basisY * _PointSize * pointScale;
-    output.rightVector = basisX * _PointSize * pointScale;
+    output.upVector = basisY * pointSize * scalingFactor;
+    output.rightVector = basisX * pointSize * scalingFactor;
     output.position = worldPos;
     
+    if (useUniformColor == 0) {
     // Look up color from the uniform
-    uint colorMapIndex = clamp(applyScaling(dataVal[id], scalingTypeColorMap, scaleColorMap, offsetColorMap) * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
-    output.color = colorMapData[colorMapIndex];
+        uint colorMapIndex = clamp(applyScaling(dataCmap[id], scalingTypeColorMap, scalingColorMap, offsetColorMap) * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
+        output.color = colorMapData[colorMapIndex];
+    }
+    else {
+        output.color = color;
+    }
     return output;
 }
 
@@ -66,13 +72,18 @@ VertexShaderOutput vsPointBillboardSpherical(uint id : SV_VertexID)
     // Find two basis vectors that are perpendicular to the camera direction 
     float3 basisX = normalize(cross(cameraUp, cameraDirection));
     float3 basisY = normalize(cross(basisX, cameraDirection));
-    output.upVector = basisY * _PointSize * pointScale;
-    output.rightVector = basisX * _PointSize * pointScale;
+    output.upVector = basisY * pointSize * scalingFactor;
+    output.rightVector = basisX * pointSize * scalingFactor;
     output.position = worldPos;
     
-    // Look up color from the uniform
-    uint colorMapIndex = clamp(applyScaling(dataVal[id], scalingTypeColorMap, scaleColorMap, offsetColorMap) * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
-    output.color = colorMapData[colorMapIndex];
+    if (useUniformColor == 0) {
+        // Look up color from the uniform
+        uint colorMapIndex = clamp(applyScaling(dataCmap[id], scalingTypeColorMap, scalingColorMap, offsetColorMap) * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
+        output.color = colorMapData[colorMapIndex];
+    }
+    else {
+        output.color = color;
+    }
     return output;
 }
 
@@ -106,6 +117,6 @@ void gsBillboard(point VertexShaderOutput input[1], inout TriangleStream<Fragmen
 float4 fsSprite(FragmentShaderInput input) : COLOR
 {
     float4 pointColor = input.color;
-    float opacityFactor = tex2D(_SpriteSheet, input.uv).a * _Opacity; 				               
+    float opacityFactor = tex2D(_SpriteSheet, input.uv).a * opacity; 				               
     return pointColor * opacityFactor;
 }

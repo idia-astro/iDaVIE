@@ -1,21 +1,37 @@
 using System;
 using System.IO;
 using UnityEngine;
+using Valve.Newtonsoft.Json;
 
 namespace CatalogData
 {
     [Serializable]
     public class DataMapping
     {
-        public string Colormap;
+        public ColorMapEnum ColorMap = ColorMapEnum.Accent;
         public bool Spherical;
-        public Defaults Defaults;
+        public RenderType RenderType = RenderType.Billboard;
+        public bool UniformColor;
+        public bool UniformPointSize;
+        public bool UniformOpacity;
+        public MappingUniforms Uniforms = new MappingUniforms();
+
         public Mapping Mapping;
         public MetaMapping MetaMapping;
 
         public static DataMapping CreateFromJson(string jsonString)
         {
-            return JsonUtility.FromJson<DataMapping>(jsonString);
+            DataMapping dataMapping = JsonConvert.DeserializeObject<DataMapping>(jsonString);
+            if (dataMapping.UniformColor && dataMapping.Uniforms != null)
+            {
+                Color parsedColor;
+                if (ColorUtility.TryParseHtmlString(dataMapping.Uniforms.ColorString, out parsedColor))
+                {
+                    dataMapping.Uniforms.Color = parsedColor;
+                }
+            }
+
+            return dataMapping;
         }
 
         public static DataMapping CreateFromFile(string fileName)
@@ -26,7 +42,7 @@ namespace CatalogData
 
         public string ToJson()
         {
-            return JsonUtility.ToJson(this);
+            return JsonConvert.SerializeObject(this);
         }
 
         public static DataMapping DefaultXyzMapping
@@ -36,36 +52,22 @@ namespace CatalogData
                 DataMapping mapping = new DataMapping
                 {
                     Spherical = false,
-                    Defaults = new Defaults
+                    RenderType = RenderType.Billboard,
+                    ColorMap = ColorMapEnum.Plasma,
+                    UniformColor = true,
+                    UniformPointSize = true,
+                    UniformOpacity = true,
+                    Uniforms = new MappingUniforms
                     {
-                        Shape = DisplayShape.Billboard,
-                        Color = "#FF0000",
                         Scale = 0.001f,
-                        PointSize = 0.3f
+                        PointSize = 0.3f,
+                        Color = Color.red
                     },
                     Mapping = new Mapping
                     {
                         X = new MapFloatEntry {Source = "X"},
                         Y = new MapFloatEntry {Source = "Y"},
                         Z = new MapFloatEntry {Source = "Z"},
-                        Cmap = new MapFloatEntry
-                        {
-                            Source = "Kmag",
-                            Offset = -2,
-                            Scale = 0.25f,
-                            ScalingType = ScalingType.Linear,
-                            Clamped = false
-                        },
-                        Size = new MapFloatEntry
-                        {
-                            Source = "Dm",
-                            Offset = 1,
-                            Scale = 0.01f,
-                            ScalingType = ScalingType.Linear,
-                            Clamped = false,
-                            MinVal = 0.1f,
-                            MaxVal = 4
-                        }
                     }
                 };
                 return mapping;
@@ -79,67 +81,21 @@ namespace CatalogData
                 DataMapping mapping = new DataMapping
                 {
                     Spherical = true,
-                    Defaults = new Defaults
+                    RenderType = RenderType.Billboard,
+                    UniformColor = true,
+                    UniformPointSize = true,
+                    UniformOpacity = true,
+                    Uniforms = new MappingUniforms
                     {
-                        Shape = DisplayShape.Billboard,
-                        Color = "#FF0000",
                         Scale = 0.001f,
-                        PointSize = 0.3f
+                        PointSize = 0.3f,
+                        Color = Color.red
                     },
                     Mapping = new Mapping
                     {
                         Lat = new MapFloatEntry {Source = "glon"},
-                        Long = new MapFloatEntry {Source = "glat"},
-                        R = new MapFloatEntry {Source = "Dm"},
-                        Cmap = new MapFloatEntry
-                        {
-                            Source = "Kmag",
-                            Offset = -6,
-                            Scale = 0.5f,
-                            ScalingType = ScalingType.Linear,
-                            Clamped = false
-                        },
-                        Size = new MapFloatEntry
-                        {
-                            Source = "Dm",
-                            Offset = 1,
-                            Scale = 0.01f,
-                            ScalingType = ScalingType.Linear,
-                            Clamped = false,
-                            MinVal = 0.1f,
-                            MaxVal = 4
-                        }
-                    }
-                };
-                return mapping;
-            }
-        }
-
-        public static DataMapping DefaultXyzLineMapping
-        {
-            get
-            {
-                DataMapping mapping = new DataMapping
-                {
-                    Spherical = false,
-                    Defaults = new Defaults
-                    {
-                        Shape = DisplayShape.Line,
-                        Color = "#FF0000",
-                        Scale = 0.001f
-                    },
-                    Mapping = new Mapping
-                    {
-                        X = new MapFloatEntry {Source = "X1"},
-                        Y = new MapFloatEntry {Source = "Y1"},
-                        Z = new MapFloatEntry {Source = "Z1"},
-                        X2 = new MapFloatEntry {Source = "X2"},
-                        Y2 = new MapFloatEntry {Source = "Y2"},
-                        Z2 = new MapFloatEntry {Source = "Z2"},
-                        Cmap = new MapFloatEntry
-                        {
-                            Source = "Weight"
-                        }                        
+                        Lng = new MapFloatEntry {Source = "glat"},
+                        R = new MapFloatEntry {Source = "Dm"}
                     }
                 };
                 return mapping;
@@ -148,12 +104,13 @@ namespace CatalogData
     }
 
     [Serializable]
-    public class Defaults
+    public class MappingUniforms
     {
-        public string Color;
-        public float Scale = 1;
+        [HideInInspector] public string ColorString;
+        public Color Color;
+        [HideInInspector] public float Scale = 1;
         public float PointSize = 0.1f;
-        public DisplayShape Shape = DisplayShape.Billboard;
+        [Range(0.0f, 1.0f)] public float Opacity = 1.0f;
     }
 
     [Serializable]
@@ -161,10 +118,10 @@ namespace CatalogData
     {
         public MapFloatEntry Cmap;
         public MapFloatEntry Lat;
-        public MapFloatEntry Long;
+        public MapFloatEntry Lng;
         public MapFloatEntry Opacity;
         public MapFloatEntry R;
-        public MapFloatEntry Size;
+        public MapFloatEntry PointSize;
         public MapFloatEntry X;
         public MapFloatEntry Y;
         public MapFloatEntry Z;
@@ -188,17 +145,17 @@ namespace CatalogData
     [Serializable]
     public class MetaMapping
     {
-        public Name Name;
+        public MapMetaEntry Name;
     }
 
     [Serializable]
-    public class Name
+    public class MapMetaEntry
     {
         public string Source;
     }
 
     [Serializable]
-    public enum DisplayShape
+    public enum RenderType
     {
         Billboard,
         Line

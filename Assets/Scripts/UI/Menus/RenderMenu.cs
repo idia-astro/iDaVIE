@@ -27,7 +27,7 @@ public class RenderMenu : MonoBehaviour
         var activeDataSet = CatalogDataSetManager.ActiveDataSet;
         if (activeDataSet != null)
         {
-            LabelColormap.text = activeDataSet.ColorMap.ToString();
+            LabelColormap.text = activeDataSet.DataMapping.ColorMap.ToString();
             LabelDataSet.text = Path.GetFileName(activeDataSet.TableFileName);
         }
 
@@ -50,7 +50,7 @@ public class RenderMenu : MonoBehaviour
     private void HandleDataSetChanged(CatalogDataSetRenderer dataSet)
     {
         LabelDataSet.text = Path.GetFileName(dataSet.TableFileName);
-        LabelColormap.text = dataSet.ColorMap.ToString();
+        LabelColormap.text = dataSet.DataMapping.ColorMap.ToString();
     }
 
     private void HandleColorMapChanged(ColorMapEnum colorMap)

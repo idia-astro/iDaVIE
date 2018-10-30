@@ -2760,9 +2760,120 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   TableFileName: Assets/Resources/DataTables/2MRS_Edges.tbl
-  MappingFileName: Assets/Resources/DataMaps/basicxyz.json
-  SphericalCoordinates: 0
-  LineData: 1
+  MappingFileName: 
+  DataMapping:
+    ColorMap: 0
+    Spherical: 0
+    RenderType: 0
+    UniformColor: 0
+    UniformPointSize: 0
+    UniformOpacity: 0
+    Uniforms:
+      ColorString: 
+      Color: {r: 0, g: 0, b: 0, a: 0}
+      Scale: 1
+      PointSize: 0.1
+      Opacity: 1
+    Mapping:
+      Cmap:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lat:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lng:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Opacity:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      R:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointSize:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X2:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y2:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z2:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+    MetaMapping:
+      Name:
+        Source: 
   ValueCutoffMin: 0
   ValueCutoffMax: 1
   ColorMap: 45
@@ -3809,7 +3920,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1894848104
 Transform:
   m_ObjectHideFlags: 0
@@ -3837,9 +3948,120 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   TableFileName: Assets/Resources/DataTables/2MRS_GroupGalaxies.tbl
-  MappingFileName: Assets/Resources/DataMaps/basicxyz.json
-  SphericalCoordinates: 0
-  LineData: 0
+  MappingFileName: 
+  DataMapping:
+    ColorMap: 0
+    Spherical: 0
+    RenderType: 0
+    UniformColor: 0
+    UniformPointSize: 0
+    UniformOpacity: 0
+    Uniforms:
+      ColorString: 
+      Color: {r: 0, g: 0, b: 0, a: 0}
+      Scale: 1
+      PointSize: 0.1
+      Opacity: 1
+    Mapping:
+      Cmap:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lat:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lng:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Opacity:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      R:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointSize:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X2:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y2:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z2:
+        Clamped: 0
+        MaxVal: 0
+        MinVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+    MetaMapping:
+      Name:
+        Source: 
   ValueCutoffMin: 0
   ValueCutoffMax: 1
   ColorMap: 3

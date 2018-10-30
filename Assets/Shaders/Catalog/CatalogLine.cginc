@@ -29,10 +29,16 @@ VertexShaderOutput vsLine(uint id : SV_VertexID)
     // Transform positions from local space to screen space    
     output.startPoint = mul(UNITY_MATRIX_VP, mul(datasetMatrix, float4(startPointLocalSpace, 1.0)));
     output.endPoint =  mul(UNITY_MATRIX_VP, mul(datasetMatrix, float4(endPointLocalSpace, 1.0)));      
-    output.value = applyScaling(dataVal[id], scalingTypeColorMap, scaleColorMap, offsetColorMap);
-    // Look up color from the uniform
-    uint colorMapIndex = clamp(output.value * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
-    output.color = colorMapData[colorMapIndex];
+    output.value = applyScaling(dataCmap[id], scalingTypeColorMap, scalingColorMap, offsetColorMap);
+    
+    if (useUniformColor == 0) {
+        // Look up color from the uniform
+        uint colorMapIndex = clamp(output.value * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
+        output.color = colorMapData[colorMapIndex];
+    }
+    else {
+        output.color = color;
+    }
     return output;
 }
 
@@ -51,10 +57,16 @@ VertexShaderOutput vsLineSpherical(uint id : SV_VertexID)
     // Transform positions from local space to world space    
     output.startPoint = mul(UNITY_MATRIX_VP, mul(datasetMatrix, float4(startPointLocalSpace, 1.0)));
     output.endPoint =  mul(UNITY_MATRIX_VP, mul(datasetMatrix, float4(endPointLocalSpace, 1.0)));            
-    output.value = applyScaling(dataVal[id], scalingTypeColorMap, scaleColorMap, offsetColorMap);
-    // Look up color from the uniform
-    uint colorMapIndex = clamp(output.value * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
-    output.color = colorMapData[colorMapIndex];
+    output.value = applyScaling(dataCmap[id], scalingTypeColorMap, scalingColorMap, offsetColorMap);
+    
+    if (useUniformColor == 0) {
+        // Look up color from the uniform
+        uint colorMapIndex = clamp(output.value * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
+        output.color = colorMapData[colorMapIndex];
+    }
+    else {
+        output.color = color;
+    }
     return output;
 }
 
@@ -80,5 +92,5 @@ void gsLine(point VertexShaderOutput input[1], inout LineStream<FragmentShaderIn
 float4 fsSimple(FragmentShaderInput input) : COLOR
 {
     float4 pointColor = input.color;
-    return pointColor * _Opacity;
+    return pointColor * opacity;
 }
