@@ -258,6 +258,8 @@ namespace CatalogData
             long longnull = 0;
             float floatnull = 0;
             hdunum = 2;
+            int dataColumnCounter = 0;
+            int metaColumnCounter = 0;
             // move to the HDU
             if (FitsReader.FitsMovabsHdu(fptr, hdunum, out hdutype, out status) != 0)
             {
@@ -274,7 +276,9 @@ namespace CatalogData
             }
             dataSet.ColumnDefinitions = new ColumnInfo[ncols];
             StringBuilder keyword = new StringBuilder(75);
-            StringBuilder colname = new StringBuilder(71);
+            StringBuilder colName = new StringBuilder(71);
+
+            StringBuilder colFormat = new StringBuilder(71);
 
             StringBuilder colUnit = new StringBuilder(71);
 
@@ -289,12 +293,21 @@ namespace CatalogData
                 float[] dataFromColumn = new float[nrows];
                 IntPtr ptrDataFromColumn;
                 FitsReader.FitsMakeKeyN("TTYPE", col + 1, keyword, out status);
-                if (FitsReader.FitsReadKey(fptr, 16, keyword.ToString(), colname, IntPtr.Zero, out status) != 0)
+                if (FitsReader.FitsReadKey(fptr, 16, keyword.ToString(), colName, IntPtr.Zero, out status) != 0)
                 {
                     Debug.Log("Fits Read column name error #" + status.ToString());
                     FitsReader.FitsCloseFile(fptr, out status);
                     return dataSet;
                 }
+                keyword.Clear();
+                FitsReader.FitsMakeKeyN("TFORM", col + 1, keyword, out status);
+                if (FitsReader.FitsReadKey(fptr, 16, keyword.ToString(), colFormat, IntPtr.Zero, out status) != 0)
+                {
+                    Debug.Log("Fits Read column format error #" + status.ToString());
+                    FitsReader.FitsCloseFile(fptr, out status);
+                    return dataSet;
+                }
+                string colFormatLetter = colFormat.ToString().Substring(1, 1);
                 keyword.Clear();
                 FitsReader.FitsMakeKeyN("TUNIT", col + 1, keyword, out status);
 
@@ -303,8 +316,30 @@ namespace CatalogData
                     Debug.Log("No unit in column #" + col);
                     status = 0;
                 }
-                dataSet.ColumnDefinitions[col] = new ColumnInfo { Name = colname.ToString(), Index = col,
-                    Type = ColumnType.Numeric, NumericIndex = col, Unit = colUnit.ToString() };
+                if (colFormatLetter == "A")
+                {
+                    dataSet.ColumnDefinitions[col] = new ColumnInfo
+                    {
+                        Name = colName.ToString(),
+                        Index = col,
+                        Type = ColumnType.String,
+                        MetaIndex = col,
+                        Unit = colUnit.ToString()
+                    };
+                    metaColumnCounter++;
+                }
+                else
+                {
+                    dataSet.ColumnDefinitions[col] = new ColumnInfo
+                    {
+                        Name = colName.ToString(),
+                        Index = col,
+                        Type = ColumnType.Numeric,
+                        NumericIndex = col,
+                        Unit = colUnit.ToString()
+                    };
+                    dataColumnCounter++;
+                }
                 if (FitsReader.FitsReadCol(fptr, 42, col + 1, frow, felem, nrows, out ptrDataFromColumn, out status) != 0)
                 {
 

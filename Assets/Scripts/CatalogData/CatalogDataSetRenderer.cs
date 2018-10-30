@@ -119,10 +119,13 @@ namespace CatalogData
                 }
                 sw.Stop();
                 Debug.Log($"Table read in {sw.Elapsed.TotalSeconds} seconds");
-                sw.Restart();
-                _dataSet.WriteCacheFile();
-                sw.Stop();
-                Debug.Log($"Cached file written in {sw.Elapsed.TotalSeconds} seconds");
+                if (FileType == FileTypes.Ipac)
+                {
+                    sw.Restart();
+                    _dataSet.WriteCacheFile();
+                    sw.Stop();
+                    Debug.Log($"Cached file written in {sw.Elapsed.TotalSeconds} seconds");
+                }
             }
 
             // Spherical coordinates are not currently supported for line data
