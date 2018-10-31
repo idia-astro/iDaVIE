@@ -12,33 +12,42 @@ struct VertexShaderOutput
     float4 color : COLOR;
     float4 endPoint: TEXCOORD0;
     float value: TEXCOORD1;
+    float opacity: TEXCOORD3;
 };
 
 struct FragmentShaderInput
 {
     float4 position : SV_POSITION;
-    float4 color : COLOR;    
+    float4 color : COLOR;
+    float opacity: TEXCOORD1;
 };
 
 // Vertex shader
 VertexShaderOutput vsLine(uint id : SV_VertexID)
 {
     VertexShaderOutput output = (VertexShaderOutput) 0;
-    float3 startPointLocalSpace = float3(applyScaling(dataX[id], scalingTypeX, scalingX, offsetX), applyScaling(dataY[id], scalingTypeY, scalingY, offsetY), applyScaling(dataZ[id], scalingTypeZ, scalingZ, offsetZ));    
-    float3 endPointLocalSpace = float3(applyScaling(dataX2[id], scalingTypeX, scalingX, offsetX), applyScaling(dataY2[id], scalingTypeY, scalingY, offsetY), applyScaling(dataZ2[id], scalingTypeZ, scalingZ, offsetZ));    
+    float3 startPointLocalSpace = float3(applyScaling(dataX[id], mappingConfigs[X_INDEX]), applyScaling(dataY[id], mappingConfigs[Y_INDEX]), applyScaling(dataZ[id], mappingConfigs[Z_INDEX]));    
+    float3 endPointLocalSpace = float3(applyScaling(dataX2[id], mappingConfigs[X_INDEX]), applyScaling(dataY2[id], mappingConfigs[Y_INDEX]), applyScaling(dataZ2[id], mappingConfigs[Z_INDEX]));    
     // Transform positions from local space to screen space    
     output.startPoint = mul(UNITY_MATRIX_VP, mul(datasetMatrix, float4(startPointLocalSpace, 1.0)));
-    output.endPoint =  mul(UNITY_MATRIX_VP, mul(datasetMatrix, float4(endPointLocalSpace, 1.0)));      
-    output.value = applyScaling(dataCmap[id], scalingTypeColorMap, scalingColorMap, offsetColorMap);
+    output.endPoint =  mul(UNITY_MATRIX_VP, mul(datasetMatrix, float4(endPointLocalSpace, 1.0)));
+    output.value = clamp(applyScaling(dataCmap[id], mappingConfigs[CMAP_INDEX]), 0, 1);
     
-    if (useUniformColor == 0) {
-        // Look up color from the uniform
+    if (!useUniformColor) {
         uint colorMapIndex = clamp(output.value * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
         output.color = colorMapData[colorMapIndex];
     }
     else {
         output.color = color;
     }
+    
+    if (!useUniformOpacity) {                
+        output.opacity = applyScaling(dataOpacity[id], mappingConfigs[OPACITY_INDEX]);
+    }
+    else {
+        output.opacity = opacity;
+    }
+    
     return output;
 }
 
@@ -46,9 +55,9 @@ VertexShaderOutput vsLine(uint id : SV_VertexID)
 VertexShaderOutput vsLineSpherical(uint id : SV_VertexID)
 {
     VertexShaderOutput output = (VertexShaderOutput) 0;
-    float gLat = applyScaling(dataX[id], scalingTypeX, scalingX, offsetX);
-    float gLong = applyScaling(dataY[id], scalingTypeY, scalingY, offsetY);
-    float R = applyScaling(dataZ[id], scalingTypeZ, scalingZ, offsetZ);
+    float gLat = applyScaling(dataX[id], mappingConfigs[X_INDEX]);
+    float gLong = applyScaling(dataY[id], mappingConfigs[Y_INDEX]);
+    float R = applyScaling(dataZ[id], mappingConfigs[Z_INDEX]);
     // Transform from spherical to cartesian coordinates
     float3 startPointLocalSpace = R * float3(cos(gLong) * cos(gLat), sin(gLong) * cos(gLat), sin(gLat));
     
@@ -57,16 +66,23 @@ VertexShaderOutput vsLineSpherical(uint id : SV_VertexID)
     // Transform positions from local space to world space    
     output.startPoint = mul(UNITY_MATRIX_VP, mul(datasetMatrix, float4(startPointLocalSpace, 1.0)));
     output.endPoint =  mul(UNITY_MATRIX_VP, mul(datasetMatrix, float4(endPointLocalSpace, 1.0)));            
-    output.value = applyScaling(dataCmap[id], scalingTypeColorMap, scalingColorMap, offsetColorMap);
+    output.value = clamp(applyScaling(dataCmap[id], mappingConfigs[CMAP_INDEX]), 0, 1);
     
     if (useUniformColor == 0) {
-        // Look up color from the uniform
         uint colorMapIndex = clamp(output.value * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
         output.color = colorMapData[colorMapIndex];
     }
     else {
         output.color = color;
     }
+    
+    if (!useUniformOpacity) {                
+        output.opacity = applyScaling(dataOpacity[id], mappingConfigs[OPACITY_INDEX]);
+    }
+    else {
+        output.opacity = opacity;
+    }
+    
     return output;
 }
 
@@ -83,6 +99,7 @@ void gsLine(point VertexShaderOutput input[1], inout LineStream<FragmentShaderIn
     // First vertex and common properties
     output.position = input[0].startPoint;
     output.color = input[0].color;
+    output.opacity = input[0].opacity;
     outputStream.Append(output);
     // Second vertex
     output.position = input[0].endPoint;

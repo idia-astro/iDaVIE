@@ -22,7 +22,7 @@ namespace CatalogData
         public static DataMapping CreateFromJson(string jsonString)
         {
             DataMapping dataMapping = JsonConvert.DeserializeObject<DataMapping>(jsonString);
-            if (dataMapping.UniformColor && dataMapping.Uniforms != null)
+            if (!string.IsNullOrEmpty(dataMapping.Uniforms.ColorString))
             {
                 Color parsedColor;
                 if (ColorUtility.TryParseHtmlString(dataMapping.Uniforms.ColorString, out parsedColor))
@@ -134,12 +134,43 @@ namespace CatalogData
     public class MapFloatEntry
     {
         public bool Clamped;
-        public float MaxVal;
         public float MinVal;
+        public float MaxVal;
         public float Offset;
         public float Scale = 1;
         public ScalingType ScalingType = ScalingType.Linear;
         public string Source;
+
+        public GPUMappingConfig GpuMappingConfig => new GPUMappingConfig
+        {
+            Clamped = Clamped ? 1 : 0,
+            MinVal = MinVal,
+            MaxVal = MaxVal,
+            Offset = Offset,
+            Scale = Scale,
+            ScalingType = ScalingType.GetHashCode(),
+            FilterMinVal = -float.MaxValue,
+            FilterMaxVal = float.MaxValue
+        };
+    }
+
+    // Struct used to store mapping config values on the GPU.
+    // Using 32-bit ints for clamped and scaling type instead of 8-bit bools for packing purposes
+    // (For performance reasons, struct should be an integer multiple of 128 bits)
+    // Each config struct has a size of 4 * 8 = 32 bytes
+    public struct GPUMappingConfig
+    {
+        public int Clamped;
+        public float MinVal;
+        public float MaxVal;
+        public float Offset;
+        public float Scale;
+
+        public int ScalingType;
+
+        // Future use: Will filter points based on this range
+        public float FilterMinVal;
+        public float FilterMaxVal;
     }
 
     [Serializable]

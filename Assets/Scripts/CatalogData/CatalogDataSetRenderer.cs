@@ -22,22 +22,26 @@ namespace CatalogData
         public Texture2D ColorMapTexture;
 
 
-        private ComputeBuffer[] _buffers;        
+        private ComputeBuffer[] _buffers;
         private Color[] _colorMapData;
+
         private const int NumColorMapStops = 256;
 
+        // The mapping buffer is used to store mapping configuration. Since each mapping has a similar set of options,
+        // it's less verbose than storing a huge number of options individually
+        private ComputeBuffer _mappingConfigBuffer;
+        private readonly GPUMappingConfig[] _mappingConfigs = new GPUMappingConfig[6];
         private CatalogDataSet _dataSet;
         private Material _catalogMaterial;
 
         #region Material Property IDs
 
         private int _idSpriteSheet, _idNumSprites, _idShapeIndex, _idColorMapData, _idDataSetMatrix, _idScalingFactor;
-        private int _idDataX, _idDataY, _idDataZ, _idDataX2, _idDataY2, _idDataZ2, _idDataCmap;
-        private int _idScalingTypeX, _idScalingTypeY, _idScalingTypeZ, _idScalingTypeColorMap, _idScalingTypePointSize, _idScalingTypeOpacity;
-        private int _idScalingX, _idScalingY, _idScalingZ, _idScalingColorMap, _idScalingPointSize, _idScalingOpacity;
-        private int _idOffsetX, _idOffsetY, _idOffsetZ, _idOffsetColorMap, _idOffsetPointSize, _idOffsetOpacity;
+        private int _idDataX, _idDataY, _idDataZ, _idDataX2, _idDataY2, _idDataZ2, _idDataCmap, _idDataOpacity, _idDataPointSize;
         private int _idCutoffMin, _idCutoffMax;
-        private int _idUseUniformColor, _idUseUniformPointSize, _idUseUniformOpacity, _idColor, _idPointSize, _idOpacity;
+        private int _idUseUniformColor, _idUseUniformPointSize, _idUseUniformOpacity;
+        private int _idColor, _idPointSize, _idOpacity;
+        private int _idMappingConfigs;
 
         private void GetPropertyIds()
         {
@@ -47,7 +51,7 @@ namespace CatalogData
             _idColorMapData = Shader.PropertyToID("colorMapData");
             _idDataSetMatrix = Shader.PropertyToID("datasetMatrix");
             _idScalingFactor = Shader.PropertyToID("scalingFactor");
-            
+
             _idDataX = Shader.PropertyToID("dataX");
             _idDataY = Shader.PropertyToID("dataY");
             _idDataZ = Shader.PropertyToID("dataZ");
@@ -55,29 +59,8 @@ namespace CatalogData
             _idDataY2 = Shader.PropertyToID("dataY2");
             _idDataZ2 = Shader.PropertyToID("dataZ2");
             _idDataCmap = Shader.PropertyToID("dataCmap");
-
-            _idScalingTypeX = Shader.PropertyToID("scalingTypeX");
-            _idScalingTypeY = Shader.PropertyToID("scalingTypeY");
-            _idScalingTypeZ = Shader.PropertyToID("scalingTypeZ");
-            _idScalingTypeColorMap = Shader.PropertyToID("scalingTypeColorMap");
-            _idScalingTypePointSize = Shader.PropertyToID("scalingTypePointSize");
-            _idScalingTypeOpacity = Shader.PropertyToID("scalingTypeOpacity");
-
-            _idScalingX = Shader.PropertyToID("scalingX");
-            _idScalingY = Shader.PropertyToID("scalingY");
-            _idScalingZ = Shader.PropertyToID("scalingZ");
-            _idScalingColorMap = Shader.PropertyToID("scalingColorMap");
-            _idScalingPointSize = Shader.PropertyToID("scalingPointSize");
-            _idScalingOpacity = Shader.PropertyToID("scalingOpacity");
-
-            _idOffsetX = Shader.PropertyToID("offsetX");
-            _idOffsetY = Shader.PropertyToID("offsetY");
-            _idOffsetZ = Shader.PropertyToID("offsetZ");
-            _idOffsetColorMap = Shader.PropertyToID("offsetColorMap");
-            _idOffsetPointSize = Shader.PropertyToID("offsetPointSize");
-            _idOffsetOpacity = Shader.PropertyToID("offsetOpacity");
-
-      
+            _idDataOpacity = Shader.PropertyToID("dataOpacity");
+            _idDataPointSize = Shader.PropertyToID("dataPointSize");
 
             _idCutoffMin = Shader.PropertyToID("cutoffMin");
             _idCutoffMax = Shader.PropertyToID("cutoffMax");
@@ -88,6 +71,8 @@ namespace CatalogData
             _idColor = Shader.PropertyToID("color");
             _idPointSize = Shader.PropertyToID("pointSize");
             _idOpacity = Shader.PropertyToID("opacity");
+
+            _idMappingConfigs = Shader.PropertyToID("mappingConfigs");
         }
 
         #endregion
@@ -170,6 +155,10 @@ namespace CatalogData
                     _catalogMaterial.SetInt(_idShapeIndex, 2);
                 }
 
+                // Buffer holds XYZ, cmap, pointSize and opacity mapping configs               
+                _mappingConfigBuffer = new ComputeBuffer(32 * 6, 32);
+                _catalogMaterial.SetBuffer(_idMappingConfigs, _mappingConfigBuffer);
+
                 // Apply scaling from data set space to world space
                 transform.localScale *= DataMapping.Uniforms.Scale;
                 Debug.Log($"Scaling from data set space to world space: {ScalingString}");
@@ -210,7 +199,69 @@ namespace CatalogData
                 {
                     if (logErrors)
                     {
-                        Debug.Log("No mapping for Cmap or SingleColor");
+                        Debug.Log("No mapping for Cmap");
+                    }
+
+                    return false;
+                }
+            }
+
+            // Set the opacity buffer if we're not using a uniform opacity
+            if (!DataMapping.UniformOpacity)
+            {
+                if (DataMapping.Mapping.Opacity != null)
+                {
+                    int opacityColumnIndex = _dataSet.GetDataColumnIndex(DataMapping.Mapping.Opacity.Source);
+                    if (opacityColumnIndex >= 0)
+                    {
+                        _catalogMaterial.SetBuffer(_idDataOpacity, _buffers[opacityColumnIndex]);
+                    }
+                    else
+                    {
+                        if (logErrors)
+                        {
+                            Debug.Log($"Can't find column {DataMapping.Mapping.Opacity.Source} (mapped to Opacity)");
+                        }
+
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (logErrors)
+                    {
+                        Debug.Log("No mapping for Opacity");
+                    }
+
+                    return false;
+                }
+            }
+
+            // Set the point size buffer if we're not using a uniform point size
+            if (DataMapping.RenderType == RenderType.Billboard && !DataMapping.UniformPointSize)
+            {
+                if (DataMapping.Mapping.PointSize != null)
+                {
+                    int pointSizeColumnIndex = _dataSet.GetDataColumnIndex(DataMapping.Mapping.PointSize.Source);
+                    if (pointSizeColumnIndex >= 0)
+                    {
+                        _catalogMaterial.SetBuffer(_idDataPointSize, _buffers[pointSizeColumnIndex]);
+                    }
+                    else
+                    {
+                        if (logErrors)
+                        {
+                            Debug.Log($"Can't find column {DataMapping.Mapping.PointSize.Source} (mapped to PointSize)");
+                        }
+
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (logErrors)
+                    {
+                        Debug.Log("No mapping for PointSize");
                     }
 
                     return false;
@@ -330,27 +381,37 @@ namespace CatalogData
                 return false;
             }
 
-            _catalogMaterial.SetFloat(_idPointSize, DataMapping.Uniforms.PointSize);
-            _catalogMaterial.SetFloat(_idOpacity, DataMapping.Uniforms.Opacity);
-            // Update the color map properties if we're not using a uniform color
-            if (!DataMapping.UniformColor)
+            if (!DataMapping.UniformColor && DataMapping.Mapping.Cmap != null && !string.IsNullOrEmpty(DataMapping.Mapping.Cmap.Source))
             {
-                if (DataMapping.Mapping.Cmap != null)
-                {
-                    // Color map mapping and scaling
-                    _catalogMaterial.SetInt(_idUseUniformColor, 0);
-                    _catalogMaterial.SetFloat(_idScalingColorMap, DataMapping.Mapping.Cmap.Scale);
-                    _catalogMaterial.SetFloat(_idOffsetColorMap, DataMapping.Mapping.Cmap.Offset);
-                }
-                else
-                {
-                    return false;
-                }
+                _catalogMaterial.SetInt(_idUseUniformColor, 0);
+                _mappingConfigs[3] = DataMapping.Mapping.Cmap.GpuMappingConfig;
             }
             else
             {
                 _catalogMaterial.SetInt(_idUseUniformColor, 1);
                 _catalogMaterial.SetColor(_idColor, DataMapping.Uniforms.Color);
+            }
+
+            if (!DataMapping.UniformOpacity && DataMapping.Mapping.Opacity != null && !string.IsNullOrEmpty(DataMapping.Mapping.Opacity.Source))
+            {
+                _catalogMaterial.SetInt(_idUseUniformOpacity, 0);
+                _mappingConfigs[4] = DataMapping.Mapping.Opacity.GpuMappingConfig;
+            }
+            else
+            {
+                _catalogMaterial.SetInt(_idUseUniformOpacity, 1);
+                _catalogMaterial.SetFloat(_idOpacity, DataMapping.Uniforms.Opacity);
+            }
+
+            if (!DataMapping.UniformPointSize && DataMapping.Mapping.PointSize != null && !string.IsNullOrEmpty(DataMapping.Mapping.PointSize.Source))
+            {
+                _catalogMaterial.SetInt(_idUseUniformPointSize, 0);
+                _mappingConfigs[5] = DataMapping.Mapping.PointSize.GpuMappingConfig;
+            }
+            else
+            {
+                _catalogMaterial.SetInt(_idUseUniformPointSize, 1);
+                _catalogMaterial.SetFloat(_idPointSize, DataMapping.Uniforms.PointSize);
             }
 
             // Update spherical mapping properties if we're using spherical coordinates
@@ -359,12 +420,18 @@ namespace CatalogData
                 if (DataMapping.Mapping.Lat != null && DataMapping.Mapping.Lng != null && DataMapping.Mapping.R != null)
                 {
                     // Spherical coordinate input assumes degrees for XY, while the shader assumes radians
-                    _catalogMaterial.SetFloat(_idScalingX, DataMapping.Mapping.Lat.Scale * Mathf.Deg2Rad);
-                    _catalogMaterial.SetFloat(_idScalingY, DataMapping.Mapping.Lng.Scale * Mathf.Deg2Rad);
-                    _catalogMaterial.SetFloat(_idScalingZ, DataMapping.Mapping.R.Scale);
-                    _catalogMaterial.SetFloat(_idOffsetX, DataMapping.Mapping.Lat.Offset * Mathf.Deg2Rad);
-                    _catalogMaterial.SetFloat(_idOffsetY, DataMapping.Mapping.Lng.Offset * Mathf.Deg2Rad);
-                    _catalogMaterial.SetFloat(_idOffsetZ, DataMapping.Mapping.R.Offset);
+                    var latConfig = DataMapping.Mapping.Lat.GpuMappingConfig;
+                    latConfig.Scale *= Mathf.Deg2Rad;
+                    latConfig.Offset *= Mathf.Deg2Rad;
+
+                    var lngConfig = DataMapping.Mapping.Lng.GpuMappingConfig;
+                    lngConfig.Scale *= Mathf.Deg2Rad;
+                    lngConfig.Offset *= Mathf.Deg2Rad;
+
+                    _mappingConfigs[0] = latConfig;
+                    _mappingConfigs[1] = lngConfig;
+                    _mappingConfigs[2] = DataMapping.Mapping.R.GpuMappingConfig;
+                    _mappingConfigBuffer.SetData(_mappingConfigs);
                     return true;
                 }
 
@@ -375,12 +442,10 @@ namespace CatalogData
             if (DataMapping.Mapping.X != null && DataMapping.Mapping.Y != null && DataMapping.Mapping.Z != null)
             {
                 // Spatial mapping and scaling
-                _catalogMaterial.SetFloat(_idScalingX, DataMapping.Mapping.X.Scale);
-                _catalogMaterial.SetFloat(_idScalingY, DataMapping.Mapping.Y.Scale);
-                _catalogMaterial.SetFloat(_idScalingZ, DataMapping.Mapping.Z.Scale);
-                _catalogMaterial.SetFloat(_idOffsetX, DataMapping.Mapping.X.Offset);
-                _catalogMaterial.SetFloat(_idOffsetY, DataMapping.Mapping.Y.Offset);
-                _catalogMaterial.SetFloat(_idOffsetZ, DataMapping.Mapping.Z.Offset);
+                _mappingConfigs[0] = DataMapping.Mapping.X.GpuMappingConfig;
+                _mappingConfigs[1] = DataMapping.Mapping.Y.GpuMappingConfig;
+                _mappingConfigs[2] = DataMapping.Mapping.Z.GpuMappingConfig;
+                _mappingConfigBuffer.SetData(_mappingConfigs);
                 return true;
             }
 
@@ -461,10 +526,6 @@ namespace CatalogData
             // Update the object transform and point scale on the GPU
             _catalogMaterial.SetMatrix(_idDataSetMatrix, transform.localToWorldMatrix);
             _catalogMaterial.SetFloat(_idScalingFactor, transform.localScale.x);
-            _catalogMaterial.SetInt(_idScalingTypeX, 0);
-            _catalogMaterial.SetInt(_idScalingTypeY, 0);
-            _catalogMaterial.SetInt(_idScalingTypeZ, 0);
-            _catalogMaterial.SetInt(_idScalingTypeColorMap, 0);
             // Shader defines two passes: Pass #0 uses cartesian coordinates and Pass #1 uses spherical coordinates
             _catalogMaterial.SetPass(DataMapping.Spherical ? 1 : 0);
             // Render points on the GPU using vertex pulling
@@ -473,6 +534,7 @@ namespace CatalogData
 
         void OnDestroy()
         {
+            _mappingConfigBuffer.Release();
             if (_buffers != null)
             {
                 for (var i = 0; i < _buffers.Length; i++)
