@@ -22,7 +22,7 @@ namespace CatalogData
         public string MappingFileName;
         public bool SphericalCoordinates;
         public bool LineData;
-        public FileTypes FileType = FileTypes.Ipac;
+        private FileTypes fileType = FileTypes.Ipac;
         [Range(0.0f, 1.0f)] public float ValueCutoffMin = 0;
         [Range(0.0f, 1.0f)] public float ValueCutoffMax = 1;
         public ColorMapEnum ColorMap = ColorMapEnum.Inferno;
@@ -103,14 +103,17 @@ namespace CatalogData
             }
             else
             {
+                string fileExt = Path.GetExtension(TableFileName);
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
-                switch (FileType)
+                switch (fileExt)
                 {
-                    case FileTypes.Ipac:
+                    case ".tbl":
+                        fileType = FileTypes.Ipac;
                         _dataSet = CatalogDataSet.LoadIpacTable(TableFileName);
                         break;
-                    case FileTypes.Fits:
+                    case ".fits":
+                        fileType = FileTypes.Fits;
                         _dataSet = CatalogDataSet.LoadFitsTable(TableFileName);
                         break;
                     default:
@@ -119,7 +122,7 @@ namespace CatalogData
                 }
                 sw.Stop();
                 Debug.Log($"Table read in {sw.Elapsed.TotalSeconds} seconds");
-                if (FileType == FileTypes.Ipac)
+                if (fileType == FileTypes.Ipac)
                 {
                     sw.Restart();
                     _dataSet.WriteCacheFile();

@@ -241,22 +241,17 @@ namespace CatalogData
         public static CatalogDataSet LoadFitsTable(string fileName)
         {
             CatalogDataSet dataSet = new CatalogDataSet();
+            dataSet.FileName = fileName;
             IntPtr fptr; // pointer to the FITS file, defined in fitsio.h
-            int status, hdunum, hdutype, anynull, ncols;
+            int status, hdunum, hdutype, ncols;
             long nrows;
-            if (FitsReader.FitsOpenFile(out fptr, fileName, out status) != 0)
+            if (FitsReader.FitsOpenFile(out fptr, dataSet.FileName, out status) != 0)
             {
-                //UE_LOG(LogTemp, Error, TEXT("Fits Open & Read error #%i"), status);
-                //delete filename;
                 Debug.Log("Fits Failure... cfits code #" + status.ToString());
-
                 return dataSet;
             }
-            //Debug.Log("Fits open Success! Memory address: " + fptr.ToString());
             long frow = 1;
             long felem = 1;
-            long longnull = 0;
-            float floatnull = 0;
             hdunum = 2;
             int dataColumnCounter = 0;
             int metaColumnCounter = 0;
@@ -277,11 +272,8 @@ namespace CatalogData
             dataSet.ColumnDefinitions = new ColumnInfo[ncols];
             StringBuilder keyword = new StringBuilder(75);
             StringBuilder colName = new StringBuilder(71);
-
             StringBuilder colFormat = new StringBuilder(71);
-
             StringBuilder colUnit = new StringBuilder(71);
-
             dataSet.N = (int)nrows;
             dataSet.DataColumns = new float[ncols][];
             for (var i = 0; i < ncols; i++)
@@ -310,11 +302,19 @@ namespace CatalogData
                 string colFormatLetter = colFormat.ToString().Substring(1, 1);
                 keyword.Clear();
                 FitsReader.FitsMakeKeyN("TUNIT", col + 1, keyword, out status);
-
                 if (FitsReader.FitsReadKey(fptr, 16, keyword.ToString(), colUnit, IntPtr.Zero, out status) != 0)
                 {
-                    Debug.Log("No unit in column #" + col);
-                    status = 0;
+                    if (status == 202)
+                    {
+                        Debug.Log("No unit in column #" + col);
+                        status = 0;
+                    }
+                    else
+                    {
+                        Debug.Log("Fits Read unit error #" + status.ToString());
+                        FitsReader.FitsCloseFile(fptr, out status);
+                        return dataSet;
+                    }
                 }
                 if (colFormatLetter == "A")
                 {
@@ -323,7 +323,7 @@ namespace CatalogData
                         Name = colName.ToString(),
                         Index = col,
                         Type = ColumnType.String,
-                        MetaIndex = col,
+                        MetaIndex = metaColumnCounter,
                         Unit = colUnit.ToString()
                     };
                     metaColumnCounter++;
@@ -335,14 +335,13 @@ namespace CatalogData
                         Name = colName.ToString(),
                         Index = col,
                         Type = ColumnType.Numeric,
-                        NumericIndex = col,
+                        NumericIndex = dataColumnCounter,
                         Unit = colUnit.ToString()
                     };
                     dataColumnCounter++;
                 }
                 if (FitsReader.FitsReadCol(fptr, 42, col + 1, frow, felem, nrows, out ptrDataFromColumn, out status) != 0)
                 {
-
                     Debug.Log("Fits Read column data error #" + status.ToString());
                     FitsReader.FitsCloseFile(fptr, out status);
                     return dataSet;
@@ -350,11 +349,8 @@ namespace CatalogData
                 Marshal.Copy(ptrDataFromColumn, dataFromColumn, 0, (int)nrows);
                 FitsReader.FreeMemory(ptrDataFromColumn);
                 dataSet.DataColumns[col] = dataFromColumn;
-                //Debug.Log("Fits column: " + dataSet.ColumnDefinitions[col].Unit);
             }
             FitsReader.FitsCloseFile(fptr, out status);
-      
-
             return dataSet;
         }
 
