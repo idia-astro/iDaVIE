@@ -12,7 +12,7 @@ struct VertexShaderOutput
     float4 color : COLOR;
     float4 endPoint: TEXCOORD0;
     float value: TEXCOORD1;
-    float opacity: TEXCOORD3;
+    float opacity: TEXCOORD2;
 };
 
 struct FragmentShaderInput
@@ -108,6 +108,5 @@ void gsLine(point VertexShaderOutput input[1], inout LineStream<FragmentShaderIn
 
 float4 fsSimple(FragmentShaderInput input) : COLOR
 {
-    float4 pointColor = input.color;
-    return pointColor * opacity;
+    return input.color * input.opacity;
 }

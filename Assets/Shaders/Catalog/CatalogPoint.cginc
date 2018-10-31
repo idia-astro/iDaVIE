@@ -154,7 +154,6 @@ void gsBillboard(point VertexShaderOutput input[1], inout TriangleStream<Fragmen
 
 float4 fsSprite(FragmentShaderInput input) : COLOR
 {
-    float4 pointColor = input.color;
-    float opacityFactor = tex2D(_SpriteSheet, input.uv).a * opacity; 				               
-    return pointColor * opacityFactor;
+    float opacityFactor = tex2D(_SpriteSheet, input.uv).a * input.opacity; 				               
+    return input.color * opacityFactor;
 }
