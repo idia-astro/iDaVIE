@@ -3,12 +3,14 @@
 // Sprites
 uniform sampler2D _SpriteSheet;
 uniform int _NumSprites;			
-uniform int _ShapeIndex;
 
-// Points
+// Additional parameters for points
 Buffer<float> dataPointSize;
-uniform float pointSize;
+Buffer<float> dataPointShape;
 uniform int useUniformPointSize;
+uniform int useUniformPointShape;
+uniform float pointSize;
+uniform float pointShape;
 uniform float scalingFactor;
 
 // Points -> <VS> -> VertexShaderOutput -> <GS> -> PixelShaderInput -> <PS> -> Pixels 
@@ -19,7 +21,8 @@ struct VertexShaderOutput
     float3 upVector: TEXCOORD0;
     float3 rightVector: TEXCOORD1;
     float pointSize: TEXCOORD2;
-    float opacity: TEXCOORD3;
+    float pointShape: TEXCOORD3;  
+    float opacity: TEXCOORD4;
 };
 
 struct FragmentShaderInput
@@ -71,7 +74,14 @@ VertexShaderOutput vsPointBillboard(uint id : SV_VertexID)
     else {
         output.opacity = opacity;
     }
-        
+    
+    if (!useUniformPointShape) {                
+        output.pointShape = applyScaling(dataPointShape[id], mappingConfigs[POINT_SHAPE_INDEX]);
+    }
+    else {
+        output.pointShape = pointShape;
+    }
+    
     return output;
 }
 
@@ -121,6 +131,13 @@ VertexShaderOutput vsPointBillboardSpherical(uint id : SV_VertexID)
         output.opacity = opacity;
     }             
     
+    if (!useUniformPointShape) {                
+        output.pointShape = applyScaling(dataPointShape[id], mappingConfigs[POINT_SHAPE_INDEX]);
+    }
+    else {
+        output.pointShape = pointShape;
+    }
+    
     return output;
 }
 
@@ -130,7 +147,7 @@ void gsBillboard(point VertexShaderOutput input[1], inout TriangleStream<Fragmen
     // Offsets for the four corners of the quad
     float2 offsets[4] = { float2(-0.5, 0.5), float2(-0.5,-0.5), float2(0.5,0.5), float2(0.5,-0.5) };
     // Shift UV coordinates based on shape index
-    float uvOffset = ((float)_ShapeIndex) / _NumSprites;
+    float uvOffset = clamp(round(input[0].pointShape), 0, _NumSprites -1) / _NumSprites;
     float uvRange = 1.0 / _NumSprites;
     
     float3 billboardOrigin = input[0].position.xyz;

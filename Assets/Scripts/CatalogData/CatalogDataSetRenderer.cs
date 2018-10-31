@@ -21,7 +21,6 @@ namespace CatalogData
         [Range(0.0f, 1.0f)] public float ValueCutoffMax = 1;
         public Texture2D ColorMapTexture;
 
-
         private ComputeBuffer[] _buffers;
         private Color[] _colorMapData;
 
@@ -30,24 +29,23 @@ namespace CatalogData
         // The mapping buffer is used to store mapping configuration. Since each mapping has a similar set of options,
         // it's less verbose than storing a huge number of options individually
         private ComputeBuffer _mappingConfigBuffer;
-        private readonly GPUMappingConfig[] _mappingConfigs = new GPUMappingConfig[6];
+        private readonly GPUMappingConfig[] _mappingConfigs = new GPUMappingConfig[7];
         private CatalogDataSet _dataSet;
         private Material _catalogMaterial;
 
         #region Material Property IDs
 
-        private int _idSpriteSheet, _idNumSprites, _idShapeIndex, _idColorMapData, _idDataSetMatrix, _idScalingFactor;
-        private int _idDataX, _idDataY, _idDataZ, _idDataX2, _idDataY2, _idDataZ2, _idDataCmap, _idDataOpacity, _idDataPointSize;
+        private int _idSpriteSheet, _idNumSprites, _idColorMapData, _idDataSetMatrix, _idScalingFactor;
+        private int _idDataX, _idDataY, _idDataZ, _idDataX2, _idDataY2, _idDataZ2, _idDataCmap, _idDataOpacity, _idDataPointSize, _idDataPointShape;
         private int _idCutoffMin, _idCutoffMax;
-        private int _idUseUniformColor, _idUseUniformPointSize, _idUseUniformOpacity;
-        private int _idColor, _idPointSize, _idOpacity;
+        private int _idUseUniformColor, _idUseUniformOpacity, _idUseUniformPointSize, _idUseUniformPointShape;
+        private int _idColor, _idOpacity, _idPointSize, _idPointShape;
         private int _idMappingConfigs;
 
         private void GetPropertyIds()
         {
             _idSpriteSheet = Shader.PropertyToID("_SpriteSheet");
             _idNumSprites = Shader.PropertyToID("_NumSprites");
-            _idShapeIndex = Shader.PropertyToID("_ShapeIndex");
             _idColorMapData = Shader.PropertyToID("colorMapData");
             _idDataSetMatrix = Shader.PropertyToID("datasetMatrix");
             _idScalingFactor = Shader.PropertyToID("scalingFactor");
@@ -61,16 +59,20 @@ namespace CatalogData
             _idDataCmap = Shader.PropertyToID("dataCmap");
             _idDataOpacity = Shader.PropertyToID("dataOpacity");
             _idDataPointSize = Shader.PropertyToID("dataPointSize");
+            _idDataPointShape = Shader.PropertyToID("dataPointShape");
 
             _idCutoffMin = Shader.PropertyToID("cutoffMin");
             _idCutoffMax = Shader.PropertyToID("cutoffMax");
+            
             _idUseUniformColor = Shader.PropertyToID("useUniformColor");
-            _idUseUniformPointSize = Shader.PropertyToID("useUniformPointSize");
             _idUseUniformOpacity = Shader.PropertyToID("useUniformOpacity");
+            _idUseUniformPointSize = Shader.PropertyToID("useUniformPointSize");
+            _idUseUniformPointShape = Shader.PropertyToID("useUniformPointShape");
 
             _idColor = Shader.PropertyToID("color");
-            _idPointSize = Shader.PropertyToID("pointSize");
             _idOpacity = Shader.PropertyToID("opacity");
+            _idPointSize = Shader.PropertyToID("pointSize");
+            _idPointShape = Shader.PropertyToID("pointShape");
 
             _idMappingConfigs = Shader.PropertyToID("mappingConfigs");
         }
@@ -152,11 +154,10 @@ namespace CatalogData
                     Texture2D spriteSheetTexture = (Texture2D) AssetDatabase.LoadAssetAtPath("Assets/Textures/billboard_textures.TGA", typeof(Texture2D));
                     _catalogMaterial.SetTexture(_idSpriteSheet, spriteSheetTexture);
                     _catalogMaterial.SetInt(_idNumSprites, 8);
-                    _catalogMaterial.SetInt(_idShapeIndex, 2);
                 }
 
-                // Buffer holds XYZ, cmap, pointSize and opacity mapping configs               
-                _mappingConfigBuffer = new ComputeBuffer(32 * 6, 32);
+                // Buffer holds XYZ, cmap, pointSize, pointShape and opacity mapping configs               
+                _mappingConfigBuffer = new ComputeBuffer(32 * 7, 32);
                 _catalogMaterial.SetBuffer(_idMappingConfigs, _mappingConfigBuffer);
 
                 // Apply scaling from data set space to world space
@@ -262,6 +263,37 @@ namespace CatalogData
                     if (logErrors)
                     {
                         Debug.Log("No mapping for PointSize");
+                    }
+
+                    return false;
+                }
+            }
+
+            // Set the point shape buffer if we're not using a uniform point shape
+            if (DataMapping.RenderType == RenderType.Billboard && !DataMapping.UniformPointShape)
+            {
+                if (DataMapping.Mapping.PointShape != null)
+                {
+                    int pointShapeColumnIndex = _dataSet.GetDataColumnIndex(DataMapping.Mapping.PointShape.Source);
+                    if (pointShapeColumnIndex >= 0)
+                    {
+                        _catalogMaterial.SetBuffer(_idDataPointShape, _buffers[pointShapeColumnIndex]);
+                    }
+                    else
+                    {
+                        if (logErrors)
+                        {
+                            Debug.Log($"Can't find column {DataMapping.Mapping.PointShape.Source} (mapped to PointShape)");
+                        }
+
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (logErrors)
+                    {
+                        Debug.Log("No mapping for PointShape");
                     }
 
                     return false;
@@ -412,6 +444,18 @@ namespace CatalogData
             {
                 _catalogMaterial.SetInt(_idUseUniformPointSize, 1);
                 _catalogMaterial.SetFloat(_idPointSize, DataMapping.Uniforms.PointSize);
+            }
+
+            if (!DataMapping.UniformPointShape && DataMapping.Mapping.PointShape != null && !string.IsNullOrEmpty(DataMapping.Mapping.PointShape.Source))
+            {
+                _catalogMaterial.SetInt(_idUseUniformPointShape, 0);
+                _mappingConfigs[6] = DataMapping.Mapping.PointShape.GpuMappingConfig;
+            }
+            else
+            {
+                _catalogMaterial.SetInt(_idUseUniformPointShape, 1);
+                float shapeIndex = DataMapping.Uniforms.PointShape.GetHashCode();
+                _catalogMaterial.SetFloat(_idPointShape, shapeIndex);
             }
 
             // Update spherical mapping properties if we're using spherical coordinates

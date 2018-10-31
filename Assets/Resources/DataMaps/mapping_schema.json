@@ -92,6 +92,19 @@
       ],
       "type": "string"
     },
+    "ShapeType": {
+      "enum": [
+        "Halo",
+        "Circle",
+        "OutlinedCircle",
+        "Square",
+        "OutlinedSquare",
+        "Triangle",
+        "OutlinedTriangle",
+        "Star"
+      ],
+      "type": "string"
+    },
     "ScalingType": {
       "enum": [
         "Linear",
@@ -147,6 +160,9 @@
         },
         "Opacity": {
           "type": "number"
+        },
+        "PointShape": {
+          "$ref": "#/definitions/ShapeType"
         }
       },
       "additionalProperties": false
@@ -169,6 +185,9 @@
       "type": "boolean"
     },
     "UniformOpacity": {
+      "type": "boolean"
+    },
+    "UniformPointShape": {
       "type": "boolean"
     },
     "Uniforms": {
@@ -203,13 +222,16 @@
         "R": {
           "$ref": "#/definitions/MapFloatEntry"
         },
-        "PointSize": {
-          "$ref": "#/definitions/MapFloatEntry"
-        },
         "Cmap": {
           "$ref": "#/definitions/MapFloatEntry"
         },
         "Opacity": {
+          "$ref": "#/definitions/MapFloatEntry"
+        },
+        "PointSize": {
+          "$ref": "#/definitions/MapFloatEntry"
+        },
+        "PointShape": {
           "$ref": "#/definitions/MapFloatEntry"
         }
       },

@@ -12,6 +12,7 @@
 #define CMAP_INDEX 3
 #define OPACITY_INDEX 4
 #define POINT_SIZE_INDEX 5
+#define POINT_SHAPE_INDEX 6
 
 struct MappingConfig
 {
@@ -36,16 +37,6 @@ uniform float opacity;
 uniform float4 color;
 uniform float4x4 datasetMatrix;
 
-// Scaling types
-uniform int scalingTypePointSize;
-uniform int scalingTypeOpacity;
-// Scaling sizes
-uniform float scalingPointSize;
-uniform float scalingOpacity;        
-// Scaling offsets
-uniform float offsetPointSize;
-uniform float offsetOpacity;
-
 // Filtering
 uniform float cutoffMin;
 uniform float cutoffMax;
@@ -59,7 +50,6 @@ Buffer<float> dataZ;
 Buffer<float> dataCmap;
 Buffer<float> dataOpacity;
 StructuredBuffer<MappingConfig> mappingConfigs;
-
 
 float applyScaling(float input, MappingConfig config)
 {

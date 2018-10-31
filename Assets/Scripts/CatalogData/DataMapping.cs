@@ -13,6 +13,7 @@ namespace CatalogData
         public RenderType RenderType = RenderType.Billboard;
         public bool UniformColor;
         public bool UniformPointSize;
+        public bool UniformPointShape;
         public bool UniformOpacity;
         public MappingUniforms Uniforms = new MappingUniforms();
 
@@ -56,11 +57,13 @@ namespace CatalogData
                     ColorMap = ColorMapEnum.Plasma,
                     UniformColor = true,
                     UniformPointSize = true,
+                    UniformPointShape = true,
                     UniformOpacity = true,
                     Uniforms = new MappingUniforms
                     {
                         Scale = 0.001f,
                         PointSize = 0.3f,
+                        PointShape = ShapeType.Circle,
                         Color = Color.red
                     },
                     Mapping = new Mapping
@@ -84,11 +87,13 @@ namespace CatalogData
                     RenderType = RenderType.Billboard,
                     UniformColor = true,
                     UniformPointSize = true,
+                    UniformPointShape = true,
                     UniformOpacity = true,
                     Uniforms = new MappingUniforms
                     {
                         Scale = 0.001f,
                         PointSize = 0.3f,
+                        PointShape = ShapeType.Circle,
                         Color = Color.red
                     },
                     Mapping = new Mapping
@@ -110,6 +115,7 @@ namespace CatalogData
         public Color Color;
         [HideInInspector] public float Scale = 1;
         public float PointSize = 0.1f;
+        public ShapeType PointShape = ShapeType.OutlinedCircle;
         [Range(0.0f, 1.0f)] public float Opacity = 1.0f;
     }
 
@@ -122,6 +128,7 @@ namespace CatalogData
         public MapFloatEntry Opacity;
         public MapFloatEntry R;
         public MapFloatEntry PointSize;
+        public MapFloatEntry PointShape;
         public MapFloatEntry X;
         public MapFloatEntry Y;
         public MapFloatEntry Z;
@@ -200,5 +207,18 @@ namespace CatalogData
         Sqrt,
         Squared,
         Exp
+    };
+
+    [Serializable]
+    public enum ShapeType
+    {
+        Halo,
+        Circle,
+        OutlinedCircle,
+        Square,
+        OutlinedSquare,
+        Triangle,
+        OutlinedTriangle,
+        Star
     };
 }

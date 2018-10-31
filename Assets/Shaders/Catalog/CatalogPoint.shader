@@ -4,7 +4,6 @@
 	{
 		_SpriteSheet("Sprite sheet", 2D) = "white" {}
 		_NumSprites("Number of sprites", Int) = 1
-		_ShapeIndex("Shape index", Int) = 0
 	}
 
 	SubShader
