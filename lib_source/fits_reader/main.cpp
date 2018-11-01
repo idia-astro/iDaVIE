@@ -1,4 +1,5 @@
 #include <cfitsio/fitsio.h>
+#include <iostream>
 
 
 #define DllExport __declspec (dllexport)
@@ -14,7 +15,6 @@ extern "C"
 	{
 		return fits_close_file(fptr, status);
 	}
-
 	
 	DllExport int FitsMovabsHdu(fitsfile *fptr, int hdunum, int *hdutype, int *status)
 	{
@@ -34,33 +34,41 @@ extern "C"
 	DllExport int FitsMakeKeyN(const char *keyroot, int value, char *keyname, int *status)
 	{
 		return fits_make_keyn(keyroot, value, keyname, status);
-
 	}
+
 	DllExport int FitsReadKey(fitsfile *fptr, int datatype, const char *keyname, void *value,
 		char *comm, int *status)
 	{
 		return fits_read_key(fptr, datatype, keyname, value, comm, status);
-
 	}
-	DllExport int FitsReadCol(fitsfile *fptr, int datatype, int colnum, long firstrow,
+
+	DllExport int FitsReadColFloat(fitsfile *fptr, int colnum, long firstrow,
 		long firstelem, long nelem, float **array, int  *status)
 	{
 		int anynul;
 		float nulval = 0;
 		float *dataArray = new float[nelem];
-		int success = fits_read_col(fptr, datatype, colnum, firstrow, firstelem, nelem, &nulval, dataArray, &anynul, status);
+		int success = fits_read_col(fptr, 42, colnum, firstrow, firstelem, nelem, &nulval, dataArray, &anynul, status);
 		*array = dataArray;
-		//delete[] dataArray;
 		return success;
-
-
 	}
 
+	DllExport int FitsReadColString(fitsfile *fptr, int colnum, long firstrow,
+		long firstelem, long nelem, char ***array, int  *status)
+	{
+		int anynul;
+		float nulval = 0;
+		char **dataArray = new char*[nelem];
+		for (int i = 0; i < nelem; i++)
+			dataArray[i] = (char *)malloc(16);
+		int success = fits_read_col(fptr, 16, colnum, firstrow, firstelem, nelem, &nulval, dataArray, &anynul, status);
+		*array = dataArray;
+		return success;
+	}
 
 	DllExport int FreeMemory(float* ptrToDelete)
 	{
 		delete[] ptrToDelete;
 		return 0;
 	}
-
 }

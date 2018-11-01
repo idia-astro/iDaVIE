@@ -26,15 +26,14 @@ public class FitsReader {
     [DllImport("fits_reader")]
     public static extern int FitsMakeKeyN(string keyroot, int value, StringBuilder keyname, out int status);
 
-
     [DllImport("fits_reader")]
     public static extern int FitsReadKey(IntPtr fptr, int datatype, string keyname, StringBuilder colname, IntPtr comm, out int status);
-
+    
+    [DllImport("fits_reader")]
+    public static extern int FitsReadColFloat(IntPtr fptr, int colnum, long firstrow, long firstelem, long nelem,  out IntPtr array,  out int status);
 
     [DllImport("fits_reader")]
-    public static extern int FitsReadCol(IntPtr fptr, int datatype, int colnum, long firstrow,
-        long firstelem, long nelem,  out IntPtr array,  out int status);
-
+    public static extern int FitsReadColString(IntPtr fptr, int colnum, long firstrow, long firstelem, long nelem, out IntPtr array, out int status);
 
     [DllImport("fits_reader")]
     public static extern int FreeMemory(IntPtr pointerToDelete);

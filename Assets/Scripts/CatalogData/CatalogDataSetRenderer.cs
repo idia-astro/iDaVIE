@@ -22,7 +22,7 @@ namespace CatalogData
         public string MappingFileName;
         public bool SphericalCoordinates;
         public bool LineData;
-        private FileTypes fileType = FileTypes.Ipac;
+        public bool LoadMetaColumns = true;
         [Range(0.0f, 1.0f)] public float ValueCutoffMin = 0;
         [Range(0.0f, 1.0f)] public float ValueCutoffMax = 1;
         public ColorMapEnum ColorMap = ColorMapEnum.Inferno;
@@ -33,6 +33,8 @@ namespace CatalogData
 
         private Color[] _colorMapData;
         private const int NumColorMapStops = 256;
+
+        private FileTypes _fileType = FileTypes.Ipac;
 
         private CatalogDataSet _dataSet;
         private DataMapping _dataMapping;
@@ -103,18 +105,20 @@ namespace CatalogData
             }
             else
             {
-                string fileExt = Path.GetExtension(TableFileName);
+                string fileExt = Path.GetExtension(TableFileName).ToUpper();
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
                 switch (fileExt)
                 {
-                    case ".tbl":
-                        fileType = FileTypes.Ipac;
+                    case ".TBL":
+                        _fileType = FileTypes.Ipac;
                         _dataSet = CatalogDataSet.LoadIpacTable(TableFileName);
+                        _dataSet.WriteCacheFile();
                         break;
-                    case ".fits":
-                        fileType = FileTypes.Fits;
-                        _dataSet = CatalogDataSet.LoadFitsTable(TableFileName);
+                    case ".FITS":
+                    case ".FIT":
+                        _fileType = FileTypes.Fits;
+                        _dataSet = CatalogDataSet.LoadFitsTable(TableFileName, LoadMetaColumns);
                         break;
                     default:
                         Debug.Log($"Unrecognized file type!");
@@ -122,13 +126,6 @@ namespace CatalogData
                 }
                 sw.Stop();
                 Debug.Log($"Table read in {sw.Elapsed.TotalSeconds} seconds");
-                if (fileType == FileTypes.Ipac)
-                {
-                    sw.Restart();
-                    _dataSet.WriteCacheFile();
-                    sw.Stop();
-                    Debug.Log($"Cached file written in {sw.Elapsed.TotalSeconds} seconds");
-                }
             }
 
             // Spherical coordinates are not currently supported for line data
