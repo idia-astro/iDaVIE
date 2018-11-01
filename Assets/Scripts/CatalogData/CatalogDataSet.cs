@@ -3,14 +3,17 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
+using System.Text;
 
 namespace CatalogData
 {
     [Serializable]
     public class CatalogDataSet
     {
+
         public ColumnInfo[] ColumnDefinitions { get; private set; }
         public string FileName { get; private set; }
         public string[][] MetaColumns { get; private set; }
@@ -54,8 +57,8 @@ namespace CatalogData
             bool hasUnitDefinition = false;
             int firstDataLine = -1;
 
-            HashSet<string> numericColumnTypes = new HashSet<string> {"int", "i", "long", "l", "float", "f", "double", "d", "real", "r"};
-            string[] metaColumnTypes = {"char", "c", "date"};
+            HashSet<string> numericColumnTypes = new HashSet<string> { "int", "i", "long", "l", "float", "f", "double", "d", "real", "r" };
+            string[] metaColumnTypes = { "char", "c", "date" };
             // Parse lines for the column info 
             for (var i = 0; i < lines.Length; i++)
             {
@@ -83,7 +86,7 @@ namespace CatalogData
                     for (var j = 0; j < numSplits; j++)
                     {
                         string nameEntry = splitLines[j];
-                        dataSet.ColumnDefinitions[j] = new ColumnInfo {Name = nameEntry.Trim(), Index = j, StartPosition = startPosition};
+                        dataSet.ColumnDefinitions[j] = new ColumnInfo { Name = nameEntry.Trim(), Index = j, StartPosition = startPosition };
                         startPosition += 1 + nameEntry.Length;
 
                         // Specify the previous column's length 
@@ -235,12 +238,158 @@ namespace CatalogData
             return dataSet;
         }
 
+        public static CatalogDataSet LoadFitsTable(string fileName, bool loadMeta)
+        {
+            CatalogDataSet dataSet = new CatalogDataSet();
+            dataSet.FileName = fileName;
+            IntPtr fptr; // pointer to the FITS file, defined in fitsio.h
+            int status, hdunum, hdutype, ncols;
+            long nrows;
+            if (FitsReader.FitsOpenFile(out fptr, dataSet.FileName, out status) != 0)
+            {
+                Debug.Log("Fits Failure... cfits code #" + status.ToString());
+                return dataSet;
+            }
+            long frow = 1;
+            long felem = 1;
+            hdunum = 2;
+            int dataColumnCounter = 0;
+            int metaColumnCounter = 0;
+            // move to the HDU
+            if (FitsReader.FitsMovabsHdu(fptr, hdunum, out hdutype, out status) != 0)
+            {
+                Debug.Log("Fits HDU Read error #" + status.ToString());
+                FitsReader.FitsCloseFile(fptr, out status);
+                return dataSet;
+            }
+            // Need to specify which table??
+            if (FitsReader.FitsGetNumRows(fptr, out nrows, out status) != 0 || FitsReader.FitsGetNumCols(fptr, out ncols, out status) != 0)
+            {
+                Debug.Log("Fits Read table size error #" + status.ToString());
+                FitsReader.FitsCloseFile(fptr, out status);
+                return dataSet;
+            }
+            dataSet.ColumnDefinitions = new ColumnInfo[ncols];
+            StringBuilder keyword = new StringBuilder(75);
+            StringBuilder colName = new StringBuilder(71);
+            StringBuilder colFormat = new StringBuilder(71);
+            StringBuilder colUnit = new StringBuilder(71);
+            dataSet.N = (int)nrows;
+
+            for (int col = 0; col < ncols; col++)
+            {
+                FitsReader.FitsMakeKeyN("TTYPE", col + 1, keyword, out status);
+                if (FitsReader.FitsReadKey(fptr, 16, keyword.ToString(), colName, IntPtr.Zero, out status) != 0)
+                {
+                    Debug.Log("Fits Read column name error #" + status.ToString());
+                    FitsReader.FitsCloseFile(fptr, out status);
+                    return dataSet;
+                }
+                keyword.Clear();
+                FitsReader.FitsMakeKeyN("TFORM", col + 1, keyword, out status);
+                if (FitsReader.FitsReadKey(fptr, 16, keyword.ToString(), colFormat, IntPtr.Zero, out status) != 0)
+                {
+                    Debug.Log("Fits Read column format error #" + status.ToString());
+                    FitsReader.FitsCloseFile(fptr, out status);
+                    return dataSet;
+                }
+                string colFormatLetter = new String(colFormat.ToString().Where(Char.IsLetter).ToArray());
+                keyword.Clear();
+                FitsReader.FitsMakeKeyN("TUNIT", col + 1, keyword, out status);
+                if (FitsReader.FitsReadKey(fptr, 16, keyword.ToString(), colUnit, IntPtr.Zero, out status) != 0)
+                {
+                    if (status == 202)
+                    {
+                        Debug.Log("No unit in column #" + col);
+                        status = 0;
+                    }
+                    else
+                    {
+                        Debug.Log("Fits Read unit error #" + status.ToString());
+                        FitsReader.FitsCloseFile(fptr, out status);
+                        return dataSet;
+                    }
+                }
+                if (colFormatLetter == "A")
+                {
+                    dataSet.ColumnDefinitions[col] = new ColumnInfo
+                    {
+                        Name = colName.ToString(),
+                        Index = col,
+                        Type = ColumnType.String,
+                        MetaIndex = metaColumnCounter,
+                        Unit = colUnit.ToString()
+                    };
+                    metaColumnCounter++;
+                }
+                else
+                {
+                    dataSet.ColumnDefinitions[col] = new ColumnInfo
+                    {
+                        Name = colName.ToString(),
+                        Index = col,
+                        Type = ColumnType.Numeric,
+                        NumericIndex = dataColumnCounter,
+                        Unit = colUnit.ToString()
+                    };
+                    dataColumnCounter++;
+                }
+            }
+            dataSet.DataColumns = new float[dataColumnCounter][];
+            for (var i = 0; i < dataColumnCounter; i++)
+            {
+                dataSet.DataColumns[i] = new float[nrows];
+            }
+            if (loadMeta)
+            {
+                dataSet.MetaColumns = new string[metaColumnCounter][];
+                for (var i = 0; i < metaColumnCounter; i++)
+                {
+                    dataSet.MetaColumns[i] = new string[nrows];
+                }
+            }
+            IntPtr ptrDataFromColumn = IntPtr.Zero;
+            foreach (ColumnInfo column in dataSet.ColumnDefinitions)
+            {
+                if (column.Type == ColumnType.Numeric)
+                {
+                    if (FitsReader.FitsReadColFloat(fptr, column.Index + 1, frow, felem, nrows, out ptrDataFromColumn, out status) != 0)
+                    {
+                        Debug.Log("Fits Read column numeric data error #" + status.ToString());
+                        FitsReader.FitsCloseFile(fptr, out status);
+                        return dataSet;
+                    }
+                    float[] numericDataFromColumn = new float[nrows];
+                    Marshal.Copy(ptrDataFromColumn, numericDataFromColumn, 0, (int)nrows);
+                    dataSet.DataColumns[column.NumericIndex] = numericDataFromColumn;
+                    }
+                    else if (loadMeta)
+                    {
+                        if (FitsReader.FitsReadColString(fptr, column.Index + 1, frow, felem, nrows, out ptrDataFromColumn, out status) != 0)
+                        {
+                            Debug.Log("Fits Read column meta data error #" + status.ToString());
+                            FitsReader.FitsCloseFile(fptr, out status);
+                            return dataSet;
+                        }
+                        IntPtr[] metaDataFromColumn = new IntPtr[nrows];
+                        Marshal.Copy(ptrDataFromColumn, metaDataFromColumn, 0, (int)nrows);
+                        for (int row = 0; row < nrows; row++)
+                        {
+                            dataSet.MetaColumns[column.MetaIndex][row] = Marshal.PtrToStringAnsi(metaDataFromColumn[row]);
+                        }
+                    }
+                FitsReader.FreeMemory(ptrDataFromColumn);
+            }
+            FitsReader.FitsCloseFile(fptr, out status);
+            return dataSet;
+        }
+
         public static CatalogDataSet LoadCacheFile(string fileName)
         {
             using (var stream = File.Open($"{fileName}.cache", FileMode.Open))
             {
                 BinaryFormatter binaryFormatter = new BinaryFormatter();
-                return (CatalogDataSet) binaryFormatter.Deserialize(stream);
+                return (CatalogDataSet)binaryFormatter.Deserialize(stream);
             }
         }
 

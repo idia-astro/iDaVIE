@@ -10,6 +10,7 @@ using Debug = UnityEngine.Debug;
 
 namespace CatalogData
 {
+    public enum FileTypes { Ipac, Fits };
     public class CatalogDataSetRenderer : MonoBehaviour
     {
         public ColorMapDelegate OnColorMapChanged;
@@ -18,6 +19,7 @@ namespace CatalogData
         public string MappingFileName;
         public bool SphericalCoordinates;
         public bool LineData;
+        public bool LoadMetaColumns = true;
         [Range(0.0f, 1.0f)] public float ValueCutoffMin = 0;
         [Range(0.0f, 1.0f)] public float ValueCutoffMax = 1;
         public ColorMapEnum ColorMap = ColorMapEnum.Inferno;
@@ -28,6 +30,8 @@ namespace CatalogData
 
         private Color[] _colorMapData;
         private const int NumColorMapStops = 256;
+
+        private FileTypes _fileType = FileTypes.Ipac;
 
         private CatalogDataSet _dataSet;
         private DataMapping _dataMapping;
@@ -98,15 +102,27 @@ namespace CatalogData
             }
             else
             {
+                string fileExt = Path.GetExtension(TableFileName).ToUpper();
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
-                _dataSet = CatalogDataSet.LoadIpacTable(TableFileName);
+                switch (fileExt)
+                {
+                    case ".TBL":
+                        _fileType = FileTypes.Ipac;
+                        _dataSet = CatalogDataSet.LoadIpacTable(TableFileName);
+                        _dataSet.WriteCacheFile();
+                        break;
+                    case ".FITS":
+                    case ".FIT":
+                        _fileType = FileTypes.Fits;
+                        _dataSet = CatalogDataSet.LoadFitsTable(TableFileName, LoadMetaColumns);
+                        break;
+                    default:
+                        Debug.Log($"Unrecognized file type!");
+                        break;
+                }
                 sw.Stop();
-                Debug.Log($"IPAC table read in {sw.Elapsed.TotalSeconds} seconds");
-                sw.Restart();
-                _dataSet.WriteCacheFile();
-                sw.Stop();
-                Debug.Log($"Cached file written in {sw.Elapsed.TotalSeconds} seconds");
+                Debug.Log($"Table read in {sw.Elapsed.TotalSeconds} seconds");
             }
 
             // Spherical coordinates are not currently supported for line data
