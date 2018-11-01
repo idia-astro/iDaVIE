@@ -13,9 +13,6 @@ namespace CatalogData
     public enum FileTypes { Ipac, Fits };
     public class CatalogDataSetRenderer : MonoBehaviour
     {
-
-        
-
         public ColorMapDelegate OnColorMapChanged;
 
         public string TableFileName;
