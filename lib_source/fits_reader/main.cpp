@@ -31,6 +31,16 @@ extern "C"
 		return fits_get_num_cols(fptr, ncols, status);
 	}
 
+	DllExport int FitsGetImageDims(fitsfile *fptr, int  *dims, int *status)
+	{
+		return fits_get_img_dim(fptr, dims, status);
+	}
+
+	DllExport int FitsGetImageSize(fitsfile *fptr, long  *naxes, int *status)
+	{
+		return fits_get_img_size(fptr, 3, naxes, status);
+	}
+
 	DllExport int FitsMakeKeyN(const char *keyroot, int value, char *keyname, int *status)
 	{
 		return fits_make_keyn(keyroot, value, keyname, status);
@@ -60,12 +70,8 @@ extern "C"
 		float nulval = 0;
 		char **dataArray = (char**)malloc(sizeof(char*)*nelem);
 		char *dataArrayElements = (char*)malloc(sizeof(char)*nelem*FLEN_VALUE);
-		//char **dataArray = new char*[nelem];
-		//dataArray = malloc
 		for (int i = 0; i < nelem; i++)
 			*(dataArray + i) = (dataArrayElements + i* FLEN_VALUE);
-			//dataArray[i] = (char *)malloc(FLEN_VALUE);
-			
 		int success = fits_read_col(fptr, TSTRING, colnum, firstrow, firstelem, nelem, &nulval, dataArray, &anynul, status);
 		*ptrarray = dataArray;
 		*chararray = dataArrayElements;
@@ -83,6 +89,13 @@ extern "C"
 		delete[] ptrToDelete1;
 		delete[] ptrToDelete2;
 		return 0;
+	}
+
+	DllExport int FitsRead3DFloat(fitsfile *fptr, long group, float nulval, long dim1,
+		long dim2, long naxis1, long naxis2, long naxis3,
+		float **array, int *anynul, int *status)
+	{
+		fits_read_3d_flt(fptr, group, nulval, dim1, dim2, )
 	}
 	
 
