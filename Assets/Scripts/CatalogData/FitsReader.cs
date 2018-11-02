@@ -33,8 +33,11 @@ public class FitsReader {
     public static extern int FitsReadColFloat(IntPtr fptr, int colnum, long firstrow, long firstelem, long nelem,  out IntPtr array,  out int status);
 
     [DllImport("fits_reader")]
-    public static extern int FitsReadColString(IntPtr fptr, int colnum, long firstrow, long firstelem, long nelem, out IntPtr array, out int status);
+    public static extern int FitsReadColString(IntPtr fptr, int colnum, long firstrow, long firstelem, long nelem, out IntPtr ptrarray, out IntPtr chararray, out int status);
 
     [DllImport("fits_reader")]
     public static extern int FreeMemory(IntPtr pointerToDelete);
+
+    [DllImport("fits_reader")]
+    public static extern int FreeMemoryTwo(IntPtr pointerToDelete1, IntPtr pointerToDelete2);
 }

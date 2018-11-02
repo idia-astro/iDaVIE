@@ -48,27 +48,42 @@ extern "C"
 		int anynul;
 		float nulval = 0;
 		float *dataArray = new float[nelem];
-		int success = fits_read_col(fptr, 42, colnum, firstrow, firstelem, nelem, &nulval, dataArray, &anynul, status);
+		int success = fits_read_col(fptr, TFLOAT, colnum, firstrow, firstelem, nelem, &nulval, dataArray, &anynul, status);
 		*array = dataArray;
 		return success;
 	}
 
 	DllExport int FitsReadColString(fitsfile *fptr, int colnum, long firstrow,
-		long firstelem, long nelem, char ***array, int  *status)
+		long firstelem, long nelem, char ***ptrarray, char **chararray, int  *status)
 	{
 		int anynul;
 		float nulval = 0;
-		char **dataArray = new char*[nelem];
+		char **dataArray = (char**)malloc(sizeof(char*)*nelem);
+		char *dataArrayElements = (char*)malloc(sizeof(char)*nelem*FLEN_VALUE);
+		//char **dataArray = new char*[nelem];
+		//dataArray = malloc
 		for (int i = 0; i < nelem; i++)
-			dataArray[i] = (char *)malloc(16);
-		int success = fits_read_col(fptr, 16, colnum, firstrow, firstelem, nelem, &nulval, dataArray, &anynul, status);
-		*array = dataArray;
+			*(dataArray + i) = (dataArrayElements + i* FLEN_VALUE);
+			//dataArray[i] = (char *)malloc(FLEN_VALUE);
+			
+		int success = fits_read_col(fptr, TSTRING, colnum, firstrow, firstelem, nelem, &nulval, dataArray, &anynul, status);
+		*ptrarray = dataArray;
+		*chararray = dataArrayElements;
 		return success;
 	}
 
-	DllExport int FreeMemory(float* ptrToDelete)
+	DllExport int FreeMemory(void* ptrToDelete)
 	{
 		delete[] ptrToDelete;
 		return 0;
 	}
+
+	DllExport int FreeMemoryTwo(void* ptrToDelete1, void* ptrToDelete2)
+	{
+		delete[] ptrToDelete1;
+		delete[] ptrToDelete2;
+		return 0;
+	}
+	
+
 }
