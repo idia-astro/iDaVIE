@@ -37,7 +37,4 @@ public class FitsReader {
 
     [DllImport("fits_reader")]
     public static extern int FreeMemory(IntPtr pointerToDelete);
-
-    [DllImport("fits_reader")]
-    public static extern int FreeMemoryTwo(IntPtr pointerToDelete1, IntPtr pointerToDelete2);
 }

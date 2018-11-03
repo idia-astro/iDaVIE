@@ -58,14 +58,10 @@ extern "C"
 	{
 		int anynul;
 		float nulval = 0;
-		char **dataArray = (char**)malloc(sizeof(char*)*nelem);
-		char *dataArrayElements = (char*)malloc(sizeof(char)*nelem*FLEN_VALUE);
-		//char **dataArray = new char*[nelem];
-		//dataArray = malloc
+		char **dataArray = new char*[sizeof(char*)*nelem];
+		char *dataArrayElements = new char[sizeof(char)*nelem*FLEN_VALUE];
 		for (int i = 0; i < nelem; i++)
 			*(dataArray + i) = (dataArrayElements + i* FLEN_VALUE);
-			//dataArray[i] = (char *)malloc(FLEN_VALUE);
-			
 		int success = fits_read_col(fptr, TSTRING, colnum, firstrow, firstelem, nelem, &nulval, dataArray, &anynul, status);
 		*ptrarray = dataArray;
 		*chararray = dataArrayElements;
@@ -77,13 +73,4 @@ extern "C"
 		delete[] ptrToDelete;
 		return 0;
 	}
-
-	DllExport int FreeMemoryTwo(void* ptrToDelete1, void* ptrToDelete2)
-	{
-		delete[] ptrToDelete1;
-		delete[] ptrToDelete2;
-		return 0;
-	}
-	
-
 }
