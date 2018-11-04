@@ -24,10 +24,10 @@ public class FitsReader {
     public static extern int FitsGetNumCols(IntPtr fptr, out int ncols, out int status);
 
     [DllImport("fits_reader")]
-    public static extern int FitsGetImageDims(IntPtr fptr, out int ncols, out int status);
+    public static extern int FitsGetImageDims(IntPtr fptr, out int dims, out int status);
 
     [DllImport("fits_reader")]
-    public static extern int FitsGetImageSize(IntPtr fptr, out int ncols, out int status);
+    public static extern int FitsGetImageSize(IntPtr fptr, out IntPtr naxes, out int status);
 
     [DllImport("fits_reader")]
     public static extern int FitsMakeKeyN(string keyroot, int value, StringBuilder keyname, out int status);
@@ -46,4 +46,7 @@ public class FitsReader {
 
     [DllImport("fits_reader")]
     public static extern int FreeMemoryTwo(IntPtr pointerToDelete1, IntPtr pointerToDelete2);
+
+    [DllImport("fits_reader")]
+    public static extern int FitsRead3DFloat(IntPtr fptr, long naxis1, long naxis2, long naxis3, out IntPtr array, out int status);
 }

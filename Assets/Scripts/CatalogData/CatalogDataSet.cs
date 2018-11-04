@@ -381,7 +381,6 @@ namespace CatalogData
                         dataSet.MetaColumns[column.MetaIndex][row] = Marshal.PtrToStringAnsi(metaDataFromColumn[row]);
                     }
                     FitsReader.FreeMemoryTwo(ptrDataFromColumn, ptrRawDataFromColumn);
-                    Debug.Log("Fits string example: " + dataSet.MetaColumns[0][6].ToString());
                 }
             }
             FitsReader.FitsCloseFile(fptr, out status);

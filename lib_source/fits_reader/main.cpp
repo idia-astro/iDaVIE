@@ -36,9 +36,14 @@ extern "C"
 		return fits_get_img_dim(fptr, dims, status);
 	}
 
-	DllExport int FitsGetImageSize(fitsfile *fptr, long  *naxes, int *status)
+	DllExport int FitsGetImageSize(fitsfile *fptr, long  **naxes, int *status)
 	{
-		return fits_get_img_size(fptr, 3, naxes, status);
+		//need to allocate
+		long* dude = new long[3];
+		fits_get_img_size(fptr, 3, dude , status);
+		*naxes = dude;
+		return 0;
+
 	}
 
 	DllExport int FitsMakeKeyN(const char *keyroot, int value, char *keyname, int *status)
@@ -91,11 +96,18 @@ extern "C"
 		return 0;
 	}
 
-	DllExport int FitsRead3DFloat(fitsfile *fptr, long group, float nulval, long dim1,
-		long dim2, long naxis1, long naxis2, long naxis3,
-		float **array, int *anynul, int *status)
+	DllExport int FitsRead3DFloat(fitsfile *fptr, long naxis1, long naxis2, long naxis3, float **array, int *status)
 	{
-		fits_read_3d_flt(fptr, group, nulval, dim1, dim2, )
+		int anynul;
+		float nulval = 0;
+		long totalPix = naxis1 * naxis2 * naxis3;
+		float* dataarray = new float[totalPix];
+		long startPix[3] = { 1,1 ,1};
+		
+			//int success = fits_read_3d_flt(fptr, 1, nulval, naxis1, naxis2, naxis1, naxis2, naxis3, dataarray, &anynul, status);
+		int success = fits_read_pix(fptr, TFLOAT, startPix, totalPix, &nulval, dataarray, &anynul, status);
+		*array = dataarray;
+		return success;
 	}
 	
 
