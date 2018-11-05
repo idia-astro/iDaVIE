@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
-//[ExecuteInEditMode]
+
 public class VolumeDataSet : MonoBehaviour
 {
     // Step control
@@ -17,6 +17,10 @@ public class VolumeDataSet : MonoBehaviour
     // Spatial thresholding
     public Vector3 SliceMin = Vector3.zero;
     public Vector3 SliceMax = Vector3.one;
+
+    // Scale max n' min
+    public float ScaleMax;
+    public float ScaleMin;
 
     // Value thresholding
     [Range(0, 1)] public float ThresholdMin = 0;
@@ -32,11 +36,12 @@ public class VolumeDataSet : MonoBehaviour
     private Material _materialInstance;
 
     // Material property IDs
-    private int _idSliceMin, _idSliceMax, _idThresholdMin, _idThresholdMax, _idJitter, _idMaxSteps, _idColorMapIndex;
+    private int _idSliceMin, _idSliceMax, _idThresholdMin, _idThresholdMax, _idJitter, _idMaxSteps, _idColorMapIndex, _idScaleMin, _idScaleMax;
     
     void Start()
     {
         DataCube = LoadFitsAsTexture3D(FileName);
+        FindMinAndMax();
         _renderer = GetComponent<MeshRenderer>();
         _materialInstance = Instantiate(RayMarchingMaterial);
         _materialInstance.SetTexture("_DataCube", DataCube);
@@ -49,8 +54,11 @@ public class VolumeDataSet : MonoBehaviour
         _idJitter = Shader.PropertyToID("_Jitter");
         _idMaxSteps = Shader.PropertyToID("_MaxSteps");
         _idColorMapIndex = Shader.PropertyToID("_ColorMapIndex");
+        _idScaleMin = Shader.PropertyToID("_ScaleMin");
+        _idScaleMax = Shader.PropertyToID("_ScaleMax");
+
     }
-    
+
     public void ShiftColorMap(int delta)
     {
         int numColorMaps = ColorMapUtils.NumColorMaps;
@@ -69,8 +77,11 @@ public class VolumeDataSet : MonoBehaviour
         _materialInstance.SetFloat(_idJitter, Jitter);
         _materialInstance.SetFloat(_idMaxSteps, MaxSteps);
         _materialInstance.SetFloat(_idColorMapIndex, ColorMap.GetHashCode());
+        _materialInstance.SetFloat(_idScaleMax, ScaleMax);
+        _materialInstance.SetFloat(_idScaleMin, ScaleMin);
+
     }
-    
+
     public static Texture3D LoadFitsAsTexture3D(string fileName)
     {
         IntPtr fptr;
@@ -111,11 +122,11 @@ public class VolumeDataSet : MonoBehaviour
         //for (int i = 0; i < 1; i++)
         //    cubeSize[i] = Marshal.ReadInt64(ptrCubeSize[i]);
        
-        Debug.Log("Number of data points #" + cubeSize[2]);
+        //Debug.Log("Number of data points #" + cubeSize[2]);
         FitsReader.FreeMemory(dataPtr);
         long numberDataPoints = cubeSize[0] * cubeSize[1] * cubeSize[2];
 
-        Texture3D dataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], TextureFormat.RFloat, false);
+        Texture3D dataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], TextureFormat.RGBAFloat, false);
         Color[] colorArray = new Color[numberDataPoints];
         IntPtr fitsDataPtr;
         if (FitsReader.FitsRead3DFloat(fptr, cubeSize[0], cubeSize[1], cubeSize[2], out fitsDataPtr, out status) != 0)
@@ -128,24 +139,43 @@ public class VolumeDataSet : MonoBehaviour
         
         Marshal.Copy(fitsDataPtr, fitsCubeData, 0, (int)numberDataPoints);
         FitsReader.FreeMemory(fitsDataPtr);
-        float maxPixValue = fitsCubeData.Max();
-    
-        float minPixValue = fitsCubeData.Min();
-        Debug.Log("max and min vals: " + maxPixValue + " and " + minPixValue);
+
         for (int i = 0; i < numberDataPoints; i++)
         {
-            if (float.IsNaN(fitsCubeData[i]))
-                colorArray[i].r = 0;
-            else
-                colorArray[i].r = (fitsCubeData[i])/maxPixValue;
-            if (i> 4990 && i < 5000)
-                Debug.Log("Fits color info: " + colorArray[i].r.ToString() + " and " + fitsCubeData[i].ToString());
+            //if (float.IsNaN(fitsCubeData[i]))
+            //   colorArray[i].r = 0;
+
+            colorArray[i].r = fitsCubeData[i];
+            //if (i> 4990 && i < 5000)
+            //    Debug.Log("Fits color info: " + colorArray[i].r.ToString() + " and " + fitsCubeData[i].ToString());
         }
+        
         dataCube.SetPixels(colorArray);
         dataCube.Apply();
-
+        //dataCube.filterMode = FilterMode.Trilinear;
         return dataCube;
 
     }
-    
+
+
+    public void FindMinAndMax()
+    {
+        float maxPixelValue = -float.MaxValue;
+        float minPixelValue = float.MaxValue;
+        var colorArray = DataCube.GetPixels();
+        int lengthArray = DataCube.GetPixels().Length;
+
+        for (int i = 0; i < lengthArray; i++)
+        {
+            float pixValue = colorArray[i].r;
+            maxPixelValue = Mathf.Max(maxPixelValue, pixValue);
+            minPixelValue = Mathf.Min(minPixelValue, pixValue);
+
+            //if (pixValue < minPixelValue)
+            //    minPixelValue = pixValue;
+        }
+        ScaleMax = maxPixelValue;
+        ScaleMin = minPixelValue;
+        Debug.Log("max and min vals: " + ScaleMax + " and " + ScaleMin);
+    }
 }
