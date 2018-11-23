@@ -31,21 +31,6 @@ extern "C"
 		return fits_get_num_cols(fptr, ncols, status);
 	}
 
-	DllExport int FitsGetImageDims(fitsfile *fptr, int  *dims, int *status)
-	{
-		return fits_get_img_dim(fptr, dims, status);
-	}
-
-	DllExport int FitsGetImageSize(fitsfile *fptr, long  **naxes, int *status)
-	{
-		//need to allocate
-		long* dude = new long[3];
-		fits_get_img_size(fptr, 3, dude , status);
-		*naxes = dude;
-		return 0;
-
-	}
-
 	DllExport int FitsMakeKeyN(const char *keyroot, int value, char *keyname, int *status)
 	{
 		return fits_make_keyn(keyroot, value, keyname, status);
@@ -73,8 +58,8 @@ extern "C"
 	{
 		int anynul;
 		float nulval = 0;
-		char **dataArray = (char**)malloc(sizeof(char*)*nelem);
-		char *dataArrayElements = (char*)malloc(sizeof(char)*nelem*FLEN_VALUE);
+		char **dataArray = new char*[sizeof(char*)*nelem];
+		char *dataArrayElements = new char[sizeof(char)*nelem*FLEN_VALUE];
 		for (int i = 0; i < nelem; i++)
 			*(dataArray + i) = (dataArrayElements + i* FLEN_VALUE);
 		int success = fits_read_col(fptr, TSTRING, colnum, firstrow, firstelem, nelem, &nulval, dataArray, &anynul, status);
@@ -88,27 +73,4 @@ extern "C"
 		delete[] ptrToDelete;
 		return 0;
 	}
-
-	DllExport int FreeMemoryTwo(void* ptrToDelete1, void* ptrToDelete2)
-	{
-		delete[] ptrToDelete1;
-		delete[] ptrToDelete2;
-		return 0;
-	}
-
-	DllExport int FitsRead3DFloat(fitsfile *fptr, long naxis1, long naxis2, long naxis3, float **array, int *status)
-	{
-		int anynul;
-		float nulval = 0;
-		long totalPix = naxis1 * naxis2 * naxis3;
-		float* dataarray = new float[totalPix];
-		long startPix[3] = { 1,1 ,1};
-		
-			//int success = fits_read_3d_flt(fptr, 1, nulval, naxis1, naxis2, naxis1, naxis2, naxis3, dataarray, &anynul, status);
-		int success = fits_read_pix(fptr, TFLOAT, startPix, totalPix, &nulval, dataarray, &anynul, status);
-		*array = dataarray;
-		return success;
-	}
-	
-
 }
