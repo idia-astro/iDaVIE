@@ -88,9 +88,9 @@ public class VolumeDataSet : MonoBehaviour
         int status = 0;
         int cubeDimensions;
         IntPtr dataPtr;
-        IntPtr[] ptrCubeSize = new IntPtr[3];
+       
         //need to use int, not long for some reason??
-        int[] cubeSize = new int[3];
+
 
 
         if (FitsReader.FitsOpenFile(out fptr, fileName, out status) != 0)
@@ -106,19 +106,21 @@ public class VolumeDataSet : MonoBehaviour
             return null;
         }
 
-        if (cubeDimensions != 3)
+        if (cubeDimensions < 3)
         {
-            Debug.Log("Only " + cubeDimensions.ToString() + " found. Please use Fits cube with 3 dimensions.");
+            Debug.Log("Only " + cubeDimensions.ToString() + " found. Please use Fits cube with at least 3 dimensions.");
             return null;
         }
         
-        if (FitsReader.FitsGetImageSize(fptr, out dataPtr, out status) != 0)
+        if (FitsReader.FitsGetImageSize(fptr, cubeDimensions, out dataPtr, out status) != 0)
         {
             Debug.Log("Fits Read cube size error #" + status.ToString());
             FitsReader.FitsCloseFile(fptr, out status);
             return null;
         }
-        Marshal.Copy(dataPtr, cubeSize, 0, 3);
+        //IntPtr[] ptrCubeSize = new IntPtr[cubeDimensions];
+        int[] cubeSize = new int[cubeDimensions];
+        Marshal.Copy(dataPtr, cubeSize, 0, cubeDimensions);
         //for (int i = 0; i < 1; i++)
         //    cubeSize[i] = Marshal.ReadInt64(ptrCubeSize[i]);
        
@@ -129,7 +131,7 @@ public class VolumeDataSet : MonoBehaviour
         Texture3D dataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], TextureFormat.RGBAFloat, false);
         Color[] colorArray = new Color[numberDataPoints];
         IntPtr fitsDataPtr;
-        if (FitsReader.FitsRead3DFloat(fptr, cubeSize[0], cubeSize[1], cubeSize[2], out fitsDataPtr, out status) != 0)
+        if (FitsReader.FitsReadImageFloat(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
         {
             Debug.Log("Fits Read cube data error #" + status.ToString());
             FitsReader.FitsCloseFile(fptr, out status);

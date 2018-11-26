@@ -42,6 +42,19 @@ extern "C"
 		return fits_read_key(fptr, datatype, keyname, value, comm, status);
 	}
 
+	DllExport int FitsGetImageDims(fitsfile *fptr, int  *dims, int *status)
+	{
+		return fits_get_img_dim(fptr, dims, status);
+	}
+
+	DllExport int FitsGetImageSize(fitsfile *fptr, int dims, long  **naxes, int *status)
+	{
+		long* dude = new long[dims];
+		fits_get_img_size(fptr, dims, dude, status);
+		*naxes = dude;
+		return 0;
+	}
+
 	DllExport int FitsReadColFloat(fitsfile *fptr, int colnum, long firstrow,
 		long firstelem, long nelem, float **array, int  *status)
 	{
@@ -65,6 +78,22 @@ extern "C"
 		int success = fits_read_col(fptr, TSTRING, colnum, firstrow, firstelem, nelem, &nulval, dataArray, &anynul, status);
 		*ptrarray = dataArray;
 		*chararray = dataArrayElements;
+		return success;
+	}
+	
+	DllExport int FitsReadImageFloat(fitsfile *fptr, int dims, long nelem, float **array, int *status)
+	{
+		int anynul;
+		float nulval = 0;
+		//long totalPix = naxis1 * naxis2 * naxis3;
+		float* dataarray = new float[nelem];
+		long* startPix = new long[dims];
+		for (int i = 0; i < dims; i++)
+			startPix[i] = 1;
+		//int success = fits_read_3d_flt(fptr, 1, nulval, naxis1, naxis2, naxis1, naxis2, naxis3, dataarray, &anynul, status);
+		int success = fits_read_pix(fptr, TFLOAT, startPix, nelem, &nulval, dataarray, &anynul, status);
+		delete[] startPix;
+		*array = dataarray;
 		return success;
 	}
 

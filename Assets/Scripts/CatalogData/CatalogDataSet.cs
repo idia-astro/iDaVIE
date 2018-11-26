@@ -382,7 +382,6 @@ namespace CatalogData
                     }
                     FitsReader.FreeMemory(ptrDataFromColumn);
                     FitsReader.FreeMemory(ptrRawDataFromColumn);
-                    Debug.Log("Fits string example: " + dataSet.MetaColumns[0][6].ToString());
                 }
             }
             FitsReader.FitsCloseFile(fptr, out status);

@@ -24,6 +24,12 @@ public class FitsReader {
     public static extern int FitsGetNumCols(IntPtr fptr, out int ncols, out int status);
 
     [DllImport("fits_reader")]
+    public static extern int FitsGetImageDims(IntPtr fptr, out int dims, out int status);
+
+    [DllImport("fits_reader")]
+    public static extern int FitsGetImageSize(IntPtr fptr, int dims, out IntPtr naxes, out int status);
+
+    [DllImport("fits_reader")]
     public static extern int FitsMakeKeyN(string keyroot, int value, StringBuilder keyname, out int status);
 
     [DllImport("fits_reader")]
@@ -34,6 +40,9 @@ public class FitsReader {
 
     [DllImport("fits_reader")]
     public static extern int FitsReadColString(IntPtr fptr, int colnum, long firstrow, long firstelem, long nelem, out IntPtr ptrarray, out IntPtr chararray, out int status);
+
+    [DllImport("fits_reader")]
+    public static extern int FitsReadImageFloat(IntPtr fptr, int dims, long nelem, out IntPtr array, out int status);
 
     [DllImport("fits_reader")]
     public static extern int FreeMemory(IntPtr pointerToDelete);
