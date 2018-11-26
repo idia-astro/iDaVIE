@@ -35,12 +35,15 @@ public class VolumeDataSet : MonoBehaviour
     private MeshRenderer _renderer;
     private Material _materialInstance;
 
+    private float[] _fitsFloatData;
+
     // Material property IDs
     private int _idSliceMin, _idSliceMax, _idThresholdMin, _idThresholdMax, _idJitter, _idMaxSteps, _idColorMapIndex, _idScaleMin, _idScaleMax;
     
     void Start()
     {
-        DataCube = LoadFitsAsTexture3D(FileName);
+        LoadFits(FileName);
+        //DataCube = FloatDataToTexture3D(_fitsFloatData);
         FindMinAndMax();
         _renderer = GetComponent<MeshRenderer>();
         _materialInstance = Instantiate(RayMarchingMaterial);
@@ -82,41 +85,33 @@ public class VolumeDataSet : MonoBehaviour
 
     }
 
-    public static Texture3D LoadFitsAsTexture3D(string fileName)
+    public void LoadFits(string fileName)
     {
         IntPtr fptr;
         int status = 0;
         int cubeDimensions;
         IntPtr dataPtr;
-       
-        //need to use int, not long for some reason??
-
-
-
+   
         if (FitsReader.FitsOpenFile(out fptr, fileName, out status) != 0)
         {
             Debug.Log("Fits open failure... code #" + status.ToString());
-            return null;
         }
 
         //check if 3 dims..
         if (FitsReader.FitsGetImageDims(fptr, out cubeDimensions, out status) != 0)
         {
             Debug.Log("Fits read image dimensions failed... code #" + status.ToString());
-            return null;
         }
 
         if (cubeDimensions < 3)
         {
             Debug.Log("Only " + cubeDimensions.ToString() + " found. Please use Fits cube with at least 3 dimensions.");
-            return null;
         }
         
         if (FitsReader.FitsGetImageSize(fptr, cubeDimensions, out dataPtr, out status) != 0)
         {
             Debug.Log("Fits Read cube size error #" + status.ToString());
             FitsReader.FitsCloseFile(fptr, out status);
-            return null;
         }
         //IntPtr[] ptrCubeSize = new IntPtr[cubeDimensions];
         int[] cubeSize = new int[cubeDimensions];
@@ -128,35 +123,26 @@ public class VolumeDataSet : MonoBehaviour
         FitsReader.FreeMemory(dataPtr);
         long numberDataPoints = cubeSize[0] * cubeSize[1] * cubeSize[2];
 
-        Texture3D dataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], TextureFormat.RGBAFloat, false);
+        Texture3D dataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], TextureFormat.RFloat, false);
         Color[] colorArray = new Color[numberDataPoints];
         IntPtr fitsDataPtr;
         if (FitsReader.FitsReadImageFloat(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
         {
             Debug.Log("Fits Read cube data error #" + status.ToString());
             FitsReader.FitsCloseFile(fptr, out status);
-            return null;
         }
         float[] fitsCubeData = new float[numberDataPoints];
-        
         Marshal.Copy(fitsDataPtr, fitsCubeData, 0, (int)numberDataPoints);
         FitsReader.FreeMemory(fitsDataPtr);
-
         for (int i = 0; i < numberDataPoints; i++)
         {
-            //if (float.IsNaN(fitsCubeData[i]))
-            //   colorArray[i].r = 0;
-
             colorArray[i].r = fitsCubeData[i];
-            //if (i> 4990 && i < 5000)
-            //    Debug.Log("Fits color info: " + colorArray[i].r.ToString() + " and " + fitsCubeData[i].ToString());
         }
         
         dataCube.SetPixels(colorArray);
         dataCube.Apply();
-        //dataCube.filterMode = FilterMode.Trilinear;
-        return dataCube;
-
+        DataCube = dataCube;
+        _fitsFloatData = fitsCubeData;
     }
 
 
@@ -164,17 +150,15 @@ public class VolumeDataSet : MonoBehaviour
     {
         float maxPixelValue = -float.MaxValue;
         float minPixelValue = float.MaxValue;
-        var colorArray = DataCube.GetPixels();
-        int lengthArray = DataCube.GetPixels().Length;
+        //var colorArray = DataCube.GetPixels();
+        //int lengthArray = DataCube.GetPixels().Length;
+        int lengthArray = _fitsFloatData.Length;
 
         for (int i = 0; i < lengthArray; i++)
         {
-            float pixValue = colorArray[i].r;
+            float pixValue = _fitsFloatData[i];
             maxPixelValue = Mathf.Max(maxPixelValue, pixValue);
             minPixelValue = Mathf.Min(minPixelValue, pixValue);
-
-            //if (pixValue < minPixelValue)
-            //    minPixelValue = pixValue;
         }
         ScaleMax = maxPixelValue;
         ScaleMin = minPixelValue;
