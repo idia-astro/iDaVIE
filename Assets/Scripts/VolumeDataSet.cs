@@ -91,38 +91,27 @@ public class VolumeDataSet : MonoBehaviour
         int status = 0;
         int cubeDimensions;
         IntPtr dataPtr;
-   
         if (FitsReader.FitsOpenFile(out fptr, fileName, out status) != 0)
         {
             Debug.Log("Fits open failure... code #" + status.ToString());
         }
-
-        //check if 3 dims..
         if (FitsReader.FitsGetImageDims(fptr, out cubeDimensions, out status) != 0)
         {
             Debug.Log("Fits read image dimensions failed... code #" + status.ToString());
         }
-
         if (cubeDimensions < 3)
         {
             Debug.Log("Only " + cubeDimensions.ToString() + " found. Please use Fits cube with at least 3 dimensions.");
         }
-        
         if (FitsReader.FitsGetImageSize(fptr, cubeDimensions, out dataPtr, out status) != 0)
         {
             Debug.Log("Fits Read cube size error #" + status.ToString());
             FitsReader.FitsCloseFile(fptr, out status);
         }
-        //IntPtr[] ptrCubeSize = new IntPtr[cubeDimensions];
         int[] cubeSize = new int[cubeDimensions];
         Marshal.Copy(dataPtr, cubeSize, 0, cubeDimensions);
-        //for (int i = 0; i < 1; i++)
-        //    cubeSize[i] = Marshal.ReadInt64(ptrCubeSize[i]);
-       
-        //Debug.Log("Number of data points #" + cubeSize[2]);
         FitsReader.FreeMemory(dataPtr);
         long numberDataPoints = cubeSize[0] * cubeSize[1] * cubeSize[2];
-
         Texture3D dataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], TextureFormat.RFloat, false);
         Color[] colorArray = new Color[numberDataPoints];
         IntPtr fitsDataPtr;
@@ -138,7 +127,6 @@ public class VolumeDataSet : MonoBehaviour
         {
             colorArray[i].r = fitsCubeData[i];
         }
-        
         dataCube.SetPixels(colorArray);
         dataCube.Apply();
         DataCube = dataCube;
@@ -150,15 +138,15 @@ public class VolumeDataSet : MonoBehaviour
     {
         float maxPixelValue = -float.MaxValue;
         float minPixelValue = float.MaxValue;
-        //var colorArray = DataCube.GetPixels();
-        //int lengthArray = DataCube.GetPixels().Length;
         int lengthArray = _fitsFloatData.Length;
-
         for (int i = 0; i < lengthArray; i++)
         {
             float pixValue = _fitsFloatData[i];
-            maxPixelValue = Mathf.Max(maxPixelValue, pixValue);
-            minPixelValue = Mathf.Min(minPixelValue, pixValue);
+            if (!float.IsNaN(pixValue))
+            {
+                maxPixelValue = Mathf.Max(maxPixelValue, pixValue);
+                minPixelValue = Mathf.Min(minPixelValue, pixValue);
+            }
         }
         ScaleMax = maxPixelValue;
         ScaleMin = minPixelValue;
