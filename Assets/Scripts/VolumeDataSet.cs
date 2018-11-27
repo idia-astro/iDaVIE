@@ -112,8 +112,7 @@ public class VolumeDataSet : MonoBehaviour
         Marshal.Copy(dataPtr, cubeSize, 0, cubeDimensions);
         FitsReader.FreeMemory(dataPtr);
         long numberDataPoints = cubeSize[0] * cubeSize[1] * cubeSize[2];
-        Texture3D dataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], TextureFormat.RFloat, false);
-        Color[] colorArray = new Color[numberDataPoints];
+
         IntPtr fitsDataPtr;
         if (FitsReader.FitsReadImageFloat(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
         {
@@ -123,12 +122,32 @@ public class VolumeDataSet : MonoBehaviour
         float[] fitsCubeData = new float[numberDataPoints];
         Marshal.Copy(fitsDataPtr, fitsCubeData, 0, (int)numberDataPoints);
         FitsReader.FreeMemory(fitsDataPtr);
+
+        Texture3D dataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], TextureFormat.RFloat, false);
+        int sliceSize = cubeSize[0] * cubeSize[1];
+
+        for (int slice = 0; slice < cubeSize[2]; slice++)
+        {
+            Texture2D textureSlice = new Texture2D(cubeSize[0], cubeSize[1], TextureFormat.RFloat, false);
+            //float[] fitsDataSlice = new float[sliceSize];
+            //Array.Copy(fitsCubeData, sliceSize * slice, fitsDataSlice, 0, sliceSize);
+            var byteArray = new byte[sliceSize * 4];
+            Buffer.BlockCopy(fitsCubeData, sliceSize * slice * 4, byteArray, 0, byteArray.Length);
+            textureSlice.LoadRawTextureData(byteArray);
+            Graphics.CopyTexture(textureSlice, 0, dataCube, slice);
+        }
+
+        
+        /*Color[] colorArray = new Color[numberDataPoints];
+;
+        
         for (int i = 0; i < numberDataPoints; i++)
         {
             colorArray[i].r = fitsCubeData[i];
         }
         dataCube.SetPixels(colorArray);
         dataCube.Apply();
+        */
         DataCube = dataCube;
         _fitsFloatData = fitsCubeData;
     }
