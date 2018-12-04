@@ -1,8 +1,11 @@
-﻿using System.Collections;
+﻿using System;
+using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
-[ExecuteInEditMode]
+
 public class VolumeDataSet : MonoBehaviour
 {
     // Step control
@@ -15,25 +18,36 @@ public class VolumeDataSet : MonoBehaviour
     public Vector3 SliceMin = Vector3.zero;
     public Vector3 SliceMax = Vector3.one;
 
+    // Scale max n' min
+    public float ScaleMax;
+    public float ScaleMin;
+
     // Value thresholding
     [Range(0, 1)] public float ThresholdMin = 0;
     [Range(0, 1)] public float ThresholdMax = 1;
     
     public Material RayMarchingMaterial;
+    public string FileName;
     public Texture3D DataCube;
     public ColorMapEnum ColorMap = ColorMapEnum.Inferno;
 
+    //private Texture3D _dataCube;
     private MeshRenderer _renderer;
     private Material _materialInstance;
 
+    private float[] _fitsFloatData;
+
     // Material property IDs
-    private int _idSliceMin, _idSliceMax, _idThresholdMin, _idThresholdMax, _idJitter, _idMaxSteps, _idColorMapIndex;
+    private int _idSliceMin, _idSliceMax, _idThresholdMin, _idThresholdMax, _idJitter, _idMaxSteps, _idColorMapIndex, _idScaleMin, _idScaleMax;
     
     void Start()
     {
+        LoadFits(FileName);
+        //DataCube = FloatDataToTexture3D(_fitsFloatData);
+        FindMinAndMax();
         _renderer = GetComponent<MeshRenderer>();
         _materialInstance = Instantiate(RayMarchingMaterial);
-        _materialInstance.SetTexture("DataCube", DataCube);
+        _materialInstance.SetTexture("_DataCube", DataCube);
         _materialInstance.SetInt("_NumColorMaps", ColorMapUtils.NumColorMaps);
         _renderer.material = _materialInstance;
         _idSliceMin = Shader.PropertyToID("_SliceMin");
@@ -43,8 +57,11 @@ public class VolumeDataSet : MonoBehaviour
         _idJitter = Shader.PropertyToID("_Jitter");
         _idMaxSteps = Shader.PropertyToID("_MaxSteps");
         _idColorMapIndex = Shader.PropertyToID("_ColorMapIndex");
+        _idScaleMin = Shader.PropertyToID("_ScaleMin");
+        _idScaleMax = Shader.PropertyToID("_ScaleMax");
+
     }
-    
+
     public void ShiftColorMap(int delta)
     {
         int numColorMaps = ColorMapUtils.NumColorMaps;
@@ -63,5 +80,76 @@ public class VolumeDataSet : MonoBehaviour
         _materialInstance.SetFloat(_idJitter, Jitter);
         _materialInstance.SetFloat(_idMaxSteps, MaxSteps);
         _materialInstance.SetFloat(_idColorMapIndex, ColorMap.GetHashCode());
+        _materialInstance.SetFloat(_idScaleMax, ScaleMax);
+        _materialInstance.SetFloat(_idScaleMin, ScaleMin);
+
+    }
+
+    public void LoadFits(string fileName)
+    {
+        IntPtr fptr;
+        int status = 0;
+        int cubeDimensions;
+        IntPtr dataPtr;
+        if (FitsReader.FitsOpenFile(out fptr, fileName, out status) != 0)
+        {
+            Debug.Log("Fits open failure... code #" + status.ToString());
+        }
+        if (FitsReader.FitsGetImageDims(fptr, out cubeDimensions, out status) != 0)
+        {
+            Debug.Log("Fits read image dimensions failed... code #" + status.ToString());
+        }
+        if (cubeDimensions < 3)
+        {
+            Debug.Log("Only " + cubeDimensions.ToString() + " found. Please use Fits cube with at least 3 dimensions.");
+        }
+        if (FitsReader.FitsGetImageSize(fptr, cubeDimensions, out dataPtr, out status) != 0)
+        {
+            Debug.Log("Fits Read cube size error #" + status.ToString());
+            FitsReader.FitsCloseFile(fptr, out status);
+        }
+        int[] cubeSize = new int[cubeDimensions];
+        Marshal.Copy(dataPtr, cubeSize, 0, cubeDimensions);
+        FitsReader.FreeMemory(dataPtr);
+        long numberDataPoints = cubeSize[0] * cubeSize[1] * cubeSize[2];
+        Texture3D dataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], TextureFormat.RFloat, false);
+        Color[] colorArray = new Color[numberDataPoints];
+        IntPtr fitsDataPtr;
+        if (FitsReader.FitsReadImageFloat(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
+        {
+            Debug.Log("Fits Read cube data error #" + status.ToString());
+            FitsReader.FitsCloseFile(fptr, out status);
+        }
+        float[] fitsCubeData = new float[numberDataPoints];
+        Marshal.Copy(fitsDataPtr, fitsCubeData, 0, (int)numberDataPoints);
+        FitsReader.FreeMemory(fitsDataPtr);
+        for (int i = 0; i < numberDataPoints; i++)
+        {
+            colorArray[i].r = fitsCubeData[i];
+        }
+        dataCube.SetPixels(colorArray);
+        dataCube.Apply();
+        DataCube = dataCube;
+        _fitsFloatData = fitsCubeData;
+    }
+
+
+    public void FindMinAndMax()
+    {
+        float maxPixelValue = -float.MaxValue;
+        float minPixelValue = float.MaxValue;
+        int lengthArray = _fitsFloatData.Length;
+        for (int i = 0; i < lengthArray; i++)
+        {
+            float pixValue = _fitsFloatData[i];
+            if (!float.IsNaN(pixValue))
+            {
+                maxPixelValue = Mathf.Max(maxPixelValue, pixValue);
+                minPixelValue = Mathf.Min(minPixelValue, pixValue);
+            }
+        }
+        ScaleMax = maxPixelValue;
+        ScaleMin = minPixelValue;
+        Debug.Log("max and min vals: " + ScaleMax + " and " + ScaleMin);
     }
 }

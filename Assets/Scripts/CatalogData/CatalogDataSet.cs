@@ -348,7 +348,7 @@ namespace CatalogData
                     dataSet.MetaColumns[i] = new string[nrows];
                 }
             }
-            IntPtr ptrDataFromColumn = IntPtr.Zero;
+            IntPtr ptrDataFromColumn;
             foreach (ColumnInfo column in dataSet.ColumnDefinitions)
             {
                 if (column.Type == ColumnType.Numeric)
@@ -362,23 +362,27 @@ namespace CatalogData
                     float[] numericDataFromColumn = new float[nrows];
                     Marshal.Copy(ptrDataFromColumn, numericDataFromColumn, 0, (int)nrows);
                     dataSet.DataColumns[column.NumericIndex] = numericDataFromColumn;
-                    }
-                    else if (loadMeta)
+                    FitsReader.FreeMemory(ptrDataFromColumn);
+
+                }
+                else if (loadMeta)
                     {
-                        if (FitsReader.FitsReadColString(fptr, column.Index + 1, frow, felem, nrows, out ptrDataFromColumn, out status) != 0)
+                    IntPtr ptrRawDataFromColumn;
+                    if (FitsReader.FitsReadColString(fptr, column.Index + 1, frow, felem, nrows, out ptrDataFromColumn, out ptrRawDataFromColumn, out status) != 0)
                         {
                             Debug.Log("Fits Read column meta data error #" + status.ToString());
                             FitsReader.FitsCloseFile(fptr, out status);
                             return dataSet;
                         }
-                        IntPtr[] metaDataFromColumn = new IntPtr[nrows];
-                        Marshal.Copy(ptrDataFromColumn, metaDataFromColumn, 0, (int)nrows);
-                        for (int row = 0; row < nrows; row++)
-                        {
-                            dataSet.MetaColumns[column.MetaIndex][row] = Marshal.PtrToStringAnsi(metaDataFromColumn[row]);
-                        }
+                    IntPtr[] metaDataFromColumn = new IntPtr[nrows];
+                    Marshal.Copy(ptrDataFromColumn, metaDataFromColumn, 0, (int)nrows);
+                    for (int row = 0; row < nrows; row++)
+                    {
+                        dataSet.MetaColumns[column.MetaIndex][row] = Marshal.PtrToStringAnsi(metaDataFromColumn[row]);
                     }
-                FitsReader.FreeMemory(ptrDataFromColumn);
+                    FitsReader.FreeMemory(ptrDataFromColumn);
+                    FitsReader.FreeMemory(ptrRawDataFromColumn);
+                }
             }
             FitsReader.FitsCloseFile(fptr, out status);
             return dataSet;
