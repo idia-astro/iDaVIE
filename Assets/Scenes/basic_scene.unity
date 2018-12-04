@@ -1010,7 +1010,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!65 &435814247
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1089,14 +1089,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21dee1cc9bcae143bb5aec63656bfd5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MaxSteps: 192
+  MaxSteps: 384
   Jitter: 1
-  SliceMin: {x: -0.5, y: -0.43357658, z: -0.5}
+  FoveatedRendering: 1
+  FoveationStart: 0.015
+  FoveationEnd: 0.4
+  FoveationJitter: 0.1
+  FoveatedStepsLow: 96
+  FoveatedStepsHigh: 384
+  SliceMin: {x: -0.5, y: -0.5, z: -0.5}
   SliceMax: {x: 0.5, y: 0.5, z: 0.5}
-  ThresholdMin: 0.219
+  ScaleMax: 0.15302625
+  ScaleMin: -0.13979377
+  ThresholdMin: 0.478
   ThresholdMax: 1
   RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
-  DataCube: {fileID: 11700000, guid: 48dd3337ab5e307499823930a3b01855, type: 2}
+  FileName: Assets/Resources/Volumes/m81.fits
+  DataCube: {fileID: 0}
   ColorMap: 45
 --- !u!1 &443449006
 GameObject:
@@ -2732,7 +2741,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1222561473
 Transform:
   m_ObjectHideFlags: 0
@@ -2763,6 +2772,7 @@ MonoBehaviour:
   MappingFileName: Assets/Resources/DataMaps/basicxyz.json
   SphericalCoordinates: 0
   LineData: 1
+  LoadMetaColumns: 1
   ValueCutoffMin: 0
   ValueCutoffMax: 1
   ColorMap: 45
@@ -3809,7 +3819,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1894848104
 Transform:
   m_ObjectHideFlags: 0
@@ -3840,6 +3850,7 @@ MonoBehaviour:
   MappingFileName: Assets/Resources/DataMaps/basicxyz.json
   SphericalCoordinates: 0
   LineData: 0
+  LoadMetaColumns: 1
   ValueCutoffMin: 0
   ValueCutoffMax: 1
   ColorMap: 3
