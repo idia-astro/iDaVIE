@@ -5,7 +5,7 @@ using UnityEngine;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
 
-[RequireComponent(typeof(Player), typeof(LineRenderer))]
+[RequireComponent(typeof(Player))]
 public class InputController : MonoBehaviour
 {
     private enum InputState
@@ -15,7 +15,12 @@ public class InputController : MonoBehaviour
         Scaling
     }
 
+    // Scaling/Rotation options
     public bool InPlaceScaling = true;
+    public bool ScalingEnabled = true;
+    public bool YawEnabled = true;
+    public bool RollEnabled = false;
+
     public CatalogDataSetManager CatalogDataSetManager;
     private Player _player;
     private Hand[] _hands;
@@ -29,8 +34,10 @@ public class InputController : MonoBehaviour
     private Vector3[] _currentGripPositions;
     private Vector3 _startGripSeparation;
     private Vector3 _startGripCenter;
+    private Vector3 _starGripForwardAxis;
     private InputState _inputState;
-    private LineRenderer _lineRenderer;
+    private LineRenderer _lineRendererAxisSeparation;
+    private LineRenderer _lineRendererRotationAxes;
     private TextMeshPro _scalingTextComponent;
 
     private void OnEnable()
@@ -71,7 +78,30 @@ public class InputController : MonoBehaviour
             _allDataSets.AddRange(_volumeDataSets);
         }
 
-        _lineRenderer = GetComponent<LineRenderer>();
+        // Line renderer for showing separation between controllers while scaling/rotating. World space thickness of 2 mm
+        var lineRendererAxisSeparationGameObject = new GameObject("lineRendererAxisSeparation");
+        lineRendererAxisSeparationGameObject.transform.parent = transform;
+        _lineRendererAxisSeparation = lineRendererAxisSeparationGameObject.AddComponent<LineRenderer>();
+        _lineRendererAxisSeparation.positionCount = 3;
+        _lineRendererAxisSeparation.startWidth = 2e-3f;
+        _lineRendererAxisSeparation.endWidth = 2e-3f;
+        _lineRendererAxisSeparation.material = new Material(Shader.Find("Sprites/Default"));
+        _lineRendererAxisSeparation.startColor = Color.red;
+        _lineRendererAxisSeparation.endColor = Color.red;
+        _lineRendererAxisSeparation.enabled = false;
+
+        // Line renderer for showing axes while scaling/rotating. World space thickness of 2 mm
+        var lineRendererRotationAxesGameObject = new GameObject("lineRendererRotationAxes");
+        lineRendererRotationAxesGameObject.transform.parent = transform;
+        _lineRendererRotationAxes = lineRendererRotationAxesGameObject.AddComponent<LineRenderer>();
+        _lineRendererRotationAxes.positionCount = 3;
+        _lineRendererRotationAxes.startWidth = 2e-3f;
+        _lineRendererRotationAxes.endWidth = 2e-3f;
+        _lineRendererRotationAxes.material = new Material(Shader.Find("Sprites/Default"));
+        _lineRendererRotationAxes.startColor = Color.white;
+        _lineRendererRotationAxes.endColor = Color.white;
+        _lineRendererRotationAxes.enabled = false;
+
         _scalingTextComponent = _hands[0].GetComponentInChildren<TextMeshPro>();
         _startDataSetScales = new float[_allDataSets.Count];
         _currentGripPositions = new Vector3[2];
@@ -126,7 +156,6 @@ public class InputController : MonoBehaviour
 
     private void OnPinchChanged(SteamVR_Action_In actionIn)
     {
-        
     }
 
     private void StateTransitionMovingToIdle()
@@ -144,17 +173,19 @@ public class InputController : MonoBehaviour
         _inputState = InputState.Scaling;
         _startGripSeparation = _handTransforms[0].position - _handTransforms[1].position;
         _startGripCenter = (_handTransforms[0].position + _handTransforms[1].position) / 2.0f;
+        _starGripForwardAxis = Vector3.Cross(Vector3.up, _startGripSeparation.normalized).normalized;
+
         for (var i = 0; i < _allDataSets.Count; i++)
         {
             _startDataSetScales[i] = _allDataSets[i].transform.localScale.magnitude;
         }
 
-        // World space: 2 mm lines
-        _lineRenderer.positionCount = 3;
-        _lineRenderer.startWidth = 2e-3f;
-        _lineRenderer.endWidth = 2e-3f;
-        _lineRenderer.SetPositions(new[] {_currentGripPositions[0], _startGripCenter, _currentGripPositions[1]});
-        _lineRenderer.enabled = true;
+        _lineRendererAxisSeparation.SetPositions(new[] {_currentGripPositions[0], _startGripCenter, _currentGripPositions[1]});
+        _lineRendererAxisSeparation.enabled = true;
+
+        // Axis lines: 10 cm length
+        _lineRendererRotationAxes.SetPositions(new[] {_startGripCenter + _starGripForwardAxis * 0.1f, _startGripCenter, _startGripCenter + Vector3.up * 0.1f});
+        _lineRendererRotationAxes.enabled = true;
 
         if (_scalingTextComponent)
         {
@@ -165,7 +196,8 @@ public class InputController : MonoBehaviour
     private void StateTransitionScalingToMoving()
     {
         _inputState = InputState.Moving;
-        _lineRenderer.enabled = false;
+        _lineRendererAxisSeparation.enabled = false;
+        _lineRendererRotationAxes.enabled = false;
 
         if (_scalingTextComponent)
         {
@@ -217,36 +249,66 @@ public class InputController : MonoBehaviour
             // Calculate the change in rotation of the grip vector about the up (Y+) axis
             Vector3 previousGripDirectionXz = new Vector3(previousGripSeparation.x, 0, previousGripSeparation.z).normalized;
             Vector3 currentGripDirectionXz = new Vector3(currentGripSeparation.x, 0, currentGripSeparation.z).normalized;
-            // A x B = |A| |B| sin(theta)
-            float sine = Vector3.Cross(previousGripDirectionXz, currentGripDirectionXz).y;
-            float angle = Mathf.Asin(sine);
+            float angleYaw = Mathf.Asin(Vector3.Cross(previousGripDirectionXz, currentGripDirectionXz).y);
+
+            // Calculate the change in rotation of the grip vector about the custom rotation axis
+            Vector3 perpendicularAxis = Vector3.Cross(_starGripForwardAxis, Vector3.up);
+            Vector3 previousGripDirectionRotationAxis = new Vector3(Vector3.Dot(perpendicularAxis, previousGripSeparation), Vector3.Dot(Vector3.up, previousGripSeparation), 0).normalized;
+            Vector3 currentGripDirectionRotationAxis = new Vector3(Vector3.Dot(perpendicularAxis, currentGripSeparation), Vector3.Dot(Vector3.up, currentGripSeparation), 0).normalized;
+            float angleRoll = Mathf.Asin(-Vector3.Cross(previousGripDirectionRotationAxis, currentGripDirectionRotationAxis).z);
 
             if (InPlaceScaling)
             {
-                // Adjust dataSet position while scaling to keep the pivot point fixed 
-                Vector3 dataSetPositionWorldSpace = dataSet.transform.position;
-                Vector3 preScaleOffset = dataSetPositionWorldSpace - _startGripCenter;
-                float scaleRatio = newScale / currentScale;
-                dataSet.transform.localScale = dataSet.transform.localScale.normalized * newScale;
-                dataSet.transform.position = _startGripCenter + preScaleOffset * scaleRatio;
+                // Adjust dataSet position while scaling to keep the pivot point fixed
+                if (ScalingEnabled)
+                {
+                    Vector3 dataSetPositionWorldSpace = dataSet.transform.position;
+                    Vector3 preScaleOffset = dataSetPositionWorldSpace - _startGripCenter;
+                    float scaleRatio = newScale / currentScale;
+                    dataSet.transform.localScale = dataSet.transform.localScale.normalized * newScale;
+                    dataSet.transform.position = _startGripCenter + preScaleOffset * scaleRatio;
+                }
 
                 // Adjust dataSet position while rotating to keep the pivot point fixed
                 Vector3 startGripPositionDataSpace = dataSet.transform.InverseTransformPoint(_startGripCenter);
-                dataSet.transform.RotateAround(_startGripCenter, Vector3.up, angle * Mathf.Rad2Deg);
+                if (YawEnabled)
+                {
+                    dataSet.transform.RotateAround(_startGripCenter, Vector3.up, angleYaw * Mathf.Rad2Deg);
+                }
+
+                if (RollEnabled)
+                {
+                    dataSet.transform.RotateAround(_startGripCenter, _starGripForwardAxis, angleRoll * Mathf.Rad2Deg);
+                }
+
                 Vector3 updatedPositionWorldSpace = dataSet.transform.TransformPoint(startGripPositionDataSpace);
                 dataSet.transform.position -= updatedPositionWorldSpace - _startGripCenter;
             }
             else
             {
                 // Rotate and scale with the pivot at the origin
-                dataSet.transform.localScale = dataSet.transform.localScale.normalized * newScale;
-                dataSet.transform.Rotate(Vector3.up, angle * Mathf.Rad2Deg);
+                if (ScalingEnabled)
+                {
+                    dataSet.transform.localScale = dataSet.transform.localScale.normalized * newScale;
+                }
+
+                if (YawEnabled)
+                {
+                    dataSet.transform.Rotate(Vector3.up, angleYaw * Mathf.Rad2Deg);
+                }
+
+                if (RollEnabled)
+                {
+                    dataSet.transform.Rotate(_starGripForwardAxis, angleRoll * Mathf.Rad2Deg);
+                }
             }
 
             UpdateScalingText(dataSet);
         }
 
-        _lineRenderer.SetPositions(new[] {_currentGripPositions[0], InPlaceScaling ? _startGripCenter : currentGripCenter, _currentGripPositions[1]});
+        var rotationPoint = InPlaceScaling ? _startGripCenter : currentGripCenter;
+        _lineRendererAxisSeparation.SetPositions(new[] {_currentGripPositions[0], rotationPoint, _currentGripPositions[1]});
+        _lineRendererRotationAxes.SetPositions(new[] {_startGripCenter + _starGripForwardAxis * (RollEnabled ? 0.1f : 0.0f), rotationPoint, _startGripCenter + Vector3.up * (YawEnabled ? 0.1f : 0.0f)});
     }
 
     // Update function for FSM Moving state
