@@ -30,6 +30,12 @@ uniform float _PostScaling;
 uniform float _MaxSteps;
 uniform float _Jitter;
 
+// Foveated Rendering settings
+uniform float FoveationStart;
+uniform float FoveationEnd;
+uniform float FoveationJitter;
+uniform int FoveatedStepsLow, FoveatedStepsHigh;
+
 // Implementation: NVIDIA. Original algorithm : HyperGraph
 // http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
 bool IntersectBox(Ray r, float3 boxmin, float3 boxmax, out float tnear, out float tfar)
@@ -90,8 +96,22 @@ float nrand(float2 uv)
     return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453);
 }
 
+float numSamples(float2 position, float2 screenSize)
+{
+    position = float2(position.x % screenSize.x, position.y);       
+    float2 center = screenSize / 2.0;
+    float2 delta = center - position;
+    float radius = length(delta)/ screenSize.x;
+    return floor(FoveatedStepsLow + (FoveatedStepsHigh - FoveatedStepsLow) * (1.0 - smoothstep(FoveationStart, FoveationEnd, radius)));   
+}
+
 fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
 {
+    // TODO: Make this dynamic
+    float2 screenSize = float2(1901.0, 2263.0);
+    float foveatedSamples = numSamples(input.position.xy, screenSize);
+    //return float4(foveatedSamples / FoveatedStepsHigh, 0, 0, 1);
+    
     input.ray.direction = normalize(input.ray.direction);
     float3 boxMin = _SliceMin;
     float3 boxMax = _SliceMax;    
@@ -111,16 +131,15 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
     // convert to texture space
     pNear = pNear + 0.5;
     pFar  = pFar + 0.5;
-    
-    
+        
     float3 currentRayPosition = pNear;
     float3 rayDelta = pFar - pNear;
     float totalLength = length(rayDelta);
     // The maximum possible distance through the cube is sqrt(3).
-    float stepLength = sqrt(3) / floor(_MaxSteps);
+    float stepLength = sqrt(3) / floor(foveatedSamples);
     float3 stepVector = normalize(rayDelta);
     // Calculate the required number of steps, based on the total path length through the object 
-    int requiredSteps = clamp(totalLength / stepLength, 0, _MaxSteps);
+    int requiredSteps = clamp(totalLength / stepLength, 0, foveatedSamples);
     
     // Shift ray's starting point by a small temporal noise amount to reduce box artefacts
     // Based on code from Ryan Brucks: https://shaderbits.com/blog/creating-volumetric-ray-marcher
@@ -156,7 +175,7 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
     rayValue = clamp(rayValue, 0, 1);
     float colorMapValue = (rayValue - _ThresholdMin) / thresholdRange;   
     float4 color = tex2D(_ColorMap, float2(colorMapValue, colorMapOffset));
-    
+        
     // Pre-multiply the output color
     return float4(color.xyz, rayValue);
 }
