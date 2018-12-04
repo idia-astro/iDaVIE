@@ -6,27 +6,37 @@
 #define SQUARED 3
 #define EXP 4
 
-// Properties variables
-uniform float4 _Color;			
-uniform float _Opacity;
+#define X_INDEX 0
+#define Y_INDEX 1
+#define Z_INDEX 2
+#define CMAP_INDEX 3
+#define OPACITY_INDEX 4
+#define POINT_SIZE_INDEX 5
+#define POINT_SHAPE_INDEX 6
 
+struct MappingConfig
+{
+    int Clamped;
+    float MinVal;
+    float MaxVal;
+    float Offset;
+    float Scale;
+    int ScalingType;
+    
+    // Future use: Will filter points based on this range
+    float FilterMinVal;
+    float FilterMaxVal;
+};
+
+// Properties variables
+uniform int useUniformColor;
+uniform int useUniformOpacity;
+
+// Uniform values;
+uniform float opacity;
+uniform float4 color;
 uniform float4x4 datasetMatrix;
-uniform int numDataPoints;
-// Scaling types
-uniform int scalingTypeX;
-uniform int scalingTypeY;
-uniform int scalingTypeZ;
-uniform int scalingTypeColorMap;
-// Scaling sizes
-uniform float scalingX;
-uniform float scalingY;
-uniform float scalingZ;            
-uniform float scaleColorMap;           
-// Scaling offsets
-uniform float offsetX;
-uniform float offsetY;
-uniform float offsetZ;
-uniform float offsetColorMap;
+
 // Filtering
 uniform float cutoffMin;
 uniform float cutoffMax;
@@ -37,7 +47,38 @@ uniform float4 colorMapData[NUM_COLOR_MAP_STEPS];
 Buffer<float> dataX;
 Buffer<float> dataY;
 Buffer<float> dataZ;
-Buffer<float> dataVal;
+Buffer<float> dataCmap;
+Buffer<float> dataOpacity;
+StructuredBuffer<MappingConfig> mappingConfigs;
+
+float applyScaling(float input, MappingConfig config)
+{
+    float scaledValue;
+    switch (config.ScalingType)
+    {
+        case LOG:
+            scaledValue = log(input);
+            break;
+        case SQRT:
+            scaledValue = sqrt(input);
+            break;
+        case SQUARED:
+            scaledValue = input * input;
+            break;
+        case EXP:
+            scaledValue = exp(input);
+            break;
+        default:
+            scaledValue = input * config.Scale + config.Offset;
+            break;                        
+    }
+    
+    if (config.Clamped)
+    {
+        scaledValue = clamp(scaledValue, config.MinVal, config.MaxVal);
+    }
+    return scaledValue;
+}
 
 float applyScaling(float input, int type, float scale, float offset)
 {

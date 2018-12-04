@@ -2,12 +2,8 @@
 {
 	Properties
 	{
-		_Color("Color", Color) = (0, 0, 0.5, 0.3)
-		_PointSize("Point Size", Range(0, 0.1)) = 0.001
-		_Opacity("Opacity", Range(0, 1)) = 0.2
 		_SpriteSheet("Sprite sheet", 2D) = "white" {}
 		_NumSprites("Number of sprites", Int) = 1
-		_ShapeIndex("Shape index", Int) = 0
 	}
 
 	SubShader

@@ -3,11 +3,15 @@
 // Sprites
 uniform sampler2D _SpriteSheet;
 uniform int _NumSprites;			
-uniform int _ShapeIndex;
 
-// Data transforms
-uniform float _PointSize;
-uniform float pointScale;
+// Additional parameters for points
+Buffer<float> dataPointSize;
+Buffer<float> dataPointShape;
+uniform int useUniformPointSize;
+uniform int useUniformPointShape;
+uniform float pointSize;
+uniform float pointShape;
+uniform float scalingFactor;
 
 // Points -> <VS> -> VertexShaderOutput -> <GS> -> PixelShaderInput -> <PS> -> Pixels 
 struct VertexShaderOutput
@@ -16,6 +20,9 @@ struct VertexShaderOutput
     float4 color : COLOR;
     float3 upVector: TEXCOORD0;
     float3 rightVector: TEXCOORD1;
+    float pointSize: TEXCOORD2;
+    float pointShape: TEXCOORD3;  
+    float opacity: TEXCOORD4;
 };
 
 struct FragmentShaderInput
@@ -23,28 +30,58 @@ struct FragmentShaderInput
     float4 position : SV_POSITION;
     float4 color : COLOR;
     float2 uv : TEXCOORD0;
+    float opacity: TEXCOORD1;
 };
 
 // Vertex shader
 VertexShaderOutput vsPointBillboard(uint id : SV_VertexID)
 {
     VertexShaderOutput output = (VertexShaderOutput) 0;
-    float3 inputPos = float3(applyScaling(dataX[id], scalingTypeX, scalingX, offsetX), applyScaling(dataY[id], scalingTypeY, scalingY, offsetY), applyScaling(dataZ[id], scalingTypeZ, scalingZ, offsetZ));
+    float3 inputPos = float3(applyScaling(dataX[id], mappingConfigs[X_INDEX]), applyScaling(dataY[id], mappingConfigs[Y_INDEX]), applyScaling(dataZ[id], mappingConfigs[Z_INDEX]));
     // Transform position from local space to world space
     float4 worldPos = mul(datasetMatrix, float4(inputPos, 1.0));
+    output.position = worldPos;
+
+    if (!useUniformPointSize) {                
+        output.pointSize = applyScaling(dataPointSize[id], mappingConfigs[POINT_SIZE_INDEX]);
+    }
+    else {
+        output.pointSize = pointSize;
+    }
+        
     // Get per-vertex camera direction
     float3 cameraDirection = normalize(worldPos.xyz - _WorldSpaceCameraPos);				
     float3 cameraUp = UNITY_MATRIX_IT_MV[1].xyz;
     // Find two basis vectors that are perpendicular to the camera direction 
     float3 basisX = normalize(cross(cameraUp, cameraDirection));
-    float3 basisY = normalize(cross(basisX, cameraDirection));
-    output.upVector = basisY * _PointSize * pointScale;
-    output.rightVector = basisX * _PointSize * pointScale;
-    output.position = worldPos;
+    float3 basisY = normalize(cross(basisX, cameraDirection));        
+        
+    output.upVector = basisY * output.pointSize * scalingFactor;
+    output.rightVector = basisX * output.pointSize * scalingFactor;
+
+    if (!useUniformColor) {        
+        float value = clamp(applyScaling(dataCmap[id], mappingConfigs[CMAP_INDEX]), 0, 1);        
+        uint colorMapIndex = clamp(value * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
+        output.color = colorMapData[colorMapIndex];
+    }
+    else {
+        output.color = color;
+    }
     
-    // Look up color from the uniform
-    uint colorMapIndex = clamp(applyScaling(dataVal[id], scalingTypeColorMap, scaleColorMap, offsetColorMap) * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
-    output.color = colorMapData[colorMapIndex];
+    if (!useUniformOpacity) {                
+        output.opacity = applyScaling(dataOpacity[id], mappingConfigs[OPACITY_INDEX]);
+    }
+    else {
+        output.opacity = opacity;
+    }
+    
+    if (!useUniformPointShape) {                
+        output.pointShape = applyScaling(dataPointShape[id], mappingConfigs[POINT_SHAPE_INDEX]);
+    }
+    else {
+        output.pointShape = pointShape;
+    }
+    
     return output;
 }
 
@@ -52,27 +89,55 @@ VertexShaderOutput vsPointBillboard(uint id : SV_VertexID)
 VertexShaderOutput vsPointBillboardSpherical(uint id : SV_VertexID)
 {
     VertexShaderOutput output = (VertexShaderOutput) 0;
-    float gLat = applyScaling(dataX[id], scalingTypeX, scalingX, offsetX);
-    float gLong = applyScaling(dataY[id], scalingTypeY, scalingY, offsetY);
-    float R = applyScaling(dataZ[id], scalingTypeZ, scalingZ, offsetZ);
+    float gLat = applyScaling(dataX[id], mappingConfigs[X_INDEX]);
+    float gLong = applyScaling(dataY[id], mappingConfigs[Y_INDEX]);
+    float R = applyScaling(dataZ[id], mappingConfigs[Z_INDEX]);
     // Transform from spherical to cartesian coordinates
     float3 inputPos = R * float3(cos(gLong) * cos(gLat), sin(gLong) * cos(gLat), sin(gLat));
     
     // Transform position from local space to world space
     float4 worldPos = mul(datasetMatrix, float4(inputPos, 1.0));
+    output.position = worldPos;
+
+    if (!useUniformPointSize) {                
+        output.pointSize = applyScaling(dataPointSize[id], mappingConfigs[POINT_SIZE_INDEX]);
+    }
+    else {
+        output.pointSize = pointSize;
+    }      
+    
     // Get per-vertex camera direction
     float3 cameraDirection = normalize(worldPos.xyz - _WorldSpaceCameraPos);				
     float3 cameraUp = UNITY_MATRIX_IT_MV[1].xyz;
     // Find two basis vectors that are perpendicular to the camera direction 
     float3 basisX = normalize(cross(cameraUp, cameraDirection));
     float3 basisY = normalize(cross(basisX, cameraDirection));
-    output.upVector = basisY * _PointSize * pointScale;
-    output.rightVector = basisX * _PointSize * pointScale;
-    output.position = worldPos;
+    output.upVector = basisY * output.pointSize * scalingFactor;
+    output.rightVector = basisX * output.pointSize * scalingFactor;
     
-    // Look up color from the uniform
-    uint colorMapIndex = clamp(applyScaling(dataVal[id], scalingTypeColorMap, scaleColorMap, offsetColorMap) * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
-    output.color = colorMapData[colorMapIndex];
+    if (!useUniformColor) {        
+        float value = clamp(applyScaling(dataCmap[id], mappingConfigs[CMAP_INDEX]), 0, 1);        
+        uint colorMapIndex = clamp(value * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
+        output.color = colorMapData[colorMapIndex];
+    }
+    else {
+        output.color = color;
+    }        
+    
+    if (!useUniformOpacity) {                
+        output.opacity = applyScaling(dataOpacity[id], mappingConfigs[OPACITY_INDEX]);
+    }
+    else {
+        output.opacity = opacity;
+    }             
+    
+    if (!useUniformPointShape) {                
+        output.pointShape = applyScaling(dataPointShape[id], mappingConfigs[POINT_SHAPE_INDEX]);
+    }
+    else {
+        output.pointShape = pointShape;
+    }
+    
     return output;
 }
 
@@ -82,7 +147,7 @@ void gsBillboard(point VertexShaderOutput input[1], inout TriangleStream<Fragmen
     // Offsets for the four corners of the quad
     float2 offsets[4] = { float2(-0.5, 0.5), float2(-0.5,-0.5), float2(0.5,0.5), float2(0.5,-0.5) };
     // Shift UV coordinates based on shape index
-    float uvOffset = ((float)_ShapeIndex) / _NumSprites;
+    float uvOffset = clamp(round(input[0].pointShape), 0, _NumSprites -1) / _NumSprites;
     float uvRange = 1.0 / _NumSprites;
     
     float3 billboardOrigin = input[0].position.xyz;
@@ -91,6 +156,7 @@ void gsBillboard(point VertexShaderOutput input[1], inout TriangleStream<Fragmen
     
     FragmentShaderInput output;
     output.color = input[0].color;
+    output.opacity = input[0].opacity;
     
     for (int i = 0; i < 4; i++)
     {
@@ -105,7 +171,6 @@ void gsBillboard(point VertexShaderOutput input[1], inout TriangleStream<Fragmen
 
 float4 fsSprite(FragmentShaderInput input) : COLOR
 {
-    float4 pointColor = input.color;
-    float opacityFactor = tex2D(_SpriteSheet, input.uv).a * _Opacity; 				               
-    return pointColor * opacityFactor;
+    float opacityFactor = tex2D(_SpriteSheet, input.uv).a * input.opacity; 				               
+    return input.color * opacityFactor;
 }
