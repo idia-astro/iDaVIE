@@ -45,7 +45,8 @@ public class VolumeDataSet : MonoBehaviour
     private MeshRenderer _renderer;
     private Material _materialInstance;
 
-    private float[] _fitsFloatData;
+    private IntPtr _fitsCubeData;
+    private long _numberDataPts;
 
     // Material property IDs
     private int _idSliceMin, _idSliceMax, _idThresholdMin, _idThresholdMax, _idJitter, _idMaxSteps, _idColorMapIndex, _idScaleMin, _idScaleMax;
@@ -73,7 +74,6 @@ public class VolumeDataSet : MonoBehaviour
     void Start()
     {        
         LoadFits(FileName);
-        //DataCube = FloatDataToTexture3D(_fitsFloatData);
         FindMinAndMax();
         GetPropertyIds();
         _renderer = GetComponent<MeshRenderer>();
@@ -154,35 +154,31 @@ public class VolumeDataSet : MonoBehaviour
             Debug.Log("Fits Read cube data error #" + status.ToString());
             FitsReader.FitsCloseFile(fptr, out status);
         }
-        float[] fitsCubeData = new float[numberDataPoints];
-        Marshal.Copy(fitsDataPtr, fitsCubeData, 0, (int)numberDataPoints);
-        FitsReader.FreeMemory(fitsDataPtr);
-
         Texture3D dataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], TextureFormat.RFloat, false);
         int sliceSize = cubeSize[0] * cubeSize[1];
-
-        var byteArray = new byte[sliceSize * sizeof(float)];
         Texture2D textureSlice = new Texture2D(cubeSize[0], cubeSize[1], TextureFormat.RFloat, false);
         for (int slice = 0; slice < cubeSize[2]; slice++)
         {
-            Buffer.BlockCopy(fitsCubeData, sliceSize * slice * sizeof(float), byteArray, 0, byteArray.Length);
-            textureSlice.LoadRawTextureData(byteArray);
+            textureSlice.LoadRawTextureData(IntPtr.Add(fitsDataPtr,slice * sliceSize * sizeof(float)), sliceSize * sizeof(float));
             textureSlice.Apply();
             Graphics.CopyTexture(textureSlice, 0, 0, 0, 0, cubeSize[0], cubeSize[1], dataCube, slice, 0, 0, 0);
         }
         DataCube = dataCube;
-        _fitsFloatData = fitsCubeData;
+        _fitsCubeData = fitsDataPtr;
+        _numberDataPts = numberDataPoints;
     }
 
 
     public void FindMinAndMax()
     {
+        float[] fitsCubeData = new float[_numberDataPts];
+        Marshal.Copy(_fitsCubeData, fitsCubeData, 0, (int)_numberDataPts);
         float maxPixelValue = -float.MaxValue;
         float minPixelValue = float.MaxValue;
-        int lengthArray = _fitsFloatData.Length;
+        int lengthArray = fitsCubeData.Length;
         for (int i = 0; i < lengthArray; i++)
         {
-            float pixValue = _fitsFloatData[i];
+            float pixValue = fitsCubeData[i];
             if (!float.IsNaN(pixValue))
             {
                 maxPixelValue = Mathf.Max(maxPixelValue, pixValue);
