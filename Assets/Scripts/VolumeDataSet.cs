@@ -31,7 +31,6 @@ public class VolumeDataSet : MonoBehaviour
     public Texture3D DataCube;
     public ColorMapEnum ColorMap = ColorMapEnum.Inferno;
 
-    //private Texture3D _dataCube;
     private MeshRenderer _renderer;
     private Material _materialInstance;
 
@@ -43,7 +42,6 @@ public class VolumeDataSet : MonoBehaviour
     void Start()
     {
         LoadFits(FileName);
-        //DataCube = FloatDataToTexture3D(_fitsFloatData);
         FindMinAndMax();
         _renderer = GetComponent<MeshRenderer>();
         _materialInstance = Instantiate(RayMarchingMaterial);
@@ -112,7 +110,6 @@ public class VolumeDataSet : MonoBehaviour
         Marshal.Copy(dataPtr, cubeSize, 0, cubeDimensions);
         FitsReader.FreeMemory(dataPtr);
         long numberDataPoints = cubeSize[0] * cubeSize[1] * cubeSize[2];
-
         IntPtr fitsDataPtr;
         if (FitsReader.FitsReadImageFloat(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
         {
@@ -130,26 +127,11 @@ public class VolumeDataSet : MonoBehaviour
         Texture2D textureSlice = new Texture2D(cubeSize[0], cubeSize[1], TextureFormat.RFloat, false);
         for (int slice = 0; slice < cubeSize[2]; slice++)
         {
-            //Color[] colorArray = new Color[sliceSize];
-            //for (int pixel = 0; pixel < sliceSize; pixel++)
-            //    colorArray[pixel].r = fitsCubeData[slice * sliceSize + pixel];
-            //textureSlice.SetPixels(colorArray);
-            //float[] fitsDataSlice = new float[sliceSize];
-            //Array.Copy(fitsCubeData, sliceSize * slice, fitsDataSlice, 0, sliceSize);
             Buffer.BlockCopy(fitsCubeData, sliceSize * slice * sizeof(float), byteArray, 0, byteArray.Length);
             textureSlice.LoadRawTextureData(byteArray);
             textureSlice.Apply();
             Graphics.CopyTexture(textureSlice, 0, 0, 0, 0, cubeSize[0], cubeSize[1], dataCube, slice, 0, 0, 0);
         }
-        /*
-        Color[] colorArray = new Color[numberDataPoints];
-        for (int i = 0; i < numberDataPoints; i++)
-        {
-            colorArray[i].r = fitsCubeData[i];
-        }
-        dataCube.SetPixels(colorArray);
-        dataCube.Apply();
-        */
         DataCube = dataCube;
         _fitsFloatData = fitsCubeData;
     }
