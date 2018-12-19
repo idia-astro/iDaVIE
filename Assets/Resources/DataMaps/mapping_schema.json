@@ -1,11 +1,117 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "http://json-schema.org/draft-06/schema#",
   "definitions": {
-    "DisplayShape": {
+    "ColorMap": {
+      "enum": [
+        "Accent",
+        "Afmhot",
+        "Autumn",
+        "Binary",
+        "Blues",
+        "Bone",
+        "BrBg",
+        "Brg",
+        "BuGn",
+        "BuPu",
+        "Bwr",
+        "CmRmap",
+        "Cool",
+        "Coolwarm",
+        "Copper",
+        "Cubehelix",
+        "Dark2",
+        "Flag",
+        "GistEarth",
+        "GistGray",
+        "GistHeat",
+        "GistNcar",
+        "GistRainbow",
+        "GistStern",
+        "GistYarg",
+        "GnBu",
+        "Gnuplot",
+        "Gnuplot2",
+        "Gray",
+        "Greens",
+        "Greys",
+        "Hot",
+        "Hsv",
+        "Inferno",
+        "Jet",
+        "Magma",
+        "NipySpectral",
+        "Ocean",
+        "Oranges",
+        "OrRd",
+        "Paired",
+        "Pastel1",
+        "Pastel2",
+        "Pink",
+        "PiYg",
+        "Plasma",
+        "PrGn",
+        "Prism",
+        "PuBu",
+        "PuBuGn",
+        "PuOr",
+        "PuRd",
+        "Purples",
+        "Rainbow",
+        "RdBu",
+        "RdGy",
+        "RdPu",
+        "RdYlBu",
+        "RdYlGn",
+        "Reds",
+        "Seismic",
+        "Set1",
+        "Set2",
+        "Set3",
+        "Spectral",
+        "Spring",
+        "Summer",
+        "Tab10",
+        "Tab20",
+        "Tab20B",
+        "Tab20C",
+        "Terrain",
+        "Viridis",
+        "Winter",
+        "Wistia",
+        "YlGn",
+        "YlGnBu",
+        "YlOrBr",
+        "YlOrRd"
+      ],
+      "type": "string"
+    },
+    "RenderType": {
       "enum": [
         "Billboard",
-        "Cube",
-        "Sphere"
+        "Line"
+      ],
+      "type": "string"
+    },
+    "ShapeType": {
+      "enum": [
+        "Halo",
+        "Circle",
+        "OutlinedCircle",
+        "Square",
+        "OutlinedSquare",
+        "Triangle",
+        "OutlinedTriangle",
+        "Star"
+      ],
+      "type": "string"
+    },
+    "ScalingType": {
+      "enum": [
+        "Linear",
+        "Log",
+        "Sqrt",
+        "Squared",
+        "Exp"
       ],
       "type": "string"
     },
@@ -38,25 +144,13 @@
       ],
       "type": "object"
     },
-    "ScalingType": {
-      "enum": [
-        "Linear",
-        "Log",
-        "Sqrt",
-        "Squared",
-        "Exp"
-      ],
-      "type": "string"
-    }
-  },
-  "properties": {
-    "Colormap": {
-      "type": "string"
-    },
-    "Defaults": {
+    "MappingUniforms": {
+      "type": "object",
       "properties": {
-        "Color": {
-          "type": "string"
+        "ColorString": {
+          "type": "string",
+          "pattern": "^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$",
+          "example": "#aa33cc"
         },
         "Scale": {
           "type": "number"
@@ -64,11 +158,40 @@
         "PointSize": {
           "type": "number"
         },
-        "Shape": {
-          "$ref": "#/definitions/DisplayShape"
+        "Opacity": {
+          "type": "number"
+        },
+        "PointShape": {
+          "$ref": "#/definitions/ShapeType"
         }
       },
-      "type": "object"
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "ColorMap": {
+      "$ref": "#/definitions/ColorMap"
+    },
+    "Spherical": {
+      "type": "boolean"
+    },
+    "RenderType": {
+      "$ref": "#/definitions/RenderType"
+    },
+    "UniformColor": {
+      "type": "boolean"
+    },
+    "UniformPointSize": {
+      "type": "boolean"
+    },
+    "UniformOpacity": {
+      "type": "boolean"
+    },
+    "UniformPointShape": {
+      "type": "boolean"
+    },
+    "Uniforms": {
+      "$ref": "#/definitions/MappingUniforms"
     },
     "Mapping": {
       "properties": {
@@ -81,16 +204,22 @@
         "Z": {
           "$ref": "#/definitions/MapFloatEntry"
         },
+        "X2": {
+          "$ref": "#/definitions/MapFloatEntry"
+        },
+        "Y2": {
+          "$ref": "#/definitions/MapFloatEntry"
+        },
+        "Z2": {
+          "$ref": "#/definitions/MapFloatEntry"
+        },
         "Lat": {
           "$ref": "#/definitions/MapFloatEntry"
         },
-        "Long": {
+        "Lng": {
           "$ref": "#/definitions/MapFloatEntry"
         },
         "R": {
-          "$ref": "#/definitions/MapFloatEntry"
-        },
-        "Size": {
           "$ref": "#/definitions/MapFloatEntry"
         },
         "Cmap": {
@@ -98,8 +227,15 @@
         },
         "Opacity": {
           "$ref": "#/definitions/MapFloatEntry"
+        },
+        "PointSize": {
+          "$ref": "#/definitions/MapFloatEntry"
+        },
+        "PointShape": {
+          "$ref": "#/definitions/MapFloatEntry"
         }
       },
+      "additionalProperties": false,
       "type": "object"
     },
     "metaMapping": {
@@ -110,15 +246,18 @@
               "type": "string"
             }
           },
+          "additionalProperties": false,
           "required": [
             "Source"
           ],
           "type": "object"
         }
       },
+      "additionalProperties": false,
       "type": "object"
     }
   },
+  "additionalProperties": false,
   "required": [
     "Mapping"
   ],

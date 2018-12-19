@@ -1089,14 +1089,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21dee1cc9bcae143bb5aec63656bfd5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MaxSteps: 192
+  MaxSteps: 384
   Jitter: 1
-  SliceMin: {x: -0.5, y: -0.43357658, z: -0.5}
+  FoveatedRendering: 1
+  FoveationStart: 0.015
+  FoveationEnd: 0.4
+  FoveationJitter: 0.1
+  FoveatedStepsLow: 96
+  FoveatedStepsHigh: 384
+  SliceMin: {x: -0.5, y: -0.5, z: -0.5}
   SliceMax: {x: 0.5, y: 0.5, z: 0.5}
-  ThresholdMin: 0.219
+  ScaleMax: 0.15302625
+  ScaleMin: -0.13979377
+  ThresholdMin: 0.478
   ThresholdMax: 1
   RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
-  DataCube: {fileID: 11700000, guid: 48dd3337ab5e307499823930a3b01855, type: 2}
+  FileName: Assets/Resources/Volumes/m81.fits
+  DataCube: {fileID: 0}
   ColorMap: 45
 --- !u!1 &443449006
 GameObject:
@@ -2438,6 +2447,7 @@ Transform:
   m_Children:
   - {fileID: 1222561473}
   - {fileID: 1894848104}
+  - {fileID: 1866218500}
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2760,12 +2770,133 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   TableFileName: Assets/Resources/DataTables/2MRS_Edges.tbl
-  MappingFileName: Assets/Resources/DataMaps/basicxyz.json
-  SphericalCoordinates: 0
-  LineData: 1
+  MappingFileName: 
+  DataMapping:
+    ColorMap: 0
+    Spherical: 0
+    RenderType: 0
+    UniformColor: 0
+    UniformPointSize: 0
+    UniformPointShape: 0
+    UniformOpacity: 0
+    Uniforms:
+      ColorString: 
+      Color: {r: 0, g: 0, b: 0, a: 0}
+      Scale: 1
+      PointSize: 0.1
+      PointShape: 2
+      Opacity: 1
+    Mapping:
+      Cmap:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lat:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lng:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Opacity:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      R:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointSize:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointShape:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+    MetaMapping:
+      Name:
+        Source: 
+  LoadMetaColumns: 1
   ValueCutoffMin: 0
   ValueCutoffMax: 1
-  ColorMap: 45
   ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
 --- !u!1 &1314198636
 GameObject:
@@ -3793,6 +3924,178 @@ MonoBehaviour:
   mouseScale: {x: 1, y: 1}
   curvedRange: {x: 1, y: 2}
   inputMethod: 0
+--- !u!1 &1866218499
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 1646877424920036, guid: c449de312ca87e741ac9e4c0eea07b74,
+    type: 2}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1866218500}
+  - component: {fileID: 1866218501}
+  m_Layer: 0
+  m_Name: LargePointDataSet
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &1866218500
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 4769254169897186, guid: c449de312ca87e741ac9e4c0eea07b74,
+    type: 2}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1866218499}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1061534655}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1866218501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 114066515159941612, guid: c449de312ca87e741ac9e4c0eea07b74,
+    type: 2}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1866218499}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6175a300d859994c8994c25ba3f35e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TableFileName: Assets/Resources/DataTables/2MPZ.CATcross_PLUS.tbl
+  MappingFileName: 
+  DataMapping:
+    ColorMap: 0
+    Spherical: 0
+    RenderType: 0
+    UniformColor: 0
+    UniformPointSize: 0
+    UniformPointShape: 0
+    UniformOpacity: 0
+    Uniforms:
+      ColorString: 
+      Color: {r: 0, g: 0, b: 0, a: 0}
+      Scale: 1
+      PointSize: 0.1
+      PointShape: 2
+      Opacity: 1
+    Mapping:
+      Cmap:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lat:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lng:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Opacity:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      R:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointSize:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointShape:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+    MetaMapping:
+      Name:
+        Source: 
+  LoadMetaColumns: 1
+  ValueCutoffMin: 0
+  ValueCutoffMax: 1
+  ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
 --- !u!1 &1894848103
 GameObject:
   m_ObjectHideFlags: 0
@@ -3837,12 +4140,133 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   TableFileName: Assets/Resources/DataTables/2MRS_GroupGalaxies.tbl
-  MappingFileName: Assets/Resources/DataMaps/basicxyz.json
-  SphericalCoordinates: 0
-  LineData: 0
+  MappingFileName: 
+  DataMapping:
+    ColorMap: 0
+    Spherical: 0
+    RenderType: 0
+    UniformColor: 0
+    UniformPointSize: 0
+    UniformPointShape: 0
+    UniformOpacity: 0
+    Uniforms:
+      ColorString: 
+      Color: {r: 0, g: 0, b: 0, a: 0}
+      Scale: 1
+      PointSize: 0.1
+      PointShape: 2
+      Opacity: 1
+    Mapping:
+      Cmap:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lat:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lng:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Opacity:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      R:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointSize:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointShape:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+    MetaMapping:
+      Name:
+        Source: 
+  LoadMetaColumns: 1
   ValueCutoffMin: 0
   ValueCutoffMax: 1
-  ColorMap: 3
   ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
 --- !u!1 &1974559755
 GameObject:

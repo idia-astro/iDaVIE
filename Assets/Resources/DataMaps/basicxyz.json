@@ -1,97 +1,55 @@
 {
-   "Colormap": "",
-   "Defaults": {
-      "Color": "#FF0000",
-      "Scale": 0.05,
-      "Shape": 0,
-      "PointSize": 0.1
-   },
-   "Mapping": {
-      "Cmap": {
-         "Clamped": false,
-         "MaxVal": 0.0,
-         "MinVal": 0.0,
-         "Offset": 0.0,
-         "Scale": 0.2,
-         "ScalingType": 0,
-         "Source": "Kmag"
-      },
-      "Lat": {
-         "Clamped": false,
-         "MaxVal": 0.0,
-         "MinVal": 0.0,
-         "Offset": 0.0,
-         "Scale": 1.0,
-         "ScalingType": 0,
-         "Source": ""
-      },
-      "Long": {
-         "Clamped": false,
-         "MaxVal": 0.0,
-         "MinVal": 0.0,
-         "Offset": 0.0,
-         "Scale": 1.0,
-         "ScalingType": 0,
-         "Source": ""
-      },
-      "Opacity": {
-         "Clamped": false,
-         "MaxVal": 0.0,
-         "MinVal": 0.0,
-         "Offset": 0.0,
-         "Scale": 1.0,
-         "ScalingType": 0,
-         "Source": ""
-      },
-      "R": {
-         "Clamped": false,
-         "MaxVal": 0.0,
-         "MinVal": 0.0,
-         "Offset": 0.0,
-         "Scale": 1.0,
-         "ScalingType": 0,
-         "Source": ""
-      },
-      "Size": {
-         "Clamped": false,
-         "MaxVal": 4.0,
-         "MinVal": 0.1,
-         "Offset": 1.0,
-         "Scale": 0.01,
-         "ScalingType": 0,
-         "Source": "Dm"
-      },
-      "X": {
-         "Clamped": false,
-         "MaxVal": 0.0,
-         "MinVal": 0.0,
-         "Offset": 0.0,
-         "Scale": 1.0,
-         "ScalingType": 0,
-         "Source": "X"
-      },
-      "Y": {
-         "Clamped": false,
-         "MaxVal": 0.0,
-         "MinVal": 0.0,
-         "Offset": 0.0,
-         "Scale": 1.0,
-         "ScalingType": 0,
-         "Source": "Y"
-      },
-      "Z": {
-         "Clamped": false,
-         "MaxVal": 0.0,
-         "MinVal": 0.0,
-         "Offset": 0.0,
-         "Scale": 1.0,
-         "ScalingType": 0,
-         "Source": "Z"
-      }
-   },
-   "MetaMapping": {
-      "Name": {
-         "Source": ""
-      }
-   }
+  "ColorMap": "Inferno",
+  "SingleColor": "#FF0000",
+  "Spherical": false,
+  "Scale": 0.05,
+  "Shape": "Billboard",
+  "PointSize": 0.1,
+  "Mapping": {
+    "Cmap": {
+      "Clamped": false,
+      "MaxVal": 0.0,
+      "MinVal": 0.0,
+      "Offset": 0.0,
+      "Scale": 0.2,
+      "ScalingType": "Log",
+      "Source": "Kmag"
+    },
+    "Size": {
+      "Clamped": false,
+      "MaxVal": 4.0,
+      "MinVal": 0.1,
+      "Offset": 1.0,
+      "Scale": 0.01,
+      "ScalingType": "Linear",
+      "Source": "Dm"
+    },
+    "X": {
+      "Clamped": false,
+      "MaxVal": 0.0,
+      "MinVal": 0.0,
+      "Offset": 0.0,
+      "Scale": 1.0,
+      "ScalingType": "Linear",
+      "Source": "X"
+    },
+    "Y": {
+      "Clamped": false,
+      "MaxVal": 0.0,
+      "MinVal": 0.0,
+      "Offset": 0.0,
+      "Scale": 1.0,
+      "ScalingType": "Linear",
+      "Source": "Y"
+    },
+    "Z": {
+      "Clamped": false,
+      "MaxVal": 0.0,
+      "MinVal": 0.0,
+      "Offset": 0.0,
+      "Scale": 1.0,
+      "ScalingType": "Linear",
+      "Source": "Z"
+    }
+  }
 }

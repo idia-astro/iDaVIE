@@ -8,12 +8,22 @@ using UnityEngine;
 
 public class VolumeDataSet : MonoBehaviour
 {
+    [Header("Rendering Settings")]
     // Step control
     [Range(16, 512)] public int MaxSteps = 192;
-
     // Jitter factor
     [Range(0, 1)] public float Jitter = 1.0f;
 
+    // Foveated rendering controls
+    [Header("Foveated Rendering Controls")]
+    public bool FoveatedRendering = false;
+    [Range(0, 0.5f)] public float FoveationStart = 0.15f;
+    [Range(0, 0.5f)] public float FoveationEnd = 0.40f;
+    [Range(0, 0.5f)] public float FoveationJitter = 0.0f;
+    [Range(16, 512)] public int FoveatedStepsLow = 64;
+    [Range(16, 512)] public int FoveatedStepsHigh = 384;
+
+    [Header("Thresholds")]
     // Spatial thresholding
     public Vector3 SliceMin = Vector3.zero;
     public Vector3 SliceMax = Vector3.one;
@@ -26,6 +36,7 @@ public class VolumeDataSet : MonoBehaviour
     [Range(0, 1)] public float ThresholdMin = 0;
     [Range(0, 1)] public float ThresholdMax = 1;
     
+    [Space(10)]
     public Material RayMarchingMaterial;
     public string FileName;
     public Texture3D DataCube;
@@ -38,16 +49,10 @@ public class VolumeDataSet : MonoBehaviour
 
     // Material property IDs
     private int _idSliceMin, _idSliceMax, _idThresholdMin, _idThresholdMax, _idJitter, _idMaxSteps, _idColorMapIndex, _idScaleMin, _idScaleMax;
-    
-    void Start()
+    private int _idFoveationStart, _idFoveationEnd, _idFoveationJitter, _idFoveatedStepsLow, _idFoveatedStepsHigh;
+
+    private void GetPropertyIds()
     {
-        LoadFits(FileName);
-        FindMinAndMax();
-        _renderer = GetComponent<MeshRenderer>();
-        _materialInstance = Instantiate(RayMarchingMaterial);
-        _materialInstance.SetTexture("_DataCube", DataCube);
-        _materialInstance.SetInt("_NumColorMaps", ColorMapUtils.NumColorMaps);
-        _renderer.material = _materialInstance;
         _idSliceMin = Shader.PropertyToID("_SliceMin");
         _idSliceMax = Shader.PropertyToID("_SliceMax");
         _idThresholdMin = Shader.PropertyToID("_ThresholdMin");
@@ -58,6 +63,26 @@ public class VolumeDataSet : MonoBehaviour
         _idScaleMin = Shader.PropertyToID("_ScaleMin");
         _idScaleMax = Shader.PropertyToID("_ScaleMax");
 
+        _idFoveationStart = Shader.PropertyToID("FoveationStart");
+        _idFoveationEnd = Shader.PropertyToID("FoveationEnd");
+        _idFoveationJitter = Shader.PropertyToID("FoveationJitter");
+        _idFoveatedStepsLow = Shader.PropertyToID("FoveatedStepsLow");
+        _idFoveatedStepsHigh = Shader.PropertyToID("FoveatedStepsHigh");
+    }
+    
+    void Start()
+    {        
+        LoadFits(FileName);
+        //DataCube = FloatDataToTexture3D(_fitsFloatData);
+        FindMinAndMax();
+        GetPropertyIds();
+        _renderer = GetComponent<MeshRenderer>();
+        _materialInstance = Instantiate(RayMarchingMaterial);
+        _materialInstance.SetTexture("_DataCube", DataCube);
+        _materialInstance.SetInt("_NumColorMaps", ColorMapUtils.NumColorMaps);
+        _materialInstance.SetFloat(_idFoveationStart, FoveationStart);
+        _materialInstance.SetFloat(_idFoveationEnd, FoveationEnd);
+        _renderer.material = _materialInstance;                
     }
 
     public void ShiftColorMap(int delta)
@@ -81,6 +106,19 @@ public class VolumeDataSet : MonoBehaviour
         _materialInstance.SetFloat(_idScaleMax, ScaleMax);
         _materialInstance.SetFloat(_idScaleMin, ScaleMin);
 
+        _materialInstance.SetFloat(_idFoveationStart, FoveationStart);
+        _materialInstance.SetFloat(_idFoveationEnd, FoveationEnd);        
+        if (FoveatedRendering)
+        {
+            _materialInstance.SetFloat(_idFoveationJitter, FoveationJitter);
+            _materialInstance.SetInt(_idFoveatedStepsLow, FoveatedStepsLow);
+            _materialInstance.SetInt(_idFoveatedStepsHigh, FoveatedStepsHigh);
+        }
+        else
+        {
+            _materialInstance.SetInt(_idFoveatedStepsLow, MaxSteps);
+            _materialInstance.SetInt(_idFoveatedStepsHigh, MaxSteps);
+        }
     }
 
     public void LoadFits(string fileName)
