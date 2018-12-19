@@ -9,19 +9,29 @@ extern "C"
 {
 	DllExport void FindMaxMin(float *dataPtr, long numberElements, float *maxResult, float *minResult)
 	{
+		float val;
 		float maxVal = -std::numeric_limits<float>::max();
 		float minVal = std::numeric_limits<float>::max();
-
-		float val;
-		//#pragma omp parallel for reduction(min:minVal) reduction(max:maxVal)
-		for (auto i = 0; i < numberElements; i++) 
+#pragma omp parallel 
 		{
-			val = dataPtr[i];
-			maxVal = fmax(maxVal, val);
-			minVal = fmin(minVal, val);
+			float currentMax = -std::numeric_limits<float>::max();
+			float currentMin = -std::numeric_limits<float>::min();
+
+#pragma omp for
+			for (int i = 0; i < numberElements; i++)
+			{
+				val = dataPtr[i];
+				currentMax = fmax(currentMax, val);
+				currentMin = fmin(currentMin, val);
+			}
+#pragma omp critical
+			{
+				maxVal = fmax(currentMax, maxVal);
+				minVal = fmin(currentMin, minVal);
+			}
+			*maxResult = maxVal;
+			*minResult = minVal;
 		}
-		*maxResult = maxVal;
-		*minResult = minVal;
 	}
 
 	DllExport int NearNeighborScale(float *dataPtr, float **newDataPtr, int dimX, int dimY, int dimZ, int windowX, int windowY, int windowZ)

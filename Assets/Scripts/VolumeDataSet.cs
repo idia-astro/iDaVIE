@@ -170,29 +170,8 @@ public class VolumeDataSet : MonoBehaviour
 
 
     public void FindMinAndMax()
-    {
-        /*
-        float[] fitsCubeData = new float[_numberDataPts];
-        Marshal.Copy(_fitsCubeData, fitsCubeData, 0, (int)_numberDataPts);
-        float maxPixelValue = -float.MaxValue;
-        float minPixelValue = float.MaxValue;
-        int lengthArray = fitsCubeData.Length;
-        for (int i = 0; i < lengthArray; i++)
-        {
-            float pixValue = fitsCubeData[i];
-            if (!float.IsNaN(pixValue))
-            {
-                maxPixelValue = Mathf.Max(maxPixelValue, pixValue);
-                minPixelValue = Mathf.Min(minPixelValue, pixValue);
-            }
-        }
-        ScaleMax = maxPixelValue;
-        ScaleMin = minPixelValue;
-        */
-
+    { 
         DataAnalysis.FindMaxMin(_fitsCubeData, _numberDataPts, out ScaleMax, out ScaleMin);
-       
-
         Debug.Log("max and min vals: " + ScaleMax + " and " + ScaleMin);
     }
 }
