@@ -15,7 +15,7 @@ extern "C"
 #pragma omp parallel 
 		{
 			float currentMax = -std::numeric_limits<float>::max();
-			float currentMin = -std::numeric_limits<float>::min();
+			float currentMin = std::numeric_limits<float>::max();
 
 #pragma omp for
 			for (int i = 0; i < numberElements; i++)
