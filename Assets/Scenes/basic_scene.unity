@@ -2962,6 +2962,7 @@ MonoBehaviour:
   ValueCutoffMin: 0
   ValueCutoffMax: 1
   ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
+  SpriteSheetTexture: {fileID: 2800000, guid: 8dbd6bb4429503744b8c120fa13de531, type: 3}
 --- !u!1 &1314198636
 GameObject:
   m_ObjectHideFlags: 0
@@ -4216,6 +4217,7 @@ MonoBehaviour:
   ValueCutoffMin: 0
   ValueCutoffMax: 1
   ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
+  SpriteSheetTexture: {fileID: 2800000, guid: 8dbd6bb4429503744b8c120fa13de531, type: 3}
 --- !u!1 &1894848103
 GameObject:
   m_ObjectHideFlags: 0
@@ -4391,6 +4393,7 @@ MonoBehaviour:
   ValueCutoffMin: 0
   ValueCutoffMax: 1
   ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
+  SpriteSheetTexture: {fileID: 2800000, guid: 8dbd6bb4429503744b8c120fa13de531, type: 3}
 --- !u!1 &1974559755
 GameObject:
   m_ObjectHideFlags: 0

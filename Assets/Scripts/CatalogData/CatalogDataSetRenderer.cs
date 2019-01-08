@@ -22,7 +22,8 @@ namespace CatalogData
         [Range(0.0f, 1.0f)] public float ValueCutoffMin = 0;
         [Range(0.0f, 1.0f)] public float ValueCutoffMax = 1;
         public Texture2D ColorMapTexture;
-
+        public Texture2D SpriteSheetTexture;
+        
         private ComputeBuffer[] _buffers;
         private Color[] _colorMapData;
 
@@ -167,8 +168,7 @@ namespace CatalogData
                 else
                 {
                     _catalogMaterial = new Material(Shader.Find("IDIA/CatalogPoint"));
-                    Texture2D spriteSheetTexture = (Texture2D) AssetDatabase.LoadAssetAtPath("Assets/Textures/billboard_textures.TGA", typeof(Texture2D));
-                    _catalogMaterial.SetTexture(_idSpriteSheet, spriteSheetTexture);
+                    _catalogMaterial.SetTexture(_idSpriteSheet, SpriteSheetTexture);
                     _catalogMaterial.SetInt(_idNumSprites, 8);
                 }
 
