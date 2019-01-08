@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using CatalogData;
 using TMPro;
 using UnityEngine;
@@ -15,11 +16,18 @@ public class InputController : MonoBehaviour
         Scaling
     }
 
+    [Flags]
+    private enum RotationAxes
+    {
+        None = 0,
+        Roll = 1,
+        Yaw = 2        
+    }
+
     // Scaling/Rotation options
     public bool InPlaceScaling = true;
     public bool ScalingEnabled = true;
-    public bool YawEnabled = true;
-    public bool RollEnabled = false;
+    public float RotationAxisCutoff = 5.0f;
 
     public CatalogDataSetManager CatalogDataSetManager;
     private Player _player;
@@ -40,6 +48,10 @@ public class InputController : MonoBehaviour
     private LineRenderer _lineRendererRotationAxes;
     private TextMeshPro _scalingTextComponent;
 
+    private float _rotationYawCumulative = 0;
+    private float _rotationRollCumulative = 0;
+    private RotationAxes _rotationAxes = RotationAxes.Yaw | RotationAxes.Roll;
+    
     private void OnEnable()
     {
         if (_player == null)
@@ -174,6 +186,9 @@ public class InputController : MonoBehaviour
         _startGripSeparation = _handTransforms[0].position - _handTransforms[1].position;
         _startGripCenter = (_handTransforms[0].position + _handTransforms[1].position) / 2.0f;
         _starGripForwardAxis = Vector3.Cross(Vector3.up, _startGripSeparation.normalized).normalized;
+        _rotationYawCumulative = 0;
+        _rotationRollCumulative = 0;
+        _rotationAxes = RotationAxes.Yaw | RotationAxes.Roll;
 
         for (var i = 0; i < _allDataSets.Count; i++)
         {
@@ -236,27 +251,49 @@ public class InputController : MonoBehaviour
         Vector3 currentGripCenter = (_currentGripPositions[0] + _currentGripPositions[1]) / 2.0f;
         float startGripDistance = _startGripSeparation.magnitude;
         float currentGripDistance = currentGripSeparation.magnitude;
-        float scalingFactor = currentGripDistance / Mathf.Max(startGripDistance, 1.0e-6f);
+        float scalingFactor = currentGripDistance / Mathf.Max(startGripDistance, 1.0e-6f);                               
+        
+        // Calculate the change in rotation of the grip vector about the up (Y+) axis
+        Vector3 previousGripDirectionXz = new Vector3(previousGripSeparation.x, 0, previousGripSeparation.z).normalized;
+        Vector3 currentGripDirectionXz = new Vector3(currentGripSeparation.x, 0, currentGripSeparation.z).normalized;
+        float angleYaw = Mathf.Asin(Vector3.Cross(previousGripDirectionXz, currentGripDirectionXz).y);
 
+        // Calculate the change in rotation of the grip vector about the custom rotation axis
+        Vector3 perpendicularAxis = Vector3.Cross(_starGripForwardAxis, Vector3.up);
+        Vector3 previousGripDirectionRotationAxis = new Vector3(Vector3.Dot(perpendicularAxis, previousGripSeparation), Vector3.Dot(Vector3.up, previousGripSeparation), 0).normalized;
+        Vector3 currentGripDirectionRotationAxis = new Vector3(Vector3.Dot(perpendicularAxis, currentGripSeparation), Vector3.Dot(Vector3.up, currentGripSeparation), 0).normalized;
+        float angleRoll = Mathf.Asin(-Vector3.Cross(previousGripDirectionRotationAxis, currentGripDirectionRotationAxis).z);
+                        
+        if ((_rotationAxes & RotationAxes.Yaw) == RotationAxes.Yaw)
+        {
+            _rotationYawCumulative += angleYaw * Mathf.Rad2Deg;
+            if (Mathf.Abs(_rotationYawCumulative) >= RotationAxisCutoff)
+            {
+                _rotationAxes = RotationAxes.Yaw;
+            }
+        }       
+        
+        // Only apply yaw if roll rotation is below the cutoff threshold
+        if ((_rotationAxes & RotationAxes.Roll) == RotationAxes.Roll)
+        {
+            _rotationRollCumulative += angleRoll * Mathf.Rad2Deg;
+            if (Mathf.Abs(_rotationRollCumulative) >= RotationAxisCutoff)
+            {
+                _rotationAxes = RotationAxes.Roll;
+            }
+        }
+
+        var yawCurrentlyActive = (_rotationAxes & RotationAxes.Yaw) == RotationAxes.Yaw;
+        var rollCurrentlyActive = (_rotationAxes & RotationAxes.Roll) == RotationAxes.Roll;
+        
         // Each dataSet needs to be updated separately, as they can have different initial scales.        
         for (var i = 0; i < _allDataSets.Count; i++)
         {
             var dataSet = _allDataSets[i];
             float initialScale = _startDataSetScales[i];
             float currentScale = dataSet.transform.localScale.magnitude;
-            float newScale = Mathf.Max(1e-6f, initialScale * scalingFactor);
-
-            // Calculate the change in rotation of the grip vector about the up (Y+) axis
-            Vector3 previousGripDirectionXz = new Vector3(previousGripSeparation.x, 0, previousGripSeparation.z).normalized;
-            Vector3 currentGripDirectionXz = new Vector3(currentGripSeparation.x, 0, currentGripSeparation.z).normalized;
-            float angleYaw = Mathf.Asin(Vector3.Cross(previousGripDirectionXz, currentGripDirectionXz).y);
-
-            // Calculate the change in rotation of the grip vector about the custom rotation axis
-            Vector3 perpendicularAxis = Vector3.Cross(_starGripForwardAxis, Vector3.up);
-            Vector3 previousGripDirectionRotationAxis = new Vector3(Vector3.Dot(perpendicularAxis, previousGripSeparation), Vector3.Dot(Vector3.up, previousGripSeparation), 0).normalized;
-            Vector3 currentGripDirectionRotationAxis = new Vector3(Vector3.Dot(perpendicularAxis, currentGripSeparation), Vector3.Dot(Vector3.up, currentGripSeparation), 0).normalized;
-            float angleRoll = Mathf.Asin(-Vector3.Cross(previousGripDirectionRotationAxis, currentGripDirectionRotationAxis).z);
-
+            float newScale = Mathf.Max(1e-6f, initialScale * scalingFactor);                     
+            
             if (InPlaceScaling)
             {
                 // Adjust dataSet position while scaling to keep the pivot point fixed
@@ -271,12 +308,13 @@ public class InputController : MonoBehaviour
 
                 // Adjust dataSet position while rotating to keep the pivot point fixed
                 Vector3 startGripPositionDataSpace = dataSet.transform.InverseTransformPoint(_startGripCenter);
-                if (YawEnabled)
+                
+                if (yawCurrentlyActive)
                 {
                     dataSet.transform.RotateAround(_startGripCenter, Vector3.up, angleYaw * Mathf.Rad2Deg);
                 }
 
-                if (RollEnabled)
+                if (rollCurrentlyActive)
                 {
                     dataSet.transform.RotateAround(_startGripCenter, _starGripForwardAxis, angleRoll * Mathf.Rad2Deg);
                 }
@@ -292,14 +330,18 @@ public class InputController : MonoBehaviour
                     dataSet.transform.localScale = dataSet.transform.localScale.normalized * newScale;
                 }
 
-                if (YawEnabled)
+                if (yawCurrentlyActive)
                 {
-                    dataSet.transform.Rotate(Vector3.up, angleYaw * Mathf.Rad2Deg);
+                    var angleDegrees = angleYaw * Mathf.Rad2Deg;
+                    _rotationYawCumulative += angleDegrees;
+                    dataSet.transform.Rotate(Vector3.up, angleDegrees);
                 }
 
-                if (RollEnabled)
+                if (rollCurrentlyActive)
                 {
-                    dataSet.transform.Rotate(_starGripForwardAxis, angleRoll * Mathf.Rad2Deg);
+                    var angleDegrees = angleRoll * Mathf.Rad2Deg;
+                    _rotationRollCumulative += angleDegrees;
+                    dataSet.transform.Rotate(_starGripForwardAxis, angleDegrees);
                 }
             }
 
@@ -308,7 +350,8 @@ public class InputController : MonoBehaviour
 
         var rotationPoint = InPlaceScaling ? _startGripCenter : currentGripCenter;
         _lineRendererAxisSeparation.SetPositions(new[] {_currentGripPositions[0], rotationPoint, _currentGripPositions[1]});
-        _lineRendererRotationAxes.SetPositions(new[] {_startGripCenter + _starGripForwardAxis * (RollEnabled ? 0.1f : 0.0f), rotationPoint, _startGripCenter + Vector3.up * (YawEnabled ? 0.1f : 0.0f)});
+        
+        _lineRendererRotationAxes.SetPositions(new[] {_startGripCenter + _starGripForwardAxis * (rollCurrentlyActive ? 0.1f : 0.0f), rotationPoint, _startGripCenter + Vector3.up * (yawCurrentlyActive ? 0.1f : 0.0f)});
     }
 
     // Update function for FSM Moving state
