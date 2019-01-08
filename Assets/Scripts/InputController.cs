@@ -29,6 +29,8 @@ public class InputController : MonoBehaviour
     public bool ScalingEnabled = true;
     public float RotationAxisCutoff = 5.0f;
 
+    [Range(0.1f, 5.0f)] public float VignetteFadeSpeed = 2.0f;
+
     public CatalogDataSetManager CatalogDataSetManager;
     private Player _player;
     private Hand[] _hands;
@@ -51,6 +53,10 @@ public class InputController : MonoBehaviour
     private float _rotationYawCumulative = 0;
     private float _rotationRollCumulative = 0;
     private RotationAxes _rotationAxes = RotationAxes.Yaw | RotationAxes.Roll;
+    
+    // Vignetting
+    private float _currentVignetteIntensity = 0;
+    private float _targetVignetteIntensity = 0;
     
     private void OnEnable()
     {
@@ -173,11 +179,13 @@ public class InputController : MonoBehaviour
     private void StateTransitionMovingToIdle()
     {
         _inputState = InputState.Idle;
+        _targetVignetteIntensity = 0;
     }
 
     private void StateTransitionIdleToMoving()
     {
         _inputState = InputState.Moving;
+        _targetVignetteIntensity = 1;
     }
 
     private void StateTransitionMovingToScaling()
@@ -222,6 +230,9 @@ public class InputController : MonoBehaviour
 
     private void Update()
     {
+        // Common update functions
+        UpdateVignette();
+
         switch (_inputState)
         {
             case InputState.Moving:
@@ -233,6 +244,31 @@ public class InputController : MonoBehaviour
             case InputState.Idle:
                 UpdateIdle();
                 break;
+        }
+    }
+
+    private void UpdateVignette()
+    {
+        float requiredChange = _targetVignetteIntensity - _currentVignetteIntensity;
+        // Skip updates if the target is sufficiently close
+        if (Mathf.Abs(requiredChange) > 1e-6f)
+        {
+            float maxChange = Mathf.Sign(requiredChange) * Time.deltaTime * VignetteFadeSpeed;
+            if (Mathf.Abs(maxChange) > Mathf.Abs(requiredChange))
+            {
+                maxChange = requiredChange;
+            }
+
+            _currentVignetteIntensity += maxChange;
+            foreach (var dataSet in _volumeDataSets)
+            {
+                dataSet.VignetteIntensity = _currentVignetteIntensity;
+            }
+            
+            foreach (var dataSet in _catalogDataSets)
+            {
+                dataSet.VignetteIntensity = _currentVignetteIntensity;
+            }
         }
     }
 
@@ -349,9 +385,10 @@ public class InputController : MonoBehaviour
         }
 
         var rotationPoint = InPlaceScaling ? _startGripCenter : currentGripCenter;
-        _lineRendererAxisSeparation.SetPositions(new[] {_currentGripPositions[0], rotationPoint, _currentGripPositions[1]});
-        
+        _lineRendererAxisSeparation.SetPositions(new[] {_currentGripPositions[0], rotationPoint, _currentGripPositions[1]});        
         _lineRendererRotationAxes.SetPositions(new[] {_startGripCenter + _starGripForwardAxis * (rollCurrentlyActive ? 0.1f : 0.0f), rotationPoint, _startGripCenter + Vector3.up * (yawCurrentlyActive ? 0.1f : 0.0f)});
+        
+        
     }
 
     // Update function for FSM Moving state
