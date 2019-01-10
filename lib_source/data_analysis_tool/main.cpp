@@ -9,7 +9,6 @@ extern "C"
 {
 	DllExport void FindMaxMin(float *dataPtr, long numberElements, float *maxResult, float *minResult)
 	{
-		float val;
 		float maxVal = -std::numeric_limits<float>::max();
 		float minVal = std::numeric_limits<float>::max();
 #pragma omp parallel 
@@ -20,7 +19,7 @@ extern "C"
 #pragma omp for
 			for (int i = 0; i < numberElements; i++)
 			{
-				val = dataPtr[i];
+				float val = dataPtr[i];
 				currentMax = fmax(currentMax, val);
 				currentMin = fmin(currentMin, val);
 			}
