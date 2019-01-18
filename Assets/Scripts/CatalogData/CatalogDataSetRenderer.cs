@@ -24,6 +24,13 @@ namespace CatalogData
         public Texture2D ColorMapTexture;
         public Texture2D SpriteSheetTexture;
         
+        // Vignette Rendering
+        [Header("Vignette Rendering Controls")]
+        [Range(0, 0.5f)] public float VignetteFadeStart = 0.15f;
+        [Range(0, 0.5f)] public float VignetteFadeEnd = 0.40f;
+        [Range(0, 1)] public float VignetteIntensity = 0.0f;
+        public Color VignetteColor = Color.black;
+        
         private ComputeBuffer[] _buffers;
         private Color[] _colorMapData;
 
@@ -46,6 +53,8 @@ namespace CatalogData
         private int _idUseUniformColor, _idUseUniformOpacity, _idUseUniformPointSize, _idUseUniformPointShape;
         private int _idColor, _idOpacity, _idPointSize, _idPointShape;
         private int _idMappingConfigs;
+        private int _idVignetteFadeStart, _idVignetteFadeEnd, _idVignetteIntensity, _idVignetteColor, _idScreenWidth, _idScreenHeight;
+
 
         private void GetPropertyIds()
         {
@@ -80,6 +89,13 @@ namespace CatalogData
             _idPointShape = Shader.PropertyToID("pointShape");
 
             _idMappingConfigs = Shader.PropertyToID("mappingConfigs");
+            
+            _idVignetteFadeStart = Shader.PropertyToID("VignetteFadeStart");
+            _idVignetteFadeEnd = Shader.PropertyToID("VignetteFadeEnd");
+            _idVignetteIntensity = Shader.PropertyToID("VignetteIntensity");
+            _idVignetteColor = Shader.PropertyToID("VignetteIntensity");
+            _idScreenWidth = Shader.PropertyToID("ScreenWidth");
+            _idScreenHeight = Shader.PropertyToID("ScreenHeight");
         }
 
         #endregion
@@ -570,6 +586,16 @@ namespace CatalogData
             {
                 _catalogMaterial.SetFloat(_idCutoffMin, ValueCutoffMin);
                 _catalogMaterial.SetFloat(_idCutoffMax, ValueCutoffMax);
+            }
+            
+            _catalogMaterial.SetFloat(_idVignetteFadeStart, VignetteFadeStart);
+            _catalogMaterial.SetFloat(_idVignetteFadeEnd, VignetteFadeEnd);
+            _catalogMaterial.SetFloat(_idVignetteIntensity, VignetteIntensity);
+            _catalogMaterial.SetColor(_idVignetteColor, VignetteColor);
+            if (Camera.current != null)
+            {
+                _catalogMaterial.SetFloat(_idScreenWidth, Camera.current.scaledPixelWidth);
+                _catalogMaterial.SetFloat(_idScreenHeight, Camera.current.scaledPixelHeight);            
             }
 
             UpdateMappingValues();

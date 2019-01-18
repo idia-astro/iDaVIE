@@ -1,6 +1,8 @@
 // Ray marching fragment shader, partially adapted from NVIDIA OpenGL SDK sample "Render to 3D Texture"
 // http://developer.download.nvidia.com/SDK/10/opengl/samples.html
 
+#include "./Shared/Vignette.cginc"
+
 struct Ray
 {
     float3 origin;
@@ -107,10 +109,15 @@ float numSamples(float2 position, float2 screenSize)
 
 fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
 {
-    // TODO: Make this dynamic
-    float2 screenSize = float2(1901.0, 2263.0);
+    float vignetteWeight = GetVignetteWeight(input.position.xy);
+    
+    if (vignetteWeight >= 1.0)
+    {
+        return GetVignetteFromWeight(vignetteWeight, float4(0, 0, 0, 0));
+    }    
+    
+    float2 screenSize = float2(ScreenWidth, ScreenHeight);    
     float foveatedSamples = numSamples(input.position.xy, screenSize);
-    //return float4(foveatedSamples / FoveatedStepsHigh, 0, 0, 1);
     
     input.ray.direction = normalize(input.ray.direction);
     float3 boxMin = _SliceMin;
@@ -121,7 +128,7 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
     // Early exit of pixels missing the bounding box
     if (!hit)
     {
-        return float4(0, 0, 0, 0);
+        return GetVignetteFromWeight(vignetteWeight, float4(0, 0, 0, 0));
     }
     
     tNear = max(0, tNear);    
@@ -177,5 +184,5 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
     float4 color = tex2D(_ColorMap, float2(colorMapValue, colorMapOffset));
         
     // Pre-multiply the output color
-    return float4(color.xyz, rayValue);
+    return GetVignetteFromWeight(vignetteWeight, float4(color.xyz, rayValue));    
 }
