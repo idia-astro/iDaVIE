@@ -108,5 +108,5 @@ void gsLine(point VertexShaderOutput input[1], inout LineStream<FragmentShaderIn
 
 float4 fsSimple(FragmentShaderInput input) : COLOR
 {
-    return input.color * input.opacity;
+    return GetVignette(input.position.xy, input.color * input.opacity);
 }

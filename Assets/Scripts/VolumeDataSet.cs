@@ -23,6 +23,13 @@ public class VolumeDataSet : MonoBehaviour
     [Range(16, 512)] public int FoveatedStepsLow = 64;
     [Range(16, 512)] public int FoveatedStepsHigh = 384;
 
+    // Vignette Rendering
+    [Header("Vignette Rendering Controls")]
+    [Range(0, 0.5f)] public float VignetteFadeStart = 0.15f;
+    [Range(0, 0.5f)] public float VignetteFadeEnd = 0.40f;
+    [Range(0, 1)] public float VignetteIntensity = 0.0f;
+    public Color VignetteColor = Color.black;
+    
     [Header("Thresholds")]
     // Spatial thresholding
     public Vector3 SliceMin = Vector3.zero;
@@ -51,6 +58,7 @@ public class VolumeDataSet : MonoBehaviour
     // Material property IDs
     private int _idSliceMin, _idSliceMax, _idThresholdMin, _idThresholdMax, _idJitter, _idMaxSteps, _idColorMapIndex, _idScaleMin, _idScaleMax;
     private int _idFoveationStart, _idFoveationEnd, _idFoveationJitter, _idFoveatedStepsLow, _idFoveatedStepsHigh;
+    private int _idVignetteFadeStart, _idVignetteFadeEnd, _idVignetteIntensity, _idVignetteColor, _idScreenWidth, _idScreenHeight;
 
     private void GetPropertyIds()
     {
@@ -69,6 +77,13 @@ public class VolumeDataSet : MonoBehaviour
         _idFoveationJitter = Shader.PropertyToID("FoveationJitter");
         _idFoveatedStepsLow = Shader.PropertyToID("FoveatedStepsLow");
         _idFoveatedStepsHigh = Shader.PropertyToID("FoveatedStepsHigh");
+        
+        _idVignetteFadeStart = Shader.PropertyToID("VignetteFadeStart");
+        _idVignetteFadeEnd = Shader.PropertyToID("VignetteFadeEnd");
+        _idVignetteIntensity = Shader.PropertyToID("VignetteIntensity");
+        _idVignetteColor = Shader.PropertyToID("VignetteIntensity");
+        _idScreenWidth = Shader.PropertyToID("ScreenWidth");
+        _idScreenHeight = Shader.PropertyToID("ScreenHeight");
     }
     
     void Start()
@@ -119,6 +134,16 @@ public class VolumeDataSet : MonoBehaviour
             _materialInstance.SetInt(_idFoveatedStepsLow, MaxSteps);
             _materialInstance.SetInt(_idFoveatedStepsHigh, MaxSteps);
         }
+        
+        _materialInstance.SetFloat(_idVignetteFadeStart, VignetteFadeStart);
+        _materialInstance.SetFloat(_idVignetteFadeEnd, VignetteFadeEnd);
+        _materialInstance.SetFloat(_idVignetteIntensity, VignetteIntensity);
+        _materialInstance.SetColor(_idVignetteColor, VignetteColor);
+        if (Camera.current != null)
+        {
+            _materialInstance.SetFloat(_idScreenWidth, Camera.current.scaledPixelWidth);
+            _materialInstance.SetFloat(_idScreenHeight, Camera.current.scaledPixelHeight);            
+        }        
     }
 
     public void LoadFits(string fileName)

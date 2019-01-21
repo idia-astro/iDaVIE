@@ -1,3 +1,5 @@
+#include "../Shared/Vignette.cginc"
+
 #define NUM_COLOR_MAP_STEPS 256
 
 #define LINEAR 0
