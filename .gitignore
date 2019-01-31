@@ -435,6 +435,7 @@ ASALocalRun/
 Assets/SteamVR
 Assets/SteamVR_Input
 Assets/TextMesh\ Pro
-Assets/Resources/DataTables/
-Assets/Resources/
+Data/
 Assets/Plugins/Fits/
+*.fits
+*.tbl
