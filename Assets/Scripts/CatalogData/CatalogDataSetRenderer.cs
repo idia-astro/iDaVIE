@@ -53,7 +53,7 @@ namespace CatalogData
         private int _idUseUniformColor, _idUseUniformOpacity, _idUseUniformPointSize, _idUseUniformPointShape;
         private int _idColor, _idOpacity, _idPointSize, _idPointShape;
         private int _idMappingConfigs;
-        private int _idVignetteFadeStart, _idVignetteFadeEnd, _idVignetteIntensity, _idVignetteColor, _idScreenWidth, _idScreenHeight;
+        private int _idVignetteFadeStart, _idVignetteFadeEnd, _idVignetteIntensity, _idVignetteColor;
 
 
         private void GetPropertyIds()
@@ -94,8 +94,6 @@ namespace CatalogData
             _idVignetteFadeEnd = Shader.PropertyToID("VignetteFadeEnd");
             _idVignetteIntensity = Shader.PropertyToID("VignetteIntensity");
             _idVignetteColor = Shader.PropertyToID("VignetteIntensity");
-            _idScreenWidth = Shader.PropertyToID("ScreenWidth");
-            _idScreenHeight = Shader.PropertyToID("ScreenHeight");
         }
 
         #endregion
@@ -591,12 +589,7 @@ namespace CatalogData
             _catalogMaterial.SetFloat(_idVignetteFadeStart, VignetteFadeStart);
             _catalogMaterial.SetFloat(_idVignetteFadeEnd, VignetteFadeEnd);
             _catalogMaterial.SetFloat(_idVignetteIntensity, VignetteIntensity);
-            _catalogMaterial.SetColor(_idVignetteColor, VignetteColor);
-            if (Camera.current != null)
-            {
-                _catalogMaterial.SetFloat(_idScreenWidth, Camera.current.scaledPixelWidth);
-                _catalogMaterial.SetFloat(_idScreenHeight, Camera.current.scaledPixelHeight);            
-            }
+            _catalogMaterial.SetColor(_idVignetteColor, VignetteColor);           
 
             UpdateMappingValues();
         }

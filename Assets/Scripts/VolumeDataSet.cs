@@ -58,7 +58,7 @@ public class VolumeDataSet : MonoBehaviour
     // Material property IDs
     private int _idSliceMin, _idSliceMax, _idThresholdMin, _idThresholdMax, _idJitter, _idMaxSteps, _idColorMapIndex, _idScaleMin, _idScaleMax;
     private int _idFoveationStart, _idFoveationEnd, _idFoveationJitter, _idFoveatedStepsLow, _idFoveatedStepsHigh;
-    private int _idVignetteFadeStart, _idVignetteFadeEnd, _idVignetteIntensity, _idVignetteColor, _idScreenWidth, _idScreenHeight;
+    private int _idVignetteFadeStart, _idVignetteFadeEnd, _idVignetteIntensity, _idVignetteColor;
 
     private void GetPropertyIds()
     {
@@ -82,8 +82,6 @@ public class VolumeDataSet : MonoBehaviour
         _idVignetteFadeEnd = Shader.PropertyToID("VignetteFadeEnd");
         _idVignetteIntensity = Shader.PropertyToID("VignetteIntensity");
         _idVignetteColor = Shader.PropertyToID("VignetteIntensity");
-        _idScreenWidth = Shader.PropertyToID("ScreenWidth");
-        _idScreenHeight = Shader.PropertyToID("ScreenHeight");
     }
     
     void Start()
@@ -138,12 +136,7 @@ public class VolumeDataSet : MonoBehaviour
         _materialInstance.SetFloat(_idVignetteFadeStart, VignetteFadeStart);
         _materialInstance.SetFloat(_idVignetteFadeEnd, VignetteFadeEnd);
         _materialInstance.SetFloat(_idVignetteIntensity, VignetteIntensity);
-        _materialInstance.SetColor(_idVignetteColor, VignetteColor);
-        if (Camera.current != null)
-        {
-            _materialInstance.SetFloat(_idScreenWidth, Camera.current.scaledPixelWidth);
-            _materialInstance.SetFloat(_idScreenHeight, Camera.current.scaledPixelHeight);            
-        }        
+        _materialInstance.SetColor(_idVignetteColor, VignetteColor);        
     }
 
     public void LoadFits(string fileName)

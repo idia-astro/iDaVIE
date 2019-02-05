@@ -2,14 +2,12 @@ uniform float VignetteFadeStart;
 uniform float VignetteFadeEnd;
 uniform float VignetteIntensity;
 uniform float4 VignetteColor;
-uniform float ScreenWidth;
-uniform float ScreenHeight;
 
 float GetVignetteWeight(float2 position)
 {
-    bool leftEye = position.x < ScreenWidth;
-    position = float2(position.x % ScreenWidth, position.y);       
-    float2 center = float2(ScreenWidth, ScreenHeight) / 2.0;
+    bool leftEye = position.x < _ScreenParams.x;
+    position = float2(position.x % _ScreenParams.x, position.y);       
+    float2 center = _ScreenParams.xy / 2.0;
     float2 delta = center - position;
     if (leftEye)
     {
@@ -19,7 +17,7 @@ float GetVignetteWeight(float2 position)
     {
         delta.x = min(delta.x, 0);
     }
-    float radius = length(delta)/ ScreenWidth;    
+    float radius = length(delta)/ _ScreenParams.x;    
     return VignetteIntensity * smoothstep(VignetteFadeStart, VignetteFadeEnd, radius);
 }
 
