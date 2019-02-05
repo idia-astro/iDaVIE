@@ -5,25 +5,28 @@
 
 #define DllExport __declspec (dllexport)
 
+#define EXIT_SUCCESS 0
+#define EXIT_FAILURE 1
+
+
 extern "C"
 {
-	DllExport void FindMaxMin(float *dataPtr, long numberElements, float *maxResult, float *minResult)
+	DllExport int FindMaxMin(float *dataPtr, long numberElements, float *maxResult, float *minResult)
 	{
 		float maxVal = -std::numeric_limits<float>::max();
 		float minVal = std::numeric_limits<float>::max();
-#pragma omp parallel 
+		#pragma omp parallel 
 		{
 			float currentMax = -std::numeric_limits<float>::max();
 			float currentMin = std::numeric_limits<float>::max();
-
-#pragma omp for
+			#pragma omp for
 			for (int i = 0; i < numberElements; i++)
 			{
 				float val = dataPtr[i];
 				currentMax = fmax(currentMax, val);
 				currentMin = fmin(currentMin, val);
 			}
-#pragma omp critical
+			#pragma omp critical
 			{
 				maxVal = fmax(currentMax, maxVal);
 				minVal = fmin(currentMin, minVal);
@@ -31,8 +34,19 @@ extern "C"
 			*maxResult = maxVal;
 			*minResult = minVal;
 		}
+		return EXIT_SUCCESS
 	}
 
+	DllExport int GetVoxelValue(float *dataPtr, float *voxelValue, int xDim, int yDim, int zDim, int x, int y, int z)
+	{
+		if (x > xDim || y > yDim || z > zDim)
+			return EXIT_FAILURE;
+		int index = xDim * yDim * z + xDim * y + x;
+		*voxelValue = dataPtr[index];
+		return EXIT_SUCCESS;
+	}
+
+	/*
 	DllExport int NearNeighborScale(float *dataPtr, float **newDataPtr, int dimX, int dimY, int dimZ, int windowX, int windowY, int windowZ)
 	{
 		int newDimX = dimX / windowX;
@@ -92,10 +106,10 @@ extern "C"
 		*newDataPtr = reducedCube;
 		return 0;
 	}
-
+	*/
 	DllExport int FreeMemory(void* ptrToDelete)
 	{
 		delete[] ptrToDelete;
-		return 0;
+		return EXIT_SUCCESS;
 	}
 }
