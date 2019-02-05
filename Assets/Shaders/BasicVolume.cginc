@@ -22,6 +22,7 @@ struct VertexShaderOuput
 
 uniform sampler3D _DataCube;
 uniform sampler2D _ColorMap;
+uniform sampler2D _CameraDepthTexture;
 uniform int _NumColorMaps;
 uniform float _ColorMapIndex;
 uniform float3 _SliceMin, _SliceMax;
@@ -98,26 +99,31 @@ float nrand(float2 uv)
     return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453);
 }
 
-float numSamples(float2 position, float2 screenSize)
+float numSamples(float2 position)
 {
-    position = float2(position.x % screenSize.x, position.y);       
-    float2 center = screenSize / 2.0;
+    position = float2(position.x % _ScreenParams.x, position.y);       
+    float2 center = _ScreenParams.xy / 2.0;
     float2 delta = center - position;
-    float radius = length(delta)/ screenSize.x;
+    float radius = length(delta)/ _ScreenParams.x;
     return floor(FoveatedStepsLow + (FoveatedStepsHigh - FoveatedStepsLow) * (1.0 - smoothstep(FoveationStart, FoveationEnd, radius)));   
 }
 
 fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
-{
-    float vignetteWeight = GetVignetteWeight(input.position.xy);
+{    
+    float2 uv = float2(0.5 * input.position.x / _ScreenParams.x, input.position.y / _ScreenParams.y);
+    float depth = LinearEyeDepth(tex2D(_CameraDepthTexture, uv).r);
+    float depthMask = depth > 10.0 ? 0: 1;
+    //return float4(depth * depthMask, 0.1, 0, 1);
+    //return float4(uv.x, 0, 0, 1);
+
+    float vignetteWeight = GetVignetteWeight(input.position.xy);    
     
     if (vignetteWeight >= 1.0)
     {
         return GetVignetteFromWeight(vignetteWeight, float4(0, 0, 0, 0));
     }    
     
-    float2 screenSize = float2(ScreenWidth, ScreenHeight);    
-    float foveatedSamples = numSamples(input.position.xy, screenSize);
+    float foveatedSamples = numSamples(input.position.xy);
     
     input.ray.direction = normalize(input.ray.direction);
     float3 boxMin = _SliceMin;
@@ -131,10 +137,20 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
         return GetVignetteFromWeight(vignetteWeight, float4(0, 0, 0, 0));
     }
     
+    if (depth < tNear)
+    {
+        return float4(0, 0, 0, 0);
+    }
+    
+    if (depth < tFar)
+    {
+        tFar = depth;
+    }
+        
     tNear = max(0, tNear);    
     // calculate intersection points
     float3 pNear = input.ray.origin + input.ray.direction * tNear;
-    float3 pFar  = input.ray.origin + input.ray.direction * tFar;
+    float3 pFar  = input.ray.origin + input.ray.direction * tFar;    
     // convert to texture space
     pNear = pNear + 0.5;
     pFar  = pFar + 0.5;

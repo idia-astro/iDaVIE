@@ -127,6 +127,8 @@ public class InputController : MonoBehaviour
         _startGripCenter = Vector3.zero;
 
         _inputState = InputState.Idle;
+
+        
     }
 
     private void OnDisable()
@@ -232,6 +234,10 @@ public class InputController : MonoBehaviour
     {
         // Common update functions
         UpdateVignette();
+        if (Camera.current)
+        {
+            Camera.current.depthTextureMode = DepthTextureMode.Depth;
+        }
 
         switch (_inputState)
         {

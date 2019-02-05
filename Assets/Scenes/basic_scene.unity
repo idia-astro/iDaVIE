@@ -1166,6 +1166,10 @@ MonoBehaviour:
   FoveationJitter: 0.1
   FoveatedStepsLow: 96
   FoveatedStepsHigh: 384
+  VignetteFadeStart: 0.15
+  VignetteFadeEnd: 0.4
+  VignetteIntensity: 0
+  VignetteColor: {r: 0, g: 0, b: 0, a: 1}
   SliceMin: {x: -0.5, y: -0.5, z: -0.5}
   SliceMax: {x: 0.5, y: 0.5, z: 0.5}
   ScaleMax: 0.15302625
@@ -1211,6 +1215,7 @@ MonoBehaviour:
   InPlaceScaling: 1
   ScalingEnabled: 1
   RotationAxisCutoff: 5
+  VignetteFadeSpeed: 2
   CatalogDataSetManager: {fileID: 1061534654}
 --- !u!114 &443449009
 MonoBehaviour:
@@ -2963,6 +2968,10 @@ MonoBehaviour:
   ValueCutoffMax: 1
   ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
   SpriteSheetTexture: {fileID: 2800000, guid: 8dbd6bb4429503744b8c120fa13de531, type: 3}
+  VignetteFadeStart: 0.15
+  VignetteFadeEnd: 0.4
+  VignetteIntensity: 0
+  VignetteColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!1 &1314198636
 GameObject:
   m_ObjectHideFlags: 0
@@ -4218,6 +4227,10 @@ MonoBehaviour:
   ValueCutoffMax: 1
   ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
   SpriteSheetTexture: {fileID: 2800000, guid: 8dbd6bb4429503744b8c120fa13de531, type: 3}
+  VignetteFadeStart: 0.15
+  VignetteFadeEnd: 0.4
+  VignetteIntensity: 0
+  VignetteColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!1 &1894848103
 GameObject:
   m_ObjectHideFlags: 0
@@ -4394,6 +4407,10 @@ MonoBehaviour:
   ValueCutoffMax: 1
   ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
   SpriteSheetTexture: {fileID: 2800000, guid: 8dbd6bb4429503744b8c120fa13de531, type: 3}
+  VignetteFadeStart: 0.15
+  VignetteFadeEnd: 0.4
+  VignetteIntensity: 0
+  VignetteColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!1 &1974559755
 GameObject:
   m_ObjectHideFlags: 0
