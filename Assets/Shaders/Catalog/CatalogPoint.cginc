@@ -61,8 +61,9 @@ VertexShaderOutput vsPointBillboard(uint id : SV_VertexID)
 
     if (!useUniformColor) {        
         float value = clamp(applyScaling(dataCmap[id], mappingConfigs[CMAP_INDEX]), 0, 1);        
-        uint colorMapIndex = clamp(value * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
-        output.color = colorMapData[colorMapIndex];
+        // Apply color mapping
+        float colorMapOffset = 1.0 - (0.5 + colorMapIndex) / numColorMaps;
+        output.color = tex2Dlod(colorMap, float4(value, colorMapOffset, 0, 0));
     }
     else {
         output.color = color;
@@ -115,10 +116,11 @@ VertexShaderOutput vsPointBillboardSpherical(uint id : SV_VertexID)
     output.upVector = basisY * output.pointSize * scalingFactor;
     output.rightVector = basisX * output.pointSize * scalingFactor;
     
-    if (!useUniformColor) {        
+    if (!useUniformColor) {
         float value = clamp(applyScaling(dataCmap[id], mappingConfigs[CMAP_INDEX]), 0, 1);        
-        uint colorMapIndex = clamp(value * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
-        output.color = colorMapData[colorMapIndex];
+        // Apply color mapping
+        float colorMapOffset = 1.0 - (0.5 + colorMapIndex) / numColorMaps;
+        output.color = tex2Dlod(colorMap, float4(value, colorMapOffset, 0, 0));
     }
     else {
         output.color = color;
