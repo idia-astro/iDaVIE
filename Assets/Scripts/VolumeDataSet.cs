@@ -97,7 +97,15 @@ public class VolumeDataSet : MonoBehaviour
         _materialInstance.SetInt("_NumColorMaps", ColorMapUtils.NumColorMaps);
         _materialInstance.SetFloat(_idFoveationStart, FoveationStart);
         _materialInstance.SetFloat(_idFoveationEnd, FoveationEnd);
-        _renderer.material = _materialInstance;                
+        _renderer.material = _materialInstance;
+
+        //test purposes...
+        float test = -1;
+        if (DataAnalysis.GetVoxelValue(_fitsCubeData, out test, 1, 1, 3) != 0)
+            Debug.Log("Fail");
+        Debug.Log("Value test: " + test.ToString());
+
+
     }
 
     public void ShiftColorMap(int delta)
