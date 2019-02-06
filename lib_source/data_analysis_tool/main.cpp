@@ -34,7 +34,7 @@ extern "C"
 			*maxResult = maxVal;
 			*minResult = minVal;
 		}
-		return EXIT_SUCCESS
+		return EXIT_SUCCESS;
 	}
 
 	DllExport int GetVoxelValue(float *dataPtr, float *voxelValue, int xDim, int yDim, int zDim, int x, int y, int z)
@@ -46,6 +46,41 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
+	DllExport int GetXProfile(float *dataPtr, float **profile, int xDim, int yDim, int zDim, int y, int z)
+	{
+		float* newProfile = new float[xDim];
+		if (y > yDim || z > zDim)
+			return EXIT_FAILURE;
+		for (int i = 0; i < xDim; i++)
+			newProfile[i] = dataPtr[z * xDim * yDim + y * xDim + i];
+		*profile = newProfile;
+		return EXIT_SUCCESS;
+	}
+
+	DllExport int GetYProfile(float *dataPtr, float **profile, int xDim, int yDim, int zDim, int x, int z)
+	{
+		float* newProfile = new float[yDim];
+		if (x > xDim || z > zDim)
+			return EXIT_FAILURE;
+		for (int i = 0; i < yDim; i++)
+			newProfile[i] = dataPtr[z * xDim * yDim + yDim * i + x];
+		*profile = newProfile;
+		return EXIT_SUCCESS;
+
+	}
+
+	DllExport int GetZProfile(float *dataPtr, float **profile, int xDim, int yDim, int zDim, int x, int y)
+	{
+		float* newProfile = new float[xDim];
+		if (y > yDim || y > yDim)
+			return EXIT_FAILURE;
+		for (int i = 0; i < zDim; i++)
+			newProfile[i] = dataPtr[i * xDim * yDim + y * xDim + x];
+		*profile = newProfile;
+		return EXIT_SUCCESS;
+	}
+
+    //
 	/*
 	DllExport int NearNeighborScale(float *dataPtr, float **newDataPtr, int dimX, int dimY, int dimZ, int windowX, int windowY, int windowZ)
 	{
