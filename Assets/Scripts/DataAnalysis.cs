@@ -13,7 +13,7 @@ public class DataAnalysis
     //public static extern int NearNeighborScale(IntPtr dataPtr, out IntPtr newDataPtr, int dimX, int dimY, int dimZ, int windowX, int windowY, int windowZ);
 
     [DllImport("data_analysis_tool")]
-    public static extern int GetVoxelValue(IntPtr dataPtr, out float voxelValue, int x, int y, int z);
+    public static extern int GetVoxelValue(IntPtr dataPtr, out float voxelValue, int dimX, int dimY, int dimZ, int x, int y, int z);
 
     [DllImport("data_analysis_tool")]
     public static extern int GetXProfile(IntPtr dataPtr, out IntPtr profile, int dimX, int dimY, int dimZ, int y, int z);

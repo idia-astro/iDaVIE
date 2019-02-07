@@ -100,11 +100,14 @@ public class VolumeDataSet : MonoBehaviour
         _renderer.material = _materialInstance;
 
         //test purposes...
-        float test = -1;
-        if (DataAnalysis.GetVoxelValue(_fitsCubeData, out test, 1, 1, 3) != 0)
-            Debug.Log("Fail");
-        Debug.Log("Value test: " + test.ToString());
-
+        float test = -1.0f;
+        for (int i = -1; i < 6; i++)
+        {
+            Debug.Log("#" + i.ToString());
+            if (DataAnalysis.GetVoxelValue(_fitsCubeData, out test, (int)_xDim, (int)_yDim, (int)_zDim, i, 1, 1) != 0)
+                Debug.Log("Fail");
+            Debug.Log("Value test: " + test.ToString());
+        }
 
     }
 

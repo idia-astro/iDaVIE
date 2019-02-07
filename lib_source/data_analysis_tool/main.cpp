@@ -39,10 +39,12 @@ extern "C"
 
 	DllExport int GetVoxelValue(float *dataPtr, float *voxelValue, int xDim, int yDim, int zDim, int x, int y, int z)
 	{
-		if (x > xDim || y > yDim || z > zDim)
+		float outValue;
+		if (x > xDim || y > yDim || z > zDim || x < 1 || y < 1 || z < 1)
 			return EXIT_FAILURE;
-		int index = xDim * yDim * z + xDim * y + x;
-		*voxelValue = dataPtr[index];
+		int index = xDim * yDim * (z - 1) + xDim * (y - 1) + (x - 1);
+		outValue = dataPtr[index];
+		*voxelValue = outValue;
 		return EXIT_SUCCESS;
 	}
 
