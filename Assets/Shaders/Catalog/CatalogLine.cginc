@@ -34,8 +34,9 @@ VertexShaderOutput vsLine(uint id : SV_VertexID)
     output.value = clamp(applyScaling(dataCmap[id], mappingConfigs[CMAP_INDEX]), 0, 1);
     
     if (!useUniformColor) {
-        uint colorMapIndex = clamp(output.value * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
-        output.color = colorMapData[colorMapIndex];
+       // Apply color mapping
+        float colorMapOffset = 1.0 - (0.5 + colorMapIndex) / numColorMaps;
+        output.color = tex2Dlod(colorMap, float4(output.value, colorMapOffset, 0, 0));
     }
     else {
         output.color = color;
@@ -69,8 +70,9 @@ VertexShaderOutput vsLineSpherical(uint id : SV_VertexID)
     output.value = clamp(applyScaling(dataCmap[id], mappingConfigs[CMAP_INDEX]), 0, 1);
     
     if (useUniformColor == 0) {
-        uint colorMapIndex = clamp(output.value * NUM_COLOR_MAP_STEPS, 0, NUM_COLOR_MAP_STEPS-1);
-        output.color = colorMapData[colorMapIndex];
+        // Apply color mapping
+        float colorMapOffset = 1.0 - (0.5 + colorMapIndex) / numColorMaps;
+        output.color = tex2Dlod(colorMap, float4(output.value, colorMapOffset, 0, 0));
     }
     else {
         output.color = color;
