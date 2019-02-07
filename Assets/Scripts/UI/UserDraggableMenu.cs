@@ -62,7 +62,10 @@ namespace UI
 
         public void OnDragEnded()
         {
+            var startPosition = transform.position;
             transform.SetParent(null, true);
+            transform.position = startPosition;
+            
             _isDragging = false;
         }
     }
