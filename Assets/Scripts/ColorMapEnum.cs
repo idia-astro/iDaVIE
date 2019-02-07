@@ -8,7 +8,7 @@ public enum ColorMapEnum
     GnBu, Gnuplot, Gnuplot2, Gray, Greens, Greys, Hot, Hsv, Inferno, Jet, Magma, NipySpectral, Ocean, Oranges,
     OrRd, Paired, Pastel1, Pastel2, Pink, PiYg, Plasma, PrGn, Prism, PuBu, PuBuGn, PuOr, PuRd, Purples, Rainbow,
     RdBu, RdGy, RdPu, RdYlBu, RdYlGn, Reds, Seismic, Set1, Set2, Set3, Spectral, Spring, Summer, Tab10, Tab20,
-    Tab20B, Tab20C, Terrain, Viridis, Winter, Wistia, YlGn, YlGnBu, YlOrBr, YlOrRd
+    Tab20B, Tab20C, Terrain, Viridis, Winter, Wistia, YlGn, YlGnBu, YlOrBr, YlOrRd, None
 }
 // @formatter:on
 
@@ -30,6 +30,7 @@ public static class ColorMapUtils
 
     public static int NumColorMaps
     {
-        get { return Enum.GetNames(typeof(ColorMapEnum)).Length; }
+        // Subtract 1 because the last enum value is "None"; 
+        get { return Enum.GetNames(typeof(ColorMapEnum)).Length -1; }
     }
 }

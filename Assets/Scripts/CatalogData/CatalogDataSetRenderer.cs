@@ -32,9 +32,6 @@ namespace CatalogData
         public Color VignetteColor = Color.black;
         
         private ComputeBuffer[] _buffers;
-        private Color[] _colorMapData;
-
-        private const int NumColorMapStops = 256;
 
         // The mapping buffer is used to store mapping configuration. Since each mapping has a similar set of options,
         // it's less verbose than storing a huge number of options individually
@@ -44,10 +41,11 @@ namespace CatalogData
 
         private CatalogDataSet _dataSet;
         private Material _catalogMaterial;
-
+        private ColorMapEnum _appliedColorMap = ColorMapEnum.None;
+        
         #region Material Property IDs
 
-        private int _idSpriteSheet, _idNumSprites, _idColorMapData, _idDataSetMatrix, _idScalingFactor;
+        private int _idSpriteSheet, _idNumSprites, _idColorMap, _idColorMapIndex, _idNumColorMaps, _idDataSetMatrix, _idScalingFactor;
         private int _idDataX, _idDataY, _idDataZ, _idDataX2, _idDataY2, _idDataZ2, _idDataCmap, _idDataOpacity, _idDataPointSize, _idDataPointShape;
         private int _idCutoffMin, _idCutoffMax;
         private int _idUseUniformColor, _idUseUniformOpacity, _idUseUniformPointSize, _idUseUniformPointShape;
@@ -60,7 +58,9 @@ namespace CatalogData
         {
             _idSpriteSheet = Shader.PropertyToID("_SpriteSheet");
             _idNumSprites = Shader.PropertyToID("_NumSprites");
-            _idColorMapData = Shader.PropertyToID("colorMapData");
+            _idColorMap = Shader.PropertyToID("colorMap");
+            _idColorMapIndex = Shader.PropertyToID("colorMapIndex");
+            _idNumColorMaps = Shader.PropertyToID("numColorMaps");
             _idDataSetMatrix = Shader.PropertyToID("datasetMatrix");
             _idScalingFactor = Shader.PropertyToID("scalingFactor");
 
@@ -186,6 +186,7 @@ namespace CatalogData
                     _catalogMaterial.SetInt(_idNumSprites, 8);
                 }
 
+                _catalogMaterial.SetTexture(_idColorMap, ColorMapTexture);
                 // Buffer holds XYZ, cmap, pointSize, pointShape and opacity mapping configs               
                 _mappingConfigBuffer = new ComputeBuffer(32 * 7, 32);
                 _catalogMaterial.SetBuffer(_idMappingConfigs, _mappingConfigBuffer);
@@ -193,11 +194,11 @@ namespace CatalogData
                 // Apply scaling from data set space to world space
                 transform.localScale *= DataMapping.Uniforms.Scale;
                 Debug.Log($"Scaling from data set space to world space: {ScalingString}");
+                
                 UpdateMappingColumns(true);
                 UpdateMappingValues();
             }
 
-            _colorMapData = new Color[NumColorMapStops];
             if (!DataMapping.UniformColor)
             {
                 SetColorMap(DataMapping.ColorMap);
@@ -447,6 +448,14 @@ namespace CatalogData
             {
                 _catalogMaterial.SetInt(_idUseUniformColor, 0);
                 _mappingConfigs[3] = DataMapping.Mapping.Cmap.GpuMappingConfig;
+                if (_appliedColorMap != DataMapping.ColorMap)
+                {
+                    _appliedColorMap = DataMapping.ColorMap;
+                    int colorMapIndex = _appliedColorMap.GetHashCode();                    
+                    OnColorMapChanged?.Invoke(_appliedColorMap);
+                    _catalogMaterial.SetFloat(_idColorMapIndex, colorMapIndex);
+                    _catalogMaterial.SetInt(_idNumColorMaps, ColorMapUtils.NumColorMaps);
+                }                
             }
             else
             {
@@ -556,17 +565,17 @@ namespace CatalogData
         public void SetColorMap(ColorMapEnum newColorMap)
         {
             DataMapping.ColorMap = newColorMap;
-            int numColorMaps = ColorMapUtils.NumColorMaps;
-            float colorMapPixelDeltaX = (float) (ColorMapTexture.width) / NumColorMapStops;
-            float colorMapPixelDeltaY = (float) (ColorMapTexture.height) / numColorMaps;
-            int colorMapIndex = newColorMap.GetHashCode();
-
-            for (var i = 0; i < NumColorMapStops; i++)
-            {
-                _colorMapData[i] = ColorMapTexture.GetPixel((int) (i * colorMapPixelDeltaX), (int) (colorMapIndex * colorMapPixelDeltaY));
-            }
-
-            _catalogMaterial.SetColorArray(_idColorMapData, _colorMapData);
+//            int numColorMaps = ColorMapUtils.NumColorMaps;
+//            float colorMapPixelDeltaX = (float) (ColorMapTexture.width) / NumColorMapStops;
+//            float colorMapPixelDeltaY = (float) (ColorMapTexture.height) / numColorMaps;
+//            int colorMapIndex = newColorMap.GetHashCode();
+//
+//            for (var i = 0; i < NumColorMapStops; i++)
+//            {
+//                _colorMapData[i] = ColorMapTexture.GetPixel((int) (i * colorMapPixelDeltaX), (int) (colorMapIndex * colorMapPixelDeltaY));
+//            }
+//
+//            _catalogMaterial.SetColorArray(_idColorMapData, _colorMapData);
         }
 
         public void ShiftColorMap(int delta)
@@ -589,7 +598,7 @@ namespace CatalogData
             _catalogMaterial.SetFloat(_idVignetteFadeStart, VignetteFadeStart);
             _catalogMaterial.SetFloat(_idVignetteFadeEnd, VignetteFadeEnd);
             _catalogMaterial.SetFloat(_idVignetteIntensity, VignetteIntensity);
-            _catalogMaterial.SetColor(_idVignetteColor, VignetteColor);           
+            _catalogMaterial.SetColor(_idVignetteColor, VignetteColor);
 
             UpdateMappingValues();
         }

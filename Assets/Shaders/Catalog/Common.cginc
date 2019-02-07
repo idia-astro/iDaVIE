@@ -1,7 +1,5 @@
 #include "../Shared/Vignette.cginc"
 
-#define NUM_COLOR_MAP_STEPS 256
-
 #define LINEAR 0
 #define LOG 1
 #define SQRT 2
@@ -43,7 +41,9 @@ uniform float4x4 datasetMatrix;
 uniform float cutoffMin;
 uniform float cutoffMax;
 // Color maps
-uniform float4 colorMapData[NUM_COLOR_MAP_STEPS];
+uniform sampler2D colorMap;
+uniform float colorMapIndex;
+uniform int numColorMaps;
 
 // Data buffers for positions and values
 Buffer<float> dataX;
