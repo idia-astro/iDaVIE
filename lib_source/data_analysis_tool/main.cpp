@@ -51,10 +51,10 @@ extern "C"
 	DllExport int GetXProfile(float *dataPtr, float **profile, int xDim, int yDim, int zDim, int y, int z)
 	{
 		float* newProfile = new float[xDim];
-		if (y > yDim || z > zDim)
+		if (y > yDim || z > zDim || y < 1 || z < 1)
 			return EXIT_FAILURE;
 		for (int i = 0; i < xDim; i++)
-			newProfile[i] = dataPtr[z * xDim * yDim + y * xDim + i];
+			newProfile[i] = dataPtr[(z - 1) * xDim * yDim + (y - 1) * xDim + i];
 		*profile = newProfile;
 		return EXIT_SUCCESS;
 	}
@@ -62,10 +62,10 @@ extern "C"
 	DllExport int GetYProfile(float *dataPtr, float **profile, int xDim, int yDim, int zDim, int x, int z)
 	{
 		float* newProfile = new float[yDim];
-		if (x > xDim || z > zDim)
+		if (x > xDim || z > zDim || x < 1 || z < 1)
 			return EXIT_FAILURE;
 		for (int i = 0; i < yDim; i++)
-			newProfile[i] = dataPtr[z * xDim * yDim + yDim * i + x];
+			newProfile[i] = dataPtr[(z - 1) * xDim * yDim + yDim * i + (x - 1)];
 		*profile = newProfile;
 		return EXIT_SUCCESS;
 
@@ -74,10 +74,10 @@ extern "C"
 	DllExport int GetZProfile(float *dataPtr, float **profile, int xDim, int yDim, int zDim, int x, int y)
 	{
 		float* newProfile = new float[xDim];
-		if (y > yDim || y > yDim)
+		if (x > xDim || y > yDim || x < 1 || y < 1)
 			return EXIT_FAILURE;
 		for (int i = 0; i < zDim; i++)
-			newProfile[i] = dataPtr[i * xDim * yDim + y * xDim + x];
+			newProfile[i] = dataPtr[i * xDim * yDim + (y - 1) * xDim + (x - 1)];
 		*profile = newProfile;
 		return EXIT_SUCCESS;
 	}
