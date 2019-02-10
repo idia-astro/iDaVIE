@@ -5,25 +5,28 @@
 
 #define DllExport __declspec (dllexport)
 
+#define EXIT_SUCCESS 0
+#define EXIT_FAILURE 1
+
+
 extern "C"
 {
-	DllExport void FindMaxMin(float *dataPtr, long numberElements, float *maxResult, float *minResult)
+	DllExport int FindMaxMin(float *dataPtr, long numberElements, float *maxResult, float *minResult)
 	{
 		float maxVal = -std::numeric_limits<float>::max();
 		float minVal = std::numeric_limits<float>::max();
-#pragma omp parallel 
+		#pragma omp parallel 
 		{
 			float currentMax = -std::numeric_limits<float>::max();
 			float currentMin = std::numeric_limits<float>::max();
-
-#pragma omp for
+			#pragma omp for
 			for (int i = 0; i < numberElements; i++)
 			{
 				float val = dataPtr[i];
 				currentMax = fmax(currentMax, val);
 				currentMin = fmin(currentMin, val);
 			}
-#pragma omp critical
+			#pragma omp critical
 			{
 				maxVal = fmax(currentMax, maxVal);
 				minVal = fmin(currentMin, minVal);
@@ -31,8 +34,56 @@ extern "C"
 			*maxResult = maxVal;
 			*minResult = minVal;
 		}
+		return EXIT_SUCCESS;
 	}
 
+	DllExport int GetVoxelValue(float *dataPtr, float *voxelValue, int xDim, int yDim, int zDim, int x, int y, int z)
+	{
+		float outValue;
+		if (x > xDim || y > yDim || z > zDim || x < 1 || y < 1 || z < 1)
+			return EXIT_FAILURE;
+		int index = xDim * yDim * (z - 1) + xDim * (y - 1) + (x - 1);
+		outValue = dataPtr[index];
+		*voxelValue = outValue;
+		return EXIT_SUCCESS;
+	}
+
+	DllExport int GetXProfile(float *dataPtr, float **profile, int xDim, int yDim, int zDim, int y, int z)
+	{
+		float* newProfile = new float[xDim];
+		if (y > yDim || z > zDim || y < 1 || z < 1)
+			return EXIT_FAILURE;
+		for (int i = 0; i < xDim; i++)
+			newProfile[i] = dataPtr[(z - 1) * xDim * yDim + (y - 1) * xDim + i];
+		*profile = newProfile;
+		return EXIT_SUCCESS;
+	}
+
+	DllExport int GetYProfile(float *dataPtr, float **profile, int xDim, int yDim, int zDim, int x, int z)
+	{
+		float* newProfile = new float[yDim];
+		if (x > xDim || z > zDim || x < 1 || z < 1)
+			return EXIT_FAILURE;
+		for (int i = 0; i < yDim; i++)
+			newProfile[i] = dataPtr[(z - 1) * xDim * yDim + yDim * i + (x - 1)];
+		*profile = newProfile;
+		return EXIT_SUCCESS;
+
+	}
+
+	DllExport int GetZProfile(float *dataPtr, float **profile, int xDim, int yDim, int zDim, int x, int y)
+	{
+		float* newProfile = new float[xDim];
+		if (x > xDim || y > yDim || x < 1 || y < 1)
+			return EXIT_FAILURE;
+		for (int i = 0; i < zDim; i++)
+			newProfile[i] = dataPtr[i * xDim * yDim + (y - 1) * xDim + (x - 1)];
+		*profile = newProfile;
+		return EXIT_SUCCESS;
+	}
+
+    //
+	/*
 	DllExport int NearNeighborScale(float *dataPtr, float **newDataPtr, int dimX, int dimY, int dimZ, int windowX, int windowY, int windowZ)
 	{
 		int newDimX = dimX / windowX;
@@ -92,10 +143,10 @@ extern "C"
 		*newDataPtr = reducedCube;
 		return 0;
 	}
-
+	*/
 	DllExport int FreeMemory(void* ptrToDelete)
 	{
 		delete[] ptrToDelete;
-		return 0;
+		return EXIT_SUCCESS;
 	}
 }

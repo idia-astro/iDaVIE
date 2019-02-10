@@ -53,7 +53,9 @@ public class VolumeDataSet : MonoBehaviour
     private Material _materialInstance;
 
     private IntPtr _fitsCubeData;
-    private long _numberDataPts;
+    private long _xDim;
+    private long _yDim;
+    private long _zDim;
 
     // Material property IDs
     private int _idSliceMin, _idSliceMax, _idThresholdMin, _idThresholdMax, _idJitter, _idMaxSteps, _idColorMapIndex, _idScaleMin, _idScaleMax;
@@ -95,7 +97,7 @@ public class VolumeDataSet : MonoBehaviour
         _materialInstance.SetInt("_NumColorMaps", ColorMapUtils.NumColorMaps);
         _materialInstance.SetFloat(_idFoveationStart, FoveationStart);
         _materialInstance.SetFloat(_idFoveationEnd, FoveationEnd);
-        _renderer.material = _materialInstance;                
+        _renderer.material = _materialInstance;
     }
 
     public void ShiftColorMap(int delta)
@@ -183,13 +185,16 @@ public class VolumeDataSet : MonoBehaviour
         }
         DataCube = dataCube;
         _fitsCubeData = fitsDataPtr;
-        _numberDataPts = numberDataPoints;
+        _xDim = cubeSize[0];
+        _yDim = cubeSize[1];
+        _zDim = cubeSize[2];
     }
 
 
     public void FindMinAndMax()
-    { 
-        DataAnalysis.FindMaxMin(_fitsCubeData, _numberDataPts, out ScaleMax, out ScaleMin);
+    {
+        long numberDataPoints = _xDim * _yDim * _zDim;
+        DataAnalysis.FindMaxMin(_fitsCubeData, numberDataPoints, out ScaleMax, out ScaleMin);
         Debug.Log("max and min vals: " + ScaleMax + " and " + ScaleMin);
     }
 }
