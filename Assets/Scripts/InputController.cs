@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
+using VolumeData;
 
 [RequireComponent(typeof(Player))]
 public class InputController : MonoBehaviour
@@ -38,7 +39,7 @@ public class InputController : MonoBehaviour
     private SteamVR_Action_Boolean _grabGripAction;
     private SteamVR_Action_Boolean _grabPinchAction;
     private CatalogDataSetRenderer[] _catalogDataSets;
-    private VolumeDataSet[] _volumeDataSets;
+    private VolumeDataSetRenderer[] _volumeDataSets;
     private List<MonoBehaviour> _allDataSets;
     private float[] _startDataSetScales;
     private Vector3[] _currentGripPositions;
@@ -92,7 +93,7 @@ public class InputController : MonoBehaviour
         var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
         if (volumeDataSetManager)
         {
-            _volumeDataSets = volumeDataSetManager.GetComponentsInChildren<VolumeDataSet>();
+            _volumeDataSets = volumeDataSetManager.GetComponentsInChildren<VolumeDataSetRenderer>();
             _allDataSets.AddRange(_volumeDataSets);
         }
 

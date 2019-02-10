@@ -233,10 +233,10 @@ MonoBehaviour:
   ScaleSpeed: 0.005
   MinScale: 0.0001
   MaxScale: 0.01
-  menuUpAction: {fileID: 11400000, guid: 4bf5d7f31cb496949ada9bb5f3dbb33f, type: 2}
-  menuDownAction: {fileID: 11400000, guid: 94b9d4c98bcbbd143a3ec1574149e35e, type: 2}
-  menuLeftAction: {fileID: 11400000, guid: 3367ebaf11d9a91439ffed14d1fd7f55, type: 2}
-  menuRightAction: {fileID: 11400000, guid: eacad2d1a44e25c4ca5c87582fae6590, type: 2}
+  menuUpAction: {fileID: 11400000, guid: 1ac489d16bea7c54ba71893d7b20364a, type: 2}
+  menuDownAction: {fileID: 11400000, guid: 50c90f0a91a077542a99c7da274a43ed, type: 2}
+  menuLeftAction: {fileID: 11400000, guid: 8843a0555c994984dad40790f591f14d, type: 2}
+  menuRightAction: {fileID: 11400000, guid: 87ad4f9838104d046bc1033438dfd6c1, type: 2}
 --- !u!114 &54561593
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -285,7 +285,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &105996226
 Transform:
   m_ObjectHideFlags: 0
@@ -726,7 +726,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!65 &435814247
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -808,7 +808,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 435814246}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c21dee1cc9bcae143bb5aec63656bfd5, type: 3}
+  m_Script: {fileID: 11500000, guid: 7da762646b489e945ade5ffbe65a506b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   MaxSteps: 384
@@ -825,13 +825,12 @@ MonoBehaviour:
   VignetteColor: {r: 0, g: 0, b: 0, a: 1}
   SliceMin: {x: -0.5, y: -0.5, z: -0.5}
   SliceMax: {x: 0.5, y: 0.5, z: 0.5}
-  ScaleMax: 0.15302625
-  ScaleMin: -0.13979377
+  ScaleMax: 0
+  ScaleMin: 0
   ThresholdMin: 0.478
   ThresholdMax: 1
   RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
   FileName: Data/Volumes/m81.fits
-  DataCube: {fileID: 0}
   ColorMap: 45
 --- !u!1 &454358807
 GameObject:
