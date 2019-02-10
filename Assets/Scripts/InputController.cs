@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using CatalogData;
+using VolumeData;
 using TMPro;
 using UnityEngine;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
-using VolumeData;
 
 [RequireComponent(typeof(Player))]
 public class InputController : MonoBehaviour
