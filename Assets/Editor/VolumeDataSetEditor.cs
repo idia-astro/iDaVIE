@@ -2,7 +2,7 @@
 using UnityEngine;
 using VolumeData;
 
-[CustomEditor(typeof(VolumeDataSet)), CanEditMultipleObjects]
+[CustomEditor(typeof(VolumeDataSetRenderer)), CanEditMultipleObjects]
 public class VolumeDataSetEditor : Editor
 {
 	protected virtual void OnSceneGUI()

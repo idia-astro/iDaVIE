@@ -208,7 +208,7 @@ RectTransform:
   - {fileID: 1314198637}
   - {fileID: 454358808}
   m_Father: {fileID: 0}
-  m_RootOrder: 5
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -302,6 +302,183 @@ Transform:
   m_Father: {fileID: 1061534655}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &125597887
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 125597888}
+  - component: {fileID: 125597889}
+  m_Layer: 0
+  m_Name: IC_OB_whole_IPAC
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &125597888
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 125597887}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 907803936}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &125597889
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 125597887}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6175a300d859994c8994c25ba3f35e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TableFileName: Data/DataTables/IC_OB_whole_IPAC.tbl
+  MappingFileName: 
+  DataMapping:
+    ColorMap: 26
+    Spherical: 0
+    RenderType: 0
+    UniformColor: 0
+    UniformPointSize: 0
+    UniformPointShape: 0
+    UniformOpacity: 0
+    Uniforms:
+      ColorString: 
+      Color: {r: 0, g: 0, b: 0, a: 0}
+      Scale: 1
+      PointSize: 0.1
+      PointShape: 2
+      Opacity: 1
+    Mapping:
+      Cmap:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lat:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lng:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Opacity:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      R:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointSize:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointShape:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+    MetaMapping:
+      Name:
+        Source: 
+  LoadMetaColumns: 1
+  ValueCutoffMin: 0
+  ValueCutoffMax: 1
+  ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
+  SpriteSheetTexture: {fileID: 2800000, guid: 8dbd6bb4429503744b8c120fa13de531, type: 3}
+  VignetteFadeStart: 0.15
+  VignetteFadeEnd: 0.4
+  VignetteIntensity: 0
+  VignetteColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!1 &147707343
 GameObject:
   m_ObjectHideFlags: 0
@@ -526,37 +703,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   IsDragHandle: 0
   MenuRoot: {fileID: 0}
---- !u!1 &379208438
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 379208439}
-  m_Layer: 0
-  m_Name: VolumeDataSetManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &379208439
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 379208438}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children:
-  - {fileID: 435814250}
-  m_Father: {fileID: 0}
-  m_RootOrder: 4
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &416005579
 GameObject:
   m_ObjectHideFlags: 0
@@ -707,131 +853,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 421364764}
   m_CullTransparentMesh: 0
---- !u!1 &435814246
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 435814250}
-  - component: {fileID: 435814249}
-  - component: {fileID: 435814248}
-  - component: {fileID: 435814247}
-  - component: {fileID: 435814251}
-  m_Layer: 0
-  m_Name: M81
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!65 &435814247
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 435814246}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 0
-  serializedVersion: 2
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!23 &435814248
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 435814246}
-  m_Enabled: 1
-  m_CastShadows: 0
-  m_ReceiveShadows: 0
-  m_DynamicOccludee: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RenderingLayerMask: 4294967295
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 652452884}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 0
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
---- !u!33 &435814249
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 435814246}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!4 &435814250
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 435814246}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 379208439}
-  m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &435814251
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 435814246}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7da762646b489e945ade5ffbe65a506b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  MaxSteps: 384
-  Jitter: 1
-  FoveatedRendering: 1
-  FoveationStart: 0.015
-  FoveationEnd: 0.4
-  FoveationJitter: 0.1
-  FoveatedStepsLow: 96
-  FoveatedStepsHigh: 384
-  VignetteFadeStart: 0.15
-  VignetteFadeEnd: 0.4
-  VignetteIntensity: 0
-  VignetteColor: {r: 0, g: 0, b: 0, a: 1}
-  SliceMin: {x: -0.5, y: -0.5, z: -0.5}
-  SliceMax: {x: 0.5, y: 0.5, z: 0.5}
-  ScaleMax: 0
-  ScaleMin: 0
-  ThresholdMin: 0.478
-  ThresholdMax: 1
-  RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
-  FileName: Data/Volumes/m81.fits
-  ColorMap: 45
 --- !u!1 &454358807
 GameObject:
   m_ObjectHideFlags: 0
@@ -912,100 +933,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 454358807}
   m_CullTransparentMesh: 0
---- !u!21 &652452884
-Material:
-  serializedVersion: 6
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: RayMarchedVolume(Clone)
-  m_Shader: {fileID: 4800000, guid: 07747c1775d045cba364c7323689521b, type: 3}
-  m_ShaderKeywords: 
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _BumpMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _ColorMap:
-        m_Texture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _DataCube:
-        m_Texture: {fileID: 11700000, guid: 48dd3337ab5e307499823930a3b01855, type: 2}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _DetailAlbedoMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _DetailMask:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _DetailNormalMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _EmissionMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _MetallicGlossMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _OcclusionMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _ParallaxMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Floats:
-    - _BumpScale: 1
-    - _ColorMapIndex: 45
-    - _Cutoff: 0.5
-    - _DetailNormalMapScale: 1
-    - _DstBlend: 0
-    - _GlossMapScale: 1
-    - _Glossiness: 0.5
-    - _GlossyReflections: 1
-    - _Jitter: 1
-    - _MaxSteps: 192
-    - _Metallic: 0
-    - _Mode: 0
-    - _NumColorMaps: 79
-    - _OcclusionStrength: 1
-    - _Parallax: 0.02
-    - _PostScaling: 1
-    - _ScaleMax: 0.156931
-    - _ScaleMin: -0.0418814
-    - _SmoothnessTextureChannel: 0
-    - _SpecularHighlights: 1
-    - _SrcBlend: 1
-    - _ThresholdMax: 1
-    - _ThresholdMin: 0.219
-    - _UVSec: 0
-    - _ZWrite: 1
-    m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _SliceMax: {r: 0.5, g: 0.5, b: 0.5, a: 0}
-    - _SliceMin: {r: -0.5, g: -0.43357658, b: -0.5, a: 0}
 --- !u!1 &811274610
 GameObject:
   m_ObjectHideFlags: 0
@@ -1296,6 +1223,218 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   IsDragHandle: 0
   MenuRoot: {fileID: 0}
+--- !u!1 &907333105
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 907333106}
+  - component: {fileID: 907333107}
+  m_Layer: 0
+  m_Name: IC_redgiant_whole_IPAC
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &907333106
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 907333105}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 907803936}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &907333107
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 907333105}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6175a300d859994c8994c25ba3f35e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TableFileName: Data/DataTables/IC_redgiant_whole_IPAC.tbl
+  MappingFileName: 
+  DataMapping:
+    ColorMap: 26
+    Spherical: 0
+    RenderType: 0
+    UniformColor: 0
+    UniformPointSize: 0
+    UniformPointShape: 0
+    UniformOpacity: 0
+    Uniforms:
+      ColorString: 
+      Color: {r: 0, g: 0, b: 0, a: 0}
+      Scale: 1
+      PointSize: 0.1
+      PointShape: 2
+      Opacity: 1
+    Mapping:
+      Cmap:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lat:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lng:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Opacity:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      R:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointSize:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointShape:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+    MetaMapping:
+      Name:
+        Source: 
+  LoadMetaColumns: 1
+  ValueCutoffMin: 0
+  ValueCutoffMax: 1
+  ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
+  SpriteSheetTexture: {fileID: 2800000, guid: 8dbd6bb4429503744b8c120fa13de531, type: 3}
+  VignetteFadeStart: 0.15
+  VignetteFadeEnd: 0.4
+  VignetteIntensity: 0
+  VignetteColor: {r: 0, g: 0, b: 0, a: 1}
+--- !u!1 &907803935
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 907803936}
+  m_Layer: 0
+  m_Name: Meridith
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &907803936
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 907803935}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 2139428097}
+  - {fileID: 1507500991}
+  - {fileID: 125597888}
+  - {fileID: 907333106}
+  - {fileID: 1905156368}
+  m_Father: {fileID: 1061534655}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1019692755
 GameObject:
   m_ObjectHideFlags: 0
@@ -1484,6 +1623,8 @@ Transform:
   m_Children:
   - {fileID: 1866218500}
   - {fileID: 105996226}
+  - {fileID: 2068030359}
+  - {fileID: 907803936}
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1933,6 +2074,183 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1479050618}
   m_CullTransparentMesh: 0
+--- !u!1 &1507500990
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1507500991}
+  - component: {fileID: 1507500992}
+  m_Layer: 0
+  m_Name: IC_mainsequence_whole_IPAC
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1507500991
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1507500990}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 907803936}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1507500992
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1507500990}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6175a300d859994c8994c25ba3f35e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TableFileName: Data/DataTables/IC_mainsequence_whole_IPAC.tbl
+  MappingFileName: 
+  DataMapping:
+    ColorMap: 26
+    Spherical: 0
+    RenderType: 0
+    UniformColor: 0
+    UniformPointSize: 0
+    UniformPointShape: 0
+    UniformOpacity: 0
+    Uniforms:
+      ColorString: 
+      Color: {r: 0, g: 0, b: 0, a: 0}
+      Scale: 1
+      PointSize: 0.1
+      PointShape: 2
+      Opacity: 1
+    Mapping:
+      Cmap:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lat:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lng:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Opacity:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      R:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointSize:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointShape:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+    MetaMapping:
+      Name:
+        Source: 
+  LoadMetaColumns: 1
+  ValueCutoffMin: 0
+  ValueCutoffMax: 1
+  ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
+  SpriteSheetTexture: {fileID: 2800000, guid: 8dbd6bb4429503744b8c120fa13de531, type: 3}
+  VignetteFadeStart: 0.15
+  VignetteFadeEnd: 0.4
+  VignetteIntensity: 0
+  VignetteColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!1 &1621451944
 GameObject:
   m_ObjectHideFlags: 0
@@ -2295,6 +2613,537 @@ MonoBehaviour:
   MappingFileName: 
   DataMapping:
     ColorMap: 0
+    Spherical: 0
+    RenderType: 0
+    UniformColor: 0
+    UniformPointSize: 0
+    UniformPointShape: 0
+    UniformOpacity: 0
+    Uniforms:
+      ColorString: 
+      Color: {r: 0, g: 0, b: 0, a: 0}
+      Scale: 1
+      PointSize: 0.1
+      PointShape: 2
+      Opacity: 1
+    Mapping:
+      Cmap:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lat:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lng:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Opacity:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      R:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointSize:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointShape:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+    MetaMapping:
+      Name:
+        Source: 
+  LoadMetaColumns: 1
+  ValueCutoffMin: 0
+  ValueCutoffMax: 1
+  ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
+  SpriteSheetTexture: {fileID: 2800000, guid: 8dbd6bb4429503744b8c120fa13de531, type: 3}
+  VignetteFadeStart: 0.15
+  VignetteFadeEnd: 0.4
+  VignetteIntensity: 0
+  VignetteColor: {r: 0, g: 0, b: 0, a: 1}
+--- !u!1 &1905156367
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1905156368}
+  - component: {fileID: 1905156369}
+  m_Layer: 0
+  m_Name: IC_wd3_1Msolar_whole_IPAC
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1905156368
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1905156367}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 907803936}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1905156369
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1905156367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6175a300d859994c8994c25ba3f35e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TableFileName: Data/DataTables/IC_wd3_1Msolar_whole_IPAC.tbl
+  MappingFileName: 
+  DataMapping:
+    ColorMap: 26
+    Spherical: 0
+    RenderType: 0
+    UniformColor: 0
+    UniformPointSize: 0
+    UniformPointShape: 0
+    UniformOpacity: 0
+    Uniforms:
+      ColorString: 
+      Color: {r: 0, g: 0, b: 0, a: 0}
+      Scale: 1
+      PointSize: 0.1
+      PointShape: 2
+      Opacity: 1
+    Mapping:
+      Cmap:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lat:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lng:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Opacity:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      R:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointSize:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointShape:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+    MetaMapping:
+      Name:
+        Source: 
+  LoadMetaColumns: 1
+  ValueCutoffMin: 0
+  ValueCutoffMax: 1
+  ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
+  SpriteSheetTexture: {fileID: 2800000, guid: 8dbd6bb4429503744b8c120fa13de531, type: 3}
+  VignetteFadeStart: 0.15
+  VignetteFadeEnd: 0.4
+  VignetteIntensity: 0
+  VignetteColor: {r: 0, g: 0, b: 0, a: 1}
+--- !u!1 &2068030358
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2068030359}
+  - component: {fileID: 2068030360}
+  m_Layer: 0
+  m_Name: NKATZ_2.3M
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &2068030359
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2068030358}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1061534655}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2068030360
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2068030358}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6175a300d859994c8994c25ba3f35e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TableFileName: Data/DataTables/NKATZ_2.3M.tbl
+  MappingFileName: 
+  DataMapping:
+    ColorMap: 26
+    Spherical: 0
+    RenderType: 0
+    UniformColor: 0
+    UniformPointSize: 0
+    UniformPointShape: 0
+    UniformOpacity: 0
+    Uniforms:
+      ColorString: 
+      Color: {r: 0, g: 0, b: 0, a: 0}
+      Scale: 1
+      PointSize: 0.1
+      PointShape: 2
+      Opacity: 1
+    Mapping:
+      Cmap:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lat:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Lng:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Opacity:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      R:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointSize:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      PointShape:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      X2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Y2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+      Z2:
+        Clamped: 0
+        MinVal: 0
+        MaxVal: 0
+        Offset: 0
+        Scale: 1
+        ScalingType: 0
+        Source: 
+    MetaMapping:
+      Name:
+        Source: 
+  LoadMetaColumns: 1
+  ValueCutoffMin: 0
+  ValueCutoffMax: 1
+  ColorMapTexture: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
+  SpriteSheetTexture: {fileID: 2800000, guid: 8dbd6bb4429503744b8c120fa13de531, type: 3}
+  VignetteFadeStart: 0.15
+  VignetteFadeEnd: 0.4
+  VignetteIntensity: 0
+  VignetteColor: {r: 0, g: 0, b: 0, a: 1}
+--- !u!1 &2139428096
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2139428097}
+  - component: {fileID: 2139428098}
+  m_Layer: 0
+  m_Name: IC_AGB_whole_IPAC
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2139428097
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2139428096}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 907803936}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2139428098
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2139428096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6175a300d859994c8994c25ba3f35e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TableFileName: Data/DataTables/IC_AGB_whole_IPAC.tbl
+  MappingFileName: 
+  DataMapping:
+    ColorMap: 26
     Spherical: 0
     RenderType: 0
     UniformColor: 0

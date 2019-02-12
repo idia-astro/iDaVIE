@@ -89,12 +89,20 @@ public class InputController : MonoBehaviour
             _catalogDataSets = CatalogDataSetManager.GetComponentsInChildren<CatalogDataSetRenderer>();
             _allDataSets.AddRange(_catalogDataSets);
         }
+        else
+        {
+            _catalogDataSets = new CatalogDataSetRenderer[0];
+        }
 
         var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
         if (volumeDataSetManager)
         {
             _volumeDataSets = volumeDataSetManager.GetComponentsInChildren<VolumeDataSetRenderer>();
             _allDataSets.AddRange(_volumeDataSets);
+        }
+        else
+        {
+            _volumeDataSets = new VolumeDataSetRenderer[0];
         }
 
         // Line renderer for showing separation between controllers while scaling/rotating. World space thickness of 2 mm
@@ -129,7 +137,6 @@ public class InputController : MonoBehaviour
 
         _inputState = InputState.Idle;
 
-        
     }
 
     private void OnDisable()
