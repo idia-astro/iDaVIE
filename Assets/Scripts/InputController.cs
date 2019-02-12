@@ -97,7 +97,7 @@ public class InputController : MonoBehaviour
         var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
         if (volumeDataSetManager)
         {
-            _volumeDataSets = volumeDataSetManager.GetComponentsInChildren<VolumeDataSetRenderer>();
+            _volumeDataSets = volumeDataSetManager.GetComponentsInChildren<VolumeDataSetRenderer>(true);
             _allDataSets.AddRange(_volumeDataSets);
         }
         else
@@ -210,7 +210,10 @@ public class InputController : MonoBehaviour
 
         for (var i = 0; i < _allDataSets.Count; i++)
         {
-            _startDataSetScales[i] = _allDataSets[i].transform.localScale.magnitude;
+            if (_allDataSets[i].isActiveAndEnabled)
+            {
+                _startDataSetScales[i] = _allDataSets[i].transform.localScale.magnitude;
+            }
         }
 
         _lineRendererAxisSeparation.SetPositions(new[] {_currentGripPositions[0], _startGripCenter, _currentGripPositions[1]});
@@ -276,7 +279,10 @@ public class InputController : MonoBehaviour
             _currentVignetteIntensity += maxChange;
             foreach (var dataSet in _volumeDataSets)
             {
-                dataSet.VignetteIntensity = _currentVignetteIntensity;
+                if (dataSet.isActiveAndEnabled)
+                {
+                    dataSet.VignetteIntensity = _currentVignetteIntensity;                    
+                }
             }
             
             foreach (var dataSet in _catalogDataSets)
@@ -340,6 +346,11 @@ public class InputController : MonoBehaviour
         for (var i = 0; i < _allDataSets.Count; i++)
         {
             var dataSet = _allDataSets[i];
+            if (!dataSet.isActiveAndEnabled)
+            {
+                continue;
+            }
+            
             float initialScale = _startDataSetScales[i];
             float currentScale = dataSet.transform.localScale.magnitude;
             float newScale = Mathf.Max(1e-6f, initialScale * scalingFactor);                     
@@ -417,7 +428,10 @@ public class InputController : MonoBehaviour
                 var delta = _currentGripPositions[i] - previousPosition;
                 foreach (var dataSet in _allDataSets)
                 {
-                    dataSet.transform.position += delta;
+                    if (dataSet.isActiveAndEnabled)
+                    {
+                        dataSet.transform.position += delta;
+                    }
                 }
             }
         }

@@ -49,12 +49,16 @@ namespace VolumeData
         [Space(10)] public Material RayMarchingMaterial;
         public string FileName;
         public ColorMapEnum ColorMap = ColorMapEnum.Inferno;
+        public Vector3 InitialPosition { get; private set; }
+        public Quaternion InitialRotation { get; private set; }
+        public Vector3 InitialScale { get; private set; }
+        
+        public float InitialThresholdMin { get; private set; }
+        public float InitialThresholdMax { get; private set; }
 
         private MeshRenderer _renderer;
         private Material _materialInstance;
         private VolumeDataSet _dataSet;
-
-        private ColorMapEnum _appliedColorMap = ColorMapEnum.None;
 
         #region Material Property IDs
 
@@ -103,6 +107,13 @@ namespace VolumeData
             _materialInstance.SetFloat(_idFoveationStart, FoveationStart);
             _materialInstance.SetFloat(_idFoveationEnd, FoveationEnd);
             _renderer.material = _materialInstance;
+            
+            // Set initial values (for resetting later)
+            InitialPosition = transform.position;
+            InitialScale = transform.localScale;
+            InitialRotation = transform.rotation;
+            InitialThresholdMax = ThresholdMax;
+            InitialThresholdMin = ThresholdMin;
         }
 
         public void ShiftColorMap(int delta)
