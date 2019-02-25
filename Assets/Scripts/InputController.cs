@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using CatalogData;
+using VolumeData;
 using TMPro;
 using UnityEngine;
 using Valve.VR;
@@ -38,7 +39,7 @@ public class InputController : MonoBehaviour
     private SteamVR_Action_Boolean _grabGripAction;
     private SteamVR_Action_Boolean _grabPinchAction;
     private CatalogDataSetRenderer[] _catalogDataSets;
-    private VolumeDataSet[] _volumeDataSets;
+    private VolumeDataSetRenderer[] _volumeDataSets;
     private List<MonoBehaviour> _allDataSets;
     private float[] _startDataSetScales;
     private Vector3[] _currentGripPositions;
@@ -88,12 +89,20 @@ public class InputController : MonoBehaviour
             _catalogDataSets = CatalogDataSetManager.GetComponentsInChildren<CatalogDataSetRenderer>();
             _allDataSets.AddRange(_catalogDataSets);
         }
+        else
+        {
+            _catalogDataSets = new CatalogDataSetRenderer[0];
+        }
 
         var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
         if (volumeDataSetManager)
         {
-            _volumeDataSets = volumeDataSetManager.GetComponentsInChildren<VolumeDataSet>();
+            _volumeDataSets = volumeDataSetManager.GetComponentsInChildren<VolumeDataSetRenderer>(true);
             _allDataSets.AddRange(_volumeDataSets);
+        }
+        else
+        {
+            _volumeDataSets = new VolumeDataSetRenderer[0];
         }
 
         // Line renderer for showing separation between controllers while scaling/rotating. World space thickness of 2 mm
@@ -128,7 +137,6 @@ public class InputController : MonoBehaviour
 
         _inputState = InputState.Idle;
 
-        
     }
 
     private void OnDisable()
@@ -202,7 +210,10 @@ public class InputController : MonoBehaviour
 
         for (var i = 0; i < _allDataSets.Count; i++)
         {
-            _startDataSetScales[i] = _allDataSets[i].transform.localScale.magnitude;
+            if (_allDataSets[i].isActiveAndEnabled)
+            {
+                _startDataSetScales[i] = _allDataSets[i].transform.localScale.magnitude;
+            }
         }
 
         _lineRendererAxisSeparation.SetPositions(new[] {_currentGripPositions[0], _startGripCenter, _currentGripPositions[1]});
@@ -268,7 +279,10 @@ public class InputController : MonoBehaviour
             _currentVignetteIntensity += maxChange;
             foreach (var dataSet in _volumeDataSets)
             {
-                dataSet.VignetteIntensity = _currentVignetteIntensity;
+                if (dataSet.isActiveAndEnabled)
+                {
+                    dataSet.VignetteIntensity = _currentVignetteIntensity;                    
+                }
             }
             
             foreach (var dataSet in _catalogDataSets)
@@ -332,6 +346,11 @@ public class InputController : MonoBehaviour
         for (var i = 0; i < _allDataSets.Count; i++)
         {
             var dataSet = _allDataSets[i];
+            if (!dataSet.isActiveAndEnabled)
+            {
+                continue;
+            }
+            
             float initialScale = _startDataSetScales[i];
             float currentScale = dataSet.transform.localScale.magnitude;
             float newScale = Mathf.Max(1e-6f, initialScale * scalingFactor);                     
@@ -409,7 +428,10 @@ public class InputController : MonoBehaviour
                 var delta = _currentGripPositions[i] - previousPosition;
                 foreach (var dataSet in _allDataSets)
                 {
-                    dataSet.transform.position += delta;
+                    if (dataSet.isActiveAndEnabled)
+                    {
+                        dataSet.transform.position += delta;
+                    }
                 }
             }
         }
