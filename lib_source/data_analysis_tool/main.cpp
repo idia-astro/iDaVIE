@@ -82,68 +82,61 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-    //
-	/*
-	DllExport int NearNeighborScale(float *dataPtr, float **newDataPtr, int dimX, int dimY, int dimZ, int windowX, int windowY, int windowZ)
+    
+	DllExport int DataDownsampleByFactor(float *dataPtr, float **newDataPtr, int dimX, int dimY, int dimZ, int factorX, int factorY, int factorZ)
 	{
-		int newDimX = dimX / windowX;
-		int newDimY = dimY / windowY;
-		int newDimZ = dimZ / windowZ;
-		int extraX = dimX % windowX;
-		int extraY = dimY % windowY;
-		int extraZ = dimZ % windowZ;
-		int windowSize = windowX * windowY * windowZ;
-		std::vector<float> windowVector;
-		if (extraX)
-			newDimX++;
-		if (extraY)
-			newDimY++;
-		if (extraZ)
-			newDimZ++;
-		int newCubeSize = newDimX * newDimY * newDimZ;
-		float* reducedCube = new float[newCubeSize];
-		
-		int sliceSize = dimX * dimY;
-		int newSliceSize = newDimX * newDimY;
-		int rowSize = dimY;
-		int newRowSize = newDimX;
-
-		int zStart, yStart, xStart, zEnd, yEnd, xEnd;
-		float sum;
-		for (int i = 0; i < newCubeSize; i++)
+		int oldSize = dimX * dimY * dimZ;
+		int newDimX = dimX / factorX;
+		int newDimY = dimY / factorY;
+		int newDimZ = dimZ / factorZ;
+		if (dimX % factorX != 0)
+			newDimX = newDimX + 1;
+		if (dimY % factorY != 0)
+			newDimY = newDimY + 1;
+		if (dimZ % factorZ != 0)
+			newDimZ = newDimZ + 1;
+		int newSize = newDimX * newDimY * newDimZ;
+		float* reducedCube = new float[newSize];
+		int* pixelCount = new int[newSize];
+		for (int i = 0; i < newSize; i++)
 		{
-			zStart = i / newSliceSize * windowZ;
-			zEnd = (extraZ ? zStart + extraZ : zStart + windowZ);
-			for (int z = zStart; z < zEnd; z++)
+			pixelCount[i] = 0;
+			reducedCube[i] = 0;
+		}
+		
+		int newX, newY, newZ, oldIndex, newIndex;
+		for (int oldZ = 0; oldZ < dimZ; oldZ++)
+		{
+			newZ = oldZ / factorZ;
+			for (int oldY = 0; oldY < dimY; oldY++)
 			{
-				yStart = i % newSliceSize / newRowSize * windowY;
-				yEnd = (extraY ? yStart + extraY : yStart + windowY);
-
-				for (int y = yStart; yEnd; y++)
+				newY = oldY / factorY;
+				for (int oldX = 0; oldX < dimX; oldX++)
 				{
-					xStart = i % newRowSize * windowX;
-					xEnd = (extraX ? xStart + extraX : xStart + windowX);
-
-					for (int x = xStart; x < xEnd; x++)
-					{
-						float valueToInsert = dataPtr[z * sliceSize + y * rowSize + x];
-						windowVector.push_back(valueToInsert);
-					}
+					newX = oldX / factorX;
+					oldIndex = oldZ * dimX*dimY + oldY * dimX + oldX;
+					newIndex = newZ * newDimX*newDimY + newY * newDimX + newX;
+					reducedCube[newIndex] = reducedCube[newIndex] + dataPtr[oldIndex];
+					pixelCount[newIndex]++;
 				}
 			}
-			sum = 0;
-			for (int j = 0; j < (int)windowVector.size(); j++)
-			{
-				float value = windowVector[j];
-				sum += value;
-			}
-			reducedCube[i] = sum / (float)windowVector.size();
-			windowVector.clear();
-		}	
+		//	reducedCube[newIndex] = reducedCube[newIndex] + dataPtr[oldIndex];
+		//	pixelCount[newIndex]++;
+		}
+		
+		
+		for (int i = 0; i < newSize; i++)
+		{
+			if (pixelCount[i] != 0)
+				reducedCube[i] = reducedCube[i] / (float)pixelCount[i];
+			else
+				reducedCube[i] = NAN;
+		}
+		//delete[] pixelCount;
 		*newDataPtr = reducedCube;
 		return 0;
 	}
-	*/
+	
 	DllExport int FreeMemory(void* ptrToDelete)
 	{
 		delete[] ptrToDelete;
