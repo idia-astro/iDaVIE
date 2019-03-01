@@ -24,6 +24,9 @@ public class DataAnalysis
     [DllImport("data_analysis_tool")]
     public static extern int GetZProfile(IntPtr dataPtr, out IntPtr profile, int dimX, int dimY, int dimZ, int x, int y);
 
+    [DllImport("data_analysis_tool")]
+    public static extern int FreeMemory(IntPtr pointerToDelete);
+
 
     public static float[] GetXProfileAsArray(IntPtr dataPtr, int dimX, int dimY, int dimZ, int y, int z)
     {

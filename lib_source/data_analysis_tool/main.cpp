@@ -83,7 +83,7 @@ extern "C"
 	}
 
     
-	DllExport int DataDownsampleByFactor(float *dataPtr, float **newDataPtr, int dimX, int dimY, int dimZ, int factorX, int factorY, int factorZ)
+	DllExport int DataDownsampleByFactor(const float *dataPtr, float **newDataPtr, int dimX, int dimY, int dimZ, int factorX, int factorY, int factorZ)
 	{
 		int oldSize = dimX * dimY * dimZ;
 		int newDimX = dimX / factorX;
@@ -96,43 +96,53 @@ extern "C"
 		if (dimZ % factorZ != 0)
 			newDimZ = newDimZ + 1;
 		int newSize = newDimX * newDimY * newDimZ;
-		float* reducedCube = new float[newSize];
-		int* pixelCount = new int[newSize];
-		for (int i = 0; i < newSize; i++)
+		float* reducedCube = new float[newSize] {};
+		#pragma omp parallel 
+		#pragma omp for
+		for (int newZ = 0; newZ < newDimZ; newZ++)
 		{
-			pixelCount[i] = 0;
-			reducedCube[i] = 0;
-		}
-		
-		int newX, newY, newZ, oldIndex, newIndex;
-		for (int oldZ = 0; oldZ < dimZ; oldZ++)
-		{
-			newZ = oldZ / factorZ;
-			for (int oldY = 0; oldY < dimY; oldY++)
+			int pixelCount, oldZ, oldY, oldX;
+			float pixelSum, pixVal;
+			size_t blockSizeX, blockSizeY, blockSizeZ;
+			for (int newY = 0; newY < newDimY; newY++)
 			{
-				newY = oldY / factorY;
-				for (int oldX = 0; oldX < dimX; oldX++)
+				for (int newX = 0; newX < newDimX; newX++)
 				{
-					newX = oldX / factorX;
-					oldIndex = oldZ * dimX*dimY + oldY * dimX + oldX;
-					newIndex = newZ * newDimX*newDimY + newY * newDimX + newX;
-					reducedCube[newIndex] = reducedCube[newIndex] + dataPtr[oldIndex];
-					pixelCount[newIndex]++;
+					pixelSum = 0;
+					pixelCount = 0;
+					blockSizeX = factorX;
+					blockSizeY = factorY;
+					blockSizeZ = factorZ;
+					if ((newX + 1) * factorX >= dimX) {
+						blockSizeX = dimX - (newX*factorX);
+					}
+					if ((newY + 1) * factorY >= dimY) {
+						blockSizeY = dimY - (newY*factorY);
+					}
+					if ((newZ + 1) * factorZ >= dimZ) {
+						blockSizeZ = dimZ - (newZ*factorZ);
+					}
+					for (auto pixelZ = 0; pixelZ < blockSizeZ; pixelZ++)
+					{
+						oldZ = newZ * factorZ + pixelZ;
+						for (auto pixelY = 0; pixelY < blockSizeY; pixelY++)
+						{
+							oldY = newY * factorY + pixelY;
+							for (auto pixelX = 0; pixelX < blockSizeX; pixelX++)
+							{
+								oldX = newX * factorX + pixelX;
+								pixVal = dataPtr[oldZ * dimX * dimY + oldY * dimX + oldX];
+								if (!isnan(pixVal)) {
+									pixelCount++;
+									pixelSum += pixVal;
+								}
+							}
+						}
+					}
+					reducedCube[newZ * newDimX * newDimY + newY * newDimX + newX] = pixelCount ? pixelSum / pixelCount : NAN;
 				}
 			}
-		//	reducedCube[newIndex] = reducedCube[newIndex] + dataPtr[oldIndex];
-		//	pixelCount[newIndex]++;
 		}
-		
-		
-		for (int i = 0; i < newSize; i++)
-		{
-			if (pixelCount[i] != 0)
-				reducedCube[i] = reducedCube[i] / (float)pixelCount[i];
-			else
-				reducedCube[i] = NAN;
-		}
-		//delete[] pixelCount;
 		*newDataPtr = reducedCube;
 		return 0;
 	}

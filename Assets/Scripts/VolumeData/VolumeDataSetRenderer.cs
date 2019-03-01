@@ -24,6 +24,12 @@ namespace VolumeData
         [Range(16, 512)] public int FoveatedStepsLow = 64;
         [Range(16, 512)] public int FoveatedStepsHigh = 384;
 
+        // RenderDownsampling
+        [Header("Render Downsampling")]
+        public int XFactor = 1;
+        public int YFactor = 1;
+        public int ZFactor = 1;
+
         // Vignette Rendering
         [Header("Vignette Rendering Controls")] [Range(0, 0.5f)]
         public float VignetteFadeStart = 0.15f;
@@ -95,7 +101,8 @@ namespace VolumeData
 
         public void Start()
         {
-            _dataSet = VolumeDataSet.LoadFromFitsFile(FileName);
+            _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName);
+            _dataSet.RenderVolume(XFactor, YFactor, ZFactor);
             ScaleMin = _dataSet.CubeMin;
             ScaleMax = _dataSet.CubeMax;
 
@@ -156,5 +163,12 @@ namespace VolumeData
             _materialInstance.SetFloat(_idVignetteIntensity, VignetteIntensity);
             _materialInstance.SetColor(_idVignetteColor, VignetteColor);
         }
+
+        public void OnDestroy()
+        {
+            _dataSet.CleanUp();
+        }
+
+
     }
 }

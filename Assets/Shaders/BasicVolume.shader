@@ -23,7 +23,7 @@ Shader "VRTest/BasicVolume"
         Pass
         {
             Blend SrcAlpha OneMinusSrcAlpha
-            Cull Front ZWrite Off ZTest Always
+            Cull Off ZWrite Off ZTest Always
 
             CGPROGRAM
             #pragma vertex vertexShaderVolume
