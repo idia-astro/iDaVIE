@@ -51,7 +51,7 @@ namespace VolumeData
                 FitsReader.FitsCloseFile(fptr, out status);
             }
 
-            int[] cubeSize = new int[cubeDimensions];
+            long[] cubeSize = new long[cubeDimensions];
             Marshal.Copy(dataPtr, cubeSize, 0, cubeDimensions);
             FitsReader.FreeMemory(dataPtr);
             long numberDataPoints = cubeSize[0] * cubeSize[1] * cubeSize[2];
@@ -79,7 +79,7 @@ namespace VolumeData
             bool downsampled = false;
             if (xDownsample != 1 || yDownsample != 1 || zDownsample != 1)
             {
-                if (DataAnalysis.DataDownsampleByFactor(_fitsCubeData, out reducedData, (int)XDim, (int)YDim, (int)ZDim, xDownsample, yDownsample, zDownsample) != 0)
+                if (DataAnalysis.DataDownsampleByFactor(_fitsCubeData, out reducedData, XDim, YDim, ZDim, xDownsample, yDownsample, zDownsample) != 0)
                 {
                     Debug.Log("Data cube downsample error!");
                 }

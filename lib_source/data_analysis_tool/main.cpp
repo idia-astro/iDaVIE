@@ -11,7 +11,7 @@
 
 extern "C"
 {
-	DllExport int FindMaxMin(float *dataPtr, long numberElements, float *maxResult, float *minResult)
+	DllExport int FindMaxMin(float *dataPtr, long long numberElements, float *maxResult, float *minResult)
 	{
 		float maxVal = -std::numeric_limits<float>::max();
 		float minVal = std::numeric_limits<float>::max();
@@ -20,7 +20,7 @@ extern "C"
 			float currentMax = -std::numeric_limits<float>::max();
 			float currentMin = std::numeric_limits<float>::max();
 			#pragma omp for
-			for (int i = 0; i < numberElements; i++)
+			for (auto i = 0; i < numberElements; i++)
 			{
 				float val = dataPtr[i];
 				currentMax = fmax(currentMax, val);
@@ -83,30 +83,29 @@ extern "C"
 	}
 
     
-	DllExport int DataDownsampleByFactor(const float *dataPtr, float **newDataPtr, int dimX, int dimY, int dimZ, int factorX, int factorY, int factorZ)
+	DllExport int DataDownsampleByFactor(const float *dataPtr, float **newDataPtr, long long dimX, long long dimY, long long dimZ, int factorX, int factorY, int factorZ)
 	{
-		int oldSize = dimX * dimY * dimZ;
-		int newDimX = dimX / factorX;
-		int newDimY = dimY / factorY;
-		int newDimZ = dimZ / factorZ;
+		long long newDimX = dimX / factorX;
+		long long newDimY = dimY / factorY;
+		long long newDimZ = dimZ / factorZ;
 		if (dimX % factorX != 0)
 			newDimX = newDimX + 1;
 		if (dimY % factorY != 0)
 			newDimY = newDimY + 1;
 		if (dimZ % factorZ != 0)
 			newDimZ = newDimZ + 1;
-		int newSize = newDimX * newDimY * newDimZ;
+		long long newSize = newDimX * newDimY * newDimZ;
 		float* reducedCube = new float[newSize] {};
 		#pragma omp parallel 
 		#pragma omp for
-		for (int newZ = 0; newZ < newDimZ; newZ++)
+		for (auto newZ = 0; newZ < newDimZ; newZ++)
 		{
-			int pixelCount, oldZ, oldY, oldX;
+			long long  pixelCount, oldZ, oldY, oldX;
 			float pixelSum, pixVal;
 			size_t blockSizeX, blockSizeY, blockSizeZ;
-			for (int newY = 0; newY < newDimY; newY++)
+			for (auto newY = 0; newY < newDimY; newY++)
 			{
-				for (int newX = 0; newX < newDimX; newX++)
+				for (auto newX = 0; newX < newDimX; newX++)
 				{
 					pixelSum = 0;
 					pixelCount = 0;

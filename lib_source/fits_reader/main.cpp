@@ -48,17 +48,17 @@ extern "C"
 	}
 
 	
-	DllExport int FitsGetImageSize(fitsfile *fptr, int dims, long  **naxes, int *status)
+	DllExport int FitsGetImageSize(fitsfile *fptr, int dims, long long **naxes, int *status)
 	{
-		long* imageSize = new long[dims];
-		fits_get_img_size(fptr, dims, imageSize, status);
+		long long* imageSize = new long long[dims];
+		fits_get_img_sizell(fptr, dims, imageSize, status);
 		*naxes = imageSize;
 		return 0;
 	}
 
 
 	DllExport int FitsReadColFloat(fitsfile *fptr, int colnum, long firstrow,
-		long firstelem, long nelem, float **array, int  *status)
+		long firstelem, long long nelem, float **array, int  *status)
 	{
 		int anynul;
 		float nulval = 0;
@@ -69,7 +69,7 @@ extern "C"
 	}
 
 	DllExport int FitsReadColString(fitsfile *fptr, int colnum, long firstrow,
-		long firstelem, long nelem, char ***ptrarray, char **chararray, int  *status)
+		long firstelem, long long nelem, char ***ptrarray, char **chararray, int  *status)
 	{
 		int anynul;
 		float nulval = 0;
@@ -83,15 +83,15 @@ extern "C"
 		return success;
 	}
 	
-	DllExport int FitsReadImageFloat(fitsfile *fptr, int dims, long nelem, float **array, int *status)
+	DllExport int FitsReadImageFloat(fitsfile *fptr, int dims, long long nelem, float **array, int *status)
 	{
 		int anynul;
 		float nulval = 0;
 		float* dataarray = new float[nelem];
-		long* startPix = new long[dims];
+		long long* startPix = new long long[dims];
 		for (int i = 0; i < dims; i++)
 			startPix[i] = 1;
-		int success = fits_read_pix(fptr, TFLOAT, startPix, nelem, &nulval, dataarray, &anynul, status);
+		int success = fits_read_pixll(fptr, TFLOAT, startPix, nelem, &nulval, dataarray, &anynul, status);
 		delete[] startPix;
 		*array = dataarray;
 		return success;
