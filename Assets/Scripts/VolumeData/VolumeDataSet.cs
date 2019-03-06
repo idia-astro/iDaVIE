@@ -126,6 +126,32 @@ namespace VolumeData
             Debug.Log("max and min vals: " + CubeMax + " and " + CubeMin);
         }
 
+        public void FindDownsampleFactors(long MaxCubeSizeInMB, out int Xfactor, out int Yfactor, out int Zfactor)
+        {
+            Xfactor = 1;
+            Yfactor = 1;
+            Zfactor = 1;
+            while (XDim / Xfactor > 2048 || YDim / Yfactor > 2048)
+            {
+                Xfactor++;
+                Yfactor++;
+            }
+            while (ZDim / Zfactor > 2048)
+            {
+                Zfactor++;
+            }
+            long maximumElements = MaxCubeSizeInMB * 1000000 / 4;
+            while (XDim * YDim * ZDim / (Xfactor * Yfactor * Zfactor) > maximumElements)
+            {
+                Zfactor++;
+                if (XDim * YDim * ZDim / (Xfactor * Yfactor * Zfactor) > maximumElements)
+                {
+                    Xfactor++;
+                    Yfactor++;
+                }
+            }
+        }
+
         public void CleanUp()
         {
             FitsReader.FreeMemory(_fitsCubeData);

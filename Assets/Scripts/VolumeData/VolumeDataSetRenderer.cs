@@ -26,6 +26,8 @@ namespace VolumeData
 
         // RenderDownsampling
         [Header("Render Downsampling")]
+        public long MaximumCubeSizeInMB = 250;
+        public bool FactorOverride = false;
         public int XFactor = 1;
         public int YFactor = 1;
         public int ZFactor = 1;
@@ -102,6 +104,10 @@ namespace VolumeData
         public void Start()
         {
             _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName);
+            if (!FactorOverride)
+            {
+                _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
+            }
             _dataSet.RenderVolume(XFactor, YFactor, ZFactor);
             ScaleMin = _dataSet.CubeMin;
             ScaleMax = _dataSet.CubeMax;
