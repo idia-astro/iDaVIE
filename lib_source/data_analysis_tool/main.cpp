@@ -20,7 +20,7 @@ extern "C"
 			float currentMax = -std::numeric_limits<float>::max();
 			float currentMin = std::numeric_limits<float>::max();
 			#pragma omp for
-			for (auto i = 0; i < numberElements; i++)
+			for (long long i = 0; i < numberElements; i++)
 			{
 				float val = dataPtr[i];
 				currentMax = fmax(currentMax, val);
@@ -143,7 +143,7 @@ extern "C"
 			}
 		}
 		*newDataPtr = reducedCube;
-		return 0;
+		return EXIT_SUCCESS;
 	}
 	
 	DllExport int FreeMemory(void* ptrToDelete)
