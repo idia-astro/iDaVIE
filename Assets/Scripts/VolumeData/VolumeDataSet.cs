@@ -73,6 +73,8 @@ namespace VolumeData
                 Graphics.CopyTexture(textureSlice, 0, 0, 0, 0, cubeSize[0], cubeSize[1], dataCube, slice, 0, 0, 0);
             }
 
+            dataCube.filterMode = FilterMode.Point;
+
             volumeDataSet.DataCube = dataCube;
             volumeDataSet._fitsCubeData = fitsDataPtr;
             volumeDataSet.XDim = cubeSize[0];
@@ -81,6 +83,18 @@ namespace VolumeData
             volumeDataSet.findMinAndMax();
 
             return volumeDataSet;
+        }
+
+        public float GetValue(int x, int y, int z)
+        {
+            if (x < 1 || x > XDim || y < 1 || y > YDim || z < 1 || z > ZDim)
+            {
+                return float.NaN;
+            }
+
+            float val;
+            DataAnalysis.GetVoxelValue(_fitsCubeData, out val, (int)XDim, (int)YDim, (int)ZDim, x, y, z);
+            return val;
         }
 
         private void findMinAndMax()
