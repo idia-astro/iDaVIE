@@ -73,7 +73,7 @@ namespace VolumeData
             return volumeDataSet;
         }
 
-        public void RenderVolume(int xDownsample, int yDownsample, int zDownsample)
+        public void RenderVolume(TextureFilterEnum textureFilter, int xDownsample, int yDownsample, int zDownsample)
         {
             IntPtr reducedData;
             bool downsampled = false;
@@ -100,6 +100,20 @@ namespace VolumeData
             int newCubeLength = cubeSize[0] * cubeSize[1] * cubeSize[2];
             float[] reducedCube = new float[newCubeLength];
             Texture3D dataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], TextureFormat.RFloat, false);
+
+            switch (textureFilter)
+            {
+                case TextureFilterEnum.Point:
+                    dataCube.filterMode = FilterMode.Point;
+                    break;
+                case TextureFilterEnum.Bilinear:
+                    dataCube.filterMode = FilterMode.Bilinear;
+                    break;
+                case TextureFilterEnum.Trilinear:
+                    dataCube.filterMode = FilterMode.Trilinear;
+                    break;
+            }
+
             int sliceSize = cubeSize[0] * cubeSize[1];
             Texture2D textureSlice = new Texture2D(cubeSize[0], cubeSize[1], TextureFormat.RFloat, false);
             for (int slice = 0; slice < cubeSize[2]; slice++)
@@ -109,6 +123,7 @@ namespace VolumeData
                 textureSlice.Apply();
                 Graphics.CopyTexture(textureSlice, 0, 0, 0, 0, cubeSize[0], cubeSize[1], dataCube, slice, 0, 0, 0);
             }
+           
             DataCube = dataCube;
             //TODO output cached file
             if (downsampled)
@@ -131,24 +146,21 @@ namespace VolumeData
             Xfactor = 1;
             Yfactor = 1;
             Zfactor = 1;
-            while (XDim / Xfactor > 2048 || YDim / Yfactor > 2048)
-            {
+            while (XDim / Xfactor > 2048)
                 Xfactor++;
+            while (YDim / Yfactor > 2048)
                 Yfactor++;
-            }
             while (ZDim / Zfactor > 2048)
-            {
                 Zfactor++;
-            }
             long maximumElements = MaxCubeSizeInMB * 1000000 / 4;
             while (XDim * YDim * ZDim / (Xfactor * Yfactor * Zfactor) > maximumElements)
             {
-                Zfactor++;
-                if (XDim * YDim * ZDim / (Xfactor * Yfactor * Zfactor) > maximumElements)
-                {
-                    Xfactor++;
+                if (ZDim / Zfactor > XDim / Xfactor || ZDim / Zfactor > YDim / Yfactor)
+                    Zfactor++;
+                else if (YDim / Yfactor > XDim / Xfactor)
                     Yfactor++;
-                }
+                else
+                    Xfactor++;
             }
         }
 

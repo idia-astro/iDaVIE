@@ -1,7 +1,15 @@
 using UnityEngine;
 
+
+
 namespace VolumeData
 {
+
+    public enum TextureFilterEnum
+    {
+        Point, Bilinear, Trilinear
+    }
+
     public class VolumeDataSetRenderer : MonoBehaviour
     {
         public ColorMapDelegate OnColorMapChanged;
@@ -13,6 +21,10 @@ namespace VolumeData
 
         // Jitter factor
         [Range(0, 1)] public float Jitter = 1.0f;
+
+
+        // Texture Filtering
+        public TextureFilterEnum TextureFilter = TextureFilterEnum.Point;
 
         // Foveated rendering controls
         [Header("Foveated Rendering Controls")]
@@ -108,7 +120,7 @@ namespace VolumeData
             {
                 _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
             }
-            _dataSet.RenderVolume(XFactor, YFactor, ZFactor);
+            _dataSet.RenderVolume(TextureFilter, XFactor, YFactor, ZFactor);
             ScaleMin = _dataSet.CubeMin;
             ScaleMax = _dataSet.CubeMax;
 
