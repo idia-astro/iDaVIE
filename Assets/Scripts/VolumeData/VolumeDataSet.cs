@@ -33,24 +33,20 @@ namespace VolumeData
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
-
             if (FitsReader.FitsGetImageDims(fptr, out cubeDimensions, out status) != 0)
             {
                 Debug.Log("Fits read image dimensions failed... code #" + status.ToString());
             }
-
             if (cubeDimensions < 3)
             {
                 Debug.Log("Only " + cubeDimensions.ToString() +
                           " found. Please use Fits cube with at least 3 dimensions.");
             }
-
             if (FitsReader.FitsGetImageSize(fptr, cubeDimensions, out dataPtr, out status) != 0)
             {
                 Debug.Log("Fits Read cube size error #" + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
             }
-
             long[] cubeSize = new long[cubeDimensions];
             Marshal.Copy(dataPtr, cubeSize, 0, cubeDimensions);
             FitsReader.FreeMemory(dataPtr);
@@ -62,7 +58,6 @@ namespace VolumeData
                 FitsReader.FitsCloseFile(fptr, out status);
             }
             FitsReader.FitsCloseFile(fptr, out status);
-
             volumeDataSet._fitsCubeData = fitsDataPtr;
             volumeDataSet.XDim = cubeSize[0];
             volumeDataSet.YDim = cubeSize[1];
@@ -100,7 +95,6 @@ namespace VolumeData
             int newCubeLength = cubeSize[0] * cubeSize[1] * cubeSize[2];
             float[] reducedCube = new float[newCubeLength];
             Texture3D dataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], TextureFormat.RFloat, false);
-
             switch (textureFilter)
             {
                 case TextureFilterEnum.Point:
@@ -113,7 +107,6 @@ namespace VolumeData
                     dataCube.filterMode = FilterMode.Trilinear;
                     break;
             }
-
             int sliceSize = cubeSize[0] * cubeSize[1];
             Texture2D textureSlice = new Texture2D(cubeSize[0], cubeSize[1], TextureFormat.RFloat, false);
             for (int slice = 0; slice < cubeSize[2]; slice++)
@@ -123,7 +116,6 @@ namespace VolumeData
                 textureSlice.Apply();
                 Graphics.CopyTexture(textureSlice, 0, 0, 0, 0, cubeSize[0], cubeSize[1], dataCube, slice, 0, 0, 0);
             }
-           
             DataCube = dataCube;
             //TODO output cached file
             if (downsampled)
