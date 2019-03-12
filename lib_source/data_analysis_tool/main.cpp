@@ -42,12 +42,13 @@ extern "C"
 		float outValue;
 		if (x > xDim || y > yDim || z > zDim || x < 1 || y < 1 || z < 1)
 			return EXIT_FAILURE;
-		int index = xDim * yDim * (z - 1) + xDim * (y - 1) + (x - 1);
+		long long index = (long long)xDim * (long long)yDim * ((long long)z - 1) + (long long)xDim * ((long long)y - 1) + ((long long)x - 1);
 		outValue = dataPtr[index];
 		*voxelValue = outValue;
 		return EXIT_SUCCESS;
 	}
-
+	
+	//TODO make compatible with long long
 	DllExport int GetXProfile(float *dataPtr, float **profile, int xDim, int yDim, int zDim, int y, int z)
 	{
 		float* newProfile = new float[xDim];
