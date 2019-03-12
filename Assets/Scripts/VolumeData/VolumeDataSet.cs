@@ -122,6 +122,18 @@ namespace VolumeData
                 DataAnalysis.FreeMemory(reducedData);
         }
 
+        public float GetValue(int x, int y, int z)
+        {
+            if (x < 1 || x > XDim || y < 1 || y > YDim || z < 1 || z > ZDim)
+            {
+                return float.NaN;
+            }
+
+            float val;
+            DataAnalysis.GetVoxelValue(_fitsCubeData, out val, (int)XDim, (int)YDim, (int)ZDim, x, y, z);
+            return val;
+        }
+
         private void findMinAndMax()
         {
             long numberDataPoints = XDim * YDim * ZDim;

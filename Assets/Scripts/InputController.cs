@@ -6,6 +6,7 @@ using TMPro;
 using UnityEngine;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
+using Vectrosity;
 
 [RequireComponent(typeof(Player))]
 public class InputController : MonoBehaviour
@@ -47,8 +48,9 @@ public class InputController : MonoBehaviour
     private Vector3 _startGripCenter;
     private Vector3 _starGripForwardAxis;
     private InputState _inputState;
-    private LineRenderer _lineRendererAxisSeparation;
-    private LineRenderer _lineRendererRotationAxes;
+    private VectorLine _lineAxisSeparation;
+    private VectorLine _lineRotationAxes;
+    
     private TextMeshPro _scalingTextComponent;
 
     private float _rotationYawCumulative = 0;
@@ -105,29 +107,14 @@ public class InputController : MonoBehaviour
             _volumeDataSets = new VolumeDataSetRenderer[0];
         }
 
-        // Line renderer for showing separation between controllers while scaling/rotating. World space thickness of 2 mm
-        var lineRendererAxisSeparationGameObject = new GameObject("lineRendererAxisSeparation");
-        lineRendererAxisSeparationGameObject.transform.parent = transform;
-        _lineRendererAxisSeparation = lineRendererAxisSeparationGameObject.AddComponent<LineRenderer>();
-        _lineRendererAxisSeparation.positionCount = 3;
-        _lineRendererAxisSeparation.startWidth = 2e-3f;
-        _lineRendererAxisSeparation.endWidth = 2e-3f;
-        _lineRendererAxisSeparation.material = new Material(Shader.Find("Sprites/Default"));
-        _lineRendererAxisSeparation.startColor = Color.red;
-        _lineRendererAxisSeparation.endColor = Color.red;
-        _lineRendererAxisSeparation.enabled = false;
-
-        // Line renderer for showing axes while scaling/rotating. World space thickness of 2 mm
-        var lineRendererRotationAxesGameObject = new GameObject("lineRendererRotationAxes");
-        lineRendererRotationAxesGameObject.transform.parent = transform;
-        _lineRendererRotationAxes = lineRendererRotationAxesGameObject.AddComponent<LineRenderer>();
-        _lineRendererRotationAxes.positionCount = 3;
-        _lineRendererRotationAxes.startWidth = 2e-3f;
-        _lineRendererRotationAxes.endWidth = 2e-3f;
-        _lineRendererRotationAxes.material = new Material(Shader.Find("Sprites/Default"));
-        _lineRendererRotationAxes.startColor = Color.white;
-        _lineRendererRotationAxes.endColor = Color.white;
-        _lineRendererRotationAxes.enabled = false;
+        // Line renderer for showing separation between controllers while scaling/rotating
+        _lineRotationAxes = new VectorLine("RotationAxes", new List<Vector3>(new Vector3[3]), 2.0f, LineType.Continuous);
+        _lineRotationAxes.color = Color.white;
+        _lineRotationAxes.Draw3DAuto();
+        
+        _lineAxisSeparation = new VectorLine("AxisSeparation", new List<Vector3>(new Vector3[3]), 2.0f, LineType.Continuous);
+        _lineAxisSeparation.color = Color.red;
+        _lineAxisSeparation.Draw3DAuto();
 
         _scalingTextComponent = _hands[0].GetComponentInChildren<TextMeshPro>();
         _startDataSetScales = new float[_allDataSets.Count];
@@ -216,12 +203,16 @@ public class InputController : MonoBehaviour
             }
         }
 
-        _lineRendererAxisSeparation.SetPositions(new[] {_currentGripPositions[0], _startGripCenter, _currentGripPositions[1]});
-        _lineRendererAxisSeparation.enabled = true;
+        _lineAxisSeparation.points3[0] = _currentGripPositions[0];
+        _lineAxisSeparation.points3[1] = _startGripCenter;
+        _lineAxisSeparation.points3[2] = _currentGripPositions[1];
+        _lineAxisSeparation.active = true;
 
         // Axis lines: 10 cm length
-        _lineRendererRotationAxes.SetPositions(new[] {_startGripCenter + _starGripForwardAxis * 0.1f, _startGripCenter, _startGripCenter + Vector3.up * 0.1f});
-        _lineRendererRotationAxes.enabled = true;
+        _lineRotationAxes.points3[0] = _startGripCenter + _starGripForwardAxis * 0.1f;
+        _lineRotationAxes.points3[1] = _startGripCenter;
+        _lineRotationAxes.points3[2] = _startGripCenter + Vector3.up * 0.1f;
+        _lineRotationAxes.active = true;
 
         if (_scalingTextComponent)
         {
@@ -232,8 +223,8 @@ public class InputController : MonoBehaviour
     private void StateTransitionScalingToMoving()
     {
         _inputState = InputState.Moving;
-        _lineRendererAxisSeparation.enabled = false;
-        _lineRendererRotationAxes.enabled = false;
+        _lineRotationAxes.active = false;
+        _lineAxisSeparation.active = false;
 
         if (_scalingTextComponent)
         {
@@ -410,10 +401,13 @@ public class InputController : MonoBehaviour
         }
 
         var rotationPoint = InPlaceScaling ? _startGripCenter : currentGripCenter;
-        _lineRendererAxisSeparation.SetPositions(new[] {_currentGripPositions[0], rotationPoint, _currentGripPositions[1]});        
-        _lineRendererRotationAxes.SetPositions(new[] {_startGripCenter + _starGripForwardAxis * (rollCurrentlyActive ? 0.1f : 0.0f), rotationPoint, _startGripCenter + Vector3.up * (yawCurrentlyActive ? 0.1f : 0.0f)});
+        _lineAxisSeparation.points3[0] = _currentGripPositions[0];
+        _lineAxisSeparation.points3[1] = rotationPoint;
+        _lineAxisSeparation.points3[2] = _currentGripPositions[1];
         
-        
+        _lineRotationAxes.points3[0] = _startGripCenter + _starGripForwardAxis * (rollCurrentlyActive ? 0.1f : 0.0f);
+        _lineRotationAxes.points3[1] = rotationPoint;
+        _lineRotationAxes.points3[2] = _startGripCenter + Vector3.up * (yawCurrentlyActive ? 0.1f : 0.0f);
     }
 
     // Update function for FSM Moving state
@@ -440,6 +434,26 @@ public class InputController : MonoBehaviour
     // (Placeholder) Update function for FSM Idle state
     private void UpdateIdle()
     {
+        if (_volumeDataSets == null)
+        {
+            return;            
+        }
+
+        string cursorString = "";
+        
+        foreach (var dataSet in _volumeDataSets)
+        {
+            dataSet.SetCursorPosition(_handTransforms[0].position);
+            var voxelCoordinate = dataSet.CursorVoxel;
+            if (voxelCoordinate.x >= 0 &&  _scalingTextComponent != null)
+            {
+                var voxelValue = dataSet.CursorValue;                
+                cursorString = $"({voxelCoordinate.x}, {voxelCoordinate.y}, {voxelCoordinate.z}): {voxelValue}";                
+            }
+        }
+
+        _scalingTextComponent.enabled = true;
+        _scalingTextComponent.text = cursorString;
     }
 
     private void UpdateScalingText(MonoBehaviour dataSet)
