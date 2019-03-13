@@ -37,19 +37,19 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int GetVoxelValue(float *dataPtr, float *voxelValue, int xDim, int yDim, int zDim, int x, int y, int z)
+	DllExport int GetVoxelValue(float *dataPtr, float *voxelValue, long long xDim, long long yDim, long long zDim, long long x, long long y, long long z)
 	{
 		float outValue;
 		if (x > xDim || y > yDim || z > zDim || x < 1 || y < 1 || z < 1)
 			return EXIT_FAILURE;
-		long long index = (long long)xDim * (long long)yDim * ((long long)z - 1) + (long long)xDim * ((long long)y - 1) + ((long long)x - 1);
+		long long index = xDim * yDim * (z - 1) + xDim * (y - 1) + (x - 1);
 		outValue = dataPtr[index];
 		*voxelValue = outValue;
 		return EXIT_SUCCESS;
 	}
 	
 	//TODO make compatible with long long
-	DllExport int GetXProfile(float *dataPtr, float **profile, int xDim, int yDim, int zDim, int y, int z)
+	DllExport int GetXProfile(float *dataPtr, float **profile, long long xDim, long long yDim, long long zDim, long long y, long long z)
 	{
 		float* newProfile = new float[xDim];
 		if (y > yDim || z > zDim || y < 1 || z < 1)
@@ -60,7 +60,7 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int GetYProfile(float *dataPtr, float **profile, int xDim, int yDim, int zDim, int x, int z)
+	DllExport int GetYProfile(float *dataPtr, float **profile, long long xDim, long long yDim, long long zDim, long long x, long long z)
 	{
 		float* newProfile = new float[yDim];
 		if (x > xDim || z > zDim || x < 1 || z < 1)
@@ -72,7 +72,7 @@ extern "C"
 
 	}
 
-	DllExport int GetZProfile(float *dataPtr, float **profile, int xDim, int yDim, int zDim, int x, int y)
+	DllExport int GetZProfile(float *dataPtr, float **profile, long long xDim, long long yDim, long long zDim, long long x, long long y)
 	{
 		float* newProfile = new float[xDim];
 		if (x > xDim || y > yDim || x < 1 || y < 1)
@@ -90,11 +90,11 @@ extern "C"
 		long long newDimY = dimY / factorY;
 		long long newDimZ = dimZ / factorZ;
 		if (dimX % factorX != 0)
-			newDimX = newDimX + 1;
+			newDimX++;
 		if (dimY % factorY != 0)
-			newDimY = newDimY + 1;
+			newDimY++;
 		if (dimZ % factorZ != 0)
-			newDimZ = newDimZ + 1;
+			newDimZ++;
 		long long newSize = newDimX * newDimY * newDimZ;
 		float* reducedCube = new float[newSize] {};
 		#pragma omp parallel 
