@@ -11,7 +11,7 @@
 
 extern "C"
 {
-	DllExport int FindMaxMin(float *dataPtr, long long numberElements, float *maxResult, float *minResult)
+	DllExport int FindMaxMin(float *dataPtr, int64_t numberElements, float *maxResult, float *minResult)
 	{
 		float maxVal = -std::numeric_limits<float>::max();
 		float minVal = std::numeric_limits<float>::max();
@@ -20,7 +20,7 @@ extern "C"
 			float currentMax = -std::numeric_limits<float>::max();
 			float currentMin = std::numeric_limits<float>::max();
 			#pragma omp for
-			for (long long i = 0; i < numberElements; i++)
+			for (int64_t i = 0; i < numberElements; i++)
 			{
 				float val = dataPtr[i];
 				currentMax = fmax(currentMax, val);
@@ -37,19 +37,19 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int GetVoxelValue(float *dataPtr, float *voxelValue, long long xDim, long long yDim, long long zDim, long long x, long long y, long long z)
+	DllExport int GetVoxelValue(float *dataPtr, float *voxelValue, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y, int64_t z)
 	{
 		float outValue;
 		if (x > xDim || y > yDim || z > zDim || x < 1 || y < 1 || z < 1)
 			return EXIT_FAILURE;
-		long long index = xDim * yDim * (z - 1) + xDim * (y - 1) + (x - 1);
+		int64_t index = xDim * yDim * (z - 1) + xDim * (y - 1) + (x - 1);
 		outValue = dataPtr[index];
 		*voxelValue = outValue;
 		return EXIT_SUCCESS;
 	}
 	
-	//TODO make compatible with long long
-	DllExport int GetXProfile(float *dataPtr, float **profile, long long xDim, long long yDim, long long zDim, long long y, long long z)
+	//TODO make compatible with int64_t
+	DllExport int GetXProfile(float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t y, int64_t z)
 	{
 		float* newProfile = new float[xDim];
 		if (y > yDim || z > zDim || y < 1 || z < 1)
@@ -60,7 +60,7 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int GetYProfile(float *dataPtr, float **profile, long long xDim, long long yDim, long long zDim, long long x, long long z)
+	DllExport int GetYProfile(float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t z)
 	{
 		float* newProfile = new float[yDim];
 		if (x > xDim || z > zDim || x < 1 || z < 1)
@@ -72,7 +72,7 @@ extern "C"
 
 	}
 
-	DllExport int GetZProfile(float *dataPtr, float **profile, long long xDim, long long yDim, long long zDim, long long x, long long y)
+	DllExport int GetZProfile(float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y)
 	{
 		float* newProfile = new float[xDim];
 		if (x > xDim || y > yDim || x < 1 || y < 1)
@@ -84,24 +84,24 @@ extern "C"
 	}
 
     
-	DllExport int DataDownsampleByFactor(const float *dataPtr, float **newDataPtr, long long dimX, long long dimY, long long dimZ, int factorX, int factorY, int factorZ)
+	DllExport int DataDownsampleByFactor(const float *dataPtr, float **newDataPtr, int64_t dimX, int64_t dimY, int64_t dimZ, int factorX, int factorY, int factorZ)
 	{
-		long long newDimX = dimX / factorX;
-		long long newDimY = dimY / factorY;
-		long long newDimZ = dimZ / factorZ;
+		int64_t newDimX = dimX / factorX;
+		int64_t newDimY = dimY / factorY;
+		int64_t newDimZ = dimZ / factorZ;
 		if (dimX % factorX != 0)
 			newDimX++;
 		if (dimY % factorY != 0)
 			newDimY++;
 		if (dimZ % factorZ != 0)
 			newDimZ++;
-		long long newSize = newDimX * newDimY * newDimZ;
+		int64_t newSize = newDimX * newDimY * newDimZ;
 		float* reducedCube = new float[newSize] {};
 		#pragma omp parallel 
 		#pragma omp for
 		for (auto newZ = 0; newZ < newDimZ; newZ++)
 		{
-			long long  pixelCount, oldZ, oldY, oldX;
+			int64_t  pixelCount, oldZ, oldY, oldX;
 			float pixelSum, pixVal;
 			size_t blockSizeX, blockSizeY, blockSizeZ;
 			for (auto newY = 0; newY < newDimY; newY++)
