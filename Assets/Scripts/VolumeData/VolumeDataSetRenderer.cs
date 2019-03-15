@@ -2,8 +2,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using Vectrosity;
 
+
+
 namespace VolumeData
 {
+
+    public enum TextureFilterEnum
+    {
+        Point, Bilinear, Trilinear
+    }
+
     public class VolumeDataSetRenderer : MonoBehaviour
     {
         public ColorMapDelegate OnColorMapChanged;
@@ -16,6 +24,10 @@ namespace VolumeData
         // Jitter factor
         [Range(0, 1)] public float Jitter = 1.0f;
 
+
+        // Texture Filtering
+        public TextureFilterEnum TextureFilter = TextureFilterEnum.Point;
+
         // Foveated rendering controls
         [Header("Foveated Rendering Controls")]
         public bool FoveatedRendering = false;
@@ -25,6 +37,14 @@ namespace VolumeData
         [Range(0, 0.5f)] public float FoveationJitter = 0.0f;
         [Range(16, 512)] public int FoveatedStepsLow = 64;
         [Range(16, 512)] public int FoveatedStepsHigh = 384;
+
+        // RenderDownsampling
+        [Header("Render Downsampling")]
+        public long MaximumCubeSizeInMB = 250;
+        public bool FactorOverride = false;
+        public int XFactor = 1;
+        public int YFactor = 1;
+        public int ZFactor = 1;
 
         // Vignette Rendering
         [Header("Vignette Rendering Controls")] [Range(0, 0.5f)]
@@ -101,7 +121,12 @@ namespace VolumeData
 
         public void Start()
         {
-            _dataSet = VolumeDataSet.LoadFromFitsFile(FileName);
+            _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName);
+            if (!FactorOverride)
+            {
+                _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
+            }
+            _dataSet.RenderVolume(TextureFilter, XFactor, YFactor, ZFactor);
             ScaleMin = _dataSet.CubeMin;
             ScaleMax = _dataSet.CubeMax;
 
@@ -242,5 +267,12 @@ namespace VolumeData
             _materialInstance.SetFloat(_idVignetteIntensity, VignetteIntensity);
             _materialInstance.SetColor(_idVignetteColor, VignetteColor);
         }
+
+        public void OnDestroy()
+        {
+            _dataSet.CleanUp();
+        }
+
+
     }
 }

@@ -48,7 +48,7 @@ namespace VolumeData
         void Start()
         {
             _dataSets = GetComponentsInChildren<VolumeDataSetRenderer>(true);
-            Debug.Log(_dataSets.Length);
+            //Debug.Log(_dataSets.Length);
             string[] keywords =
             {
                 _keywordEditThresholdMin, _keywordEditThresholdMax, _keywordSaveThreshold,

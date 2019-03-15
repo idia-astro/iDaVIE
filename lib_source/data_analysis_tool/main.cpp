@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include <math.h>
 #include <omp.h>
 
@@ -11,7 +12,7 @@
 
 extern "C"
 {
-	DllExport int FindMaxMin(float *dataPtr, long numberElements, float *maxResult, float *minResult)
+	DllExport int FindMaxMin(float *dataPtr, int64_t numberElements, float *maxResult, float *minResult)
 	{
 		float maxVal = -std::numeric_limits<float>::max();
 		float minVal = std::numeric_limits<float>::max();
@@ -20,7 +21,7 @@ extern "C"
 			float currentMax = -std::numeric_limits<float>::max();
 			float currentMin = std::numeric_limits<float>::max();
 			#pragma omp for
-			for (int i = 0; i < numberElements; i++)
+			for (int64_t i = 0; i < numberElements; i++)
 			{
 				float val = dataPtr[i];
 				currentMax = fmax(currentMax, val);
@@ -37,18 +38,19 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int GetVoxelValue(float *dataPtr, float *voxelValue, int xDim, int yDim, int zDim, int x, int y, int z)
+	DllExport int GetVoxelValue(float *dataPtr, float *voxelValue, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y, int64_t z)
 	{
 		float outValue;
 		if (x > xDim || y > yDim || z > zDim || x < 1 || y < 1 || z < 1)
 			return EXIT_FAILURE;
-		int index = xDim * yDim * (z - 1) + xDim * (y - 1) + (x - 1);
+		int64_t index = xDim * yDim * (z - 1) + xDim * (y - 1) + (x - 1);
 		outValue = dataPtr[index];
 		*voxelValue = outValue;
 		return EXIT_SUCCESS;
 	}
-
-	DllExport int GetXProfile(float *dataPtr, float **profile, int xDim, int yDim, int zDim, int y, int z)
+	
+	//TODO make compatible with int64_t
+	DllExport int GetXProfile(float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t y, int64_t z)
 	{
 		float* newProfile = new float[xDim];
 		if (y > yDim || z > zDim || y < 1 || z < 1)
@@ -59,7 +61,7 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int GetYProfile(float *dataPtr, float **profile, int xDim, int yDim, int zDim, int x, int z)
+	DllExport int GetYProfile(float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t z)
 	{
 		float* newProfile = new float[yDim];
 		if (x > xDim || z > zDim || x < 1 || z < 1)
@@ -71,7 +73,7 @@ extern "C"
 
 	}
 
-	DllExport int GetZProfile(float *dataPtr, float **profile, int xDim, int yDim, int zDim, int x, int y)
+	DllExport int GetZProfile(float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y)
 	{
 		float* newProfile = new float[xDim];
 		if (x > xDim || y > yDim || x < 1 || y < 1)
@@ -82,68 +84,139 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-    //
-	/*
-	DllExport int NearNeighborScale(float *dataPtr, float **newDataPtr, int dimX, int dimY, int dimZ, int windowX, int windowY, int windowZ)
+    
+	DllExport int DataDownsampleByFactor(const float *dataPtr, float **newDataPtr, int64_t dimX, int64_t dimY, int64_t dimZ, int factorX, int factorY, int factorZ)
 	{
-		int newDimX = dimX / windowX;
-		int newDimY = dimY / windowY;
-		int newDimZ = dimZ / windowZ;
-		int extraX = dimX % windowX;
-		int extraY = dimY % windowY;
-		int extraZ = dimZ % windowZ;
-		int windowSize = windowX * windowY * windowZ;
-		std::vector<float> windowVector;
-		if (extraX)
+		int64_t newDimX = dimX / factorX;
+		int64_t newDimY = dimY / factorY;
+		int64_t newDimZ = dimZ / factorZ;
+		if (dimX % factorX != 0)
 			newDimX++;
-		if (extraY)
+		if (dimY % factorY != 0)
 			newDimY++;
-		if (extraZ)
+		if (dimZ % factorZ != 0)
 			newDimZ++;
-		int newCubeSize = newDimX * newDimY * newDimZ;
-		float* reducedCube = new float[newCubeSize];
-		
-		int sliceSize = dimX * dimY;
-		int newSliceSize = newDimX * newDimY;
-		int rowSize = dimY;
-		int newRowSize = newDimX;
-
-		int zStart, yStart, xStart, zEnd, yEnd, xEnd;
-		float sum;
-		for (int i = 0; i < newCubeSize; i++)
+		int64_t newSize = newDimX * newDimY * newDimZ;
+		float* reducedCube = new float[newSize] {};
+		#pragma omp parallel 
+		#pragma omp for
+		for (auto newZ = 0; newZ < newDimZ; newZ++)
 		{
-			zStart = i / newSliceSize * windowZ;
-			zEnd = (extraZ ? zStart + extraZ : zStart + windowZ);
-			for (int z = zStart; z < zEnd; z++)
+			int64_t  pixelCount, oldZ, oldY, oldX;
+			float pixelSum, pixVal;
+			size_t blockSizeX, blockSizeY, blockSizeZ;
+			for (auto newY = 0; newY < newDimY; newY++)
 			{
-				yStart = i % newSliceSize / newRowSize * windowY;
-				yEnd = (extraY ? yStart + extraY : yStart + windowY);
-
-				for (int y = yStart; yEnd; y++)
+				for (auto newX = 0; newX < newDimX; newX++)
 				{
-					xStart = i % newRowSize * windowX;
-					xEnd = (extraX ? xStart + extraX : xStart + windowX);
-
-					for (int x = xStart; x < xEnd; x++)
-					{
-						float valueToInsert = dataPtr[z * sliceSize + y * rowSize + x];
-						windowVector.push_back(valueToInsert);
+					pixelSum = 0;
+					pixelCount = 0;
+					blockSizeX = factorX;
+					blockSizeY = factorY;
+					blockSizeZ = factorZ;
+					if ((newX + 1) * factorX >= dimX) {
+						blockSizeX = dimX - (newX*factorX);
 					}
+					if ((newY + 1) * factorY >= dimY) {
+						blockSizeY = dimY - (newY*factorY);
+					}
+					if ((newZ + 1) * factorZ >= dimZ) {
+						blockSizeZ = dimZ - (newZ*factorZ);
+					}
+					for (auto pixelZ = 0; pixelZ < blockSizeZ; pixelZ++)
+					{
+						oldZ = newZ * factorZ + pixelZ;
+						for (auto pixelY = 0; pixelY < blockSizeY; pixelY++)
+						{
+							oldY = newY * factorY + pixelY;
+							for (auto pixelX = 0; pixelX < blockSizeX; pixelX++)
+							{
+								oldX = newX * factorX + pixelX;
+								pixVal = dataPtr[oldZ * dimX * dimY + oldY * dimX + oldX];
+								if (!isnan(pixVal)) {
+									pixelCount++;
+									pixelSum += pixVal;
+								}
+							}
+						}
+					}
+					reducedCube[newZ * newDimX * newDimY + newY * newDimX + newX] = pixelCount ? pixelSum / pixelCount : NAN;
 				}
 			}
-			sum = 0;
-			for (int j = 0; j < (int)windowVector.size(); j++)
-			{
-				float value = windowVector[j];
-				sum += value;
-			}
-			reducedCube[i] = sum / (float)windowVector.size();
-			windowVector.clear();
-		}	
+		}
 		*newDataPtr = reducedCube;
-		return 0;
+		return EXIT_SUCCESS;
 	}
-	*/
+
+	DllExport int DataCropAndDownsample(const float *dataPtr, float **newDataPtr, int64_t dimX, int64_t dimY, int64_t dimZ,
+		int64_t cropX1, int64_t cropY1, int64_t cropZ1, int64_t cropX2, int64_t cropY2, int64_t cropZ2, int factorX, int factorY, int factorZ)
+	{
+		if (cropX1 > dimX || cropX2 > dimX || cropY1 > dimY || cropY2 > dimY || cropZ1 > dimZ || cropZ2 > dimZ || cropX1 < 1 || cropX2 < 1 || cropY1 < 1 || cropY2 < 1 || cropZ1 < 1 || cropZ2 < 1)
+			return EXIT_FAILURE;
+		int64_t newDimX = (abs(cropX1 - cropX2) + 1) / factorX;
+		int64_t newDimY = (abs(cropY1 - cropY2) + 1) / factorY;
+		int64_t newDimZ = (abs(cropZ1 - cropZ2) + 1) / factorZ;
+		if ((abs(cropX1 - cropX2) + 1) % factorX != 0)
+			newDimX++;
+		if ((abs(cropY1 - cropY2) + 1) % factorY != 0)
+			newDimY++;
+		if ((abs(cropZ1 - cropZ2) + 1) % factorZ != 0)
+			newDimZ++;
+		int64_t newSize = newDimX * newDimY * newDimZ;
+		float* reducedCube = new float[newSize] {};
+		int64_t smallX = std::min(cropX1, cropX2);
+		int64_t smallY = std::min(cropY1, cropY2);
+		int64_t smallZ = std::min(cropZ1, cropZ2);
+		#pragma omp parallel 
+		#pragma omp for
+		for (auto newZ = 0; newZ < newDimZ; newZ++)
+		{
+			int64_t  pixelCount, oldZ, oldY, oldX;
+			float pixelSum, pixVal;
+			size_t blockSizeX, blockSizeY, blockSizeZ;
+			for (auto newY = 0; newY < newDimY; newY++)
+			{
+				for (auto newX = 0; newX < newDimX; newX++)
+				{
+					pixelSum = 0;
+					pixelCount = 0;
+					blockSizeX = factorX;
+					blockSizeY = factorY;
+					blockSizeZ = factorZ;
+					if ((newX + 1) * factorX >= dimX) {
+						blockSizeX = dimX - (newX*factorX);
+					}
+					if ((newY + 1) * factorY >= dimY) {
+						blockSizeY = dimY - (newY*factorY);
+					}
+					if ((newZ + 1) * factorZ >= dimZ) {
+						blockSizeZ = dimZ - (newZ*factorZ);
+					}
+					for (auto pixelZ = 0; pixelZ < blockSizeZ; pixelZ++)
+					{
+						oldZ = newZ * factorZ + pixelZ + smallZ - 1;
+						for (auto pixelY = 0; pixelY < blockSizeY; pixelY++)
+						{
+							oldY = newY * factorY + pixelY + smallY - 1;
+							for (auto pixelX = 0; pixelX < blockSizeX; pixelX++)
+							{
+								oldX = newX * factorX + pixelX + smallX - 1;
+								pixVal = dataPtr[oldZ * dimX * dimY + oldY * dimX + oldX];
+								if (!isnan(pixVal)) {
+									pixelCount++;
+									pixelSum += pixVal;
+								}
+							}
+						}
+					}
+					reducedCube[newZ * newDimX * newDimY + newY * newDimX + newX] = pixelCount ? pixelSum / pixelCount : NAN;
+				}
+			}
+		}
+		*newDataPtr = reducedCube;
+		return EXIT_SUCCESS;
+	}
+	
 	DllExport int FreeMemory(void* ptrToDelete)
 	{
 		delete[] ptrToDelete;
