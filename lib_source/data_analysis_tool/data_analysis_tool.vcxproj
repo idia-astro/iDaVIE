@@ -145,6 +145,12 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
     </Link>
+    <PreBuildEvent>
+      <Command>xcopy /y $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll $(SolutionDir)\..\..\Assets\Plugins\DataAnalysis\</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>copy dll file to Unity assets</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
