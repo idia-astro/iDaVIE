@@ -437,8 +437,8 @@ Assets/SteamVR_Input
 unityProject.vrmanifest
 Assets/TextMesh\ Pro
 Assets/Vectrosity
-Data/
+Data/Volumes
+Data/DataTables
+Data/DataMaps
 Assets/Plugins/Fits/
-*.fits
-*.tbl
 Assets/Plugins/
