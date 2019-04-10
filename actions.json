@@ -82,7 +82,6 @@
     {
       "language_tag": "en_US",
       "/actions/default/in/InteractUI": "Interact With UI",
-      "/actions/default/in/Teleport": "Teleport",
       "/actions/default/in/GrabPinch": "Grab Pinch",
       "/actions/default/in/GrabGrip": "Grab Grip",
       "/actions/default/in/SkeletonLeftHand": "Skeleton (Left)",

@@ -5,6 +5,7 @@
       "app_key": "application.generated.unity.idia_unityvr.exe",
       "launch_type": "url",
       "url": "steam://launch/",
+      "action_manifest_path": "C:\\Users\\accom\\Documents\\IDIA_UnityVR\\actions.json",
       "strings": {
         "en_us": {
           "name": "IDIA_UnityVR [Testing]"

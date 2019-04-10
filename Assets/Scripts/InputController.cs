@@ -136,7 +136,7 @@ public class InputController : MonoBehaviour
         }
     }
 
-    private void OnGripChanged(SteamVR_Action_In actionIn)
+    private void OnGripChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
         int gripCount = (_grabGripAction.GetState(SteamVR_Input_Sources.LeftHand) ? 1 : 0) + (_grabGripAction.GetState(SteamVR_Input_Sources.RightHand) ? 1 : 0);
 
@@ -169,7 +169,7 @@ public class InputController : MonoBehaviour
     }
 
 
-    private void OnPinchChanged(SteamVR_Action_In actionIn)
+    private void OnPinchChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
     }
 

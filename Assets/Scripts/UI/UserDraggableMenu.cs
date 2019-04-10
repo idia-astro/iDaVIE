@@ -14,10 +14,10 @@ namespace UI
         public float MaxScale = 1e-2f;
         private bool _isDragging;
         private SteamVR_Input_Sources _handType;
-        [SteamVR_DefaultAction("MenuUp")] public SteamVR_Action_Boolean menuUpAction;
-        [SteamVR_DefaultAction("MenuDown")] public SteamVR_Action_Boolean menuDownAction;
-        [SteamVR_DefaultAction("MenuLeft")] public SteamVR_Action_Boolean menuLeftAction;
-        [SteamVR_DefaultAction("MenuRight")] public SteamVR_Action_Boolean menuRightAction;
+        public SteamVR_Action_Boolean menuUpAction = SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp");
+        public SteamVR_Action_Boolean menuDownAction = SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown");
+        public SteamVR_Action_Boolean menuLeftAction = SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuLeft");
+        public SteamVR_Action_Boolean menuRightAction = SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight");
 
         public void OnDragStarted(PointerController parent)
         {
