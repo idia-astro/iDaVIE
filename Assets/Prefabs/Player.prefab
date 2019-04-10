@@ -58,7 +58,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27991c206a5e66147bb8ee3ef31c8bac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  actionSet: {fileID: 11400000, guid: 4ecb2b10aca2cbb4db93af6f0b1fc8ec, type: 2}
+  actionSet: {fileID: 11400000, guid: 8da4da9bd1b0abe429e822ba4ae48efa, type: 2}
   disableAllOtherActionSets: 0
   activateOnStart: 1
   deactivateOnDestroy: 1
@@ -189,10 +189,10 @@ MonoBehaviour:
   otherHand: {fileID: 0}
   handType: 0
   trackedObject: {fileID: 0}
-  grabPinchAction: {fileID: 11400000, guid: dbcdb4faeba774a4487f3941fe2581da, type: 2}
-  grabGripAction: {fileID: 11400000, guid: 2810b625f8c73604bbd544074e82bb50, type: 2}
-  hapticAction: {fileID: 11400000, guid: 85a2c6b3a29ba0b45b190ec342e7ce4a, type: 2}
-  uiInteractAction: {fileID: 11400000, guid: 9155b6aa36f203d4b93efd321ef813db, type: 2}
+  grabPinchAction: {fileID: 11400000, guid: 4dfcabdfc57109248b695ac735e15039, type: 2}
+  grabGripAction: {fileID: 11400000, guid: 00c6741cb4addc9488aae4bbc66f4adb, type: 2}
+  hapticAction: {fileID: 11400000, guid: a71d89a67e4a3a146a85be76363d6214, type: 2}
+  uiInteractAction: {fileID: 11400000, guid: b290b754c6df6634e87c98bcb839ae75, type: 2}
   useHoverSphere: 1
   hoverSphereTransform: {fileID: 0}
   hoverSphereRadius: 0.05
@@ -757,10 +757,10 @@ MonoBehaviour:
   otherHand: {fileID: 132523758458162118}
   handType: 1
   trackedObject: {fileID: 0}
-  grabPinchAction: {fileID: 11400000, guid: dbcdb4faeba774a4487f3941fe2581da, type: 2}
-  grabGripAction: {fileID: 11400000, guid: 2810b625f8c73604bbd544074e82bb50, type: 2}
-  hapticAction: {fileID: 11400000, guid: 85a2c6b3a29ba0b45b190ec342e7ce4a, type: 2}
-  uiInteractAction: {fileID: 11400000, guid: 9155b6aa36f203d4b93efd321ef813db, type: 2}
+  grabPinchAction: {fileID: 11400000, guid: 4dfcabdfc57109248b695ac735e15039, type: 2}
+  grabGripAction: {fileID: 11400000, guid: 00c6741cb4addc9488aae4bbc66f4adb, type: 2}
+  hapticAction: {fileID: 11400000, guid: a71d89a67e4a3a146a85be76363d6214, type: 2}
+  uiInteractAction: {fileID: 11400000, guid: b290b754c6df6634e87c98bcb839ae75, type: 2}
   useHoverSphere: 1
   hoverSphereTransform: {fileID: 132523757896558327}
   hoverSphereRadius: 0.075
@@ -795,7 +795,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a5fb0ca93b55ef4b8d54b512b103341, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  poseAction: {fileID: 11400000, guid: 9dd559495d07e6542832f974d4be3c18, type: 2}
+  poseAction: {fileID: 11400000, guid: 9336642c8f94a924a9495c280a98c181, type: 2}
   inputSource: 1
   origin: {fileID: 0}
   onTransformUpdated:
@@ -864,7 +864,7 @@ MonoBehaviour:
   controllerMaterial: {fileID: 2100000, guid: 11b050e661ec0cf48a289a7266451e91, type: 2}
   flashColor: {r: 1, g: 0.9170069, b: 0.453, a: 0.709}
   textHintPrefab: {fileID: 140952, guid: 5fa42bb9e52706a42b8a1eaf0b54326a, type: 3}
-  hapticFlash: {fileID: 11400000, guid: 85a2c6b3a29ba0b45b190ec342e7ce4a, type: 2}
+  hapticFlash: {fileID: 11400000, guid: a71d89a67e4a3a146a85be76363d6214, type: 2}
   debugHints: 0
 --- !u!1 &132523757187573564
 GameObject:
@@ -1117,7 +1117,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 132523757436195810}
   m_LocalRotation: {x: 0.24184473, y: 0.24184473, z: -0.66446304, w: 0.66446304}
-  m_LocalPosition: {x: -0.005, y: -0.029, z: -0.027}
+  m_LocalPosition: {x: 0, y: -0.09, z: 0.04}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 132523757771587747}
@@ -1432,7 +1432,7 @@ MonoBehaviour:
   controllerMaterial: {fileID: 2100000, guid: 11b050e661ec0cf48a289a7266451e91, type: 2}
   flashColor: {r: 1, g: 0.9170069, b: 0.453, a: 0.709}
   textHintPrefab: {fileID: 140952, guid: 5fa42bb9e52706a42b8a1eaf0b54326a, type: 3}
-  hapticFlash: {fileID: 11400000, guid: 85a2c6b3a29ba0b45b190ec342e7ce4a, type: 2}
+  hapticFlash: {fileID: 11400000, guid: a71d89a67e4a3a146a85be76363d6214, type: 2}
   debugHints: 0
 --- !u!1 &132523757931239352
 GameObject:
@@ -1850,7 +1850,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 132523758454370952}
   m_LocalRotation: {x: 0.24184473, y: 0.24184473, z: -0.66446304, w: 0.66446304}
-  m_LocalPosition: {x: 0.005, y: -0.029, z: -0.027}
+  m_LocalPosition: {x: 0, y: -0.09, z: 0.04}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 132523756750895620}
@@ -1940,10 +1940,10 @@ MonoBehaviour:
   otherHand: {fileID: 132523757114527049}
   handType: 2
   trackedObject: {fileID: 0}
-  grabPinchAction: {fileID: 11400000, guid: dbcdb4faeba774a4487f3941fe2581da, type: 2}
-  grabGripAction: {fileID: 11400000, guid: 2810b625f8c73604bbd544074e82bb50, type: 2}
-  hapticAction: {fileID: 11400000, guid: 85a2c6b3a29ba0b45b190ec342e7ce4a, type: 2}
-  uiInteractAction: {fileID: 11400000, guid: 9155b6aa36f203d4b93efd321ef813db, type: 2}
+  grabPinchAction: {fileID: 11400000, guid: 4dfcabdfc57109248b695ac735e15039, type: 2}
+  grabGripAction: {fileID: 11400000, guid: 00c6741cb4addc9488aae4bbc66f4adb, type: 2}
+  hapticAction: {fileID: 11400000, guid: a71d89a67e4a3a146a85be76363d6214, type: 2}
+  uiInteractAction: {fileID: 11400000, guid: b290b754c6df6634e87c98bcb839ae75, type: 2}
   useHoverSphere: 1
   hoverSphereTransform: {fileID: 132523757850076793}
   hoverSphereRadius: 0.075
@@ -1978,7 +1978,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a5fb0ca93b55ef4b8d54b512b103341, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  poseAction: {fileID: 11400000, guid: 9dd559495d07e6542832f974d4be3c18, type: 2}
+  poseAction: {fileID: 11400000, guid: 9336642c8f94a924a9495c280a98c181, type: 2}
   inputSource: 2
   origin: {fileID: 0}
   onTransformUpdated:

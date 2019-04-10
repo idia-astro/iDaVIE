@@ -1,15 +1,16 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Vectrosity;
 
 
-
 namespace VolumeData
 {
-
     public enum TextureFilterEnum
     {
-        Point, Bilinear, Trilinear
+        Point,
+        Bilinear,
+        Trilinear
     }
 
     public class VolumeDataSetRenderer : MonoBehaviour
@@ -39,8 +40,7 @@ namespace VolumeData
         [Range(16, 512)] public int FoveatedStepsHigh = 384;
 
         // RenderDownsampling
-        [Header("Render Downsampling")]
-        public long MaximumCubeSizeInMB = 250;
+        [Header("Render Downsampling")] public long MaximumCubeSizeInMB = 250;
         public bool FactorOverride = false;
         public int XFactor = 1;
         public int YFactor = 1;
@@ -80,7 +80,10 @@ namespace VolumeData
 
         public Vector3Int CursorVoxel { get; private set; }
         public float CursorValue { get; private set; }
-        private VectorLine _voxelOutline, _cubeOutline;
+        public Vector3Int RegionStartVoxel { get; private set; }
+        public Vector3Int RegionEndVoxel { get; private set; }
+
+        private VectorLine _voxelOutline, _cubeOutline, _regionOutline;
 
         private MeshRenderer _renderer;
         private Material _materialInstance;
@@ -126,6 +129,7 @@ namespace VolumeData
             {
                 _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
             }
+
             _dataSet.RenderVolume(TextureFilter, XFactor, YFactor, ZFactor);
             ScaleMin = _dataSet.CubeMin;
             ScaleMax = _dataSet.CubeMax;
@@ -138,7 +142,7 @@ namespace VolumeData
             _materialInstance.SetFloat(_idFoveationStart, FoveationStart);
             _materialInstance.SetFloat(_idFoveationEnd, FoveationEnd);
             _renderer.material = _materialInstance;
-            
+
             // Set initial values (for resetting later)
             InitialPosition = transform.position;
             InitialScale = transform.localScale;
@@ -147,12 +151,13 @@ namespace VolumeData
             InitialThresholdMin = ThresholdMin;
 
             // Bounding box outline and axes
-            Vector3 axesIndicatorOrigin = - 0.5f * Vector3.one;
+            Vector3 axesIndicatorOrigin = -0.5f * Vector3.one;
             Vector3 axesIndicatorOpposite = 0.5f * Vector3.one;
-            var cubeOutlinePoints = new List<Vector3> {
+            var cubeOutlinePoints = new List<Vector3>
+            {
                 // axis indicators
                 axesIndicatorOrigin, axesIndicatorOrigin + Vector3.right,
-                axesIndicatorOrigin, axesIndicatorOrigin + Vector3.up, 
+                axesIndicatorOrigin, axesIndicatorOrigin + Vector3.up,
                 axesIndicatorOrigin, axesIndicatorOrigin + Vector3.forward,
                 // opposite axes
                 axesIndicatorOpposite, axesIndicatorOpposite - Vector3.right,
@@ -178,12 +183,12 @@ namespace VolumeData
                 defaultColor, defaultColor,
                 defaultColor, defaultColor
             };
-            
+
             _cubeOutline = new VectorLine("CubeAxes", cubeOutlinePoints, 2.0f, LineType.Discrete);
             _cubeOutline.SetColors(axesLineColors);
             _cubeOutline.drawTransform = transform;
             _cubeOutline.Draw3DAuto();
-            
+
             // Voxel axes
             CursorVoxel = new Vector3Int(-1, -1, -1);
             _voxelOutline = new VectorLine("VoxelOutline", new List<Vector3>(24), 1.0f);
@@ -192,6 +197,14 @@ namespace VolumeData
             _voxelOutline.color = Color.green;
             _voxelOutline.active = false;
             _voxelOutline.Draw3DAuto();
+
+            // Voxel axes
+            _regionOutline = new VectorLine("VoxelOutline", new List<Vector3>(24), 1.0f);
+            _regionOutline.MakeCube(Vector3.zero, 1, 1, 1);
+            _regionOutline.drawTransform = transform;
+            _regionOutline.color = Color.red;
+            _regionOutline.active = false;
+            _regionOutline.Draw3DAuto();
         }
 
         public void ShiftColorMap(int delta)
@@ -232,7 +245,56 @@ namespace VolumeData
 
                 CursorValue = float.NaN;
                 CursorVoxel = new Vector3Int(-1, -1, -1);
-            }            
+            }
+        }
+
+        public void SetRegionPosition(Vector3 cursor, bool start)
+        {
+            Vector3 objectSpacePosition = transform.InverseTransformPoint(cursor);
+            objectSpacePosition = new Vector3(
+                Mathf.Clamp(objectSpacePosition.x, -0.5f, 0.5f),
+                Mathf.Clamp(objectSpacePosition.y, -0.5f, 0.5f),
+                Mathf.Clamp(objectSpacePosition.z, -0.5f, 0.5f)
+            );
+            if (_dataSet != null)
+            {
+                Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
+                Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
+                Vector3Int newVoxelCursor = new Vector3Int(
+                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int) _dataSet.XDim),
+                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, 1, (int) _dataSet.YDim),
+                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1, 1, (int) _dataSet.ZDim)
+                );
+
+                var existingVoxel = start ? RegionStartVoxel : RegionEndVoxel;
+                if (!newVoxelCursor.Equals(existingVoxel))
+                {
+                    if (start)
+                    {
+                        RegionStartVoxel = newVoxelCursor;
+                    }
+                    else
+                    {
+                        RegionEndVoxel = newVoxelCursor;
+                    }
+
+                    // Calculate full region bounds
+                    var regionMin = Vector3.Min(RegionStartVoxel, RegionEndVoxel);
+                    var regionMax = Vector3.Max(RegionStartVoxel, RegionEndVoxel);
+                    var regionSize = regionMax - regionMin + Vector3.one;
+                    Vector3 regionCenter = (regionMax + regionMin) / 2.0f - 0.5f * Vector3.one;
+
+                    Vector3 regionCenterObjectSpace = new Vector3(regionCenter.x / _dataSet.XDim - 0.5f, regionCenter.y / _dataSet.YDim - 0.5f, regionCenter.z / _dataSet.ZDim - 0.5f);
+                    _regionOutline.MakeCube(regionCenterObjectSpace, regionSize.x / _dataSet.XDim, regionSize.y / _dataSet.YDim, regionSize.z / _dataSet.ZDim);
+                }
+
+                _regionOutline.active = true;
+            }
+        }               
+
+        public void ClearRegion()
+        {
+            _regionOutline.active = false;
         }
 
         // Update is called once per frame
@@ -272,7 +334,5 @@ namespace VolumeData
         {
             _dataSet.CleanUp();
         }
-
-
     }
 }
