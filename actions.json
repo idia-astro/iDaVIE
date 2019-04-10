@@ -32,22 +32,22 @@
     {
       "name": "/actions/default/in/MenuDown",
       "type": "boolean",
-      "requirement": "mandatory"
+      "requirement": "optional"
     },
     {
       "name": "/actions/default/in/MenuUp",
       "type": "boolean",
-      "requirement": "mandatory"
+      "requirement": "optional"
     },
     {
       "name": "/actions/default/in/MenuLeft",
       "type": "boolean",
-      "requirement": "mandatory"
+      "requirement": "optional"
     },
     {
       "name": "/actions/default/in/MenuRight",
       "type": "boolean",
-      "requirement": "mandatory"
+      "requirement": "optional"
     },
     {
       "name": "/actions/default/out/Haptic",

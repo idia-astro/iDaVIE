@@ -15,7 +15,8 @@ public class InputController : MonoBehaviour
     {
         Idle,
         Moving,
-        Scaling
+        Scaling,
+        Selecting
     }
 
     [Flags]
@@ -23,7 +24,7 @@ public class InputController : MonoBehaviour
     {
         None = 0,
         Roll = 1,
-        Yaw = 2        
+        Yaw = 2
     }
 
     // Scaling/Rotation options
@@ -50,17 +51,20 @@ public class InputController : MonoBehaviour
     private InputState _inputState;
     private VectorLine _lineAxisSeparation;
     private VectorLine _lineRotationAxes;
-    
+
     private TextMeshPro _scalingTextComponent;
 
     private float _rotationYawCumulative = 0;
     private float _rotationRollCumulative = 0;
     private RotationAxes _rotationAxes = RotationAxes.Yaw | RotationAxes.Roll;
-    
+
     // Vignetting
     private float _currentVignetteIntensity = 0;
     private float _targetVignetteIntensity = 0;
-    
+
+    // Selecting
+    private Hand _selectingHand;
+
     private void OnEnable()
     {
         if (_player == null)
@@ -82,7 +86,8 @@ public class InputController : MonoBehaviour
 
         _grabGripAction.AddOnChangeListener(OnGripChanged, SteamVR_Input_Sources.LeftHand);
         _grabGripAction.AddOnChangeListener(OnGripChanged, SteamVR_Input_Sources.RightHand);
-        _grabPinchAction.AddOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.Any);
+        _grabPinchAction.AddOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.LeftHand);
+        _grabPinchAction.AddOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.RightHand);
 
         _allDataSets = new List<MonoBehaviour>();
         // Connect this behaviour component to others        
@@ -111,7 +116,7 @@ public class InputController : MonoBehaviour
         _lineRotationAxes = new VectorLine("RotationAxes", new List<Vector3>(new Vector3[3]), 2.0f, LineType.Continuous);
         _lineRotationAxes.color = Color.white;
         _lineRotationAxes.Draw3DAuto();
-        
+
         _lineAxisSeparation = new VectorLine("AxisSeparation", new List<Vector3>(new Vector3[3]), 2.0f, LineType.Continuous);
         _lineAxisSeparation.color = Color.red;
         _lineAxisSeparation.Draw3DAuto();
@@ -123,7 +128,6 @@ public class InputController : MonoBehaviour
         _startGripCenter = Vector3.zero;
 
         _inputState = InputState.Idle;
-
     }
 
     private void OnDisable()
@@ -132,7 +136,8 @@ public class InputController : MonoBehaviour
         {
             _grabGripAction.RemoveOnChangeListener(OnGripChanged, SteamVR_Input_Sources.LeftHand);
             _grabGripAction.RemoveOnChangeListener(OnGripChanged, SteamVR_Input_Sources.RightHand);
-            _grabPinchAction.RemoveOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.Any);
+            _grabPinchAction.RemoveOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.LeftHand);
+            _grabPinchAction.RemoveOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.RightHand);
         }
     }
 
@@ -171,6 +176,23 @@ public class InputController : MonoBehaviour
 
     private void OnPinchChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
+        foreach (var hand in _hands)
+        {
+            if (actionIn.GetChanged(hand.handType))
+            {
+                if (_selectingHand == null && _grabPinchAction.GetState(hand.handType))
+                {
+                    StateTransitionIdleToSelecting(hand);
+                    break;
+                }
+
+                if (_selectingHand == hand && !_grabPinchAction.GetState(hand.handType))
+                {
+                    StateTransitionSelectingToIdle();
+                    break;
+                }
+            }
+        }
     }
 
     private void StateTransitionMovingToIdle()
@@ -183,6 +205,27 @@ public class InputController : MonoBehaviour
     {
         _inputState = InputState.Moving;
         _targetVignetteIntensity = 1;
+    }
+
+    private void StateTransitionIdleToSelecting(Hand selectingHand)
+    {
+        _selectingHand = selectingHand;
+        _inputState = InputState.Selecting;
+        int handIndex = _selectingHand.handType == SteamVR_Input_Sources.LeftHand ? 0 : 1;
+        var startPosition = _handTransforms[handIndex].position;
+        foreach (var dataSet in _volumeDataSets)
+        {
+            dataSet.SetRegionPosition(startPosition, true);
+        }
+
+        Debug.Log($"Entering selecting state with hand {selectingHand.handType}!");
+    }
+
+    private void StateTransitionSelectingToIdle()
+    {
+        _selectingHand = null;
+        _inputState = InputState.Idle;
+        Debug.Log("Leaving selecting state");
     }
 
     private void StateTransitionMovingToScaling()
@@ -252,6 +295,9 @@ public class InputController : MonoBehaviour
             case InputState.Idle:
                 UpdateIdle();
                 break;
+            case InputState.Selecting:
+                UpdateSelecting();
+                break;
         }
     }
 
@@ -272,10 +318,10 @@ public class InputController : MonoBehaviour
             {
                 if (dataSet.isActiveAndEnabled)
                 {
-                    dataSet.VignetteIntensity = _currentVignetteIntensity;                    
+                    dataSet.VignetteIntensity = _currentVignetteIntensity;
                 }
             }
-            
+
             foreach (var dataSet in _catalogDataSets)
             {
                 dataSet.VignetteIntensity = _currentVignetteIntensity;
@@ -298,8 +344,8 @@ public class InputController : MonoBehaviour
         Vector3 currentGripCenter = (_currentGripPositions[0] + _currentGripPositions[1]) / 2.0f;
         float startGripDistance = _startGripSeparation.magnitude;
         float currentGripDistance = currentGripSeparation.magnitude;
-        float scalingFactor = currentGripDistance / Mathf.Max(startGripDistance, 1.0e-6f);                               
-        
+        float scalingFactor = currentGripDistance / Mathf.Max(startGripDistance, 1.0e-6f);
+
         // Calculate the change in rotation of the grip vector about the up (Y+) axis
         Vector3 previousGripDirectionXz = new Vector3(previousGripSeparation.x, 0, previousGripSeparation.z).normalized;
         Vector3 currentGripDirectionXz = new Vector3(currentGripSeparation.x, 0, currentGripSeparation.z).normalized;
@@ -310,7 +356,7 @@ public class InputController : MonoBehaviour
         Vector3 previousGripDirectionRotationAxis = new Vector3(Vector3.Dot(perpendicularAxis, previousGripSeparation), Vector3.Dot(Vector3.up, previousGripSeparation), 0).normalized;
         Vector3 currentGripDirectionRotationAxis = new Vector3(Vector3.Dot(perpendicularAxis, currentGripSeparation), Vector3.Dot(Vector3.up, currentGripSeparation), 0).normalized;
         float angleRoll = Mathf.Asin(-Vector3.Cross(previousGripDirectionRotationAxis, currentGripDirectionRotationAxis).z);
-                        
+
         if ((_rotationAxes & RotationAxes.Yaw) == RotationAxes.Yaw)
         {
             _rotationYawCumulative += angleYaw * Mathf.Rad2Deg;
@@ -318,8 +364,8 @@ public class InputController : MonoBehaviour
             {
                 _rotationAxes = RotationAxes.Yaw;
             }
-        }       
-        
+        }
+
         // Only apply yaw if roll rotation is below the cutoff threshold
         if ((_rotationAxes & RotationAxes.Roll) == RotationAxes.Roll)
         {
@@ -332,7 +378,7 @@ public class InputController : MonoBehaviour
 
         var yawCurrentlyActive = (_rotationAxes & RotationAxes.Yaw) == RotationAxes.Yaw;
         var rollCurrentlyActive = (_rotationAxes & RotationAxes.Roll) == RotationAxes.Roll;
-        
+
         // Each dataSet needs to be updated separately, as they can have different initial scales.        
         for (var i = 0; i < _allDataSets.Count; i++)
         {
@@ -341,11 +387,11 @@ public class InputController : MonoBehaviour
             {
                 continue;
             }
-            
+
             float initialScale = _startDataSetScales[i];
             float currentScale = dataSet.transform.localScale.magnitude;
-            float newScale = Mathf.Max(1e-6f, initialScale * scalingFactor);                     
-            
+            float newScale = Mathf.Max(1e-6f, initialScale * scalingFactor);
+
             if (InPlaceScaling)
             {
                 // Adjust dataSet position while scaling to keep the pivot point fixed
@@ -360,7 +406,7 @@ public class InputController : MonoBehaviour
 
                 // Adjust dataSet position while rotating to keep the pivot point fixed
                 Vector3 startGripPositionDataSpace = dataSet.transform.InverseTransformPoint(_startGripCenter);
-                
+
                 if (yawCurrentlyActive)
                 {
                     dataSet.transform.RotateAround(_startGripCenter, Vector3.up, angleYaw * Mathf.Rad2Deg);
@@ -404,7 +450,7 @@ public class InputController : MonoBehaviour
         _lineAxisSeparation.points3[0] = _currentGripPositions[0];
         _lineAxisSeparation.points3[1] = rotationPoint;
         _lineAxisSeparation.points3[2] = _currentGripPositions[1];
-        
+
         _lineRotationAxes.points3[0] = _startGripCenter + _starGripForwardAxis * (rollCurrentlyActive ? 0.1f : 0.0f);
         _lineRotationAxes.points3[1] = rotationPoint;
         _lineRotationAxes.points3[2] = _startGripCenter + Vector3.up * (yawCurrentlyActive ? 0.1f : 0.0f);
@@ -431,30 +477,57 @@ public class InputController : MonoBehaviour
         }
     }
 
-    // (Placeholder) Update function for FSM Idle state
     private void UpdateIdle()
     {
         if (_volumeDataSets == null)
         {
-            return;            
+            return;
         }
 
         string cursorString = "";
-        
+
         foreach (var dataSet in _volumeDataSets)
         {
             dataSet.SetCursorPosition(_handTransforms[0].position);
-            var voxelCoordinate = dataSet.CursorVoxel;
-            if (voxelCoordinate.x >= 0 &&  _scalingTextComponent != null)
+            if (dataSet.isActiveAndEnabled)
             {
-                var voxelValue = dataSet.CursorValue;                
-                cursorString = $"({voxelCoordinate.x}, {voxelCoordinate.y}, {voxelCoordinate.z}): {voxelValue}";                
+                var voxelCoordinate = dataSet.CursorVoxel;
+                if (voxelCoordinate.x >= 0 && _scalingTextComponent != null)
+                {
+                    var voxelValue = dataSet.CursorValue;
+                    cursorString = $"({voxelCoordinate.x}, {voxelCoordinate.y}, {voxelCoordinate.z}): {voxelValue}";
+                }
             }
         }
 
         _scalingTextComponent.enabled = true;
         _scalingTextComponent.text = cursorString;
     }
+
+    private void UpdateSelecting()
+    {
+        if (_selectingHand == null)
+        {
+            return;
+        }
+
+        string cursorString = "";
+        int handIndex = _selectingHand.handType == SteamVR_Input_Sources.LeftHand ? 0 : 1;
+        var endPosition = _handTransforms[handIndex].position;
+
+        foreach (var dataSet in _volumeDataSets)
+        {
+            dataSet.SetRegionPosition(endPosition, false);
+            if (dataSet.isActiveAndEnabled)
+            {
+                var regionSize = Vector3.Max(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) - Vector3.Min(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) + Vector3.one;
+                cursorString = $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}";
+            }
+        }
+        _scalingTextComponent.enabled = true;
+        _scalingTextComponent.text = cursorString;
+    }
+
 
     private void UpdateScalingText(MonoBehaviour dataSet)
     {
