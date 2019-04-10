@@ -77,18 +77,25 @@ public class InputController : MonoBehaviour
     // VR-family dependent values
     private VRFamily _vrFamily;
     // Used for moving the pointer transform to an acceptable position for each controller type
-    private static readonly Dictionary<VRFamily, Vector3> PointerOffsets = new Dictionary<VRFamily, Vector3>
+    private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsLeft = new Dictionary<VRFamily, Vector3>
     {
         {VRFamily.Unknown, Vector3.zero},
-        {VRFamily.Oculus, new Vector3(0, -0.025f, -0.025f)},
+        {VRFamily.Oculus, new Vector3(0.005f, -0.025f, -0.025f)},
         {VRFamily.Vive, new Vector3(0, -0.09f, 0.04f)},
         {VRFamily.WindowsMixedReality, new Vector3(-0.005f, -0.029f, -0.027f)}
+    };
+    private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsRight = new Dictionary<VRFamily, Vector3>
+    {
+        {VRFamily.Unknown, Vector3.zero},
+        {VRFamily.Oculus, new Vector3(-0.005f, -0.025f, -0.025f)},
+        {VRFamily.Vive, new Vector3(0, -0.09f, 0.04f)},
+        {VRFamily.WindowsMixedReality, new Vector3(0.005f, -0.029f, -0.027f)}
     };
 
     private void OnEnable()
     {
         _vrFamily = DetermineVRFamily();
-        Vector3 pointerOffset = PointerOffsets[_vrFamily];
+        Vector3 pointerOffset = PointerOffsetsLeft[_vrFamily];
         if (_player == null)
         {
             _player = GetComponent<Player>();
@@ -102,6 +109,10 @@ public class InputController : MonoBehaviour
                 _handTransforms[i] = (laserPointer != null) ? laserPointer.transform : _hands[i].transform;
                 _handTransforms[i].localPosition = pointerOffset;
             }
+
+            _handTransforms[0].localPosition = PointerOffsetsLeft[_vrFamily];
+            _handTransforms[1].localPosition = PointerOffsetsRight[_vrFamily];
+            
 
             _grabGripAction = _player.leftHand.grabGripAction;
             _grabPinchAction = _player.leftHand.grabPinchAction;
