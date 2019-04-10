@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using CatalogData;
 using VolumeData;
 using TMPro;
 using UnityEngine;
@@ -10,7 +9,7 @@ using Valve.VR.InteractionSystem;
 using Vectrosity;
 
 [RequireComponent(typeof(Player))]
-public class InputController : MonoBehaviour
+public class VolumeInputController : MonoBehaviour
 {
     private enum VRFamily
     {
@@ -43,15 +42,12 @@ public class InputController : MonoBehaviour
 
     [Range(0.1f, 5.0f)] public float VignetteFadeSpeed = 2.0f;
 
-    public CatalogDataSetManager CatalogDataSetManager;
     private Player _player;
     private Hand[] _hands;
     private Transform[] _handTransforms;
     private SteamVR_Action_Boolean _grabGripAction;
     private SteamVR_Action_Boolean _grabPinchAction;
-    private CatalogDataSetRenderer[] _catalogDataSets;
     private VolumeDataSetRenderer[] _volumeDataSets;
-    private List<MonoBehaviour> _allDataSets;
     private float[] _startDataSetScales;
     private Vector3[] _currentGripPositions;
     private Vector3 _startGripSeparation;
@@ -82,14 +78,14 @@ public class InputController : MonoBehaviour
         {VRFamily.Unknown, Vector3.zero},
         {VRFamily.Oculus, new Vector3(0.005f, -0.025f, -0.025f)},
         {VRFamily.Vive, new Vector3(0, -0.09f, 0.04f)},
-        {VRFamily.WindowsMixedReality, new Vector3(0.065f, -0.01f, 0.03f)}
+        {VRFamily.WindowsMixedReality, new Vector3(-0.005f, -0.029f, -0.027f)}
     };
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsRight = new Dictionary<VRFamily, Vector3>
     {
         {VRFamily.Unknown, Vector3.zero},
         {VRFamily.Oculus, new Vector3(-0.005f, -0.025f, -0.025f)},
         {VRFamily.Vive, new Vector3(0, -0.09f, 0.04f)},
-        {VRFamily.WindowsMixedReality, new Vector3(-0.065f, -0.01f, 0.03f)}
+        {VRFamily.WindowsMixedReality, new Vector3(0.005f, -0.029f, -0.027f)}
     };
 
     private void OnEnable()
@@ -123,23 +119,10 @@ public class InputController : MonoBehaviour
         _grabPinchAction.AddOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.LeftHand);
         _grabPinchAction.AddOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.RightHand);
 
-        _allDataSets = new List<MonoBehaviour>();
-        // Connect this behaviour component to others        
-        if (CatalogDataSetManager)
-        {
-            _catalogDataSets = CatalogDataSetManager.GetComponentsInChildren<CatalogDataSetRenderer>();
-            _allDataSets.AddRange(_catalogDataSets);
-        }
-        else
-        {
-            _catalogDataSets = new CatalogDataSetRenderer[0];
-        }
-
         var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
         if (volumeDataSetManager)
         {
             _volumeDataSets = volumeDataSetManager.GetComponentsInChildren<VolumeDataSetRenderer>(true);
-            _allDataSets.AddRange(_volumeDataSets);
         }
         else
         {
@@ -156,7 +139,7 @@ public class InputController : MonoBehaviour
         _lineAxisSeparation.Draw3DAuto();
 
         _scalingTextComponent = _hands[0].GetComponentInChildren<TextMeshPro>();
-        _startDataSetScales = new float[_allDataSets.Count];
+        _startDataSetScales = new float[_volumeDataSets.Length];
         _currentGripPositions = new Vector3[2];
         _startGripSeparation = Vector3.zero;
         _startGripCenter = Vector3.zero;
@@ -264,11 +247,11 @@ public class InputController : MonoBehaviour
         _rotationRollCumulative = 0;
         _rotationAxes = RotationAxes.Yaw | RotationAxes.Roll;
 
-        for (var i = 0; i < _allDataSets.Count; i++)
+        for (var i = 0; i < _volumeDataSets.Length; i++)
         {
-            if (_allDataSets[i].isActiveAndEnabled)
+            if (_volumeDataSets[i].isActiveAndEnabled)
             {
-                _startDataSetScales[i] = _allDataSets[i].transform.localScale.magnitude;
+                _startDataSetScales[i] = _volumeDataSets[i].transform.localScale.magnitude;
             }
         }
 
@@ -348,7 +331,7 @@ public class InputController : MonoBehaviour
                 }
             }
 
-            foreach (var dataSet in _catalogDataSets)
+            foreach (var dataSet in _volumeDataSets)
             {
                 dataSet.VignetteIntensity = _currentVignetteIntensity;
             }
@@ -406,9 +389,9 @@ public class InputController : MonoBehaviour
         var rollCurrentlyActive = (_rotationAxes & RotationAxes.Roll) == RotationAxes.Roll;
 
         // Each dataSet needs to be updated separately, as they can have different initial scales.        
-        for (var i = 0; i < _allDataSets.Count; i++)
+        for (var i = 0; i < _volumeDataSets.Length; i++)
         {
-            var dataSet = _allDataSets[i];
+            var dataSet = _volumeDataSets[i];
             if (!dataSet.isActiveAndEnabled)
             {
                 continue;
@@ -492,7 +475,7 @@ public class InputController : MonoBehaviour
             if (_grabGripAction.GetState(_hands[i].handType))
             {
                 var delta = _currentGripPositions[i] - previousPosition;
-                foreach (var dataSet in _allDataSets)
+                foreach (var dataSet in _volumeDataSets)
                 {
                     if (dataSet.isActiveAndEnabled)
                     {
@@ -555,18 +538,9 @@ public class InputController : MonoBehaviour
     }
 
 
-    private void UpdateScalingText(MonoBehaviour dataSet)
+    private void UpdateScalingText(VolumeDataSetRenderer dataSet)
     {
-        CatalogDataSetRenderer catalogDataSetRenderer = dataSet as CatalogDataSetRenderer;
-        if (catalogDataSetRenderer != null)
-        {
-            string scalingString = catalogDataSetRenderer.ScalingString;
-            if (_scalingTextComponent != null)
-            {
-                _scalingTextComponent.enabled = true;
-                _scalingTextComponent.text = scalingString;
-            }
-        }
+        // TODO: update scaling text
     }
 
     private VRFamily DetermineVRFamily()
