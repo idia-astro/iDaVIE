@@ -434,6 +434,7 @@ ASALocalRun/
 # Unity Asset packages
 Assets/SteamVR
 Assets/SteamVR_Input
+unityProject.vrmanifest
 Assets/TextMesh\ Pro
 Assets/Vectrosity
 Data/

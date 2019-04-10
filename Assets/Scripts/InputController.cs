@@ -4,6 +4,7 @@ using CatalogData;
 using VolumeData;
 using TMPro;
 using UnityEngine;
+using UnityEngine.XR;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
 using Vectrosity;
@@ -11,13 +12,21 @@ using Vectrosity;
 [RequireComponent(typeof(Player))]
 public class InputController : MonoBehaviour
 {
+    private enum VRFamily
+    {
+        Unknown,
+        Oculus,
+        Vive,
+        WindowsMixedReality
+    }
+    
     private enum InputState
     {
         Idle,
         Moving,
         Scaling,
         Selecting
-    }
+    }       
 
     [Flags]
     private enum RotationAxes
@@ -65,8 +74,28 @@ public class InputController : MonoBehaviour
     // Selecting
     private Hand _selectingHand;
 
+    // VR-family dependent values
+    private VRFamily _vrFamily;
+    // Used for moving the pointer transform to an acceptable position for each controller type
+    private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsLeft = new Dictionary<VRFamily, Vector3>
+    {
+        {VRFamily.Unknown, Vector3.zero},
+        {VRFamily.Oculus, new Vector3(0.005f, -0.025f, -0.025f)},
+        {VRFamily.Vive, new Vector3(0, -0.09f, 0.04f)},
+        {VRFamily.WindowsMixedReality, new Vector3(0.065f, -0.01f, 0.03f)}
+    };
+    private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsRight = new Dictionary<VRFamily, Vector3>
+    {
+        {VRFamily.Unknown, Vector3.zero},
+        {VRFamily.Oculus, new Vector3(-0.005f, -0.025f, -0.025f)},
+        {VRFamily.Vive, new Vector3(0, -0.09f, 0.04f)},
+        {VRFamily.WindowsMixedReality, new Vector3(-0.065f, -0.01f, 0.03f)}
+    };
+
     private void OnEnable()
     {
+        _vrFamily = DetermineVRFamily();
+        Vector3 pointerOffset = PointerOffsetsLeft[_vrFamily];
         if (_player == null)
         {
             _player = GetComponent<Player>();
@@ -78,7 +107,12 @@ public class InputController : MonoBehaviour
             {
                 var laserPointer = _hands[i].GetComponentInChildren<LaserPointer>();
                 _handTransforms[i] = (laserPointer != null) ? laserPointer.transform : _hands[i].transform;
+                _handTransforms[i].localPosition = pointerOffset;
             }
+
+            _handTransforms[0].localPosition = PointerOffsetsLeft[_vrFamily];
+            _handTransforms[1].localPosition = PointerOffsetsRight[_vrFamily];
+            
 
             _grabGripAction = _player.leftHand.grabGripAction;
             _grabPinchAction = _player.leftHand.grabPinchAction;
@@ -141,7 +175,7 @@ public class InputController : MonoBehaviour
         }
     }
 
-    private void OnGripChanged(SteamVR_Action_In actionIn)
+    private void OnGripChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
         int gripCount = (_grabGripAction.GetState(SteamVR_Input_Sources.LeftHand) ? 1 : 0) + (_grabGripAction.GetState(SteamVR_Input_Sources.RightHand) ? 1 : 0);
 
@@ -174,25 +208,17 @@ public class InputController : MonoBehaviour
     }
 
 
-    private void OnPinchChanged(SteamVR_Action_In actionIn)
+    private void OnPinchChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
-        foreach (var hand in _hands)
+        var hand = fromSource == SteamVR_Input_Sources.LeftHand ? _hands[0] : _hands[1];
+        if (newState && _selectingHand == null)
         {
-            if (actionIn.GetChanged(hand.handType))
-            {
-                if (_selectingHand == null && _grabPinchAction.GetState(hand.handType))
-                {
-                    StateTransitionIdleToSelecting(hand);
-                    break;
-                }
-
-                if (_selectingHand == hand && !_grabPinchAction.GetState(hand.handType))
-                {
-                    StateTransitionSelectingToIdle();
-                    break;
-                }
-            }
+            StateTransitionIdleToSelecting(hand);
         }
+        else if (!newState && _selectingHand == hand)
+        {
+            StateTransitionSelectingToIdle();
+        }        
     }
 
     private void StateTransitionMovingToIdle()
@@ -541,5 +567,26 @@ public class InputController : MonoBehaviour
                 _scalingTextComponent.text = scalingString;
             }
         }
+    }
+
+    private VRFamily DetermineVRFamily()
+    {
+        string vrModel = XRDevice.model.ToLower();
+        if (vrModel.Contains("oculus"))
+        {
+            return VRFamily.Oculus;
+        }
+        if (vrModel.Contains("vive"))
+        {
+            return VRFamily.Vive;
+        }
+
+        if (vrModel.Contains("mixed reality") || vrModel.Contains("acer"))
+        {
+            return VRFamily.WindowsMixedReality;
+        }
+        
+        Debug.Log($"Unknown VR model {XRDevice.model}!");
+        return VRFamily.Unknown;
     }
 }

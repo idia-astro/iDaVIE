@@ -233,10 +233,18 @@ MonoBehaviour:
   ScaleSpeed: 0.005
   MinScale: 0.0001
   MaxScale: 0.01
-  menuUpAction: {fileID: 11400000, guid: 5f4758932aa269c4b8a4b444b9b1fd83, type: 2}
-  menuDownAction: {fileID: 11400000, guid: cf5c8fb0f2f2e4146b8ca133b6ce240e, type: 2}
-  menuLeftAction: {fileID: 11400000, guid: 6e7bcd8cea56ee244ba98a6fba5a429d, type: 2}
-  menuRightAction: {fileID: 11400000, guid: 8a215b1115a08e44ab1881df66d230c7, type: 2}
+  menuUpAction:
+    actionPath: /actions/default/in/MenuUp
+    needsReinit: 1
+  menuDownAction:
+    actionPath: /actions/default/in/MenuDown
+    needsReinit: 1
+  menuLeftAction:
+    actionPath: /actions/default/in/MenuLeft
+    needsReinit: 1
+  menuRightAction:
+    actionPath: /actions/default/in/MenuRight
+    needsReinit: 1
 --- !u!114 &54561593
 MonoBehaviour:
   m_ObjectHideFlags: 0

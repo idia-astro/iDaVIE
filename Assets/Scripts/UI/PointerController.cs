@@ -25,10 +25,10 @@ public class PointerController : MonoBehaviour
         Hand.uiInteractAction.AddOnChangeListener(OnUiInteractionChanged, Hand.handType);
     }
 
-    private void OnUiInteractionChanged(SteamVR_Action_In actionIn)
+    private void OnUiInteractionChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
         // Mouse down
-        if (Hand.uiInteractAction.GetState(Hand.handType))
+        if (newState)
         {
             if (_hoveredElement)
             {
