@@ -437,8 +437,12 @@ Assets/SteamVR_Input
 unityProject.vrmanifest
 Assets/TextMesh\ Pro
 Assets/Vectrosity
-Data/
+Data/Volumes
+Data/DataTables
+Data/DataMaps
 Assets/Plugins/Fits/
-*.fits
-*.tbl
 Assets/Plugins/
+
+# exclude lib_source solution files
+!lib_source/fits_reader/*.sln
+!lib_source/data_analysis_tool/*.sln

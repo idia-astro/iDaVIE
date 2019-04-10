@@ -141,6 +141,11 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll $(SolutionDir)\..\..\Assets\Plugins\FitsReader\
+xcopy /y $(SolutionDir)$(Platform)\$(Configuration)\cfitsio.dll $(SolutionDir)\..\..\Assets\Plugins\FitsReader\</Command>
+      <Message>Copy dll files over to Unity assets</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
