@@ -72,8 +72,10 @@ bool IntersectBox(Ray r, float3 boxmin, float3 boxmax, out float tnear, out floa
 }
 
 // Data lookup from 3D texture. Slice and value thresholds are applied
-float dataLookup(float3 uvw)
+float dataLookup(float3 uvw, float3 scale, float3 offset)
 {
+    // transform from object space into region texture space
+    uvw = (uvw - offset) * scale;
     float data = tex3Dlod(_DataCube, float4(uvw, 0)).r;
     float scaleRange = _ScaleMax - _ScaleMin;
     // transform from texture values to 0 -> 1
@@ -126,11 +128,9 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
     float foveatedSamples = numSamples(input.position.xy);
     
     input.ray.direction = normalize(input.ray.direction);
-    float3 boxMin = _SliceMin;
-    float3 boxMax = _SliceMax;    
         
     float tNear, tFar;
-    bool hit = IntersectBox(input.ray, boxMin, boxMax, tNear, tFar);
+    bool hit = IntersectBox(input.ray, _SliceMin, _SliceMax, tNear, tFar);
     // Early exit of pixels missing the bounding box
     if (!hit)
     {
@@ -158,8 +158,9 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
     float3 currentRayPosition = pNear;
     float3 rayDelta = pFar - pNear;
     float totalLength = length(rayDelta);
-    // The maximum possible distance through the cube is sqrt(3).
-    float stepLength = sqrt(3) / floor(foveatedSamples);
+    // The maximum possible distance through the cube is sqrt(3) for the full cube, but smaller if slice bounds are applied.
+    float maxLength = length(_SliceMax - _SliceMin);
+    float stepLength = sqrt(maxLength) / floor(foveatedSamples);
     float3 stepVector = normalize(rayDelta);
     // Calculate the required number of steps, based on the total path length through the object 
     int requiredSteps = clamp(totalLength / stepLength, 0, foveatedSamples);
@@ -169,14 +170,17 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
     float3 randVector = nrand(input.position.xy +_Time.xy) * stepVector * stepLength * _Jitter;
     currentRayPosition += randVector;
     
+    float3 regionScale = 1.0f / (_SliceMax - _SliceMin);
+    float3 regionOffset = _SliceMin + 0.5f;
+    
     // Maximum Value transfer function (MIP)
     float rayValue = 0;
     for(int i = 0; i < requiredSteps; i++)
     {        
-        float stepValue = dataLookup(currentRayPosition);
+        float stepValue = dataLookup(currentRayPosition, regionScale, regionOffset);
         rayValue = max (stepValue, rayValue);
         // For an accumulating transfer function (AIP), we would need the step length as well: 
-        // float stepValue = dataLookup(currentRayPosition) * stepLength;
+        // float stepValue = dataLookup(currentRayPosition, regionScale, regionOffset) * stepLength;
         // rayValue += stepValue;
         currentRayPosition += stepVector * stepLength;
     }
@@ -184,7 +188,7 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
     // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
     float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
     currentRayPosition += stepVector * remainingStepLength;
-    float stepValue = dataLookup(currentRayPosition);
+    float stepValue = dataLookup(currentRayPosition, regionScale, regionOffset);
     rayValue = max (stepValue, rayValue);
       
     // For AIP, we would normalize based on the total ray length  

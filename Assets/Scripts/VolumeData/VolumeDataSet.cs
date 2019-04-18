@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 
 namespace VolumeData
@@ -8,6 +10,7 @@ namespace VolumeData
     public class VolumeDataSet
     {
         public Texture3D DataCube { get; private set; }
+        public Texture3D RegionCube { get; private set; }
         public string FileName { get; private set; }
         public long XDim { get; private set; }
         public long YDim { get; private set; }
@@ -20,7 +23,6 @@ namespace VolumeData
         public long[] Dims => new[] {XDim, YDim, ZDim};
 
         private IntPtr _fitsCubeData;
-
 
         public static VolumeDataSet LoadDataFromFitsFile(string fileName)
         {
@@ -68,7 +70,7 @@ namespace VolumeData
             return volumeDataSet;
         }
 
-        public void RenderVolume(TextureFilterEnum textureFilter, int xDownsample, int yDownsample, int zDownsample)
+        public void GenerateVolumeTexture(TextureFilterEnum textureFilter, int xDownsample, int yDownsample, int zDownsample)
         {
             IntPtr reducedData;
             bool downsampled = false;
@@ -92,8 +94,6 @@ namespace VolumeData
                 cubeSize[1]++;
             if (ZDim % zDownsample != 0)
                 cubeSize[2]++;
-            int newCubeLength = cubeSize[0] * cubeSize[1] * cubeSize[2];
-            float[] reducedCube = new float[newCubeLength];
             Texture3D dataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], TextureFormat.RFloat, false);
             switch (textureFilter)
             {
@@ -121,6 +121,55 @@ namespace VolumeData
             if (downsampled)
                 DataAnalysis.FreeMemory(reducedData);
         }
+        
+        public void GenerateCroppedVolumeTexture(TextureFilterEnum textureFilter, Vector3Int cropStart, Vector3Int cropEnd, Vector3Int downsample)
+        {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            IntPtr regionData;
+            if (DataAnalysis.DataCropAndDownsample(_fitsCubeData, out regionData, XDim, YDim, ZDim, cropStart.x, cropStart.y, cropStart.z, 
+                cropEnd.x, cropEnd.y, cropEnd.z, downsample.x, downsample.y, downsample.z) != 0)                
+            {
+                Debug.Log("Data cube downsample error!");
+            }
+
+            Vector3Int cubeSize = new Vector3Int();
+            cubeSize.x = (Math.Abs(cropStart.x - cropEnd.x) + 1) / downsample.x;
+            cubeSize.y = (Math.Abs(cropStart.y - cropEnd.y) + 1) / downsample.y;
+            cubeSize.z = (Math.Abs(cropStart.z - cropEnd.z) + 1) / downsample.z;
+            if ((Math.Abs(cropStart.x - cropEnd.x) + 1) % downsample.x != 0)
+                cubeSize.x++;
+            if ((Math.Abs(cropStart.x - cropEnd.x) + 1) % downsample.y != 0)
+                cubeSize.y++;
+            if ((Math.Abs(cropStart.x - cropEnd.x) + 1) % downsample.z != 0)
+                cubeSize.z++;
+                               
+            RegionCube = new Texture3D(cubeSize.x, cubeSize.y, cubeSize.z, TextureFormat.RFloat, false);
+            switch (textureFilter)
+            {
+                case TextureFilterEnum.Point:
+                    RegionCube.filterMode = FilterMode.Point;
+                    break;
+                case TextureFilterEnum.Bilinear:
+                    RegionCube.filterMode = FilterMode.Bilinear;
+                    break;
+                case TextureFilterEnum.Trilinear:
+                    RegionCube.filterMode = FilterMode.Trilinear;
+                    break;
+            }
+            int sliceSize = cubeSize.x * cubeSize.y;
+            Texture2D textureSlice = new Texture2D(cubeSize.x, cubeSize.y, TextureFormat.RFloat, false);
+            
+            for (int slice = 0; slice < cubeSize.z; slice++)
+            {
+                textureSlice.LoadRawTextureData(IntPtr.Add(regionData, slice * sliceSize * sizeof(float)),sliceSize * sizeof(float));
+                textureSlice.Apply();
+                Graphics.CopyTexture(textureSlice, 0, 0, 0, 0, cubeSize.x, cubeSize.y, RegionCube, slice, 0, 0, 0);
+            }
+            DataAnalysis.FreeMemory(regionData);
+            sw.Stop();            
+            Debug.Log($"Cropped into {cubeSize.x} x {cubeSize.y} x {cubeSize.z} region ({cubeSize.x * cubeSize.y * cubeSize.z * 4e-6} MB) in {sw.ElapsedMilliseconds} ms");
+        }
 
         public float GetValue(int x, int y, int z)
         {
@@ -145,26 +194,31 @@ namespace VolumeData
             Debug.Log("max and min vals: " + CubeMax + " and " + CubeMin);
         }
 
-        public void FindDownsampleFactors(long MaxCubeSizeInMB, out int Xfactor, out int Yfactor, out int Zfactor)
+        public void FindDownsampleFactors(long maxCubeSizeInMb, out int xFactor, out int yFactor, out int zFactor)
         {
-            Xfactor = 1;
-            Yfactor = 1;
-            Zfactor = 1;
-            while (XDim / Xfactor > 2048)
-                Xfactor++;
-            while (YDim / Yfactor > 2048)
-                Yfactor++;
-            while (ZDim / Zfactor > 2048)
-                Zfactor++;
-            long maximumElements = MaxCubeSizeInMB * 1000000 / 4;
-            while (XDim * YDim * ZDim / (Xfactor * Yfactor * Zfactor) > maximumElements)
+            FindDownsampleFactors(maxCubeSizeInMb, XDim, YDim, ZDim, out xFactor, out yFactor, out zFactor);
+        }
+
+        public void FindDownsampleFactors(long maxCubeSizeInMB, long regionXDim, long regionYDim, long regionZDim, out int xFactor, out int yFactor, out int zFactor)
+        {
+            xFactor = 1;
+            yFactor = 1;
+            zFactor = 1;
+            while (regionXDim / xFactor > 2048)
+                xFactor++;
+            while (regionYDim / yFactor > 2048)
+                yFactor++;
+            while (regionZDim / zFactor > 2048)
+                zFactor++;
+            long maximumElements = maxCubeSizeInMB * 1000000 / 4;
+            while (regionXDim * regionYDim * regionZDim / (xFactor * yFactor * zFactor) > maximumElements)
             {
-                if (ZDim / Zfactor > XDim / Xfactor || ZDim / Zfactor > YDim / Yfactor)
-                    Zfactor++;
-                else if (YDim / Yfactor > XDim / Xfactor)
-                    Yfactor++;
+                if (regionZDim / zFactor > regionXDim / xFactor || regionZDim / zFactor > regionYDim / yFactor)
+                    zFactor++;
+                else if (regionYDim / yFactor > regionXDim / xFactor)
+                    yFactor++;
                 else
-                    Xfactor++;
+                    xFactor++;
             }
         }
 
