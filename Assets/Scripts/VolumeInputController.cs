@@ -19,7 +19,7 @@ public class VolumeInputController : MonoBehaviour
         WindowsMixedReality
     }
     
-    private enum InputState
+    private enum LocomotionState
     {
         Idle,
         Moving,
@@ -52,7 +52,7 @@ public class VolumeInputController : MonoBehaviour
     private Vector3 _startGripSeparation;
     private Vector3 _startGripCenter;
     private Vector3 _starGripForwardAxis;
-    private InputState _inputState;
+    private LocomotionState _locomotionState;
     private bool _isSelecting;
     private VectorLine _lineAxisSeparation;
     private VectorLine _lineRotationAxes;
@@ -144,7 +144,7 @@ public class VolumeInputController : MonoBehaviour
         _startGripSeparation = Vector3.zero;
         _startGripCenter = Vector3.zero;
 
-        _inputState = InputState.Idle;
+        _locomotionState = LocomotionState.Idle;
     }
 
     private void OnDisable()
@@ -174,7 +174,7 @@ public class VolumeInputController : MonoBehaviour
                 break;
             case 1:
                 // Can do a transition either from Idle or Scaling to Moving
-                if (_inputState == InputState.Idle)
+                if (_locomotionState == LocomotionState.Idle)
                 {
                     StateTransitionIdleToMoving();
                 }
@@ -206,13 +206,13 @@ public class VolumeInputController : MonoBehaviour
 
     private void StateTransitionMovingToIdle()
     {
-        _inputState = InputState.Idle;
+        _locomotionState = LocomotionState.Idle;
         _targetVignetteIntensity = 0;
     }
 
     private void StateTransitionIdleToMoving()
     {
-        _inputState = InputState.Moving;
+        _locomotionState = LocomotionState.Moving;
         _targetVignetteIntensity = 1;
     }
 
@@ -239,7 +239,7 @@ public class VolumeInputController : MonoBehaviour
 
     private void StateTransitionMovingToScaling()
     {
-        _inputState = InputState.Scaling;
+        _locomotionState = LocomotionState.Scaling;
         _startGripSeparation = _handTransforms[0].position - _handTransforms[1].position;
         _startGripCenter = (_handTransforms[0].position + _handTransforms[1].position) / 2.0f;
         _starGripForwardAxis = Vector3.Cross(Vector3.up, _startGripSeparation.normalized).normalized;
@@ -274,7 +274,7 @@ public class VolumeInputController : MonoBehaviour
 
     private void StateTransitionScalingToMoving()
     {
-        _inputState = InputState.Moving;
+        _locomotionState = LocomotionState.Moving;
         _lineRotationAxes.active = false;
         _lineAxisSeparation.active = false;
 
@@ -293,15 +293,15 @@ public class VolumeInputController : MonoBehaviour
             Camera.current.depthTextureMode = DepthTextureMode.Depth;
         }
 
-        switch (_inputState)
+        switch (_locomotionState)
         {
-            case InputState.Moving:
+            case LocomotionState.Moving:
                 UpdateMoving();
                 break;
-            case InputState.Scaling:
+            case LocomotionState.Scaling:
                 UpdateScaling();
                 break;
-            case InputState.Idle:
+            case LocomotionState.Idle:
                 UpdateIdle();
                 break;            
         }
