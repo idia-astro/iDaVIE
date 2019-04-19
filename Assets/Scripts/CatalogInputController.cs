@@ -8,6 +8,8 @@ using Valve.VR;
 using Valve.VR.InteractionSystem;
 using Vectrosity;
 
+using VRHand = Valve.VR.InteractionSystem.Hand;
+
 [RequireComponent(typeof(Player))]
 public class CatalogInputController : MonoBehaviour
 {
@@ -43,7 +45,7 @@ public class CatalogInputController : MonoBehaviour
 
     public CatalogDataSetManager CatalogDataSetManager;
     private Player _player;
-    private Hand[] _hands;
+    private VRHand[] _hands;
     private Transform[] _handTransforms;
     private SteamVR_Action_Boolean _grabGripAction;
     private CatalogDataSetRenderer[] _catalogDataSets;
@@ -65,9 +67,6 @@ public class CatalogInputController : MonoBehaviour
     // Vignetting
     private float _currentVignetteIntensity = 0;
     private float _targetVignetteIntensity = 0;
-
-    // Selecting
-    private Hand _selectingHand;
 
     // VR-family dependent values
     private VRFamily _vrFamily;
