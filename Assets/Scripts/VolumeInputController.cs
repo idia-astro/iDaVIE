@@ -21,12 +21,11 @@ public class VolumeInputController : MonoBehaviour
         WindowsMixedReality
     }
     
-    private enum InputState
+    private enum LocomotionState
     {
         Idle,
         Moving,
-        Scaling,
-        Selecting
+        Scaling
     }       
 
     [Flags]
@@ -55,7 +54,8 @@ public class VolumeInputController : MonoBehaviour
     private Vector3 _startGripSeparation;
     private Vector3 _startGripCenter;
     private Vector3 _starGripForwardAxis;
-    private InputState _inputState;
+    private LocomotionState _locomotionState;
+    private bool _isSelecting;
     private VectorLine _lineAxisSeparation;
     private VectorLine _lineRotationAxes;
 
@@ -146,7 +146,7 @@ public class VolumeInputController : MonoBehaviour
         _startGripSeparation = Vector3.zero;
         _startGripCenter = Vector3.zero;
 
-        _inputState = InputState.Idle;
+        _locomotionState = LocomotionState.Idle;
     }
 
     private void OnDisable()
@@ -176,7 +176,7 @@ public class VolumeInputController : MonoBehaviour
                 break;
             case 1:
                 // Can do a transition either from Idle or Scaling to Moving
-                if (_inputState == InputState.Idle)
+                if (_locomotionState == LocomotionState.Idle)
                 {
                     StateTransitionIdleToMoving();
                 }
@@ -198,30 +198,30 @@ public class VolumeInputController : MonoBehaviour
         var hand = fromSource == SteamVR_Input_Sources.LeftHand ? _hands[0] : _hands[1];
         if (newState && _selectingHand == null)
         {
-            StateTransitionIdleToSelecting(hand);
+            StartSelection(hand);
         }
         else if (!newState && _selectingHand == hand)
         {
-            StateTransitionSelectingToIdle();
+            EndSelection();
         }        
     }
 
     private void StateTransitionMovingToIdle()
     {
-        _inputState = InputState.Idle;
+        _locomotionState = LocomotionState.Idle;
         _targetVignetteIntensity = 0;
     }
 
     private void StateTransitionIdleToMoving()
     {
-        _inputState = InputState.Moving;
+        _locomotionState = LocomotionState.Moving;
         _targetVignetteIntensity = 1;
     }
 
-    private void StateTransitionIdleToSelecting(VRHand selectingHand)
+    private void StartSelection(VRHand selectingHand)
     {
         _selectingHand = selectingHand;
-        _inputState = InputState.Selecting;
+        _isSelecting = true;
         int handIndex = _selectingHand.handType == SteamVR_Input_Sources.LeftHand ? 0 : 1;
         var startPosition = _handTransforms[handIndex].position;
         foreach (var dataSet in _volumeDataSets)
@@ -232,16 +232,16 @@ public class VolumeInputController : MonoBehaviour
         Debug.Log($"Entering selecting state with hand {selectingHand.handType}!");
     }
 
-    private void StateTransitionSelectingToIdle()
+    private void EndSelection()
     {
         _selectingHand = null;
-        _inputState = InputState.Idle;
+        _isSelecting = false;
         Debug.Log("Leaving selecting state");
     }
 
     private void StateTransitionMovingToScaling()
     {
-        _inputState = InputState.Scaling;
+        _locomotionState = LocomotionState.Scaling;
         _startGripSeparation = _handTransforms[0].position - _handTransforms[1].position;
         _startGripCenter = (_handTransforms[0].position + _handTransforms[1].position) / 2.0f;
         _starGripForwardAxis = Vector3.Cross(Vector3.up, _startGripSeparation.normalized).normalized;
@@ -276,7 +276,7 @@ public class VolumeInputController : MonoBehaviour
 
     private void StateTransitionScalingToMoving()
     {
-        _inputState = InputState.Moving;
+        _locomotionState = LocomotionState.Moving;
         _lineRotationAxes.active = false;
         _lineAxisSeparation.active = false;
 
@@ -295,20 +295,22 @@ public class VolumeInputController : MonoBehaviour
             Camera.current.depthTextureMode = DepthTextureMode.Depth;
         }
 
-        switch (_inputState)
+        switch (_locomotionState)
         {
-            case InputState.Moving:
+            case LocomotionState.Moving:
                 UpdateMoving();
                 break;
-            case InputState.Scaling:
+            case LocomotionState.Scaling:
                 UpdateScaling();
                 break;
-            case InputState.Idle:
+            case LocomotionState.Idle:
                 UpdateIdle();
-                break;
-            case InputState.Selecting:
-                UpdateSelecting();
-                break;
+                break;            
+        }
+
+        if (_isSelecting)
+        {
+            UpdateSelecting();
         }
     }
 
@@ -495,24 +497,27 @@ public class VolumeInputController : MonoBehaviour
             return;
         }
 
-        string cursorString = "";
-
-        foreach (var dataSet in _volumeDataSets)
+        if (!_isSelecting)
         {
-            dataSet.SetCursorPosition(_handTransforms[0].position);
-            if (dataSet.isActiveAndEnabled)
+            string cursorString = "";
+
+            foreach (var dataSet in _volumeDataSets)
             {
-                var voxelCoordinate = dataSet.CursorVoxel;
-                if (voxelCoordinate.x >= 0 && _scalingTextComponent != null)
+                dataSet.SetCursorPosition(_handTransforms[0].position);
+                if (dataSet.isActiveAndEnabled)
                 {
-                    var voxelValue = dataSet.CursorValue;
-                    cursorString = $"({voxelCoordinate.x}, {voxelCoordinate.y}, {voxelCoordinate.z}): {voxelValue}";
+                    var voxelCoordinate = dataSet.CursorVoxel;
+                    if (voxelCoordinate.x >= 0 && _scalingTextComponent != null)
+                    {
+                        var voxelValue = dataSet.CursorValue;
+                        cursorString = $"({voxelCoordinate.x}, {voxelCoordinate.y}, {voxelCoordinate.z}): {voxelValue}";
+                    }
                 }
             }
-        }
 
-        _scalingTextComponent.enabled = true;
-        _scalingTextComponent.text = cursorString;
+            _scalingTextComponent.enabled = true;
+            _scalingTextComponent.text = cursorString;
+        }
     }
 
     private void UpdateSelecting()
