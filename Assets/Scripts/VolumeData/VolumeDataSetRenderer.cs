@@ -92,7 +92,7 @@ namespace VolumeData
         #region Material Property IDs
 
         private int _idSliceMin, _idSliceMax, _idThresholdMin, _idThresholdMax, _idJitter, _idMaxSteps;
-        private int _idColorMapIndex, _idScaleMin, _idScaleMax;
+        private int _idColorMapIndex, _idScaleMin, _idScaleMax, _idViewProjectInverseLeft, _idViewProjectInverseRight;
         private int _idFoveationStart, _idFoveationEnd, _idFoveationJitter, _idFoveatedStepsLow, _idFoveatedStepsHigh;
         private int _idVignetteFadeStart, _idVignetteFadeEnd, _idVignetteIntensity, _idVignetteColor;
 
@@ -109,6 +109,8 @@ namespace VolumeData
             _idColorMapIndex = Shader.PropertyToID("_ColorMapIndex");
             _idScaleMin = Shader.PropertyToID("_ScaleMin");
             _idScaleMax = Shader.PropertyToID("_ScaleMax");
+            _idViewProjectInverseLeft = Shader.PropertyToID("ViewProjectInverseLeft");
+            _idViewProjectInverseRight = Shader.PropertyToID("ViewProjectInverseRight");
 
             _idFoveationStart = Shader.PropertyToID("FoveationStart");
             _idFoveationEnd = Shader.PropertyToID("FoveationEnd");
@@ -336,6 +338,29 @@ namespace VolumeData
             _materialInstance.SetFloat(_idColorMapIndex, ColorMap.GetHashCode());
             _materialInstance.SetFloat(_idScaleMax, ScaleMax);
             _materialInstance.SetFloat(_idScaleMin, ScaleMin);
+
+            if (Camera.current)
+            {
+                Matrix4x4 mat = (Camera.current.projectionMatrix * Camera.current.worldToCameraMatrix).inverse;
+                _materialInstance.SetMatrix("_ViewProjectInverse", mat);
+
+                var leftProj = Camera.current.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left);
+                var rightProj = Camera.current.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right);
+
+                // Adapted from https://github.com/zezba9000/UnityMathReference/tree/master/Assets/Shaders/DepthBuffToWorldPos
+                // Will clean up a bit later
+                var p = GL.GetGPUProjectionMatrix(leftProj, false);
+                p[2, 3] = p[3, 2] = 0.0f;
+                p[3, 3] = 1.0f;
+                var clipToWorldLeft = Matrix4x4.Inverse(p * Camera.current.worldToCameraMatrix) * Matrix4x4.TRS(new Vector3(0, 0, -p[2, 2]), Quaternion.identity, Vector3.one);                               
+                _materialInstance.SetMatrix(_idViewProjectInverseLeft, clipToWorldLeft);
+
+                p = GL.GetGPUProjectionMatrix(rightProj, false);
+                p[2, 3] = p[3, 2] = 0.0f;
+                p[3, 3] = 1.0f;
+                var clipToWorldRight = Matrix4x4.Inverse(p * Camera.current.worldToCameraMatrix) * Matrix4x4.TRS(new Vector3(0, 0, -p[2, 2]), Quaternion.identity, Vector3.one);
+                _materialInstance.SetMatrix(_idViewProjectInverseRight, clipToWorldRight);
+            }
 
             _materialInstance.SetFloat(_idFoveationStart, FoveationStart);
             _materialInstance.SetFloat(_idFoveationEnd, FoveationEnd);

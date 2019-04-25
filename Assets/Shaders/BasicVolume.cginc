@@ -18,11 +18,11 @@ struct VertexShaderOuput
 {
     float4 position : SV_POSITION;
     Ray ray : TEXCOORD0;
+    float3 worldDirection : TEXCOORD2;
 };
 
 uniform sampler3D _DataCube;
 uniform sampler2D _ColorMap;
-uniform sampler2D _CameraDepthTexture;
 uniform int _NumColorMaps;
 uniform float _ColorMapIndex;
 uniform float3 _SliceMin, _SliceMax;
@@ -37,6 +37,10 @@ uniform float FoveationStart;
 uniform float FoveationEnd;
 uniform float FoveationJitter;
 uniform int FoveatedStepsLow, FoveatedStepsHigh;
+
+// Depth buffer and projection
+uniform float4x4 ViewProjectInverseLeft, ViewProjectInverseRight;
+uniform sampler2D _CameraDepthTexture;
 
 // Implementation: NVIDIA. Original algorithm : HyperGraph
 // http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
@@ -85,6 +89,11 @@ VertexShaderOuput vertexShaderVolume(VertexShaderInput input)
     output.position = UnityObjectToClipPos(input.position);
     output.ray.direction = -ObjSpaceViewDir(input.position);
     output.ray.origin = input.position.xyz - output.ray.direction;
+        
+    float4 clipSpacePosition = float4(output.position.xy, 0.0, 1.0);
+    float4x4 clipToWorld = unity_StereoEyeIndex ? ViewProjectInverseRight : ViewProjectInverseLeft;
+    output.worldDirection = mul(clipToWorld, clipSpacePosition) - _WorldSpaceCameraPos;
+
     return output;
 }
 
@@ -105,11 +114,17 @@ float numSamples(float2 position)
 
 fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
 {
+    // transform from screen space to UV space (scaling of 0.5 is due to single-pass stereoscopic rendering)
     float2 uv = float2(0.5 * input.position.x / _ScreenParams.x, input.position.y / _ScreenParams.y);
-    float depth = LinearEyeDepth(tex2D(_CameraDepthTexture, uv).r);
+
+    // calculate displacement of opaque objects in the depth buffer in world space from the camera
+    float3 dispWorldSpace = input.worldDirection * LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv));
+    // convert to object space and get distance
+    float opaqueDepthObjectSpace = length(mul(unity_WorldToObject, float4(dispWorldSpace, 0)).xyz);
     
     float vignetteWeight = GetVignetteWeight(input.position.xy);
     
+    // Early exit if vignette is fully opaque
     if (vignetteWeight >= 1.0)
     {
         return GetVignetteFromWeight(vignetteWeight, float4(0, 0, 0, 0));
@@ -117,28 +132,21 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     
     float foveatedSamples = numSamples(input.position.xy);
     
-    input.ray.direction = normalize(input.ray.direction);
         
     float tNear, tFar;
+    input.ray.direction = normalize(input.ray.direction);
     bool hit = IntersectBox(input.ray, _SliceMin, _SliceMax, tNear, tFar);
-    // Early exit of pixels missing the bounding box
-    if (!hit || tFar < 0)
+    // Early exit of pixels missing the bounding box or occluded by opaque objects
+    if (!hit || tFar < 0 || opaqueDepthObjectSpace < tNear)
     {
         return GetVignetteFromWeight(vignetteWeight, float4(0, 0, 0, 0));
     }
     
-    if (depth < tNear)
-    {
-        return float4(0, 0, 0, 0);
-    }
-    
-    if (depth < tFar)
-    {
-        tFar = depth;
-    }
-        
+    // Clamp intersection depths between 0 and opaque object depth
     tNear = max(0, tNear);
-    // calculate intersection points
+    tFar = min(tFar, opaqueDepthObjectSpace);
+
+    // calculate intersection points    
     float3 pNear = input.ray.origin + input.ray.direction * tNear;
     float3 pFar = input.ray.origin + input.ray.direction * tFar;
     // convert to texture space
@@ -148,6 +156,7 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     float3 currentRayPosition = pNear;
     float3 rayDelta = pFar - pNear;
     float totalLength = length(rayDelta);
+
     // The maximum possible distance through the cube is sqrt(3) for the full cube, but smaller if slice bounds are applied.
     float maxLength = length(_SliceMax - _SliceMin);
     float stepLength = sqrt(maxLength) / floor(foveatedSamples);
@@ -163,23 +172,19 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     float3 regionScale = 1.0f / (_SliceMax - _SliceMin);
     float3 regionOffset = -(_SliceMin + 0.5f);
     
-    // Maximum Value transfer function (MIP)
     float rayValue = 0;
     
+    // For transforming from object space to region space
     currentRayPosition += regionOffset;
     currentRayPosition *= regionScale;
     float3 adjustedStepVector = stepVector * stepLength * regionScale;
-    
+    // For transforming from raw values to scaled values in range [0, 1]
     float scaleFactor = 1.0 / (_ScaleMax - _ScaleMin);
     
     for (int i = 0; i < requiredSteps; i++)
     {
         float stepValue = dataLookup(currentRayPosition, _ScaleMin, scaleFactor);
-        rayValue = max(stepValue, rayValue);
-        
-        // For an accumulating transfer function (AIP), we would need the step length as well: 
-        // float stepValue = dataLookup(currentRayPosition, regionScale, regionOffset) * stepLength;
-        // rayValue += stepValue;
+        rayValue = max(stepValue, rayValue);       
         currentRayPosition += adjustedStepVector;
     }
     
@@ -188,18 +193,14 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     currentRayPosition += stepVector * remainingStepLength * regionScale;
     float stepValue = dataLookup(currentRayPosition, _ScaleMin, scaleFactor);
     rayValue = max(stepValue, rayValue);
-      
-    // For AIP, we would normalize based on the total ray length  
-    // rayValue /= totalLength;
-    // Apply color mapping
-    float colorMapOffset = 1.0 - (0.5 + _ColorMapIndex) / _NumColorMaps;
-    
-    float thresholdRange = _ThresholdMax - _ThresholdMin;
-    // transform from texture values to 0 -> 1
     rayValue = clamp(rayValue, 0, 1);
+
+    // Apply linear color mapping after threshold adjustments
+    float colorMapOffset = 1.0 - (0.5 + _ColorMapIndex) / _NumColorMaps;    
+    float thresholdRange = _ThresholdMax - _ThresholdMin;        
     float colorMapValue = (rayValue - _ThresholdMin) / thresholdRange;
     float4 color = tex2D(_ColorMap, float2(colorMapValue, colorMapOffset));
         
-    // Pre-multiply the output color
+    // Set the ouptut color's opacity to the ray value
     return GetVignetteFromWeight(vignetteWeight, float4(color.xyz, rayValue));
 }
