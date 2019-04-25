@@ -29,7 +29,6 @@ uniform float3 _SliceMin, _SliceMax;
 uniform float _ThresholdMin, _ThresholdMax;
 uniform float _ScaleMin;
 uniform float _ScaleMax;
-uniform float _PostScaling;
 uniform float _MaxSteps;
 uniform float _Jitter;
 
@@ -72,16 +71,12 @@ bool IntersectBox(Ray r, float3 boxmin, float3 boxmax, out float tnear, out floa
 }
 
 // Data lookup from 3D texture. Slice and value thresholds are applied
-float dataLookup(float3 uvw)
+float dataLookup(float3 uvw, float scaleMin, float scaleFactor)
 {
     float data = tex3Dlod(_DataCube, float4(uvw, 0)).r;
-    float scaleRange = _ScaleMax - _ScaleMin;
-    // transform from texture values to 0 -> 1
-    data = (data - _ScaleMin) / scaleRange;
-    // apply value threshold
-    float thresholdStep = step(_ThresholdMin, data) * step(data, _ThresholdMax);
-    data *= thresholdStep;
-    return data;
+    data = (data - scaleMin) * scaleFactor;
+    // apply value threshold    
+    return (data >= _ThresholdMin && data <= _ThresholdMax) ? data : 0.0;
 }
 
 VertexShaderOuput vertexShaderVolume (VertexShaderInput input)
@@ -112,10 +107,7 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
 {    
     float2 uv = float2(0.5 * input.position.x / _ScreenParams.x, input.position.y / _ScreenParams.y);
     float depth = LinearEyeDepth(tex2D(_CameraDepthTexture, uv).r);
-    float depthMask = depth > 10.0 ? 0: 1;
-    //return float4(depth * depthMask, 0.1, 0, 1);
-    //return float4(uv.x, 0, 0, 1);
-
+    
     float vignetteWeight = GetVignetteWeight(input.position.xy);    
     
     if (vignetteWeight >= 1.0)
@@ -126,13 +118,11 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
     float foveatedSamples = numSamples(input.position.xy);
     
     input.ray.direction = normalize(input.ray.direction);
-    float3 boxMin = _SliceMin;
-    float3 boxMax = _SliceMax;    
         
     float tNear, tFar;
-    bool hit = IntersectBox(input.ray, boxMin, boxMax, tNear, tFar);
+    bool hit = IntersectBox(input.ray, _SliceMin, _SliceMax, tNear, tFar);
     // Early exit of pixels missing the bounding box
-    if (!hit)
+    if (!hit || tFar < 0)
     {
         return GetVignetteFromWeight(vignetteWeight, float4(0, 0, 0, 0));
     }
@@ -158,8 +148,9 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
     float3 currentRayPosition = pNear;
     float3 rayDelta = pFar - pNear;
     float totalLength = length(rayDelta);
-    // The maximum possible distance through the cube is sqrt(3).
-    float stepLength = sqrt(3) / floor(foveatedSamples);
+    // The maximum possible distance through the cube is sqrt(3) for the full cube, but smaller if slice bounds are applied.
+    float maxLength = length(_SliceMax - _SliceMin);
+    float stepLength = sqrt(maxLength) / floor(foveatedSamples);
     float3 stepVector = normalize(rayDelta);
     // Calculate the required number of steps, based on the total path length through the object 
     int requiredSteps = clamp(totalLength / stepLength, 0, foveatedSamples);
@@ -169,27 +160,37 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
     float3 randVector = nrand(input.position.xy +_Time.xy) * stepVector * stepLength * _Jitter;
     currentRayPosition += randVector;
     
+    float3 regionScale = 1.0f / (_SliceMax - _SliceMin);
+    float3 regionOffset =  - (_SliceMin + 0.5f);
+    
     // Maximum Value transfer function (MIP)
     float rayValue = 0;
+    
+    currentRayPosition += regionOffset; 
+    currentRayPosition *= regionScale;
+    float3 adjustedStepVector = stepVector * stepLength * regionScale;
+    
+    float scaleFactor = 1.0 / (_ScaleMax - _ScaleMin);    
+    
     for(int i = 0; i < requiredSteps; i++)
-    {        
-        float stepValue = dataLookup(currentRayPosition);
+    {
+        float stepValue = dataLookup(currentRayPosition, _ScaleMin, scaleFactor);
         rayValue = max (stepValue, rayValue);
+        
         // For an accumulating transfer function (AIP), we would need the step length as well: 
-        // float stepValue = dataLookup(currentRayPosition) * stepLength;
+        // float stepValue = dataLookup(currentRayPosition, regionScale, regionOffset) * stepLength;
         // rayValue += stepValue;
-        currentRayPosition += stepVector * stepLength;
+        currentRayPosition += adjustedStepVector;
     }
     
     // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
     float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
-    currentRayPosition += stepVector * remainingStepLength;
-    float stepValue = dataLookup(currentRayPosition);
+    currentRayPosition += stepVector * remainingStepLength * regionScale;
+    float stepValue = dataLookup(currentRayPosition, _ScaleMin, scaleFactor);
     rayValue = max (stepValue, rayValue);
       
     // For AIP, we would normalize based on the total ray length  
     // rayValue /= totalLength;
-    rayValue *= _PostScaling;
     // Apply color mapping
     float colorMapOffset = 1.0 - (0.5 + _ColorMapIndex) / _NumColorMaps;
     

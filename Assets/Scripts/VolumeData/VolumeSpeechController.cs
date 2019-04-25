@@ -23,7 +23,7 @@ namespace VolumeData
         private VolumeDataSetRenderer[] _dataSets;
 
         private SpeechControllerState _state;
-
+                
         // Keywords
         private string _keywordEditThresholdMin = "edit min";
         private string _keywordEditThresholdMax = "edit max";
@@ -38,6 +38,8 @@ namespace VolumeData
         private string _keywordColormapCubeHelix = "color map cube helix";
         private string _keywordNextDataSet = "next data set";
         private string _keywordPrevDataSet = "previous data set";
+        private string _keywordCrop = "crop selection";
+        private string _keywordResetCrop = "reset crop";
 
         private KeywordRecognizer _speechKeywordRecognizer;
         private float previousControllerHeight;
@@ -48,16 +50,15 @@ namespace VolumeData
         void Start()
         {
             _dataSets = GetComponentsInChildren<VolumeDataSetRenderer>(true);
-            //Debug.Log(_dataSets.Length);
             string[] keywords =
             {
                 _keywordEditThresholdMin, _keywordEditThresholdMax, _keywordSaveThreshold,
                 _keywordResetThreshold, _keywordResetTransform,
                 _keywordColormapPlasma, _keywordColormapRainbow, _keywordColormapMagma, _keywordColormapInferno,
                 _keywordColormapViridis, _keywordColormapCubeHelix,
-                _keywordNextDataSet, _keywordPrevDataSet
+                _keywordNextDataSet, _keywordPrevDataSet, _keywordCrop, _keywordResetCrop
             };
-            _speechKeywordRecognizer = new KeywordRecognizer(keywords, ConfidenceLevel.Low);
+            _speechKeywordRecognizer = new KeywordRecognizer(keywords, ConfidenceLevel.Medium);
             _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
 
             _speechKeywordRecognizer.Start();
@@ -123,6 +124,14 @@ namespace VolumeData
             else if (args.text == _keywordColormapCubeHelix)
             {
                 setColorMap(ColorMapEnum.Cubehelix);
+            }
+            else if (args.text == _keywordCrop)
+            {
+                cropDataSet();
+            }
+            else if (args.text == _keywordResetCrop)
+            {
+                resetCropDataSet();
             }
         }
 
@@ -199,7 +208,7 @@ namespace VolumeData
             {
                 _activeDataSet.ColorMap = colorMap;
             }
-        }
+        }               
 
         private void stepDataSet(bool forwards)
         {
@@ -215,6 +224,22 @@ namespace VolumeData
                     Debug.Log("Switching from dataset " + i + " to dataset " + newIndex);
                     break;
                 }
+            }
+        }
+
+        private void cropDataSet()
+        {
+            if (_activeDataSet)
+            {
+                _activeDataSet.CropToRegion();
+            }
+        }
+
+        private void resetCropDataSet()
+        {
+            if (_activeDataSet)
+            {
+                _activeDataSet.ResetCrop();
             }
         }
 

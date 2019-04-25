@@ -130,7 +130,7 @@ namespace VolumeData
                 _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
             }
 
-            _dataSet.RenderVolume(TextureFilter, XFactor, YFactor, ZFactor);
+            _dataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
             ScaleMin = _dataSet.CubeMin;
             ScaleMax = _dataSet.CubeMax;
 
@@ -295,6 +295,33 @@ namespace VolumeData
         public void ClearRegion()
         {
             _regionOutline.active = false;
+        }
+
+        public void CropToRegion()
+        {
+            Vector3 regionStartObjectSpace = new Vector3((float)(RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
+            Vector3 regionEndObjectSpace = new Vector3((float)(RegionEndVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionEndVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
+            Vector3 padding = new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
+            SliceMin = Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
+            SliceMax = Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
+            LoadRegionData();
+            _materialInstance.SetTexture("_DataCube", _dataSet.RegionCube);
+        }
+
+        public void ResetCrop()
+        {
+            SliceMin = -0.5f * Vector3.one;
+            SliceMax = +0.5f * Vector3.one;
+            _materialInstance.SetTexture("_DataCube", _dataSet.DataCube);
+        }
+
+        public void LoadRegionData()
+        {            
+            Vector3Int deltaRegion = RegionStartVoxel - RegionEndVoxel;
+            Vector3Int regionSize = new Vector3Int(Math.Abs(deltaRegion.x) + 1, Math.Abs(deltaRegion.y) + 1, Math.Abs(deltaRegion.z) + 1);
+            int xFactor, yFactor, zFactor;
+            _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, regionSize.x, regionSize.y, regionSize.z, out xFactor, out yFactor, out zFactor);
+            _dataSet.GenerateCroppedVolumeTexture(TextureFilter, RegionStartVoxel, RegionEndVoxel, new Vector3Int(xFactor, yFactor, zFactor));
         }
 
         // Update is called once per frame

@@ -8,6 +8,8 @@ using Valve.VR;
 using Valve.VR.InteractionSystem;
 using Vectrosity;
 
+using VRHand = Valve.VR.InteractionSystem.Hand;
+
 [RequireComponent(typeof(Player))]
 public class VolumeInputController : MonoBehaviour
 {
@@ -42,7 +44,7 @@ public class VolumeInputController : MonoBehaviour
     [Range(0.1f, 5.0f)] public float VignetteFadeSpeed = 2.0f;
 
     private Player _player;
-    private Hand[] _hands;
+    private VRHand[] _hands;
     private Transform[] _handTransforms;
     private SteamVR_Action_Boolean _grabGripAction;
     private SteamVR_Action_Boolean _grabPinchAction;
@@ -68,7 +70,7 @@ public class VolumeInputController : MonoBehaviour
     private float _targetVignetteIntensity = 0;
 
     // Selecting
-    private Hand _selectingHand;
+    private VRHand _selectingHand;
 
     // VR-family dependent values
     private VRFamily _vrFamily;
@@ -216,7 +218,7 @@ public class VolumeInputController : MonoBehaviour
         _targetVignetteIntensity = 1;
     }
 
-    private void StartSelection(Hand selectingHand)
+    private void StartSelection(VRHand selectingHand)
     {
         _selectingHand = selectingHand;
         _isSelecting = true;

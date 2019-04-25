@@ -12,7 +12,6 @@ Shader "VRTest/BasicVolume"
 		_ThresholdMax ("Threshold Max", Range(0,1)) = 1
 		_ScaleMin ("Data Scale Min" , Float) = 0
 		_ScaleMax ("Data Scale Max" , Float) = 1		
-		_PostScaling  ("Post-marching scaling" , Float) = 1
 		_Jitter ("Jitter amount", Range(0,1)) = 0
 		_MaxSteps ("Maximum step count", Range(16,512)) = 128
     }
