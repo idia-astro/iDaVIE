@@ -91,7 +91,7 @@ VertexShaderOuput vertexShaderVolume(VertexShaderInput v)
     v2f.ray.origin = v.vertex.xyz - v2f.ray.direction;
     // Adapted from the Unity "Particles/Additive" built-in shader
     v2f.projPos = ComputeScreenPos(v2f.vertex);
-    COMPUTE_EYEDEPTH(v2f.projPos.z);   
+    COMPUTE_EYEDEPTH(v2f.projPos.z);
 
     return v2f;
 }
@@ -178,7 +178,7 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     for (int i = 0; i < requiredSteps; i++)
     {
         float stepValue = dataLookup(currentRayPosition, _ScaleMin, scaleFactor);
-        rayValue = max(stepValue, rayValue);       
+        rayValue = max(stepValue, rayValue);
         currentRayPosition += adjustedStepVector;
     }
     
@@ -190,8 +190,8 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     rayValue = clamp(rayValue, 0, 1);
 
     // Apply linear color mapping after threshold adjustments
-    float colorMapOffset = 1.0 - (0.5 + _ColorMapIndex) / _NumColorMaps;    
-    float thresholdRange = _ThresholdMax - _ThresholdMin;        
+    float colorMapOffset = 1.0 - (0.5 + _ColorMapIndex) / _NumColorMaps;
+    float thresholdRange = _ThresholdMax - _ThresholdMin;
     float colorMapValue = (rayValue - _ThresholdMin) / thresholdRange;
     float4 color = tex2D(_ColorMap, float2(colorMapValue, colorMapOffset));
         
