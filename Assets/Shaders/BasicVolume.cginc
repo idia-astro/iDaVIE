@@ -11,14 +11,14 @@ struct Ray
 
 struct VertexShaderInput
 {
-    float4 position : POSITION;
+    float4 vertex : POSITION;
 };
 
 struct VertexShaderOuput
 {
-    float4 position : SV_POSITION;
+    float4 vertex : SV_POSITION;
     Ray ray : TEXCOORD0;
-    float3 worldDirection : TEXCOORD2;
+    float4 projPos : TEXCOORD2;
 };
 
 uniform sampler3D _DataCube;
@@ -38,8 +38,7 @@ uniform float FoveationEnd;
 uniform float FoveationJitter;
 uniform int FoveatedStepsLow, FoveatedStepsHigh;
 
-// Depth buffer and projection
-uniform float4x4 ViewProjectInverseLeft, ViewProjectInverseRight;
+// Depth buffer
 uniform sampler2D _CameraDepthTexture;
 
 // Implementation: NVIDIA. Original algorithm : HyperGraph
@@ -83,18 +82,18 @@ float dataLookup(float3 uvw, float scaleMin, float scaleFactor)
     return (data >= _ThresholdMin && data <= _ThresholdMax) ? data : 0.0;
 }
 
-VertexShaderOuput vertexShaderVolume(VertexShaderInput input)
+VertexShaderOuput vertexShaderVolume(VertexShaderInput v)
 {
-    VertexShaderOuput output;
-    output.position = UnityObjectToClipPos(input.position);
-    output.ray.direction = -ObjSpaceViewDir(input.position);
-    output.ray.origin = input.position.xyz - output.ray.direction;
-        
-    float4 clipSpacePosition = float4(output.position.xy, 0.0, 1.0);
-    float4x4 clipToWorld = unity_StereoEyeIndex ? ViewProjectInverseRight : ViewProjectInverseLeft;
-    output.worldDirection = mul(clipToWorld, clipSpacePosition) - _WorldSpaceCameraPos;
+    VertexShaderOuput v2f;
+    float4 worldPos = mul(UNITY_MATRIX_M, v.vertex);
+    v2f.vertex = mul(UNITY_MATRIX_VP, worldPos);
+    v2f.ray.direction = -ObjSpaceViewDir(v.vertex);
+    v2f.ray.origin = v.vertex.xyz - v2f.ray.direction;
+    // Adapted from the Unity "Particles/Additive" built-in shader
+    v2f.projPos = ComputeScreenPos(v2f.vertex);
+    COMPUTE_EYEDEPTH(v2f.projPos.z);   
 
-    return output;
+    return v2f;
 }
 
 // Simple pseudo-random number generator from https://github.com/keijiro
@@ -114,15 +113,11 @@ float numSamples(float2 position)
 
 fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
 {
-    // transform from screen space to UV space (scaling of 0.5 is due to single-pass stereoscopic rendering)
-    float2 uv = float2(0.5 * input.position.x / _ScreenParams.x, input.position.y / _ScreenParams.y);
-
-    // calculate displacement of opaque objects in the depth buffer in world space from the camera
-    float3 dispWorldSpace = input.worldDirection * LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv));
-    // convert to object space and get distance
-    float opaqueDepthObjectSpace = length(mul(unity_WorldToObject, float4(dispWorldSpace, 0)).xyz);
-    
-    float vignetteWeight = GetVignetteWeight(input.position.xy);
+    // Adapted from the Unity "Particles/Additive" built-in shader
+    float sceneZ = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE_PROJ(_CameraDepthTexture, UNITY_PROJ_COORD(input.projPos)));
+    float opaqueDepthObjectSpace = length(sceneZ * input.ray.direction / input.projPos.z);
+       
+    float vignetteWeight = GetVignetteWeight(input.vertex.xy);
     
     // Early exit if vignette is fully opaque
     if (vignetteWeight >= 1.0)
@@ -130,8 +125,7 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
         return GetVignetteFromWeight(vignetteWeight, float4(0, 0, 0, 0));
     }
     
-    float foveatedSamples = numSamples(input.position.xy);
-    
+    float foveatedSamples = numSamples(input.vertex.xy);
         
     float tNear, tFar;
     input.ray.direction = normalize(input.ray.direction);
@@ -166,7 +160,7 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     
     // Shift ray's starting point by a small temporal noise amount to reduce box artefacts
     // Based on code from Ryan Brucks: https://shaderbits.com/blog/creating-volumetric-ray-marcher
-    float3 randVector = nrand(input.position.xy + _Time.xy) * stepVector * stepLength * _Jitter;
+    float3 randVector = nrand(input.vertex.xy + _Time.xy) * stepVector * stepLength * _Jitter;
     currentRayPosition += randVector;
     
     float3 regionScale = 1.0f / (_SliceMax - _SliceMin);
