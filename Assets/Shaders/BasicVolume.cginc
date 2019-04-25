@@ -6,7 +6,7 @@
 struct Ray
 {
     float3 origin;
-    float3 direction;  
+    float3 direction;
 };
 
 struct VertexShaderInput
@@ -17,7 +17,7 @@ struct VertexShaderInput
 struct VertexShaderOuput
 {
     float4 position : SV_POSITION;
-    Ray ray: TEXCOORD0;
+    Ray ray : TEXCOORD0;
 };
 
 uniform sampler3D _DataCube;
@@ -48,14 +48,14 @@ bool IntersectBox(Ray r, float3 boxmin, float3 boxmax, out float tnear, out floa
     float3 ttop = invR * (boxmax.xyz - r.origin);
 
     // re-order intersections to find smallest and largest on each axis
-    float3 tmin = min (ttop, tbot);
-    float3 tmax = max (ttop, tbot);
+    float3 tmin = min(ttop, tbot);
+    float3 tmax = max(ttop, tbot);
 
     // find the largest tmin and the smallest tmax
-    float2 t0 = max (tmin.xx, tmin.yz);
-    float largest_tmin = max (t0.x, t0.y);
-    t0 = min (tmax.xx, tmax.yz);
-    float smallest_tmax = min (t0.x, t0.y);
+    float2 t0 = max(tmin.xx, tmin.yz);
+    float largest_tmin = max(t0.x, t0.y);
+    t0 = min(tmax.xx, tmax.yz);
+    float smallest_tmax = min(t0.x, t0.y);
 
     // check for hit
     bool hit;
@@ -79,7 +79,7 @@ float dataLookup(float3 uvw, float scaleMin, float scaleFactor)
     return (data >= _ThresholdMin && data <= _ThresholdMax) ? data : 0.0;
 }
 
-VertexShaderOuput vertexShaderVolume (VertexShaderInput input)
+VertexShaderOuput vertexShaderVolume(VertexShaderInput input)
 {
     VertexShaderOuput output;
     output.position = UnityObjectToClipPos(input.position);
@@ -96,24 +96,24 @@ float nrand(float2 uv)
 
 float numSamples(float2 position)
 {
-    position = float2(position.x % _ScreenParams.x, position.y);       
+    position = float2(position.x % _ScreenParams.x, position.y);
     float2 center = _ScreenParams.xy / 2.0;
     float2 delta = center - position;
-    float radius = length(delta)/ _ScreenParams.x;
-    return floor(FoveatedStepsLow + (FoveatedStepsHigh - FoveatedStepsLow) * (1.0 - smoothstep(FoveationStart, FoveationEnd, radius)));   
+    float radius = length(delta) / _ScreenParams.x;
+    return floor(FoveatedStepsLow + (FoveatedStepsHigh - FoveatedStepsLow) * (1.0 - smoothstep(FoveationStart, FoveationEnd, radius)));
 }
 
-fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
-{    
+fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
+{
     float2 uv = float2(0.5 * input.position.x / _ScreenParams.x, input.position.y / _ScreenParams.y);
     float depth = LinearEyeDepth(tex2D(_CameraDepthTexture, uv).r);
     
-    float vignetteWeight = GetVignetteWeight(input.position.xy);    
+    float vignetteWeight = GetVignetteWeight(input.position.xy);
     
     if (vignetteWeight >= 1.0)
     {
         return GetVignetteFromWeight(vignetteWeight, float4(0, 0, 0, 0));
-    }    
+    }
     
     float foveatedSamples = numSamples(input.position.xy);
     
@@ -137,13 +137,13 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
         tFar = depth;
     }
         
-    tNear = max(0, tNear);    
+    tNear = max(0, tNear);
     // calculate intersection points
     float3 pNear = input.ray.origin + input.ray.direction * tNear;
-    float3 pFar  = input.ray.origin + input.ray.direction * tFar;    
+    float3 pFar = input.ray.origin + input.ray.direction * tFar;
     // convert to texture space
     pNear = pNear + 0.5;
-    pFar  = pFar + 0.5;
+    pFar = pFar + 0.5;
         
     float3 currentRayPosition = pNear;
     float3 rayDelta = pFar - pNear;
@@ -157,25 +157,25 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
     
     // Shift ray's starting point by a small temporal noise amount to reduce box artefacts
     // Based on code from Ryan Brucks: https://shaderbits.com/blog/creating-volumetric-ray-marcher
-    float3 randVector = nrand(input.position.xy +_Time.xy) * stepVector * stepLength * _Jitter;
+    float3 randVector = nrand(input.position.xy + _Time.xy) * stepVector * stepLength * _Jitter;
     currentRayPosition += randVector;
     
     float3 regionScale = 1.0f / (_SliceMax - _SliceMin);
-    float3 regionOffset =  - (_SliceMin + 0.5f);
+    float3 regionOffset = -(_SliceMin + 0.5f);
     
     // Maximum Value transfer function (MIP)
     float rayValue = 0;
     
-    currentRayPosition += regionOffset; 
+    currentRayPosition += regionOffset;
     currentRayPosition *= regionScale;
     float3 adjustedStepVector = stepVector * stepLength * regionScale;
     
-    float scaleFactor = 1.0 / (_ScaleMax - _ScaleMin);    
+    float scaleFactor = 1.0 / (_ScaleMax - _ScaleMin);
     
-    for(int i = 0; i < requiredSteps; i++)
+    for (int i = 0; i < requiredSteps; i++)
     {
         float stepValue = dataLookup(currentRayPosition, _ScaleMin, scaleFactor);
-        rayValue = max (stepValue, rayValue);
+        rayValue = max(stepValue, rayValue);
         
         // For an accumulating transfer function (AIP), we would need the step length as well: 
         // float stepValue = dataLookup(currentRayPosition, regionScale, regionOffset) * stepLength;
@@ -187,7 +187,7 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
     float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
     currentRayPosition += stepVector * remainingStepLength * regionScale;
     float stepValue = dataLookup(currentRayPosition, _ScaleMin, scaleFactor);
-    rayValue = max (stepValue, rayValue);
+    rayValue = max(stepValue, rayValue);
       
     // For AIP, we would normalize based on the total ray length  
     // rayValue /= totalLength;
@@ -197,9 +197,9 @@ fixed4 fragmentShaderRayMarch (VertexShaderOuput input) : SV_Target
     float thresholdRange = _ThresholdMax - _ThresholdMin;
     // transform from texture values to 0 -> 1
     rayValue = clamp(rayValue, 0, 1);
-    float colorMapValue = (rayValue - _ThresholdMin) / thresholdRange;   
+    float colorMapValue = (rayValue - _ThresholdMin) / thresholdRange;
     float4 color = tex2D(_ColorMap, float2(colorMapValue, colorMapOffset));
         
     // Pre-multiply the output color
-    return GetVignetteFromWeight(vignetteWeight, float4(color.xyz, rayValue));    
+    return GetVignetteFromWeight(vignetteWeight, float4(color.xyz, rayValue));
 }
