@@ -17,7 +17,7 @@ Shader "VRTest/BasicVolume"
 	}
 		SubShader
 		{
-			Tags { "Queue" = "Transparent" }
+			Tags { "Queue" = "Transparent-100" }
 
 			Pass
 			{
