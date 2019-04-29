@@ -90,37 +90,32 @@ namespace VolumeData
         private VolumeDataSet _dataSet;
 
         #region Material Property IDs
-
-        private int _idSliceMin, _idSliceMax, _idThresholdMin, _idThresholdMax, _idJitter, _idMaxSteps;
-        private int _idColorMapIndex, _idScaleMin, _idScaleMax;
-        private int _idFoveationStart, _idFoveationEnd, _idFoveationJitter, _idFoveatedStepsLow, _idFoveatedStepsHigh;
-        private int _idVignetteFadeStart, _idVignetteFadeEnd, _idVignetteIntensity, _idVignetteColor;
-
-        #endregion
-
-        private void GetPropertyIds()
+        private struct MaterialID
         {
-            _idSliceMin = Shader.PropertyToID("_SliceMin");
-            _idSliceMax = Shader.PropertyToID("_SliceMax");
-            _idThresholdMin = Shader.PropertyToID("_ThresholdMin");
-            _idThresholdMax = Shader.PropertyToID("_ThresholdMax");
-            _idJitter = Shader.PropertyToID("_Jitter");
-            _idMaxSteps = Shader.PropertyToID("_MaxSteps");
-            _idColorMapIndex = Shader.PropertyToID("_ColorMapIndex");
-            _idScaleMin = Shader.PropertyToID("_ScaleMin");
-            _idScaleMax = Shader.PropertyToID("_ScaleMax");
+            public static readonly int DataCube = Shader.PropertyToID("_DataCube");
+            public static readonly int NumColorMaps = Shader.PropertyToID("_NumColorMaps");
+            public static readonly int SliceMin = Shader.PropertyToID("_SliceMin");
+            public static readonly int SliceMax = Shader.PropertyToID("_SliceMax");
+            public static readonly int ThresholdMin = Shader.PropertyToID("_ThresholdMin");
+            public static readonly int ThresholdMax = Shader.PropertyToID("_ThresholdMax");
+            public static readonly int Jitter = Shader.PropertyToID("_Jitter");
+            public static readonly int MaxSteps = Shader.PropertyToID("_MaxSteps");
+            public static readonly int ColorMapIndex = Shader.PropertyToID("_ColorMapIndex");
+            public static readonly int ScaleMin = Shader.PropertyToID("_ScaleMin");
+            public static readonly int ScaleMax = Shader.PropertyToID("_ScaleMax");
 
-            _idFoveationStart = Shader.PropertyToID("FoveationStart");
-            _idFoveationEnd = Shader.PropertyToID("FoveationEnd");
-            _idFoveationJitter = Shader.PropertyToID("FoveationJitter");
-            _idFoveatedStepsLow = Shader.PropertyToID("FoveatedStepsLow");
-            _idFoveatedStepsHigh = Shader.PropertyToID("FoveatedStepsHigh");
+            public static readonly int FoveationStart = Shader.PropertyToID("FoveationStart");
+            public static readonly int FoveationEnd = Shader.PropertyToID("FoveationEnd");
+            public static readonly int FoveationJitter = Shader.PropertyToID("FoveationJitter");
+            public static readonly int FoveatedStepsLow = Shader.PropertyToID("FoveatedStepsLow");
+            public static readonly int FoveatedStepsHigh = Shader.PropertyToID("FoveatedStepsHigh");
 
-            _idVignetteFadeStart = Shader.PropertyToID("VignetteFadeStart");
-            _idVignetteFadeEnd = Shader.PropertyToID("VignetteFadeEnd");
-            _idVignetteIntensity = Shader.PropertyToID("VignetteIntensity");
-            _idVignetteColor = Shader.PropertyToID("VignetteIntensity");
+            public static readonly int VignetteFadeStart = Shader.PropertyToID("VignetteFadeStart");
+            public static readonly int VignetteFadeEnd = Shader.PropertyToID("VignetteFadeEnd");
+            public static readonly int VignetteIntensity = Shader.PropertyToID("VignetteIntensity");
+            public static readonly int VignetteColor = Shader.PropertyToID("VignetteIntensity");
         }
+        #endregion
 
         public void Start()
         {
@@ -134,13 +129,12 @@ namespace VolumeData
             ScaleMin = _dataSet.CubeMin;
             ScaleMax = _dataSet.CubeMax;
 
-            GetPropertyIds();
             _renderer = GetComponent<MeshRenderer>();
             _materialInstance = Instantiate(RayMarchingMaterial);
-            _materialInstance.SetTexture("_DataCube", _dataSet.DataCube);
-            _materialInstance.SetInt("_NumColorMaps", ColorMapUtils.NumColorMaps);
-            _materialInstance.SetFloat(_idFoveationStart, FoveationStart);
-            _materialInstance.SetFloat(_idFoveationEnd, FoveationEnd);
+            _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.DataCube);
+            _materialInstance.SetInt(MaterialID.NumColorMaps, ColorMapUtils.NumColorMaps);
+            _materialInstance.SetFloat(MaterialID.FoveationStart, FoveationStart);
+            _materialInstance.SetFloat(MaterialID.FoveationEnd, FoveationEnd);
             _renderer.material = _materialInstance;
 
             // Set initial values (for resetting later)
@@ -305,14 +299,14 @@ namespace VolumeData
             SliceMin = Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
             SliceMax = Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
             LoadRegionData();
-            _materialInstance.SetTexture("_DataCube", _dataSet.RegionCube);
+            _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.RegionCube);
         }
 
         public void ResetCrop()
         {
             SliceMin = -0.5f * Vector3.one;
             SliceMax = +0.5f * Vector3.one;
-            _materialInstance.SetTexture("_DataCube", _dataSet.DataCube);
+            _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.DataCube);
         }
 
         public void LoadRegionData()
@@ -327,34 +321,34 @@ namespace VolumeData
         // Update is called once per frame
         public void Update()
         {
-            _materialInstance.SetVector(_idSliceMin, SliceMin);
-            _materialInstance.SetVector(_idSliceMax, SliceMax);
-            _materialInstance.SetFloat(_idThresholdMin, ThresholdMin);
-            _materialInstance.SetFloat(_idThresholdMax, ThresholdMax);
-            _materialInstance.SetFloat(_idJitter, Jitter);
-            _materialInstance.SetFloat(_idMaxSteps, MaxSteps);
-            _materialInstance.SetFloat(_idColorMapIndex, ColorMap.GetHashCode());
-            _materialInstance.SetFloat(_idScaleMax, ScaleMax);
-            _materialInstance.SetFloat(_idScaleMin, ScaleMin);
-
-            _materialInstance.SetFloat(_idFoveationStart, FoveationStart);
-            _materialInstance.SetFloat(_idFoveationEnd, FoveationEnd);
+            _materialInstance.SetVector(MaterialID.SliceMin, SliceMin);
+            _materialInstance.SetVector(MaterialID.SliceMax, SliceMax);
+            _materialInstance.SetFloat(MaterialID.ThresholdMin, ThresholdMin);
+            _materialInstance.SetFloat(MaterialID.ThresholdMax, ThresholdMax);
+            _materialInstance.SetFloat(MaterialID.Jitter, Jitter);
+            _materialInstance.SetFloat(MaterialID.MaxSteps, MaxSteps);
+            _materialInstance.SetFloat(MaterialID.ColorMapIndex, ColorMap.GetHashCode());
+            _materialInstance.SetFloat(MaterialID.ScaleMax, ScaleMax);
+            _materialInstance.SetFloat(MaterialID.ScaleMin, ScaleMin);
+           
+            _materialInstance.SetFloat(MaterialID.FoveationStart, FoveationStart);
+            _materialInstance.SetFloat(MaterialID.FoveationEnd, FoveationEnd);
             if (FoveatedRendering)
             {
-                _materialInstance.SetFloat(_idFoveationJitter, FoveationJitter);
-                _materialInstance.SetInt(_idFoveatedStepsLow, FoveatedStepsLow);
-                _materialInstance.SetInt(_idFoveatedStepsHigh, FoveatedStepsHigh);
+                _materialInstance.SetFloat(MaterialID.FoveationJitter, FoveationJitter);
+                _materialInstance.SetInt(MaterialID.FoveatedStepsLow, FoveatedStepsLow);
+                _materialInstance.SetInt(MaterialID.FoveatedStepsHigh, FoveatedStepsHigh);
             }
             else
             {
-                _materialInstance.SetInt(_idFoveatedStepsLow, MaxSteps);
-                _materialInstance.SetInt(_idFoveatedStepsHigh, MaxSteps);
+                _materialInstance.SetInt(MaterialID.FoveatedStepsLow, MaxSteps);
+                _materialInstance.SetInt(MaterialID.FoveatedStepsHigh, MaxSteps);
             }
 
-            _materialInstance.SetFloat(_idVignetteFadeStart, VignetteFadeStart);
-            _materialInstance.SetFloat(_idVignetteFadeEnd, VignetteFadeEnd);
-            _materialInstance.SetFloat(_idVignetteIntensity, VignetteIntensity);
-            _materialInstance.SetColor(_idVignetteColor, VignetteColor);
+            _materialInstance.SetFloat(MaterialID.VignetteFadeStart, VignetteFadeStart);
+            _materialInstance.SetFloat(MaterialID.VignetteFadeEnd, VignetteFadeEnd);
+            _materialInstance.SetFloat(MaterialID.VignetteIntensity, VignetteIntensity);
+            _materialInstance.SetColor(MaterialID.VignetteColor, VignetteColor);
         }
 
         public void OnDestroy()

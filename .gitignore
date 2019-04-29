@@ -442,6 +442,8 @@ Data/DataTables
 Data/DataMaps
 Assets/Plugins/Fits/
 Assets/Plugins/
+Assets/Resources.meta
+Assets/Vectrosity.meta
 
 # exclude lib_source solution files
 !lib_source/fits_reader/*.sln

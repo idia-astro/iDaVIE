@@ -618,7 +618,7 @@ namespace CatalogData
             _catalogMaterial.SetPass(DataMapping.Spherical ? 1 : 0);
             // Render points on the GPU using vertex pulling
 #if UNITY_2019_1
-            Graphics.DrawProcedural(MeshTopology.Points, _dataSet.N);
+            Graphics.DrawProceduralNow(MeshTopology.Points, _dataSet.N);
 #else
             Graphics.DrawProcedural(MeshTopology.Points, _dataSet.N);
 #endif
