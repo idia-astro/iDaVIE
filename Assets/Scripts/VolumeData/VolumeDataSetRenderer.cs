@@ -83,6 +83,8 @@ namespace VolumeData
         public Vector3Int RegionStartVoxel { get; private set; }
         public Vector3Int RegionEndVoxel { get; private set; }
 
+        [Range(0, 1)] public float SelectionDimFactor = 0.85f;
+
         private VectorLine _voxelOutline, _cubeOutline, _regionOutline;
 
         private MeshRenderer _renderer;
@@ -362,7 +364,7 @@ namespace VolumeData
 
                 _materialInstance.SetVector(MaterialID.HighlightMin, highlightMin);
                 _materialInstance.SetVector(MaterialID.HighlightMax, highlightMax);
-                _materialInstance.SetFloat(MaterialID.HighlightDimFactor, 0.85f);
+                _materialInstance.SetFloat(MaterialID.HighlightDimFactor, SelectionDimFactor);
             }
             else
             {
