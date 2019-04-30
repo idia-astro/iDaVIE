@@ -114,6 +114,10 @@ namespace VolumeData
             public static readonly int VignetteFadeEnd = Shader.PropertyToID("VignetteFadeEnd");
             public static readonly int VignetteIntensity = Shader.PropertyToID("VignetteIntensity");
             public static readonly int VignetteColor = Shader.PropertyToID("VignetteIntensity");
+
+            public static readonly int HighlightMin = Shader.PropertyToID("HighlightMin");
+            public static readonly int HighlightMax = Shader.PropertyToID("HighlightMax");
+            public static readonly int HighlightDimFactor = Shader.PropertyToID("HighlightDimFactor");
         }
         #endregion
 
@@ -288,7 +292,10 @@ namespace VolumeData
 
         public void ClearRegion()
         {
-            _regionOutline.active = false;
+            if (_regionOutline != null)
+            {
+                _regionOutline.active = false;
+            }
         }
 
         public void CropToRegion()
@@ -343,6 +350,23 @@ namespace VolumeData
             {
                 _materialInstance.SetInt(MaterialID.FoveatedStepsLow, MaxSteps);
                 _materialInstance.SetInt(MaterialID.FoveatedStepsHigh, MaxSteps);
+            }
+
+            if (_regionOutline.active)
+            {
+                Vector3 regionStartObjectSpace = new Vector3((float)(RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
+                Vector3 regionEndObjectSpace = new Vector3((float)(RegionEndVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionEndVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
+                Vector3 padding = new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
+                var highlightMin = Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
+                var highlightMax = Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
+
+                _materialInstance.SetVector(MaterialID.HighlightMin, highlightMin);
+                _materialInstance.SetVector(MaterialID.HighlightMax, highlightMax);
+                _materialInstance.SetFloat(MaterialID.HighlightDimFactor, 0.85f);
+            }
+            else
+            {
+                _materialInstance.SetFloat(MaterialID.HighlightDimFactor, 1f);
             }
 
             _materialInstance.SetFloat(MaterialID.VignetteFadeStart, VignetteFadeStart);

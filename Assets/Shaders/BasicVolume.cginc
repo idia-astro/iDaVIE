@@ -41,6 +41,10 @@ uniform int FoveatedStepsLow, FoveatedStepsHigh;
 // Depth buffer
 uniform sampler2D _CameraDepthTexture;
 
+// Highlight selection
+uniform float3 HighlightMin, HighlightMax;
+uniform float HighlightDimFactor;
+
 // Implementation: NVIDIA. Original algorithm : HyperGraph
 // http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
 bool IntersectBox(Ray r, float3 boxmin, float3 boxmax, out float tnear, out float tfar)
@@ -111,6 +115,15 @@ float numSamples(float2 position)
     return floor(FoveatedStepsLow + (FoveatedStepsHigh - FoveatedStepsLow) * (1.0 - smoothstep(FoveationStart, FoveationEnd, radius)));
 }
 
+float accumulateValue(float3 position, float currentValue, float scaleFactor)
+{
+    float stepValue = dataLookup(position, _ScaleMin, scaleFactor);
+    float3 stepTest = step(HighlightMin, position) * step(position, HighlightMax);
+    float highlightFactor = (stepTest.x * stepTest.y * stepTest.z) > 0.0f ? 1.0f : HighlightDimFactor;
+    stepValue *= highlightFactor;
+    return max(stepValue, currentValue);
+}
+
 fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
 {
     // Adapted from the Unity "Particles/Additive" built-in shader
@@ -169,24 +182,25 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     float rayValue = 0;
     
     // For transforming from object space to region space
-    currentRayPosition += regionOffset;
-    currentRayPosition *= regionScale;
+    currentRayPosition = (currentRayPosition + regionOffset) * regionScale;
     float3 adjustedStepVector = stepVector * stepLength * regionScale;
     // For transforming from raw values to scaled values in range [0, 1]
     float scaleFactor = 1.0 / (_ScaleMax - _ScaleMin);
     
+    // transform highlight bounds from object space to region space
+    HighlightMin = (HighlightMin + regionOffset + 0.5f) * regionScale;
+    HighlightMax = (HighlightMax + regionOffset + 0.5f) * regionScale;
+
     for (int i = 0; i < requiredSteps; i++)
     {
-        float stepValue = dataLookup(currentRayPosition, _ScaleMin, scaleFactor);
-        rayValue = max(stepValue, rayValue);
+        rayValue = accumulateValue(currentRayPosition, rayValue, scaleFactor);
         currentRayPosition += adjustedStepVector;
     }
     
     // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
     float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
     currentRayPosition += stepVector * remainingStepLength * regionScale;
-    float stepValue = dataLookup(currentRayPosition, _ScaleMin, scaleFactor);
-    rayValue = max(stepValue, rayValue);
+    rayValue = accumulateValue(currentRayPosition, rayValue, scaleFactor);
     rayValue = clamp(rayValue, 0, 1);
 
     // Apply linear color mapping after threshold adjustments
