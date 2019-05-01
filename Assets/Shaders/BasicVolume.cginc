@@ -43,7 +43,7 @@ uniform sampler2D _CameraDepthTexture;
 
 // Highlight selection
 uniform float3 HighlightMin, HighlightMax;
-uniform float HighlightDimFactor;
+uniform float HighlightSaturateFactor;
 
 // Implementation: NVIDIA. Original algorithm : HyperGraph
 // http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
@@ -83,7 +83,7 @@ float dataLookup(float3 uvw, float scaleMin, float scaleFactor)
     float data = tex3Dlod(_DataCube, float4(uvw, 0)).r;
     data = (data - scaleMin) * scaleFactor;
     // apply value threshold    
-    return (data >= _ThresholdMin && data <= _ThresholdMax) ? data : 0.0;
+    return (data >= _ThresholdMin && data <= _ThresholdMax) ? data : 0.0f;
 }
 
 VertexShaderOuput vertexShaderVolume(VertexShaderInput v)
@@ -115,13 +115,21 @@ float numSamples(float2 position)
     return floor(FoveatedStepsLow + (FoveatedStepsHigh - FoveatedStepsLow) * (1.0 - smoothstep(FoveationStart, FoveationEnd, radius)));
 }
 
-float accumulateValue(float3 position, float currentValue, float scaleFactor)
+bool positionInBox(float3 position, float3 boxMin, float3 boxMax)
+{
+    float3 stepTest = step(boxMin, position) * step(position, boxMax);
+    return stepTest.x * stepTest.y * stepTest.z > 0.0f;
+}
+
+void accumulateSample(float3 position, float scaleFactor, inout float currentValue, inout bool maxInHighlightBounds)
 {
     float stepValue = dataLookup(position, _ScaleMin, scaleFactor);
-    float3 stepTest = step(HighlightMin, position) * step(position, HighlightMax);
-    float highlightFactor = (stepTest.x * stepTest.y * stepTest.z) > 0.0f ? 1.0f : HighlightDimFactor;
-    stepValue *= highlightFactor;
-    return max(stepValue, currentValue);
+    if (stepValue >= currentValue)
+    {
+        bool stepTest = positionInBox(position, HighlightMin, HighlightMax);
+        maxInHighlightBounds = stepTest || (maxInHighlightBounds && (stepValue == currentValue));
+        currentValue = stepValue;
+    }
 }
 
 fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
@@ -179,7 +187,7 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     float3 regionScale = 1.0f / (_SliceMax - _SliceMin);
     float3 regionOffset = -(_SliceMin + 0.5f);
     
-    float rayValue = 0;
+    float rayValue = 0.0f;
     
     // For transforming from object space to region space
     currentRayPosition = (currentRayPosition + regionOffset) * regionScale;
@@ -191,24 +199,29 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     HighlightMin = (HighlightMin + regionOffset + 0.5f) * regionScale;
     HighlightMax = (HighlightMax + regionOffset + 0.5f) * regionScale;
 
+    bool maxInHighlightBounds = true;
     for (int i = 0; i < requiredSteps; i++)
     {
-        rayValue = accumulateValue(currentRayPosition, rayValue, scaleFactor);
+
+        accumulateSample(currentRayPosition, scaleFactor, rayValue, maxInHighlightBounds);
         currentRayPosition += adjustedStepVector;
     }
     
     // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
     float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
-    currentRayPosition += stepVector * remainingStepLength * regionScale;
-    rayValue = accumulateValue(currentRayPosition, rayValue, scaleFactor);
+    accumulateSample(currentRayPosition, scaleFactor, rayValue, maxInHighlightBounds);
     rayValue = clamp(rayValue, 0, 1);
 
     // Apply linear color mapping after threshold adjustments
     float colorMapOffset = 1.0 - (0.5 + _ColorMapIndex) / _NumColorMaps;
     float thresholdRange = _ThresholdMax - _ThresholdMin;
     float colorMapValue = (rayValue - _ThresholdMin) / thresholdRange;
-    float4 color = tex2D(_ColorMap, float2(colorMapValue, colorMapOffset));
-        
-    // Set the ouptut color's opacity to the ray value
+    
+    // Interpolate between greyscale output and colormapped output, depending on the highlight dim factor and whether the ray value is within the highlight region
+    float colorFraction = maxInHighlightBounds ? 1.0f : HighlightSaturateFactor;
+    float4 colorMapColor = tex2D(_ColorMap, float2(colorMapValue, colorMapOffset));
+    float4 greyscaleColor = float4(colorMapValue, colorMapValue, colorMapValue, 1.0);
+    float4 color = lerp(greyscaleColor, colorMapColor, colorFraction);
+
     return GetVignetteFromWeight(vignetteWeight, float4(color.xyz, rayValue));
 }

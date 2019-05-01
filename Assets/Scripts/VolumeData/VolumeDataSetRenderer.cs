@@ -83,7 +83,7 @@ namespace VolumeData
         public Vector3Int RegionStartVoxel { get; private set; }
         public Vector3Int RegionEndVoxel { get; private set; }
 
-        [Range(0, 1)] public float SelectionDimFactor = 0.85f;
+        [Range(0, 1)] public float SelectionSaturateFactor = 0.7f;
 
         private VectorLine _voxelOutline, _cubeOutline, _regionOutline;
 
@@ -119,7 +119,7 @@ namespace VolumeData
 
             public static readonly int HighlightMin = Shader.PropertyToID("HighlightMin");
             public static readonly int HighlightMax = Shader.PropertyToID("HighlightMax");
-            public static readonly int HighlightDimFactor = Shader.PropertyToID("HighlightDimFactor");
+            public static readonly int HighlightSaturateFactor = Shader.PropertyToID("HighlightSaturateFactor");
         }
         #endregion
 
@@ -364,11 +364,11 @@ namespace VolumeData
 
                 _materialInstance.SetVector(MaterialID.HighlightMin, highlightMin);
                 _materialInstance.SetVector(MaterialID.HighlightMax, highlightMax);
-                _materialInstance.SetFloat(MaterialID.HighlightDimFactor, SelectionDimFactor);
+                _materialInstance.SetFloat(MaterialID.HighlightSaturateFactor, SelectionSaturateFactor);
             }
             else
             {
-                _materialInstance.SetFloat(MaterialID.HighlightDimFactor, 1f);
+                _materialInstance.SetFloat(MaterialID.HighlightSaturateFactor, 1f);
             }
 
             _materialInstance.SetFloat(MaterialID.VignetteFadeStart, VignetteFadeStart);
