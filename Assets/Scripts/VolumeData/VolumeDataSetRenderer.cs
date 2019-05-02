@@ -13,64 +13,72 @@ namespace VolumeData
         Trilinear
     }
 
+    public enum ScalingType
+    {
+        Linear = 0,
+        Log = 1,
+        Sqrt = 2,
+        Square = 3,
+        Power = 4,
+        Gamma = 5
+    }
+
     public class VolumeDataSetRenderer : MonoBehaviour
     {
         public ColorMapDelegate OnColorMapChanged;
 
         [Header("Rendering Settings")]
         // Step control
-        [Range(16, 512)]
-        public int MaxSteps = 192;
+        [Range(16, 512)] public int MaxSteps = 192;
+        public long MaximumCubeSizeInMB = 250;
+        public TextureFilterEnum TextureFilter = TextureFilterEnum.Point;
 
         // Jitter factor
         [Range(0, 1)] public float Jitter = 1.0f;
 
-
-        // Texture Filtering
-        public TextureFilterEnum TextureFilter = TextureFilterEnum.Point;
-
         // Foveated rendering controls
         [Header("Foveated Rendering Controls")]
         public bool FoveatedRendering = false;
-
         [Range(0, 0.5f)] public float FoveationStart = 0.15f;
         [Range(0, 0.5f)] public float FoveationEnd = 0.40f;
         [Range(0, 0.5f)] public float FoveationJitter = 0.0f;
         [Range(16, 512)] public int FoveatedStepsLow = 64;
         [Range(16, 512)] public int FoveatedStepsHigh = 384;
 
-        // RenderDownsampling
-        [Header("Render Downsampling")] public long MaximumCubeSizeInMB = 250;
-        public bool FactorOverride = false;
-        public int XFactor = 1;
-        public int YFactor = 1;
-        public int ZFactor = 1;
-
         // Vignette Rendering
-        [Header("Vignette Rendering Controls")] [Range(0, 0.5f)]
+        [Header("Vignette Rendering Controls")]
+        [Range(0, 0.5f)]
         public float VignetteFadeStart = 0.15f;
-
         [Range(0, 0.5f)] public float VignetteFadeEnd = 0.40f;
         [Range(0, 1)] public float VignetteIntensity = 0.0f;
         public Color VignetteColor = Color.black;
 
-        [Header("Thresholds")]
-        // Spatial thresholding
-        public Vector3 SliceMin = Vector3.zero;
-
-        public Vector3 SliceMax = Vector3.one;
-
-        // Scale max n' min
-        public float ScaleMax;
-        public float ScaleMin;
-
-        // Value thresholding
+        [Header("Thresholds")]        
         [Range(0, 1)] public float ThresholdMin = 0;
         [Range(0, 1)] public float ThresholdMax = 1;
 
-        [Space(10)] public Material RayMarchingMaterial;
-        public string FileName;
+        [Header("Color Mapping")]
         public ColorMapEnum ColorMap = ColorMapEnum.Inferno;
+        public ScalingType ScalingType = ScalingType.Linear;
+        [Range(-1, 1)] public float ScalingBias = 0.0f;
+        [Range(0, 5)] public float ScalingContrast = 1.0f;
+        public float ScalingAlpha = 1000.0f;
+        [Range(0, 5)] public float ScalingGamma = 1.0f;
+
+        [Header("File Input")]
+        public string FileName;
+        public Material RayMarchingMaterial;
+
+        [Header("Debug Settings")]
+        public bool FactorOverride = false;
+        public int XFactor = 1;
+        public int YFactor = 1;
+        public int ZFactor = 1;
+        public float ScaleMax;
+        public float ScaleMin;
+        public Vector3 SliceMin = Vector3.zero;
+        public Vector3 SliceMax = Vector3.one;
+
         public Vector3 InitialPosition { get; private set; }
         public Quaternion InitialRotation { get; private set; }
         public Vector3 InitialScale { get; private set; }
@@ -105,6 +113,12 @@ namespace VolumeData
             public static readonly int ColorMapIndex = Shader.PropertyToID("_ColorMapIndex");
             public static readonly int ScaleMin = Shader.PropertyToID("_ScaleMin");
             public static readonly int ScaleMax = Shader.PropertyToID("_ScaleMax");
+
+            public static readonly int ScaleType = Shader.PropertyToID("ScaleType");
+            public static readonly int ScaleBias = Shader.PropertyToID("ScaleBias");
+            public static readonly int ScaleContrast = Shader.PropertyToID("ScaleContrast");
+            public static readonly int ScaleAlpha = Shader.PropertyToID("ScaleAlpha");
+            public static readonly int ScaleGamma = Shader.PropertyToID("ScaleGamma");
 
             public static readonly int FoveationStart = Shader.PropertyToID("FoveationStart");
             public static readonly int FoveationEnd = Shader.PropertyToID("FoveationEnd");
@@ -261,9 +275,9 @@ namespace VolumeData
                 Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
                 Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
                 Vector3Int newVoxelCursor = new Vector3Int(
-                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int) _dataSet.XDim),
-                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, 1, (int) _dataSet.YDim),
-                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1, 1, (int) _dataSet.ZDim)
+                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),
+                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, 1, (int)_dataSet.YDim),
+                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1, 1, (int)_dataSet.ZDim)
                 );
 
                 var existingVoxel = start ? RegionStartVoxel : RegionEndVoxel;
@@ -290,7 +304,7 @@ namespace VolumeData
 
                 _regionOutline.active = true;
             }
-        }               
+        }
 
         public void ClearRegion()
         {
@@ -319,7 +333,7 @@ namespace VolumeData
         }
 
         public void LoadRegionData()
-        {            
+        {
             Vector3Int deltaRegion = RegionStartVoxel - RegionEndVoxel;
             Vector3Int regionSize = new Vector3Int(Math.Abs(deltaRegion.x) + 1, Math.Abs(deltaRegion.y) + 1, Math.Abs(deltaRegion.z) + 1);
             int xFactor, yFactor, zFactor;
@@ -339,7 +353,13 @@ namespace VolumeData
             _materialInstance.SetFloat(MaterialID.ColorMapIndex, ColorMap.GetHashCode());
             _materialInstance.SetFloat(MaterialID.ScaleMax, ScaleMax);
             _materialInstance.SetFloat(MaterialID.ScaleMin, ScaleMin);
-           
+
+            _materialInstance.SetInt(MaterialID.ScaleType, ScalingType.GetHashCode());
+            _materialInstance.SetFloat(MaterialID.ScaleBias, ScalingBias);
+            _materialInstance.SetFloat(MaterialID.ScaleContrast, ScalingContrast);
+            _materialInstance.SetFloat(MaterialID.ScaleAlpha, ScalingAlpha);
+            _materialInstance.SetFloat(MaterialID.ScaleGamma, ScalingGamma);
+
             _materialInstance.SetFloat(MaterialID.FoveationStart, FoveationStart);
             _materialInstance.SetFloat(MaterialID.FoveationEnd, FoveationEnd);
             if (FoveatedRendering)

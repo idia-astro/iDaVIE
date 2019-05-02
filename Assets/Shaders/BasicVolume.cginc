@@ -3,6 +3,13 @@
 
 #include "./Shared/Vignette.cginc"
 
+#define LINEAR 0
+#define LOG 1
+#define SQRT 2
+#define SQUARE 3
+#define POWER 4
+#define GAMMA 5
+
 struct Ray
 {
     float3 origin;
@@ -44,6 +51,13 @@ uniform sampler2D _CameraDepthTexture;
 // Highlight selection
 uniform float3 HighlightMin, HighlightMax;
 uniform float HighlightSaturateFactor;
+
+// Non-linear scaling
+uniform int ScaleType;
+uniform float ScaleAlpha;
+uniform float ScaleGamma;
+uniform float ScaleBias;
+uniform float ScaleContrast;
 
 // Implementation: NVIDIA. Original algorithm : HyperGraph
 // http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
@@ -188,7 +202,7 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     HighlightMin = (HighlightMin + regionOffset + 0.5f) * regionScale;
     HighlightMax = (HighlightMax + regionOffset + 0.5f) * regionScale;
 
-    bool maxInHighlightBounds = true;
+    bool maxInHighlightBounds = false;
     for (int i = 0; i < requiredSteps; i++)
     {
         accumulateSample(currentRayPosition, rayValue, maxInHighlightBounds);
@@ -207,12 +221,39 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     // Apply linear color mapping after threshold adjustments
     float colorMapOffset = 1.0 - (0.5 + _ColorMapIndex) / _NumColorMaps;
     float thresholdRange = _ThresholdMax - _ThresholdMin;
-    float colorMapValue = (rayValue - _ThresholdMin) / thresholdRange;
+    float x = (rayValue - _ThresholdMin) / thresholdRange;
+    
+    // Non-linear scaling
+    if (ScaleType == SQUARE)
+    {
+        x = x * x;
+    }
+    else if (ScaleType == SQRT)
+    {
+        x = sqrt(x);
+    }
+    else if (ScaleType == LOG)
+    {
+        x = clamp(log(ScaleAlpha * x + 1.0) / log(ScaleAlpha), 0.0, 1.0);
+    }
+    else if (ScaleType == POWER)
+    {
+        x = (pow(ScaleAlpha, x) - 1.0) / ScaleAlpha;
+    }
+    else if (ScaleType == GAMMA)
+    {
+        x = pow(x, ScaleGamma);
+    }
+
+    // bias mod
+    x = clamp(x - ScaleBias, 0.0, 1.0);
+    // contrast mod
+    x = clamp((x - 0.5) * ScaleContrast + 0.5, 0.0, 1.0);
     
     // Interpolate between greyscale output and colormapped output, depending on the highlight dim factor and whether the ray value is within the highlight region
     float colorFraction = maxInHighlightBounds ? 1.0f : HighlightSaturateFactor;
-    float4 colorMapColor = float4(tex2D(_ColorMap, float2(colorMapValue, colorMapOffset)).xyz, colorMapValue);
-    float4 greyscaleColor = colorMapValue;
+    float4 colorMapColor = float4(tex2D(_ColorMap, float2(x, colorMapOffset)).xyz, x);
+    float4 greyscaleColor = x;
     float4 color = lerp(greyscaleColor, colorMapColor, colorFraction);
 
     return GetVignetteFromWeight(vignetteWeight, color);
