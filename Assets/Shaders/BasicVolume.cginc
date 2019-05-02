@@ -82,8 +82,7 @@ float dataLookup(float3 uvw, float scaleMin, float scaleFactor)
 {
     float data = tex3Dlod(_DataCube, float4(uvw, 0)).r;
     data = (data - scaleMin) * scaleFactor;
-    // apply value threshold    
-    return (data >= _ThresholdMin && data <= _ThresholdMax) ? data : 0.0f;
+    return data;
 }
 
 VertexShaderOuput vertexShaderVolume(VertexShaderInput v)
@@ -202,13 +201,13 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     bool maxInHighlightBounds = true;
     for (int i = 0; i < requiredSteps; i++)
     {
-
         accumulateSample(currentRayPosition, scaleFactor, rayValue, maxInHighlightBounds);
         currentRayPosition += adjustedStepVector;
     }
     
     // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
     float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
+    currentRayPosition += stepVector * remainingStepLength * regionScale;
     accumulateSample(currentRayPosition, scaleFactor, rayValue, maxInHighlightBounds);
     rayValue = clamp(rayValue, 0, 1);
 
