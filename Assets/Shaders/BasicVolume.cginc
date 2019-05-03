@@ -3,6 +3,13 @@
 
 #include "./Shared/Vignette.cginc"
 
+#define LINEAR 0
+#define LOG 1
+#define SQRT 2
+#define SQUARE 3
+#define POWER 4
+#define GAMMA 5
+
 struct Ray
 {
     float3 origin;
@@ -41,6 +48,17 @@ uniform int FoveatedStepsLow, FoveatedStepsHigh;
 // Depth buffer
 uniform sampler2D _CameraDepthTexture;
 
+// Highlight selection
+uniform float3 HighlightMin, HighlightMax;
+uniform float HighlightSaturateFactor;
+
+// Non-linear scaling
+uniform int ScaleType;
+uniform float ScaleAlpha;
+uniform float ScaleGamma;
+uniform float ScaleBias;
+uniform float ScaleContrast;
+
 // Implementation: NVIDIA. Original algorithm : HyperGraph
 // http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
 bool IntersectBox(Ray r, float3 boxmin, float3 boxmax, out float tnear, out float tfar)
@@ -73,15 +91,6 @@ bool IntersectBox(Ray r, float3 boxmin, float3 boxmax, out float tnear, out floa
     return hit;
 }
 
-// Data lookup from 3D texture. Slice and value thresholds are applied
-float dataLookup(float3 uvw, float scaleMin, float scaleFactor)
-{
-    float data = tex3Dlod(_DataCube, float4(uvw, 0)).r;
-    data = (data - scaleMin) * scaleFactor;
-    // apply value threshold    
-    return (data >= _ThresholdMin && data <= _ThresholdMax) ? data : 0.0;
-}
-
 VertexShaderOuput vertexShaderVolume(VertexShaderInput v)
 {
     VertexShaderOuput v2f;
@@ -109,6 +118,23 @@ float numSamples(float2 position)
     float2 delta = center - position;
     float radius = length(delta) / _ScreenParams.x;
     return floor(FoveatedStepsLow + (FoveatedStepsHigh - FoveatedStepsLow) * (1.0 - smoothstep(FoveationStart, FoveationEnd, radius)));
+}
+
+bool positionInBox(float3 position, float3 boxMin, float3 boxMax)
+{
+    float3 stepTest = step(boxMin, position) * step(position, boxMax);
+    return stepTest.x * stepTest.y * stepTest.z > 0.0f;
+}
+
+void accumulateSample(float3 position, inout float currentValue, inout bool maxInHighlightBounds)
+{
+    float stepValue = tex3Dlod(_DataCube, float4(position, 0)).r;
+    if (stepValue >= currentValue)
+    {
+        bool stepTest = positionInBox(position, HighlightMin, HighlightMax);
+        maxInHighlightBounds = stepTest || (maxInHighlightBounds && (stepValue == currentValue));
+        currentValue = stepValue;
+    }
 }
 
 fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
@@ -166,35 +192,69 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     float3 regionScale = 1.0f / (_SliceMax - _SliceMin);
     float3 regionOffset = -(_SliceMin + 0.5f);
     
-    float rayValue = 0;
+    float rayValue = 0.0f;
     
     // For transforming from object space to region space
-    currentRayPosition += regionOffset;
-    currentRayPosition *= regionScale;
+    currentRayPosition = (currentRayPosition + regionOffset) * regionScale;
     float3 adjustedStepVector = stepVector * stepLength * regionScale;
-    // For transforming from raw values to scaled values in range [0, 1]
-    float scaleFactor = 1.0 / (_ScaleMax - _ScaleMin);
     
+    // transform highlight bounds from object space to region space
+    HighlightMin = (HighlightMin + regionOffset + 0.5f) * regionScale;
+    HighlightMax = (HighlightMax + regionOffset + 0.5f) * regionScale;
+
+    bool maxInHighlightBounds = false;
     for (int i = 0; i < requiredSteps; i++)
     {
-        float stepValue = dataLookup(currentRayPosition, _ScaleMin, scaleFactor);
-        rayValue = max(stepValue, rayValue);
+        accumulateSample(currentRayPosition, rayValue, maxInHighlightBounds);
         currentRayPosition += adjustedStepVector;
     }
     
     // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
     float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
     currentRayPosition += stepVector * remainingStepLength * regionScale;
-    float stepValue = dataLookup(currentRayPosition, _ScaleMin, scaleFactor);
-    rayValue = max(stepValue, rayValue);
-    rayValue = clamp(rayValue, 0, 1);
+    accumulateSample(currentRayPosition, rayValue, maxInHighlightBounds);
+    
+    // transform into threshold space
+    rayValue = (rayValue - _ScaleMin) / (_ScaleMax - _ScaleMin);
+    rayValue = clamp(rayValue, _ThresholdMin, _ThresholdMax);
 
     // Apply linear color mapping after threshold adjustments
     float colorMapOffset = 1.0 - (0.5 + _ColorMapIndex) / _NumColorMaps;
     float thresholdRange = _ThresholdMax - _ThresholdMin;
-    float colorMapValue = (rayValue - _ThresholdMin) / thresholdRange;
-    float4 color = tex2D(_ColorMap, float2(colorMapValue, colorMapOffset));
-        
-    // Set the ouptut color's opacity to the ray value
-    return GetVignetteFromWeight(vignetteWeight, float4(color.xyz, rayValue));
+    float x = (rayValue - _ThresholdMin) / thresholdRange;
+    
+    // Non-linear scaling
+    if (ScaleType == SQUARE)
+    {
+        x = x * x;
+    }
+    else if (ScaleType == SQRT)
+    {
+        x = sqrt(x);
+    }
+    else if (ScaleType == LOG)
+    {
+        x = clamp(log(ScaleAlpha * x + 1.0) / log(ScaleAlpha), 0.0, 1.0);
+    }
+    else if (ScaleType == POWER)
+    {
+        x = (pow(ScaleAlpha, x) - 1.0) / ScaleAlpha;
+    }
+    else if (ScaleType == GAMMA)
+    {
+        x = pow(x, ScaleGamma);
+    }
+
+    // bias mod
+    x = clamp(x - ScaleBias, 0.0, 1.0);
+    // contrast mod
+    x = clamp((x - 0.5) * ScaleContrast + 0.5, 0.0, 1.0);
+    
+    // Interpolate between greyscale output and colormapped output, depending on the highlight dim factor and whether the ray value is within the highlight region
+    float colorFraction = maxInHighlightBounds ? 1.0f : HighlightSaturateFactor;
+    float4 colorMapColor = float4(tex2D(_ColorMap, float2(x, colorMapOffset)).xyz, x);
+    float4 greyscaleColor = x;
+    float4 color = lerp(greyscaleColor, colorMapColor, colorFraction);
+
+    return GetVignetteFromWeight(vignetteWeight, color);
 }

@@ -7,7 +7,9 @@ using UnityEngine.XR;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
 using Vectrosity;
+using System.Diagnostics;
 
+using Debug = UnityEngine.Debug;
 using VRHand = Valve.VR.InteractionSystem.Hand;
 
 [RequireComponent(typeof(Player))]
@@ -71,6 +73,7 @@ public class VolumeInputController : MonoBehaviour
 
     // Selecting
     private VRHand _selectingHand;
+    private Stopwatch selectionStopwatch = new Stopwatch();
 
     // VR-family dependent values
     private VRFamily _vrFamily;
@@ -229,6 +232,9 @@ public class VolumeInputController : MonoBehaviour
             dataSet.SetRegionPosition(startPosition, true);
         }
 
+        selectionStopwatch.Reset();
+        selectionStopwatch.Start();
+
         Debug.Log($"Entering selecting state with hand {selectingHand.handType}!");
     }
 
@@ -236,6 +242,18 @@ public class VolumeInputController : MonoBehaviour
     {
         _selectingHand = null;
         _isSelecting = false;
+
+        selectionStopwatch.Stop();
+
+        // Clear region selection by clicking selection
+        if (selectionStopwatch.ElapsedMilliseconds < 200)
+        {
+            foreach (var dataSet in _volumeDataSets)
+            {
+                dataSet.ClearRegion();
+            }
+        }
+
         Debug.Log("Leaving selecting state");
     }
 
