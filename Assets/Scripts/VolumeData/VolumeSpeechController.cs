@@ -23,24 +23,33 @@ namespace VolumeData
         private VolumeDataSetRenderer[] _dataSets;
 
         private SpeechControllerState _state;
-                
         // Keywords
-        private string _keywordEditThresholdMin = "edit min";
-        private string _keywordEditThresholdMax = "edit max";
-        private string _keywordSaveThreshold = "save";
-        private string _keywordResetThreshold = "reset threshold";
-        private string _keywordResetTransform = "reset transform";
-        private string _keywordColormapPlasma = "color map plasma";
-        private string _keywordColormapRainbow = "color map rainbow";
-        private string _keywordColormapMagma = "color map magma";
-        private string _keywordColormapInferno = "color map inferno";
-        private string _keywordColormapViridis = "color map viridis";
-        private string _keywordColormapCubeHelix = "color map cube helix";
-        private string _keywordNextDataSet = "next data set";
-        private string _keywordPrevDataSet = "previous data set";
-        private string _keywordCrop = "crop selection";
-        private string _keywordResetCrop = "reset crop";
-
+        private struct Keywords
+        {
+            public static readonly string EditThresholdMin = "edit min";
+            public static readonly string EditThresholdMax = "edit max";
+            public static readonly string SaveThreshold = "save";
+            public static readonly string ResetThreshold = "reset threshold";
+            public static readonly string ResetTransform = "reset transform";
+            public static readonly string ColormapPlasma = "color map plasma";
+            public static readonly string ColormapRainbow = "color map rainbow";
+            public static readonly string ColormapMagma = "color map magma";
+            public static readonly string ColormapInferno = "color map inferno";
+            public static readonly string ColormapViridis = "color map viridis";
+            public static readonly string ColormapCubeHelix = "color map cube helix";
+            public static readonly string NextDataSet = "next data set";
+            public static readonly string PreviousDataSet = "previous data set";
+            public static readonly string CropSelection = "crop selection";
+            public static readonly string ResetCropSelection = "reset crop";
+            public static readonly string MaskDisabled = "mask off";
+            public static readonly string MaskEnabled = "mask on";
+            public static readonly string MaskInverted = "mask invert";
+            public static readonly string[] All = { EditThresholdMin, EditThresholdMax, SaveThreshold, ResetThreshold, ResetTransform, 
+                ColormapPlasma, ColormapRainbow, ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix,
+                NextDataSet, PreviousDataSet, CropSelection, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted
+            };
+        }
+   
         private KeywordRecognizer _speechKeywordRecognizer;
         private float previousControllerHeight;
 
@@ -49,16 +58,8 @@ namespace VolumeData
 
         void Start()
         {
-            _dataSets = GetComponentsInChildren<VolumeDataSetRenderer>(true);
-            string[] keywords =
-            {
-                _keywordEditThresholdMin, _keywordEditThresholdMax, _keywordSaveThreshold,
-                _keywordResetThreshold, _keywordResetTransform,
-                _keywordColormapPlasma, _keywordColormapRainbow, _keywordColormapMagma, _keywordColormapInferno,
-                _keywordColormapViridis, _keywordColormapCubeHelix,
-                _keywordNextDataSet, _keywordPrevDataSet, _keywordCrop, _keywordResetCrop
-            };
-            _speechKeywordRecognizer = new KeywordRecognizer(keywords, ConfidenceLevel.Medium);
+            _dataSets = GetComponentsInChildren<VolumeDataSetRenderer>(true);            
+            _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, ConfidenceLevel.Medium);
             _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
 
             _speechKeywordRecognizer.Start();
@@ -71,67 +72,79 @@ namespace VolumeData
             builder.AppendFormat("\tTimestamp: {0}{1}", args.phraseStartTime, Environment.NewLine);
             builder.AppendFormat("\tDuration: {0} seconds{1}", args.phraseDuration.TotalSeconds, Environment.NewLine);
             Debug.Log(builder.ToString());
-            if (args.text == _keywordEditThresholdMin)
+            if (args.text == Keywords.EditThresholdMin)
             {
                 _state = SpeechControllerState.EditThresholdMin;
                 previousControllerHeight = EditingHand.transform.position.y;
             }
-            else if (args.text == _keywordEditThresholdMax)
+            else if (args.text == Keywords.EditThresholdMax)
             {
                 _state = SpeechControllerState.EditThresholdMax;
                 previousControllerHeight = EditingHand.transform.position.y;
             }
-            else if (args.text == _keywordSaveThreshold)
+            else if (args.text == Keywords.SaveThreshold)
             {
                 _state = SpeechControllerState.Idle;
             }
-            else if (args.text == _keywordResetThreshold)
+            else if (args.text == Keywords.ResetThreshold)
             {
                 resetThreshold();
             }
-            else if (args.text == _keywordResetTransform)
+            else if (args.text == Keywords.ResetTransform)
             {
                 resetTransform();
             }
-            else if (args.text == _keywordNextDataSet)
+            else if (args.text == Keywords.NextDataSet)
             {
                 stepDataSet(true);
             }
-            else if (args.text == _keywordPrevDataSet)
+            else if (args.text == Keywords.PreviousDataSet)
             {
                 stepDataSet(false);
             }
-            else if (args.text == _keywordColormapPlasma)
+            else if (args.text == Keywords.ColormapPlasma)
             {
                 setColorMap(ColorMapEnum.Plasma);
             }
-            else if (args.text == _keywordColormapRainbow)
+            else if (args.text == Keywords.ColormapRainbow)
             {
                 setColorMap(ColorMapEnum.Rainbow);
             }
-            else if (args.text == _keywordColormapMagma)
+            else if (args.text == Keywords.ColormapMagma)
             {
                 setColorMap(ColorMapEnum.Magma);
             }
-            else if (args.text == _keywordColormapInferno)
+            else if (args.text == Keywords.ColormapInferno)
             {
                 setColorMap(ColorMapEnum.Inferno);
             }
-            else if (args.text == _keywordColormapViridis)
+            else if (args.text == Keywords.ColormapViridis)
             {
                 setColorMap(ColorMapEnum.Viridis);
             }
-            else if (args.text == _keywordColormapCubeHelix)
+            else if (args.text == Keywords.ColormapCubeHelix)
             {
                 setColorMap(ColorMapEnum.Cubehelix);
             }
-            else if (args.text == _keywordCrop)
+            else if (args.text == Keywords.CropSelection)
             {
                 cropDataSet();
             }
-            else if (args.text == _keywordResetCrop)
+            else if (args.text == Keywords.ResetCropSelection)
             {
                 resetCropDataSet();
+            }
+            else if (args.text == Keywords.MaskDisabled)
+            {
+                setMask(MaskMode.Disabled);
+            }
+            else if (args.text == Keywords.MaskEnabled)
+            {
+                setMask(MaskMode.Enabled);
+            }
+            else if (args.text == Keywords.MaskInverted)
+            {
+                setMask(MaskMode.Inverted);
             }
         }
 
@@ -240,6 +253,14 @@ namespace VolumeData
             if (_activeDataSet)
             {
                 _activeDataSet.ResetCrop();
+            }
+        }
+
+        private void setMask(MaskMode mode)
+        {
+            if (_activeDataSet)
+            {
+                _activeDataSet.MaskMode = mode;
             }
         }
 

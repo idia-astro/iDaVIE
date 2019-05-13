@@ -23,6 +23,13 @@ namespace VolumeData
         Gamma = 5
     }
 
+    public enum MaskMode
+    {
+        Disabled = 0,
+        Enabled = 1,
+        Inverted = 2
+    }
+
 
     public class VolumeDataSetRenderer : MonoBehaviour
     {
@@ -32,6 +39,7 @@ namespace VolumeData
         // Step control
         [Range(16, 512)] public int MaxSteps = 192;
         public long MaximumCubeSizeInMB = 250;
+        public MaskMode MaskMode = MaskMode.Disabled;
         public TextureFilterEnum TextureFilter = TextureFilterEnum.Point;
 
         // Jitter factor
@@ -68,7 +76,7 @@ namespace VolumeData
 
         [Header("File Input")]
         public string FileName;
-        public string MaskFileName;
+        public string MaskFileName;        
         public Material RayMarchingMaterial;
 
         [Header("Debug Settings")]
@@ -105,6 +113,8 @@ namespace VolumeData
         private struct MaterialID
         {
             public static readonly int DataCube = Shader.PropertyToID("_DataCube");
+            public static readonly int MaskCube = Shader.PropertyToID("MaskCube");
+            public static readonly int MaskMode = Shader.PropertyToID("MaskMode");
             public static readonly int NumColorMaps = Shader.PropertyToID("_NumColorMaps");
             public static readonly int SliceMin = Shader.PropertyToID("_SliceMin");
             public static readonly int SliceMax = Shader.PropertyToID("_SliceMax");
@@ -153,7 +163,6 @@ namespace VolumeData
             {
                 _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, true);
                 _maskDataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
-
             }
 
             _renderer = GetComponent<MeshRenderer>();
@@ -162,6 +171,12 @@ namespace VolumeData
             _materialInstance.SetInt(MaterialID.NumColorMaps, ColorMapUtils.NumColorMaps);
             _materialInstance.SetFloat(MaterialID.FoveationStart, FoveationStart);
             _materialInstance.SetFloat(MaterialID.FoveationEnd, FoveationEnd);
+
+            if (_maskDataSet != null)
+            {
+                _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.DataCube);
+            }
+
             _renderer.material = _materialInstance;
 
             // Set initial values (for resetting later)
@@ -330,6 +345,10 @@ namespace VolumeData
             SliceMax = Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
             LoadRegionData();
             _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.RegionCube);
+            if (_maskDataSet != null)
+            {
+                _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
+            }
         }
 
         public void ResetCrop()
@@ -337,6 +356,10 @@ namespace VolumeData
             SliceMin = -0.5f * Vector3.one;
             SliceMax = +0.5f * Vector3.one;
             _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.DataCube);
+            if (_maskDataSet != null)
+            {
+                _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.DataCube);
+            }
         }
 
         public void LoadRegionData()
@@ -346,6 +369,10 @@ namespace VolumeData
             int xFactor, yFactor, zFactor;
             _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, regionSize.x, regionSize.y, regionSize.z, out xFactor, out yFactor, out zFactor);
             _dataSet.GenerateCroppedVolumeTexture(TextureFilter, RegionStartVoxel, RegionEndVoxel, new Vector3Int(xFactor, yFactor, zFactor));
+            if (_maskDataSet != null)
+            {
+                _maskDataSet.GenerateCroppedVolumeTexture(TextureFilter, RegionStartVoxel, RegionEndVoxel, new Vector3Int(xFactor, yFactor, zFactor));
+            }
         }
 
         // Update is called once per frame
@@ -396,6 +423,15 @@ namespace VolumeData
             else
             {
                 _materialInstance.SetFloat(MaterialID.HighlightSaturateFactor, 1f);
+            }
+
+            if (_maskDataSet != null)
+            {
+                _materialInstance.SetInt(MaterialID.MaskMode, MaskMode.GetHashCode());
+            }
+            else
+            {
+                _materialInstance.SetInt(MaterialID.MaskMode, MaskMode.Disabled.GetHashCode());
             }
 
             _materialInstance.SetFloat(MaterialID.VignetteFadeStart, VignetteFadeStart);
