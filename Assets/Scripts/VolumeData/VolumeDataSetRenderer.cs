@@ -100,7 +100,7 @@ namespace VolumeData
         private MeshRenderer _renderer;
         private Material _materialInstance;
         private VolumeDataSet _dataSet;
-        private VolumeDataSet _maskDataSet;
+        private VolumeDataSet _maskDataSet = null;
         #region Material Property IDs
         private struct MaterialID
         {
@@ -407,6 +407,8 @@ namespace VolumeData
         public void OnDestroy()
         {
             _dataSet.CleanUp();
+            if (_maskDataSet != null)
+                _maskDataSet.CleanUp();
         }
     }
 }
