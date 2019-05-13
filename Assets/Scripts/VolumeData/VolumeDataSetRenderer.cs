@@ -23,6 +23,7 @@ namespace VolumeData
         Gamma = 5
     }
 
+
     public class VolumeDataSetRenderer : MonoBehaviour
     {
         public ColorMapDelegate OnColorMapChanged;
@@ -67,6 +68,7 @@ namespace VolumeData
 
         [Header("File Input")]
         public string FileName;
+        public string MaskFileName;
         public Material RayMarchingMaterial;
 
         [Header("Debug Settings")]
@@ -98,7 +100,7 @@ namespace VolumeData
         private MeshRenderer _renderer;
         private Material _materialInstance;
         private VolumeDataSet _dataSet;
-
+        private VolumeDataSet _maskDataSet;
         #region Material Property IDs
         private struct MaterialID
         {
@@ -139,15 +141,20 @@ namespace VolumeData
 
         public void Start()
         {
-            _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName);
+            _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false);
             if (!FactorOverride)
             {
                 _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
             }
 
             _dataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
-            ScaleMin = _dataSet.CubeMin;
-            ScaleMax = _dataSet.CubeMax;
+            DataAnalysis.FindMaxMin(_dataSet.FitsData, _dataSet.NumPoints, out ScaleMax, out ScaleMin);
+            if (!String.IsNullOrEmpty(MaskFileName))
+            {
+                _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, true);
+                _maskDataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
+
+            }
 
             _renderer = GetComponent<MeshRenderer>();
             _materialInstance = Instantiate(RayMarchingMaterial);

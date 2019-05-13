@@ -10,11 +10,12 @@ public class DataAnalysis
     public static extern int FindMaxMin(IntPtr dataPtr, long numberElements, out float maxResult, out float minResult);
 
     [DllImport("data_analysis_tool")]
-    public static extern int DataDownsampleByFactor(IntPtr dataPtr, out IntPtr newDataPtr, long dimX, long dimY, long dimZ, int factorX, int factorY, int factorZ);
-
-    [DllImport("data_analysis_tool")]
     public static extern int DataCropAndDownsample(IntPtr dataPtr, out IntPtr newDataPtr, long dimX, long dimY, long dimZ, long cropX1, long cropY1, long cropZ1, 
        long cropX2, long cropY2, long cropZ2, int factorX, int factorY, int factorZ);
+
+    [DllImport("data_analysis_tool")]
+    public static extern int MaskCropAndDownsample(IntPtr dataPtr, out IntPtr newDataPtr, long dimX, long dimY, long dimZ, long cropX1, long cropY1, long cropZ1,
+   long cropX2, long cropY2, long cropZ2, int factorX, int factorY, int factorZ);
 
     [DllImport("data_analysis_tool")]
     public static extern int GetVoxelValue(IntPtr dataPtr, out float voxelValue, long dimX, long dimY, long dimZ, long x, long y, long z);

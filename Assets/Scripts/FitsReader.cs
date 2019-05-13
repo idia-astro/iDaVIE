@@ -45,5 +45,8 @@ public class FitsReader {
     public static extern int FitsReadImageFloat(IntPtr fptr, int dims, long nelem, out IntPtr array, out int status);
 
     [DllImport("fits_reader")]
+    public static extern int FitsReadImageInt16(IntPtr fptr, int dims, long nelem, out IntPtr array, out int status);
+
+    [DllImport("fits_reader")]
     public static extern int FreeMemory(IntPtr pointerToDelete);
 }
