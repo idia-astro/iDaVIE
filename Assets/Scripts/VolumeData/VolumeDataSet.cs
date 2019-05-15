@@ -16,17 +16,17 @@ namespace VolumeData
         public long YDim { get; private set; }
         public long ZDim { get; private set; }
 
-        public float CubeMin { get; private set; }
-        public float CubeMax { get; private set; }
-
         public long NumPoints => XDim * YDim * ZDim;
         public long[] Dims => new[] {XDim, YDim, ZDim};
 
-        private IntPtr _fitsCubeData;
+        public bool IsMask { get; private set; }
 
-        public static VolumeDataSet LoadDataFromFitsFile(string fileName)
+        public IntPtr FitsData;
+
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
+            volumeDataSet.IsMask = isMask;
             IntPtr fptr;
             int status = 0;
             int cubeDimensions;
@@ -54,36 +54,66 @@ namespace VolumeData
             FitsReader.FreeMemory(dataPtr);
             long numberDataPoints = cubeSize[0] * cubeSize[1] * cubeSize[2];
             IntPtr fitsDataPtr;
-            if (FitsReader.FitsReadImageFloat(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
+            if (isMask)
             {
-                Debug.Log("Fits Read cube data error #" + status.ToString());
-                FitsReader.FitsCloseFile(fptr, out status);
+                if (FitsReader.FitsReadImageInt16(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
+                {
+                    Debug.Log("Fits Read mask cube data error #" + status.ToString());
+                    FitsReader.FitsCloseFile(fptr, out status);
+                }
+            }
+                else
+            {
+                if (FitsReader.FitsReadImageFloat(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
+                {
+                    Debug.Log("Fits Read cube data error #" + status.ToString());
+                    FitsReader.FitsCloseFile(fptr, out status);
+                }
             }
             FitsReader.FitsCloseFile(fptr, out status);
-            volumeDataSet._fitsCubeData = fitsDataPtr;
+            volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = cubeSize[0];
             volumeDataSet.YDim = cubeSize[1];
             volumeDataSet.ZDim = cubeSize[2];
-            volumeDataSet.findMinAndMax();
-
-
             return volumeDataSet;
         }
 
         public void GenerateVolumeTexture(TextureFilterEnum textureFilter, int xDownsample, int yDownsample, int zDownsample)
         {
+            TextureFormat textureFormat;
+            int elementSize;
+            if (IsMask)
+            {
+                textureFormat = TextureFormat.R16;
+                elementSize = sizeof(Int16);
+            }
+            else
+            {
+                textureFormat = TextureFormat.RFloat;
+                elementSize = sizeof(float);
+            }
             IntPtr reducedData;
             bool downsampled = false;
             if (xDownsample != 1 || yDownsample != 1 || zDownsample != 1)
             {
-                if (DataAnalysis.DataDownsampleByFactor(_fitsCubeData, out reducedData, XDim, YDim, ZDim, xDownsample, yDownsample, zDownsample) != 0)
+                if (IsMask)
                 {
-                    Debug.Log("Data cube downsample error!");
+                    if (DataAnalysis.MaskCropAndDownsample(FitsData, out reducedData, XDim, YDim, ZDim, 1, 1, 1, XDim, YDim, ZDim, xDownsample, yDownsample, zDownsample) != 0)
+                    {
+                        Debug.Log("Data cube downsample error!");
+                    }
+                }
+                else
+                {
+                    if (DataAnalysis.DataCropAndDownsample(FitsData, out reducedData, XDim, YDim, ZDim, 1, 1, 1, XDim, YDim, ZDim, xDownsample, yDownsample, zDownsample) != 0)
+                    {
+                        Debug.Log("Data cube downsample error!");
+                    }
                 }
                 downsampled = true;
             }
             else
-                reducedData = _fitsCubeData;
+                reducedData = FitsData;
             int[] cubeSize = new int[3];    //assume 3D cube
             cubeSize[0] = (int) XDim / xDownsample;
             cubeSize[1] = (int) YDim / yDownsample;
@@ -94,7 +124,7 @@ namespace VolumeData
                 cubeSize[1]++;
             if (ZDim % zDownsample != 0)
                 cubeSize[2]++;
-            Texture3D dataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], TextureFormat.RFloat, false);
+            Texture3D dataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], textureFormat, false);
             switch (textureFilter)
             {
                 case TextureFilterEnum.Point:
@@ -108,11 +138,11 @@ namespace VolumeData
                     break;
             }
             int sliceSize = cubeSize[0] * cubeSize[1];
-            Texture2D textureSlice = new Texture2D(cubeSize[0], cubeSize[1], TextureFormat.RFloat, false);
+            Texture2D textureSlice = new Texture2D(cubeSize[0], cubeSize[1], textureFormat, false);
             for (int slice = 0; slice < cubeSize[2]; slice++)
             {
-                textureSlice.LoadRawTextureData(IntPtr.Add(reducedData, slice * sliceSize * sizeof(float)),
-                    sliceSize * sizeof(float));
+                textureSlice.LoadRawTextureData(IntPtr.Add(reducedData, slice * sliceSize * elementSize),
+                    sliceSize * elementSize);
                 textureSlice.Apply();
                 Graphics.CopyTexture(textureSlice, 0, 0, 0, 0, cubeSize[0], cubeSize[1], dataCube, slice, 0, 0, 0);
             }
@@ -126,13 +156,29 @@ namespace VolumeData
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
+            TextureFormat textureFormat;
+            int elementSize;
             IntPtr regionData;
-            if (DataAnalysis.DataCropAndDownsample(_fitsCubeData, out regionData, XDim, YDim, ZDim, cropStart.x, cropStart.y, cropStart.z, 
-                cropEnd.x, cropEnd.y, cropEnd.z, downsample.x, downsample.y, downsample.z) != 0)                
+            if (IsMask)
             {
-                Debug.Log("Data cube downsample error!");
+                textureFormat = TextureFormat.R16;
+                elementSize = sizeof(Int16);
+                if (DataAnalysis.MaskCropAndDownsample(FitsData, out regionData, XDim, YDim, ZDim, cropStart.x, cropStart.y, cropStart.z,
+                    cropEnd.x, cropEnd.y, cropEnd.z, downsample.x, downsample.y, downsample.z) != 0)
+                {
+                    Debug.Log("Mask cube downsample error!");
+                }
             }
-
+            else
+            {
+                textureFormat = TextureFormat.RFloat;
+                elementSize = sizeof(float);
+                if (DataAnalysis.DataCropAndDownsample(FitsData, out regionData, XDim, YDim, ZDim, cropStart.x, cropStart.y, cropStart.z,
+                    cropEnd.x, cropEnd.y, cropEnd.z, downsample.x, downsample.y, downsample.z) != 0)
+                {
+                    Debug.Log("Data cube downsample error!");
+                }
+            }
             Vector3Int cubeSize = new Vector3Int();
             cubeSize.x = (Math.Abs(cropStart.x - cropEnd.x) + 1) / downsample.x;
             cubeSize.y = (Math.Abs(cropStart.y - cropEnd.y) + 1) / downsample.y;
@@ -144,7 +190,7 @@ namespace VolumeData
             if ((Math.Abs(cropStart.x - cropEnd.x) + 1) % downsample.z != 0)
                 cubeSize.z++;
                                
-            RegionCube = new Texture3D(cubeSize.x, cubeSize.y, cubeSize.z, TextureFormat.RFloat, false);
+            RegionCube = new Texture3D(cubeSize.x, cubeSize.y, cubeSize.z, textureFormat, false);
             switch (textureFilter)
             {
                 case TextureFilterEnum.Point:
@@ -158,11 +204,11 @@ namespace VolumeData
                     break;
             }
             int sliceSize = cubeSize.x * cubeSize.y;
-            Texture2D textureSlice = new Texture2D(cubeSize.x, cubeSize.y, TextureFormat.RFloat, false);
+            Texture2D textureSlice = new Texture2D(cubeSize.x, cubeSize.y, textureFormat, false);
             
             for (int slice = 0; slice < cubeSize.z; slice++)
             {
-                textureSlice.LoadRawTextureData(IntPtr.Add(regionData, slice * sliceSize * sizeof(float)),sliceSize * sizeof(float));
+                textureSlice.LoadRawTextureData(IntPtr.Add(regionData, slice * sliceSize * elementSize),sliceSize * elementSize);
                 textureSlice.Apply();
                 Graphics.CopyTexture(textureSlice, 0, 0, 0, 0, cubeSize.x, cubeSize.y, RegionCube, slice, 0, 0, 0);
             }
@@ -179,19 +225,8 @@ namespace VolumeData
             }
 
             float val;
-            DataAnalysis.GetVoxelValue(_fitsCubeData, out val, (int)XDim, (int)YDim, (int)ZDim, x, y, z);
+            DataAnalysis.GetVoxelValue(FitsData, out val, (int)XDim, (int)YDim, (int)ZDim, x, y, z);
             return val;
-        }
-
-        private void findMinAndMax()
-        {
-            long numberDataPoints = XDim * YDim * ZDim;
-            float minVal;
-            float maxVal;
-            DataAnalysis.FindMaxMin(_fitsCubeData, numberDataPoints, out maxVal, out minVal);
-            CubeMin = minVal;
-            CubeMax = maxVal;
-            Debug.Log("max and min vals: " + CubeMax + " and " + CubeMin);
         }
 
         public void FindDownsampleFactors(long maxCubeSizeInMb, out int xFactor, out int yFactor, out int zFactor)
@@ -224,7 +259,7 @@ namespace VolumeData
 
         public void CleanUp()
         {
-            FitsReader.FreeMemory(_fitsCubeData);
+            FitsReader.FreeMemory(FitsData);
         }
     }
 }

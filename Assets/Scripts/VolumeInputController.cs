@@ -82,14 +82,14 @@ public class VolumeInputController : MonoBehaviour
     {
         {VRFamily.Unknown, Vector3.zero},
         {VRFamily.Oculus, new Vector3(0.005f, -0.025f, -0.025f)},
-        {VRFamily.Vive, new Vector3(0, -0.09f, 0.04f)},
+        {VRFamily.Vive, new Vector3(0, -0.09f, 0.06f)},
         {VRFamily.WindowsMixedReality, new Vector3(-0.005f, -0.029f, -0.027f)}
     };
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsRight = new Dictionary<VRFamily, Vector3>
     {
         {VRFamily.Unknown, Vector3.zero},
         {VRFamily.Oculus, new Vector3(-0.005f, -0.025f, -0.025f)},
-        {VRFamily.Vive, new Vector3(0, -0.09f, 0.04f)},
+        {VRFamily.Vive, new Vector3(0, -0.09f, 0.06f)},
         {VRFamily.WindowsMixedReality, new Vector3(0.005f, -0.029f, -0.027f)}
     };
 

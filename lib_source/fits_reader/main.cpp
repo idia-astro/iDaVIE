@@ -97,6 +97,20 @@ extern "C"
 		return success;
 	}
 
+	DllExport int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array, int *status)
+	{
+		int anynul;
+		float nulval = 0;
+		int16_t* dataarray = new int16_t[nelem];
+		int64_t* startPix = new int64_t[dims];
+		for (int i = 0; i < dims; i++)
+			startPix[i] = 1;
+		int success = fits_read_pixll(fptr, TSHORT, startPix, nelem, &nulval, dataarray, &anynul, status);
+		delete[] startPix;
+		*array = dataarray;
+		return success;
+	}
+
 	DllExport int FreeMemory(void* ptrToDelete)
 	{
 		delete[] ptrToDelete;

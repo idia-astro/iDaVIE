@@ -10,6 +10,10 @@
 #define POWER 4
 #define GAMMA 5
 
+#define MASK_DISABLED 0
+#define MASK_ENABLED 1
+#define MASK_INVERTED 2
+
 struct Ray
 {
     float3 origin;
@@ -58,6 +62,10 @@ uniform float ScaleAlpha;
 uniform float ScaleGamma;
 uniform float ScaleBias;
 uniform float ScaleContrast;
+
+// Mask
+uniform int MaskMode;
+uniform sampler3D MaskCube;
 
 // Implementation: NVIDIA. Original algorithm : HyperGraph
 // http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
@@ -137,6 +145,30 @@ void accumulateSample(float3 position, inout float currentValue, inout bool maxI
     }
 }
 
+void accumulateSampleMasked(float3 position, inout float currentValue, inout bool maxInHighlightBounds)
+{
+    float maskValue = tex3Dlod(MaskCube, float4(position, 0)).r;
+    float stepValue = tex3Dlod(_DataCube, float4(position, 0)).r;
+    if (maskValue > 0.0f && stepValue >= currentValue)
+    {
+        bool stepTest = positionInBox(position, HighlightMin, HighlightMax);
+        maxInHighlightBounds = stepTest || (maxInHighlightBounds && (stepValue == currentValue));
+        currentValue = stepValue;
+    }
+}
+
+void accumulateSampleInverseMasked(float3 position, inout float currentValue, inout bool maxInHighlightBounds)
+{
+    float maskValue = tex3Dlod(MaskCube, float4(position, 0)).r;
+    float stepValue = tex3Dlod(_DataCube, float4(position, 0)).r;
+    if (maskValue == 0.0f && stepValue >= currentValue)
+    {
+        bool stepTest = positionInBox(position, HighlightMin, HighlightMax);
+        maxInHighlightBounds = stepTest || (maxInHighlightBounds && (stepValue == currentValue));
+        currentValue = stepValue;
+    }
+}
+
 fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
 {
     // Adapted from the Unity "Particles/Additive" built-in shader
@@ -203,16 +235,43 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     HighlightMax = (HighlightMax + regionOffset + 0.5f) * regionScale;
 
     bool maxInHighlightBounds = false;
-    for (int i = 0; i < requiredSteps; i++)
+    // TODO: make this a shader variant thing
+    if (MaskMode == 0)
     {
+        for (int i = 0; i < requiredSteps; i++)
+        {
+            accumulateSample(currentRayPosition, rayValue, maxInHighlightBounds);
+            currentRayPosition += adjustedStepVector;
+        }
+        // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
+        float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
+        currentRayPosition += stepVector * remainingStepLength * regionScale;
         accumulateSample(currentRayPosition, rayValue, maxInHighlightBounds);
-        currentRayPosition += adjustedStepVector;
     }
-    
-    // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
-    float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
-    currentRayPosition += stepVector * remainingStepLength * regionScale;
-    accumulateSample(currentRayPosition, rayValue, maxInHighlightBounds);
+    else if (MaskMode == 1)
+    {
+        for (int i = 0; i < requiredSteps; i++)
+        {
+            accumulateSampleMasked(currentRayPosition, rayValue, maxInHighlightBounds);
+            currentRayPosition += adjustedStepVector;
+        }
+        // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
+        float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
+        currentRayPosition += stepVector * remainingStepLength * regionScale;
+        accumulateSampleMasked(currentRayPosition, rayValue, maxInHighlightBounds);
+    }
+    else
+    {
+        for (int i = 0; i < requiredSteps; i++)
+        {
+            accumulateSampleInverseMasked(currentRayPosition, rayValue, maxInHighlightBounds);
+            currentRayPosition += adjustedStepVector;
+        }
+        // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
+        float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
+        currentRayPosition += stepVector * remainingStepLength * regionScale;
+        accumulateSampleInverseMasked(currentRayPosition, rayValue, maxInHighlightBounds);
+    }
     
     // transform into threshold space
     rayValue = (rayValue - _ScaleMin) / (_ScaleMax - _ScaleMin);
