@@ -21,6 +21,11 @@ extern "C"
 		return fits_movabs_hdu(fptr, hdunum, hdutype, status);
 	}
 
+	DllExport int FitsGetNumHeaderKeys(fitsfile *fptr, int *keysexist, int *morekeys, int *status)
+	{
+		return fits_get_hdrspace(fptr, keysexist, morekeys, status);
+	}
+
 	DllExport int FitsGetNumRows(fitsfile *fptr, long *nrows, int *status)
 	{
 		return fits_get_num_rows(fptr, nrows, status);
@@ -40,6 +45,12 @@ extern "C"
 		char *comm, int *status)
 	{
 		return fits_read_key(fptr, datatype, keyname, value, comm, status);
+	}
+
+	DllExport int FitsReadKeyN(fitsfile *fptr, int keynum, char *keyname, char *value,
+		char *comment, int *status)
+	{
+		return fits_read_keyn(fptr, keynum, keyname, value, comment, status);
 	}
 
 	DllExport int FitsGetImageDims(fitsfile *fptr, int  *dims, int *status)

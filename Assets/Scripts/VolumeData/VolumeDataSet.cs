@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using UnityEngine;
@@ -34,6 +36,14 @@ namespace VolumeData
             if (FitsReader.FitsOpenFile(out fptr, fileName, out status) != 0)
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
+            }
+            if (!isMask)
+            {
+                IDictionary<string, string> headerKeys = FitsReader.ExtractHeaders(fptr, out status);
+                foreach (KeyValuePair<string, string> entry in headerKeys)
+                {
+                    Debug.Log("Fits keys: " + entry.ToString());
+                }
             }
             if (FitsReader.FitsGetImageDims(fptr, out cubeDimensions, out status) != 0)
             {
