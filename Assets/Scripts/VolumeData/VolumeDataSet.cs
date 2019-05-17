@@ -23,6 +23,9 @@ namespace VolumeData
 
         public bool IsMask { get; private set; }
 
+        private double xRef, yRef, xRefPix, yRefPix, xDelt, yDelt, rot;
+        private string wcsType;
+
         public IntPtr FitsData;
 
         public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask)
@@ -81,6 +84,9 @@ namespace VolumeData
                 }
             }
             FitsReader.FitsCloseFile(fptr, out status);
+
+            
+
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = cubeSize[0];
             volumeDataSet.YDim = cubeSize[1];
@@ -265,6 +271,14 @@ namespace VolumeData
                 else
                     xFactor++;
             }
+        }
+
+        public Vector2 GetRADecFromXY(double XPix, double YPix)
+        {
+            double xPos, yPos;
+            MariusSoft.WCSTools.WCSUtil.ffwldp(XPix, YPix, xRef, yRef, xRefPix, yRefPix, xDelt, yDelt, rot, wcsType, out xPos, out yPos);
+            Vector2 raDec= new Vector2((float)xPos, (float)yPos);
+            return raDec;
         }
 
         public void CleanUp()
