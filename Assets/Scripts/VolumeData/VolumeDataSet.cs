@@ -23,8 +23,9 @@ namespace VolumeData
 
         public bool IsMask { get; private set; }
 
+        private Dictionary<string, string> HeaderDictionary;
         private double xRef, yRef, xRefPix, yRefPix, xDelt, yDelt, rot;
-        private string wcsType;
+        private string xCoord, yCoord, wcsProj;
 
         public IntPtr FitsData;
 
@@ -85,8 +86,8 @@ namespace VolumeData
             }
             FitsReader.FitsCloseFile(fptr, out status);
 
-            
 
+            volumeDataSet.ParseHeaderDict();
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = cubeSize[0];
             volumeDataSet.YDim = cubeSize[1];
@@ -275,10 +276,57 @@ namespace VolumeData
 
         public Vector2 GetRADecFromXY(double XPix, double YPix)
         {
-            double xPos, yPos;
-            MariusSoft.WCSTools.WCSUtil.ffwldp(XPix, YPix, xRef, yRef, xRefPix, yRefPix, xDelt, yDelt, rot, wcsType, out xPos, out yPos);
-            Vector2 raDec= new Vector2((float)xPos, (float)yPos);
+            double XPos, YPos;
+            MariusSoft.WCSTools.WCSUtil.ffwldp(XPix, YPix, xRef, yRef, xRefPix, yRefPix, xDelt, yDelt, rot, wcsProj, out XPos, out YPos);
+            Vector2 raDec= new Vector2((float)XPos, (float)YPos);
             return raDec;
+        }
+
+        public void ParseHeaderDict()
+        {
+            string xProj = "";
+            string yProj = "";
+            rot = 0;
+            foreach (KeyValuePair<string, string> entry in HeaderDictionary)
+            {
+                switch (entry.Key)
+                {
+                    case "CTYPE1":
+                        xCoord = entry.Value.Substring(0, 4);
+                        xProj = entry.Value.Substring(3, 4);
+                        break;
+                    case "CRPIX1":
+                        xRefPix = Convert.ToDouble(entry.Value);
+                        break;
+                    case "CDELT1":
+                        xDelt = Convert.ToDouble(entry.Value);
+                        break;
+                    case "CRVAL1":
+                        xRef = Convert.ToDouble(entry.Value);
+                        break;
+                    case "CTYPE2":
+                        yCoord = entry.Value.Substring(0, 4);
+                        yProj = entry.Value.Substring(3, 4);
+                        break;
+                    case "CRPIX2":
+                        yRefPix = Convert.ToDouble(entry.Value);
+                        break;
+                    case "CDELT2":
+                        yDelt = Convert.ToDouble(entry.Value);
+                        break;
+                    case "CRVAL2":
+                        yRef = Convert.ToDouble(entry.Value);
+                        break;
+                    case "CROTA2":
+                        rot = Convert.ToDouble(entry.Value);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if (xProj != yProj)
+                Debug.Log("Warning: WCS projection types do not agree for dimensions!");
+            wcsProj = xProj;
         }
 
         public void CleanUp()
