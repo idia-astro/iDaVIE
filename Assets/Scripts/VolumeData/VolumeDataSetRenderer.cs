@@ -440,6 +440,29 @@ namespace VolumeData
             _materialInstance.SetColor(MaterialID.VignetteColor, VignetteColor);
         }
 
+        public Vector3 GetFitsCoords(double X, double Y, double Z)
+        {
+            Vector2 raDec = _dataSet.GetRADecFromXY(X, Y);
+            float z = (float)_dataSet.GetVelocityFromZ(Z);
+            return new Vector3(raDec.x, raDec.y, z);
+        }
+
+        public string GetFitsCoordsString(double X, double Y, double Z)
+        {
+            Vector2 raDec = _dataSet.GetRADecFromXY(X, Y);
+            float vel = (float)_dataSet.GetVelocityFromZ(Z);
+            double raHours = (raDec.x * 12 / 180);
+            double raMin = (raHours - Math.Truncate(raHours)) * 60;
+            double raSec = Math.Truncate((raMin - Math.Truncate(raMin)) * 60 * 100)/100;
+
+            double decMin = Math.Abs((raDec.y - Math.Truncate(raDec.y)) * 60);
+            double decSec = Math.Truncate((decMin - Math.Truncate(decMin)) * 60 * 100) / 100;
+
+            string ra = $"{(int)raHours}:{(int)raMin}:{raSec}";
+            string dec = $"{(int)raDec.y}:{(int)decMin}:{decSec}";
+            return ra + ", " + dec + ", " + vel;
+        }
+
         public void OnDestroy()
         {
             _dataSet.CleanUp();

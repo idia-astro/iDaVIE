@@ -271,12 +271,17 @@ namespace VolumeData
             }
         }
 
-        public Vector2 GetRADecFromXY(Vector2 XY)
+        public Vector2 GetRADecFromXY(double X, double Y)
         {
             double XPos, YPos;
-            MariusSoft.WCSTools.WCSUtil.ffwldp(XY.x, XY.y, xRef, yRef, xRefPix, yRefPix, xDelt, yDelt, rot, wcsProj, out XPos, out YPos);
+            MariusSoft.WCSTools.WCSUtil.ffwldp(X, Y, xRef, yRef, xRefPix, yRefPix, xDelt, yDelt, rot, wcsProj, out XPos, out YPos);
             Vector2 raDec= new Vector2((float)XPos, (float)YPos);
             return raDec;
+        }
+
+        public double GetVelocityFromZ(double z)
+        {
+            return zRef + zDelt * (z - zRefPix);
         }
 
         public void ParseHeaderDict()

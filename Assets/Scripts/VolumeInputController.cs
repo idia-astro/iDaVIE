@@ -528,7 +528,9 @@ public class VolumeInputController : MonoBehaviour
                     if (voxelCoordinate.x >= 0 && _scalingTextComponent != null)
                     {
                         var voxelValue = dataSet.CursorValue;
-                        cursorString = $"({voxelCoordinate.x}, {voxelCoordinate.y}, {voxelCoordinate.z}): {voxelValue}";
+                        string raDecVel = dataSet.GetFitsCoordsString(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z);
+                        cursorString = $"({voxelCoordinate.x}, {voxelCoordinate.y}, {voxelCoordinate.z}): {voxelValue}" + System.Environment.NewLine
+                            + raDecVel;
                     }
                 }
             }
