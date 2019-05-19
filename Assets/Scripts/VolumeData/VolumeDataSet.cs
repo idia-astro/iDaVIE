@@ -23,9 +23,9 @@ namespace VolumeData
 
         public bool IsMask { get; private set; }
 
-        private Dictionary<string, string> HeaderDictionary;
-        private double xRef, yRef, xRefPix, yRefPix, xDelt, yDelt, rot;
-        private string xCoord, yCoord, wcsProj;
+        private IDictionary<string, string> _headerDictionary;
+        private double xRef, yRef, zRef, xRefPix, yRefPix, zRefPix, xDelt, yDelt, zDelt, rot;
+        private string xCoord, yCoord, zCoord, wcsProj;
 
         public IntPtr FitsData;
 
@@ -43,11 +43,8 @@ namespace VolumeData
             }
             if (!isMask)
             {
-                IDictionary<string, string> headerKeys = FitsReader.ExtractHeaders(fptr, out status);
-                foreach (KeyValuePair<string, string> entry in headerKeys)
-                {
-                    Debug.Log("Fits keys: " + entry.ToString());
-                }
+                volumeDataSet._headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
+                volumeDataSet.ParseHeaderDict();
             }
             if (FitsReader.FitsGetImageDims(fptr, out cubeDimensions, out status) != 0)
             {
@@ -87,7 +84,7 @@ namespace VolumeData
             FitsReader.FitsCloseFile(fptr, out status);
 
 
-            volumeDataSet.ParseHeaderDict();
+
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = cubeSize[0];
             volumeDataSet.YDim = cubeSize[1];
@@ -274,10 +271,10 @@ namespace VolumeData
             }
         }
 
-        public Vector2 GetRADecFromXY(double XPix, double YPix)
+        public Vector2 GetRADecFromXY(Vector2 XY)
         {
             double XPos, YPos;
-            MariusSoft.WCSTools.WCSUtil.ffwldp(XPix, YPix, xRef, yRef, xRefPix, yRefPix, xDelt, yDelt, rot, wcsProj, out XPos, out YPos);
+            MariusSoft.WCSTools.WCSUtil.ffwldp(XY.x, XY.y, xRef, yRef, xRefPix, yRefPix, xDelt, yDelt, rot, wcsProj, out XPos, out YPos);
             Vector2 raDec= new Vector2((float)XPos, (float)YPos);
             return raDec;
         }
@@ -286,14 +283,15 @@ namespace VolumeData
         {
             string xProj = "";
             string yProj = "";
+            string zProj = "";
             rot = 0;
-            foreach (KeyValuePair<string, string> entry in HeaderDictionary)
+            foreach (KeyValuePair<string, string> entry in _headerDictionary)
             {
                 switch (entry.Key)
                 {
                     case "CTYPE1":
                         xCoord = entry.Value.Substring(0, 4);
-                        xProj = entry.Value.Substring(3, 4);
+                        xProj = entry.Value.Substring(5, 4);
                         break;
                     case "CRPIX1":
                         xRefPix = Convert.ToDouble(entry.Value);
@@ -306,7 +304,7 @@ namespace VolumeData
                         break;
                     case "CTYPE2":
                         yCoord = entry.Value.Substring(0, 4);
-                        yProj = entry.Value.Substring(3, 4);
+                        yProj = entry.Value.Substring(5, 4);
                         break;
                     case "CRPIX2":
                         yRefPix = Convert.ToDouble(entry.Value);
@@ -317,15 +315,28 @@ namespace VolumeData
                     case "CRVAL2":
                         yRef = Convert.ToDouble(entry.Value);
                         break;
+                    case "CTYPE3":
+                        zCoord = entry.Value.Substring(0, 4);
+                        zProj = entry.Value.Substring(5, 4);
+                        break;
+                    case "CRPIX3":
+                        zRefPix = Convert.ToDouble(entry.Value);
+                        break;
+                    case "CDELT3":
+                        zDelt = Convert.ToDouble(entry.Value);
+                        break;
+                    case "CRVAL3":
+                        zRef = Convert.ToDouble(entry.Value);
+                        break;
                     case "CROTA2":
-                        rot = Convert.ToDouble(entry.Value);
+                        rot = Convert.ToDouble(entry.Value.Replace("'", ""));
                         break;
                     default:
                         break;
                 }
             }
             if (xProj != yProj)
-                Debug.Log("Warning: WCS projection types do not agree for dimensions!");
+                Debug.Log("Warning: WCS projection types do not agree for dimensions! x: " + xProj + ", y: " + yProj);
             wcsProj = xProj;
         }
 
