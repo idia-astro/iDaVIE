@@ -28,7 +28,7 @@ namespace VolumeData
         {
             public static readonly string EditThresholdMin = "edit min";
             public static readonly string EditThresholdMax = "edit max";
-            public static readonly string SaveThreshold = "save";
+            public static readonly string SaveThreshold = "save threshold";
             public static readonly string ResetThreshold = "reset threshold";
             public static readonly string ResetTransform = "reset transform";
             public static readonly string ColormapPlasma = "color map plasma";
