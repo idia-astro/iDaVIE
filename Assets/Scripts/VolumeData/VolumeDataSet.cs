@@ -284,6 +284,11 @@ namespace VolumeData
             return zRef + zDelt * (z - zRefPix);
         }
 
+        public Vector3 GetWCSDeltas()
+        {
+            return new Vector3((float)xDelt, (float)yDelt, (float)zDelt);
+        }
+
         public void ParseHeaderDict()
         {
             string xProj = "";

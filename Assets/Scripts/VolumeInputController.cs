@@ -557,7 +557,9 @@ public class VolumeInputController : MonoBehaviour
             if (dataSet.isActiveAndEnabled)
             {
                 var regionSize = Vector3.Max(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) - Vector3.Min(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) + Vector3.one;
-                cursorString = $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}";
+                Vector3 wcsLengths = dataSet.GetFitsLengths(regionSize.x, regionSize.y, regionSize.z);
+                cursorString = $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}" + System.Environment.NewLine
+                            + $"Physical: {Math.Truncate(wcsLengths.x*100)/100}° x {Math.Truncate(wcsLengths.y*100)/100}° x {Math.Truncate(wcsLengths.z*100)/100/1000} km/s";
             }
         }
         _scalingTextComponent.enabled = true;

@@ -447,10 +447,19 @@ namespace VolumeData
             return new Vector3(raDec.x, raDec.y, z);
         }
 
+        public Vector3 GetFitsLengths(double X, double Y, double Z)
+        {
+            Vector3 wcsConversion = _dataSet.GetWCSDeltas();
+            float xLength = Math.Abs((float)X * wcsConversion.x);
+            float yLength = Math.Abs((float)Y * wcsConversion.y);
+            float zLength = Math.Abs((float)Z * wcsConversion.z);
+            return new Vector3(xLength, yLength, zLength);
+        }
+
         public string GetFitsCoordsString(double X, double Y, double Z)
         {
             Vector2 raDec = _dataSet.GetRADecFromXY(X, Y);
-            float vel = (float)_dataSet.GetVelocityFromZ(Z);
+            string vel = (float)_dataSet.GetVelocityFromZ(Z)/1000 + "km/s";
             double raHours = (raDec.x * 12 / 180);
             double raMin = (raHours - Math.Truncate(raHours)) * 60;
             double raSec = Math.Truncate((raMin - Math.Truncate(raMin)) * 60 * 100)/100;
