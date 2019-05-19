@@ -70,7 +70,11 @@ public class FitsReader {
         for (int i = 1; i <= numberKeys; i++)
         {
             FitsReadKeyN(fptr, i, keyName, keyValue, null, out status);
-            dict.Add(keyName.ToString(), keyValue.ToString());
+            string key = keyName.ToString();
+            if (!dict.ContainsKey(key))
+                dict.Add(key, keyValue.ToString());
+            else
+                dict[key] = dict[key] + keyValue.ToString();
             keyName.Clear();
             keyValue.Clear();
         }
