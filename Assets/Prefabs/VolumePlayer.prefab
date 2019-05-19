@@ -16,7 +16,6 @@ MonoBehaviour:
   ScalingEnabled: 1
   RotationAxisCutoff: 5
   VignetteFadeSpeed: 2
-  CatalogDataSetManager: {fileID: 0}
 --- !u!1001 &8833955704422217956
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -47,6 +46,41 @@ PrefabInstance:
     - target: {fileID: 132523757760137563, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 132523756916079099, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0.01
+      objectReference: {fileID: 0}
+    - target: {fileID: 132523756916079100, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
+        type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 132523756916079098, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
+        type: 3}
+      propertyPath: m_textInfo.characterCount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 132523756916079098, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
+        type: 3}
+      propertyPath: m_textInfo.spaceCount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 132523756916079098, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
+        type: 3}
+      propertyPath: m_textInfo.wordCount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 132523756916079098, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
+        type: 3}
+      propertyPath: m_textInfo.lineCount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 132523756916079098, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
+        type: 3}
+      propertyPath: m_textInfo.pageCount
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
