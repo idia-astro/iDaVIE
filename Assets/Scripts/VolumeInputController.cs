@@ -37,6 +37,9 @@ public class VolumeInputController : MonoBehaviour
         Roll = 1,
         Yaw = 2
     }
+    //reference to quick menu canvass
+    public GameObject CanvassQuickMenu;
+
 
     // Scaling/Rotation options
     public bool InPlaceScaling = true;
@@ -58,6 +61,8 @@ public class VolumeInputController : MonoBehaviour
     private Vector3 _starGripForwardAxis;
     private LocomotionState _locomotionState;
     private bool _isSelecting;
+    private bool _isQuickMenu;
+
     private VectorLine _lineAxisSeparation;
     private VectorLine _lineRotationAxes;
 
@@ -202,10 +207,12 @@ public class VolumeInputController : MonoBehaviour
         if (newState && _selectingHand == null)
         {
             StartSelection(hand);
+            StartRequestQuickMenu();
         }
         else if (!newState && _selectingHand == hand)
         {
             EndSelection();
+            EndRequestQuickMenu();
         }        
     }
 
@@ -219,6 +226,20 @@ public class VolumeInputController : MonoBehaviour
     {
         _locomotionState = LocomotionState.Moving;
         _targetVignetteIntensity = 1;
+    }
+
+    private void StartRequestQuickMenu()
+    {
+        Debug.Log("Request Quick menu!");
+        CanvassQuickMenu.SetActive(true);
+        _isQuickMenu = true;
+    }
+
+    private void EndRequestQuickMenu()
+    {
+        Debug.Log("END Request Quick menu!");
+        CanvassQuickMenu.SetActive(false);
+        _isQuickMenu = false;
     }
 
     private void StartSelection(VRHand selectingHand)
@@ -330,6 +351,20 @@ public class VolumeInputController : MonoBehaviour
         {
             UpdateSelecting();
         }
+
+        if (_isQuickMenu)
+        {
+            // Link Quick menu to left controller
+
+            CanvassQuickMenu.transform.position = _hands[0].transform.position + _hands[0].transform.TransformDirection((Vector3.forward + Vector3.up * 0.5f) * 0.4f);
+            CanvassQuickMenu.transform.localScale = new Vector3(
+                    0.0008f,
+                    0.0008f,
+                    0.0008f
+                    );
+            CanvassQuickMenu.transform.eulerAngles = _hands[0].transform.eulerAngles;
+        }
+
     }
 
     private void UpdateVignette()

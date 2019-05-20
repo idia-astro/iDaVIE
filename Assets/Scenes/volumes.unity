@@ -54,7 +54,7 @@ LightmapSettings:
     m_EnableBakedLightmaps: 1
     m_EnableRealtimeLightmaps: 0
   m_LightmapEditorSettings:
-    serializedVersion: 10
+    serializedVersion: 12
     m_Resolution: 1
     m_BakeResolution: 50
     m_AtlasSize: 1024
@@ -62,6 +62,7 @@ LightmapSettings:
     m_AOMaxDistance: 1
     m_CompAOExponent: 1
     m_CompAOExponentDirect: 0
+    m_ExtractAmbientOcclusion: 0
     m_Padding: 2
     m_LightmapParameters: {fileID: 0}
     m_LightmapsBakeMode: 1
@@ -76,10 +77,16 @@ LightmapSettings:
     m_PVRDirectSampleCount: 32
     m_PVRSampleCount: 500
     m_PVRBounces: 2
+    m_PVREnvironmentSampleCount: 500
+    m_PVREnvironmentReferencePointCount: 2048
+    m_PVRFilteringMode: 0
+    m_PVRDenoiserTypeDirect: 0
+    m_PVRDenoiserTypeIndirect: 0
+    m_PVRDenoiserTypeAO: 0
     m_PVRFilterTypeDirect: 0
     m_PVRFilterTypeIndirect: 0
     m_PVRFilterTypeAO: 0
-    m_PVRFilteringMode: 0
+    m_PVREnvironmentMIS: 0
     m_PVRCulling: 1
     m_PVRFilteringGaussRadiusDirect: 1
     m_PVRFilteringGaussRadiusIndirect: 5
@@ -88,6 +95,7 @@ LightmapSettings:
     m_PVRFilteringAtrousPositionSigmaIndirect: 2
     m_PVRFilteringAtrousPositionSigmaAO: 1
     m_ShowResolutionOverlay: 1
+    m_ExportTrainingData: 0
   m_LightingDataAsset: {fileID: 0}
   m_UseShadowmask: 0
 --- !u!196 &5
@@ -223,7 +231,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &163334073
 Transform:
   m_ObjectHideFlags: 0
@@ -251,32 +259,40 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MaxSteps: 384
-  Jitter: 1
+  MaximumCubeSizeInMB: 250
+  MaskMode: 0
   TextureFilter: 0
+  Jitter: 1
   FoveatedRendering: 1
   FoveationStart: 0.015
   FoveationEnd: 0.4
   FoveationJitter: 0.1
   FoveatedStepsLow: 64
   FoveatedStepsHigh: 256
-  MaximumCubeSizeInMB: 250
-  FactorOverride: 0
-  XFactor: 1
-  YFactor: 1
-  ZFactor: 1
   VignetteFadeStart: 0.15
   VignetteFadeEnd: 0.4
   VignetteIntensity: 0
   VignetteColor: {r: 0, g: 0, b: 0, a: 1}
-  SliceMin: {x: -0.5, y: -0.5, z: -0.5}
-  SliceMax: {x: 0.5, y: 0.5, z: 0.5}
-  ScaleMax: 0.1917794
-  ScaleMin: -0.13979377
   ThresholdMin: 0.323
   ThresholdMax: 1
-  RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
-  FileName: Data/Volumes/bigM81.fits
   ColorMap: 15
+  ScalingType: 0
+  ScalingBias: 0
+  ScalingContrast: 1
+  ScalingAlpha: 1000
+  ScalingGamma: 1
+  FileName: Data/Volumes/bigM81.fits
+  MaskFileName: 
+  RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
+  FactorOverride: 0
+  XFactor: 1
+  YFactor: 1
+  ZFactor: 1
+  ScaleMax: 0.1917794
+  ScaleMin: -0.13979377
+  SliceMin: {x: -0.5, y: -0.5, z: -0.5}
+  SliceMax: {x: 0.5, y: 0.5, z: 0.5}
+  SelectionSaturateFactor: 0.7
 --- !u!65 &163334075
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -410,12 +426,13 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 416005579}
   m_Enabled: 1
-  serializedVersion: 8
+  serializedVersion: 9
   m_Type: 1
   m_Color: {r: 0.9245283, g: 0.9170542, b: 0.8503916, a: 1}
   m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
+  m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
   m_Shadows:
     m_Type: 0
@@ -425,6 +442,24 @@ Light:
     m_Bias: 0.05
     m_NormalBias: 0.4
     m_NearPlane: 0.2
+    m_CullingMatrixOverride:
+      e00: 1
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 1
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 1
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 1
+    m_UseCullingMatrixOverride: 0
   m_Cookie: {fileID: 0}
   m_DrawHalo: 0
   m_Flare: {fileID: 0}
@@ -432,12 +467,15 @@ Light:
   m_CullingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  m_RenderingLayerMask: 1
   m_Lightmapping: 4
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
   m_BounceIntensity: 1
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
+  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_UseBoundingSphereOverride: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0
 --- !u!4 &416005581
@@ -559,32 +597,40 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MaxSteps: 384
-  Jitter: 1
+  MaximumCubeSizeInMB: 250
+  MaskMode: 0
   TextureFilter: 0
+  Jitter: 1
   FoveatedRendering: 1
   FoveationStart: 0.015
   FoveationEnd: 0.4
   FoveationJitter: 0.1
   FoveatedStepsLow: 96
   FoveatedStepsHigh: 384
-  MaximumCubeSizeInMB: 250
-  FactorOverride: 0
-  XFactor: 1
-  YFactor: 1
-  ZFactor: 1
   VignetteFadeStart: 0.15
   VignetteFadeEnd: 0.4
   VignetteIntensity: 0
   VignetteColor: {r: 0, g: 0, b: 0, a: 1}
-  SliceMin: {x: -0.5, y: -0.5, z: -0.5}
-  SliceMax: {x: 0.5, y: 0.5, z: 0.5}
-  ScaleMax: 0
-  ScaleMin: 0
   ThresholdMin: 0.478
   ThresholdMax: 1
-  RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
-  FileName: Data/Volumes/m81.fits
   ColorMap: 45
+  ScalingType: 0
+  ScalingBias: 0
+  ScalingContrast: 1
+  ScalingAlpha: 1000
+  ScalingGamma: 1
+  FileName: Data/Volumes/m81.fits
+  MaskFileName: 
+  RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
+  FactorOverride: 0
+  XFactor: 1
+  YFactor: 1
+  ZFactor: 1
+  ScaleMax: 0
+  ScaleMin: 0
+  SliceMin: {x: -0.5, y: -0.5, z: -0.5}
+  SliceMax: {x: 0.5, y: 0.5, z: 0.5}
+  SelectionSaturateFactor: 0.7
 --- !u!21 &652452884
 Material:
   serializedVersion: 6
@@ -698,7 +744,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1488925793
 Transform:
   m_ObjectHideFlags: 0
@@ -726,32 +772,40 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MaxSteps: 384
-  Jitter: 1
+  MaximumCubeSizeInMB: 250
+  MaskMode: 0
   TextureFilter: 0
+  Jitter: 1
   FoveatedRendering: 1
   FoveationStart: 0.015
   FoveationEnd: 0.4
   FoveationJitter: 0.1
   FoveatedStepsLow: 96
   FoveatedStepsHigh: 384
-  MaximumCubeSizeInMB: 250
-  FactorOverride: 0
-  XFactor: 1
-  YFactor: 1
-  ZFactor: 1
   VignetteFadeStart: 0.15
   VignetteFadeEnd: 0.4
   VignetteIntensity: 0
   VignetteColor: {r: 0, g: 0, b: 0, a: 1}
-  SliceMin: {x: -0.5, y: -0.5, z: -0.5}
-  SliceMax: {x: 0.5, y: 0.5, z: 0.5}
-  ScaleMax: 0
-  ScaleMin: 0
   ThresholdMin: 0
   ThresholdMax: 1
-  RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
-  FileName: Data/Volumes/testVolume2.fits
   ColorMap: 45
+  ScalingType: 0
+  ScalingBias: 0
+  ScalingContrast: 1
+  ScalingAlpha: 1000
+  ScalingGamma: 1
+  FileName: Data/SampleData/test_volume.fits
+  MaskFileName: 
+  RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
+  FactorOverride: 0
+  XFactor: 1
+  YFactor: 1
+  ZFactor: 1
+  ScaleMax: 0
+  ScaleMin: 0
+  SliceMin: {x: -0.5, y: -0.5, z: -0.5}
+  SliceMax: {x: 0.5, y: 0.5, z: 0.5}
+  SelectionSaturateFactor: 0.7
 --- !u!65 &1488925795
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -857,32 +911,40 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MaxSteps: 384
-  Jitter: 1
+  MaximumCubeSizeInMB: 250
+  MaskMode: 0
   TextureFilter: 0
+  Jitter: 1
   FoveatedRendering: 1
   FoveationStart: 0.015
   FoveationEnd: 0.4
   FoveationJitter: 0.1
   FoveatedStepsLow: 96
   FoveatedStepsHigh: 384
-  MaximumCubeSizeInMB: 250
-  FactorOverride: 0
-  XFactor: 1
-  YFactor: 1
-  ZFactor: 1
   VignetteFadeStart: 0.15
   VignetteFadeEnd: 0.4
   VignetteIntensity: 0
   VignetteColor: {r: 0, g: 0, b: 0, a: 1}
-  SliceMin: {x: -0.5, y: -0.5, z: -0.5}
-  SliceMax: {x: 0.5, y: 0.5, z: 0.5}
-  ScaleMax: 0
-  ScaleMin: 0
   ThresholdMin: 0.233
   ThresholdMax: 1
-  RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
-  FileName: Data/Volumes/ngc6946_VelCube_wsrt.fits
   ColorMap: 45
+  ScalingType: 0
+  ScalingBias: 0
+  ScalingContrast: 1
+  ScalingAlpha: 1000
+  ScalingGamma: 1
+  FileName: Data/Volumes/ngc6946_VelCube_wsrt.fits
+  MaskFileName: 
+  RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
+  FactorOverride: 0
+  XFactor: 1
+  YFactor: 1
+  ZFactor: 1
+  ScaleMax: 0
+  ScaleMin: 0
+  SliceMin: {x: -0.5, y: -0.5, z: -0.5}
+  SliceMax: {x: 0.5, y: 0.5, z: 0.5}
+  SelectionSaturateFactor: 0.7
 --- !u!65 &1526129209
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1074,32 +1136,40 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MaxSteps: 384
-  Jitter: 1
+  MaximumCubeSizeInMB: 250
+  MaskMode: 0
   TextureFilter: 0
+  Jitter: 1
   FoveatedRendering: 1
   FoveationStart: 0.015
   FoveationEnd: 0.4
   FoveationJitter: 0.1
   FoveatedStepsLow: 96
   FoveatedStepsHigh: 384
-  MaximumCubeSizeInMB: 250
-  FactorOverride: 0
-  XFactor: 1
-  YFactor: 1
-  ZFactor: 1
   VignetteFadeStart: 0.15
   VignetteFadeEnd: 0.4
   VignetteIntensity: 0
   VignetteColor: {r: 0, g: 0, b: 0, a: 1}
-  SliceMin: {x: -0.3, y: -0.05, z: -0.34}
-  SliceMax: {x: -0.09, y: 0.33, z: 0.25}
-  ScaleMax: 0.031808604
-  ScaleMin: -0.013813979
   ThresholdMin: 0.333
   ThresholdMax: 1
-  RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
-  FileName: Data/Volumes/N7232_cube.fits
   ColorMap: 45
+  ScalingType: 0
+  ScalingBias: 0
+  ScalingContrast: 1
+  ScalingAlpha: 1000
+  ScalingGamma: 1
+  FileName: Data/Volumes/N7232_cube.fits
+  MaskFileName: 
+  RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
+  FactorOverride: 0
+  XFactor: 1
+  YFactor: 1
+  ZFactor: 1
+  ScaleMax: 0.031808604
+  ScaleMin: -0.013813979
+  SliceMin: {x: -0.3, y: -0.05, z: -0.34}
+  SliceMax: {x: -0.09, y: 0.33, z: 0.25}
+  SelectionSaturateFactor: 0.7
 --- !u!65 &1693202220
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1205,32 +1275,40 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MaxSteps: 384
-  Jitter: 1
+  MaximumCubeSizeInMB: 250
+  MaskMode: 0
   TextureFilter: 0
+  Jitter: 1
   FoveatedRendering: 1
   FoveationStart: 0.015
   FoveationEnd: 0.4
   FoveationJitter: 0.1
   FoveatedStepsLow: 96
   FoveatedStepsHigh: 384
-  MaximumCubeSizeInMB: 250
-  FactorOverride: 0
-  XFactor: 1
-  YFactor: 1
-  ZFactor: 1
   VignetteFadeStart: 0.15
   VignetteFadeEnd: 0.4
   VignetteIntensity: 0
   VignetteColor: {r: 0, g: 0, b: 0, a: 1}
-  SliceMin: {x: -0.5, y: -0.5, z: -0.5}
-  SliceMax: {x: 0.5, y: 0.5, z: 0.5}
-  ScaleMax: 0
-  ScaleMin: 0
   ThresholdMin: 0
   ThresholdMax: 1
-  RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
-  FileName: Data/Volumes/cubehi-clean-m31.fits
   ColorMap: 45
+  ScalingType: 0
+  ScalingBias: 0
+  ScalingContrast: 1
+  ScalingAlpha: 1000
+  ScalingGamma: 1
+  FileName: Data/Volumes/cubehi-clean-m31.fits
+  MaskFileName: 
+  RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
+  FactorOverride: 0
+  XFactor: 1
+  YFactor: 1
+  ZFactor: 1
+  ScaleMax: 0
+  ScaleMin: 0
+  SliceMin: {x: -0.5, y: -0.5, z: -0.5}
+  SliceMax: {x: 0.5, y: 0.5, z: 0.5}
+  SelectionSaturateFactor: 0.7
 --- !u!65 &1929847159
 BoxCollider:
   m_ObjectHideFlags: 0
