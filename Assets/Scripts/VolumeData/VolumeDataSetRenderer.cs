@@ -27,7 +27,8 @@ namespace VolumeData
     {
         Disabled = 0,
         Enabled = 1,
-        Inverted = 2
+        Inverted = 2,
+        Isolated = 3
     }
 
 
