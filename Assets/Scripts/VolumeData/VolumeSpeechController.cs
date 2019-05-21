@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Windows.Speech;
+using Valve.VR;
 using Valve.VR.InteractionSystem;
-using VolumeData;
 
 namespace VolumeData
 {
@@ -44,9 +42,11 @@ namespace VolumeData
             public static readonly string MaskDisabled = "mask off";
             public static readonly string MaskEnabled = "mask on";
             public static readonly string MaskInverted = "mask invert";
+            public static readonly string MaskIsolated = "mask isolate";
+            
             public static readonly string[] All = { EditThresholdMin, EditThresholdMax, SaveThreshold, ResetThreshold, ResetTransform, 
                 ColormapPlasma, ColormapRainbow, ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix,
-                NextDataSet, PreviousDataSet, CropSelection, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted
+                NextDataSet, PreviousDataSet, CropSelection, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated
             };
         }
    
@@ -63,6 +63,12 @@ namespace VolumeData
             _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
 
             _speechKeywordRecognizer.Start();
+            EditingHand.uiInteractAction.AddOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
+        }
+
+        private void OnUiInteractDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+        {
+            _state = SpeechControllerState.Idle;
         }
 
         private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
@@ -145,6 +151,10 @@ namespace VolumeData
             else if (args.text == Keywords.MaskInverted)
             {
                 setMask(MaskMode.Inverted);
+            }
+            else if (args.text == Keywords.MaskIsolated)
+            {
+                setMask(MaskMode.Isolated);
             }
         }
 
