@@ -99,6 +99,7 @@ namespace VolumeData
 
         public Vector3Int CursorVoxel { get; private set; }
         public float CursorValue { get; private set; }
+        public Int16 CursorSource { get; private set; }
         public Vector3Int RegionStartVoxel { get; private set; }
         public Vector3Int RegionEndVoxel { get; private set; }
 
@@ -266,7 +267,11 @@ namespace VolumeData
                 if (!newVoxelCursor.Equals(CursorVoxel))
                 {
                     CursorVoxel = newVoxelCursor;
-                    CursorValue = _dataSet.GetValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
+                    CursorValue = _dataSet.GetDataValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
+                    if (_maskDataSet != null)
+                        CursorSource = _maskDataSet.GetMaskValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
+                    else
+                        CursorSource = 0;
                     Vector3 voxelCenterObjectSpace = new Vector3(voxelCenterCubeSpace.x / _dataSet.XDim - 0.5f, voxelCenterCubeSpace.y / _dataSet.YDim - 0.5f, voxelCenterCubeSpace.z / _dataSet.ZDim - 0.5f);
                     _voxelOutline.MakeCube(voxelCenterObjectSpace, 1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
                 }

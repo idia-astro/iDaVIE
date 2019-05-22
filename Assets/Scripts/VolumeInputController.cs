@@ -524,13 +524,16 @@ public class VolumeInputController : MonoBehaviour
                 dataSet.SetCursorPosition(_handTransforms[0].position);
                 if (dataSet.isActiveAndEnabled)
                 {
+                    string sourceIndex = "";
+                    if (dataSet.CursorSource != 0)
+                        sourceIndex = $"Source # {dataSet.CursorSource}";
                     var voxelCoordinate = dataSet.CursorVoxel;
                     if (voxelCoordinate.x >= 0 && _scalingTextComponent != null)
                     {
                         var voxelValue = dataSet.CursorValue;
                         string raDecVel = dataSet.GetFitsCoordsString(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z);
                         cursorString = $"({voxelCoordinate.x}, {voxelCoordinate.y}, {voxelCoordinate.z}): {voxelValue}" + System.Environment.NewLine
-                            + raDecVel;
+                            + raDecVel + System.Environment.NewLine + sourceIndex;
                     }
                 }
             }

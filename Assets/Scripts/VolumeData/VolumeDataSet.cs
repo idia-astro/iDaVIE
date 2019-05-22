@@ -231,7 +231,7 @@ namespace VolumeData
             Debug.Log($"Cropped into {cubeSize.x} x {cubeSize.y} x {cubeSize.z} region ({cubeSize.x * cubeSize.y * cubeSize.z * 4e-6} MB) in {sw.ElapsedMilliseconds} ms");
         }
 
-        public float GetValue(int x, int y, int z)
+        public float GetDataValue(int x, int y, int z)
         {
             if (x < 1 || x > XDim || y < 1 || y > YDim || z < 1 || z > ZDim)
             {
@@ -239,7 +239,19 @@ namespace VolumeData
             }
 
             float val;
-            DataAnalysis.GetVoxelValue(FitsData, out val, (int)XDim, (int)YDim, (int)ZDim, x, y, z);
+            DataAnalysis.GetVoxelFloatValue(FitsData, out val, (int)XDim, (int)YDim, (int)ZDim, x, y, z);
+            return val;
+        }
+
+        public Int16 GetMaskValue(int x, int y, int z)
+        {
+            if (x < 1 || x > XDim || y < 1 || y > YDim || z < 1 || z > ZDim)
+            {
+                return 0;
+            }
+
+            Int16 val;
+            DataAnalysis.GetVoxelInt16Value(FitsData, out val, (int)XDim, (int)YDim, (int)ZDim, x, y, z);
             return val;
         }
 
