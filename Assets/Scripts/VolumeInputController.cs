@@ -61,6 +61,8 @@ public class VolumeInputController : MonoBehaviour
     private VectorLine _lineAxisSeparation;
     private VectorLine _lineRotationAxes;
 
+    private Vector3Int _coordDecimcalPlaces;
+
     private TextMeshPro _scalingTextComponent;
 
     private float _rotationYawCumulative = 0;
@@ -530,9 +532,13 @@ public class VolumeInputController : MonoBehaviour
                     var voxelCoordinate = dataSet.CursorVoxel;
                     if (voxelCoordinate.x >= 0 && _scalingTextComponent != null)
                     {
+                        Vector3Int coordDecimcalPlaces = dataSet.GetDimDecimals();
                         var voxelValue = dataSet.CursorValue;
                         string raDecVel = dataSet.GetFitsCoordsString(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z);
-                        cursorString = $"({voxelCoordinate.x}, {voxelCoordinate.y}, {voxelCoordinate.z}): {voxelValue}" + System.Environment.NewLine
+                        cursorString = "(" + voxelCoordinate.x.ToString().PadLeft(coordDecimcalPlaces.x) 
+                            + "," + voxelCoordinate.y.ToString().PadLeft(coordDecimcalPlaces.y) + "," 
+                            + voxelCoordinate.z.ToString().PadLeft(coordDecimcalPlaces.z) + "): " 
+                            + voxelValue.ToString("0.###E+000").PadLeft(11)  + System.Environment.NewLine
                             + raDecVel + System.Environment.NewLine + sourceIndex;
                     }
                 }

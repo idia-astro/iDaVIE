@@ -465,17 +465,22 @@ namespace VolumeData
         public string GetFitsCoordsString(double X, double Y, double Z)
         {
             Vector2 raDec = _dataSet.GetRADecFromXY(X, Y);
-            string vel = (float)_dataSet.GetVelocityFromZ(Z)/1000 + "km/s";
-            double raHours = (raDec.x * 12 / 180);
+            string vel = string.Format("{0,8:F2} km/s", (float)_dataSet.GetVelocityFromZ(Z)/1000);
+            double raHours = (raDec.x * 12.0 / 180.0);
             double raMin = (raHours - Math.Truncate(raHours)) * 60;
             double raSec = Math.Truncate((raMin - Math.Truncate(raMin)) * 60 * 100)/100;
 
             double decMin = Math.Abs((raDec.y - Math.Truncate(raDec.y)) * 60);
             double decSec = Math.Truncate((decMin - Math.Truncate(decMin)) * 60 * 100) / 100;
 
-            string ra = $"{(int)raHours}:{(int)raMin}:{raSec}";
-            string dec = $"{(int)raDec.y}:{(int)decMin}:{decSec}";
-            return ra + ", " + dec + ", " + vel;
+            string ra = Math.Truncate(raHours).ToString("00").PadLeft(3) + ":" + Math.Truncate(raMin).ToString("00") + ":" + raSec.ToString("00.00");
+            string dec = Math.Truncate(raDec.y).ToString("00").PadLeft(3) + ":" + Math.Truncate(decMin).ToString("00") + ":" + decSec.ToString("00.00");
+            return ra + " " + dec + " " + vel;
+        }
+
+        public Vector3Int GetDimDecimals()
+        {
+            return new Vector3Int(_dataSet.XDimDecimal, _dataSet.YDimDecimal, _dataSet.ZDimDecimal);
         }
 
         public void OnDestroy()

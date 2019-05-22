@@ -17,6 +17,11 @@ namespace VolumeData
         public long XDim { get; private set; }
         public long YDim { get; private set; }
         public long ZDim { get; private set; }
+        public int XDimDecimal { get; private set; }
+        public int YDimDecimal { get; private set; }
+        public int ZDimDecimal { get; private set; }
+
+        public int VelDecimal { get; private set; }
 
         public long NumPoints => XDim * YDim * ZDim;
         public long[] Dims => new[] {XDim, YDim, ZDim};
@@ -24,8 +29,8 @@ namespace VolumeData
         public bool IsMask { get; private set; }
 
         private IDictionary<string, string> _headerDictionary;
-        private double xRef, yRef, zRef, xRefPix, yRefPix, zRefPix, xDelt, yDelt, zDelt, rot;
-        private string xCoord, yCoord, zCoord, wcsProj;
+        private double _xRef, _yRef, _zRef, _xRefPix, _yRefPix, _zRefPix, _xDelt, _yDelt, _zDelt, _rot;
+        private string _xCoord, _yCoord, _zCoord, _wcsProj;
 
         public IntPtr FitsData;
 
@@ -89,6 +94,9 @@ namespace VolumeData
             volumeDataSet.XDim = cubeSize[0];
             volumeDataSet.YDim = cubeSize[1];
             volumeDataSet.ZDim = cubeSize[2];
+            volumeDataSet.XDimDecimal = cubeSize[0].ToString().Length;
+            volumeDataSet.YDimDecimal = cubeSize[1].ToString().Length;
+            volumeDataSet.ZDimDecimal = cubeSize[2].ToString().Length;
             return volumeDataSet;
         }
 
@@ -286,19 +294,19 @@ namespace VolumeData
         public Vector2 GetRADecFromXY(double X, double Y)
         {
             double XPos, YPos;
-            MariusSoft.WCSTools.WCSUtil.ffwldp(X, Y, xRef, yRef, xRefPix, yRefPix, xDelt, yDelt, rot, wcsProj, out XPos, out YPos);
+            MariusSoft.WCSTools.WCSUtil.ffwldp(X, Y, _xRef, _yRef, _xRefPix, _yRefPix, _xDelt, _yDelt, _rot, _wcsProj, out XPos, out YPos);
             Vector2 raDec= new Vector2((float)XPos, (float)YPos);
             return raDec;
         }
 
         public double GetVelocityFromZ(double z)
         {
-            return zRef + zDelt * (z - zRefPix);
+            return _zRef + _zDelt * (z - _zRefPix);
         }
 
         public Vector3 GetWCSDeltas()
         {
-            return new Vector3((float)xDelt, (float)yDelt, (float)zDelt);
+            return new Vector3((float)_xDelt, (float)_yDelt, (float)_zDelt);
         }
 
         public void ParseHeaderDict()
@@ -306,52 +314,52 @@ namespace VolumeData
             string xProj = "";
             string yProj = "";
             string zProj = "";
-            rot = 0;
+            _rot = 0;
             foreach (KeyValuePair<string, string> entry in _headerDictionary)
             {
                 switch (entry.Key)
                 {
                     case "CTYPE1":
-                        xCoord = entry.Value.Substring(0, 4);
+                        _xCoord = entry.Value.Substring(0, 4);
                         xProj = entry.Value.Substring(5, 4);
                         break;
                     case "CRPIX1":
-                        xRefPix = Convert.ToDouble(entry.Value);
+                        _xRefPix = Convert.ToDouble(entry.Value);
                         break;
                     case "CDELT1":
-                        xDelt = Convert.ToDouble(entry.Value);
+                        _xDelt = Convert.ToDouble(entry.Value);
                         break;
                     case "CRVAL1":
-                        xRef = Convert.ToDouble(entry.Value);
+                        _xRef = Convert.ToDouble(entry.Value);
                         break;
                     case "CTYPE2":
-                        yCoord = entry.Value.Substring(0, 4);
+                        _yCoord = entry.Value.Substring(0, 4);
                         yProj = entry.Value.Substring(5, 4);
                         break;
                     case "CRPIX2":
-                        yRefPix = Convert.ToDouble(entry.Value);
+                        _yRefPix = Convert.ToDouble(entry.Value);
                         break;
                     case "CDELT2":
-                        yDelt = Convert.ToDouble(entry.Value);
+                        _yDelt = Convert.ToDouble(entry.Value);
                         break;
                     case "CRVAL2":
-                        yRef = Convert.ToDouble(entry.Value);
+                        _yRef = Convert.ToDouble(entry.Value);
                         break;
                     case "CTYPE3":
-                        zCoord = entry.Value.Substring(0, 4);
+                        _zCoord = entry.Value.Substring(0, 4);
                         zProj = entry.Value.Substring(5, 4);
                         break;
                     case "CRPIX3":
-                        zRefPix = Convert.ToDouble(entry.Value);
+                        _zRefPix = Convert.ToDouble(entry.Value);
                         break;
                     case "CDELT3":
-                        zDelt = Convert.ToDouble(entry.Value);
+                        _zDelt = Convert.ToDouble(entry.Value);
                         break;
                     case "CRVAL3":
-                        zRef = Convert.ToDouble(entry.Value);
+                        _zRef = Convert.ToDouble(entry.Value);
                         break;
                     case "CROTA2":
-                        rot = Convert.ToDouble(entry.Value.Replace("'", ""));
+                        _rot = Convert.ToDouble(entry.Value.Replace("'", ""));
                         break;
                     default:
                         break;
@@ -359,7 +367,7 @@ namespace VolumeData
             }
             if (xProj != yProj)
                 Debug.Log("Warning: WCS projection types do not agree for dimensions! x: " + xProj + ", y: " + yProj);
-            wcsProj = xProj;
+            _wcsProj = xProj;
         }
 
         public void CleanUp()
