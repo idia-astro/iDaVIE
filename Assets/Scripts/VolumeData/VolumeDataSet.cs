@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -324,39 +325,39 @@ namespace VolumeData
                         xProj = entry.Value.Substring(5, 4);
                         break;
                     case "CRPIX1":
-                        _xRefPix = Convert.ToDouble(entry.Value);
+                        _xRefPix = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                         break;
                     case "CDELT1":
-                        _xDelt = Convert.ToDouble(entry.Value);
+                        _xDelt = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                         break;
                     case "CRVAL1":
-                        _xRef = Convert.ToDouble(entry.Value);
+                        _xRef = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                         break;
                     case "CTYPE2":
                         _yCoord = entry.Value.Substring(0, 4);
                         yProj = entry.Value.Substring(5, 4);
                         break;
                     case "CRPIX2":
-                        _yRefPix = Convert.ToDouble(entry.Value);
+                        _yRefPix = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                         break;
                     case "CDELT2":
-                        _yDelt = Convert.ToDouble(entry.Value);
+                        _yDelt = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                         break;
                     case "CRVAL2":
-                        _yRef = Convert.ToDouble(entry.Value);
+                        _yRef = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                         break;
                     case "CTYPE3":
                         _zCoord = entry.Value.Substring(0, 4);
                         zProj = entry.Value.Substring(5, 4);
                         break;
                     case "CRPIX3":
-                        _zRefPix = Convert.ToDouble(entry.Value);
+                        _zRefPix = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                         break;
                     case "CDELT3":
-                        _zDelt = Convert.ToDouble(entry.Value);
+                        _zDelt = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                         break;
                     case "CRVAL3":
-                        _zRef = Convert.ToDouble(entry.Value);
+                        _zRef = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                         break;
                     case "CROTA2":
                         _rot = Convert.ToDouble(entry.Value.Replace("'", ""));
