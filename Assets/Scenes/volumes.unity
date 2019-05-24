@@ -794,8 +794,8 @@ MonoBehaviour:
   ScalingContrast: 1
   ScalingAlpha: 1000
   ScalingGamma: 1
-  FileName: Data/SampleData/test_volume.fits
-  MaskFileName: 
+  FileName: Data/cube/mosaic.fits
+  MaskFileName: Data/cube/mask.fits
   RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
   FactorOverride: 0
   XFactor: 1

@@ -2029,7 +2029,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e84a72dc261851a4b907e58c03e0dad8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mainMenuCanvas: {fileID: 0}
+  volumeDatasetRendererObj: {fileID: 379208438}
+  notificationText: {fileID: 1257161245}
+  mainMenuCanvas: {fileID: 822478519}
 --- !u!225 &379983800
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -2596,6 +2598,7 @@ GameObject:
   - component: {fileID: 490866555}
   - component: {fileID: 490866554}
   - component: {fileID: 490866553}
+  - component: {fileID: 490866558}
   m_Layer: 0
   m_Name: Mask
   m_TagString: Untagged
@@ -2726,7 +2729,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 490866556}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 490866558}
+        m_MethodName: ToggleMask
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_TypeName: UnityEngine.UI.Button+ButtonClickedEvent, UnityEngine.UI, Version=1.0.0.0,
       Culture=neutral, PublicKeyToken=null
 --- !u!114 &490866556
@@ -2766,6 +2780,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 490866551}
   m_CullTransparentMesh: 0
+--- !u!114 &490866558
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 490866551}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e84a72dc261851a4b907e58c03e0dad8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  volumeDatasetRendererObj: {fileID: 379208438}
+  notificationText: {fileID: 1257161245}
+  mainMenuCanvas: {fileID: 0}
 --- !u!1 &550508979
 GameObject:
   m_ObjectHideFlags: 0
@@ -6022,8 +6051,8 @@ MonoBehaviour:
   ScalingContrast: 1
   ScalingAlpha: 1000
   ScalingGamma: 1
-  FileName: Data/SampleData/test_volume.fits
-  MaskFileName: 
+  FileName: Data/cube/mosaic.fits
+  MaskFileName: Data/cube/mask.fits
   RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
   FactorOverride: 0
   XFactor: 1
@@ -7912,6 +7941,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e84a72dc261851a4b907e58c03e0dad8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  volumeDatasetRendererObj: {fileID: 379208438}
+  notificationText: {fileID: 0}
   mainMenuCanvas: {fileID: 822478519}
 --- !u!114 &2106689976
 MonoBehaviour:
