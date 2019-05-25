@@ -61,6 +61,8 @@ public class VolumeInputController : MonoBehaviour
     private VectorLine _lineAxisSeparation;
     private VectorLine _lineRotationAxes;
 
+    private Vector3Int _coordDecimcalPlaces;
+
     private TextMeshPro _scalingTextComponent;
 
     private float _rotationYawCumulative = 0;
@@ -524,11 +526,20 @@ public class VolumeInputController : MonoBehaviour
                 dataSet.SetCursorPosition(_handTransforms[0].position);
                 if (dataSet.isActiveAndEnabled)
                 {
+                    string sourceIndex = "";
+                    if (dataSet.CursorSource != 0)
+                        sourceIndex = $"Source # {dataSet.CursorSource}";
                     var voxelCoordinate = dataSet.CursorVoxel;
                     if (voxelCoordinate.x >= 0 && _scalingTextComponent != null)
                     {
+                        Vector3Int coordDecimcalPlaces = dataSet.GetDimDecimals();
                         var voxelValue = dataSet.CursorValue;
-                        cursorString = $"({voxelCoordinate.x}, {voxelCoordinate.y}, {voxelCoordinate.z}): {voxelValue}";
+                        string raDecVel = dataSet.GetFitsCoordsString(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z);
+                        cursorString = "(" + voxelCoordinate.x.ToString().PadLeft(coordDecimcalPlaces.x) 
+                            + "," + voxelCoordinate.y.ToString().PadLeft(coordDecimcalPlaces.y) + "," 
+                            + voxelCoordinate.z.ToString().PadLeft(coordDecimcalPlaces.z) + "): " 
+                            + voxelValue.ToString("0.###E+000").PadLeft(11)  + System.Environment.NewLine
+                            + raDecVel + System.Environment.NewLine + sourceIndex;
                     }
                 }
             }
@@ -555,7 +566,9 @@ public class VolumeInputController : MonoBehaviour
             if (dataSet.isActiveAndEnabled)
             {
                 var regionSize = Vector3.Max(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) - Vector3.Min(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) + Vector3.one;
-                cursorString = $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}";
+                Vector3 wcsLengths = dataSet.GetFitsLengths(regionSize.x, regionSize.y, regionSize.z);
+                cursorString = $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}" + System.Environment.NewLine
+                            + $"Physical: {Math.Truncate(wcsLengths.x*100)/100}° x {Math.Truncate(wcsLengths.y*100)/100}° x {Math.Truncate(wcsLengths.z*100)/100/1000} km/s";
             }
         }
         _scalingTextComponent.enabled = true;

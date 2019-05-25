@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -15,11 +18,20 @@ namespace VolumeData
         public long XDim { get; private set; }
         public long YDim { get; private set; }
         public long ZDim { get; private set; }
+        public int XDimDecimal { get; private set; }
+        public int YDimDecimal { get; private set; }
+        public int ZDimDecimal { get; private set; }
+
+        public int VelDecimal { get; private set; }
 
         public long NumPoints => XDim * YDim * ZDim;
         public long[] Dims => new[] {XDim, YDim, ZDim};
 
         public bool IsMask { get; private set; }
+
+        private IDictionary<string, string> _headerDictionary;
+        private double _xRef, _yRef, _zRef, _xRefPix, _yRefPix, _zRefPix, _xDelt, _yDelt, _zDelt, _rot;
+        private string _xCoord, _yCoord, _zCoord, _wcsProj;
 
         public IntPtr FitsData;
 
@@ -34,6 +46,11 @@ namespace VolumeData
             if (FitsReader.FitsOpenFile(out fptr, fileName, out status) != 0)
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
+            }
+            if (!isMask)
+            {
+                volumeDataSet._headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
+                volumeDataSet.ParseHeaderDict();
             }
             if (FitsReader.FitsGetImageDims(fptr, out cubeDimensions, out status) != 0)
             {
@@ -71,10 +88,16 @@ namespace VolumeData
                 }
             }
             FitsReader.FitsCloseFile(fptr, out status);
+
+
+
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = cubeSize[0];
             volumeDataSet.YDim = cubeSize[1];
             volumeDataSet.ZDim = cubeSize[2];
+            volumeDataSet.XDimDecimal = cubeSize[0].ToString().Length;
+            volumeDataSet.YDimDecimal = cubeSize[1].ToString().Length;
+            volumeDataSet.ZDimDecimal = cubeSize[2].ToString().Length;
             return volumeDataSet;
         }
 
@@ -217,7 +240,7 @@ namespace VolumeData
             Debug.Log($"Cropped into {cubeSize.x} x {cubeSize.y} x {cubeSize.z} region ({cubeSize.x * cubeSize.y * cubeSize.z * 4e-6} MB) in {sw.ElapsedMilliseconds} ms");
         }
 
-        public float GetValue(int x, int y, int z)
+        public float GetDataValue(int x, int y, int z)
         {
             if (x < 1 || x > XDim || y < 1 || y > YDim || z < 1 || z > ZDim)
             {
@@ -225,7 +248,19 @@ namespace VolumeData
             }
 
             float val;
-            DataAnalysis.GetVoxelValue(FitsData, out val, (int)XDim, (int)YDim, (int)ZDim, x, y, z);
+            DataAnalysis.GetVoxelFloatValue(FitsData, out val, (int)XDim, (int)YDim, (int)ZDim, x, y, z);
+            return val;
+        }
+
+        public Int16 GetMaskValue(int x, int y, int z)
+        {
+            if (x < 1 || x > XDim || y < 1 || y > YDim || z < 1 || z > ZDim)
+            {
+                return 0;
+            }
+
+            Int16 val;
+            DataAnalysis.GetVoxelInt16Value(FitsData, out val, (int)XDim, (int)YDim, (int)ZDim, x, y, z);
             return val;
         }
 
@@ -255,6 +290,85 @@ namespace VolumeData
                 else
                     xFactor++;
             }
+        }
+
+        public Vector2 GetRADecFromXY(double X, double Y)
+        {
+            double XPos, YPos;
+            MariusSoft.WCSTools.WCSUtil.ffwldp(X, Y, _xRef, _yRef, _xRefPix, _yRefPix, _xDelt, _yDelt, _rot, _wcsProj, out XPos, out YPos);
+            Vector2 raDec= new Vector2((float)XPos, (float)YPos);
+            return raDec;
+        }
+
+        public double GetVelocityFromZ(double z)
+        {
+            return _zRef + _zDelt * (z - _zRefPix);
+        }
+
+        public Vector3 GetWCSDeltas()
+        {
+            return new Vector3((float)_xDelt, (float)_yDelt, (float)_zDelt);
+        }
+
+        public void ParseHeaderDict()
+        {
+            string xProj = "";
+            string yProj = "";
+            string zProj = "";
+            _rot = 0;
+            foreach (KeyValuePair<string, string> entry in _headerDictionary)
+            {
+                switch (entry.Key)
+                {
+                    case "CTYPE1":
+                        _xCoord = entry.Value.Substring(0, 4);
+                        xProj = entry.Value.Substring(5, 4);
+                        break;
+                    case "CRPIX1":
+                        _xRefPix = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
+                        break;
+                    case "CDELT1":
+                        _xDelt = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
+                        break;
+                    case "CRVAL1":
+                        _xRef = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
+                        break;
+                    case "CTYPE2":
+                        _yCoord = entry.Value.Substring(0, 4);
+                        yProj = entry.Value.Substring(5, 4);
+                        break;
+                    case "CRPIX2":
+                        _yRefPix = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
+                        break;
+                    case "CDELT2":
+                        _yDelt = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
+                        break;
+                    case "CRVAL2":
+                        _yRef = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
+                        break;
+                    case "CTYPE3":
+                        _zCoord = entry.Value.Substring(0, 4);
+                        zProj = entry.Value.Substring(5, 4);
+                        break;
+                    case "CRPIX3":
+                        _zRefPix = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
+                        break;
+                    case "CDELT3":
+                        _zDelt = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
+                        break;
+                    case "CRVAL3":
+                        _zRef = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
+                        break;
+                    case "CROTA2":
+                        _rot = Convert.ToDouble(entry.Value.Replace("'", ""));
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if (xProj != yProj)
+                Debug.Log("Warning: WCS projection types do not agree for dimensions! x: " + xProj + ", y: " + yProj);
+            _wcsProj = xProj;
         }
 
         public void CleanUp()

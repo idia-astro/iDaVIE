@@ -13,6 +13,7 @@
 #define MASK_DISABLED 0
 #define MASK_ENABLED 1
 #define MASK_INVERTED 2
+#define MASK_ISOLATED 3
 
 struct Ray
 {
@@ -169,6 +170,12 @@ void accumulateSampleInverseMasked(float3 position, inout float currentValue, in
     }
 }
 
+void accumulateMaskIsolated(float3 position, inout float currentValue, inout bool maxInHighlightBounds)
+{
+    float maskValue = tex3Dlod(MaskCube, float4(position, 0)).r;
+    currentValue = max(currentValue, maskValue > 0? 1: 0);
+}
+
 fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
 {
     // Adapted from the Unity "Particles/Additive" built-in shader
@@ -236,7 +243,7 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
 
     bool maxInHighlightBounds = false;
     // TODO: make this a shader variant thing
-    if (MaskMode == 0)
+    if (MaskMode == MASK_DISABLED)
     {
         for (int i = 0; i < requiredSteps; i++)
         {
@@ -248,7 +255,7 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
         currentRayPosition += stepVector * remainingStepLength * regionScale;
         accumulateSample(currentRayPosition, rayValue, maxInHighlightBounds);
     }
-    else if (MaskMode == 1)
+    else if (MaskMode == MASK_ENABLED)
     {
         for (int i = 0; i < requiredSteps; i++)
         {
@@ -259,6 +266,18 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
         float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
         currentRayPosition += stepVector * remainingStepLength * regionScale;
         accumulateSampleMasked(currentRayPosition, rayValue, maxInHighlightBounds);
+    }
+    else if (MaskMode == MASK_ISOLATED)
+    {
+        for (int i = 0; i < requiredSteps; i++)
+        {
+            accumulateMaskIsolated(currentRayPosition, rayValue, maxInHighlightBounds);
+            currentRayPosition += adjustedStepVector;
+        }
+        // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
+        float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
+        currentRayPosition += stepVector * remainingStepLength * regionScale;
+        accumulateMaskIsolated(currentRayPosition, rayValue, maxInHighlightBounds);
     }
     else
     {
@@ -274,9 +293,11 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     }
     
     // transform into threshold space
-    rayValue = (rayValue - _ScaleMin) / (_ScaleMax - _ScaleMin);
-    rayValue = clamp(rayValue, _ThresholdMin, _ThresholdMax);
-
+    if (MaskMode != MASK_ISOLATED)
+    {
+        rayValue = (rayValue - _ScaleMin) / (_ScaleMax - _ScaleMin);
+        rayValue = clamp(rayValue, _ThresholdMin, _ThresholdMax);
+    }
     // Apply linear color mapping after threshold adjustments
     float colorMapOffset = 1.0 - (0.5 + _ColorMapIndex) / _NumColorMaps;
     float thresholdRange = _ThresholdMax - _ThresholdMin;
