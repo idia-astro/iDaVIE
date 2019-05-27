@@ -18,12 +18,15 @@ namespace DataFeatures
 
         public string FileName { get; private set; }
 
-        public Dictionary<string, string>[] Features { get; private set; }
+        public Dictionary<string, string>[] FeatureData { get; private set; }
+        public Vector3[] FeaturePositions { get; private set; }
+        public string[] FeatureNames { get; private set; }
+        public int NumberFeatures { get; private set; }
 
         public static FeatureSet CreateSetFromAscii(string fileName)
         {
             FeatureSet featureset = new FeatureSet();
-  
+
             featureset.FileName = fileName;
             string[] keys = null;
             string[] lines = File.ReadAllLines(fileName);
@@ -47,12 +50,12 @@ namespace DataFeatures
                 else if (keys != null)
                 {
                     if (sourceIndex == 0)
-                        featureset.Features = new Dictionary<string, string>[lines.Length - i];
-                    featureset.Features[sourceIndex] = new Dictionary<string, string>();
+                        featureset.FeatureData = new Dictionary<string, string>[lines.Length - i];
+                    featureset.FeatureData[sourceIndex] = new Dictionary<string, string>();
                     string[] values = System.Text.RegularExpressions.Regex.Split(lines[i], @"\s{2,}");
                     for (int j = 0; j < values.Length; j++)
                     {
-                        featureset.Features[sourceIndex].Add(keys[j], values[j]);
+                        featureset.FeatureData[sourceIndex].Add(keys[j], values[j]);
                     }
                     sourceIndex++;
                 }
@@ -62,25 +65,18 @@ namespace DataFeatures
                     return featureset;
                 }
             }
-            return featureset;
-        }
-
-        public void SpawnMarkers()
-        {
-            for (int i = 1; i <= Features.Length; i++)
+            featureset.NumberFeatures = featureset.FeatureData.Length;
+            featureset.FeatureNames = new string[featureset.NumberFeatures];
+            featureset.FeaturePositions = new Vector3[featureset.NumberFeatures];
+            for (int i = 0; i < featureset.NumberFeatures; i++)
             {
-                
+                featureset.FeatureNames[i] = featureset.FeatureData[i][nameKey];
+                featureset.FeaturePositions[i].x = Convert.ToSingle(featureset.FeatureData[i][xKey]);
+                featureset.FeaturePositions[i].y = Convert.ToSingle(featureset.FeatureData[i][yKey]);
+                featureset.FeaturePositions[i].z = Convert.ToSingle(featureset.FeatureData[i][zKey]);
+
             }
-        }
-
-        public string GetFeatureName(int Index)
-        {
-            return Features[Index - 1][nameKey];
-        }
-
-        public Vector3Int GetXYZ(int Index)
-        {
-            return new Vector3Int(Convert.ToInt32(Features[Index - 1][xKey]), Convert.ToInt32(Features[Index - 1][yKey]), Convert.ToInt32(Features[Index - 1][zKey]));
+            return featureset;
         }
     }
 }
