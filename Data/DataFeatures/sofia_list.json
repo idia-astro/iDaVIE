@@ -6,15 +6,6 @@
     "Name": {
       "Source": "name"
     },
-    "RA": {
-      "Source": "ra"
-    },
-    "Dec": {
-      "Source": "dec"
-    },
-    "Vel": {
-      "Source": "vopt"
-    },
     "X": {
       "Source": "x"
     },
@@ -41,6 +32,15 @@
     },
     "ZMax": {
       "Source": "z_max"
+    },
+    "RA": {
+      "Source": "ra"
+    },
+    "Dec": {
+      "Source": "dec"
+    },
+    "Vel": {
+      "Source": "vopt"
     }
   }
  }

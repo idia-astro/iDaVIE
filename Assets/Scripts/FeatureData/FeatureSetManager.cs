@@ -46,6 +46,10 @@ namespace DataFeatures
             FeatureSetRendererPrefab.MappingFileName = FeatureMappingFile;
             featureSetRenderer = Instantiate(FeatureSetRendererPrefab, new Vector3(0, 0, 0), Quaternion.identity);
             featureSetRenderer.transform.parent = transform;
+            featureSetRenderer.transform.localPosition = Vector3.zero;
+            featureSetRenderer.transform.localRotation = Quaternion.identity;
+            featureSetRenderer.transform.localScale = new Vector3(1, 1, 1);
+            featureSetRenderer.SpawnFeaturesFromFile();
         }
 
         public void ExportFeatureSet(FeatureSetRenderer setToExport, string FileName)
@@ -53,12 +57,21 @@ namespace DataFeatures
 
         }
 
-        public Vector3 VolumePositionToLocalPosition(Vector3 volumePosition)
+        public Vector3 VolumePositionToWorldPosition(Vector3 volumePosition)
         {
             var parentVolume = GetComponentInParent<VolumeDataSetRenderer>();
             Vector3Int cubeDimensions = parentVolume.GetCubeDimensions();
-            Vector3 worldPosition = new Vector3(volumePosition.x / cubeDimensions.x - 0.5f, volumePosition.y / cubeDimensions.y - 0.5f, volumePosition.z / cubeDimensions.z - 0.5f);
-            return parentVolume.transform.TransformPoint(worldPosition);
+            Vector3 localPosition = new Vector3(volumePosition.x / cubeDimensions.x - 0.5f, volumePosition.y / cubeDimensions.y - 0.5f, volumePosition.z / cubeDimensions.z - 0.5f);
+            return localPosition;
+            //return parentVolume.transform.TransformPoint(localPosition);
+        }
+
+        public Vector3 LocalPositionToVolumePosition(Vector3 localPosition)
+        {
+            var parentVolume = GetComponentInParent<VolumeDataSetRenderer>();
+            Vector3Int cubeDimensions = parentVolume.GetCubeDimensions();
+            Vector3 volumePosition = new Vector3((localPosition.x + 0.5f) * cubeDimensions.x, (localPosition.y + 0.5f) * cubeDimensions.y, (localPosition.z + 0.5f) * cubeDimensions.z);
+            return volumePosition;
         }
 
     }

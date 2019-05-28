@@ -29,15 +29,6 @@
             "Name": {
                 "$ref": "#/definitions/MapEntry"
             },
-            "RA": {
-                "$ref": "#/definitions/MapEntry"
-            },
-            "Dec": {
-                "$ref": "#/definitions/MapEntry"
-            },
-            "Vel": {
-                "$ref": "#/definitions/MapEntry"
-            },
             "X": {
                 "$ref": "#/definitions/MapEntry"
             },
@@ -63,6 +54,15 @@
                 "$ref": "#/definitions/MapEntry"
             },
             "ZMax": {
+                "$ref": "#/definitions/MapEntry"
+            },
+            "RA": {
+                "$ref": "#/definitions/MapEntry"
+            },
+            "Dec": {
+                "$ref": "#/definitions/MapEntry"
+            },
+            "Vel": {
                 "$ref": "#/definitions/MapEntry"
             }
         },
