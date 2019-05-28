@@ -13,10 +13,13 @@ namespace DataFeatures
         public string FeatureFileToLoad;
         public string FeatureMappingFile;
 
+        private List<FeatureSetRenderer> _featureSetList;
+
 
         // Start is called before the first frame update
         void Start()
         {
+            _featureSetList = new List<FeatureSetRenderer>();
         }
 
         // Update is called once per frame
@@ -27,20 +30,33 @@ namespace DataFeatures
             //Debug.Log($"x: {objectSpacePosition.x}, y: {objectSpacePosition.y}, z: {objectSpacePosition}");
         }
 
-        public void ImportFeatureSet()
+        public FeatureSetRenderer NewFeatureSet()
+        {
+            FeatureSetRenderer featureSetRenderer;
+            featureSetRenderer = Instantiate(FeatureSetRendererPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+            featureSetRenderer.transform.parent = transform;
+            featureSetRenderer.transform.localPosition = Vector3.zero;
+            featureSetRenderer.transform.localRotation = Quaternion.identity;
+            featureSetRenderer.transform.localScale = new Vector3(1, 1, 1);
+            _featureSetList.Add(featureSetRenderer);
+            return featureSetRenderer;
+        }
+
+
+        public FeatureSetRenderer ImportFeatureSet()
         {
             //var featureSet = new FeatureSet();
             //featureSet.FileName = FeatureSetToLoad;
-            FeatureSetRenderer featureSetRenderer;
+            FeatureSetRenderer featureSetRenderer = null;
             if (FeatureFileToLoad == "")
             {
                 Debug.Log("Please enter path to feature file.");
-                return;
+                return featureSetRenderer;
             }
             if (FeatureMappingFile == "")
             {
                 Debug.Log("Please enter path to feature mapping file.");
-                return;
+                return featureSetRenderer;
             }
             FeatureSetRendererPrefab.FileName = FeatureFileToLoad;
             FeatureSetRendererPrefab.MappingFileName = FeatureMappingFile;
@@ -50,6 +66,8 @@ namespace DataFeatures
             featureSetRenderer.transform.localRotation = Quaternion.identity;
             featureSetRenderer.transform.localScale = new Vector3(1, 1, 1);
             featureSetRenderer.SpawnFeaturesFromFile();
+            _featureSetList.Add(featureSetRenderer);
+            return featureSetRenderer;
         }
 
         public void ExportFeatureSet(FeatureSetRenderer setToExport, string FileName)
