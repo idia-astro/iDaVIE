@@ -10,8 +10,8 @@ namespace DataFeatures
     {
 
         public FeatureSetRenderer FeatureSetRendererPrefab;
-        private FeatureSetRenderer _featureSetRenderer;
-        public string FeatureSetToLoad;
+        public string FeatureFileToLoad;
+        public string FeatureMappingFile;
 
 
         // Start is called before the first frame update
@@ -31,9 +31,21 @@ namespace DataFeatures
         {
             //var featureSet = new FeatureSet();
             //featureSet.FileName = FeatureSetToLoad;
-            FeatureSetRendererPrefab.FileName = FeatureSetToLoad;
-            _featureSetRenderer = Instantiate(FeatureSetRendererPrefab, new Vector3(0, 0, 0), Quaternion.identity);
-            _featureSetRenderer.transform.parent = transform;
+            FeatureSetRenderer featureSetRenderer;
+            if (FeatureFileToLoad == "")
+            {
+                Debug.Log("Please enter path to feature file.");
+                return;
+            }
+            if (FeatureMappingFile == "")
+            {
+                Debug.Log("Please enter path to feature mapping file.");
+                return;
+            }
+            FeatureSetRendererPrefab.FileName = FeatureFileToLoad;
+            FeatureSetRendererPrefab.MappingFileName = FeatureMappingFile;
+            featureSetRenderer = Instantiate(FeatureSetRendererPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+            featureSetRenderer.transform.parent = transform;
         }
 
         public void ExportFeatureSet(FeatureSetRenderer setToExport, string FileName)
@@ -47,8 +59,6 @@ namespace DataFeatures
             Vector3Int cubeDimensions = parentVolume.GetCubeDimensions();
             Vector3 worldPosition = new Vector3(volumePosition.x / cubeDimensions.x - 0.5f, volumePosition.y / cubeDimensions.y - 0.5f, volumePosition.z / cubeDimensions.z - 0.5f);
             return parentVolume.transform.TransformPoint(worldPosition);
-            return worldPosition;
-
         }
 
     }

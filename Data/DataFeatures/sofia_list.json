@@ -1,46 +1,46 @@
 {
   "Mapping": {
    "Index": {
-      "source": "id",
+      "Source": "id"
     },
     "Name": {
-      "source": "name",
+      "Source": "name"
     },
     "RA": {
-      "source": "ra",
+      "Source": "ra"
     },
     "Dec": {
-      "source": "dec",
+      "Source": "dec"
     },
     "Vel": {
-      "source": "vopt",
+      "Source": "vopt"
     },
     "X": {
-      "source": "x",
+      "Source": "x"
     },
     "Y": {
-      "source": "y",
+      "Source": "y"
     },
     "Z": {
-      "source": "z",
-    }
+      "Source": "z"
+    },
     "XMin": {
-      "source": "x_min",
+      "Source": "x_min"
     },
     "XMax": {
-      "source": "x_max",
+      "Source": "x_max"
     },
     "YMin": {
-      "source": "y_min",
+      "Source": "y_min"
     },
     "YMax": {
-      "source": "y_max",
+      "Source": "y_max"
     },
     "ZMin": {
-      "source": "z_min",
+      "Source": "z_min"
     },
     "ZMax": {
-      "source": "z_max",
+      "Source": "z_max"
     }
   }
  }

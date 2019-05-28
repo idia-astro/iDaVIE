@@ -10,7 +10,7 @@
      },
      "MapEntry": {
       "properties": {
-        "source": {
+        "Source": {
           "type": "string"
         }
       },
@@ -19,7 +19,7 @@
       ],
       "type": "object"
     }
-}
+},
 "properties": {
     "Mapping": {
         "properties": {
@@ -65,7 +65,15 @@
             "ZMax": {
                 "$ref": "#/definitions/MapEntry"
             }
-        }
+        },
+        "required": [
+            "X",
+            "Y",
+            "Z",
+            "name"
+          ],
+        "additionalProperties": false,
+        "type":"object"
     }
 }
 }

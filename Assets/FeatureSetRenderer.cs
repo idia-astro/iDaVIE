@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using TMPro;
+
 
 using UnityEngine;
 
@@ -8,13 +8,14 @@ namespace DataFeatures {
     public class FeatureSetRenderer : MonoBehaviour
     {
         public string FileName;
+        public string MappingFileName;
         public GameObject PrefabToSpawn;
         public FeatureSet FeatureSet { get; private set; }
 
     // Start is called before the first frame update
     void Start()
         {
-            FeatureSet = FeatureSet.CreateSetFromAscii(FileName);
+            FeatureSet = FeatureSet.CreateSetFromAscii(FileName, MappingFileName);
             SpawnFeatureMarkers();
         }
 
@@ -33,6 +34,7 @@ namespace DataFeatures {
                 Vector3 spawnPosition = GetComponentInParent<FeatureSetManager>().VolumePositionToLocalPosition(featurePosition);
                 spawningObject = Instantiate(PrefabToSpawn, spawnPosition, Quaternion.identity);
                 spawningObject.transform.parent = transform;
+                spawningObject.name = FeatureSet.FeatureNames[i];
             }
         }
 
