@@ -35,7 +35,7 @@ namespace DataFeatures
     }
 
     [Serializable]
-    public class FeatureSet
+    public class FeatureSetImporter
     {
 
         public string X   { get; set; }
@@ -54,11 +54,10 @@ namespace DataFeatures
         public int NumberFeatures { get; private set; }
 
 
-        public static FeatureSet CreateSetFromAscii(string fileName, string mappingFileName)
+        public static FeatureSetImporter CreateSetFromAscii(string fileName, string mappingFileName)
         {
-            //FeatureSet featureset = new FeatureSet();
             string mappingJson = File.ReadAllText(mappingFileName);
-            FeatureSet featureSet = JsonConvert.DeserializeObject<FeatureSet>(mappingJson);
+            FeatureSetImporter featureSet = JsonConvert.DeserializeObject<FeatureSetImporter>(mappingJson);
             featureSet.FileName = fileName;
             string[] keys = null;
             string[] lines = File.ReadAllLines(fileName);

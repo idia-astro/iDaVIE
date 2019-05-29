@@ -11,12 +11,13 @@ namespace DataFeatures {
     {
         public string FileName;
         public string MappingFileName;
-        public Feature PrefabToSpawn;
-        public FeatureSet FeatureSet { get; private set; }
+        public Feature FeaturePrefab;
+        private FeatureSetImporter _importer;
         public List<Feature> _featureList;
 
-    // Start is called before the first frame update
-    void Start()
+
+        // Start is called before the first frame update
+        void Start()
         {
             _featureList = new List<Feature>();
         }
@@ -27,29 +28,32 @@ namespace DataFeatures {
 
         }
 
+        // Add feature to Renderer as container
         public void AddFeature(Feature featureToAdd)
         {
             _featureList.Add(featureToAdd);
             featureToAdd.transform.parent = transform;
         }
 
+        // Spawn Feature objects intro world from FileName
         public void SpawnFeaturesFromFile()
         {
-            FeatureSet = FeatureSet.CreateSetFromAscii(FileName, MappingFileName);
-            for (int i = 0; i < FeatureSet.NumberFeatures; i++)
+            _importer = FeatureSetImporter.CreateSetFromAscii(FileName, MappingFileName);
+            for (int i = 0; i < _importer.NumberFeatures; i++)
             {
                 Feature spawningObject;
-                Vector3 featurePosition = FeatureSet.FeaturePositions[i];
-                Vector3 spawnPosition = GetComponentInParent<FeatureSetManager>().VolumePositionToWorldPosition(featurePosition);
-                spawningObject = Instantiate(PrefabToSpawn, Vector3.zero, Quaternion.identity);
-                spawningObject.transform.parent = transform;
+                Vector3 featurePosition = _importer.FeaturePositions[i];
+                Vector3 spawnPosition = GetComponentInParent<FeatureSetManager>().VolumePositionToLocalPosition(featurePosition);
+                spawningObject = Instantiate(FeaturePrefab, Vector3.zero, Quaternion.identity);
+                spawningObject.transform.SetParent(transform, false);
                 spawningObject.transform.localPosition = spawnPosition;
-                spawningObject.name = FeatureSet.FeatureNames[i];
+                spawningObject.name = _importer.FeatureNames[i];
                 _featureList.Add(spawningObject);
                 
             }
         }
 
+        // Output the features to File
         public void OutputFeaturesToFile(string FileName)
         {
             VolumeDataSet parentVolume = GetComponentInParent<VolumeDataSet>();

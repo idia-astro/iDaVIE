@@ -45,6 +45,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   FileName: Data/DataFeatures/Vela_mosaic1_cat.ascii
   MappingFileName: Data/DataFeatures/sofia_list.json
-  PrefabToSpawn: {fileID: -8534198213075591909, guid: 8e9e62fa93afa3f47a71d80cc78fbb7f,
+  FeaturePrefab: {fileID: -8534198213075591909, guid: 8e9e62fa93afa3f47a71d80cc78fbb7f,
     type: 3}
   _featureList: []

@@ -109,8 +109,9 @@ namespace VolumeData
         public FeatureSetManager FeatureSetManagerPrefab;
 
         private VectorLine _voxelOutline, _cubeOutline, _regionOutline;
+        
 
-        private FeatureSetManager _featureManager;
+        private FeatureSetManager _featureManager = null;
         private MeshRenderer _renderer;
         private Material _materialInstance;
         private VolumeDataSet _dataSet;
@@ -159,8 +160,9 @@ namespace VolumeData
         {
             _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false);
 
-            //_featureManager = Instantiate(FeatureSetManagerPrefab, new Vector3(0, 0, 0), Quaternion.identity);
-            //_featureManager.transform.parent = transform;
+            _featureManager = GetComponentInChildren<FeatureSetManager>();
+            if (_featureManager == null)
+                Debug.Log($"No FeatureManager attached to VolumeDataSetRenderer. Attach prefab for use of Features.");
 
             if (!FactorOverride)
             {
