@@ -38,9 +38,20 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int GetVoxelValue(float *dataPtr, float *voxelValue, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y, int64_t z)
+	DllExport int GetVoxelFloatValue(float *dataPtr, float *voxelValue, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y, int64_t z)
 	{
 		float outValue;
+		if (x > xDim || y > yDim || z > zDim || x < 1 || y < 1 || z < 1)
+			return EXIT_FAILURE;
+		int64_t index = xDim * yDim * (z - 1) + xDim * (y - 1) + (x - 1);
+		outValue = dataPtr[index];
+		*voxelValue = outValue;
+		return EXIT_SUCCESS;
+	}
+
+	DllExport int GetVoxelInt16Value(int16_t *dataPtr, int16_t *voxelValue, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y, int64_t z)
+	{
+		int16_t outValue;
 		if (x > xDim || y > yDim || z > zDim || x < 1 || y < 1 || z < 1)
 			return EXIT_FAILURE;
 		int64_t index = xDim * yDim * (z - 1) + xDim * (y - 1) + (x - 1);

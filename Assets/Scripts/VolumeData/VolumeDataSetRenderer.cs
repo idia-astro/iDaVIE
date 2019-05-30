@@ -27,7 +27,8 @@ namespace VolumeData
     {
         Disabled = 0,
         Enabled = 1,
-        Inverted = 2
+        Inverted = 2,
+        Isolated = 3
     }
 
 
@@ -98,6 +99,7 @@ namespace VolumeData
 
         public Vector3Int CursorVoxel { get; private set; }
         public float CursorValue { get; private set; }
+        public Int16 CursorSource { get; private set; }
         public Vector3Int RegionStartVoxel { get; private set; }
         public Vector3Int RegionEndVoxel { get; private set; }
 
@@ -265,7 +267,11 @@ namespace VolumeData
                 if (!newVoxelCursor.Equals(CursorVoxel))
                 {
                     CursorVoxel = newVoxelCursor;
-                    CursorValue = _dataSet.GetValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
+                    CursorValue = _dataSet.GetDataValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
+                    if (_maskDataSet != null)
+                        CursorSource = _maskDataSet.GetMaskValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
+                    else
+                        CursorSource = 0;
                     Vector3 voxelCenterObjectSpace = new Vector3(voxelCenterCubeSpace.x / _dataSet.XDim - 0.5f, voxelCenterCubeSpace.y / _dataSet.YDim - 0.5f, voxelCenterCubeSpace.z / _dataSet.ZDim - 0.5f);
                     _voxelOutline.MakeCube(voxelCenterObjectSpace, 1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
                 }
@@ -438,6 +444,43 @@ namespace VolumeData
             _materialInstance.SetFloat(MaterialID.VignetteFadeEnd, VignetteFadeEnd);
             _materialInstance.SetFloat(MaterialID.VignetteIntensity, VignetteIntensity);
             _materialInstance.SetColor(MaterialID.VignetteColor, VignetteColor);
+        }
+
+        public Vector3 GetFitsCoords(double X, double Y, double Z)
+        {
+            Vector2 raDec = _dataSet.GetRADecFromXY(X, Y);
+            float z = (float)_dataSet.GetVelocityFromZ(Z);
+            return new Vector3(raDec.x, raDec.y, z);
+        }
+
+        public Vector3 GetFitsLengths(double X, double Y, double Z)
+        {
+            Vector3 wcsConversion = _dataSet.GetWCSDeltas();
+            float xLength = Math.Abs((float)X * wcsConversion.x);
+            float yLength = Math.Abs((float)Y * wcsConversion.y);
+            float zLength = Math.Abs((float)Z * wcsConversion.z);
+            return new Vector3(xLength, yLength, zLength);
+        }
+
+        public string GetFitsCoordsString(double X, double Y, double Z)
+        {
+            Vector2 raDec = _dataSet.GetRADecFromXY(X, Y);
+            string vel = string.Format("{0,8:F2} km/s", (float)_dataSet.GetVelocityFromZ(Z)/1000);
+            double raHours = (raDec.x * 12.0 / 180.0);
+            double raMin = (raHours - Math.Truncate(raHours)) * 60;
+            double raSec = Math.Truncate((raMin - Math.Truncate(raMin)) * 60 * 100)/100;
+
+            double decMin = Math.Abs((raDec.y - Math.Truncate(raDec.y)) * 60);
+            double decSec = Math.Truncate((decMin - Math.Truncate(decMin)) * 60 * 100) / 100;
+
+            string ra = Math.Truncate(raHours).ToString("00").PadLeft(3) + ":" + Math.Truncate(raMin).ToString("00") + ":" + raSec.ToString("00.00");
+            string dec = Math.Truncate(raDec.y).ToString("00").PadLeft(3) + ":" + Math.Truncate(decMin).ToString("00") + ":" + decSec.ToString("00.00");
+            return ra + " " + dec + " " + vel;
+        }
+
+        public Vector3Int GetDimDecimals()
+        {
+            return new Vector3Int(_dataSet.XDimDecimal, _dataSet.YDimDecimal, _dataSet.ZDimDecimal);
         }
 
         public void OnDestroy()

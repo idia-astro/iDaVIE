@@ -18,7 +18,10 @@ public class DataAnalysis
    long cropX2, long cropY2, long cropZ2, int factorX, int factorY, int factorZ);
 
     [DllImport("data_analysis_tool")]
-    public static extern int GetVoxelValue(IntPtr dataPtr, out float voxelValue, long dimX, long dimY, long dimZ, long x, long y, long z);
+    public static extern int GetVoxelFloatValue(IntPtr dataPtr, out float voxelValue, long dimX, long dimY, long dimZ, long x, long y, long z);
+
+    [DllImport("data_analysis_tool")]
+    public static extern int GetVoxelInt16Value(IntPtr dataPtr, out Int16 voxelValue, long dimX, long dimY, long dimZ, long x, long y, long z);
 
     [DllImport("data_analysis_tool")]
     public static extern int GetXProfile(IntPtr dataPtr, out IntPtr profile, long dimX, long dimY, long dimZ, long y, long z);
