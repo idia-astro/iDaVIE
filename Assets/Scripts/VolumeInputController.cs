@@ -53,6 +53,7 @@ public class VolumeInputController : MonoBehaviour
     private Transform[] _handTransforms;
     private SteamVR_Action_Boolean _grabGripAction;
     private SteamVR_Action_Boolean _grabPinchAction;
+    private SteamVR_Action_Boolean _interactUIAction;
     private VolumeDataSetRenderer[] _volumeDataSets;
     private float[] _startDataSetScales;
     private Vector3[] _currentGripPositions;
@@ -124,12 +125,15 @@ public class VolumeInputController : MonoBehaviour
 
             _grabGripAction = _player.leftHand.grabGripAction;
             _grabPinchAction = _player.leftHand.grabPinchAction;
+            _interactUIAction = _player.leftHand.uiInteractAction;
         }
 
         _grabGripAction.AddOnChangeListener(OnGripChanged, SteamVR_Input_Sources.LeftHand);
         _grabGripAction.AddOnChangeListener(OnGripChanged, SteamVR_Input_Sources.RightHand);
         _grabPinchAction.AddOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.LeftHand);
         _grabPinchAction.AddOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.RightHand);
+        _interactUIAction.AddOnChangeListener(OnInteractChanged, SteamVR_Input_Sources.LeftHand);
+        _interactUIAction.AddOnChangeListener(OnInteractChanged, SteamVR_Input_Sources.RightHand);
 
         var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
         if (volumeDataSetManager)
@@ -167,7 +171,40 @@ public class VolumeInputController : MonoBehaviour
             _grabGripAction.RemoveOnChangeListener(OnGripChanged, SteamVR_Input_Sources.RightHand);
             _grabPinchAction.RemoveOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.LeftHand);
             _grabPinchAction.RemoveOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.RightHand);
+            _interactUIAction.RemoveOnChangeListener(OnInteractChanged, SteamVR_Input_Sources.LeftHand);
+            _interactUIAction.RemoveOnChangeListener(OnInteractChanged, SteamVR_Input_Sources.RightHand);
+
         }
+    }
+
+    private void OnInteractChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
+    {
+
+        Debug.Log("state_ "+newState);
+
+        if (fromSource == SteamVR_Input_Sources.LeftHand)
+         {
+             Debug.Log("LeFT Trigger");
+            
+            if (newState )
+            {
+                //  StartSelection(hand);
+                StartRequestQuickMenu();
+            }
+            else if (!newState )
+            {
+                //  EndSelection();
+                EndRequestQuickMenu();
+            }
+
+        }
+         else
+         {
+             Debug.Log("Right Trigger");
+
+
+         }
+   
     }
 
     private void OnGripChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
@@ -200,22 +237,34 @@ public class VolumeInputController : MonoBehaviour
                 StateTransitionMovingToScaling();
                 break;
         }
+
+
+       
+
+
+     
+
     }
 
 
     private void OnPinchChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
+
+
         var hand = fromSource == SteamVR_Input_Sources.LeftHand ? _hands[0] : _hands[1];
         if (newState && _selectingHand == null)
         {
             StartSelection(hand);
-            StartRequestQuickMenu();
+           // StartRequestQuickMenu();
         }
         else if (!newState && _selectingHand == hand)
         {
             EndSelection();
-            EndRequestQuickMenu();
+           // EndRequestQuickMenu();
         }        
+
+
+      
     }
 
     private void StateTransitionMovingToIdle()

@@ -27,14 +27,19 @@ public class PointerController : MonoBehaviour
 
     private void OnUiInteractionChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
+
+        Debug.Log("interax");
         // Mouse down
-        if (newState)
+        if (newState && fromSource != SteamVR_Input_Sources.LeftHand)
         {
+            Debug.Log("newState");
             if (_hoveredElement)
             {
+                Debug.Log("_hoveredElement");
                 UserSelectableItem selectableItem = _hoveredElement.GetComponent<UserSelectableItem>();
-                if (selectableItem)
+                if (selectableItem )
                 {
+                    Debug.Log("selectableItem");
                     if (selectableItem.IsDragHandle && selectableItem.MenuRoot != null)
                     {
                         _draggingMenu = selectableItem.MenuRoot;
