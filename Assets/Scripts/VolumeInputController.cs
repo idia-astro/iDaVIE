@@ -624,22 +624,24 @@ public class VolumeInputController : MonoBehaviour
         float targetDistance = 0.5f;
 
         var activeDataSet = getFirstActiveDataSet();
-        if (activeDataSet)
+        if (activeDataSet != null && Camera.main != null)
         {
+            var dataSetTransform = activeDataSet.transform;
+            var cameraTransform = Camera.main.transform;
             Vector3 boundsMinObjectSpace = activeDataSet.VolumePositionToLocalPosition(boundsMin);
             Vector3 boundsMaxObjectSpace = activeDataSet.VolumePositionToLocalPosition(boundsMax);
             Vector3 deltaObjectSpace = boundsMaxObjectSpace - boundsMinObjectSpace;
-            Vector3 deltaWorldSpace = activeDataSet.transform.TransformVector(deltaObjectSpace);
+            Vector3 deltaWorldSpace = dataSetTransform.TransformVector(deltaObjectSpace);
             float lengthWorldSpace = deltaWorldSpace.magnitude;
             float scalingRequired = targetSize / lengthWorldSpace;
-            activeDataSet.transform.localScale *= scalingRequired;
+            dataSetTransform.localScale *= scalingRequired;
 
-            Vector3 cameraPosWorldSpace = Camera.main.transform.position;
-            Vector3 cameraDirWorldSpace = Camera.main.transform.forward.normalized;
+            Vector3 cameraPosWorldSpace = cameraTransform.position;
+            Vector3 cameraDirWorldSpace = cameraTransform.forward.normalized;
             Vector3 targetPosition = cameraPosWorldSpace + cameraDirWorldSpace * targetDistance;
-            Vector3 centerWorldSpace = activeDataSet.transform.TransformPoint((boundsMaxObjectSpace + boundsMinObjectSpace) / 2.0f);
+            Vector3 centerWorldSpace = dataSetTransform.TransformPoint((boundsMaxObjectSpace + boundsMinObjectSpace) / 2.0f);
             Vector3 deltaPosition = targetPosition - centerWorldSpace;
-            activeDataSet.transform.position += deltaPosition;
+            dataSetTransform.position += deltaPosition;
         }
     }
 }
