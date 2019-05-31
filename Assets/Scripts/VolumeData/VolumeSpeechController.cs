@@ -11,7 +11,7 @@ namespace VolumeData
     {
         public Hand EditingHand;
 
-        private enum SpeechControllerState
+        public enum SpeechControllerState
         {
             Idle,
             EditThresholdMin,
@@ -183,7 +183,7 @@ namespace VolumeData
             }
         }
 
-        private void UpdateThreshold(bool editingMax)
+        public void UpdateThreshold(bool editingMax)
         {
             if (EditingHand)
             {
@@ -206,7 +206,7 @@ namespace VolumeData
             }
         }
 
-        private void resetThreshold()
+        public void resetThreshold()
         {
             if (_activeDataSet)
             {
@@ -215,7 +215,7 @@ namespace VolumeData
             }
         }
 
-        private void resetTransform()
+        public void resetTransform()
         {
             if (_activeDataSet)
             {
@@ -225,7 +225,7 @@ namespace VolumeData
             }
         }
 
-        private void setColorMap(ColorMapEnum colorMap)
+        public void setColorMap(ColorMapEnum colorMap)
         {
             if (_activeDataSet)
             {
@@ -233,7 +233,7 @@ namespace VolumeData
             }
         }               
 
-        private void stepDataSet(bool forwards)
+        public void stepDataSet(bool forwards)
         {
             for (var i = 0; i < _dataSets.Length; i++)
             {
@@ -250,7 +250,7 @@ namespace VolumeData
             }
         }
 
-        private void cropDataSet()
+        public void cropDataSet()
         {
             if (_activeDataSet)
             {
@@ -258,7 +258,7 @@ namespace VolumeData
             }
         }
 
-        private void resetCropDataSet()
+        public void resetCropDataSet()
         {
             if (_activeDataSet)
             {
@@ -266,7 +266,7 @@ namespace VolumeData
             }
         }
 
-        private void setMask(MaskMode mode)
+        public void setMask(MaskMode mode)
         {
             if (_activeDataSet)
             {
@@ -274,7 +274,7 @@ namespace VolumeData
             }
         }
 
-        private VolumeDataSetRenderer getFirstActiveDataSet()
+        public VolumeDataSetRenderer getFirstActiveDataSet()
         {
             foreach (var dataSet in _dataSets)
             {
@@ -285,6 +285,11 @@ namespace VolumeData
             }
 
             return null;
+        }
+
+        public void ChangeSpeechControllerState(SpeechControllerState state)
+        {
+            _state = state;
         }
     }
 }
