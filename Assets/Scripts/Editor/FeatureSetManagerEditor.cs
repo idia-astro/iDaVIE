@@ -5,15 +5,15 @@ using UnityEditor;
 
 
 [CustomEditor(typeof(FeatureSetManager))]
-public class LevelScriptEditor : Editor 
+public class FeatureSetManagerEditor : Editor 
 {
     public override void OnInspectorGUI()
     {
         DrawDefaultInspector();
-        FeatureSetManager featureSetManagerScript = (FeatureSetManager)target;
+        FeatureSetManager featureSetManager = (FeatureSetManager)target;
         if (GUILayout.Button("Import Feature Set"))
         {
-            featureSetManagerScript.ImportFeatureSet();
+            featureSetManager.ImportFeatureSet();
         }
     }
 }
