@@ -2,25 +2,19 @@
 using System.Collections.Generic;
 using System.IO;
 using VolumeData;
-
-
 using UnityEngine;
+using Vectrosity;
 
-namespace DataFeatures {
+namespace DataFeatures
+{
     public class FeatureSetRenderer : MonoBehaviour
     {
         public string FileName;
         public string MappingFileName;
         public Feature FeaturePrefab;
         private FeatureSetImporter _importer;
-        public List<Feature> _featureList;
-
-
-        // Start is called before the first frame update
-        void Start()
-        {
-            _featureList = new List<Feature>();
-        }
+        private readonly List<Feature> _featureList = new List<Feature>();
+        private readonly List<VectorLine> _featureBoxes = new List<VectorLine>();
 
         // Add feature to Renderer as container
         public void AddFeature(Feature featureToAdd)
@@ -38,12 +32,14 @@ namespace DataFeatures {
             {
                 for (int i = 0; i < _importer.NumberFeatures; i++)
                 {
-                    Feature spawningObject;
-                    Vector3 featurePosition = _importer.FeaturePositions[i];
-                    Vector3 spawnPosition = volumeDataSetRenderer.VolumePositionToLocalPosition(featurePosition);
-                    spawningObject = Instantiate(FeaturePrefab, Vector3.zero, Quaternion.identity, transform);
-                    spawningObject.transform.localPosition = spawnPosition;
+                    Feature spawningObject = Instantiate(FeaturePrefab, Vector3.zero, Quaternion.identity, transform);
                     spawningObject.name = _importer.FeatureNames[i];
+
+                    // For some reason, this has to be constructed _outside_ the prefab.
+                    var boundingBox = new VectorLine($"{_importer.FeatureNames[i]}_outline", new List<Vector3>(24), 1.0f) {drawTransform = transform, color = Color.gray};
+                    boundingBox.Draw3DAuto();
+                    spawningObject.SetBoundingBox(boundingBox);
+                    spawningObject.SetBounds(volumeDataSetRenderer.VolumePositionToLocalPosition(_importer.BoxMinPositions[i]), volumeDataSetRenderer.VolumePositionToLocalPosition(_importer.BoxMaxPositions[i]));
                     _featureList.Add(spawningObject);
                 }
             }

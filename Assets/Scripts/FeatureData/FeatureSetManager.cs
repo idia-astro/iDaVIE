@@ -1,17 +1,14 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using VolumeData;
+﻿using System.Collections.Generic;
 using UnityEngine;
-
 
 namespace DataFeatures
 {
     public class FeatureSetManager : MonoBehaviour
     {
-
         public FeatureSetRenderer FeatureSetRendererPrefab;
         public string FeatureFileToLoad;
         public string FeatureMappingFile;
+        public bool ImportAtStart;
 
         // List containing the different FeatureSets (example: SofiaSet, CustomSet, VRSet, etc.)
         // UI will have tab for each Renderer containing the lists of Features
@@ -26,6 +23,10 @@ namespace DataFeatures
         {
             _featureSetList = new List<FeatureSetRenderer>();
             _activeFeatureSetRenderer = null;
+            if (ImportAtStart)
+            {
+                ImportFeatureSet();
+            }
         }
 
         // Creates new empty FeatureSetRenderer for adding Features
@@ -49,11 +50,13 @@ namespace DataFeatures
                 Debug.Log("Please enter path to feature file.");
                 return featureSetRenderer;
             }
+
             if (FeatureMappingFile == "")
             {
                 Debug.Log("Please enter path to feature mapping file.");
                 return featureSetRenderer;
             }
+
             FeatureSetRendererPrefab.FileName = FeatureFileToLoad;
             FeatureSetRendererPrefab.MappingFileName = FeatureMappingFile;
             featureSetRenderer = Instantiate(FeatureSetRendererPrefab, new Vector3(0, 0, 0), Quaternion.identity);
@@ -67,7 +70,6 @@ namespace DataFeatures
 
         public void ExportFeatureSet(FeatureSetRenderer setToExport, string FileName)
         {
-
-        }   
+        }
     }
 }
