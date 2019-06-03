@@ -181,11 +181,10 @@ public class VolumeInputController : MonoBehaviour
     private void OnInteractChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
 
-        Debug.Log("state_ "+newState);
-
+     
         if (fromSource == SteamVR_Input_Sources.LeftHand)
          {
-             Debug.Log("LeFT Trigger");
+            
             
             if (newState )
             {

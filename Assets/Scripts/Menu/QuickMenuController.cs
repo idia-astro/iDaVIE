@@ -15,6 +15,7 @@ public class QuickMenuController : MonoBehaviour
 
     public GameObject mainMenuCanvas;
     int maskstatus=0;
+    int cropstatus = 0;
     // Start is called before the first frame update
     void Start()
     {
@@ -108,12 +109,42 @@ public class QuickMenuController : MonoBehaviour
         
     }
 
+
     private void setMask(MaskMode mode)
     {
        
         if (_activeDataSet)
         {
             _activeDataSet.MaskMode = mode;
+        }
+    }
+
+
+    public void cropDataSet()
+    {
+
+        if (cropstatus == 1)
+            cropstatus = -1;
+        cropstatus++;
+
+        this.gameObject.transform.Find("Image_dis").gameObject.SetActive(false);
+        this.gameObject.transform.Find("Image_en").gameObject.SetActive(false);
+
+        if (_activeDataSet)
+        {
+            switch (cropstatus)
+            {
+                case 0:
+                    this.gameObject.transform.Find("Image_dis").gameObject.SetActive(true);
+                    notificationText.GetComponent<Text>().text = "Crop disabled";
+                    _activeDataSet.ResetCrop();
+                    break;
+                case 1:
+                    this.gameObject.transform.Find("Image_en").gameObject.SetActive(true);
+                    notificationText.GetComponent<Text>().text = "Crop enabled";
+                    _activeDataSet.CropToRegion();
+                    break;
+            }
         }
     }
 }
