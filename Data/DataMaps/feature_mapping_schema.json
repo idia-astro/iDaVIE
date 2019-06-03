@@ -1,0 +1,85 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "definitions": {
+        "dataType": {
+            "enum": [
+                "string",
+                "int",
+                "float"
+            ],
+            "type": "string"
+        },
+        "MapEntry": {
+            "properties": {
+                "Source": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Source"
+            ],
+            "type": "object"
+        }
+    },
+    "properties": {
+        "Mapping": {
+            "properties": {
+                "Index": {
+                    "$ref": "#/definitions/MapEntry"
+                },
+                "Name": {
+                    "$ref": "#/definitions/MapEntry"
+                },
+                "X": {
+                    "$ref": "#/definitions/MapEntry"
+                },
+                "Y": {
+                    "$ref": "#/definitions/MapEntry"
+                },
+                "Z": {
+                    "$ref": "#/definitions/MapEntry"
+                },
+                "XMin": {
+                    "$ref": "#/definitions/MapEntry"
+                },
+                "XMax": {
+                    "$ref": "#/definitions/MapEntry"
+                },
+                "YMin": {
+                    "$ref": "#/definitions/MapEntry"
+                },
+                "YMax": {
+                    "$ref": "#/definitions/MapEntry"
+                },
+                "ZMin": {
+                    "$ref": "#/definitions/MapEntry"
+                },
+                "ZMax": {
+                    "$ref": "#/definitions/MapEntry"
+                },
+                "RA": {
+                    "$ref": "#/definitions/MapEntry"
+                },
+                "Dec": {
+                    "$ref": "#/definitions/MapEntry"
+                },
+                "Vel": {
+                    "$ref": "#/definitions/MapEntry"
+                }
+            },
+            "required": [
+                "X",
+                "Y",
+                "Z",
+                "name"
+            ],
+            "additionalProperties": false,
+            "type": "object"
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "Mapping"
+    ],
+    "type": "object"
+}

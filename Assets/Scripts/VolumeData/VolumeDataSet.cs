@@ -360,7 +360,7 @@ namespace VolumeData
                         _zRef = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                         break;
                     case "CROTA2":
-                        _rot = Convert.ToDouble(entry.Value.Replace("'", ""));
+                        _rot = Convert.ToDouble(entry.Value.Replace("'", ""), CultureInfo.InvariantCulture);
                         break;
                     default:
                         break;

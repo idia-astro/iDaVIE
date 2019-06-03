@@ -8,7 +8,6 @@ using Valve.VR;
 using Valve.VR.InteractionSystem;
 using Vectrosity;
 using System.Diagnostics;
-
 using Debug = UnityEngine.Debug;
 using VRHand = Valve.VR.InteractionSystem.Hand;
 
@@ -22,13 +21,13 @@ public class VolumeInputController : MonoBehaviour
         Vive,
         WindowsMixedReality
     }
-    
+
     private enum LocomotionState
     {
         Idle,
         Moving,
         Scaling
-    }       
+    }
 
     [Flags]
     private enum RotationAxes
@@ -85,6 +84,7 @@ public class VolumeInputController : MonoBehaviour
 
     // VR-family dependent values
     private VRFamily _vrFamily;
+
     // Used for moving the pointer transform to an acceptable position for each controller type
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsLeft = new Dictionary<VRFamily, Vector3>
     {
@@ -93,6 +93,7 @@ public class VolumeInputController : MonoBehaviour
         {VRFamily.Vive, new Vector3(0, -0.09f, 0.06f)},
         {VRFamily.WindowsMixedReality, new Vector3(-0.005f, -0.029f, -0.027f)}
     };
+
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsRight = new Dictionary<VRFamily, Vector3>
     {
         {VRFamily.Unknown, Vector3.zero},
@@ -121,7 +122,7 @@ public class VolumeInputController : MonoBehaviour
 
             _handTransforms[0].localPosition = PointerOffsetsLeft[_vrFamily];
             _handTransforms[1].localPosition = PointerOffsetsRight[_vrFamily];
-            
+
 
             _grabGripAction = _player.leftHand.grabGripAction;
             _grabPinchAction = _player.leftHand.grabPinchAction;
@@ -255,16 +256,13 @@ public class VolumeInputController : MonoBehaviour
         if (newState && _selectingHand == null)
         {
             StartSelection(hand);
-           // StartRequestQuickMenu();
+       
         }
         else if (!newState && _selectingHand == hand)
         {
             EndSelection();
-           // EndRequestQuickMenu();
-        }        
 
-
-      
+        }
     }
 
     private void StateTransitionMovingToIdle()
@@ -395,7 +393,7 @@ public class VolumeInputController : MonoBehaviour
                 break;
             case LocomotionState.Idle:
                 UpdateIdle();
-                break;            
+                break;
         }
 
         if (_isSelecting)
@@ -619,11 +617,11 @@ public class VolumeInputController : MonoBehaviour
                         Vector3Int coordDecimcalPlaces = dataSet.GetDimDecimals();
                         var voxelValue = dataSet.CursorValue;
                         string raDecVel = dataSet.GetFitsCoordsString(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z);
-                        cursorString = "(" + voxelCoordinate.x.ToString().PadLeft(coordDecimcalPlaces.x) 
-                            + "," + voxelCoordinate.y.ToString().PadLeft(coordDecimcalPlaces.y) + "," 
-                            + voxelCoordinate.z.ToString().PadLeft(coordDecimcalPlaces.z) + "): " 
-                            + voxelValue.ToString("0.###E+000").PadLeft(11)  + System.Environment.NewLine
-                            + raDecVel + System.Environment.NewLine + sourceIndex;
+                        cursorString = "(" + voxelCoordinate.x.ToString().PadLeft(coordDecimcalPlaces.x)
+                                           + "," + voxelCoordinate.y.ToString().PadLeft(coordDecimcalPlaces.y) + ","
+                                           + voxelCoordinate.z.ToString().PadLeft(coordDecimcalPlaces.z) + "): "
+                                           + voxelValue.ToString("0.###E+000").PadLeft(11) + System.Environment.NewLine
+                                           + raDecVel + System.Environment.NewLine + sourceIndex;
                     }
                 }
             }
@@ -652,9 +650,10 @@ public class VolumeInputController : MonoBehaviour
                 var regionSize = Vector3.Max(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) - Vector3.Min(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) + Vector3.one;
                 Vector3 wcsLengths = dataSet.GetFitsLengths(regionSize.x, regionSize.y, regionSize.z);
                 cursorString = $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}" + System.Environment.NewLine
-                            + $"Physical: {Math.Truncate(wcsLengths.x*100)/100}° x {Math.Truncate(wcsLengths.y*100)/100}° x {Math.Truncate(wcsLengths.z*100)/100/1000} km/s";
+                                                                                           + $"Physical: {Math.Truncate(wcsLengths.x * 100) / 100}° x {Math.Truncate(wcsLengths.y * 100) / 100}° x {Math.Truncate(wcsLengths.z * 100) / 100 / 1000} km/s";
             }
         }
+
         _scalingTextComponent.enabled = true;
         _scalingTextComponent.text = cursorString;
     }
@@ -672,6 +671,7 @@ public class VolumeInputController : MonoBehaviour
         {
             return VRFamily.Oculus;
         }
+
         if (vrModel.Contains("vive"))
         {
             return VRFamily.Vive;
@@ -681,8 +681,48 @@ public class VolumeInputController : MonoBehaviour
         {
             return VRFamily.WindowsMixedReality;
         }
-        
+
         Debug.Log($"Unknown VR model {XRDevice.model}!");
         return VRFamily.Unknown;
+    }
+
+    private VolumeDataSetRenderer getFirstActiveDataSet()
+    {
+        foreach (var dataSet in _volumeDataSets)
+        {
+            if (dataSet.isActiveAndEnabled)
+            {
+                return dataSet;
+            }
+        }
+
+        return null;
+    }
+
+    public void Teleport(Vector3 boundsMin, Vector3 boundsMax)
+    {
+        float targetSize = 0.3f;
+        float targetDistance = 0.5f;
+
+        var activeDataSet = getFirstActiveDataSet();
+        if (activeDataSet != null && Camera.main != null)
+        {
+            var dataSetTransform = activeDataSet.transform;
+            var cameraTransform = Camera.main.transform;
+            Vector3 boundsMinObjectSpace = activeDataSet.VolumePositionToLocalPosition(boundsMin);
+            Vector3 boundsMaxObjectSpace = activeDataSet.VolumePositionToLocalPosition(boundsMax);
+            Vector3 deltaObjectSpace = boundsMaxObjectSpace - boundsMinObjectSpace;
+            Vector3 deltaWorldSpace = dataSetTransform.TransformVector(deltaObjectSpace);
+            float lengthWorldSpace = deltaWorldSpace.magnitude;
+            float scalingRequired = targetSize / lengthWorldSpace;
+            dataSetTransform.localScale *= scalingRequired;
+
+            Vector3 cameraPosWorldSpace = cameraTransform.position;
+            Vector3 cameraDirWorldSpace = cameraTransform.forward.normalized;
+            Vector3 targetPosition = cameraPosWorldSpace + cameraDirWorldSpace * targetDistance;
+            Vector3 centerWorldSpace = dataSetTransform.TransformPoint((boundsMaxObjectSpace + boundsMinObjectSpace) / 2.0f);
+            Vector3 deltaPosition = targetPosition - centerWorldSpace;
+            dataSetTransform.position += deltaPosition;
+        }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using DataFeatures;
 using Vectrosity;
 
 
@@ -105,8 +106,12 @@ namespace VolumeData
 
         [Range(0, 1)] public float SelectionSaturateFactor = 0.7f;
 
-        private VectorLine _voxelOutline, _cubeOutline, _regionOutline;
+        public FeatureSetManager FeatureSetManagerPrefab;
 
+        private VectorLine _voxelOutline, _cubeOutline, _regionOutline;
+        
+
+        private FeatureSetManager _featureManager = null;
         private MeshRenderer _renderer;
         private Material _materialInstance;
         private VolumeDataSet _dataSet;
@@ -154,6 +159,11 @@ namespace VolumeData
         public void Start()
         {
             _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false);
+
+            _featureManager = GetComponentInChildren<FeatureSetManager>();
+            if (_featureManager == null)
+                Debug.Log($"No FeatureManager attached to VolumeDataSetRenderer. Attach prefab for use of Features.");
+
             if (!FactorOverride)
             {
                 _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
@@ -481,6 +491,27 @@ namespace VolumeData
         public Vector3Int GetDimDecimals()
         {
             return new Vector3Int(_dataSet.XDimDecimal, _dataSet.YDimDecimal, _dataSet.ZDimDecimal);
+        }
+
+        public Vector3Int GetCubeDimensions()
+        {
+            return new Vector3Int((int)_dataSet.XDim, (int)_dataSet.YDim, (int)_dataSet.ZDim);
+        }
+
+        // Converts volume space to local space
+        public Vector3 VolumePositionToLocalPosition(Vector3 volumePosition)
+        {
+            Vector3Int cubeDimensions = GetCubeDimensions();
+            Vector3 localPosition = new Vector3(volumePosition.x / cubeDimensions.x - 0.5f, volumePosition.y / cubeDimensions.y - 0.5f, volumePosition.z / cubeDimensions.z - 0.5f);
+            return localPosition;
+        }
+        
+        // Converts local space to volume space
+        public Vector3 LocalPositionToVolumePosition(Vector3 localPosition)
+        {
+            Vector3Int cubeDimensions = GetCubeDimensions();
+            Vector3 volumePosition = new Vector3((localPosition.x + 0.5f) * cubeDimensions.x, (localPosition.y + 0.5f) * cubeDimensions.y, (localPosition.z + 0.5f) * cubeDimensions.z);
+            return volumePosition;
         }
 
         public void OnDestroy()
