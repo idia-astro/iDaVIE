@@ -498,6 +498,22 @@ namespace VolumeData
             return new Vector3Int((int)_dataSet.XDim, (int)_dataSet.YDim, (int)_dataSet.ZDim);
         }
 
+        // Converts volume space to local space
+        public Vector3 VolumePositionToLocalPosition(Vector3 volumePosition)
+        {
+            Vector3Int cubeDimensions = GetCubeDimensions();
+            Vector3 localPosition = new Vector3(volumePosition.x / cubeDimensions.x - 0.5f, volumePosition.y / cubeDimensions.y - 0.5f, volumePosition.z / cubeDimensions.z - 0.5f);
+            return localPosition;
+        }
+        
+        // Converts local space to volume space
+        public Vector3 LocalPositionToVolumePosition(Vector3 localPosition)
+        {
+            Vector3Int cubeDimensions = GetCubeDimensions();
+            Vector3 volumePosition = new Vector3((localPosition.x + 0.5f) * cubeDimensions.x, (localPosition.y + 0.5f) * cubeDimensions.y, (localPosition.z + 0.5f) * cubeDimensions.z);
+            return volumePosition;
+        }
+
         public void OnDestroy()
         {
             _dataSet.CleanUp();
