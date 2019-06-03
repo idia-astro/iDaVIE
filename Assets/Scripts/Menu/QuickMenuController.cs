@@ -72,23 +72,37 @@ public class QuickMenuController : MonoBehaviour
 
     public void ToggleMask()
     {
-        if (maskstatus == 2)
+        if (maskstatus == 3)
             maskstatus = -1;
         maskstatus++;
-        
+
+
+        this.gameObject.transform.Find("Image_nf").gameObject.SetActive(false);
+        this.gameObject.transform.Find("Image_f1").gameObject.SetActive(false);
+        this.gameObject.transform.Find("Image_f2").gameObject.SetActive(false);
+        this.gameObject.transform.Find("Image_f3").gameObject.SetActive(false);
+
         switch (maskstatus)
         {
             case 0:
                 setMask(MaskMode.Disabled);
                 notificationText.GetComponent<Text>().text = "Mask disabled";
+                this.gameObject.transform.Find("Image_nf").gameObject.SetActive(true);
                 break;
             case 1: 
                 setMask(MaskMode.Enabled);
                 notificationText.GetComponent<Text>().text = "Mask enabled";
+                this.gameObject.transform.Find("Image_f1").gameObject.SetActive(true);
                 break;
             case 2:
                 setMask(MaskMode.Inverted);
                 notificationText.GetComponent<Text>().text = "Mask inverted";
+                this.gameObject.transform.Find("Image_f2").gameObject.SetActive(true);
+                break;
+            case 3:
+                setMask(MaskMode.Isolated);
+                notificationText.GetComponent<Text>().text = "Mask Isolated";
+                this.gameObject.transform.Find("Image_f3").gameObject.SetActive(true);
                 break;
         }
         
@@ -96,10 +110,9 @@ public class QuickMenuController : MonoBehaviour
 
     private void setMask(MaskMode mode)
     {
-        Debug.Log("set");
+       
         if (_activeDataSet)
         {
-            Debug.Log("attive");
             _activeDataSet.MaskMode = mode;
         }
     }
