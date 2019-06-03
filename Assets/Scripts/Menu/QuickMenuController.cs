@@ -31,9 +31,10 @@ public class QuickMenuController : MonoBehaviour
     void Update()
     {
 
-        if (_dataSets!= null)
-            Debug.Log("_dataSets size " + _dataSets.Length);
-       
+        if (_dataSets != null)
+        {
+            //Debug.Log("_dataSets size " + _dataSets.Length);
+        }
 
         var firstActive = getFirstActiveDataSet();
         if (firstActive && _activeDataSet != firstActive)
