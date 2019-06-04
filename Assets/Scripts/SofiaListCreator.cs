@@ -28,7 +28,8 @@ public class SofiaListCreator : MonoBehaviour
 
         //setContent Holder Height;
         content.sizeDelta = new Vector2(0, numberOfItems * 100);
-        Debug.Log("pre");
+     
+
         for (int i = 0; i < numberOfItems; i++)
         {
             // 100 Height of item
@@ -49,7 +50,7 @@ public class SofiaListCreator : MonoBehaviour
              itemDetails.GetComponent<Image>().color = new Color(0.4039216f, 0.5333334f, 0.5882353f, 1f);
 
 
-            Debug.Log("inside i: "+i);
+           
         }
     }
 

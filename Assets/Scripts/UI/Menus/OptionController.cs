@@ -89,7 +89,7 @@ public class OptionController : MonoBehaviour
 
     public void SetColorMap(ColorMapEnum colorMap)
     {
-        Debug.Log("COLOOR INDEZ: "+ colorIndex);
+        
         LabelColormap.gameObject.GetComponent<Text>().text = colorMap + "";
         if (_activeDataSet)
         {
