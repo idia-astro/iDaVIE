@@ -1,13 +1,31 @@
 ﻿using Vectrosity;
+using System.Collections.Generic;
 using UnityEngine;
 
+
 // Feature is the basic unit of marking up the volume
-public class Feature : MonoBehaviour
+public class Feature
 {
+    private string _name;
+    private Vector3 _position;
     private Vector3 _cornerMin;
     private Vector3 _cornerMax;
     private Color _color;
     private VectorLine _boundingBox;
+
+    public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, Transform transform, string name)
+    {
+        //_cornerMin = cubeMin;
+        //_cornerMax = cubeMax;
+        _color = cubeColor;
+
+        _boundingBox= new VectorLine(name, new List<Vector3>(24), 1.0f) { drawTransform = transform, color = _color };
+        _boundingBox.Draw3DAuto();
+        //SetBoundingBox(boundingBox);
+        SetBounds(cubeMin, cubeMax);
+
+
+    }
 
     public Vector3 CornerMin
     {
@@ -53,11 +71,12 @@ public class Feature : MonoBehaviour
             UpdateCube();
         }
     }
-    
-    public void MoveToPosition(Vector3 position)
+    /*
+     public void MoveToPosition(Vector3 position)
     {
         transform.localPosition = position;
     }
+    */
 
     public void SetBounds(Vector3 cornerMin, Vector3 cornerMax)
     {
@@ -72,7 +91,7 @@ public class Feature : MonoBehaviour
         _cornerMax = voxel + 0.5f * Vector3.one;
         UpdateCube();
     }
-
+    /*
     public void SetName(string newName)
     {
         name = newName;
@@ -81,6 +100,7 @@ public class Feature : MonoBehaviour
             _boundingBox.name = $"{newName}_outline";
         }
     }
+    */
 
     public void SetColor(Color color)
     {

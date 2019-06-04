@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using VolumeData;
 using UnityEngine;
+
 
 namespace DataFeatures
 {
@@ -32,9 +34,12 @@ namespace DataFeatures
         // Creates new empty FeatureSetRenderer for adding Features
         public FeatureSetRenderer NewFeatureSet()
         {
+            VolumeDataSetRenderer volumeRenderer = GetComponentInParent<VolumeDataSetRenderer>();
+            Vector3 CubeDimensions = volumeRenderer.GetCubeDimensions();
             FeatureSetRenderer featureSetRenderer;
             featureSetRenderer = Instantiate(FeatureSetRendererPrefab, new Vector3(0, 0, 0), Quaternion.identity);
             featureSetRenderer.transform.SetParent(transform, false);
+            featureSetRenderer.transform.localScale = new Vector3(1 / CubeDimensions.x, 1 / CubeDimensions.y, 1 / CubeDimensions.z);
             _featureSetList.Add(featureSetRenderer);
             if (_activeFeatureSetRenderer == null)
                 _activeFeatureSetRenderer = featureSetRenderer;
@@ -57,10 +62,16 @@ namespace DataFeatures
                 return featureSetRenderer;
             }
 
+            VolumeDataSetRenderer volumeRenderer = GetComponentInParent<VolumeDataSetRenderer>();
+            Vector3 CubeDimensions = volumeRenderer.GetCubeDimensions();
+
             FeatureSetRendererPrefab.FileName = FeatureFileToLoad;
             FeatureSetRendererPrefab.MappingFileName = FeatureMappingFile;
             featureSetRenderer = Instantiate(FeatureSetRendererPrefab, new Vector3(0, 0, 0), Quaternion.identity);
             featureSetRenderer.transform.SetParent(transform, false);
+            featureSetRenderer.transform.localPosition -= 0.5f * Vector3.one;
+            featureSetRenderer.transform.localScale = new Vector3(1 / CubeDimensions.x, 1 / CubeDimensions.y, 1 / CubeDimensions.z);
+
             featureSetRenderer.SpawnFeaturesFromFile();
             _featureSetList.Add(featureSetRenderer);
             if (_activeFeatureSetRenderer == null)

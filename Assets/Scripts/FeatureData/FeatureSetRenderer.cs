@@ -11,16 +11,16 @@ namespace DataFeatures
     {
         public string FileName;
         public string MappingFileName;
-        public Feature FeaturePrefab;
+        //public Feature FeaturePrefab;
         private FeatureSetImporter _importer;
         private readonly List<Feature> _featureList = new List<Feature>();
-        private readonly List<VectorLine> _featureBoxes = new List<VectorLine>();
 
         // Add feature to Renderer as container
         public void AddFeature(Feature featureToAdd)
         {
             _featureList.Add(featureToAdd);
-            featureToAdd.transform.parent = transform;
+
+            //featureToAdd.transform.parent = transform;
         }
 
         // Spawn Feature objects intro world from FileName
@@ -32,19 +32,16 @@ namespace DataFeatures
             {
                 for (int i = 0; i < _importer.NumberFeatures; i++)
                 {
-                    Feature spawningObject = Instantiate(FeaturePrefab, Vector3.zero, Quaternion.identity, transform);
-                    spawningObject.name = _importer.FeatureNames[i];
+                    //Feature spawningObject = Instantiate(FeaturePrefab, Vector3.zero, Quaternion.identity, transform);
+                    Feature spawningObject = new Feature(_importer.BoxMinPositions[i], _importer.BoxMaxPositions[i], Color.cyan, transform, _importer.FeatureNames[i]);
 
                     // For some reason, this has to be constructed _outside_ the prefab.
-                    var boundingBox = new VectorLine($"{_importer.FeatureNames[i]}_outline", new List<Vector3>(24), 1.0f) {drawTransform = transform, color = Color.gray};
-                    boundingBox.Draw3DAuto();
-                    spawningObject.SetBoundingBox(boundingBox);
-                    spawningObject.SetBounds(volumeDataSetRenderer.VolumePositionToLocalPosition(_importer.BoxMinPositions[i]), volumeDataSetRenderer.VolumePositionToLocalPosition(_importer.BoxMaxPositions[i]));
-                    _featureList.Add(spawningObject);
+_featureList.Add(spawningObject);
                 }
             }
         }
 
+        /*
         // Output the features to File
         public void OutputFeaturesToFile(string FileName)
         {
@@ -66,5 +63,6 @@ namespace DataFeatures
                 File.WriteAllLines(FileName, featureData);
             }
         }
+        */
     }
 }

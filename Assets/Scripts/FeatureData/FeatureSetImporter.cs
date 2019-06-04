@@ -99,6 +99,7 @@ namespace DataFeatures
             featureSet.NumberFeatures = featureSet.FeatureData.Length;
             featureSet.FeatureNames = new string[featureSet.NumberFeatures];
             featureSet.FeaturePositions = new Vector3[featureSet.NumberFeatures];
+            // TODO: Check if min max defined 
             featureSet.BoxMinPositions = new Vector3[featureSet.NumberFeatures];
             featureSet.BoxMaxPositions = new Vector3[featureSet.NumberFeatures];
             for (int i = 0; i < featureSet.NumberFeatures; i++)
