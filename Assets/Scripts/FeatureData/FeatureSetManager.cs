@@ -69,8 +69,11 @@ namespace DataFeatures
             FeatureSetRendererPrefab.MappingFileName = FeatureMappingFile;
             featureSetRenderer = Instantiate(FeatureSetRendererPrefab, new Vector3(0, 0, 0), Quaternion.identity);
             featureSetRenderer.transform.SetParent(transform, false);
+            // Move BLC to (0,0,0)
             featureSetRenderer.transform.localPosition -= 0.5f * Vector3.one;
             featureSetRenderer.transform.localScale = new Vector3(1 / CubeDimensions.x, 1 / CubeDimensions.y, 1 / CubeDimensions.z);
+            // Shift by half a voxel (because voxel center has integer coordinates, not corner)
+            featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
 
             featureSetRenderer.SpawnFeaturesFromFile();
             _featureSetList.Add(featureSetRenderer);

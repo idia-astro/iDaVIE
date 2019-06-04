@@ -19,8 +19,6 @@ namespace DataFeatures
         public void AddFeature(Feature featureToAdd)
         {
             _featureList.Add(featureToAdd);
-
-            //featureToAdd.transform.parent = transform;
         }
 
         // Spawn Feature objects intro world from FileName
@@ -32,11 +30,8 @@ namespace DataFeatures
             {
                 for (int i = 0; i < _importer.NumberFeatures; i++)
                 {
-                    //Feature spawningObject = Instantiate(FeaturePrefab, Vector3.zero, Quaternion.identity, transform);
-                    Feature spawningObject = new Feature(_importer.BoxMinPositions[i], _importer.BoxMaxPositions[i], Color.cyan, transform, _importer.FeatureNames[i]);
-
-                    // For some reason, this has to be constructed _outside_ the prefab.
-_featureList.Add(spawningObject);
+                    Feature feature = new Feature(_importer.BoxMinPositions[i], _importer.BoxMaxPositions[i], Color.cyan, transform, _importer.FeatureNames[i]);
+                    _featureList.Add(feature);
                 }
             }
         }

@@ -10,21 +10,13 @@ public class Feature
     private Vector3 _position;
     private Vector3 _cornerMin;
     private Vector3 _cornerMax;
-    private Color _color;
-    private VectorLine _boundingBox;
+    private readonly VectorLine _boundingBox;
 
     public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, Transform transform, string name)
     {
-        //_cornerMin = cubeMin;
-        //_cornerMax = cubeMax;
-        _color = cubeColor;
-
-        _boundingBox= new VectorLine(name, new List<Vector3>(24), 1.0f) { drawTransform = transform, color = _color };
+        _boundingBox= new VectorLine(name, new List<Vector3>(24), 1.0f) { drawTransform = transform, color = cubeColor };
         _boundingBox.Draw3DAuto();
-        //SetBoundingBox(boundingBox);
         SetBounds(cubeMin, cubeMax);
-
-
     }
 
     public Vector3 CornerMin
@@ -62,7 +54,8 @@ public class Feature
 
     public Vector3 Size
     {
-        get => (Vector3.Max(_cornerMax, _cornerMin) - Vector3.Min(_cornerMax, _cornerMin));
+        //  Size is padded by one, because the bounding box includes both the min and max voxels
+        get => (Vector3.Max(_cornerMax, _cornerMin) - Vector3.Min(_cornerMax, _cornerMin) + Vector3.one);
         set
         {
             var currentCenter = Center;
@@ -71,12 +64,12 @@ public class Feature
             UpdateCube();
         }
     }
-    /*
-     public void MoveToPosition(Vector3 position)
+
+    public Color CubeColor
     {
-        transform.localPosition = position;
+        get => _boundingBox.color;
+        set => _boundingBox.color = value;
     }
-    */
 
     public void SetBounds(Vector3 cornerMin, Vector3 cornerMax)
     {
@@ -87,42 +80,18 @@ public class Feature
 
     public void SetVoxel(Vector3Int voxel)
     {
-        _cornerMin = voxel - 0.5f * Vector3.one;
-        _cornerMax = voxel + 0.5f * Vector3.one;
+        _cornerMin = voxel;
+        _cornerMax = voxel;
         UpdateCube();
-    }
-    /*
-    public void SetName(string newName)
-    {
-        name = newName;
-        if (_boundingBox != null)
-        {
-            _boundingBox.name = $"{newName}_outline";
-        }
-    }
-    */
-
-    public void SetColor(Color color)
-    {
-        _color = color;
-        if (_boundingBox != null)
-        {
-            _boundingBox.SetColor(color);
-        }
-    }
-
-    public void SetBoundingBox(VectorLine boundingBox)
-    {
-        _boundingBox = boundingBox;
     }
     
     private void UpdateCube()
     {
         if (_boundingBox != null)
         {
-            var newSize = Size;
+            var boundingBoxSize = Size;
             var center = Center;
-            _boundingBox.MakeCube(center, newSize.x, newSize.y, newSize.z);
+            _boundingBox.MakeCube(center, boundingBoxSize.x, boundingBoxSize.y, boundingBoxSize.z);
         }
     }
 }
