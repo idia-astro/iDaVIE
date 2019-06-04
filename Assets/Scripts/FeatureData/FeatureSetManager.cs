@@ -11,6 +11,7 @@ namespace DataFeatures
         public string FeatureFileToLoad;
         public string FeatureMappingFile;
         public bool ImportAtStart;
+        public Feature SelectedFeature { get; private set; }
 
         // List containing the different FeatureSets (example: SofiaSet, CustomSet, VRSet, etc.)
         // UI will have tab for each Renderer containing the lists of Features
@@ -80,6 +81,33 @@ namespace DataFeatures
             if (_activeFeatureSetRenderer == null)
                 _activeFeatureSetRenderer = featureSetRenderer;
             return featureSetRenderer;
+        }
+
+        public bool SelectFeature(Vector3 cursorWorldSpace)
+        {
+            // Deselect existing feature
+            if (SelectedFeature != null)
+            {
+                SelectedFeature.Selected = false;
+            }
+
+            FeatureSetRenderer featureSetRenderer = GetComponentInChildren<FeatureSetRenderer>();
+            // TODO: Extend this to multiple feature lists
+            if (featureSetRenderer)
+            {
+                Vector3 volumeSpacePosition = featureSetRenderer.transform.InverseTransformPoint(cursorWorldSpace);
+                foreach (var feature in featureSetRenderer.FeatureList)
+                {
+                    if (feature.UnityBounds.Contains(volumeSpacePosition))
+                    {
+                        SelectedFeature = feature;
+                        SelectedFeature.Selected = true;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         public void ExportFeatureSet(FeatureSetRenderer setToExport, string FileName)

@@ -352,6 +352,18 @@ namespace VolumeData
             }
         }
 
+        public void SelectFeature(Vector3 cursor)
+        {
+            FeatureSetManager featureSetManager = GetComponentInChildren<FeatureSetManager>();
+            if (featureSetManager)
+            {
+                if (featureSetManager.SelectFeature(cursor))
+                {
+                    Debug.Log($"Selected feature '{featureSetManager.SelectedFeature.Name}'");
+                }
+            }
+        }
+
         public void CropToRegion()
         {
             Vector3 regionStartObjectSpace = new Vector3((float)(RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);

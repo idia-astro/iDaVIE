@@ -243,17 +243,21 @@ public class VolumeInputController : MonoBehaviour
 
     private void EndSelection()
     {
+        int handIndex = _selectingHand.handType == SteamVR_Input_Sources.LeftHand ? 0 : 1;
+        var endPosition = _handTransforms[handIndex].position;
+        
         _selectingHand = null;
         _isSelecting = false;
 
         selectionStopwatch.Stop();
 
-        // Clear region selection by clicking selection
+        // Clear region selection by clicking selection. Attempt to select feature
         if (selectionStopwatch.ElapsedMilliseconds < 200)
         {
             foreach (var dataSet in _volumeDataSets)
             {
                 dataSet.ClearRegion();
+                dataSet.SelectFeature(endPosition);
             }
         }
 

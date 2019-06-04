@@ -7,6 +7,7 @@ using UnityEngine;
 public class Feature
 {
     private bool _selected;
+    private Bounds _unityBounds;
     private Vector3 _position;
     private Vector3 _cornerMin;
     private Vector3 _cornerMax;
@@ -18,6 +19,8 @@ public class Feature
         _boundingBox.Draw3DAuto();
         SetBounds(cubeMin, cubeMax);
     }
+
+    public Bounds UnityBounds => _unityBounds;
 
     public Vector3 CornerMin
     {
@@ -108,11 +111,9 @@ public class Feature
 
     private void UpdateCube()
     {
-        if (_boundingBox != null)
-        {
-            var boundingBoxSize = Size;
-            var center = Center;
-            _boundingBox.MakeCube(center, boundingBoxSize.x, boundingBoxSize.y, boundingBoxSize.z);
-        }
+        var boundingBoxSize = Size;
+        var center = Center;
+        _boundingBox.MakeCube(center, boundingBoxSize.x, boundingBoxSize.y, boundingBoxSize.z);
+        _unityBounds = new Bounds(center, boundingBoxSize);
     }
 }
