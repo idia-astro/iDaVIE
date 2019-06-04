@@ -10,7 +10,9 @@ namespace DataFeatures
     public class FeatureSetRenderer : MonoBehaviour
     {
         public string FileName;
+
         public string MappingFileName;
+
         //public Feature FeaturePrefab;
         private FeatureSetImporter _importer;
 
