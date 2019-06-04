@@ -1,9 +1,9 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using VolumeData;
 using UnityEngine;
-using Vectrosity;
 
 namespace DataFeatures
 {
@@ -13,12 +13,18 @@ namespace DataFeatures
         public string MappingFileName;
         //public Feature FeaturePrefab;
         private FeatureSetImporter _importer;
-        private readonly List<Feature> _featureList = new List<Feature>();
+
+        public List<Feature> FeatureList { get; private set; }
+
+        private void Awake()
+        {
+            FeatureList = new List<Feature>();
+        }
 
         // Add feature to Renderer as container
         public void AddFeature(Feature featureToAdd)
         {
-            _featureList.Add(featureToAdd);
+            FeatureList.Add(featureToAdd);
         }
 
         // Spawn Feature objects intro world from FileName
@@ -31,7 +37,7 @@ namespace DataFeatures
                 for (int i = 0; i < _importer.NumberFeatures; i++)
                 {
                     Feature feature = new Feature(_importer.BoxMinPositions[i], _importer.BoxMaxPositions[i], Color.cyan, transform, _importer.FeatureNames[i]);
-                    _featureList.Add(feature);
+                    FeatureList.Add(feature);
                 }
             }
         }

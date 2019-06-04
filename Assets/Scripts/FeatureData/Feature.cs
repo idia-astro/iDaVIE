@@ -71,6 +71,12 @@ public class Feature
         set => _boundingBox.color = value;
     }
 
+    public bool Visible
+    {
+        get => _boundingBox.active;
+        set => _boundingBox.active = value;
+    }
+
     public void SetBounds(Vector3 cornerMin, Vector3 cornerMax)
     {
         _cornerMin = cornerMin;
