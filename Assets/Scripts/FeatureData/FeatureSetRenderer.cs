@@ -36,13 +36,28 @@ namespace DataFeatures
             var volumeDataSetRenderer = GetComponentInParent<VolumeDataSetRenderer>();
             if (volumeDataSetRenderer)
             {
-                for (int i = 0; i < _importer.NumberFeatures; i++)
+                Vector3 cubeMin, cubeMax;
+
+                if (_importer.BoxMinPositions.Length > 0)
                 {
-                    Feature feature = new Feature(_importer.BoxMinPositions[i], _importer.BoxMaxPositions[i], Color.cyan, transform, _importer.FeatureNames[i]);
-                    FeatureList.Add(feature);
+                    for (int i = 0; i < _importer.NumberFeatures; i++)
+                    {
+                        cubeMin = _importer.BoxMinPositions[i];
+                        cubeMax = _importer.BoxMaxPositions[i];
+                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, _importer.FeatureNames[i]));
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < _importer.NumberFeatures; i++)
+                    {
+                        cubeMin = _importer.FeaturePositions[i];
+                        cubeMax = _importer.FeaturePositions[i];
+                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, _importer.FeatureNames[i]));
+                    }
                 }
             }
-        }
+        } 
 
         /*
         // Output the features to File
