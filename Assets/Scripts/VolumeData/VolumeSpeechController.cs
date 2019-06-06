@@ -11,6 +11,11 @@ namespace VolumeData
     {
         public Hand EditingHand;
 
+        public float VibrationDuration = 0.25f;
+        public float VibrationFrequency = 100.0f;
+        public float VibrationAmplitude = 1.0f;
+
+
         public enum SpeechControllerState
         {
             Idle,
@@ -80,9 +85,9 @@ namespace VolumeData
         private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
         {
             if (EditingHand.name == "LeftHand")
-                _volumeInputController.VibrateController(SteamVR_Input_Sources.LeftHand, 1.0f, 100.0f, 1.0f);
+                _volumeInputController.VibrateController(SteamVR_Input_Sources.LeftHand, VibrationAmplitude, VibrationFrequency, VibrationAmplitude);
             else if (EditingHand.name == "RightHand")
-                _volumeInputController.VibrateController(SteamVR_Input_Sources.RightHand, 1.0f, 100.0f, 1.0f);
+                _volumeInputController.VibrateController(SteamVR_Input_Sources.RightHand, VibrationAmplitude, VibrationFrequency, VibrationAmplitude);
             else
             {
 
