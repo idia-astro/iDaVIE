@@ -52,6 +52,7 @@ namespace VolumeData
    
         private KeywordRecognizer _speechKeywordRecognizer;
         private float previousControllerHeight;
+        private VolumeInputController _volumeInputController;
 
         private VolumeDataSetRenderer _activeDataSet;
 
@@ -63,6 +64,11 @@ namespace VolumeData
             _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
 
             _speechKeywordRecognizer.Start();
+            _volumeInputController = FindObjectOfType<VolumeInputController>();
+            if (EditingHand == null)
+            {
+                Debug.Log("Editing Hand not set. Please set in Editor.");
+            }
             EditingHand.uiInteractAction.AddOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
         }
 
@@ -73,6 +79,14 @@ namespace VolumeData
 
         private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
         {
+            if (EditingHand.name == "LeftHand")
+                _volumeInputController.VibrateController(SteamVR_Input_Sources.LeftHand, 1.0f, 100.0f, 1.0f);
+            else if (EditingHand.name == "RightHand")
+                _volumeInputController.VibrateController(SteamVR_Input_Sources.RightHand, 1.0f, 100.0f, 1.0f);
+            else
+            {
+
+            }
             StringBuilder builder = new StringBuilder();
             builder.AppendFormat("{0} ({1}){2}", args.text, args.confidence, Environment.NewLine);
             builder.AppendFormat("\tTimestamp: {0}{1}", args.phraseStartTime, Environment.NewLine);

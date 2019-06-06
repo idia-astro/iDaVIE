@@ -648,4 +648,9 @@ public class VolumeInputController : MonoBehaviour
             dataSetTransform.position += deltaPosition;
         }
     }
+
+    public void VibrateController(SteamVR_Input_Sources hand, float duration, float frequency, float amplitude)
+    {
+        _player.leftHand.hapticAction.Execute(0, duration, frequency, amplitude, hand);
+    }
 }
