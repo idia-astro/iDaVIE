@@ -6,18 +6,37 @@ using UnityEngine;
 // Feature is the basic unit of marking up the volume
 public class Feature
 {
+    public bool Temporary;
+    public string Comment;
+    public float Metric;
+    
     private bool _selected;
     private Bounds _unityBounds;
     private Vector3 _position;
     private Vector3 _cornerMin;
     private Vector3 _cornerMax;
-    private readonly VectorLine _boundingBox;
+    private VectorLine _boundingBox;
 
     public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, Transform transform, string name)
     {
         _boundingBox = new VectorLine(name, new List<Vector3>(24), 1.0f) {drawTransform = transform, color = cubeColor};
         _boundingBox.Draw3DAuto();
         SetBounds(cubeMin, cubeMax);
+    }
+
+    public void Deactivate()
+    {
+        if (_boundingBox != null)
+        {
+            _boundingBox.StopDrawing3DAuto();
+            _boundingBox.active = false;
+            VectorLine.Destroy(ref _boundingBox);
+        }
+    }
+
+    ~Feature()
+    {
+        Deactivate();
     }
 
     public Bounds UnityBounds => _unityBounds;
@@ -82,7 +101,7 @@ public class Feature
 
     public string Name
     {
-        get => _boundingBox.name;
+        get => _boundingBox?.name;
     }
 
     public bool Selected
@@ -91,7 +110,10 @@ public class Feature
         set
         {
             _selected = value;
-            _boundingBox.lineWidth = _selected ? 3.0f : 1.0f;
+            if (_boundingBox != null)
+            {
+                _boundingBox.lineWidth = _selected ? 5.0f : 1.0f;
+            }
         }
     }
 
