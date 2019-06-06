@@ -85,7 +85,7 @@ public class VolumeInputController : MonoBehaviour
         {VRFamily.Unknown, Vector3.zero},
         {VRFamily.Oculus, new Vector3(0.005f, -0.025f, -0.025f)},
         {VRFamily.Vive, new Vector3(0, -0.09f, 0.06f)},
-        {VRFamily.WindowsMixedReality, new Vector3(-0.005f, -0.029f, -0.027f)}
+        {VRFamily.WindowsMixedReality, new Vector3(0.05f, -0.029f, 0.03f)}
     };
 
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsRight = new Dictionary<VRFamily, Vector3>
@@ -93,7 +93,7 @@ public class VolumeInputController : MonoBehaviour
         {VRFamily.Unknown, Vector3.zero},
         {VRFamily.Oculus, new Vector3(-0.005f, -0.025f, -0.025f)},
         {VRFamily.Vive, new Vector3(0, -0.09f, 0.06f)},
-        {VRFamily.WindowsMixedReality, new Vector3(0.005f, -0.029f, -0.027f)}
+        {VRFamily.WindowsMixedReality, new Vector3(-0.05f, -0.029f, 0.03f)}
     };
 
     private void OnEnable()
@@ -243,17 +243,21 @@ public class VolumeInputController : MonoBehaviour
 
     private void EndSelection()
     {
+        int handIndex = _selectingHand.handType == SteamVR_Input_Sources.LeftHand ? 0 : 1;
+        var endPosition = _handTransforms[handIndex].position;
+        
         _selectingHand = null;
         _isSelecting = false;
 
         selectionStopwatch.Stop();
 
-        // Clear region selection by clicking selection
+        // Clear region selection by clicking selection. Attempt to select feature
         if (selectionStopwatch.ElapsedMilliseconds < 200)
         {
             foreach (var dataSet in _volumeDataSets)
             {
                 dataSet.ClearRegion();
+                dataSet.SelectFeature(endPosition);
             }
         }
 
@@ -643,5 +647,10 @@ public class VolumeInputController : MonoBehaviour
             Vector3 deltaPosition = targetPosition - centerWorldSpace;
             dataSetTransform.position += deltaPosition;
         }
+    }
+
+    public void VibrateController(SteamVR_Input_Sources hand, float duration, float frequency, float amplitude)
+    {
+        _player.leftHand.hapticAction.Execute(0, duration, frequency, amplitude, hand);
     }
 }
