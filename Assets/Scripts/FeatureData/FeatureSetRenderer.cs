@@ -59,6 +59,12 @@ namespace DataFeatures
             }
         } 
 
+        public void ToggleVisibility()
+        {
+            foreach (var feature in FeatureList)
+                feature.Visible = !feature.Visible;
+        }
+
         /*
         // Output the features to File
         public void OutputFeaturesToFile(string FileName)
