@@ -48,15 +48,18 @@ namespace VolumeData
             public static readonly string MaskEnabled = "mask on";
             public static readonly string MaskInverted = "mask invert";
             public static readonly string MaskIsolated = "mask isolate";
+            public static readonly string ProjectionMaximum = "projection maximum";
+            public static readonly string ProjectionAverage = "projection average";
             
             public static readonly string[] All = { EditThresholdMin, EditThresholdMax, SaveThreshold, ResetThreshold, ResetTransform, 
                 ColormapPlasma, ColormapRainbow, ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix,
-                NextDataSet, PreviousDataSet, CropSelection, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated
+                NextDataSet, PreviousDataSet, CropSelection, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated,
+                ProjectionMaximum, ProjectionAverage
             };
         }
    
         private KeywordRecognizer _speechKeywordRecognizer;
-        private float previousControllerHeight;
+        private float _previousControllerHeight;
         private VolumeInputController _volumeInputController;
 
         private VolumeDataSetRenderer _activeDataSet;
@@ -100,12 +103,12 @@ namespace VolumeData
             if (args.text == Keywords.EditThresholdMin)
             {
                 _state = SpeechControllerState.EditThresholdMin;
-                previousControllerHeight = EditingHand.transform.position.y;
+                _previousControllerHeight = EditingHand.transform.position.y;
             }
             else if (args.text == Keywords.EditThresholdMax)
             {
                 _state = SpeechControllerState.EditThresholdMax;
-                previousControllerHeight = EditingHand.transform.position.y;
+                _previousControllerHeight = EditingHand.transform.position.y;
             }
             else if (args.text == Keywords.SaveThreshold)
             {
@@ -175,6 +178,14 @@ namespace VolumeData
             {
                 setMask(MaskMode.Isolated);
             }
+            else if (args.text == Keywords.ProjectionMaximum)
+            {
+                setProjection(ProjectionMode.MaximumIntensityProjection);
+            }
+            else if (args.text == Keywords.ProjectionAverage)
+            {
+                setProjection(ProjectionMode.AverageIntensityProjection);
+            }
         }
 
         // Update is called once per frame
@@ -207,8 +218,8 @@ namespace VolumeData
             if (EditingHand)
             {
                 float controllerHeight = EditingHand.transform.position.y;
-                float controlerDelta = controllerHeight - previousControllerHeight;
-                previousControllerHeight = controllerHeight;
+                float controlerDelta = controllerHeight - _previousControllerHeight;
+                _previousControllerHeight = controllerHeight;
                 if (_activeDataSet)
                 {
                     if (editingMax)
@@ -290,6 +301,14 @@ namespace VolumeData
             if (_activeDataSet)
             {
                 _activeDataSet.MaskMode = mode;
+            }
+        }
+        
+        public void setProjection(ProjectionMode mode)
+        {
+            if (_activeDataSet)
+            {
+                _activeDataSet.ProjectionMode = mode;
             }
         }
 
