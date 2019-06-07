@@ -45,6 +45,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   FeatureSetRendererPrefab: {fileID: 1034858028007187355, guid: 493ba8bacc07ee34886fa6d7b5c1bb1d,
     type: 3}
-  FeatureFileToLoad: Data/Volumes/Vela/Vela_mosaic1_cat.ascii
+  FeatureFileToLoad: Data/DataFeatures/newcat.ascii
   FeatureMappingFile: Data/DataFeatures/sofia_list.json
   ImportAtStart: 0

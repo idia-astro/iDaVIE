@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using DataFeatures;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -44,7 +45,6 @@ public class OptionController : MonoBehaviour
         var firstActive = getFirstActiveDataSet();
         if (firstActive && _activeDataSet != firstActive)
         {
-            Debug.Log("in foreach --- Update");
             _activeDataSet = firstActive;
         }
 
@@ -101,6 +101,17 @@ public class OptionController : MonoBehaviour
     {
         colorIndex = defaultColorIndex;
         SetColorMap(ColorMapUtils.FromHashCode(colorIndex));
+    }
+
+    public void LoadFeature()
+    {
+
+        if (_activeDataSet)
+        {
+            _activeDataSet.GetComponentInChildren<FeatureSetManager>().ImportFeatureSet();
+        }
+        //featureSetManager.ImportFeatureSet();
+
     }
 
 }

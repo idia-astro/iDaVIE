@@ -45,9 +45,9 @@ public class CustomDragHandler : MonoBehaviour
 
 
         spawnPointPosition.localPosition += Vector3.up * scrollSpeed;
-        if (spawnPointPosition.localPosition.y > (spawn_initial_y*0.7f*-1 + spawn_initial_y * -1) )
+        if (spawnPointPosition.localPosition.y > 1000 )
         {
-            spawnPointPosition.localPosition = new Vector3(1, spawn_initial_y * 0.7f * -1 + spawn_initial_y * -1);
+            spawnPointPosition.localPosition = new Vector3(1, 1000);
         }
 
 
