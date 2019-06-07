@@ -1,32 +1,32 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using VolumeData;
-
-
 using UnityEngine;
 
-namespace DataFeatures {
+namespace DataFeatures
+{
     public class FeatureSetRenderer : MonoBehaviour
     {
         public string FileName;
+
         public string MappingFileName;
-        public Feature FeaturePrefab;
+
+        //public Feature FeaturePrefab;
         private FeatureSetImporter _importer;
-        public List<Feature> _featureList;
 
+        public List<Feature> FeatureList { get; private set; }
 
-        // Start is called before the first frame update
-        void Start()
+        private void Awake()
         {
-            _featureList = new List<Feature>();
+            FeatureList = new List<Feature>();
         }
 
         // Add feature to Renderer as container
         public void AddFeature(Feature featureToAdd)
         {
-            _featureList.Add(featureToAdd);
-            featureToAdd.transform.parent = transform;
+            FeatureList.Add(featureToAdd);
         }
 
         // Spawn Feature objects intro world from FileName
@@ -36,19 +36,36 @@ namespace DataFeatures {
             var volumeDataSetRenderer = GetComponentInParent<VolumeDataSetRenderer>();
             if (volumeDataSetRenderer)
             {
-                for (int i = 0; i < _importer.NumberFeatures; i++)
+                Vector3 cubeMin, cubeMax;
+
+                if (_importer.BoxMinPositions.Length > 0)
                 {
-                    Feature spawningObject;
-                    Vector3 featurePosition = _importer.FeaturePositions[i];
-                    Vector3 spawnPosition = volumeDataSetRenderer.VolumePositionToLocalPosition(featurePosition);
-                    spawningObject = Instantiate(FeaturePrefab, Vector3.zero, Quaternion.identity, transform);
-                    spawningObject.transform.localPosition = spawnPosition;
-                    spawningObject.name = _importer.FeatureNames[i];
-                    _featureList.Add(spawningObject);
+                    for (int i = 0; i < _importer.NumberFeatures; i++)
+                    {
+                        cubeMin = _importer.BoxMinPositions[i];
+                        cubeMax = _importer.BoxMaxPositions[i];
+                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, _importer.FeatureNames[i]));
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < _importer.NumberFeatures; i++)
+                    {
+                        cubeMin = _importer.FeaturePositions[i];
+                        cubeMax = _importer.FeaturePositions[i];
+                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, _importer.FeatureNames[i]));
+                    }
                 }
             }
+        } 
+
+        public void ToggleVisibility()
+        {
+            foreach (var feature in FeatureList)
+                feature.Visible = !feature.Visible;
         }
 
+        /*
         // Output the features to File
         public void OutputFeaturesToFile(string FileName)
         {
@@ -70,5 +87,6 @@ namespace DataFeatures {
                 File.WriteAllLines(FileName, featureData);
             }
         }
+        */
     }
 }

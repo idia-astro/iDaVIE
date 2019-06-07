@@ -99,21 +99,34 @@ namespace DataFeatures
             featureSet.NumberFeatures = featureSet.FeatureData.Length;
             featureSet.FeatureNames = new string[featureSet.NumberFeatures];
             featureSet.FeaturePositions = new Vector3[featureSet.NumberFeatures];
-            featureSet.BoxMinPositions = new Vector3[featureSet.NumberFeatures];
-            featureSet.BoxMaxPositions = new Vector3[featureSet.NumberFeatures];
             for (int i = 0; i < featureSet.NumberFeatures; i++)
             {
                 featureSet.FeatureNames[i] = featureSet.FeatureData[i][featureSet.Mapping.Name.Source];
-                featureSet.BoxMinPositions[i].x = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.XMin.Source], CultureInfo.InvariantCulture);
-                featureSet.BoxMinPositions[i].y = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.YMin.Source], CultureInfo.InvariantCulture);
-                featureSet.BoxMinPositions[i].z = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.ZMin.Source], CultureInfo.InvariantCulture);
-                featureSet.BoxMaxPositions[i].x = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.XMax.Source], CultureInfo.InvariantCulture);
-                featureSet.BoxMaxPositions[i].y = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.YMax.Source], CultureInfo.InvariantCulture);
-                featureSet.BoxMaxPositions[i].z = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.ZMax.Source], CultureInfo.InvariantCulture);
                 featureSet.FeaturePositions[i].x = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.X.Source], CultureInfo.InvariantCulture);
                 featureSet.FeaturePositions[i].y = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.Y.Source], CultureInfo.InvariantCulture);
                 featureSet.FeaturePositions[i].z = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.Z.Source], CultureInfo.InvariantCulture);
-
+            }
+            bool boundingBoxSourcesFound = Array.IndexOf(keys, featureSet.Mapping.XMin.Source) >= 0 && Array.IndexOf(keys, featureSet.Mapping.XMax.Source) >= 0 &&
+                Array.IndexOf(keys, featureSet.Mapping.YMin.Source) >= 0 && Array.IndexOf(keys, featureSet.Mapping.YMax.Source) >= 0 &&
+                Array.IndexOf(keys, featureSet.Mapping.ZMin.Source) >= 0 && Array.IndexOf(keys, featureSet.Mapping.ZMax.Source) >= 0;
+            if (boundingBoxSourcesFound)
+            {
+                featureSet.BoxMinPositions = new Vector3[featureSet.NumberFeatures];
+                featureSet.BoxMaxPositions = new Vector3[featureSet.NumberFeatures];
+                for (int i = 0; i < featureSet.NumberFeatures; i++)
+                {
+                    featureSet.BoxMinPositions[i].x = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.XMin.Source], CultureInfo.InvariantCulture);
+                    featureSet.BoxMinPositions[i].y = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.YMin.Source], CultureInfo.InvariantCulture);
+                    featureSet.BoxMinPositions[i].z = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.ZMin.Source], CultureInfo.InvariantCulture);
+                    featureSet.BoxMaxPositions[i].x = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.XMax.Source], CultureInfo.InvariantCulture);
+                    featureSet.BoxMaxPositions[i].y = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.YMax.Source], CultureInfo.InvariantCulture);
+                    featureSet.BoxMaxPositions[i].z = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.ZMax.Source], CultureInfo.InvariantCulture);
+                }
+            }
+            else
+            {
+                featureSet.BoxMinPositions = new Vector3[0];
+                featureSet.BoxMaxPositions = new Vector3[0];
             }
             return featureSet;
         }
