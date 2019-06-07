@@ -9,7 +9,9 @@ public class TabsManager : MonoBehaviour
     public GameObject[] panels;
 
     private int activeTabIndex=0;
-    private int old_activeTabIndex = 0;
+    private int old_activeTabIndex = -1;
+
+    public int defaultTabIndex = 0;
 
     Color defaultColor= new Color(0.2901961f, 0.3960785f, 0.4470589f, 0.2f);
     Color selectedColor = new Color(0.2901961f, 0.3960785f, 0.4470589f, 1f);
@@ -21,25 +23,44 @@ public class TabsManager : MonoBehaviour
         {
             tab.GetComponent<Image>().color = defaultColor;
         }
-        
+
+        tabs[defaultTabIndex].GetComponent<Image>().color = selectedColor;
+        panels[defaultTabIndex].SetActive(true);
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        tabs[old_activeTabIndex].GetComponent<Image>().color = defaultColor;
-        tabs[activeTabIndex].GetComponent<Image>().color = selectedColor;
+        /*
+        if(activeTabIndex!= old_activeTabIndex)
+        {
+            tabs[old_activeTabIndex].GetComponent<Image>().color = defaultColor;
+            tabs[activeTabIndex].GetComponent<Image>().color = selectedColor;
 
-        panels[old_activeTabIndex].SetActive(false);
-        panels[activeTabIndex].SetActive(true);
-
+            panels[old_activeTabIndex].SetActive(false);
+            panels[activeTabIndex].SetActive(true);
+        }
+        */
 
     } 
 
     public void UpdateActiveTab(int newActiveTab)
     {
+
+       
         old_activeTabIndex = activeTabIndex;
         activeTabIndex = newActiveTab;
+
+        if (old_activeTabIndex != activeTabIndex)
+        {
+            tabs[old_activeTabIndex].GetComponent<Image>().color = defaultColor;
+            tabs[activeTabIndex].GetComponent<Image>().color = selectedColor;
+
+            panels[old_activeTabIndex].SetActive(false);
+            panels[activeTabIndex].SetActive(true);
+        }
+
     }
 }
 

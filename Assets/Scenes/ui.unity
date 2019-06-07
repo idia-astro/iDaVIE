@@ -2107,6 +2107,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   EditingHand: {fileID: 1613529189}
+  VibrationDuration: 0.25
+  VibrationFrequency: 100
+  VibrationAmplitude: 1
 --- !u!1 &379983798
 GameObject:
   m_ObjectHideFlags: 0
@@ -6107,7 +6110,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: New Text
+  m_Text: 
 --- !u!222 &1257161248
 CanvasRenderer:
   m_ObjectHideFlags: 0
