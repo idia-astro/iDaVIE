@@ -17,6 +17,7 @@ public class OptionController : MonoBehaviour
     public Text LabelColormap;
     public GameObject volumeDatasetRendererObj = null;
 
+
     int defaultColorIndex = 45;
     int colorIndex;
 
@@ -109,6 +110,7 @@ public class OptionController : MonoBehaviour
         if (_activeDataSet)
         {
             _activeDataSet.GetComponentInChildren<FeatureSetManager>().ImportFeatureSet();
+            
         }
         //featureSetManager.ImportFeatureSet();
 

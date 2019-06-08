@@ -33,7 +33,7 @@ public class SofiaListCreator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-
+       
         if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
 
@@ -47,7 +47,7 @@ public class SofiaListCreator : MonoBehaviour
         if (_activeDataSet != null)
         {
             featureSetManager = _activeDataSet.GetComponentInChildren<FeatureSetManager>();
-            featureSetManager.ImportFeatureSet();
+          //  featureSetManager.ImportFeatureSet();
         }
 
         numberOfItems = featureSetManager.GetComponentInChildren<FeatureSetRenderer>().FeatureList.Count;
@@ -76,15 +76,20 @@ public class SofiaListCreator : MonoBehaviour
 
             itemDetails.feature = featureSetManager.GetComponentInChildren<FeatureSetRenderer>().FeatureList[i];
 
+            if (!itemDetails.feature.Visible)
+                itemDetails.ToggleVisibility();
+
             itemDetails.sourceName.text = itemDetails.feature.Name;
 
 
             if (i%2!=0)
-             itemDetails.GetComponent<Image>().color = new Color(0.4039216f, 0.5333334f, 0.5882353f, 1f);
+                itemDetails.GetComponent<Image>().color = new Color(0.4039216f, 0.5333334f, 0.5882353f, 1f);
 
 
            
         }
+
+    
     
     }
 

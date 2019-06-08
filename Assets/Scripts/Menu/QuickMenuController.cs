@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using DataFeatures;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,6 +17,7 @@ public class QuickMenuController : MonoBehaviour
     public GameObject mainMenuCanvas;
     int maskstatus=0;
     int cropstatus = 0;
+    int featureStatus = 0;
     // Start is called before the first frame update
     void Start()
     {
@@ -70,6 +72,34 @@ public class QuickMenuController : MonoBehaviour
     public void OpenMainMenu()
     {
         mainMenuCanvas.SetActive(!mainMenuCanvas.activeSelf);
+    }
+
+    public void ToggleFeatures()
+    {
+        if (featureStatus == 1)
+            featureStatus = -1;
+        featureStatus++;
+
+        this.gameObject.transform.Find("Image_fet_on").gameObject.SetActive(false);
+        this.gameObject.transform.Find("Image_fet_off").gameObject.SetActive(false);
+
+        if (_activeDataSet)
+        {
+            switch (featureStatus)
+            {
+                case 0:
+                    this.gameObject.transform.Find("Image_fet_on").gameObject.SetActive(true);
+                    notificationText.GetComponent<Text>().text = "Features enabled";
+                    _activeDataSet.GetComponentInChildren<FeatureSetManager>().GetComponentInChildren<FeatureSetRenderer>().ToggleVisibility();
+                    break;
+                case 1:
+                    this.gameObject.transform.Find("Image_fet_off").gameObject.SetActive(true);
+                    notificationText.GetComponent<Text>().text = "Features disabled";
+                    _activeDataSet.GetComponentInChildren<FeatureSetManager>().GetComponentInChildren<FeatureSetRenderer>().ToggleVisibility();
+                  
+                    break;
+            }
+        }
     }
 
     public void ToggleMask()

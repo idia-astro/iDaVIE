@@ -62,7 +62,10 @@ namespace DataFeatures
         public void ToggleVisibility()
         {
             foreach (var feature in FeatureList)
+            {
+                feature.StatusChanged = true;
                 feature.Visible = !feature.Visible;
+            }
         }
 
         /*

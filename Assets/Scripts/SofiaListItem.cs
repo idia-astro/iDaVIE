@@ -53,10 +53,27 @@ public class SofiaListItem : MonoBehaviour
     }
 
 
-    public void ToggleVisibility()
+
+    public void ToggleVisibilityIcon()
     {
 
-      
+        if (visibilityStatus == 1)
+            visibilityStatus = -1;
+        visibilityStatus++;
+
+        this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_VIS").gameObject.SetActive(false);
+        this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_HIDE").gameObject.SetActive(false);
+
+        if(feature.Visible)
+            this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_VIS").gameObject.SetActive(true);
+        else
+            this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_HIDE").gameObject.SetActive(true);
+
+
+    }
+
+    public void ToggleVisibility()
+    {
         
         if (visibilityStatus == 1)
             visibilityStatus = -1;
@@ -145,7 +162,7 @@ public class SofiaListItem : MonoBehaviour
         if (_activeDataSet != null)
         {
             featureSetManager = _activeDataSet.GetComponentInChildren<FeatureSetManager>();
-            featureSetManager.ImportFeatureSet();
+           // featureSetManager.ImportFeatureSet();
         }
 
     }
@@ -153,7 +170,11 @@ public class SofiaListItem : MonoBehaviour
       // Update is called once per frame
       void Update()
       {
-
+        if (feature.StatusChanged)
+        {
+            feature.StatusChanged = false;
+            ToggleVisibilityIcon();
+        }
       }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
