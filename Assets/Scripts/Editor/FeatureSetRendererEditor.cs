@@ -13,11 +13,14 @@ public class FeatureSetRendererEditor : Editor
     {
         DrawDefaultInspector();
         FeatureSetRenderer featureSetRenderer = (FeatureSetRenderer) target;
-        if (GUILayout.Button("Toggle Set Visibility"))
+        if (GUILayout.Button("Feature Set On"))
         {
-            featureSetRenderer.ToggleVisibility();
+            featureSetRenderer.SetVisibilityOn();
         }
-
+        if (GUILayout.Button("Feature Set Off"))
+        {
+            featureSetRenderer.SetVisibilityOff();
+        }
         selectionTarget = EditorGUILayout.IntField("Feature ID", selectionTarget);
         GUILayout.BeginHorizontal();
         GUI.enabled = (selectionTarget > 0 && selectionTarget <= featureSetRenderer.FeatureList.Count);

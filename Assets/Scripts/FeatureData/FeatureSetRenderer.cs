@@ -61,6 +61,18 @@ namespace DataFeatures
                 feature.Visible = !feature.Visible;
         }
 
+        public void SetVisibilityOn()
+        {
+            foreach (var feature in FeatureList)
+                feature.Visible = true;
+        }
+
+        public void SetVisibilityOff()
+        {
+            foreach (var feature in FeatureList)
+                feature.Visible = false;
+        }
+
         public void SelectFeature(Feature feature)
         {
             var featureManager = GetComponentInParent<FeatureSetManager>();
