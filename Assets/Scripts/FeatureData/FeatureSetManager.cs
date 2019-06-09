@@ -138,7 +138,7 @@ namespace DataFeatures
             if (_activeFeatureSetRenderer)
             {
                 DeselectFeature();
-                SelectedFeature = new Feature(boundsMin, boundsMax, Color.green, _activeFeatureSetRenderer.transform, featureName, false) {Temporary = temporary, Selected = true};
+                SelectedFeature = new Feature(boundsMin, boundsMax, Color.green, _activeFeatureSetRenderer.transform, featureName) {Temporary = temporary, Selected = true};
                 return true;
             }
 
@@ -168,31 +168,14 @@ namespace DataFeatures
                 string outFilePath = "Data/DataFeatures/" + OutputFile;
                 _streamWriter = new StreamWriter(outFilePath, true);
                 _streamWriter.WriteLine("# Custom List");
-                if (feature.IsVoxel)
-                {
-                    _streamWriter.WriteLine("# " + "x".PadLeft(10, ' ') + "y".PadLeft(10, ' ') + "z".PadLeft(10, ' ') + "metric".PadLeft(10, ' ') + "comment".PadLeft(10, ' '));
-                }
-                else
-                {
-                    _streamWriter.WriteLine("# " + "x".PadLeft(10, ' ') + "y".PadLeft(10, ' ') + "z".PadLeft(10, ' ') +
+                _streamWriter.WriteLine("# " + "x".PadLeft(10, ' ') + "y".PadLeft(10, ' ') + "z".PadLeft(10, ' ') +
                          "x_min".PadLeft(10, ' ') + "x_max".PadLeft(10, ' ') +
-                          "y_min".PadLeft(10, ' ') + "y_max".PadLeft(10, ' ') +
-                           "z_min".PadLeft(10, ' ') + "z_max".PadLeft(10, ' ') +
-                        "metric".PadLeft(10, ' ') + "comment".PadLeft(10, ' ')) ;
-                }
+                         "y_min".PadLeft(10, ' ') + "y_max".PadLeft(10, ' ') +
+                         "z_min".PadLeft(10, ' ') + "z_max".PadLeft(10, ' ') +
+                         "metric".PadLeft(10, ' ') + "comment".PadLeft(10, ' ')) ;
                     _streamWriter.Flush();
             }
-            if (feature.IsVoxel)
-            {
-                _streamWriter.WriteLine("  " + feature.Center.x.ToString().PadLeft(10, ' ') +
-                   feature.Center.y.ToString().PadLeft(10, ' ') +
-                   feature.Center.z.ToString().PadLeft(10, ' ') +
-                   feature.Metric.ToString().PadLeft(10, ' ') + "   \"" +
-                   feature.Comment.ToString().PadLeft(10, ' ') + "\"");
-            }
-            else
-            {
-                _streamWriter.WriteLine("  " + feature.Center.x.ToString().PadLeft(10, ' ') +
+            _streamWriter.WriteLine("  " + feature.Center.x.ToString().PadLeft(10, ' ') +
                    feature.Center.y.ToString().PadLeft(10, ' ') +
                    feature.Center.z.ToString().PadLeft(10, ' ') +
                    feature.CornerMin.x.ToString().PadLeft(10, ' ') +
@@ -201,9 +184,8 @@ namespace DataFeatures
                    feature.CornerMax.y.ToString().PadLeft(10, ' ') +
                    feature.CornerMin.z.ToString().PadLeft(10, ' ') +
                    feature.CornerMax.z.ToString().PadLeft(10, ' ') +
-                   feature.Metric.ToString().PadLeft(10, ' ') + "   \"" +
-                   feature.Comment.ToString().PadLeft(10, ' ') + "\"");
-            }
+                   feature.Metric.ToString().PadLeft(10, ' ') + 
+                   ("  \"" + feature.Comment.ToString()).PadLeft(10, ' ') + "\"");
             _streamWriter.Flush();
             return true;
         }
