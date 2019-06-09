@@ -43,6 +43,7 @@ namespace VolumeData
             public static readonly string NextDataSet = "next data set";
             public static readonly string PreviousDataSet = "previous data set";
             public static readonly string CropSelection = "crop selection";
+            public static readonly string Teleport = "teleport";
             public static readonly string ResetCropSelection = "reset crop";
             public static readonly string MaskDisabled = "mask off";
             public static readonly string MaskEnabled = "mask on";
@@ -51,7 +52,7 @@ namespace VolumeData
             
             public static readonly string[] All = { EditThresholdMin, EditThresholdMax, SaveThreshold, ResetThreshold, ResetTransform, 
                 ColormapPlasma, ColormapRainbow, ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix,
-                NextDataSet, PreviousDataSet, CropSelection, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated
+                NextDataSet, PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated
             };
         }
    
@@ -84,14 +85,11 @@ namespace VolumeData
 
         private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
         {
-            if (EditingHand.name == "LeftHand")
-                _volumeInputController.VibrateController(SteamVR_Input_Sources.LeftHand, VibrationAmplitude, VibrationFrequency, VibrationAmplitude);
-            else if (EditingHand.name == "RightHand")
-                _volumeInputController.VibrateController(SteamVR_Input_Sources.RightHand, VibrationAmplitude, VibrationFrequency, VibrationAmplitude);
-            else
+            if (EditingHand)
             {
-
+                _volumeInputController.VibrateController(EditingHand.handType, VibrationAmplitude, VibrationFrequency, VibrationAmplitude);
             }
+
             StringBuilder builder = new StringBuilder();
             builder.AppendFormat("{0} ({1}){2}", args.text, args.confidence, Environment.NewLine);
             builder.AppendFormat("\tTimestamp: {0}{1}", args.phraseStartTime, Environment.NewLine);
@@ -158,6 +156,10 @@ namespace VolumeData
             else if (args.text == Keywords.ResetCropSelection)
             {
                 resetCropDataSet();
+            }
+            else if (args.text == Keywords.Teleport)
+            {
+                teleportToSelection();
             }
             else if (args.text == Keywords.MaskDisabled)
             {
@@ -282,6 +284,14 @@ namespace VolumeData
             if (_activeDataSet)
             {
                 _activeDataSet.ResetCrop();
+            }
+        }
+
+        public void teleportToSelection()
+        {
+            if (_activeDataSet)
+            {
+                _activeDataSet.TeleportToRegion();
             }
         }
 

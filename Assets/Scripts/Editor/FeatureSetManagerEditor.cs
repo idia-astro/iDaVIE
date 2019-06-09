@@ -2,6 +2,7 @@
 using System.Collections;
 using DataFeatures;
 using UnityEditor;
+using VolumeData;
 
 
 [CustomEditor(typeof(FeatureSetManager))]
@@ -27,12 +28,20 @@ public class FeatureSetManagerEditor : Editor
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Teleport"))
             {
-                //featureSetManager.ImportFeatureSet();
+                VolumeDataSetRenderer volumeDataSetRenderer = featureSetManager.GetComponentInParent<VolumeDataSetRenderer>();
+                if (volumeDataSetRenderer)
+                {
+                    volumeDataSetRenderer.TeleportToRegion();
+                }
             }
 
             if (GUILayout.Button("Crop"))
             {
-                //featureSetManager.ImportFeatureSet();
+                VolumeDataSetRenderer volumeDataSetRenderer = featureSetManager.GetComponentInParent<VolumeDataSetRenderer>();
+                if (volumeDataSetRenderer)
+                {
+                    volumeDataSetRenderer.CropToRegion();
+                }
             }
             GUILayout.EndHorizontal();
             
