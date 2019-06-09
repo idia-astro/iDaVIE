@@ -116,6 +116,8 @@ namespace VolumeData
         private Material _materialInstance;
         private VolumeDataSet _dataSet;
         private VolumeDataSet _maskDataSet = null;
+        private VolumeInputController _volumeInputController;
+        
         #region Material Property IDs
         private struct MaterialID
         {
@@ -160,6 +162,7 @@ namespace VolumeData
         {
             _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false);
 
+            _volumeInputController = FindObjectOfType<VolumeInputController>();
             _featureManager = GetComponentInChildren<FeatureSetManager>();
             if (_featureManager == null)
                 Debug.Log($"No FeatureManager attached to VolumeDataSetRenderer. Attach prefab for use of Features.");
@@ -359,23 +362,18 @@ namespace VolumeData
 
         public void SelectFeature(Vector3 cursor)
         {
-            FeatureSetManager featureSetManager = GetComponentInChildren<FeatureSetManager>();
-            if (featureSetManager)
+            if (_featureManager && _featureManager.SelectFeature(cursor))
             {
-                if (featureSetManager.SelectFeature(cursor))
-                {
-                    Debug.Log($"Selected feature '{featureSetManager.SelectedFeature.Name}'");
-                }
+                Debug.Log($"Selected feature '{_featureManager.SelectedFeature.Name}'");
             }
         }
 
         public void CropToRegion()
         {
-            FeatureSetManager featureSetManager = GetComponentInChildren<FeatureSetManager>();
-            if (featureSetManager != null && featureSetManager.SelectedFeature != null)
+            if (_featureManager != null && _featureManager.SelectedFeature != null)
             {
-                var cornerMin = featureSetManager.SelectedFeature.CornerMin;
-                var cornerMax = featureSetManager.SelectedFeature.CornerMax;
+                var cornerMin = _featureManager.SelectedFeature.CornerMin;
+                var cornerMax = _featureManager.SelectedFeature.CornerMax;
                 Vector3Int startVoxel = new Vector3Int(Convert.ToInt32(cornerMin.x), Convert.ToInt32(cornerMin.y), Convert.ToInt32(cornerMin.z));
                 Vector3Int endVoxel = new Vector3Int(Convert.ToInt32(cornerMax.x), Convert.ToInt32(cornerMax.y), Convert.ToInt32(cornerMax.z));
 
@@ -414,6 +412,16 @@ namespace VolumeData
             if (_maskDataSet != null)
             {
                 _maskDataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel, new Vector3Int(xFactor, yFactor, zFactor));
+            }
+        }
+
+        public void TeleportToRegion()
+        {
+            if (_volumeInputController && _featureManager && _featureManager.SelectedFeature != null)
+            {
+                var boundsMin = _featureManager.SelectedFeature.CornerMin;
+                var boundsMax = _featureManager.SelectedFeature.CornerMax;
+                _volumeInputController.Teleport(boundsMin - (0.5f * Vector3.one), boundsMax + (0.5f * Vector3.one));
             }
         }
 
