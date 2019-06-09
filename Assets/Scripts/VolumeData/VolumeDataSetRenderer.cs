@@ -371,16 +371,25 @@ namespace VolumeData
 
         public void CropToRegion()
         {
-            Vector3 regionStartObjectSpace = new Vector3((float)(RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
-            Vector3 regionEndObjectSpace = new Vector3((float)(RegionEndVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionEndVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
-            Vector3 padding = new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
-            SliceMin = Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
-            SliceMax = Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
-            LoadRegionData();
-            _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.RegionCube);
-            if (_maskDataSet != null)
+            FeatureSetManager featureSetManager = GetComponentInChildren<FeatureSetManager>();
+            if (featureSetManager != null && featureSetManager.SelectedFeature != null)
             {
-                _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
+                var cornerMin = featureSetManager.SelectedFeature.CornerMin;
+                var cornerMax = featureSetManager.SelectedFeature.CornerMax;
+                RegionStartVoxel = new Vector3Int(Convert.ToInt32(cornerMin.x), Convert.ToInt32(cornerMin.y), Convert.ToInt32(cornerMin.z));
+                RegionEndVoxel = new Vector3Int(Convert.ToInt32(cornerMax.x), Convert.ToInt32(cornerMax.y), Convert.ToInt32(cornerMax.z));
+                
+                Vector3 regionStartObjectSpace = new Vector3((float)(RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
+                Vector3 regionEndObjectSpace = new Vector3((float)(RegionEndVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionEndVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
+                Vector3 padding = new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
+                SliceMin = Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
+                SliceMax = Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
+                LoadRegionData();
+                _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.RegionCube);
+                if (_maskDataSet != null)
+                {
+                    _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
+                }
             }
         }
 
