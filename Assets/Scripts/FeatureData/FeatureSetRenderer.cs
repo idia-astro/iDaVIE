@@ -40,6 +40,9 @@ namespace DataFeatures
                     {
                         cubeMin = _importer.BoxMinPositions[i];
                         cubeMax = _importer.BoxMaxPositions[i];
+                        Debug.Log($"cubemin {cubeMin}");
+                        Debug.Log($"cubemax {cubeMax}");
+
                         FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, _importer.FeatureNames[i]));
                     }
                 }

@@ -69,7 +69,7 @@ namespace DataFeatures
                     if (i == 1)
                     {
                         keys = System.Text.RegularExpressions.Regex.Split(lines[i], @"\s{2,}");  //delimiter in json?
-                        if (Array.IndexOf(keys, featureSet.Mapping.X.Source) < 0 || Array.IndexOf(keys, featureSet.Mapping.Y.Source) < 0 || Array.IndexOf(keys, featureSet.Mapping.Z.Source) < 0 || Array.IndexOf(keys, featureSet.Mapping.Name.Source) < 0)
+                        if (Array.IndexOf(keys, featureSet.Mapping.X.Source) < 0 || Array.IndexOf(keys, featureSet.Mapping.Y.Source) < 0 || Array.IndexOf(keys, featureSet.Mapping.Z.Source) < 0)
                         {
                             Debug.Log($"Minimum keys not found!");
                             return featureSet;
@@ -101,11 +101,26 @@ namespace DataFeatures
             featureSet.FeaturePositions = new Vector3[featureSet.NumberFeatures];
             for (int i = 0; i < featureSet.NumberFeatures; i++)
             {
-                featureSet.FeatureNames[i] = featureSet.FeatureData[i][featureSet.Mapping.Name.Source];
                 featureSet.FeaturePositions[i].x = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.X.Source], CultureInfo.InvariantCulture);
                 featureSet.FeaturePositions[i].y = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.Y.Source], CultureInfo.InvariantCulture);
                 featureSet.FeaturePositions[i].z = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.Z.Source], CultureInfo.InvariantCulture);
             }
+            bool nameSourceFound = Array.IndexOf(keys, featureSet.Mapping.Name.Source) >= 0;
+            if (nameSourceFound)
+            {
+                for (int i = 0; i < featureSet.NumberFeatures; i++)
+                {
+                    featureSet.FeatureNames[i] = featureSet.FeatureData[i][featureSet.Mapping.Name.Source];
+                }
+            }
+            else
+            {
+                for (int i = 0; i < featureSet.NumberFeatures; i++)
+                {
+                    featureSet.FeatureNames[i] = i.ToString();
+                }
+            }
+
             bool boundingBoxSourcesFound = Array.IndexOf(keys, featureSet.Mapping.XMin.Source) >= 0 && Array.IndexOf(keys, featureSet.Mapping.XMax.Source) >= 0 &&
                 Array.IndexOf(keys, featureSet.Mapping.YMin.Source) >= 0 && Array.IndexOf(keys, featureSet.Mapping.YMax.Source) >= 0 &&
                 Array.IndexOf(keys, featureSet.Mapping.ZMin.Source) >= 0 && Array.IndexOf(keys, featureSet.Mapping.ZMax.Source) >= 0;

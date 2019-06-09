@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using VolumeData;
 using UnityEngine;
@@ -12,6 +13,8 @@ namespace DataFeatures
         public string FeatureFileToLoad;
         public string FeatureMappingFile;
 
+        private string _timeStamp;
+        private StreamWriter _streamWriter;
         private Feature _selectedFeature;
         public Feature SelectedFeature
         {
@@ -27,6 +30,8 @@ namespace DataFeatures
             }
         }
 
+        public string OutputFile;
+
         // List containing the different FeatureSets (example: SofiaSet, CustomSet, VRSet, etc.)
         // UI will have tab for each Renderer containing the lists of Features
         private List<FeatureSetRenderer> _featureSetList;
@@ -37,6 +42,8 @@ namespace DataFeatures
         void Awake()
         {
             _featureSetList = new List<FeatureSetRenderer>();
+            _timeStamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            OutputFile = _timeStamp + ".ascii";
         }
 
         // Creates new empty FeatureSetRenderer for adding Features
@@ -151,8 +158,36 @@ namespace DataFeatures
                     return true;
                 }
             }
-            // TODO: append to file output
             return false;
+        }
+
+        public bool AppendFeatureToFile(Feature feature)
+        {
+            if (_streamWriter == null || !File.Exists($"Data/DataFeatures/{OutputFile}"))
+            {
+                string outFilePath = "Data/DataFeatures/" + OutputFile;
+                _streamWriter = new StreamWriter(outFilePath, true);
+                _streamWriter.WriteLine("# Custom List");
+                _streamWriter.WriteLine("# " + "x".PadLeft(10, ' ') + "y".PadLeft(10, ' ') + "z".PadLeft(10, ' ') +
+                         "x_min".PadLeft(10, ' ') + "x_max".PadLeft(10, ' ') +
+                         "y_min".PadLeft(10, ' ') + "y_max".PadLeft(10, ' ') +
+                         "z_min".PadLeft(10, ' ') + "z_max".PadLeft(10, ' ') +
+                         "metric".PadLeft(10, ' ') + "comment".PadLeft(10, ' ')) ;
+                    _streamWriter.Flush();
+            }
+            _streamWriter.WriteLine("  " + feature.Center.x.ToString().PadLeft(10, ' ') +
+                   feature.Center.y.ToString().PadLeft(10, ' ') +
+                   feature.Center.z.ToString().PadLeft(10, ' ') +
+                   feature.CornerMin.x.ToString().PadLeft(10, ' ') +
+                   feature.CornerMax.x.ToString().PadLeft(10, ' ') +
+                   feature.CornerMin.y.ToString().PadLeft(10, ' ') +
+                   feature.CornerMax.y.ToString().PadLeft(10, ' ') +
+                   feature.CornerMin.z.ToString().PadLeft(10, ' ') +
+                   feature.CornerMax.z.ToString().PadLeft(10, ' ') +
+                   feature.Metric.ToString().PadLeft(10, ' ') + 
+                   ("  \"" + feature.Comment.ToString()).PadLeft(10, ' ') + "\"");
+            _streamWriter.Flush();
+            return true;
         }
 
         public void ExportFeatureSet(FeatureSetRenderer setToExport, string FileName)
