@@ -16,9 +16,11 @@ public class Feature
     private Vector3 _cornerMin;
     private Vector3 _cornerMax;
     private VectorLine _boundingBox;
+    private bool _isVoxel;
 
-    public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, Transform transform, string name)
+    public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, Transform transform, string name, bool isVoxel)
     {
+        _isVoxel = isVoxel;
         _boundingBox = new VectorLine(name, new List<Vector3>(24), 1.0f) {drawTransform = transform, color = cubeColor};
         _boundingBox.Draw3DAuto();
         SetBounds(cubeMin, cubeMax);
@@ -97,6 +99,11 @@ public class Feature
     {
         get => _boundingBox.active;
         set => _boundingBox.active = value;
+    }
+
+    public bool IsVoxel
+    {
+        get => _isVoxel;
     }
 
     public string Name

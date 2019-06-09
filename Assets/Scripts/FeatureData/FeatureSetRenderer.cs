@@ -40,7 +40,10 @@ namespace DataFeatures
                     {
                         cubeMin = _importer.BoxMinPositions[i];
                         cubeMax = _importer.BoxMaxPositions[i];
-                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, _importer.FeatureNames[i]));
+                        Debug.Log($"cubemin {cubeMin}");
+                        Debug.Log($"cubemax {cubeMax}");
+
+                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, _importer.FeatureNames[i], false));
                     }
                 }
                 else
@@ -49,7 +52,7 @@ namespace DataFeatures
                     {
                         cubeMin = _importer.FeaturePositions[i];
                         cubeMax = _importer.FeaturePositions[i];
-                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, _importer.FeatureNames[i]));
+                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, _importer.FeatureNames[i], true));
                     }
                 }
             }

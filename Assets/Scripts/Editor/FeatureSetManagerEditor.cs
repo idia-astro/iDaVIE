@@ -9,7 +9,8 @@ public class FeatureSetManagerEditor : Editor
 {
     private string selectionComment = "";
     private float metric = 0.0f;
-    
+    private bool _appendToFile = true;
+
     public override void OnInspectorGUI()
     {
         DrawDefaultInspector();
@@ -39,11 +40,19 @@ public class FeatureSetManagerEditor : Editor
             selectionComment = EditorGUILayout.TextField("Comment", selectionComment);
             metric = EditorGUILayout.FloatField("Metric", metric);
             GUILayout.EndHorizontal();
+            _appendToFile = GUILayout.Toggle(_appendToFile, "Append To File");
             if (GUILayout.Button("Add to list"))
             {
                 if (featureSetManager.SelectedFeature != null && featureSetManager.AddToList(featureSetManager.SelectedFeature, metric, selectionComment))
                 {
                     Debug.Log($"Added feature {featureSetManager.SelectedFeature.Name} to list with metric {metric} and comment {selectionComment}");
+                }
+                if (_appendToFile)
+                {
+                    if (featureSetManager.SelectedFeature != null && featureSetManager.AppendFeatureToFile(featureSetManager.SelectedFeature))
+                    {
+                        Debug.Log($"Appeneded feature to file {featureSetManager.OutputFile}");
+                    }
                 }
             }
             GUI.enabled = true;
