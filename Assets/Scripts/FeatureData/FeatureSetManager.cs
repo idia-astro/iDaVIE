@@ -158,7 +158,6 @@ namespace DataFeatures
                     return true;
                 }
             }
-            // TODO: append to file output
             return false;
         }
 
@@ -172,7 +171,6 @@ namespace DataFeatures
                 if (feature.IsVoxel)
                 {
                     _streamWriter.WriteLine("# " + "x".PadLeft(10, ' ') + "y".PadLeft(10, ' ') + "z".PadLeft(10, ' ') + "metric".PadLeft(10, ' ') + "comment".PadLeft(10, ' '));
-                    //_streamWriter.WriteLine("#    x    y    z    metric    comment");
                 }
                 else
                 {
@@ -180,19 +178,17 @@ namespace DataFeatures
                          "x_min".PadLeft(10, ' ') + "x_max".PadLeft(10, ' ') +
                           "y_min".PadLeft(10, ' ') + "y_max".PadLeft(10, ' ') +
                            "z_min".PadLeft(10, ' ') + "z_max".PadLeft(10, ' ') +
-                        "metric".PadLeft(10, ' ') + "comment".PadLeft(10, ' '));
-                    //_streamWriter.WriteLine("#    x    y    z    x_min    x_max    y_min    y_max    z_min    z_max    metric    comment");
+                        "metric".PadLeft(10, ' ') + "comment".PadLeft(10, ' ')) ;
                 }
                     _streamWriter.Flush();
             }
             if (feature.IsVoxel)
             {
-                //_streamWriter.WriteLine($"  {feature.Center.x.ToString().PadLeft(10, ' ')}    {feature.Center.y.ToString().PadLeft(10, ' ')}    {feature.Center.z}    {feature.Metric}    {feature.Comment}");
                 _streamWriter.WriteLine("  " + feature.Center.x.ToString().PadLeft(10, ' ') +
                    feature.Center.y.ToString().PadLeft(10, ' ') +
                    feature.Center.z.ToString().PadLeft(10, ' ') +
-                   feature.Metric.ToString().PadLeft(10, ' ') +
-                   feature.Comment.ToString().PadLeft(10, ' '));
+                   feature.Metric.ToString().PadLeft(10, ' ') + "   \"" +
+                   feature.Comment.ToString().PadLeft(10, ' ') + "\"");
             }
             else
             {
@@ -205,13 +201,8 @@ namespace DataFeatures
                    feature.CornerMax.y.ToString().PadLeft(10, ' ') +
                    feature.CornerMin.z.ToString().PadLeft(10, ' ') +
                    feature.CornerMax.z.ToString().PadLeft(10, ' ') +
-                   feature.Metric.ToString().PadLeft(10, ' ') +
-                   feature.Comment.ToString().PadLeft(10, ' '));
-                //_streamWriter.WriteLine($"  {feature.Center.x}    {feature.Center.y}    {feature.Center.z}    " +
-                //$"{feature.CornerMin.x}    {feature.CornerMax.x}    " +
-                //$"{feature.CornerMin.y}    {feature.CornerMax.y}    " +
-                //$"{feature.CornerMin.z}    {feature.CornerMax.z}    " +
-                //$"{feature.Metric}    {feature.Comment}");
+                   feature.Metric.ToString().PadLeft(10, ' ') + "   \"" +
+                   feature.Comment.ToString().PadLeft(10, ' ') + "\"");
             }
             _streamWriter.Flush();
             return true;
