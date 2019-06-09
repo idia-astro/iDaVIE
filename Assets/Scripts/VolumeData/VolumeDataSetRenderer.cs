@@ -250,9 +250,14 @@ namespace VolumeData
             _regionOutline = new VectorLine("VoxelOutline", new List<Vector3>(24), 1.0f);
             _regionOutline.MakeCube(Vector3.zero, 1, 1, 1);
             _regionOutline.drawTransform = transform;
-            _regionOutline.color = Color.red;
+            _regionOutline.color = Color.green;
             _regionOutline.active = false;
             _regionOutline.Draw3DAuto();
+
+            if (_featureManager)
+            {
+                _featureManager.CreateNewFeatureSet();
+            }
         }
 
         public void ShiftColorMap(int delta)
