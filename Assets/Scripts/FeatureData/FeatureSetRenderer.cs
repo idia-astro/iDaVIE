@@ -9,10 +9,6 @@ namespace DataFeatures
 {
     public class FeatureSetRenderer : MonoBehaviour
     {
-        public string FileName;
-
-        public string MappingFileName;
-
         //public Feature FeaturePrefab;
         private FeatureSetImporter _importer;
 
@@ -30,9 +26,9 @@ namespace DataFeatures
         }
 
         // Spawn Feature objects intro world from FileName
-        public void SpawnFeaturesFromFile()
+        public void SpawnFeaturesFromFile(string fileName, string mappingFileName)
         {
-            _importer = FeatureSetImporter.CreateSetFromAscii(FileName, MappingFileName);
+            _importer = FeatureSetImporter.CreateSetFromAscii(fileName, mappingFileName);
             var volumeDataSetRenderer = GetComponentInParent<VolumeDataSetRenderer>();
             if (volumeDataSetRenderer)
             {
@@ -44,6 +40,9 @@ namespace DataFeatures
                     {
                         cubeMin = _importer.BoxMinPositions[i];
                         cubeMax = _importer.BoxMaxPositions[i];
+                        Debug.Log($"cubemin {cubeMin}");
+                        Debug.Log($"cubemax {cubeMax}");
+
                         FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, _importer.FeatureNames[i]));
                     }
                 }
@@ -65,6 +64,28 @@ namespace DataFeatures
             {
                 feature.StatusChanged = true;
                 feature.Visible = !feature.Visible;
+            }
+        }
+
+        public void SetVisibilityOn()
+        {
+            foreach (var feature in FeatureList)
+                feature.Visible = true;
+        }
+
+        public void SetVisibilityOff()
+        {
+            foreach (var feature in FeatureList)
+                feature.Visible = false;
+        }
+
+        public void SelectFeature(Feature feature)
+        {
+            var featureManager = GetComponentInParent<FeatureSetManager>();
+            if (featureManager)
+            {
+                featureManager.SelectedFeature = feature;
+                Debug.Log($"Selected feature '{feature.Name}'");
             }
         }
 

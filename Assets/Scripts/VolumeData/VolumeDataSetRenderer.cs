@@ -116,6 +116,8 @@ namespace VolumeData
         private Material _materialInstance;
         private VolumeDataSet _dataSet;
         private VolumeDataSet _maskDataSet = null;
+        private VolumeInputController _volumeInputController;
+        
         #region Material Property IDs
         private struct MaterialID
         {
@@ -160,6 +162,7 @@ namespace VolumeData
         {
             _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false);
 
+            _volumeInputController = FindObjectOfType<VolumeInputController>();
             _featureManager = GetComponentInChildren<FeatureSetManager>();
             if (_featureManager == null)
                 Debug.Log($"No FeatureManager attached to VolumeDataSetRenderer. Attach prefab for use of Features.");
@@ -250,9 +253,14 @@ namespace VolumeData
             _regionOutline = new VectorLine("VoxelOutline", new List<Vector3>(24), 1.0f);
             _regionOutline.MakeCube(Vector3.zero, 1, 1, 1);
             _regionOutline.drawTransform = transform;
-            _regionOutline.color = Color.red;
+            _regionOutline.color = Color.green;
             _regionOutline.active = false;
             _regionOutline.Draw3DAuto();
+
+            if (_featureManager)
+            {
+                _featureManager.CreateNewFeatureSet();
+            }
         }
 
         public void ShiftColorMap(int delta)
@@ -354,28 +362,32 @@ namespace VolumeData
 
         public void SelectFeature(Vector3 cursor)
         {
-            FeatureSetManager featureSetManager = GetComponentInChildren<FeatureSetManager>();
-            if (featureSetManager)
+            if (_featureManager && _featureManager.SelectFeature(cursor))
             {
-                if (featureSetManager.SelectFeature(cursor))
-                {
-                    Debug.Log($"Selected feature '{featureSetManager.SelectedFeature.Name}'");
-                }
+                Debug.Log($"Selected feature '{_featureManager.SelectedFeature.Name}'");
             }
         }
 
         public void CropToRegion()
         {
-            Vector3 regionStartObjectSpace = new Vector3((float)(RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
-            Vector3 regionEndObjectSpace = new Vector3((float)(RegionEndVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionEndVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
-            Vector3 padding = new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
-            SliceMin = Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
-            SliceMax = Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
-            LoadRegionData();
-            _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.RegionCube);
-            if (_maskDataSet != null)
+            if (_featureManager != null && _featureManager.SelectedFeature != null)
             {
-                _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
+                var cornerMin = _featureManager.SelectedFeature.CornerMin;
+                var cornerMax = _featureManager.SelectedFeature.CornerMax;
+                Vector3Int startVoxel = new Vector3Int(Convert.ToInt32(cornerMin.x), Convert.ToInt32(cornerMin.y), Convert.ToInt32(cornerMin.z));
+                Vector3Int endVoxel = new Vector3Int(Convert.ToInt32(cornerMax.x), Convert.ToInt32(cornerMax.y), Convert.ToInt32(cornerMax.z));
+
+                Vector3 regionStartObjectSpace = new Vector3(cornerMin.x / _dataSet.XDim - 0.5f, cornerMin.y / _dataSet.YDim - 0.5f, cornerMin.z / _dataSet.ZDim - 0.5f);
+                Vector3 regionEndObjectSpace = new Vector3(cornerMax.x / _dataSet.XDim - 0.5f, cornerMax.y / _dataSet.YDim - 0.5f, cornerMax.z / _dataSet.ZDim - 0.5f);
+                Vector3 padding = new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
+                SliceMin = Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
+                SliceMax = Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
+                LoadRegionData(startVoxel, endVoxel);
+                _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.RegionCube);
+                if (_maskDataSet != null)
+                {
+                    _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
+                }
             }
         }
 
@@ -390,16 +402,26 @@ namespace VolumeData
             }
         }
 
-        public void LoadRegionData()
+        public void LoadRegionData(Vector3Int startVoxel, Vector3Int endVoxel)
         {
-            Vector3Int deltaRegion = RegionStartVoxel - RegionEndVoxel;
+            Vector3Int deltaRegion = startVoxel - endVoxel;
             Vector3Int regionSize = new Vector3Int(Math.Abs(deltaRegion.x) + 1, Math.Abs(deltaRegion.y) + 1, Math.Abs(deltaRegion.z) + 1);
             int xFactor, yFactor, zFactor;
             _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, regionSize.x, regionSize.y, regionSize.z, out xFactor, out yFactor, out zFactor);
-            _dataSet.GenerateCroppedVolumeTexture(TextureFilter, RegionStartVoxel, RegionEndVoxel, new Vector3Int(xFactor, yFactor, zFactor));
+            _dataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel, new Vector3Int(xFactor, yFactor, zFactor));
             if (_maskDataSet != null)
             {
-                _maskDataSet.GenerateCroppedVolumeTexture(TextureFilter, RegionStartVoxel, RegionEndVoxel, new Vector3Int(xFactor, yFactor, zFactor));
+                _maskDataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel, new Vector3Int(xFactor, yFactor, zFactor));
+            }
+        }
+
+        public void TeleportToRegion()
+        {
+            if (_volumeInputController && _featureManager && _featureManager.SelectedFeature != null)
+            {
+                var boundsMin = _featureManager.SelectedFeature.CornerMin;
+                var boundsMax = _featureManager.SelectedFeature.CornerMax;
+                _volumeInputController.Teleport(boundsMin - (0.5f * Vector3.one), boundsMax + (0.5f * Vector3.one));
             }
         }
 

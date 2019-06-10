@@ -8,6 +8,7 @@ using Valve.VR;
 using Valve.VR.InteractionSystem;
 using Vectrosity;
 using System.Diagnostics;
+using DataFeatures;
 using Debug = UnityEngine.Debug;
 using VRHand = Valve.VR.InteractionSystem.Hand;
 
@@ -311,23 +312,30 @@ public class VolumeInputController : MonoBehaviour
     {
         int handIndex = _selectingHand.handType == SteamVR_Input_Sources.LeftHand ? 0 : 1;
         var endPosition = _handTransforms[handIndex].position;
-        
+
         _selectingHand = null;
         _isSelecting = false;
 
         selectionStopwatch.Stop();
+        var activeDataSet = getFirstActiveDataSet();
 
-        // Clear region selection by clicking selection. Attempt to select feature
-        if (selectionStopwatch.ElapsedMilliseconds < 200)
+        if (activeDataSet)
         {
-            foreach (var dataSet in _volumeDataSets)
+            activeDataSet.ClearRegion();
+            var featureSetManager = activeDataSet.GetComponentInChildren<FeatureSetManager>();
+            // Clear region selection by clicking selection. Attempt to select feature
+            if (selectionStopwatch.ElapsedMilliseconds < 200)
             {
-                dataSet.ClearRegion();
-                dataSet.SelectFeature(endPosition);
+                activeDataSet.SelectFeature(endPosition);
+            }
+            else
+            {
+                if (featureSetManager)
+                {
+                    featureSetManager.CreateNewFeature(activeDataSet.RegionStartVoxel, activeDataSet.RegionEndVoxel, "selection", true);
+                }
             }
         }
-
-        Debug.Log("Leaving selecting state");
     }
 
     private void StateTransitionMovingToScaling()
@@ -653,7 +661,7 @@ public class VolumeInputController : MonoBehaviour
                 var regionSize = Vector3.Max(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) - Vector3.Min(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) + Vector3.one;
                 Vector3 wcsLengths = dataSet.GetFitsLengths(regionSize.x, regionSize.y, regionSize.z);
                 cursorString = $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}" + System.Environment.NewLine
-                                                                                           + $"Physical: {Math.Truncate(wcsLengths.x * 100) / 100}° x {Math.Truncate(wcsLengths.y * 100) / 100}° x {Math.Truncate(wcsLengths.z * 100) / 100 / 1000} km/s";
+                                                                                           + $"Physical: {Math.Truncate(wcsLengths.x * 100) / 100}Â° x {Math.Truncate(wcsLengths.y * 100) / 100}Â° x {Math.Truncate(wcsLengths.z * 100) / 100 / 1000} km/s";
             }
         }
 
