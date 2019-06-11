@@ -50,6 +50,11 @@
       "requirement": "optional"
     },
     {
+      "name": "/actions/default/in/QuickMenu",
+      "type": "boolean",
+      "requirement": "mandatory"
+    },
+    {
       "name": "/actions/default/out/Haptic",
       "type": "vibration"
     }
