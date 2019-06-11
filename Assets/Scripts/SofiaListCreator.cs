@@ -25,7 +25,8 @@ public class SofiaListCreator : MonoBehaviour
     public GameObject SofiaNewListController = null;
 
     private FeatureSetManager featureSetManager;
-    private FeatureSetRenderer featureSetRenderer;
+    private FeatureSetRenderer[] featureSetRenderer;
+    private int numberFeatureSetRenderers;
 
     private int numberOfItems;
 
@@ -50,8 +51,10 @@ public class SofiaListCreator : MonoBehaviour
           //  featureSetManager.ImportFeatureSet();
         }
 
-        numberOfItems = featureSetManager.GetComponentInChildren<FeatureSetRenderer>().FeatureList.Count;
-
+        featureSetRenderer = featureSetManager.GetComponentsInChildren<FeatureSetRenderer>();
+        numberFeatureSetRenderers = featureSetRenderer.Length;
+        numberOfItems = featureSetRenderer[numberFeatureSetRenderers - 1].FeatureList.Count;
+        //Debug.Log($"Number of items: {numberOfItems}");
        
         //setContent Holder Height;
         content.sizeDelta = new Vector2(0, numberOfItems * 100);
@@ -74,7 +77,7 @@ public class SofiaListCreator : MonoBehaviour
             //set name
             itemDetails.idTextField.text = (i+1).ToString();
 
-            itemDetails.feature = featureSetManager.GetComponentInChildren<FeatureSetRenderer>().FeatureList[i];
+            itemDetails.feature = featureSetRenderer[numberFeatureSetRenderers - 1].FeatureList[i];
 
             if (!itemDetails.feature.Visible)
                 itemDetails.ToggleVisibility();
