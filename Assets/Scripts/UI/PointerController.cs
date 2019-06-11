@@ -30,7 +30,7 @@ public class PointerController : MonoBehaviour
 
       
         // Mouse down
-        if (newState && fromSource != SteamVR_Input_Sources.LeftHand)
+        if (newState)
         {
            
             if (_hoveredElement)
