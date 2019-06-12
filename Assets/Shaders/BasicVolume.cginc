@@ -324,17 +324,17 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     }
     else if (MaskMode == MASK_ISOLATED)
     {
+        // Masks don't have NaNs
+        hasValue = true;
         for (int i = 0; i < requiredSteps; i++)
         {
-            float maskValue = tex3Dlod(MaskCube, float4(currentRayPosition, 0)).r;                
-            rayValue += maskValue;
+            accumulateMaskIsolated(currentRayPosition, rayValue, maxInHighlightBounds);
+            currentRayPosition += adjustedStepVector;
         }
         // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
         float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
-        currentRayPosition += stepVector * remainingStepLength * regionScale;        
-        
-        float maskValue = tex3Dlod(MaskCube, float4(currentRayPosition, 0)).r;
-        rayValue += maskValue;
+        currentRayPosition += stepVector * remainingStepLength * regionScale;
+        accumulateMaskIsolated(currentRayPosition, rayValue, maxInHighlightBounds);
     }
     else
     {

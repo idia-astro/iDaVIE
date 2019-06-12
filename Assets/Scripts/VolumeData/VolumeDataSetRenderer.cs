@@ -267,6 +267,9 @@ namespace VolumeData
             {
                 _featureManager.CreateNewFeatureSet();
             }
+            
+            Shader.WarmupAllShaders();
+
         }
 
         public void ShiftColorMap(int delta)
@@ -498,7 +501,6 @@ namespace VolumeData
             {
                 Shader.DisableKeyword("SHADER_AIP");
             }
-            
             _materialInstance.SetFloat(MaterialID.VignetteFadeStart, VignetteFadeStart);
             _materialInstance.SetFloat(MaterialID.VignetteFadeEnd, VignetteFadeEnd);
             _materialInstance.SetFloat(MaterialID.VignetteIntensity, VignetteIntensity);
