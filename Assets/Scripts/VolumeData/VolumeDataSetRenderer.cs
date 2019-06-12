@@ -130,7 +130,6 @@ namespace VolumeData
             public static readonly int DataCube = Shader.PropertyToID("_DataCube");
             public static readonly int MaskCube = Shader.PropertyToID("MaskCube");
             public static readonly int MaskMode = Shader.PropertyToID("MaskMode");
-            public static readonly int ProjectionMode = Shader.PropertyToID("ProjectionMode");
             public static readonly int NumColorMaps = Shader.PropertyToID("_NumColorMaps");
             public static readonly int SliceMin = Shader.PropertyToID("_SliceMin");
             public static readonly int SliceMax = Shader.PropertyToID("_SliceMax");
@@ -491,7 +490,15 @@ namespace VolumeData
                 _materialInstance.SetInt(MaterialID.MaskMode, MaskMode.Disabled.GetHashCode());
             }
 
-            _materialInstance.SetInt(MaterialID.ProjectionMode, ProjectionMode.GetHashCode());
+            if (ProjectionMode == ProjectionMode.AverageIntensityProjection)
+            {
+                Shader.EnableKeyword("SHADER_AIP");
+            }
+            else
+            {
+                Shader.DisableKeyword("SHADER_AIP");
+            }
+            
             _materialInstance.SetFloat(MaterialID.VignetteFadeStart, VignetteFadeStart);
             _materialInstance.SetFloat(MaterialID.VignetteFadeEnd, VignetteFadeEnd);
             _materialInstance.SetFloat(MaterialID.VignetteIntensity, VignetteIntensity);

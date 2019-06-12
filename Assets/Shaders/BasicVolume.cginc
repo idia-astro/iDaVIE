@@ -15,8 +15,8 @@
 #define MASK_INVERTED 2
 #define MASK_ISOLATED 3
 
-#define SHADER_MIP 0
-#define SHADER_AIP 1
+//#define SHADER_MIP 0
+//#define SHADER_AIP 1
 
 struct Ray
 {
@@ -257,174 +257,171 @@ fixed4 fragmentShaderRayMarch(VertexShaderOuput input) : SV_Target
     bool maxInHighlightBounds = false;
     bool hasValue = false;
     // TODO: this really needs to be improved using shader variants!
-    if (ProjectionMode == SHADER_AIP) 
+#ifdef SHADER_AIP
+    float cumulativeLength = 0.0f;
+    // TODO: make this a shader variant thing
+    if (MaskMode == MASK_DISABLED)
     {
-        float cumulativeLength = 0.0f;
-        // TODO: make this a shader variant thing
-        if (MaskMode == MASK_DISABLED)
+        for (int i = 0; i < requiredSteps; i++)
         {
-            for (int i = 0; i < requiredSteps; i++)
-            {
-                float stepValue = tex3Dlod(_DataCube, float4(currentRayPosition, 0)).r;                
-                if (!isnanSafe(stepValue))
-                {
-                    rayValue += stepValue * stepLength;
-                    cumulativeLength += stepLength;
-                    bool stepTest = positionInBox(currentRayPosition, HighlightMin, HighlightMax);
-                    maxInHighlightBounds = stepTest || maxInHighlightBounds;
-                    hasValue = true;
-                }
-                currentRayPosition += adjustedStepVector;
-            }
-            // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
-            float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
-            currentRayPosition += stepVector * remainingStepLength * regionScale;        
-            
-            float stepValue = tex3Dlod(_DataCube, float4(currentRayPosition, 0)).r;
+            float stepValue = tex3Dlod(_DataCube, float4(currentRayPosition, 0)).r;                
             if (!isnanSafe(stepValue))
             {
-                cumulativeLength += remainingStepLength;
-                rayValue += stepValue * remainingStepLength;
+                rayValue += stepValue * stepLength;
+                cumulativeLength += stepLength;
                 bool stepTest = positionInBox(currentRayPosition, HighlightMin, HighlightMax);
                 maxInHighlightBounds = stepTest || maxInHighlightBounds;
                 hasValue = true;
-            }            
-            rayValue /= cumulativeLength;
-        }
-        else if (MaskMode == MASK_ENABLED)
-        {
-            for (int i = 0; i < requiredSteps; i++)
-            {
-                float stepValue = tex3Dlod(_DataCube, float4(currentRayPosition, 0)).r;
-                float maskValue = tex3Dlod(MaskCube, float4(currentRayPosition, 0)).r;
-                if (!isnanSafe(stepValue) && maskValue > 0.0f)
-                {
-                    rayValue += stepValue * stepLength;
-                    cumulativeLength += stepLength;
-                    bool stepTest = positionInBox(currentRayPosition, HighlightMin, HighlightMax);
-                    maxInHighlightBounds = stepTest || maxInHighlightBounds;
-                    hasValue = true;
-                }
-                currentRayPosition += adjustedStepVector;
             }
-            // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
-            float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
-            currentRayPosition += stepVector * remainingStepLength * regionScale;        
-            
+            currentRayPosition += adjustedStepVector;
+        }
+        // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
+        float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
+        currentRayPosition += stepVector * remainingStepLength * regionScale;        
+        
+        float stepValue = tex3Dlod(_DataCube, float4(currentRayPosition, 0)).r;
+        if (!isnanSafe(stepValue))
+        {
+            cumulativeLength += remainingStepLength;
+            rayValue += stepValue * remainingStepLength;
+            bool stepTest = positionInBox(currentRayPosition, HighlightMin, HighlightMax);
+            maxInHighlightBounds = stepTest || maxInHighlightBounds;
+            hasValue = true;
+        }            
+        rayValue /= cumulativeLength;
+    }
+    else if (MaskMode == MASK_ENABLED)
+    {
+        for (int i = 0; i < requiredSteps; i++)
+        {
             float stepValue = tex3Dlod(_DataCube, float4(currentRayPosition, 0)).r;
             float maskValue = tex3Dlod(MaskCube, float4(currentRayPosition, 0)).r;
             if (!isnanSafe(stepValue) && maskValue > 0.0f)
             {
-                cumulativeLength += remainingStepLength;
-                rayValue += stepValue * remainingStepLength;
+                rayValue += stepValue * stepLength;
+                cumulativeLength += stepLength;
                 bool stepTest = positionInBox(currentRayPosition, HighlightMin, HighlightMax);
                 maxInHighlightBounds = stepTest || maxInHighlightBounds;
                 hasValue = true;
-            }            
-            rayValue /= cumulativeLength;
-        }
-        else if (MaskMode == MASK_ISOLATED)
-        {
-            for (int i = 0; i < requiredSteps; i++)
-            {
-                float maskValue = tex3Dlod(MaskCube, float4(currentRayPosition, 0)).r;                
-                rayValue += maskValue;
             }
-            // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
-            float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
-            currentRayPosition += stepVector * remainingStepLength * regionScale;        
-            
-            float maskValue = tex3Dlod(MaskCube, float4(currentRayPosition, 0)).r;
+            currentRayPosition += adjustedStepVector;
+        }
+        // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
+        float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
+        currentRayPosition += stepVector * remainingStepLength * regionScale;        
+        
+        float stepValue = tex3Dlod(_DataCube, float4(currentRayPosition, 0)).r;
+        float maskValue = tex3Dlod(MaskCube, float4(currentRayPosition, 0)).r;
+        if (!isnanSafe(stepValue) && maskValue > 0.0f)
+        {
+            cumulativeLength += remainingStepLength;
+            rayValue += stepValue * remainingStepLength;
+            bool stepTest = positionInBox(currentRayPosition, HighlightMin, HighlightMax);
+            maxInHighlightBounds = stepTest || maxInHighlightBounds;
+            hasValue = true;
+        }            
+        rayValue /= cumulativeLength;
+    }
+    else if (MaskMode == MASK_ISOLATED)
+    {
+        for (int i = 0; i < requiredSteps; i++)
+        {
+            float maskValue = tex3Dlod(MaskCube, float4(currentRayPosition, 0)).r;                
             rayValue += maskValue;
         }
-        else
-        {
-            for (int i = 0; i < requiredSteps; i++)
-            {
-                float stepValue = tex3Dlod(_DataCube, float4(currentRayPosition, 0)).r;                
-                float maskValue = tex3Dlod(MaskCube, float4(currentRayPosition, 0)).r;
-                if (!isnanSafe(stepValue) && maskValue == 0.0f)
-                {
-                    rayValue += stepValue * stepLength;
-                    cumulativeLength += stepLength;
-                    bool stepTest = positionInBox(currentRayPosition, HighlightMin, HighlightMax);
-                    maxInHighlightBounds = stepTest || maxInHighlightBounds;
-                    hasValue = true;
-                }
-                currentRayPosition += adjustedStepVector;
-            }
-            // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
-            float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
-            currentRayPosition += stepVector * remainingStepLength * regionScale;        
-            
-            float stepValue = tex3Dlod(_DataCube, float4(currentRayPosition, 0)).r;
-            float maskValue = tex3Dlod(MaskCube, float4(currentRayPosition, 0)).r;
-            if (!isnanSafe(stepValue) && maskValue == 0.0f)
-            {
-                cumulativeLength += remainingStepLength;
-                rayValue += stepValue * remainingStepLength;
-                bool stepTest = positionInBox(currentRayPosition, HighlightMin, HighlightMax);
-                maxInHighlightBounds = stepTest || maxInHighlightBounds;
-                hasValue = true;
-            }            
-            rayValue /= cumulativeLength;
-        }
+        // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
+        float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
+        currentRayPosition += stepVector * remainingStepLength * regionScale;        
+        
+        float maskValue = tex3Dlod(MaskCube, float4(currentRayPosition, 0)).r;
+        rayValue += maskValue;
     }
     else
     {
-        rayValue = -3.402823466e+38F;
-        // TODO: make this a shader variant thing
-        if (MaskMode == MASK_DISABLED)
+        for (int i = 0; i < requiredSteps; i++)
         {
-            for (int i = 0; i < requiredSteps; i++)
+            float stepValue = tex3Dlod(_DataCube, float4(currentRayPosition, 0)).r;                
+            float maskValue = tex3Dlod(MaskCube, float4(currentRayPosition, 0)).r;
+            if (!isnanSafe(stepValue) && maskValue == 0.0f)
             {
-                accumulateSample(currentRayPosition, rayValue, maxInHighlightBounds, hasValue);
-                currentRayPosition += adjustedStepVector;
+                rayValue += stepValue * stepLength;
+                cumulativeLength += stepLength;
+                bool stepTest = positionInBox(currentRayPosition, HighlightMin, HighlightMax);
+                maxInHighlightBounds = stepTest || maxInHighlightBounds;
+                hasValue = true;
             }
-            // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
-            float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
-            currentRayPosition += stepVector * remainingStepLength * regionScale;
-            accumulateSample(currentRayPosition, rayValue, maxInHighlightBounds, hasValue);
+            currentRayPosition += adjustedStepVector;
         }
-        else if (MaskMode == MASK_ENABLED)
+        // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
+        float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
+        currentRayPosition += stepVector * remainingStepLength * regionScale;        
+        
+        float stepValue = tex3Dlod(_DataCube, float4(currentRayPosition, 0)).r;
+        float maskValue = tex3Dlod(MaskCube, float4(currentRayPosition, 0)).r;
+        if (!isnanSafe(stepValue) && maskValue == 0.0f)
         {
-            for (int i = 0; i < requiredSteps; i++)
-            {
-                accumulateSampleMasked(currentRayPosition, rayValue, maxInHighlightBounds, hasValue);
-                currentRayPosition += adjustedStepVector;
-            }
-            // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
-            float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
-            currentRayPosition += stepVector * remainingStepLength * regionScale;
-            accumulateSampleMasked(currentRayPosition, rayValue, maxInHighlightBounds, hasValue);
-        }
-        else if (MaskMode == MASK_ISOLATED)
-        {
-            // Masks don't have NaNs
+            cumulativeLength += remainingStepLength;
+            rayValue += stepValue * remainingStepLength;
+            bool stepTest = positionInBox(currentRayPosition, HighlightMin, HighlightMax);
+            maxInHighlightBounds = stepTest || maxInHighlightBounds;
             hasValue = true;
-            for (int i = 0; i < requiredSteps; i++)
-            {
-                accumulateMaskIsolated(currentRayPosition, rayValue, maxInHighlightBounds);
-                currentRayPosition += adjustedStepVector;
-            }
-            // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
-            float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
-            currentRayPosition += stepVector * remainingStepLength * regionScale;
-            accumulateMaskIsolated(currentRayPosition, rayValue, maxInHighlightBounds);
-        }
-        else
-        {
-            for (int i = 0; i < requiredSteps; i++)
-            {
-                accumulateSampleInverseMasked(currentRayPosition, rayValue, maxInHighlightBounds, hasValue);
-                currentRayPosition += adjustedStepVector;
-            }
-            // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
-            float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
-            currentRayPosition += stepVector * remainingStepLength * regionScale;
-            accumulateSampleInverseMasked(currentRayPosition, rayValue, maxInHighlightBounds, hasValue);
-        }
+        }            
+        rayValue /= cumulativeLength;
     }
+#else
+    rayValue = -3.402823466e+38F;
+    // TODO: make this a shader variant thing
+    if (MaskMode == MASK_DISABLED)
+    {
+        for (int i = 0; i < requiredSteps; i++)
+        {
+            accumulateSample(currentRayPosition, rayValue, maxInHighlightBounds, hasValue);
+            currentRayPosition += adjustedStepVector;
+        }
+        // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
+        float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
+        currentRayPosition += stepVector * remainingStepLength * regionScale;
+        accumulateSample(currentRayPosition, rayValue, maxInHighlightBounds, hasValue);
+    }
+    else if (MaskMode == MASK_ENABLED)
+    {
+        for (int i = 0; i < requiredSteps; i++)
+        {
+            accumulateSampleMasked(currentRayPosition, rayValue, maxInHighlightBounds, hasValue);
+            currentRayPosition += adjustedStepVector;
+        }
+        // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
+        float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
+        currentRayPosition += stepVector * remainingStepLength * regionScale;
+        accumulateSampleMasked(currentRayPosition, rayValue, maxInHighlightBounds, hasValue);
+    }
+    else if (MaskMode == MASK_ISOLATED)
+    {
+        // Masks don't have NaNs
+        hasValue = true;
+        for (int i = 0; i < requiredSteps; i++)
+        {
+            accumulateMaskIsolated(currentRayPosition, rayValue, maxInHighlightBounds);
+            currentRayPosition += adjustedStepVector;
+        }
+        // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
+        float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
+        currentRayPosition += stepVector * remainingStepLength * regionScale;
+        accumulateMaskIsolated(currentRayPosition, rayValue, maxInHighlightBounds);
+    }
+    else
+    {
+        for (int i = 0; i < requiredSteps; i++)
+        {
+            accumulateSampleInverseMasked(currentRayPosition, rayValue, maxInHighlightBounds, hasValue);
+            currentRayPosition += adjustedStepVector;
+        }
+        // After the loop, we're still in the volume, so calculate the last step length and apply the transfer function
+        float remainingStepLength = totalLength - (requiredSteps + 1) * stepLength - length(randVector);
+        currentRayPosition += stepVector * remainingStepLength * regionScale;
+        accumulateSampleInverseMasked(currentRayPosition, rayValue, maxInHighlightBounds, hasValue);
+    }
+#endif
     
     if (!hasValue)
     {
