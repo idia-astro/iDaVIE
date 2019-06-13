@@ -84,5 +84,15 @@ public class VolumeSpeechControllerEditor : Editor
         {
             volumeSpeechController.setMask(MaskMode.Isolated);
         }
+        
+        if (GUILayout.Button("Projection Maximum"))
+        {
+            volumeSpeechController.setProjection(ProjectionMode.MaximumIntensityProjection);
+        }
+        
+        if (GUILayout.Button("Projection Average"))
+        {
+            volumeSpeechController.setProjection(ProjectionMode.AverageIntensityProjection);
+        }
     }
 }
