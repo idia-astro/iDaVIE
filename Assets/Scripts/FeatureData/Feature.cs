@@ -17,6 +17,8 @@ public class Feature
     private Vector3 _cornerMax;
     private VectorLine _boundingBox;
 
+    public bool StatusChanged;
+
     public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, Transform transform, string name)
     {
         _boundingBox = new VectorLine(name, new List<Vector3>(24), 1.0f) {drawTransform = transform, color = cubeColor};

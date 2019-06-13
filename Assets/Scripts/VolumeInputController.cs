@@ -37,6 +37,9 @@ public class VolumeInputController : MonoBehaviour
         Roll = 1,
         Yaw = 2
     }
+    //reference to quick menu canvass
+    public GameObject CanvassQuickMenu;
+
 
     // Scaling/Rotation options
     public bool InPlaceScaling = true;
@@ -50,6 +53,7 @@ public class VolumeInputController : MonoBehaviour
     private Transform[] _handTransforms;
     private SteamVR_Action_Boolean _grabGripAction;
     private SteamVR_Action_Boolean _grabPinchAction;
+    private SteamVR_Action_Boolean _quickMenuAction;
     private VolumeDataSetRenderer[] _volumeDataSets;
     private float[] _startDataSetScales;
     private Vector3[] _currentGripPositions;
@@ -58,6 +62,8 @@ public class VolumeInputController : MonoBehaviour
     private Vector3 _starGripForwardAxis;
     private LocomotionState _locomotionState;
     private bool _isSelecting;
+    private bool _isQuickMenu;
+
     private VectorLine _lineAxisSeparation;
     private VectorLine _lineRotationAxes;
 
@@ -121,12 +127,15 @@ public class VolumeInputController : MonoBehaviour
 
             _grabGripAction = _player.leftHand.grabGripAction;
             _grabPinchAction = _player.leftHand.grabPinchAction;
+            _quickMenuAction = SteamVR_Input.GetAction<SteamVR_Action_Boolean>("QuickMenu");
         }
 
         _grabGripAction.AddOnChangeListener(OnGripChanged, SteamVR_Input_Sources.LeftHand);
         _grabGripAction.AddOnChangeListener(OnGripChanged, SteamVR_Input_Sources.RightHand);
         _grabPinchAction.AddOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.LeftHand);
         _grabPinchAction.AddOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.RightHand);
+        _quickMenuAction.AddOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.LeftHand);
+        _quickMenuAction.AddOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.RightHand);
 
         var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
         if (volumeDataSetManager)
@@ -164,6 +173,22 @@ public class VolumeInputController : MonoBehaviour
             _grabGripAction.RemoveOnChangeListener(OnGripChanged, SteamVR_Input_Sources.RightHand);
             _grabPinchAction.RemoveOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.LeftHand);
             _grabPinchAction.RemoveOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.RightHand);
+            _quickMenuAction.RemoveOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.LeftHand);
+            _quickMenuAction.RemoveOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.RightHand);
+        }
+    }
+
+    private void OnQuickMenuChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
+    {
+        if (newState )
+        {
+            //  StartSelection(hand);
+            StartRequestQuickMenu(fromSource == SteamVR_Input_Sources.LeftHand ? 0 : 1);
+        }
+        else if (!newState )
+        {
+            //  EndSelection();
+            EndRequestQuickMenu();
         }
     }
 
@@ -197,19 +222,30 @@ public class VolumeInputController : MonoBehaviour
                 StateTransitionMovingToScaling();
                 break;
         }
+
+
+       
+
+
+     
+
     }
 
 
     private void OnPinchChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
+
+
         var hand = fromSource == SteamVR_Input_Sources.LeftHand ? _hands[0] : _hands[1];
         if (newState && _selectingHand == null)
         {
             StartSelection(hand);
+       
         }
         else if (!newState && _selectingHand == hand)
         {
             EndSelection();
+
         }
     }
 
@@ -223,6 +259,24 @@ public class VolumeInputController : MonoBehaviour
     {
         _locomotionState = LocomotionState.Moving;
         _targetVignetteIntensity = 1;
+    }
+
+    private void StartRequestQuickMenu(int handIndex)
+    {
+        Debug.Log("Request Quick menu!");
+        CanvassQuickMenu.transform.SetParent(_handTransforms[handIndex], false);
+        CanvassQuickMenu.transform.localPosition= new Vector3(-0.1f,(handIndex == 0 ? 1: -1) * 0.175f, 0.10f);
+        CanvassQuickMenu.transform.localRotation= Quaternion.Euler((handIndex == 0 ? 1: -1) * -3.25f,15f, 90f);
+        CanvassQuickMenu.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
+        CanvassQuickMenu.SetActive(true);
+        _isQuickMenu = true;
+    }
+
+    private void EndRequestQuickMenu()
+    {
+        Debug.Log("END Request Quick menu!");
+        CanvassQuickMenu.SetActive(false);
+        _isQuickMenu = false;
     }
 
     private void StartSelection(VRHand selectingHand)
