@@ -32,6 +32,11 @@ namespace VolumeData
         Isolated = 3
     }
 
+    public enum ProjectionMode
+    {
+        MaximumIntensityProjection = 0,
+        AverageIntensityProjection = 1
+    }
 
     public class VolumeDataSetRenderer : MonoBehaviour
     {
@@ -42,6 +47,7 @@ namespace VolumeData
         [Range(16, 512)] public int MaxSteps = 192;
         public long MaximumCubeSizeInMB = 250;
         public MaskMode MaskMode = MaskMode.Disabled;
+        public ProjectionMode ProjectionMode = ProjectionMode.MaximumIntensityProjection;
         public TextureFilterEnum TextureFilter = TextureFilterEnum.Point;
 
         // Jitter factor
@@ -261,6 +267,9 @@ namespace VolumeData
             {
                 _featureManager.CreateNewFeatureSet();
             }
+            
+            Shader.WarmupAllShaders();
+
         }
 
         public void ShiftColorMap(int delta)
@@ -321,9 +330,9 @@ namespace VolumeData
                 Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
                 Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
                 Vector3Int newVoxelCursor = new Vector3Int(
-                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),
-                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, 1, (int)_dataSet.YDim),
-                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1, 1, (int)_dataSet.ZDim)
+                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int) _dataSet.XDim),
+                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, 1, (int) _dataSet.YDim),
+                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1, 1, (int) _dataSet.ZDim)
                 );
 
                 var existingVoxel = start ? RegionStartVoxel : RegionEndVoxel;
@@ -484,6 +493,14 @@ namespace VolumeData
                 _materialInstance.SetInt(MaterialID.MaskMode, MaskMode.Disabled.GetHashCode());
             }
 
+            if (ProjectionMode == ProjectionMode.AverageIntensityProjection)
+            {
+                Shader.EnableKeyword("SHADER_AIP");
+            }
+            else
+            {
+                Shader.DisableKeyword("SHADER_AIP");
+            }
             _materialInstance.SetFloat(MaterialID.VignetteFadeStart, VignetteFadeStart);
             _materialInstance.SetFloat(MaterialID.VignetteFadeEnd, VignetteFadeEnd);
             _materialInstance.SetFloat(MaterialID.VignetteIntensity, VignetteIntensity);

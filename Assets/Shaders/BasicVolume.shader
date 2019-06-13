@@ -25,6 +25,7 @@ Shader "VRTest/BasicVolume"
 				Cull Front ZWrite Off ZTest Always
 
 				CGPROGRAM
+				#pragma multi_compile __ SHADER_AIP
 				#pragma vertex vertexShaderVolume
 				#pragma fragment fragmentShaderRayMarch
 

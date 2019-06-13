@@ -49,10 +49,13 @@ namespace VolumeData
             public static readonly string MaskEnabled = "mask on";
             public static readonly string MaskInverted = "mask invert";
             public static readonly string MaskIsolated = "mask isolate";
+            public static readonly string ProjectionMaximum = "projection maximum";
+            public static readonly string ProjectionAverage = "projection average";
             
             public static readonly string[] All = { EditThresholdMin, EditThresholdMax, SaveThreshold, ResetThreshold, ResetTransform, 
                 ColormapPlasma, ColormapRainbow, ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix,
-                NextDataSet, PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated
+                NextDataSet, PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated,
+                ProjectionMaximum, ProjectionAverage
             };
         }
    
@@ -177,6 +180,14 @@ namespace VolumeData
             {
                 setMask(MaskMode.Isolated);
             }
+            else if (args.text == Keywords.ProjectionMaximum)
+            {
+                setProjection(ProjectionMode.MaximumIntensityProjection);
+            }
+            else if (args.text == Keywords.ProjectionAverage)
+            {
+                setProjection(ProjectionMode.AverageIntensityProjection);
+            }
         }
 
         // Update is called once per frame
@@ -300,6 +311,14 @@ namespace VolumeData
             if (_activeDataSet)
             {
                 _activeDataSet.MaskMode = mode;
+            }
+        }
+        
+        public void setProjection(ProjectionMode mode)
+        {
+            if (_activeDataSet)
+            {
+                _activeDataSet.ProjectionMode = mode;
             }
         }
 
