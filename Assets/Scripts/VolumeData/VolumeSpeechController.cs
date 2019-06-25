@@ -90,7 +90,7 @@ namespace VolumeData
         {
             if (EditingHand)
             {
-                _volumeInputController.VibrateController(EditingHand.handType, VibrationAmplitude, VibrationFrequency, VibrationAmplitude);
+                _volumeInputController.VibrateController(EditingHand.handType, VibrationDuration, VibrationFrequency, VibrationAmplitude);
             }
 
             StringBuilder builder = new StringBuilder();
