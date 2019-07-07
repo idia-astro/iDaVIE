@@ -274,10 +274,11 @@ namespace VolumeData
             xFactor = 1;
             yFactor = 1;
             zFactor = 1;
-            while (regionXDim / xFactor > 2048)
+            while (regionXDim / xFactor > 2048 || regionYDim / yFactor > 2048)
+            {
                 xFactor++;
-            while (regionYDim / yFactor > 2048)
                 yFactor++;
+            }
             while (regionZDim / zFactor > 2048)
                 zFactor++;
             long maximumElements = maxCubeSizeInMB * 1000000 / 4;
@@ -285,10 +286,11 @@ namespace VolumeData
             {
                 if (regionZDim / zFactor > regionXDim / xFactor || regionZDim / zFactor > regionYDim / yFactor)
                     zFactor++;
-                else if (regionYDim / yFactor > regionXDim / xFactor)
-                    yFactor++;
                 else
+                {
                     xFactor++;
+                    yFactor++;
+                }
             }
         }
 
