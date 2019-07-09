@@ -163,7 +163,7 @@ StyleCopReport.xml
 *_p.c
 *_h.h
 *.ilk
-*.obj
+# *.obj Don't want to ignore model files
 *.iobj
 *.pch
 *.ipdb
