@@ -1,11 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.779
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29215.179
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "data_analysis_tool", "data_analysis_tool\data_analysis_tool.vcxproj", "{38ACAD17-2AFB-4BC5-A884-0E46AA68302B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fits_reader", "fits_reader\fits_reader.vcxproj", "{BB6CA7D3-91AD-4092-9C24-873F13D9D158}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VOTableParser", "VOTableParser\VOTableParser.vcxproj", "{C52A608F-2111-4A78-A8D1-114BD9C8F4C2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "votable_reader", "votable_reader\votable_reader.vcxproj", "{5B2EFBA6-1E36-4870-9A72-331CA2E7EC5D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +35,22 @@ Global
 		{BB6CA7D3-91AD-4092-9C24-873F13D9D158}.Release|x64.Build.0 = Release|x64
 		{BB6CA7D3-91AD-4092-9C24-873F13D9D158}.Release|x86.ActiveCfg = Release|Win32
 		{BB6CA7D3-91AD-4092-9C24-873F13D9D158}.Release|x86.Build.0 = Release|Win32
+		{C52A608F-2111-4A78-A8D1-114BD9C8F4C2}.Debug|x64.ActiveCfg = Debug|x64
+		{C52A608F-2111-4A78-A8D1-114BD9C8F4C2}.Debug|x64.Build.0 = Debug|x64
+		{C52A608F-2111-4A78-A8D1-114BD9C8F4C2}.Debug|x86.ActiveCfg = Debug|Win32
+		{C52A608F-2111-4A78-A8D1-114BD9C8F4C2}.Debug|x86.Build.0 = Debug|Win32
+		{C52A608F-2111-4A78-A8D1-114BD9C8F4C2}.Release|x64.ActiveCfg = Release|x64
+		{C52A608F-2111-4A78-A8D1-114BD9C8F4C2}.Release|x64.Build.0 = Release|x64
+		{C52A608F-2111-4A78-A8D1-114BD9C8F4C2}.Release|x86.ActiveCfg = Release|Win32
+		{C52A608F-2111-4A78-A8D1-114BD9C8F4C2}.Release|x86.Build.0 = Release|Win32
+		{5B2EFBA6-1E36-4870-9A72-331CA2E7EC5D}.Debug|x64.ActiveCfg = Debug|x64
+		{5B2EFBA6-1E36-4870-9A72-331CA2E7EC5D}.Debug|x64.Build.0 = Debug|x64
+		{5B2EFBA6-1E36-4870-9A72-331CA2E7EC5D}.Debug|x86.ActiveCfg = Debug|Win32
+		{5B2EFBA6-1E36-4870-9A72-331CA2E7EC5D}.Debug|x86.Build.0 = Debug|Win32
+		{5B2EFBA6-1E36-4870-9A72-331CA2E7EC5D}.Release|x64.ActiveCfg = Release|x64
+		{5B2EFBA6-1E36-4870-9A72-331CA2E7EC5D}.Release|x64.Build.0 = Release|x64
+		{5B2EFBA6-1E36-4870-9A72-331CA2E7EC5D}.Release|x86.ActiveCfg = Release|Win32
+		{5B2EFBA6-1E36-4870-9A72-331CA2E7EC5D}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
