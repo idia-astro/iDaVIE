@@ -28,7 +28,12 @@ namespace DataFeatures
         // Spawn Feature objects intro world from FileName
         public void SpawnFeaturesFromFile(string fileName, string mappingFileName)
         {
-            _importer = FeatureSetImporter.CreateSetFromAscii(fileName, mappingFileName);
+            if (Path.GetExtension(fileName) == ".ascii")
+                _importer = FeatureSetImporter.CreateSetFromAscii(fileName, mappingFileName);
+            else if (Path.GetExtension(fileName) == ".xml")
+                _importer = FeatureSetImporter.CreateSetFromVOTable(fileName);
+            else
+                Debug.Log($"File extension not recognized for " + fileName);
             var volumeDataSetRenderer = GetComponentInParent<VolumeDataSetRenderer>();
             if (volumeDataSetRenderer)
             {

@@ -8,12 +8,19 @@
 
 #include "XPathHelper.h"
 #include "VTable.h"
+#include "global.h"
+#include "MissingValueException.h"
+#include "DatatypeMismatchException.h"
 
 
 extern "C"
 {
 
+	DllExport int VOTableInitialize(VTable**);
+
 	DllExport int VOTableOpenFile(VTable*, char*, char*, int*);
+
+	DllExport int FreeMemory(void*);
 
 }
 

@@ -54,6 +54,22 @@ namespace DataFeatures
         public int NumberFeatures { get; private set; }
 
 
+        public static FeatureSetImporter CreateSetFromVOTable(string fileName)
+        {
+            FeatureSetImporter featureSetImporter = new FeatureSetImporter();
+            featureSetImporter.FileName = fileName;
+            int status;
+            IntPtr votable_ptr;
+            string xpath = "/RESOURCE[1]/TABLE[1]";
+            Debug.Log($"xpath: " + xpath );
+            VOTableReader.VOTableInitialize(out votable_ptr);
+            VOTableReader.VOTableOpenFile(votable_ptr, fileName, xpath, out status);
+            Debug.Log($"Status of VOTable: " + status);
+            VOTableReader.FreeMemory(votable_ptr);
+
+            return featureSetImporter;
+        }
+
         public static FeatureSetImporter CreateSetFromAscii(string fileName, string mappingFileName)
         {
             string mappingJson = File.ReadAllText(mappingFileName);
