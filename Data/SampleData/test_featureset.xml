@@ -1,0 +1,43 @@
+<?xml version='1.0'?>
+<VOTABLE version="1.3"
+ xmlns="http://www.ivoa.net/xml/VOTable/v1.3">
+<!--
+ !  VOTable written by STIL version 3.3-3 (uk.ac.starlink.votable.VOTableWriter)
+ !  at 2019-08-29T12:24:16
+ !-->
+<RESOURCE>
+<TABLE name="C:\Users\sivi\Documents\Development\projects\idia_unity_vr\Data\SampleData\test_featureset2.ascii" nrows="1">
+<DESCRIPTION>
+SoFiA catalogue (version 1.2.1-beta)
+</DESCRIPTION>
+<FIELD datatype="short" name="id"/>
+<FIELD datatype="short" name="x"/>
+<FIELD datatype="short" name="y"/>
+<FIELD datatype="short" name="z"/>
+<FIELD datatype="short" name="x_min"/>
+<FIELD datatype="short" name="x_max"/>
+<FIELD datatype="short" name="y_min"/>
+<FIELD datatype="short" name="y_max"/>
+<FIELD datatype="short" name="z_min"/>
+<FIELD datatype="short" name="z_max"/>
+<FIELD arraysize="10" datatype="char" name="name"/>
+<DATA>
+<TABLEDATA>
+  <TR>
+    <TD>1</TD>
+    <TD>2</TD>
+    <TD>2</TD>
+    <TD>2</TD>
+    <TD>1</TD>
+    <TD>3</TD>
+    <TD>1</TD>
+    <TD>3</TD>
+    <TD>1</TD>
+    <TD>3</TD>
+    <TD>SoFiA-Test</TD>
+  </TR>
+</TABLEDATA>
+</DATA>
+</TABLE>
+</RESOURCE>
+</VOTABLE>
