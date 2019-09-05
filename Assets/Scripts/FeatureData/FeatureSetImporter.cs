@@ -5,6 +5,8 @@ using System.IO;
 using Valve.Newtonsoft.Json;
 using UnityEngine;
 using System.Globalization;
+using System.Text;
+using System.Runtime.InteropServices;
 
 namespace DataFeatures
 {
@@ -58,14 +60,40 @@ namespace DataFeatures
         {
             FeatureSetImporter featureSetImporter = new FeatureSetImporter();
             featureSetImporter.FileName = fileName;
-            int status;
-            IntPtr votable_ptr;
+            int status, ncols;
+            IntPtr votable_ptr, meta_ptr, field_ptr, name_ptr;
+            //StringBuilder fieldName = new StringBuilder(70);
             string xpath = "/RESOURCE[1]/TABLE[1]";
             Debug.Log($"xpath: " + xpath );
             VOTableReader.VOTableInitialize(out votable_ptr);
             VOTableReader.VOTableOpenFile(votable_ptr, fileName, xpath, out status);
             Debug.Log($"Status of VOTable: " + status);
+            if (VOTableReader.VOTableGetName(votable_ptr, out name_ptr, out status) == 0)
+            {
+                //Debug.Log($"Name of VOTable: " + Marshal.PtrToStringAnsi(name_ptr));
+                Debug.Log($"Name of VOTable: " + Marshal.PtrToStringAnsi(name_ptr));
+                //Debug.Log($"Name of VOTable: " + Marshal.PtrToStringAnsi(name_ptr));
+                VOTableReader.FreeMemory(name_ptr);
+            }
+
+            VOTableReader.VOTableGetMetaData(votable_ptr, out meta_ptr, out status);
+            Debug.Log($"Status of MetaData: " + status);
+            VOTableReader.MetaDataGetNumCols(meta_ptr, out ncols, out status);
+            Debug.Log($"Number of columns: " + ncols);
+            for (int i = 0; i < ncols; i++)
+            {
+                VOTableReader.MetaDataGetField(meta_ptr, out field_ptr, i, out status);
+                Debug.Log($"Field status: " + status);
+                VOTableReader.FieldGetName(field_ptr, out name_ptr, out status);
+                //string name = fieldName.ToString();
+                Debug.Log($"Column name: " + Marshal.PtrToStringAnsi(name_ptr));
+
+                VOTableReader.FreeMemory(name_ptr);
+
+                VOTableReader.FreeMemory(field_ptr);
+            }
             VOTableReader.FreeMemory(votable_ptr);
+            VOTableReader.FreeMemory(meta_ptr);
 
             return featureSetImporter;
         }
