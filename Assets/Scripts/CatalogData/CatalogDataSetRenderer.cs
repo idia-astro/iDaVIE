@@ -30,6 +30,7 @@ namespace CatalogData
         [Range(0, 0.5f)] public float VignetteFadeEnd = 0.40f;
         [Range(0, 1)] public float VignetteIntensity = 0.0f;
         public Color VignetteColor = Color.black;
+        public bool UseVignette = true;
         
         private ComputeBuffer[] _buffers;
 
@@ -594,11 +595,13 @@ namespace CatalogData
                 _catalogMaterial.SetFloat(_idCutoffMin, ValueCutoffMin);
                 _catalogMaterial.SetFloat(_idCutoffMax, ValueCutoffMax);
             }
-            
-            _catalogMaterial.SetFloat(_idVignetteFadeStart, VignetteFadeStart);
-            _catalogMaterial.SetFloat(_idVignetteFadeEnd, VignetteFadeEnd);
-            _catalogMaterial.SetFloat(_idVignetteIntensity, VignetteIntensity);
-            _catalogMaterial.SetColor(_idVignetteColor, VignetteColor);
+            if (UseVignette)
+            {
+                _catalogMaterial.SetFloat(_idVignetteFadeStart, VignetteFadeStart);
+                _catalogMaterial.SetFloat(_idVignetteFadeEnd, VignetteFadeEnd);
+                _catalogMaterial.SetFloat(_idVignetteIntensity, VignetteIntensity);
+                _catalogMaterial.SetColor(_idVignetteColor, VignetteColor);
+            }
 
             UpdateMappingValues();
         }
@@ -620,7 +623,7 @@ namespace CatalogData
 #if UNITY_2019_1
             Graphics.DrawProceduralNow(MeshTopology.Points, _dataSet.N);
 #else
-            Graphics.DrawProcedural(MeshTopology.Points, _dataSet.N);
+            Graphics.DrawProceduralNow(MeshTopology.Points, _dataSet.N);
 #endif
         }
 
