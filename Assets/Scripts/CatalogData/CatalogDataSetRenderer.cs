@@ -47,6 +47,7 @@ namespace CatalogData
         private Vector3 _initialLocalPosition;
         private Quaternion _initialLocalRotation;
         private Vector3 _initialLocalScale;
+        private float _initialOpacity;
 
         #region Material Property IDs
 
@@ -211,6 +212,7 @@ namespace CatalogData
             _initialLocalPosition = transform.localPosition;
             _initialLocalRotation = transform.localRotation;
             _initialLocalScale = transform.localScale;
+            _initialOpacity = DataMapping.Uniforms.Opacity;
         }
 
         public bool UpdateMappingColumns(bool logErrors = false)
@@ -443,6 +445,16 @@ namespace CatalogData
             }
 
             return false;
+        }
+
+        public float GetInitialOpacity()
+        {
+            return _initialOpacity;
+        }
+
+        public void SetOpacity(float opacity)
+        {
+            DataMapping.Uniforms.Opacity = opacity;
         }
 
         public void SetVisibility(bool visible)
