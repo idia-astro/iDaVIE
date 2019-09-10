@@ -109,7 +109,9 @@ namespace CatalogData
 
         public string GetActiveSetName()
         {
-            return ActiveDataSet.name;
+            if (ActiveDataSet != null)
+                return ActiveDataSet.name;
+            return "no_name";
         }
 
         public void SetActiveSetVisibility(bool visible)
