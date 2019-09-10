@@ -168,7 +168,10 @@ namespace VolumeData
 
         public void Start()
         {
-            _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false);
+            if (RandomVolume)
+                _dataSet = VolumeDataSet.LoadRandomFitsCube(0, 512, 512, 512, 512);
+            else
+                _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false);
 
             _volumeInputController = FindObjectOfType<VolumeInputController>();
             _featureManager = GetComponentInChildren<FeatureSetManager>();
