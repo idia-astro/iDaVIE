@@ -35,6 +35,28 @@ namespace VolumeData
 
         public IntPtr FitsData;
 
+        public static VolumeDataSet LoadRandomFitsCube(float min, float max, int xDim, int yDim, int zDim)
+        {
+            VolumeDataSet volumeDataSet = new VolumeDataSet();
+            //volumeDataSet.IsMask = isMask;
+            int cubeSize = xDim * yDim * zDim;
+            IntPtr dataPtr = Marshal.AllocHGlobal(sizeof(float) * cubeSize);
+            float[] generatedData = new float[cubeSize];
+            for (int i = 0; i < cubeSize; i++)
+            {
+                generatedData[i] = UnityEngine.Random.Range(min, max);
+            }
+            Marshal.Copy(generatedData, 0, dataPtr, cubeSize);
+            volumeDataSet.FitsData = dataPtr;
+            volumeDataSet.XDim = xDim;
+            volumeDataSet.YDim = yDim;
+            volumeDataSet.ZDim = zDim;
+            volumeDataSet.XDimDecimal = xDim.ToString().Length;
+            volumeDataSet.YDimDecimal = yDim.ToString().Length;
+            volumeDataSet.ZDimDecimal = zDim.ToString().Length;
+            return volumeDataSet;
+        }
+
         public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();

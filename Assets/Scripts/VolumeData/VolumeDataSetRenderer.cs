@@ -123,6 +123,8 @@ namespace VolumeData
         private VolumeDataSet _dataSet;
         private VolumeDataSet _maskDataSet = null;
         private VolumeInputController _volumeInputController;
+
+        public bool RandomVolume = false;
         
         #region Material Property IDs
         private struct MaterialID

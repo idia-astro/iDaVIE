@@ -620,7 +620,7 @@ namespace CatalogData
 #if UNITY_2019_1
             Graphics.DrawProceduralNow(MeshTopology.Points, _dataSet.N);
 #else
-            Graphics.DrawProcedural(MeshTopology.Points, _dataSet.N);
+            Graphics.DrawProceduralNow(MeshTopology.Points, _dataSet.N);
 #endif
         }
 
