@@ -125,6 +125,7 @@ namespace VolumeData
         private VolumeInputController _volumeInputController;
 
         public bool RandomVolume = false;
+        public int RandomCubeSize = 512;
         
         #region Material Property IDs
         private struct MaterialID
@@ -169,7 +170,7 @@ namespace VolumeData
         public void Start()
         {
             if (RandomVolume)
-                _dataSet = VolumeDataSet.LoadRandomFitsCube(0, 512, 512, 512, 512);
+                _dataSet = VolumeDataSet.LoadRandomFitsCube(0, (float)RandomCubeSize , RandomCubeSize, RandomCubeSize, RandomCubeSize);
             else
                 _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false);
 
