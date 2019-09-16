@@ -6,6 +6,10 @@ using Valve.VR;
 
 public class BenchmarkManager : MonoBehaviour
 {
+
+    public float RotationSpeed = 20;
+    public int RotationTimes = 1;
+
     private VolumeDataSetRenderer _testVolume;
     private float _totalAngle = 0;
     private int _numberRotations = 0;
@@ -44,9 +48,9 @@ public class BenchmarkManager : MonoBehaviour
     void Update()
     {
         //float prevAngle = _testVolume.transform.localRotation.eulerAngles.y;
-        if (_numberRotations < 2)
+        if (_numberRotations < RotationTimes)
         {
-            float deltaAngle = Time.deltaTime * 60;
+            float deltaAngle = Time.deltaTime * RotationSpeed;
             switch (_rotationAxis)
             {
                 case 0:
@@ -81,7 +85,6 @@ public class BenchmarkManager : MonoBehaviour
                     if (vr != null)
                     {
                         vr.compositor.GetFrameTiming(ref timing, 0);
-
                         _timeInSeconds = timing.m_flSystemTimeInSeconds;
                     }
                     Debug.Log("Rotating around Z-axis at " + _timeInSeconds + " seconds.");
@@ -90,13 +93,23 @@ public class BenchmarkManager : MonoBehaviour
                     //_testVolume.transform.Rotate(90, 0, 0, Space.Self);
                     _testVolume.transform.Rotate(0, 0, 90, Space.Self);
                     _rotationAxis++;
-                    Debug.Log("Rotating around X-axis");
+                    if (vr != null)
+                    {
+                        vr.compositor.GetFrameTiming(ref timing, 0);
+                        _timeInSeconds = timing.m_flSystemTimeInSeconds;
+                    }
+                    Debug.Log("Rotating around X-axis at " + _timeInSeconds + " seconds.");
                     break;
 
                 case 2:
                     _rotationAxis = 0;
                     _testVolume.transform.Translate(0, 0, 1);
-                    Debug.Log("Rotating around Y-axis");
+                    if (vr != null)
+                    {
+                        vr.compositor.GetFrameTiming(ref timing, 0);
+                        _timeInSeconds = timing.m_flSystemTimeInSeconds;
+                    }
+                    Debug.Log("Rotating around Y-axis at " + _timeInSeconds + " seconds.");
                     break;
             }
 

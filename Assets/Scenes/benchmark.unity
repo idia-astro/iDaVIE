@@ -367,7 +367,7 @@ MonoBehaviour:
   SelectionSaturateFactor: 0.7
   FeatureSetManagerPrefab: {fileID: 0}
   RandomVolume: 1
-  RandomCubeSize: 256
+  RandomCubeSize: 720
 --- !u!65 &1201799887
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -492,6 +492,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc935e4e9b34cbf4f8dc0732c8715686, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  RotationSpeed: 10
+  RotationTimes: 1
 --- !u!1001 &1894764060
 PrefabInstance:
   m_ObjectHideFlags: 0
