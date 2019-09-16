@@ -367,7 +367,7 @@ MonoBehaviour:
   SelectionSaturateFactor: 0.7
   FeatureSetManagerPrefab: {fileID: 0}
   RandomVolume: 1
-  RandomCubeSize: 720
+  RandomCubeSize: 256
 --- !u!65 &1201799887
 BoxCollider:
   m_ObjectHideFlags: 0

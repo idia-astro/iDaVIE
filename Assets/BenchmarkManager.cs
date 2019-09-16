@@ -11,19 +11,22 @@ public class BenchmarkManager : MonoBehaviour
     private int _numberRotations = 0;
     private int _rotationAxis = 0;
     private int _distanceSet = 0;
+    private double _timeInSeconds = 0;
+    private SteamVR vr;
+    private Compositor_FrameTiming timing;
 
     // Start is called before the first frame update
     void Start()
     {
-        double timeInSeconds = 0;
-        var vr = SteamVR.instance;
+        //double _timeInSeconds = 0;
+        vr = SteamVR.instance;
         if (vr != null)
         {
-            var timing = new Valve.VR.Compositor_FrameTiming();
+            timing = new Valve.VR.Compositor_FrameTiming();
             timing.m_nSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(typeof(Valve.VR.Compositor_FrameTiming));
             vr.compositor.GetFrameTiming(ref timing, 0);
 
-            timeInSeconds = timing.m_flSystemTimeInSeconds;
+            _timeInSeconds = timing.m_flSystemTimeInSeconds;
 
             /*
         System.Diagnostics.PerformanceCounter perfUptimeCount = new System.Diagnostics.PerformanceCounter("System", "System Up Time");
@@ -33,7 +36,7 @@ public class BenchmarkManager : MonoBehaviour
         _testVolume = GetComponentInChildren<VolumeDataSetRenderer>();
         
         }
-        Debug.Log("Rotating around Y-axis at " + timeInSeconds + " seconds.");
+        Debug.Log("Rotating around Y-axis at " + _timeInSeconds + " seconds.");
         _testVolume.transform.localRotation = new Quaternion(0, 0, 0, 0);
     }
 
@@ -75,7 +78,13 @@ public class BenchmarkManager : MonoBehaviour
                 case 0:
                     _testVolume.transform.Rotate(-90, 0, 0, Space.Self);
                     _rotationAxis++;
-                    Debug.Log("Rotating around Z-axis");
+                    if (vr != null)
+                    {
+                        vr.compositor.GetFrameTiming(ref timing, 0);
+
+                        _timeInSeconds = timing.m_flSystemTimeInSeconds;
+                    }
+                    Debug.Log("Rotating around Z-axis at " + _timeInSeconds + " seconds.");
                     break;
                 case 1:
                     //_testVolume.transform.Rotate(90, 0, 0, Space.Self);
