@@ -330,7 +330,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MaxSteps: 384
-  MaximumCubeSizeInMB: 250
+  MaximumCubeSizeInMB: 1500
   MaskMode: 0
   ProjectionMode: 0
   TextureFilter: 0
@@ -367,7 +367,7 @@ MonoBehaviour:
   SelectionSaturateFactor: 0.7
   FeatureSetManagerPrefab: {fileID: 0}
   RandomVolume: 1
-  RandomCubeSize: 64
+  RandomCubeSize: 720
 --- !u!65 &1201799887
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -435,7 +435,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1201799885}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1752658193}
@@ -457,6 +457,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1851532298}
+  - component: {fileID: 1851532299}
   m_Layer: 0
   m_Name: BenchmarkManager
   m_TagString: Untagged
@@ -479,6 +480,18 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1851532299
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1851532297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc935e4e9b34cbf4f8dc0732c8715686, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1894764060
 PrefabInstance:
   m_ObjectHideFlags: 0
