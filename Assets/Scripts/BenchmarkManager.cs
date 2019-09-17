@@ -9,6 +9,7 @@ public class BenchmarkManager : MonoBehaviour
 
     public float RotationSpeed = 20;
     public int RotationTimes = 1;
+    public int StartWaitSeconds = 2;
 
     private VolumeDataSetRenderer _testVolume;
     private float _totalAngle = 0;
@@ -18,6 +19,8 @@ public class BenchmarkManager : MonoBehaviour
     private double _timeInSeconds = 0;
     private SteamVR vr;
     private Compositor_FrameTiming timing;
+
+    private bool _running = false;
 
     // Start is called before the first frame update
     void Start()
@@ -41,80 +44,95 @@ public class BenchmarkManager : MonoBehaviour
         
         }
         Debug.Log("Rotating around Y-axis at " + _timeInSeconds + " seconds.");
-        _testVolume.transform.localRotation = new Quaternion(0, 0, 0, 0);
+        _testVolume.transform.localEulerAngles = new Vector3(0, 0, 0);
+        StartCoroutine(Wait5Seconds());
     }
 
     // Update is called once per frame
     void Update()
     {
-        //float prevAngle = _testVolume.transform.localRotation.eulerAngles.y;
-        if (_numberRotations < RotationTimes)
+        if (_running)
         {
-            float deltaAngle = Time.deltaTime * RotationSpeed;
-            switch (_rotationAxis)
+            //float prevAngle = _testVolume.transform.localRotation.eulerAngles.y;
+            if (_numberRotations < RotationTimes)
             {
-                case 0:
-                    _testVolume.transform.Rotate(0, deltaAngle, 0, Space.Self);
-                    break;
-                case 1:
-                   _testVolume.transform.Rotate(0, 0, deltaAngle, Space.Self);
-                    break;
-                case 2:
-                    _testVolume.transform.Rotate(deltaAngle, 0 , 0, Space.Self);
-                    break;
+                float deltaAngle = Time.deltaTime * RotationSpeed;
+                switch (_rotationAxis)
+                {
+                    case 0:
+                        _testVolume.transform.Rotate(0, deltaAngle, 0, Space.Self);
+                        break;
+                    case 1:
+                        _testVolume.transform.Rotate(0, 0, deltaAngle, Space.Self);
+                        break;
+                    case 2:
+                        _testVolume.transform.Rotate(deltaAngle, 0, 0, Space.Self);
+                        break;
+                }
+                //float currentAngle = _testVolume.transform.localRotation.eulerAngles.y;
+                //float angleChange = Mathf.Abs(currentAngle - prevAngle);
+                _totalAngle += deltaAngle;
+                //Debug.Log("Rotation: " + _totalAngle);
+                _numberRotations = (int)(_totalAngle / 360f);
+                //Debug.Log("Rotation#: " + _numberRotations);
             }
-            //float currentAngle = _testVolume.transform.localRotation.eulerAngles.y;
-            //float angleChange = Mathf.Abs(currentAngle - prevAngle);
-            _totalAngle += deltaAngle;
-            //Debug.Log("Rotation: " + _totalAngle);
-            _numberRotations = (int)(_totalAngle / 360f);
-            //Debug.Log("Rotation#: " + _numberRotations);
-        }
-        else
-        {
-            _totalAngle = 0;
-            _numberRotations = 0;
-            _testVolume.transform.localRotation = new Quaternion(0, 0, 0, 0);
-            //_testVolume.transform.Rotate(0, 0, 90, Space.Self);
-
-            switch (_rotationAxis)
+            else
             {
-                case 0:
-                    _testVolume.transform.Rotate(-90, 0, 0, Space.Self);
-                    _rotationAxis++;
-                    if (vr != null)
-                    {
-                        vr.compositor.GetFrameTiming(ref timing, 0);
-                        _timeInSeconds = timing.m_flSystemTimeInSeconds;
-                    }
-                    Debug.Log("Rotating around Z-axis at " + _timeInSeconds + " seconds.");
-                    break;
-                case 1:
-                    //_testVolume.transform.Rotate(90, 0, 0, Space.Self);
-                    _testVolume.transform.Rotate(0, 0, 90, Space.Self);
-                    _rotationAxis++;
-                    if (vr != null)
-                    {
-                        vr.compositor.GetFrameTiming(ref timing, 0);
-                        _timeInSeconds = timing.m_flSystemTimeInSeconds;
-                    }
-                    Debug.Log("Rotating around X-axis at " + _timeInSeconds + " seconds.");
-                    break;
+                _totalAngle = 0;
+                _numberRotations = 0;
+                _testVolume.transform.localEulerAngles = new Vector3(0, 0, 0);
+                //_testVolume.transform.Rotate(0, 0, 90, Space.Self);
 
-                case 2:
-                    _rotationAxis = 0;
-                    _testVolume.transform.Translate(0, 0, 1);
-                    if (vr != null)
-                    {
-                        vr.compositor.GetFrameTiming(ref timing, 0);
-                        _timeInSeconds = timing.m_flSystemTimeInSeconds;
-                    }
-                    Debug.Log("Rotating around Y-axis at " + _timeInSeconds + " seconds.");
-                    break;
+                switch (_rotationAxis)
+                {
+                    case 0:
+                        _testVolume.transform.Rotate(-90, -90, 0, Space.Self);
+                        _rotationAxis++;
+                        if (vr != null)
+                        {
+                            vr.compositor.GetFrameTiming(ref timing, 0);
+                            _timeInSeconds = timing.m_flSystemTimeInSeconds;
+                        }
+                        Debug.Log("Rotating around Z-axis at " + _timeInSeconds + " seconds.");
+                        break;
+
+                    case 1:
+                        //_testVolume.transform.Rotate(90, 0, 0, Space.Self);
+                        _testVolume.transform.Rotate(0, 90, 90, Space.Self);
+                        //_testVolume.transform.Rotate(0, 180, 0, Space.Self);
+                        _rotationAxis++;
+                        if (vr != null)
+                        {
+                            vr.compositor.GetFrameTiming(ref timing, 0);
+                            _timeInSeconds = timing.m_flSystemTimeInSeconds;
+                        }
+                        Debug.Log("Rotating around X-axis at " + _timeInSeconds + " seconds.");
+                        break;
+
+                    case 2:
+                        _rotationAxis = 0;
+                        _testVolume.transform.localEulerAngles = new Vector3(0, 0, 0);
+
+                        _testVolume.transform.Translate(0, 0, 1);
+
+                        if (vr != null)
+                        {
+                            vr.compositor.GetFrameTiming(ref timing, 0);
+                            _timeInSeconds = timing.m_flSystemTimeInSeconds;
+                        }
+                        Debug.Log("Rotating around Y-axis at " + _timeInSeconds + " seconds.");
+                        break;
+                }
+
+
             }
-
-
         }
         
+    }
+
+    IEnumerator Wait5Seconds()
+    {
+        yield return new WaitForSeconds(StartWaitSeconds);
+        _running = true;
     }
 }
