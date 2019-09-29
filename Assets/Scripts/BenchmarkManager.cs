@@ -44,7 +44,7 @@ public class BenchmarkManager : MonoBehaviour
         
         }
         Debug.Log("Rotating around Y-axis at " + _timeInSeconds + " seconds.");
-        _testVolume.transform.localEulerAngles = new Vector3(0, 0, 0);
+        _testVolume.transform.localEulerAngles = new Vector3(0, -45, 0);
         StartCoroutine(Wait5Seconds());
     }
 
@@ -80,7 +80,7 @@ public class BenchmarkManager : MonoBehaviour
             {
                 _totalAngle = 0;
                 _numberRotations = 0;
-                _testVolume.transform.localEulerAngles = new Vector3(0, 0, 0);
+                _testVolume.transform.localEulerAngles = new Vector3(0, -45, 0);
                 //_testVolume.transform.Rotate(0, 0, 90, Space.Self);
 
                 switch (_rotationAxis)
