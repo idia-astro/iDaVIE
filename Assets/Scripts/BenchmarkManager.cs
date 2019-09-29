@@ -43,9 +43,10 @@ public class BenchmarkManager : MonoBehaviour
         _testVolume = GetComponentInChildren<VolumeDataSetRenderer>();
         
         }
-        Debug.Log("Rotating around Y-axis at " + _timeInSeconds + " seconds.");
+
+        Debug.Log("Test starting at " + _testVolume.transform.localPosition.z + " meters away.");
         _testVolume.transform.localEulerAngles = new Vector3(0, -45, 0);
-        StartCoroutine(Wait5Seconds());
+        StartCoroutine(WaitSeconds());
     }
 
     // Update is called once per frame
@@ -114,6 +115,7 @@ public class BenchmarkManager : MonoBehaviour
                         _testVolume.transform.localEulerAngles = new Vector3(0, 0, 0);
 
                         _testVolume.transform.Translate(0, 0, 1);
+                        Debug.Log("Test cube now at " + _testVolume.transform.localPosition.z + " meters away.");
 
                         if (vr != null)
                         {
@@ -130,9 +132,11 @@ public class BenchmarkManager : MonoBehaviour
         
     }
 
-    IEnumerator Wait5Seconds()
+    IEnumerator WaitSeconds()
     {
         yield return new WaitForSeconds(StartWaitSeconds);
+
+        Debug.Log("Rotating around Y-axis at " + _timeInSeconds + " seconds.");
         _running = true;
     }
 }

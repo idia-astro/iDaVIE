@@ -329,7 +329,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7da762646b489e945ade5ffbe65a506b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MaxSteps: 384
+  MaxSteps: 16
   MaximumCubeSizeInMB: 1500
   MaskMode: 0
   ProjectionMode: 0
@@ -337,10 +337,10 @@ MonoBehaviour:
   Jitter: 1
   FoveatedRendering: 1
   FoveationStart: 0.015
-  FoveationEnd: 0.4
+  FoveationEnd: 0.326
   FoveationJitter: 0.1
-  FoveatedStepsLow: 96
-  FoveatedStepsHigh: 384
+  FoveatedStepsLow: 16
+  FoveatedStepsHigh: 512
   VignetteFadeStart: 0.15
   VignetteFadeEnd: 0.4
   VignetteIntensity: 0
@@ -360,14 +360,14 @@ MonoBehaviour:
   XFactor: 1
   YFactor: 1
   ZFactor: 1
-  ScaleMax: 0
+  ScaleMax: 10
   ScaleMin: 0
   SliceMin: {x: -0.5, y: -0.5, z: -0.5}
   SliceMax: {x: 0.5, y: 0.5, z: 0.5}
   SelectionSaturateFactor: 0.7
   FeatureSetManagerPrefab: {fileID: 0}
   RandomVolume: 1
-  RandomCubeSize: 512
+  RandomCubeSize: 700
 --- !u!65 &1201799887
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -434,14 +434,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1201799885}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1}
+  m_LocalRotation: {x: 0, y: 0.38268343, z: 0, w: 0.92387956}
+  m_LocalPosition: {x: 0, y: 0, z: 0.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1752658193}
   m_Father: {fileID: 1076865376}
   m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 45, z: 0}
 --- !u!4 &1752658193 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7497200159023163673, guid: 2f9f3f22b1768b643a1d19a246519df6,
@@ -492,7 +492,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc935e4e9b34cbf4f8dc0732c8715686, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  RotationSpeed: 10
+  RotationSpeed: 5
   RotationTimes: 1
   StartWaitSeconds: 2
 --- !u!1001 &1894764060
