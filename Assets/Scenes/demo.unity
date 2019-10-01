@@ -4333,7 +4333,7 @@ MonoBehaviour:
   ScalingContrast: 1
   ScalingAlpha: 1000
   ScalingGamma: 1
-  FileName: Data/Volumes/BrainHighRes_3D.fits
+  FileName: Data/Volumes/Brain_3D.fits
   MaskFileName: 
   RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
   FactorOverride: 0
