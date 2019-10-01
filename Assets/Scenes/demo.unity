@@ -164,7 +164,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6175a300d859994c8994c25ba3f35e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TableFileName: Data/DataTables/demo/IC_AGB_solidangle.txt_IPAC.tbl
+  TableFileName: Data/DemoData/IC_AGB_solidangle.txt_IPAC.tbl
   MappingFileName: 
   DataMapping:
     ColorMap: 26
@@ -1365,7 +1365,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6175a300d859994c8994c25ba3f35e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TableFileName: Data/DataTables/demo/2MRS_GroupGalaxies.tbl
+  TableFileName: Data/DemoData/2MRS_GroupGalaxies.tbl
   MappingFileName: 
   DataMapping:
     ColorMap: 0
@@ -3104,7 +3104,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6175a300d859994c8994c25ba3f35e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TableFileName: Data/DataTables/demo/2MRS_Groups.tbl
+  TableFileName: Data/DemoData/2MRS_Groups.tbl
   MappingFileName: 
   DataMapping:
     ColorMap: 0
@@ -3282,7 +3282,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6175a300d859994c8994c25ba3f35e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TableFileName: Data/DataTables/demo/IC_wd3_1Msolar_solidangle.txt_IPAC.tbl
+  TableFileName: Data/DemoData/IC_wd3_1Msolar_solidangle.txt_IPAC.tbl
   MappingFileName: 
   DataMapping:
     ColorMap: 26
@@ -3460,7 +3460,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6175a300d859994c8994c25ba3f35e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TableFileName: Data/DataTables/demo/NKATZ_2.3M.tbl
+  TableFileName: Data/DemoData/NKATZ_2.3M.tbl
   MappingFileName: 
   DataMapping:
     ColorMap: 26
@@ -3638,7 +3638,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6175a300d859994c8994c25ba3f35e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TableFileName: Data/DataTables/demo/IC_mainsequence_solidangle.txt_IPAC.tbl
+  TableFileName: Data/DemoData/IC_mainsequence_solidangle.txt_IPAC.tbl
   MappingFileName: 
   DataMapping:
     ColorMap: 26
@@ -4019,7 +4019,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6175a300d859994c8994c25ba3f35e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TableFileName: Data/DataTables/demo/IC_redgiant_solidangle.txt_IPAC.tbl
+  TableFileName: Data/DemoData/IC_redgiant_solidangle.txt_IPAC.tbl
   MappingFileName: 
   DataMapping:
     ColorMap: 26
@@ -4333,7 +4333,7 @@ MonoBehaviour:
   ScalingContrast: 1
   ScalingAlpha: 1000
   ScalingGamma: 1
-  FileName: Data/Volumes/Brain_3D.fits
+  FileName: Data/DemoData/Brain_3D.fits
   MaskFileName: 
   RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
   FactorOverride: 0
@@ -5375,7 +5375,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6175a300d859994c8994c25ba3f35e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TableFileName: Data/DataTables/demo/IC_OB_solidangle.txt_IPAC.tbl
+  TableFileName: Data/DemoData/IC_OB_solidangle.txt_IPAC.tbl
   MappingFileName: 
   DataMapping:
     ColorMap: 26
@@ -5950,7 +5950,7 @@ MonoBehaviour:
   ScalingContrast: 1
   ScalingAlpha: 1000
   ScalingGamma: 1
-  FileName: Data/Volumes/cubehi-clean-m31.fits
+  FileName: Data/DemoData/cubehi-clean-m31.fits
   MaskFileName: 
   RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
   FactorOverride: 0
