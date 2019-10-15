@@ -10,7 +10,6 @@ namespace CatalogData
 
         public ColorMapDelegate OnColorMapChanged;
 
-
         public CatalogDataSetRenderer ActiveDataSet
         {
             get
@@ -39,10 +38,6 @@ namespace CatalogData
             {
                 SelectSet(0);
             }
-        }
-
-        private void Update()
-        {
         }
 
         public void SelectNextSet()
