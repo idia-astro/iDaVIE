@@ -10,7 +10,6 @@ namespace CatalogData
 
         public ColorMapDelegate OnColorMapChanged;
 
-        public bool ProximinityOpacity = false;
 
         public CatalogDataSetRenderer ActiveDataSet
         {
@@ -44,23 +43,6 @@ namespace CatalogData
 
         private void Update()
         {
-            if (ProximinityOpacity)
-            {
-                float distance;
-                GameObject catalogPlayer = GameObject.Find("VRCamera");
-                Vector3 playerPosition = catalogPlayer.transform.position;
-                CatalogDataSetRenderer[] catalogDataSetRenderers = GetComponentsInChildren<CatalogDataSetRenderer>();
-                foreach (CatalogDataSetRenderer renderer in catalogDataSetRenderers)
-                {
-                    Vector3 rendererPosition = renderer.transform.position;
-                    float rendererScale = Vector3.Magnitude(renderer.transform.localScale);
-                    distance = Vector3.Distance(rendererPosition, playerPosition);
-                    float initialOpacity = renderer.GetInitialOpacity();
-                    renderer.SetOpacity(Mathf.Clamp(initialOpacity / Mathf.Pow(distance,2), 0.05f, initialOpacity));
-                    //Debug.Log("initial op: " + initialOpacity);
-
-                }
-            }
         }
 
         public void SelectNextSet()
