@@ -41,6 +41,9 @@ public class VolumeInputController : MonoBehaviour
     public GameObject CanvassQuickMenu;
 
 
+    // Vignette on or off
+    public bool UseVignette = true;
+
     // Scaling/Rotation options
     public bool InPlaceScaling = true;
     public bool ScalingEnabled = true;
@@ -376,7 +379,9 @@ public class VolumeInputController : MonoBehaviour
     private void Update()
     {
         // Common update functions
-        UpdateVignette();
+        if (UseVignette)
+            UpdateVignette();
+
         if (Camera.current)
         {
             Camera.current.depthTextureMode = DepthTextureMode.Depth;
