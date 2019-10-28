@@ -230,9 +230,9 @@ namespace VolumeData
             cubeSize.z = (Math.Abs(cropStart.z - cropEnd.z) + 1) / downsample.z;
             if ((Math.Abs(cropStart.x - cropEnd.x) + 1) % downsample.x != 0)
                 cubeSize.x++;
-            if ((Math.Abs(cropStart.x - cropEnd.x) + 1) % downsample.y != 0)
+            if ((Math.Abs(cropStart.y - cropEnd.y) + 1) % downsample.y != 0)
                 cubeSize.y++;
-            if ((Math.Abs(cropStart.x - cropEnd.x) + 1) % downsample.z != 0)
+            if ((Math.Abs(cropStart.z - cropEnd.z) + 1) % downsample.z != 0)
                 cubeSize.z++;
                                
             RegionCube = new Texture3D(cubeSize.x, cubeSize.y, cubeSize.z, textureFormat, false);
@@ -371,7 +371,7 @@ namespace VolumeData
                         _yRef = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                         break;
                     case "CTYPE3":
-                        _zCoord = entry.Value.Substring(0, 4);
+                        _zCoord = entry.Value.Substring(0, 4); //Crashing with some data sets. Need to fix
                         zProj = entry.Value.Substring(5, 4);
                         break;
                     case "CRPIX3":

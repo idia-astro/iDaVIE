@@ -43,6 +43,12 @@ namespace CatalogData
         private Material _catalogMaterial;
         private ColorMapEnum _appliedColorMap = ColorMapEnum.None;
         
+        private bool _visible = true;
+        private Vector3 _initialLocalPosition;
+        private Quaternion _initialLocalRotation;
+        private Vector3 _initialLocalScale;
+        private float _initialOpacity;
+
         #region Material Property IDs
 
         private int _idSpriteSheet, _idNumSprites, _idColorMap, _idColorMapIndex, _idNumColorMaps, _idDataSetMatrix, _idScalingFactor;
@@ -203,6 +209,10 @@ namespace CatalogData
             {
                 SetColorMap(DataMapping.ColorMap);
             }
+            _initialLocalPosition = transform.localPosition;
+            _initialLocalRotation = transform.localRotation;
+            _initialLocalScale = transform.localScale;
+            _initialOpacity = DataMapping.Uniforms.Opacity;
         }
 
         public bool UpdateMappingColumns(bool logErrors = false)
@@ -437,6 +447,28 @@ namespace CatalogData
             return false;
         }
 
+        public float GetInitialOpacity()
+        {
+            return _initialOpacity;
+        }
+
+        public void SetOpacity(float opacity)
+        {
+            DataMapping.Uniforms.Opacity = opacity;
+        }
+
+        public void SetVisibility(bool visible)
+        {
+            _visible = visible;
+        }
+
+        public void resetLocalPosition()
+        {
+            transform.localPosition = _initialLocalPosition;
+            transform.localRotation = _initialLocalRotation;
+            transform.localScale = _initialLocalScale;
+        }
+
         public bool UpdateMappingValues()
         {
             if (!_catalogMaterial)
@@ -466,13 +498,20 @@ namespace CatalogData
             if (!DataMapping.UniformOpacity && DataMapping.Mapping.Opacity != null && !string.IsNullOrEmpty(DataMapping.Mapping.Opacity.Source))
             {
                 _catalogMaterial.SetInt(_idUseUniformOpacity, 0);
-                _mappingConfigs[4] = DataMapping.Mapping.Opacity.GpuMappingConfig;
+                if (_visible)
+                    _mappingConfigs[4] = DataMapping.Mapping.Opacity.GpuMappingConfig;
+                else
+                    _catalogMaterial.SetFloat(_idOpacity, 0);
             }
             else
-            {
+            { 
                 _catalogMaterial.SetInt(_idUseUniformOpacity, 1);
-                _catalogMaterial.SetFloat(_idOpacity, DataMapping.Uniforms.Opacity);
+                if (_visible)
+                    _catalogMaterial.SetFloat(_idOpacity, DataMapping.Uniforms.Opacity);
+                else
+                    _catalogMaterial.SetFloat(_idOpacity, 0);
             }
+
 
             if (!DataMapping.UniformPointSize && DataMapping.Mapping.PointSize != null && !string.IsNullOrEmpty(DataMapping.Mapping.PointSize.Source))
             {

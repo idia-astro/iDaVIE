@@ -84,6 +84,18 @@ namespace CatalogData
             }
         }
 
+        public string GetActiveSetName()
+        {
+            if (ActiveDataSet != null)
+                return ActiveDataSet.name;
+            return "no_name";
+        }
+
+        public void SetActiveSetVisibility(bool visible)
+        {
+            ActiveDataSet.SetVisibility(visible);
+        }
+
         private void HandleColorMapChanged(ColorMapEnum colorMap)
         {
             OnColorMapChanged?.Invoke(colorMap);
