@@ -87,7 +87,7 @@ public class CameraControllerTool : MonoBehaviour
             QuickMenuCanvas.GetComponent<CanvasGroup>().alpha = 1;
 
         /*
-            toolControllerComponent.CameraControlUI.GetComponent<CanvasGroup>().alpha = 1;
+            toolControllerComponent.CameraControlUIp.GetComponent<CanvasGroup>().alpha = 1;
             GameObject.Find("Canvas_Oculus").gameObject.transform.Find("CameraControlUI").GetComponent<CanvasGroup>().alpha = 1;
 
             if (StateSingleton.stateView == StateSingleton.StateView.MODE2D_PLUS_OCULUS)
