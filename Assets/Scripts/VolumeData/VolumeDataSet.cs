@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using Unity.Collections;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -14,6 +15,7 @@ namespace VolumeData
     {
         public Texture3D DataCube { get; private set; }
         public Texture3D RegionCube { get; private set; }
+        public ComputeBuffer RegionMaskEntries { get; private set; }
         public string FileName { get; private set; }
         public long XDim { get; private set; }
         public long YDim { get; private set; }
@@ -88,8 +90,6 @@ namespace VolumeData
                 }
             }
             FitsReader.FitsCloseFile(fptr, out status);
-
-
 
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = cubeSize[0];
@@ -228,13 +228,43 @@ namespace VolumeData
             }
             int sliceSize = cubeSize.x * cubeSize.y;
             Texture2D textureSlice = new Texture2D(cubeSize.x, cubeSize.y, textureFormat, false);
-            
+
             for (int slice = 0; slice < cubeSize.z; slice++)
             {
                 textureSlice.LoadRawTextureData(IntPtr.Add(regionData, slice * sliceSize * elementSize),sliceSize * elementSize);
                 textureSlice.Apply();
                 Graphics.CopyTexture(textureSlice, 0, 0, 0, 0, cubeSize.x, cubeSize.y, RegionCube, slice, 0, 0, 0);
             }
+
+            if (IsMask)
+            {
+                var numVoxels = cubeSize.x * cubeSize.y * cubeSize.z;
+                var arr = new short[numVoxels];
+                Marshal.Copy(regionData, arr, 0, numVoxels);
+
+                List<int> voxelEntries = new List<int>();
+                
+                for (int i = 0; i < numVoxels; i++)
+                {
+                    var voxelVal = arr[i];
+                    if (voxelVal != 0)
+                    {
+                        voxelEntries.Add(i);
+                        voxelEntries.Add(voxelVal);
+//                        int x = i % (cubeSize.x);
+//                        int j = (i - x) / cubeSize.x;
+//                        int y = j % cubeSize.y;
+//                        int z = (j - y) / cubeSize.y;
+//                        Debug.Log($"Mask entry at ({x}, {y}, {z}): {voxelVal}");
+                    }
+                }
+                Debug.Log($"Found {voxelEntries.Count / 2} non-empty mask voxels in region");
+                
+                RegionMaskEntries?.Release();
+                RegionMaskEntries = new ComputeBuffer(voxelEntries.Count / 2, sizeof(int) * 2);
+                RegionMaskEntries.SetData(voxelEntries);
+            }
+
             DataAnalysis.FreeMemory(regionData);
             sw.Stop();            
             Debug.Log($"Cropped into {cubeSize.x} x {cubeSize.y} x {cubeSize.z} region ({cubeSize.x * cubeSize.y * cubeSize.z * 4e-6} MB) in {sw.ElapsedMilliseconds} ms");

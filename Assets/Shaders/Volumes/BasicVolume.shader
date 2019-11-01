@@ -1,4 +1,4 @@
-Shader "VRTest/BasicVolume"
+Shader "IDIA/BasicVolume"
 {
 	Properties
 	{

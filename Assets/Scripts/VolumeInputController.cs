@@ -85,6 +85,9 @@ public class VolumeInputController : MonoBehaviour
 
     // VR-family dependent values
     private VRFamily _vrFamily;
+    
+    // Temporary hack for painting
+    private bool _isPainting;
 
     // Used for moving the pointer transform to an acceptable position for each controller type
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsLeft = new Dictionary<VRFamily, Vector3>
@@ -180,12 +183,14 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnQuickMenuChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
+        _isPainting = newState;
+
         if (newState )
         {
             //  StartSelection(hand);
             StartRequestQuickMenu(fromSource == SteamVR_Input_Sources.LeftHand ? 0 : 1);
         }
-        else if (!newState )
+        else
         {
             //  EndSelection();
             EndRequestQuickMenu();
@@ -222,20 +227,11 @@ public class VolumeInputController : MonoBehaviour
                 StateTransitionMovingToScaling();
                 break;
         }
-
-
-       
-
-
-     
-
     }
 
 
     private void OnPinchChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
-
-
         var hand = fromSource == SteamVR_Input_Sources.LeftHand ? _hands[0] : _hands[1];
         if (newState && _selectingHand == null)
         {
@@ -591,6 +587,10 @@ public class VolumeInputController : MonoBehaviour
             foreach (var dataSet in _volumeDataSets)
             {
                 dataSet.SetCursorPosition(_handTransforms[0].position);
+                if (_isPainting)
+                {
+                    dataSet.PaintCursor(1);
+                }
                 if (dataSet.isActiveAndEnabled)
                 {
                     string sourceIndex = "";

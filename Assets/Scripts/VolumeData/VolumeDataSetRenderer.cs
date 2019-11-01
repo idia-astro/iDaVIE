@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using DataFeatures;
 using Vectrosity;
-
+using Random = System.Random;
 
 namespace VolumeData
 {
@@ -44,18 +44,22 @@ namespace VolumeData
 
         [Header("Rendering Settings")]
         // Step control
-        [Range(16, 512)] public int MaxSteps = 192;
+        [Range(16, 512)]
+        public int MaxSteps = 192;
+
         public long MaximumCubeSizeInMB = 250;
         public MaskMode MaskMode = MaskMode.Disabled;
         public ProjectionMode ProjectionMode = ProjectionMode.MaximumIntensityProjection;
         public TextureFilterEnum TextureFilter = TextureFilterEnum.Point;
-
+        
+        [Range(0, 1)] public float MaskVoxelSize = 1.0f;
         // Jitter factor
         [Range(0, 1)] public float Jitter = 1.0f;
 
         // Foveated rendering controls
         [Header("Foveated Rendering Controls")]
         public bool FoveatedRendering = false;
+
         [Range(0, 0.5f)] public float FoveationStart = 0.15f;
         [Range(0, 0.5f)] public float FoveationEnd = 0.40f;
         [Range(0, 0.5f)] public float FoveationJitter = 0.0f;
@@ -63,32 +67,29 @@ namespace VolumeData
         [Range(16, 512)] public int FoveatedStepsHigh = 384;
 
         // Vignette Rendering
-        [Header("Vignette Rendering Controls")]
-        [Range(0, 0.5f)]
+        [Header("Vignette Rendering Controls")] [Range(0, 0.5f)]
         public float VignetteFadeStart = 0.15f;
+
         [Range(0, 0.5f)] public float VignetteFadeEnd = 0.40f;
         [Range(0, 1)] public float VignetteIntensity = 0.0f;
         public Color VignetteColor = Color.black;
 
-        [Header("Thresholds")]        
-        [Range(0, 1)] public float ThresholdMin = 0;
+        [Header("Thresholds")] [Range(0, 1)] public float ThresholdMin = 0;
         [Range(0, 1)] public float ThresholdMax = 1;
 
-        [Header("Color Mapping")]
-        public ColorMapEnum ColorMap = ColorMapEnum.Inferno;
+        [Header("Color Mapping")] public ColorMapEnum ColorMap = ColorMapEnum.Inferno;
         public ScalingType ScalingType = ScalingType.Linear;
         [Range(-1, 1)] public float ScalingBias = 0.0f;
         [Range(0, 5)] public float ScalingContrast = 1.0f;
         public float ScalingAlpha = 1000.0f;
         [Range(0, 5)] public float ScalingGamma = 1.0f;
 
-        [Header("File Input")]
-        public string FileName;
-        public string MaskFileName;        
+        [Header("File Input")] public string FileName;
+        public string MaskFileName;
         public Material RayMarchingMaterial;
+        public Material MaskMaterial;
 
-        [Header("Debug Settings")]
-        public bool FactorOverride = false;
+        [Header("Debug Settings")] public bool FactorOverride = false;
         public int XFactor = 1;
         public int YFactor = 1;
         public int ZFactor = 1;
@@ -115,16 +116,23 @@ namespace VolumeData
         public FeatureSetManager FeatureSetManagerPrefab;
 
         private VectorLine _voxelOutline, _cubeOutline, _regionOutline;
-        
+
 
         private FeatureSetManager _featureManager = null;
         private MeshRenderer _renderer;
         private Material _materialInstance;
+        private Material _maskMaterialInstance;
         private VolumeDataSet _dataSet;
         private VolumeDataSet _maskDataSet = null;
         private VolumeInputController _volumeInputController;
-        
+
+        // Mask updating
+        private Texture2D _updateTexture;
+        private byte[] _cachedBrush;
+        private readonly Random _rnd = new Random();
+
         #region Material Property IDs
+
         private struct MaterialID
         {
             public static readonly int DataCube = Shader.PropertyToID("_DataCube");
@@ -161,7 +169,14 @@ namespace VolumeData
             public static readonly int HighlightMin = Shader.PropertyToID("HighlightMin");
             public static readonly int HighlightMax = Shader.PropertyToID("HighlightMax");
             public static readonly int HighlightSaturateFactor = Shader.PropertyToID("HighlightSaturateFactor");
+            
+            public static readonly int CubeDimensions = Shader.PropertyToID("CubeDimensions");
+            public static readonly int RegionDimensions = Shader.PropertyToID("RegionDimensions");
+            public static readonly int RegionOffset = Shader.PropertyToID("RegionOffset");
+            public static readonly int MaskEntries = Shader.PropertyToID("MaskEntries");
+            public static readonly int MaskVoxelSize = Shader.PropertyToID("MaskVoxelSize");
         }
+
         #endregion
 
         public void Start()
@@ -192,6 +207,8 @@ namespace VolumeData
             _materialInstance.SetInt(MaterialID.NumColorMaps, ColorMapUtils.NumColorMaps);
             _materialInstance.SetFloat(MaterialID.FoveationStart, FoveationStart);
             _materialInstance.SetFloat(MaterialID.FoveationEnd, FoveationEnd);
+
+            _maskMaterialInstance = Instantiate(MaskMaterial);
 
             if (_maskDataSet != null)
             {
@@ -267,9 +284,12 @@ namespace VolumeData
             {
                 _featureManager.CreateNewFeatureSet();
             }
-            
+
             Shader.WarmupAllShaders();
 
+            _updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
+            // single pixel brush: 16-bits = 2 bytes
+            _cachedBrush = new byte[2];
         }
 
         public void ShiftColorMap(int delta)
@@ -396,6 +416,16 @@ namespace VolumeData
                 if (_maskDataSet != null)
                 {
                     _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
+                    if (_maskDataSet.RegionMaskEntries != null)
+                    {
+                        _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, _maskDataSet.RegionMaskEntries);
+                        var regionMin = Vector3.Min(RegionStartVoxel, RegionEndVoxel);
+                        _maskMaterialInstance.SetVector(MaterialID.RegionOffset, new Vector4(regionMin.x, regionMin.y, regionMin.z, 0));
+                        var regionDimensions = new Vector4(_maskDataSet.RegionCube.width, _maskDataSet.RegionCube.height, _maskDataSet.RegionCube.width, 0);
+                        _maskMaterialInstance.SetVector(MaterialID.RegionDimensions, regionDimensions);
+                        var cubeDimensions = new Vector4(_maskDataSet.XDim, _maskDataSet.YDim, _maskDataSet.ZDim, 0);
+                        _maskMaterialInstance.SetVector(MaterialID.CubeDimensions, cubeDimensions);
+                    }
                 }
             }
         }
@@ -408,6 +438,7 @@ namespace VolumeData
             if (_maskDataSet != null)
             {
                 _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.DataCube);
+                _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, null);
             }
         }
 
@@ -469,8 +500,8 @@ namespace VolumeData
 
             if (_regionOutline.active)
             {
-                Vector3 regionStartObjectSpace = new Vector3((float)(RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
-                Vector3 regionEndObjectSpace = new Vector3((float)(RegionEndVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionEndVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
+                Vector3 regionStartObjectSpace = new Vector3((float) (RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float) (RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float) (RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
+                Vector3 regionEndObjectSpace = new Vector3((float) (RegionEndVoxel.x) / _dataSet.XDim - 0.5f, (float) (RegionEndVoxel.y) / _dataSet.YDim - 0.5f, (float) (RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
                 Vector3 padding = new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
                 var highlightMin = Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
                 var highlightMax = Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
@@ -487,6 +518,7 @@ namespace VolumeData
             if (_maskDataSet != null)
             {
                 _materialInstance.SetInt(MaterialID.MaskMode, MaskMode.GetHashCode());
+                _maskMaterialInstance.SetFloat(MaterialID.MaskVoxelSize, MaskVoxelSize);
             }
             else
             {
@@ -501,35 +533,81 @@ namespace VolumeData
             {
                 Shader.DisableKeyword("SHADER_AIP");
             }
+
             _materialInstance.SetFloat(MaterialID.VignetteFadeStart, VignetteFadeStart);
             _materialInstance.SetFloat(MaterialID.VignetteFadeEnd, VignetteFadeEnd);
             _materialInstance.SetFloat(MaterialID.VignetteIntensity, VignetteIntensity);
             _materialInstance.SetColor(MaterialID.VignetteColor, VignetteColor);
         }
+        void OnRenderObject()
+        {
+            if (_maskDataSet != null && _maskDataSet.RegionMaskEntries != null)
+            {
+                _maskMaterialInstance.SetPass(0);
+                _maskMaterialInstance.SetMatrix("ModelMatrix", transform.localToWorldMatrix);
+                Graphics.DrawProceduralNow(MeshTopology.Points, _maskDataSet.RegionMaskEntries.count);
+            }
+        }
+        
+
+        public bool PaintMask(Vector3Int position, ushort value)
+        {
+            if (_maskDataSet == null || _maskDataSet.RegionCube == null)
+            {
+                return false;
+            }
+
+            var regionSizeObjectSpace = SliceMax - SliceMin;
+            var regionSizeDataSpace = new Vector3(_maskDataSet.XDim * regionSizeObjectSpace.x, _maskDataSet.YDim * regionSizeObjectSpace.y, _maskDataSet.ZDim * regionSizeObjectSpace.z);
+            if (Math.Floor(regionSizeDataSpace.x) > _maskDataSet.RegionCube.width || Math.Floor(regionSizeDataSpace.y) > _maskDataSet.RegionCube.height || Math.Floor(regionSizeDataSpace.z) > _maskDataSet.RegionCube.depth)
+            {
+                return false;
+            }
+
+            Vector3Int offsetRegionSpace = Vector3Int.FloorToInt(new Vector3((0.5f + SliceMin.x) * _maskDataSet.XDim, (0.5f + SliceMin.y) * _maskDataSet.YDim, (0.5f + SliceMin.z) * _maskDataSet.ZDim));
+            Vector3Int coordsRegionSpace = position - Vector3Int.one - offsetRegionSpace;
+            if (coordsRegionSpace.x < 0 || coordsRegionSpace.x >= _maskDataSet.RegionCube.width || coordsRegionSpace.y < 0 || coordsRegionSpace.y >= _maskDataSet.RegionCube.height || coordsRegionSpace.z < 0 ||
+                coordsRegionSpace.z >= _maskDataSet.RegionCube.depth)
+            {
+                return false;
+            }
+
+            // convert from int to byte array
+            _cachedBrush = BitConverter.GetBytes(value);
+            _updateTexture.LoadRawTextureData(_cachedBrush);
+            _updateTexture.Apply();
+            Graphics.CopyTexture(_updateTexture, 0, 0, 0, 0, 1, 1, _maskDataSet.RegionCube, coordsRegionSpace.z, 0, coordsRegionSpace.x, coordsRegionSpace.y);
+            return true;
+        }
+
+        public bool PaintCursor(ushort value)
+        {
+            return PaintMask(CursorVoxel, value);
+        }
 
         public Vector3 GetFitsCoords(double X, double Y, double Z)
         {
             Vector2 raDec = _dataSet.GetRADecFromXY(X, Y);
-            float z = (float)_dataSet.GetVelocityFromZ(Z);
+            float z = (float) _dataSet.GetVelocityFromZ(Z);
             return new Vector3(raDec.x, raDec.y, z);
         }
 
         public Vector3 GetFitsLengths(double X, double Y, double Z)
         {
             Vector3 wcsConversion = _dataSet.GetWCSDeltas();
-            float xLength = Math.Abs((float)X * wcsConversion.x);
-            float yLength = Math.Abs((float)Y * wcsConversion.y);
-            float zLength = Math.Abs((float)Z * wcsConversion.z);
+            float xLength = Math.Abs((float) X * wcsConversion.x);
+            float yLength = Math.Abs((float) Y * wcsConversion.y);
+            float zLength = Math.Abs((float) Z * wcsConversion.z);
             return new Vector3(xLength, yLength, zLength);
         }
 
         public string GetFitsCoordsString(double X, double Y, double Z)
         {
             Vector2 raDec = _dataSet.GetRADecFromXY(X, Y);
-            string vel = string.Format("{0,8:F2} km/s", (float)_dataSet.GetVelocityFromZ(Z)/1000);
+            string vel = string.Format("{0,8:F2} km/s", (float) _dataSet.GetVelocityFromZ(Z) / 1000);
             double raHours = (raDec.x * 12.0 / 180.0);
             double raMin = (raHours - Math.Truncate(raHours)) * 60;
-            double raSec = Math.Truncate((raMin - Math.Truncate(raMin)) * 60 * 100)/100;
+            double raSec = Math.Truncate((raMin - Math.Truncate(raMin)) * 60 * 100) / 100;
 
             double decMin = Math.Abs((raDec.y - Math.Truncate(raDec.y)) * 60);
             double decSec = Math.Truncate((decMin - Math.Truncate(decMin)) * 60 * 100) / 100;
@@ -546,7 +624,7 @@ namespace VolumeData
 
         public Vector3Int GetCubeDimensions()
         {
-            return new Vector3Int((int)_dataSet.XDim, (int)_dataSet.YDim, (int)_dataSet.ZDim);
+            return new Vector3Int((int) _dataSet.XDim, (int) _dataSet.YDim, (int) _dataSet.ZDim);
         }
 
         // Converts volume space to local space
@@ -556,7 +634,7 @@ namespace VolumeData
             Vector3 localPosition = new Vector3(volumePosition.x / cubeDimensions.x - 0.5f, volumePosition.y / cubeDimensions.y - 0.5f, volumePosition.z / cubeDimensions.z - 0.5f);
             return localPosition;
         }
-        
+
         // Converts local space to volume space
         public Vector3 LocalPositionToVolumePosition(Vector3 localPosition)
         {
