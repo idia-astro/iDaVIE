@@ -15,12 +15,30 @@ namespace VolumeData
     {
         public int Index;
         public int Value;
+
+        public VoxelEntry(int index, int value)
+        {
+            this.Index = index;
+            this.Value = value;
+        }
+
+        public static Comparer<VoxelEntry> IndexComparer = Comparer<VoxelEntry>.Create(
+            (a, b) => a.Index > b.Index ? 1 : a.Index < b.Index ? -1 : 0
+        );
     }
+    
+    
 
     public struct BrushStrokeTransaction
     {
         public int NewValue;
         public List<VoxelEntry> Voxels;
+
+        public BrushStrokeTransaction(int newValue)
+        {
+            NewValue = newValue;
+            Voxels = new List<VoxelEntry>();
+        }
     }
     
     public class VolumeDataSet
@@ -30,6 +48,7 @@ namespace VolumeData
         public ComputeBuffer ExistingMaskBuffer { get; private set; }
         public ComputeBuffer AddedMaskBuffer { get; private set; }
         public int AddedMaskEntryCount { get; private set; }
+        public BrushStrokeTransaction CurrentBrushStroke { get; private set; }
         
         public string FileName { get; private set; }
         public long XDim { get; private set; }
@@ -53,6 +72,7 @@ namespace VolumeData
         private List<VoxelEntry> _addedRegionMaskEntries;
         private Texture2D _updateTexture;
         private byte[] _cachedBrush;
+        private short[] _regionMaskVoxels;
         
         public IntPtr FitsData;
 
@@ -263,17 +283,16 @@ namespace VolumeData
             if (IsMask)
             {
                 var numVoxels = cubeSize.x * cubeSize.y * cubeSize.z;
-                var arr = new short[numVoxels];
-                Marshal.Copy(regionData, arr, 0, numVoxels);
-
-                //List<int> voxelEntries = new List<int>();
+                _regionMaskVoxels = new short[numVoxels];
+                Marshal.Copy(regionData, _regionMaskVoxels, 0, numVoxels);
+                
                 _existingRegionMaskEntries = new List<VoxelEntry>();
                 for (int i = 0; i < numVoxels; i++)
                 {
-                    var voxelVal = arr[i];
+                    var voxelVal = _regionMaskVoxels[i];
                     if (voxelVal != 0)
                     {
-                        _existingRegionMaskEntries.Add(new VoxelEntry() {Index = i, Value = voxelVal});
+                        _existingRegionMaskEntries.Add(new VoxelEntry(i, voxelVal));
                     }
                 }
                 Debug.Log($"Found {_existingRegionMaskEntries.Count} non-empty mask voxels in region");
@@ -441,20 +460,61 @@ namespace VolumeData
             _wcsProj = xProj;
         }
 
-        public bool PaintMaskVoxel(Vector3Int coordsRegionSpace, ushort value)
+        public bool PaintMaskVoxel(Vector3Int coordsRegionSpace, short value)
         {
             if (coordsRegionSpace.x < 0 || coordsRegionSpace.x >= RegionCube.width || coordsRegionSpace.y < 0 || coordsRegionSpace.y >= RegionCube.height || coordsRegionSpace.z < 0 ||
                 coordsRegionSpace.z >= RegionCube.depth)
             {
                 return false;
             }
+            
+            VoxelEntry newEntry = new VoxelEntry(coordsRegionSpace.x + coordsRegionSpace.y * RegionCube.width + coordsRegionSpace.z * (RegionCube.width * RegionCube.height) ,value);
+            var currentValue = _regionMaskVoxels[newEntry.Index];
 
+            // If the voxel already has the correct value, exit
+            if (currentValue == value)
+            {
+                return true;
+            }
+            
+            // Create transaction if it doesn't exist
+            if (CurrentBrushStroke.Voxels == null)
+            {
+                CurrentBrushStroke = new BrushStrokeTransaction(value);
+            }
+
+            _regionMaskVoxels[newEntry.Index] = value;
             // convert from int to byte array
             _cachedBrush = BitConverter.GetBytes(value);
             _updateTexture.LoadRawTextureData(_cachedBrush);
             _updateTexture.Apply();
             Graphics.CopyTexture(_updateTexture, 0, 0, 0, 0, 1, 1, RegionCube, coordsRegionSpace.z, 0, coordsRegionSpace.x, coordsRegionSpace.y);
+
+            if (_existingRegionMaskEntries != null)
+            {
+                int i = _existingRegionMaskEntries.BinarySearch(newEntry, VoxelEntry.IndexComparer);
+                if (i > 0)
+                {
+                    // Update entry in list
+                    _existingRegionMaskEntries[i] = newEntry;
+                    // Update compute buffer
+                    ExistingMaskBuffer.SetData(_existingRegionMaskEntries, i, i, 1);
+                }
+                else
+                {
+                    _addedRegionMaskEntries.Add(newEntry);
+                }
+            }
+            
+            CurrentBrushStroke.Voxels.Add(new VoxelEntry(newEntry.Index, currentValue));
+
             return true;
+        }
+
+        public void FlushBrushStroke()
+        {
+            Debug.Log($"Brush stroke: New Value: {CurrentBrushStroke.NewValue}; {CurrentBrushStroke.Voxels.Count} voxels");
+            CurrentBrushStroke = new BrushStrokeTransaction(CurrentBrushStroke.NewValue);
         }
 
         public void CleanUp()

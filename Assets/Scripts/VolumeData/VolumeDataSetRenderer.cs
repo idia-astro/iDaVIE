@@ -52,11 +52,12 @@ namespace VolumeData
         public TextureFilterEnum TextureFilter = TextureFilterEnum.Point;
         [Range(0, 1)] public float Jitter = 1.0f;
 
-        [Header("Mask Rendering Settings")] 
+        [Header("Mask Rendering and Editing Settings")] 
         public bool DisplayMask = false;
         public MaskMode MaskMode = MaskMode.Disabled;
         [Range(0, 1)] public float MaskVoxelSize = 1.0f;
-        public Color MaskVoxelColor = Color.gray;
+        public Color MaskVoxelColor = new Color(0.5f, 0.5f, 0.5f, 0.2f);
+        public short MaskPaintValue = 0;
        
         // Foveated rendering controls
         [Header("Foveated Rendering Controls")]
@@ -127,6 +128,8 @@ namespace VolumeData
         private VolumeDataSet _dataSet;
         private VolumeDataSet _maskDataSet = null;
         private VolumeInputController _volumeInputController;
+        private Vector3Int _previousPaintLocation;
+        private short _previousPaintValue;
 
         #region Material Property IDs
 
@@ -557,7 +560,7 @@ namespace VolumeData
         }
         
 
-        public bool PaintMask(Vector3Int position, ushort value)
+        public bool PaintMask(Vector3Int position, short value)
         {
             if (_maskDataSet == null || _maskDataSet.RegionCube == null)
             {
@@ -573,12 +576,26 @@ namespace VolumeData
 
             Vector3Int offsetRegionSpace = Vector3Int.FloorToInt(new Vector3((0.5f + SliceMin.x) * _maskDataSet.XDim, (0.5f + SliceMin.y) * _maskDataSet.YDim, (0.5f + SliceMin.z) * _maskDataSet.ZDim));
             Vector3Int coordsRegionSpace = position - Vector3Int.one - offsetRegionSpace;
-            return _maskDataSet.PaintMaskVoxel(coordsRegionSpace, value);
+            if (coordsRegionSpace != _previousPaintLocation || value != _previousPaintValue)
+            {
+                _previousPaintLocation = coordsRegionSpace;
+                _previousPaintValue = value;
+                return _maskDataSet.PaintMaskVoxel(coordsRegionSpace, value);
+            }
+            else
+            {
+                return true;
+            }
         }
 
-        public bool PaintCursor(ushort value)
+        public bool PaintCursor()
         {
-            return PaintMask(CursorVoxel, value);
+            return PaintMask(CursorVoxel, MaskPaintValue);
+        }
+
+        public void FinishBrushStroke()
+        {
+            _maskDataSet.FlushBrushStroke();
         }
 
         public Vector3 GetFitsCoords(double X, double Y, double Z)

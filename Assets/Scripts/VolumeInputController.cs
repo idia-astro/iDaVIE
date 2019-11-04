@@ -183,6 +183,15 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnQuickMenuChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
+        // Handle painting brush stroke ending
+        if (_isPainting && !newState)
+        {
+            foreach (var dataSet in _volumeDataSets)
+            {
+                dataSet.FinishBrushStroke();
+            }
+        }
+        
         _isPainting = newState;
 
         if (newState )
@@ -589,7 +598,7 @@ public class VolumeInputController : MonoBehaviour
                 dataSet.SetCursorPosition(_handTransforms[0].position);
                 if (_isPainting)
                 {
-                    dataSet.PaintCursor(1);
+                    dataSet.PaintCursor();
                 }
                 if (dataSet.isActiveAndEnabled)
                 {
