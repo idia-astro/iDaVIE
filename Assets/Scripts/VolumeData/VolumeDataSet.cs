@@ -11,6 +11,18 @@ using Debug = UnityEngine.Debug;
 
 namespace VolumeData
 {
+    public struct VoxelEntry
+    {
+        public int Index;
+        public int Value;
+    }
+
+    public struct BrushStrokeTransaction
+    {
+        public int NewValue;
+        public List<VoxelEntry> Voxels;
+    }
+    
     public class VolumeDataSet
     {
         public Texture3D DataCube { get; private set; }
@@ -242,27 +254,28 @@ namespace VolumeData
                 var arr = new short[numVoxels];
                 Marshal.Copy(regionData, arr, 0, numVoxels);
 
-                List<int> voxelEntries = new List<int>();
-                
+                //List<int> voxelEntries = new List<int>();
+                List<VoxelEntry> voxelEntries = new List<VoxelEntry>();
                 for (int i = 0; i < numVoxels; i++)
                 {
                     var voxelVal = arr[i];
                     if (voxelVal != 0)
                     {
-                        voxelEntries.Add(i);
-                        voxelEntries.Add(voxelVal);
-//                        int x = i % (cubeSize.x);
-//                        int j = (i - x) / cubeSize.x;
-//                        int y = j % cubeSize.y;
-//                        int z = (j - y) / cubeSize.y;
-//                        Debug.Log($"Mask entry at ({x}, {y}, {z}): {voxelVal}");
+                        voxelEntries.Add(new VoxelEntry() {Index = i, Value = voxelVal});
                     }
                 }
-                Debug.Log($"Found {voxelEntries.Count / 2} non-empty mask voxels in region");
+                Debug.Log($"Found {voxelEntries.Count} non-empty mask voxels in region");
                 
                 RegionMaskEntries?.Release();
-                RegionMaskEntries = new ComputeBuffer(voxelEntries.Count / 2, sizeof(int) * 2);
-                RegionMaskEntries.SetData(voxelEntries);
+                if (voxelEntries.Count > 0)
+                {
+                    RegionMaskEntries = new ComputeBuffer(voxelEntries.Count, sizeof(int) * 2);
+                    RegionMaskEntries.SetData(voxelEntries);
+                }
+                else
+                {
+                    RegionMaskEntries = null;
+                }
             }
 
             DataAnalysis.FreeMemory(regionData);
@@ -406,6 +419,7 @@ namespace VolumeData
         public void CleanUp()
         {
             FitsReader.FreeMemory(FitsData);
+            RegionMaskEntries?.Release();
         }
     }
 }

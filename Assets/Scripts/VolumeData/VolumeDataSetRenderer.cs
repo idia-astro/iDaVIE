@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using DataFeatures;
+using UnityEngine.XR;
 using Vectrosity;
 using Random = System.Random;
 
@@ -175,6 +176,8 @@ namespace VolumeData
             public static readonly int RegionOffset = Shader.PropertyToID("RegionOffset");
             public static readonly int MaskEntries = Shader.PropertyToID("MaskEntries");
             public static readonly int MaskVoxelSize = Shader.PropertyToID("MaskVoxelSize");
+            public static readonly int MaskVoxelOffsets = Shader.PropertyToID("MaskVoxelOffsets");
+            public static readonly int ModelMatrix = Shader.PropertyToID("ModelMatrix");
         }
 
         #endregion
@@ -423,7 +426,7 @@ namespace VolumeData
                         _maskMaterialInstance.SetVector(MaterialID.RegionOffset, new Vector4(regionMin.x, regionMin.y, regionMin.z, 0));
                         var regionDimensions = new Vector4(_maskDataSet.RegionCube.width, _maskDataSet.RegionCube.height, _maskDataSet.RegionCube.width, 0);
                         _maskMaterialInstance.SetVector(MaterialID.RegionDimensions, regionDimensions);
-                        var cubeDimensions = new Vector4(_maskDataSet.XDim, _maskDataSet.YDim, _maskDataSet.ZDim, 0);
+                        var cubeDimensions = new Vector4(_maskDataSet.XDim, _maskDataSet.YDim, _maskDataSet.ZDim, 1);
                         _maskMaterialInstance.SetVector(MaterialID.CubeDimensions, cubeDimensions);
                     }
                 }
@@ -519,6 +522,16 @@ namespace VolumeData
             {
                 _materialInstance.SetInt(MaterialID.MaskMode, MaskMode.GetHashCode());
                 _maskMaterialInstance.SetFloat(MaterialID.MaskVoxelSize, MaskVoxelSize);
+                
+                var offsets = new Vector4[4];
+                var modelMatrix = transform.localToWorldMatrix;
+                offsets[0] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new Vector3(-1.0f / _maskDataSet.XDim, -1.0f / _maskDataSet.YDim, -1.0f / _maskDataSet.ZDim));
+                offsets[1] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new Vector3(-1.0f / _maskDataSet.XDim, -1.0f / _maskDataSet.YDim, +1.0f / _maskDataSet.ZDim));
+                offsets[2] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new Vector3(-1.0f / _maskDataSet.XDim, +1.0f / _maskDataSet.YDim, -1.0f / _maskDataSet.ZDim));
+                offsets[3] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new Vector3(-1.0f / _maskDataSet.XDim, +1.0f / _maskDataSet.YDim, +1.0f / _maskDataSet.ZDim));
+                _maskMaterialInstance.SetVectorArray(MaterialID.MaskVoxelOffsets, offsets);
+                _maskMaterialInstance.SetMatrix(MaterialID.ModelMatrix, modelMatrix);
+                GL.GetGPUProjectionMatrix(Camera.main.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left), false);
             }
             else
             {
@@ -541,10 +554,9 @@ namespace VolumeData
         }
         void OnRenderObject()
         {
-            if (_maskDataSet != null && _maskDataSet.RegionMaskEntries != null)
+            if (_maskDataSet?.RegionMaskEntries != null)
             {
                 _maskMaterialInstance.SetPass(0);
-                _maskMaterialInstance.SetMatrix("ModelMatrix", transform.localToWorldMatrix);
                 Graphics.DrawProceduralNow(MeshTopology.Points, _maskDataSet.RegionMaskEntries.count);
             }
         }
