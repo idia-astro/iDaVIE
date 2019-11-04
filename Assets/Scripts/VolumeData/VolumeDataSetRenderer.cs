@@ -58,6 +58,7 @@ namespace VolumeData
         [Range(0, 1)] public float MaskVoxelSize = 1.0f;
         public Color MaskVoxelColor = new Color(0.5f, 0.5f, 0.5f, 0.2f);
         public short MaskPaintValue = 0;
+        public int MaskCursorSize = 1;
        
         // Foveated rendering controls
         [Header("Foveated Rendering Controls")]
@@ -589,15 +590,23 @@ namespace VolumeData
                 _previousPaintValue = value;
                 return _maskDataSet.PaintMaskVoxel(coordsRegionSpace, value);
             }
-            else
-            {
-                return true;
-            }
+            return true;
         }
 
         public bool PaintCursor()
         {
-            return PaintMask(CursorVoxel, MaskPaintValue);
+            var maskCursorLimit = (MaskCursorSize - 1) / 2;
+            for (int i = -maskCursorLimit; i <= maskCursorLimit; i++)
+            {
+                for (int j = -maskCursorLimit; j <= maskCursorLimit; j++)
+                {
+                    for (int k = -maskCursorLimit; k <= maskCursorLimit; k++)
+                    {
+                        PaintMask(new Vector3Int(CursorVoxel.x + i, CursorVoxel.y + j, CursorVoxel.z + k), MaskPaintValue);
+                    }
+                } 
+            }
+            return true;
         }
 
         public void FinishBrushStroke()

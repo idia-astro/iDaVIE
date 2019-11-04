@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Unity.Collections;
 using UnityEngine;
@@ -49,6 +50,7 @@ namespace VolumeData
         public ComputeBuffer AddedMaskBuffer { get; private set; }
         public int AddedMaskEntryCount { get; private set; }
         public BrushStrokeTransaction CurrentBrushStroke { get; private set; }
+        public List<BrushStrokeTransaction> BrushStrokeHistory { get; private set; }
         
         public string FileName { get; private set; }
         public long XDim { get; private set; }
@@ -73,7 +75,7 @@ namespace VolumeData
         private Texture2D _updateTexture;
         private byte[] _cachedBrush;
         private short[] _regionMaskVoxels;
-        private static int BrushStrokeLimit = 2500;
+        private static int BrushStrokeLimit = 25000;
         
         public IntPtr FitsData;
 
@@ -321,6 +323,7 @@ namespace VolumeData
                 
                 _addedRegionMaskEntries.Clear();
                 AddedMaskEntryCount = 0;
+                BrushStrokeHistory = new List<BrushStrokeTransaction>();
             }
 
             DataAnalysis.FreeMemory(regionData);
@@ -521,15 +524,49 @@ namespace VolumeData
         public void FlushBrushStroke()
         {
             Debug.Log($"Brush stroke: New Value: {CurrentBrushStroke.NewValue}; {CurrentBrushStroke.Voxels.Count} voxels");
+            ConsolidateMaskEntries();
+            BrushStrokeHistory.Add(CurrentBrushStroke);
             CurrentBrushStroke = new BrushStrokeTransaction(CurrentBrushStroke.NewValue);
+        }
+
+        private void ConsolidateMaskEntries()
+        {
+            if (_existingRegionMaskEntries == null || _existingRegionMaskEntries.Count == 0)
+            {
+                _existingRegionMaskEntries = new List<VoxelEntry>();
+            }
+            else
+            {
+                _existingRegionMaskEntries = _existingRegionMaskEntries.Where(entry => entry.Value != 0).ToList();
+            }
+
+            if (_addedRegionMaskEntries.Count > 0)
+            {
+                _existingRegionMaskEntries.AddRange(_addedRegionMaskEntries);
+                _existingRegionMaskEntries.Sort(VoxelEntry.IndexComparer);
+            }
             
-            // TODO: consolidate entries
+            ExistingMaskBuffer?.Release();
+            if (_existingRegionMaskEntries.Count > 0)
+            {
+                ExistingMaskBuffer = new ComputeBuffer(_existingRegionMaskEntries.Count, Marshal.SizeOf(typeof(VoxelEntry)));
+                ExistingMaskBuffer.SetData(_existingRegionMaskEntries);
+            }
+            else
+            {
+                ExistingMaskBuffer = null;
+            }
+            
+            _addedRegionMaskEntries = new List<VoxelEntry>();
+            AddedMaskEntryCount = 0;
+            
         }
 
         public void CleanUp()
         {
             FitsReader.FreeMemory(FitsData);
             ExistingMaskBuffer?.Release();
+            AddedMaskBuffer?.Release();
         }
     }
 }
