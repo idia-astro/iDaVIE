@@ -73,6 +73,7 @@ namespace VolumeData
         private Texture2D _updateTexture;
         private byte[] _cachedBrush;
         private short[] _regionMaskVoxels;
+        private static int BrushStrokeLimit = 2500;
         
         public IntPtr FitsData;
 
@@ -310,7 +311,7 @@ namespace VolumeData
 
                 if (AddedMaskBuffer == null)
                 {
-                    AddedMaskBuffer = new ComputeBuffer(10000, Marshal.SizeOf(typeof(VoxelEntry)));
+                    AddedMaskBuffer = new ComputeBuffer(BrushStrokeLimit, Marshal.SizeOf(typeof(VoxelEntry)));
                 }
 
                 if (_addedRegionMaskEntries == null)
@@ -503,6 +504,12 @@ namespace VolumeData
                 else
                 {
                     _addedRegionMaskEntries.Add(newEntry);
+                    var lastIndex = _addedRegionMaskEntries.Count - 1;
+                    if (lastIndex <= AddedMaskBuffer.count)
+                    {
+                        AddedMaskBuffer.SetData(_addedRegionMaskEntries, lastIndex, lastIndex, 1);
+                        AddedMaskEntryCount = _addedRegionMaskEntries.Count;
+                    }
                 }
             }
             
@@ -515,6 +522,8 @@ namespace VolumeData
         {
             Debug.Log($"Brush stroke: New Value: {CurrentBrushStroke.NewValue}; {CurrentBrushStroke.Voxels.Count} voxels");
             CurrentBrushStroke = new BrushStrokeTransaction(CurrentBrushStroke.NewValue);
+            
+            // TODO: consolidate entries
         }
 
         public void CleanUp()

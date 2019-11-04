@@ -554,8 +554,15 @@ namespace VolumeData
         {
             if (DisplayMask && _maskDataSet?.ExistingMaskBuffer != null)
             {
+                _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, _maskDataSet.ExistingMaskBuffer);
                 _maskMaterialInstance.SetPass(0);
                 Graphics.DrawProceduralNow(MeshTopology.Points, _maskDataSet.ExistingMaskBuffer.count);
+            }
+            if (DisplayMask && _maskDataSet?.AddedMaskBuffer != null && _maskDataSet?.AddedMaskEntryCount > 0)
+            {
+                _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, _maskDataSet.AddedMaskBuffer);
+                _maskMaterialInstance.SetPass(0);
+                Graphics.DrawProceduralNow(MeshTopology.Points, _maskDataSet.AddedMaskEntryCount);
             }
         }
         
