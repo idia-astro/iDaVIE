@@ -47,16 +47,17 @@ namespace VolumeData
         // Step control
         [Range(16, 512)]
         public int MaxSteps = 192;
-
         public long MaximumCubeSizeInMB = 250;
-        public MaskMode MaskMode = MaskMode.Disabled;
         public ProjectionMode ProjectionMode = ProjectionMode.MaximumIntensityProjection;
         public TextureFilterEnum TextureFilter = TextureFilterEnum.Point;
-        
-        [Range(0, 1)] public float MaskVoxelSize = 1.0f;
-        // Jitter factor
         [Range(0, 1)] public float Jitter = 1.0f;
 
+        [Header("Mask Rendering Settings")] 
+        public bool DisplayMask = false;
+        public MaskMode MaskMode = MaskMode.Disabled;
+        [Range(0, 1)] public float MaskVoxelSize = 1.0f;
+        public Color MaskVoxelColor = Color.gray;
+       
         // Foveated rendering controls
         [Header("Foveated Rendering Controls")]
         public bool FoveatedRendering = false;
@@ -127,11 +128,6 @@ namespace VolumeData
         private VolumeDataSet _maskDataSet = null;
         private VolumeInputController _volumeInputController;
 
-        // Mask updating
-        private Texture2D _updateTexture;
-        private byte[] _cachedBrush;
-        private readonly Random _rnd = new Random();
-
         #region Material Property IDs
 
         private struct MaterialID
@@ -177,6 +173,7 @@ namespace VolumeData
             public static readonly int MaskEntries = Shader.PropertyToID("MaskEntries");
             public static readonly int MaskVoxelSize = Shader.PropertyToID("MaskVoxelSize");
             public static readonly int MaskVoxelOffsets = Shader.PropertyToID("MaskVoxelOffsets");
+            public static readonly int MaskVoxelColor = Shader.PropertyToID("MaskVoxelColor");
             public static readonly int ModelMatrix = Shader.PropertyToID("ModelMatrix");
         }
 
@@ -289,10 +286,6 @@ namespace VolumeData
             }
 
             Shader.WarmupAllShaders();
-
-            _updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
-            // single pixel brush: 16-bits = 2 bytes
-            _cachedBrush = new byte[2];
         }
 
         public void ShiftColorMap(int delta)
@@ -419,9 +412,9 @@ namespace VolumeData
                 if (_maskDataSet != null)
                 {
                     _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
-                    if (_maskDataSet.RegionMaskEntries != null)
+                    if (_maskDataSet.ExistingMaskBuffer != null)
                     {
-                        _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, _maskDataSet.RegionMaskEntries);
+                        _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, _maskDataSet.ExistingMaskBuffer);
                         var regionMin = Vector3.Min(RegionStartVoxel, RegionEndVoxel);
                         _maskMaterialInstance.SetVector(MaterialID.RegionOffset, new Vector4(regionMin.x, regionMin.y, regionMin.z, 0));
                         var regionDimensions = new Vector4(_maskDataSet.RegionCube.width, _maskDataSet.RegionCube.height, _maskDataSet.RegionCube.width, 0);
@@ -522,7 +515,9 @@ namespace VolumeData
             {
                 _materialInstance.SetInt(MaterialID.MaskMode, MaskMode.GetHashCode());
                 _maskMaterialInstance.SetFloat(MaterialID.MaskVoxelSize, MaskVoxelSize);
+                _maskMaterialInstance.SetColor(MaterialID.MaskVoxelColor, MaskVoxelColor);
                 
+                // Calculate and update voxel corner offsets
                 var offsets = new Vector4[4];
                 var modelMatrix = transform.localToWorldMatrix;
                 offsets[0] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new Vector3(-1.0f / _maskDataSet.XDim, -1.0f / _maskDataSet.YDim, -1.0f / _maskDataSet.ZDim));
@@ -531,7 +526,7 @@ namespace VolumeData
                 offsets[3] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new Vector3(-1.0f / _maskDataSet.XDim, +1.0f / _maskDataSet.YDim, +1.0f / _maskDataSet.ZDim));
                 _maskMaterialInstance.SetVectorArray(MaterialID.MaskVoxelOffsets, offsets);
                 _maskMaterialInstance.SetMatrix(MaterialID.ModelMatrix, modelMatrix);
-                GL.GetGPUProjectionMatrix(Camera.main.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left), false);
+                
             }
             else
             {
@@ -554,10 +549,10 @@ namespace VolumeData
         }
         void OnRenderObject()
         {
-            if (_maskDataSet?.RegionMaskEntries != null)
+            if (DisplayMask && _maskDataSet?.ExistingMaskBuffer != null)
             {
                 _maskMaterialInstance.SetPass(0);
-                Graphics.DrawProceduralNow(MeshTopology.Points, _maskDataSet.RegionMaskEntries.count);
+                Graphics.DrawProceduralNow(MeshTopology.Points, _maskDataSet.ExistingMaskBuffer.count);
             }
         }
         
@@ -578,18 +573,7 @@ namespace VolumeData
 
             Vector3Int offsetRegionSpace = Vector3Int.FloorToInt(new Vector3((0.5f + SliceMin.x) * _maskDataSet.XDim, (0.5f + SliceMin.y) * _maskDataSet.YDim, (0.5f + SliceMin.z) * _maskDataSet.ZDim));
             Vector3Int coordsRegionSpace = position - Vector3Int.one - offsetRegionSpace;
-            if (coordsRegionSpace.x < 0 || coordsRegionSpace.x >= _maskDataSet.RegionCube.width || coordsRegionSpace.y < 0 || coordsRegionSpace.y >= _maskDataSet.RegionCube.height || coordsRegionSpace.z < 0 ||
-                coordsRegionSpace.z >= _maskDataSet.RegionCube.depth)
-            {
-                return false;
-            }
-
-            // convert from int to byte array
-            _cachedBrush = BitConverter.GetBytes(value);
-            _updateTexture.LoadRawTextureData(_cachedBrush);
-            _updateTexture.Apply();
-            Graphics.CopyTexture(_updateTexture, 0, 0, 0, 0, 1, 1, _maskDataSet.RegionCube, coordsRegionSpace.z, 0, coordsRegionSpace.x, coordsRegionSpace.y);
-            return true;
+            return _maskDataSet.PaintMaskVoxel(coordsRegionSpace, value);
         }
 
         public bool PaintCursor(ushort value)

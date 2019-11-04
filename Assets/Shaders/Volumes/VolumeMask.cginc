@@ -17,7 +17,6 @@ struct VertexShaderOutput
 struct FragmentShaderInput
 {
     float4 position : SV_POSITION;
-    float4 color : COLOR;
 };
 
 uniform float4 CubeDimensions;
@@ -26,6 +25,7 @@ uniform float4 RegionOffset;
 uniform float4x4 ModelMatrix;
 uniform float MaskVoxelSize;
 uniform float4 MaskVoxelOffsets[4];
+uniform float4 MaskVoxelColor;
 
 // Vertex shader
 VertexShaderOutput vsMask(uint id : SV_VertexID)
@@ -69,7 +69,6 @@ void gsMask(point VertexShaderOutput input[1], inout LineStream<FragmentShaderIn
      }
 
     FragmentShaderInput output;
-    output.color = float4(0, 1, 0, 1);  
     
     float4 corners[] = {
         input[0].position  + input[0].offsets[0],
@@ -119,5 +118,5 @@ void gsMask(point VertexShaderOutput input[1], inout LineStream<FragmentShaderIn
 
 float4 fsMask(FragmentShaderInput input) : COLOR
 {
-    return input.color;
+    return MaskVoxelColor;
 }

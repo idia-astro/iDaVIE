@@ -27,7 +27,10 @@ namespace VolumeData
     {
         public Texture3D DataCube { get; private set; }
         public Texture3D RegionCube { get; private set; }
-        public ComputeBuffer RegionMaskEntries { get; private set; }
+        public ComputeBuffer ExistingMaskBuffer { get; private set; }
+        public ComputeBuffer AddedMaskBuffer { get; private set; }
+        public int AddedMaskEntryCount { get; private set; }
+        
         public string FileName { get; private set; }
         public long XDim { get; private set; }
         public long YDim { get; private set; }
@@ -46,7 +49,11 @@ namespace VolumeData
         private IDictionary<string, string> _headerDictionary;
         private double _xRef, _yRef, _zRef, _xRefPix, _yRefPix, _zRefPix, _xDelt, _yDelt, _zDelt, _rot;
         private string _xCoord, _yCoord, _zCoord, _wcsProj;
-
+        private List<VoxelEntry> _existingRegionMaskEntries;
+        private List<VoxelEntry> _addedRegionMaskEntries;
+        private Texture2D _updateTexture;
+        private byte[] _cachedBrush;
+        
         public IntPtr FitsData;
 
         public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask)
@@ -93,7 +100,7 @@ namespace VolumeData
                     FitsReader.FitsCloseFile(fptr, out status);
                 }
             }
-                else
+            else
             {
                 if (FitsReader.FitsReadImageFloat(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
                 {
@@ -110,6 +117,11 @@ namespace VolumeData
             volumeDataSet.XDimDecimal = cubeSize[0].ToString().Length;
             volumeDataSet.YDimDecimal = cubeSize[1].ToString().Length;
             volumeDataSet.ZDimDecimal = cubeSize[2].ToString().Length;
+            
+            volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
+            // single pixel brush: 16-bits = 2 bytes
+            volumeDataSet._cachedBrush = new byte[2];
+            
             return volumeDataSet;
         }
 
@@ -255,27 +267,40 @@ namespace VolumeData
                 Marshal.Copy(regionData, arr, 0, numVoxels);
 
                 //List<int> voxelEntries = new List<int>();
-                List<VoxelEntry> voxelEntries = new List<VoxelEntry>();
+                _existingRegionMaskEntries = new List<VoxelEntry>();
                 for (int i = 0; i < numVoxels; i++)
                 {
                     var voxelVal = arr[i];
                     if (voxelVal != 0)
                     {
-                        voxelEntries.Add(new VoxelEntry() {Index = i, Value = voxelVal});
+                        _existingRegionMaskEntries.Add(new VoxelEntry() {Index = i, Value = voxelVal});
                     }
                 }
-                Debug.Log($"Found {voxelEntries.Count} non-empty mask voxels in region");
+                Debug.Log($"Found {_existingRegionMaskEntries.Count} non-empty mask voxels in region");
                 
-                RegionMaskEntries?.Release();
-                if (voxelEntries.Count > 0)
+                ExistingMaskBuffer?.Release();
+                if (_existingRegionMaskEntries.Count > 0)
                 {
-                    RegionMaskEntries = new ComputeBuffer(voxelEntries.Count, sizeof(int) * 2);
-                    RegionMaskEntries.SetData(voxelEntries);
+                    ExistingMaskBuffer = new ComputeBuffer(_existingRegionMaskEntries.Count, Marshal.SizeOf(typeof(VoxelEntry)));
+                    ExistingMaskBuffer.SetData(_existingRegionMaskEntries);
                 }
                 else
                 {
-                    RegionMaskEntries = null;
+                    ExistingMaskBuffer = null;
                 }
+
+                if (AddedMaskBuffer == null)
+                {
+                    AddedMaskBuffer = new ComputeBuffer(10000, Marshal.SizeOf(typeof(VoxelEntry)));
+                }
+
+                if (_addedRegionMaskEntries == null)
+                {
+                    _addedRegionMaskEntries = new List<VoxelEntry>();
+                }
+                
+                _addedRegionMaskEntries.Clear();
+                AddedMaskEntryCount = 0;
             }
 
             DataAnalysis.FreeMemory(regionData);
@@ -416,10 +441,26 @@ namespace VolumeData
             _wcsProj = xProj;
         }
 
+        public bool PaintMaskVoxel(Vector3Int coordsRegionSpace, ushort value)
+        {
+            if (coordsRegionSpace.x < 0 || coordsRegionSpace.x >= RegionCube.width || coordsRegionSpace.y < 0 || coordsRegionSpace.y >= RegionCube.height || coordsRegionSpace.z < 0 ||
+                coordsRegionSpace.z >= RegionCube.depth)
+            {
+                return false;
+            }
+
+            // convert from int to byte array
+            _cachedBrush = BitConverter.GetBytes(value);
+            _updateTexture.LoadRawTextureData(_cachedBrush);
+            _updateTexture.Apply();
+            Graphics.CopyTexture(_updateTexture, 0, 0, 0, 0, 1, 1, RegionCube, coordsRegionSpace.z, 0, coordsRegionSpace.x, coordsRegionSpace.y);
+            return true;
+        }
+
         public void CleanUp()
         {
             FitsReader.FreeMemory(FitsData);
-            RegionMaskEntries?.Release();
+            ExistingMaskBuffer?.Release();
         }
     }
 }

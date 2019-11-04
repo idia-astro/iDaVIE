@@ -5,9 +5,12 @@
 	}
 
 	SubShader
-	{		
+	{
+		Tags { "Queue" = "Transparent-99" "RenderType" = "Transparent" }
 		Pass
-		{		  
+		{
+            ZWrite Off
+            Blend SrcAlpha OneMinusSrcAlpha
 			CGPROGRAM
 			#pragma target 5.0
 
