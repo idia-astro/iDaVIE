@@ -1,7 +1,7 @@
 struct VoxelEntry 
 {
     int index;
-    int value;    
+    int value;
 };
 
 Buffer<VoxelEntry> MaskEntries;
@@ -33,13 +33,15 @@ VertexShaderOutput vsMask(uint id : SV_VertexID)
     VertexShaderOutput output = (VertexShaderOutput) 0;            
     VoxelEntry entry = MaskEntries[id];
     
-    if (!entry.value)
+    int value = entry.value % 32768;
+    int activeEdges = entry.value / 32768;
+        
+    if (!activeEdges || !value)
     {
         return output;
     }
     
     output.value = entry.value;
-    
     float i = entry.index;
     float3 voxelIndices;
     
@@ -63,10 +65,13 @@ VertexShaderOutput vsMask(uint id : SV_VertexID)
 // Geometry shader is limited to a fixed output.
 [maxvertexcount(16)]
 void gsMask(point VertexShaderOutput input[1], inout LineStream<FragmentShaderInput> outputStream) {
-     if (!input[0].value) 
-     {
+    int value = input[0].value % 32768;
+    int activeEdges = input[0].value / 32768;
+    
+    if (!value) 
+    {
         return;
-     }
+    }
 
     FragmentShaderInput output;
     
@@ -80,8 +85,8 @@ void gsMask(point VertexShaderOutput input[1], inout LineStream<FragmentShaderIn
         input[0].position  - input[0].offsets[1],
         input[0].position  - input[0].offsets[0],
     };
-    
-    // generate cube edges line strip
+       
+    // generate cube edges line strip    
     output.position = corners[0];
     outputStream.Append(output);
     output.position = corners[1];    

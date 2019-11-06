@@ -295,7 +295,11 @@ namespace VolumeData
                     var voxelVal = _regionMaskVoxels[i];
                     if (voxelVal != 0)
                     {
-                        _existingRegionMaskEntries.Add(new VoxelEntry(i, voxelVal));
+                        // check if voxel is surrounded by other masked voxels
+                        bool surrounded = IsVoxelSurrounded(i, cubeSize, _regionMaskVoxels);
+                        // encode the active edges into the value. For now, edges are all on or all off
+                        int compoundValue = surrounded ? (int) voxelVal : 64 * 32768 + (int) voxelVal;
+                        _existingRegionMaskEntries.Add(new VoxelEntry(i, compoundValue));
                     }
                 }
                 Debug.Log($"Found {_existingRegionMaskEntries.Count} non-empty mask voxels in region");
@@ -331,6 +335,46 @@ namespace VolumeData
             Debug.Log($"Cropped into {cubeSize.x} x {cubeSize.y} x {cubeSize.z} region ({cubeSize.x * cubeSize.y * cubeSize.z * 4e-6} MB) in {sw.ElapsedMilliseconds} ms");
         }
 
+        private static bool IsVoxelSurrounded(int i, Vector3Int cubeSize, short[] voxels)
+        {
+            Vector3Int voxelIndices = Vector3Int.zero;
+            voxelIndices.x = i % cubeSize.x;
+            int j = (i - voxelIndices.x) / cubeSize.x;
+            voxelIndices.y = j % cubeSize.y;
+            voxelIndices.z = (j - voxelIndices.y) / cubeSize.y;
+
+            // Voxels on the edge of the cube are never surrounded
+            if (voxelIndices.x <= 0 || voxelIndices.y <= 0 || voxelIndices.z <= 0)
+            {
+                return false;
+            }
+
+            if (voxelIndices.x >= cubeSize.x - 1 || voxelIndices.y >= cubeSize.y - 1 || voxelIndices.z >= cubeSize.z - 1)
+            {
+                return false;
+            }
+
+            // check x neighbours
+            if (voxels[i - 1] == 0 || voxels[i + 1] == 0)
+            {
+                return false;
+            }
+
+            // check y neighbours
+            if (voxels[i - cubeSize.x] == 0 || voxels[i + cubeSize.x] == 0)
+            {
+                return false;
+            }
+
+            // check z neighbours
+            if (voxels[i - cubeSize.y * cubeSize.x] == 0 || voxels[i + cubeSize.y * cubeSize.x] == 0)
+            {
+                return false;
+            }
+
+            return true;
+        }
+        
         public float GetDataValue(int x, int y, int z)
         {
             if (x < 1 || x > XDim || y < 1 || y > YDim || z < 1 || z > ZDim)
@@ -472,7 +516,11 @@ namespace VolumeData
                 return false;
             }
             
-            VoxelEntry newEntry = new VoxelEntry(coordsRegionSpace.x + coordsRegionSpace.y * RegionCube.width + coordsRegionSpace.z * (RegionCube.width * RegionCube.height) ,value);
+            // encode the active edges into the value. For now, edges are all on or all off
+            // TODO: recalculate active edges when adding or removing mask voxels
+            bool surrounded = false;
+            int compoundValue = surrounded ? (int) value : 64 * 32768 + (int) value;
+            VoxelEntry newEntry = new VoxelEntry(coordsRegionSpace.x + coordsRegionSpace.y * RegionCube.width + coordsRegionSpace.z * (RegionCube.width * RegionCube.height), compoundValue);
             var currentValue = _regionMaskVoxels[newEntry.Index];
 
             // If the voxel already has the correct value, exit

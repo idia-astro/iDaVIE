@@ -611,7 +611,7 @@ namespace VolumeData
 
         public void FinishBrushStroke()
         {
-            _maskDataSet.FlushBrushStroke();
+            _maskDataSet?.FlushBrushStroke();
         }
 
         public Vector3 GetFitsCoords(double X, double Y, double Z)
