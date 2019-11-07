@@ -295,10 +295,8 @@ namespace VolumeData
                     var voxelVal = _regionMaskVoxels[i];
                     if (voxelVal != 0)
                     {
-                        // check if voxel is surrounded by other masked voxels
-                        bool surrounded = IsVoxelSurrounded(i, cubeSize, _regionMaskVoxels);
-                        // encode the active edges into the value. For now, edges are all on or all off
-                        int compoundValue = surrounded ? (int) voxelVal : 64 * 32768 + (int) voxelVal;
+                        // check if voxel is surrounded by other masked voxels and encode the active edges into the value
+                        int compoundValue =  VoxelActiveFaces(i, cubeSize, _regionMaskVoxels) * 32768 + (int) voxelVal;
                         _existingRegionMaskEntries.Add(new VoxelEntry(i, compoundValue));
                     }
                 }
@@ -335,7 +333,7 @@ namespace VolumeData
             Debug.Log($"Cropped into {cubeSize.x} x {cubeSize.y} x {cubeSize.z} region ({cubeSize.x * cubeSize.y * cubeSize.z * 4e-6} MB) in {sw.ElapsedMilliseconds} ms");
         }
 
-        private static bool IsVoxelSurrounded(int i, Vector3Int cubeSize, short[] voxels)
+        private static int VoxelActiveFaces(int i, Vector3Int cubeSize, short[] voxels)
         {
             Vector3Int voxelIndices = Vector3Int.zero;
             voxelIndices.x = i % cubeSize.x;
@@ -343,36 +341,45 @@ namespace VolumeData
             voxelIndices.y = j % cubeSize.y;
             voxelIndices.z = (j - voxelIndices.y) / cubeSize.y;
 
-            // Voxels on the edge of the cube are never surrounded
-            if (voxelIndices.x <= 0 || voxelIndices.y <= 0 || voxelIndices.z <= 0)
+            int activeFaces = 0;
+            
+            // -x face
+            if (voxelIndices.x <= 0 || voxels[i - 1] == 0)
             {
-                return false;
+                activeFaces += 1;
             }
 
-            if (voxelIndices.x >= cubeSize.x - 1 || voxelIndices.y >= cubeSize.y - 1 || voxelIndices.z >= cubeSize.z - 1)
+            // +x face
+            if (voxelIndices.x >= cubeSize.x - 1 || voxels[i + 1] == 0)
             {
-                return false;
+                activeFaces += 2;
+            }
+            
+            // -y face
+            if (voxelIndices.y <= 0 || voxels[i - cubeSize.x] == 0)
+            {
+                activeFaces += 4;
             }
 
-            // check x neighbours
-            if (voxels[i - 1] == 0 || voxels[i + 1] == 0)
+            // +y face
+            if (voxelIndices.y >= cubeSize.y - 1 || voxels[i + cubeSize.x] == 0)
             {
-                return false;
+                activeFaces += 8;
+            }
+            
+            // -z face
+            if (voxelIndices.z <= 0 || voxels[i - cubeSize.y * cubeSize.x] == 0)
+            {
+                activeFaces += 16;
             }
 
-            // check y neighbours
-            if (voxels[i - cubeSize.x] == 0 || voxels[i + cubeSize.x] == 0)
+            // +z face
+            if (voxelIndices.z >= cubeSize.z - 1 || voxels[i + cubeSize.y * cubeSize.x] == 0)
             {
-                return false;
+                activeFaces += 32;
             }
-
-            // check z neighbours
-            if (voxels[i - cubeSize.y * cubeSize.x] == 0 || voxels[i + cubeSize.y * cubeSize.x] == 0)
-            {
-                return false;
-            }
-
-            return true;
+            
+            return activeFaces;
         }
         
         public float GetDataValue(int x, int y, int z)
@@ -518,8 +525,7 @@ namespace VolumeData
             
             // encode the active edges into the value. For now, edges are all on or all off
             // TODO: recalculate active edges when adding or removing mask voxels
-            bool surrounded = false;
-            int compoundValue = surrounded ? (int) value : 64 * 32768 + (int) value;
+            int compoundValue =  63 * 32768 + (int) value;
             VoxelEntry newEntry = new VoxelEntry(coordsRegionSpace.x + coordsRegionSpace.y * RegionCube.width + coordsRegionSpace.z * (RegionCube.width * RegionCube.height), compoundValue);
             var currentValue = _regionMaskVoxels[newEntry.Index];
 

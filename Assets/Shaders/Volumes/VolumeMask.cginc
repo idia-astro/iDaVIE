@@ -1,3 +1,10 @@
+#define X_FACE_FLAG 1
+#define X_FACE_FLAG_NEG 2
+#define Y_FACE_FLAG 4
+#define Y_FACE_FLAG_NEG 8
+#define Z_FACE_FLAG 16
+#define Z_FACE_FLAG_NEG 32
+
 struct VoxelEntry 
 {
     int index;
@@ -63,7 +70,7 @@ VertexShaderOutput vsMask(uint id : SV_VertexID)
 }
 
 // Geometry shader is limited to a fixed output.
-[maxvertexcount(16)]
+[maxvertexcount(30)]
 void gsMask(point VertexShaderOutput input[1], inout LineStream<FragmentShaderInput> outputStream) {
     int value = input[0].value % 32768;
     int activeEdges = input[0].value / 32768;
@@ -76,49 +83,110 @@ void gsMask(point VertexShaderOutput input[1], inout LineStream<FragmentShaderIn
     FragmentShaderInput output;
     
     float4 corners[] = {
-        input[0].position  + input[0].offsets[0],
-        input[0].position  + input[0].offsets[1],
-        input[0].position  + input[0].offsets[2],
-        input[0].position  + input[0].offsets[3],
-        input[0].position  - input[0].offsets[3],
-        input[0].position  - input[0].offsets[2],
-        input[0].position  - input[0].offsets[1],
-        input[0].position  - input[0].offsets[0],
+        input[0].position + input[0].offsets[0],
+        input[0].position + input[0].offsets[1],
+        input[0].position + input[0].offsets[2],
+        input[0].position + input[0].offsets[3],
+        input[0].position - input[0].offsets[3],
+        input[0].position - input[0].offsets[2],
+        input[0].position - input[0].offsets[1],
+        input[0].position - input[0].offsets[0],
     };
-       
-    // generate cube edges line strip    
-    output.position = corners[0];
-    outputStream.Append(output);
-    output.position = corners[1];    
-    outputStream.Append(output);
-    output.position = corners[3];
-    outputStream.Append(output);
-    output.position = corners[1];
-    outputStream.Append(output);
-    output.position = corners[5];
-    outputStream.Append(output);
-    output.position = corners[4];
-    outputStream.Append(output);
-    output.position = corners[0];    
-    outputStream.Append(output);
-    output.position = corners[2];
-    outputStream.Append(output);
-    output.position = corners[3];
-    outputStream.Append(output);
-    output.position = corners[7];
-    outputStream.Append(output);
-    output.position = corners[5];
-    outputStream.Append(output);
-    output.position = corners[4];    
-    outputStream.Append(output);
-    output.position = corners[6];
-    outputStream.Append(output);
-    output.position = corners[2];
-    outputStream.Append(output);
-    output.position = corners[6];
-    outputStream.Append(output);
-    output.position = corners[7];
-    outputStream.Append(output);        
+   
+    // -x face
+    if (activeEdges & X_FACE_FLAG) 
+    {
+        output.position = corners[0];
+        outputStream.Append(output);
+        output.position = corners[1];    
+        outputStream.Append(output);
+        output.position = corners[3];
+        outputStream.Append(output);
+        output.position = corners[2];
+        outputStream.Append(output);
+        output.position = corners[0];
+        outputStream.Append(output);    
+        outputStream.RestartStrip();
+    }
+    // +x face
+    if (activeEdges & X_FACE_FLAG_NEG)
+    {
+        output.position = corners[4];
+        outputStream.Append(output);
+        output.position = corners[6];    
+        outputStream.Append(output);
+        output.position = corners[7];
+        outputStream.Append(output);
+        output.position = corners[5];
+        outputStream.Append(output);
+        output.position = corners[4];
+        outputStream.Append(output);
+        outputStream.RestartStrip();
+    }  
+ 
+    // -y face
+    if (activeEdges & Y_FACE_FLAG)
+    {
+        output.position = corners[0];
+        outputStream.Append(output);
+        output.position = corners[4];    
+        outputStream.Append(output);
+        output.position = corners[5];
+        outputStream.Append(output);
+        output.position = corners[1];
+        outputStream.Append(output);
+        output.position = corners[0];
+        outputStream.Append(output);    
+        outputStream.RestartStrip();
+    }
+    
+    // +y face
+    if (activeEdges & Y_FACE_FLAG_NEG)
+    {
+        output.position = corners[2];
+        outputStream.Append(output);
+        output.position = corners[3];    
+        outputStream.Append(output);
+        output.position = corners[7];
+        outputStream.Append(output);
+        output.position = corners[6];
+        outputStream.Append(output);
+        output.position = corners[2];
+        outputStream.Append(output);    
+        outputStream.RestartStrip();
+    }
+    
+    // -z face
+    if (activeEdges & Z_FACE_FLAG)
+    {
+        output.position = corners[0];
+        outputStream.Append(output);
+        output.position = corners[2];    
+        outputStream.Append(output);
+        output.position = corners[6];
+        outputStream.Append(output);
+        output.position = corners[4];
+        outputStream.Append(output);
+        output.position = corners[0];
+        outputStream.Append(output);    
+        outputStream.RestartStrip();
+    }
+    
+    // +z face
+    if (activeEdges & Z_FACE_FLAG_NEG)
+    {
+        output.position = corners[1];
+        outputStream.Append(output);
+        output.position = corners[5];    
+        outputStream.Append(output);
+        output.position = corners[7];
+        outputStream.Append(output);
+        output.position = corners[3];
+        outputStream.Append(output);
+        output.position = corners[1];
+        outputStream.Append(output);    
+        outputStream.RestartStrip();
+    }    
 }
 
 float4 fsMask(FragmentShaderInput input) : COLOR
