@@ -84,7 +84,6 @@ int RowGetColumn(Row* row_ptr, Column** col_ptr, int colIndex, int* status)
 	return result;
 }
 
-int ColumnGetField(Column* )
 
 int FieldGetName(Field* field_ptr, char*& name_ptr, int* status)
 {
