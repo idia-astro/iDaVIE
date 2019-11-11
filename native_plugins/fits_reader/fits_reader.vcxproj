@@ -142,8 +142,8 @@
       <SubSystem>Windows</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll $(SolutionDir)\..\Assets\Plugins\FitsReader\
-xcopy /y $(SolutionDir)$(Platform)\$(Configuration)\cfitsio.dll $(SolutionDir)\..\Assets\Plugins\FitsReader\</Command>
+      <Command>xcopy /y $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll $(SolutionDir)\..\Assets\Plugins\ 
+xcopy /y $(SolutionDir)$(Platform)\$(Configuration)\cfitsio.dll $(SolutionDir)\..\Assets\Plugins\</Command>
       <Message>Copy dll files over to Unity assets</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>

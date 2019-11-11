@@ -154,7 +154,7 @@
       </Message>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll $(SolutionDir)\..\Assets\Plugins\DataAnalysis\</Command>
+      <Command>xcopy /y $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll $(SolutionDir)\..\Assets\Plugins\</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>copy dll file to Unity assets</Message>

@@ -101,7 +101,10 @@
       <EnableUAC>false</EnableUAC>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll $(SolutionDir)\..\Assets\Plugins\VOTableReader\</Command>
+      <Command>xcopy /y $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll $(SolutionDir)\..\Assets\Plugins\ 
+xcopy /y $(SolutionDir)$(Platform)\$(Configuration)\Xalan-C_1_11.dll $(SolutionDir)\..\Assets\Plugins\ 
+xcopy /y $(SolutionDir)$(Platform)\$(Configuration)\XalanMessages_1_11.dll $(SolutionDir)\..\Assets\Plugins\ 
+xcopy /y $(SolutionDir)$(Platform)\$(Configuration)\xerces-c_3_2.dll $(SolutionDir)\..\Assets\Plugins\ </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
