@@ -68,6 +68,7 @@ namespace VolumeData
 
         void Start()
         {
+            
             _dataSets = GetComponentsInChildren<VolumeDataSetRenderer>(true);            
             _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, ConfidenceLevel.Medium);
             _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
@@ -79,6 +80,7 @@ namespace VolumeData
                 Debug.Log("Editing Hand not set. Please set in Editor.");
             }
             EditingHand.uiInteractAction.AddOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
+            
         }
 
         private void OnUiInteractDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
@@ -193,6 +195,7 @@ namespace VolumeData
         // Update is called once per frame
         void Update()
         {
+            
             var firstActive = getFirstActiveDataSet();
             if (firstActive && _activeDataSet != firstActive)
             {
@@ -213,6 +216,7 @@ namespace VolumeData
                         break;
                 }
             }
+            
         }
 
         public void UpdateThreshold(bool editingMax)

@@ -41,7 +41,7 @@ public class QuickMenuController : MonoBehaviour
         var firstActive = getFirstActiveDataSet();
         if (firstActive && _activeDataSet != firstActive)
         {
-            Debug.Log("in foreach --- Update");
+            //Debug.Log("in foreach --- Update");
             _activeDataSet = firstActive;
         }
        
@@ -153,16 +153,21 @@ public class QuickMenuController : MonoBehaviour
 
     public void cropDataSet()
     {
+        Debug.Log("Inizio Crop "+ cropstatus);
 
         if (cropstatus == 1)
             cropstatus = -1;
         cropstatus++;
 
+        Debug.Log("dopo Crop " + cropstatus);
+
         this.gameObject.transform.Find("Image_dis").gameObject.SetActive(false);
         this.gameObject.transform.Find("Image_en").gameObject.SetActive(false);
 
+        Debug.Log("dopo disable  " );
         if (_activeDataSet)
         {
+            Debug.Log("dentro if  "+cropstatus);
             switch (cropstatus)
             {
                 case 0:
