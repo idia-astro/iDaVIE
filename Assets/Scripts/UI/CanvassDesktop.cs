@@ -17,11 +17,13 @@ public class CanvassDesktop : MonoBehaviour
     private bool showPopUp = false;
     private string textPopUp = "";
     private VolumeInputController _volumeInputController;
+    private VolumeSpeechController _volumeSpeechController;
 
     // Start is called before the first frame update
     void Start()
     {
         _volumeInputController = FindObjectOfType<VolumeInputController>();
+        _volumeSpeechController = FindObjectOfType<VolumeSpeechController>();
         checkCubesDataSet();
 
 
@@ -178,6 +180,8 @@ public class CanvassDesktop : MonoBehaviour
 
             _volumeInputController.gameObject.SetActive(false);
             _volumeInputController.gameObject.SetActive(true);
+
+            _volumeSpeechController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
 
             InformationTab();
         }
