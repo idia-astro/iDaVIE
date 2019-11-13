@@ -24,11 +24,17 @@ extern "C"
 
 	DllExport int VOTableGetMetaData(VTable*, TableMetaData**, int*);
 
+	DllExport int VOTableGetTableData(VTable*, TableData**, int*);
+
 	DllExport int VOTableGetName(VTable*, char*&, int*);
 
 	DllExport int MetaDataGetNumCols(TableMetaData*, int*, int*);
 
 	DllExport int MetaDataGetField(TableMetaData*, Field**, int, int*);
+
+	DllExport int TableDataGetRow(TableData*, Row**, int, int*);
+
+	DllExport int TableDataGetNumRows(TableData*, int*, int*);
 
 	DllExport int FieldGetName(Field*, char*&, int*);
 

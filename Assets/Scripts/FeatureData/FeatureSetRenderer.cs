@@ -31,7 +31,7 @@ namespace DataFeatures
             if (Path.GetExtension(fileName) == ".ascii")
                 _importer = FeatureSetImporter.CreateSetFromAscii(fileName, mappingFileName);
             else if (Path.GetExtension(fileName) == ".xml")
-                _importer = FeatureSetImporter.CreateSetFromVOTable(fileName);
+                _importer = FeatureSetImporter.CreateSetFromVOTable(fileName, mappingFileName);
             else
                 Debug.Log($"File extension not recognized for " + fileName);
             var volumeDataSetRenderer = GetComponentInParent<VolumeDataSetRenderer>();
