@@ -35,13 +35,13 @@ public class QuickMenuController : MonoBehaviour
 
         if (_dataSets != null)
         {
-            //Debug.Log("_dataSets size " + _dataSets.Length);
+           
         }
 
         var firstActive = getFirstActiveDataSet();
         if (firstActive && _activeDataSet != firstActive)
         {
-            //Debug.Log("in foreach --- Update");
+           // Debug.Log("in foreach --- Update");
             _activeDataSet = firstActive;
         }
        

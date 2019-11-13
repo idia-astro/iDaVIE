@@ -389,7 +389,7 @@ namespace VolumeData
             Debug.Log("Start Crop to region");
             if (_featureManager != null && _featureManager.SelectedFeature != null)
             {
-                Debug.Log("Dentro If");
+                
                 var cornerMin = _featureManager.SelectedFeature.CornerMin;
                 var cornerMax = _featureManager.SelectedFeature.CornerMax;
                 Vector3Int startVoxel = new Vector3Int(Convert.ToInt32(cornerMin.x), Convert.ToInt32(cornerMin.y), Convert.ToInt32(cornerMin.z));
