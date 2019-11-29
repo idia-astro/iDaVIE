@@ -21,6 +21,7 @@ namespace VolumeData
         public int XDimDecimal { get; private set; }
         public int YDimDecimal { get; private set; }
         public int ZDimDecimal { get; private set; }
+        private IDictionary<string, string> HeaderDictionary;
 
         public int VelDecimal { get; private set; }
 
@@ -44,7 +45,7 @@ namespace VolumeData
 
 
 
-        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask)
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, int index0=0, int index1 = 1, int index2 = 2)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
             volumeDataSet.IsMask = isMask;
@@ -80,7 +81,7 @@ namespace VolumeData
             volumeDataSet.cubeSize = new long[cubeDimensions];
             Marshal.Copy(dataPtr, volumeDataSet.cubeSize, 0, cubeDimensions);
             FitsReader.FreeMemory(dataPtr);
-            long numberDataPoints = volumeDataSet.cubeSize[0] * volumeDataSet.cubeSize[1] * volumeDataSet.cubeSize[2];
+            long numberDataPoints = volumeDataSet.cubeSize[index0] * volumeDataSet.cubeSize[index1] * volumeDataSet.cubeSize[index2];
             IntPtr fitsDataPtr;
             if (isMask)
             {
@@ -103,12 +104,14 @@ namespace VolumeData
 
 
             volumeDataSet.FitsData = fitsDataPtr;
-            volumeDataSet.XDim = volumeDataSet.cubeSize[0];
-            volumeDataSet.YDim = volumeDataSet.cubeSize[1];
-            volumeDataSet.ZDim = volumeDataSet.cubeSize[2];
-            volumeDataSet.XDimDecimal = volumeDataSet.cubeSize[0].ToString().Length;
-            volumeDataSet.YDimDecimal = volumeDataSet.cubeSize[1].ToString().Length;
-            volumeDataSet.ZDimDecimal = volumeDataSet.cubeSize[2].ToString().Length;
+            volumeDataSet.XDim = volumeDataSet.cubeSize[index0];
+            volumeDataSet.YDim = volumeDataSet.cubeSize[index1];
+            volumeDataSet.ZDim = volumeDataSet.cubeSize[index2];
+            volumeDataSet.XDimDecimal = volumeDataSet.cubeSize[index0].ToString().Length;
+            volumeDataSet.YDimDecimal = volumeDataSet.cubeSize[index1].ToString().Length;
+            volumeDataSet.YDimDecimal = volumeDataSet.cubeSize[index2].ToString().Length;
+            volumeDataSet.HeaderDictionary = volumeDataSet._headerDictionary;
+
             return volumeDataSet;
         }
 

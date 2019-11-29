@@ -13,12 +13,15 @@ public class CanvassDesktop : MonoBehaviour
 
     public GameObject cubeprefab;
     public GameObject informationPanelContent;
+    public GameObject mainCanvassDesktop;
+    public GameObject fileLoadCanvassDesktop;
+
 
     private bool showPopUp = false;
     private string textPopUp = "";
     private VolumeInputController _volumeInputController;
     private VolumeSpeechController _volumeSpeechController;
-
+    string []paths ;
     // Start is called before the first frame update
     void Start()
     {
@@ -73,7 +76,7 @@ public class CanvassDesktop : MonoBehaviour
             new ExtensionFilter("All Files", "*" ),
         };
 
-        var paths = StandaloneFileBrowser.OpenFilePanel("Open File", "", extensions, true);
+        paths = StandaloneFileBrowser.OpenFilePanel("Open File", "", extensions, true);
 
         if (paths != null)
         {
@@ -88,7 +91,18 @@ public class CanvassDesktop : MonoBehaviour
         //volumeDataSetManager.;
     }
 
-    
+    public void LoadCubeWithSpecifiedAxis()
+    {
+        int i0=fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis1").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().value;
+        int i1=fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis2").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().value;
+        int i2=fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis3").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().value;
+       
+        VolumeDataSet _dataSet = VolumeDataSet.LoadDataFromFitsFile(paths[0].ToString(), false,i0,i1,i2);
+        loadCube(_dataSet);
+        DismissFileLoad();
+    }
+
+
    private void ValidateCube(VolumeDataSet _dataSet)
    {
        bool loadable = false;
@@ -138,55 +152,104 @@ public class CanvassDesktop : MonoBehaviour
            showPopUp = true;
            textPopUp = "NAxis_ " + _dataSet.NAxis + "\n" + localMsg ;
        }
-        if (!loadable && list.Count > 3)
+        else if (!loadable && list.Count > 3)
         {
-            showPopUp = true;
-            textPopUp = "NEED TO SELECT SOME AXIS";
-        }
-        else
-       {
+            // showPopUp = true;
+            //textPopUp = "NEED TO SELECT SOME AXIS";
 
-            Vector3 oldpos = new Vector3(0, 0f, 0);
-            Quaternion oldrot = Quaternion.identity;
-            Vector3 oldscale = new Vector3(0, 0f, 0);
-            if (getFirstActiveDataSet() != null)
+            fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis1").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().options.Clear();
+            fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis2").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().options.Clear();
+            fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis3").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().options.Clear();
+            for (int i = 0; i < _dataSet.NAxis; i++)
             {
-
-
-                getFirstActiveDataSet()._voxelOutline.active = false;
-                getFirstActiveDataSet()._regionOutline.active = false;
-                getFirstActiveDataSet()._cubeOutline.active = false;
-
-                oldpos = getFirstActiveDataSet().transform.localPosition;
-                oldrot = getFirstActiveDataSet().transform.localRotation;
-                oldscale = getFirstActiveDataSet().transform.localScale;
-                getFirstActiveDataSet().transform.gameObject.SetActive(false);
-
+                if (_dataSet.cubeSize[i] > 1)
+                    fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis1").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().options.Add((new Dropdown.OptionData() { text = "NAxis" + (i + 1) }));
+                    fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis2").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().options.Add((new Dropdown.OptionData() { text = "NAxis" + (i + 1) }));
+                    fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis3").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().options.Add((new Dropdown.OptionData() { text = "NAxis" + (i + 1) }));
             }
 
-            GameObject newCube = Instantiate(cubeprefab, new Vector3(0, 0f, 0), Quaternion.identity);
-            newCube.transform.parent = volumeDataSetManager.transform;
-            newCube.transform.localPosition = oldpos;
-            newCube.transform.localRotation = oldrot;
-            newCube.transform.localScale = oldscale;
-            newCube.GetComponent<VolumeDataSetRenderer>().FileName = _dataSet.FileName.ToString();
-            newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _dataSet.FileName.ToString();
+            fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis1").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().RefreshShownValue();
+            fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis2").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().RefreshShownValue();
+            fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis3").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().RefreshShownValue();
 
-           
-            newCube.SetActive(true);
-            checkCubesDataSet();
+                /*
+                //fill the dropdown menu OptionData with all COM's Name in ports[]
+                foreach (string c in ports)
+                {
+                    Maindropdown.options.Add(new Dropdown.OptionData() { text = c });
+                }
+                */
+                string _header = "";
 
-            //Deactivate and reactivate VolumeInputController to update VolumeInputController's list of datasets
+            mainCanvassDesktop.SetActive(false);
+            fileLoadCanvassDesktop.SetActive(true);
+            //GameObject.Find("FileLoadCanvassDesktop").gameObject.SetActive(true);
 
-            _volumeInputController.gameObject.SetActive(false);
-            _volumeInputController.gameObject.SetActive(true);
+            IDictionary<string, string> _headerDictionary = _dataSet.GetHeaderDictionary();
+            //fileLoadCanvassDesktop.transform.Find("LeftPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("InformationPanel").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Header").GetComponent<Text>().text = "ciaon2";
+            foreach (KeyValuePair<string, string> entry in _headerDictionary)
+            {
+                _header +=entry.Key + "\t\t " + entry.Value+"\n";
 
-            _volumeSpeechController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
+            }
+            fileLoadCanvassDesktop.transform.Find("LeftPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("InformationPanel").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Header").GetComponent<Text>().text += _header;
 
-            InformationTab();
+        }
+        else
+        {
+
+            loadCube(_dataSet);
         }
       
    }
+
+    private void loadCube(VolumeDataSet _dataSet)
+    {
+        Vector3 oldpos = new Vector3(0, 0f, 0);
+        Quaternion oldrot = Quaternion.identity;
+        Vector3 oldscale = new Vector3(1, 1, 1);
+        if (getFirstActiveDataSet() != null)
+        {
+
+
+            getFirstActiveDataSet()._voxelOutline.active = false;
+            getFirstActiveDataSet()._regionOutline.active = false;
+            getFirstActiveDataSet()._cubeOutline.active = false;
+
+            oldpos = getFirstActiveDataSet().transform.localPosition;
+            oldrot = getFirstActiveDataSet().transform.localRotation;
+            oldscale = getFirstActiveDataSet().transform.localScale;
+            getFirstActiveDataSet().transform.gameObject.SetActive(false);
+
+        }
+
+        GameObject newCube = Instantiate(cubeprefab, new Vector3(0, 0f, 0), Quaternion.identity);
+        newCube.transform.parent = volumeDataSetManager.transform;
+        newCube.transform.localPosition = oldpos;
+        newCube.transform.localRotation = oldrot;
+        newCube.transform.localScale = oldscale;
+        newCube.GetComponent<VolumeDataSetRenderer>().FileName = _dataSet.FileName.ToString();
+        newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _dataSet.FileName.ToString();
+
+
+        newCube.SetActive(true);
+        checkCubesDataSet();
+
+        //Deactivate and reactivate VolumeInputController to update VolumeInputController's list of datasets
+
+        _volumeInputController.gameObject.SetActive(false);
+        _volumeInputController.gameObject.SetActive(true);
+
+        _volumeSpeechController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
+
+        InformationTab();
+    }
+
+    public void DismissFileLoad()
+    {
+        fileLoadCanvassDesktop.SetActive(false);
+        mainCanvassDesktop.SetActive(true);
+    }
 
    /*
     private void ValidateCube(GameObject newCube)
