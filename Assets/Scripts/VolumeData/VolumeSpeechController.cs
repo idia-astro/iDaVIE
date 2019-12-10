@@ -53,15 +53,15 @@ namespace VolumeData
             public static readonly string ProjectionAverage = "projection average";
             public static readonly string PaintMode = "paint mode";
             public static readonly string ExitPaintMode = "exit paint mode";
-            public static readonly string BrushAdditive = "brush additive";
-            public static readonly string BrushSubtractive = "brush subtractive";
+            public static readonly string BrushAdd = "brush add";
+            public static readonly string BrushErase = "brush erase";
             public static readonly string ShowMaskOutline = "show mask outline";
             public static readonly string HideMaskOutline = "hide mask outline";
             
             public static readonly string[] All = { EditThresholdMin, EditThresholdMax, SaveThreshold, ResetThreshold, ResetTransform, 
                 ColormapPlasma, ColormapRainbow, ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix,
                 NextDataSet, PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated,
-                ProjectionMaximum, ProjectionAverage, PaintMode, ExitPaintMode, BrushAdditive, BrushSubtractive, ShowMaskOutline, HideMaskOutline
+                ProjectionMaximum, ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline
             };
         }
    
@@ -202,11 +202,11 @@ namespace VolumeData
             {
                 DisablePaintMode();
             }
-            else if (args.text == Keywords.BrushAdditive)
+            else if (args.text == Keywords.BrushAdd)
             {
                 SetBrushAdditive();
             }
-            else if (args.text == Keywords.BrushSubtractive)
+            else if (args.text == Keywords.BrushErase)
             {
                 SetBrushSubtractive();
             }
