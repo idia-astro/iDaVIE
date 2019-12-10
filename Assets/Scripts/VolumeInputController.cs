@@ -29,6 +29,12 @@ public class VolumeInputController : MonoBehaviour
         Moving,
         Scaling
     }
+    
+    public enum InteractionState
+    {
+        SelectionMode,
+        PaintMode
+    }
 
     [Flags]
     private enum RotationAxes
@@ -48,6 +54,11 @@ public class VolumeInputController : MonoBehaviour
 
     [Range(0.1f, 5.0f)] public float VignetteFadeSpeed = 2.0f;
 
+    // Painting
+    public bool AdditiveBrush = true;
+    public int BrushSize = 1;
+    public short BrushValue = 1;
+    
     private Player _player;
     private VRHand[] _hands;
     private Transform[] _handTransforms;
@@ -61,6 +72,10 @@ public class VolumeInputController : MonoBehaviour
     private Vector3 _startGripCenter;
     private Vector3 _starGripForwardAxis;
     private LocomotionState _locomotionState;
+    
+    // Interactions
+    private InteractionState _interactionState;
+    private bool _isPainting;
     private bool _isSelecting;
     private bool _isQuickMenu;
 
@@ -85,9 +100,6 @@ public class VolumeInputController : MonoBehaviour
 
     // VR-family dependent values
     private VRFamily _vrFamily;
-    
-    // Temporary hack for painting
-    private bool _isPainting;
 
     // Used for moving the pointer transform to an acceptable position for each controller type
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsLeft = new Dictionary<VRFamily, Vector3>
@@ -166,6 +178,7 @@ public class VolumeInputController : MonoBehaviour
         _startGripCenter = Vector3.zero;
 
         _locomotionState = LocomotionState.Idle;
+        _interactionState = InteractionState.SelectionMode;
     }
 
     private void OnDisable()
@@ -183,17 +196,6 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnQuickMenuChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
-        // Handle painting brush stroke ending
-        if (_isPainting && !newState)
-        {
-            foreach (var dataSet in _volumeDataSets)
-            {
-                dataSet.FinishBrushStroke();
-            }
-        }
-        
-        _isPainting = newState;
-
         if (newState )
         {
             //  StartSelection(hand);
@@ -241,16 +243,30 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnPinchChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
-        var hand = fromSource == SteamVR_Input_Sources.LeftHand ? _hands[0] : _hands[1];
-        if (newState && _selectingHand == null)
+        if (_interactionState == InteractionState.PaintMode)
         {
-            StartSelection(hand);
-       
+            // Handle painting brush stroke ending
+            if (_isPainting && !newState)
+            {
+                foreach (var dataSet in _volumeDataSets)
+                {
+                    dataSet.FinishBrushStroke();
+                }
+            }
+            _isPainting = newState;
         }
-        else if (!newState && _selectingHand == hand)
+        else
         {
-            EndSelection();
+            var hand = fromSource == SteamVR_Input_Sources.LeftHand ? _hands[0] : _hands[1];
+            if (newState && _selectingHand == null)
+            {
+                StartSelection(hand);
 
+            }
+            else if (!newState && _selectingHand == hand)
+            {
+                EndSelection();
+            }
         }
     }
 
@@ -596,9 +612,9 @@ public class VolumeInputController : MonoBehaviour
             foreach (var dataSet in _volumeDataSets)
             {
                 dataSet.SetCursorPosition(_handTransforms[0].position);
-                if (_isPainting)
+                if (_interactionState == InteractionState.PaintMode && _isPainting)
                 {
-                    dataSet.PaintCursor();
+                    dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0, BrushSize);
                 }
                 if (dataSet.isActiveAndEnabled)
                 {
@@ -723,5 +739,14 @@ public class VolumeInputController : MonoBehaviour
     public void VibrateController(SteamVR_Input_Sources hand, float duration, float frequency, float amplitude)
     {
         _player.leftHand.hapticAction.Execute(0, duration, frequency, amplitude, hand);
+    }
+
+    public void SetInteractionState(InteractionState interactionState)
+    {
+        if (interactionState != _interactionState)
+        {
+            // TODO: handle state transitions properly
+            _interactionState = interactionState;
+        }
     }
 }

@@ -51,11 +51,17 @@ namespace VolumeData
             public static readonly string MaskIsolated = "mask isolate";
             public static readonly string ProjectionMaximum = "projection maximum";
             public static readonly string ProjectionAverage = "projection average";
+            public static readonly string PaintMode = "paint mode";
+            public static readonly string ExitPaintMode = "exit paint mode";
+            public static readonly string BrushAdditive = "brush additive";
+            public static readonly string BrushSubtractive = "brush subtractive";
+            public static readonly string ShowMaskOutline = "show mask outline";
+            public static readonly string HideMaskOutline = "hide mask outline";
             
             public static readonly string[] All = { EditThresholdMin, EditThresholdMax, SaveThreshold, ResetThreshold, ResetTransform, 
                 ColormapPlasma, ColormapRainbow, ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix,
                 NextDataSet, PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated,
-                ProjectionMaximum, ProjectionAverage
+                ProjectionMaximum, ProjectionAverage, PaintMode, ExitPaintMode, BrushAdditive, BrushSubtractive, ShowMaskOutline, HideMaskOutline
             };
         }
    
@@ -188,6 +194,30 @@ namespace VolumeData
             {
                 setProjection(ProjectionMode.AverageIntensityProjection);
             }
+            else if (args.text == Keywords.PaintMode)
+            {
+                EnablePaintMode();
+            }
+            else if (args.text == Keywords.ExitPaintMode)
+            {
+                DisablePaintMode();
+            }
+            else if (args.text == Keywords.BrushAdditive)
+            {
+                SetBrushAdditive();
+            }
+            else if (args.text == Keywords.BrushSubtractive)
+            {
+                SetBrushSubtractive();
+            }
+            else if (args.text == Keywords.ShowMaskOutline)
+            {
+                ShowMaskOutline();
+            }
+            else if (args.text == Keywords.HideMaskOutline)
+            {
+                HideMaskOutline();
+            }
         }
 
         // Update is called once per frame
@@ -319,6 +349,42 @@ namespace VolumeData
             if (_activeDataSet)
             {
                 _activeDataSet.ProjectionMode = mode;
+            }
+        }
+
+        public void EnablePaintMode()
+        {
+            _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.PaintMode);
+        }
+
+        public void DisablePaintMode()
+        {
+            _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.SelectionMode);
+        }
+
+        public void SetBrushAdditive()
+        {
+            _volumeInputController.AdditiveBrush = true;
+        }
+
+        public void SetBrushSubtractive()
+        {
+            _volumeInputController.AdditiveBrush = false;
+        }
+
+        public void ShowMaskOutline()
+        {
+            foreach (var dataSet in _dataSets)
+            {
+                dataSet.DisplayMask = true;
+            }
+        }
+
+        public void HideMaskOutline()
+        {
+            foreach (var dataSet in _dataSets)
+            {
+                dataSet.DisplayMask = false;
             }
         }
 

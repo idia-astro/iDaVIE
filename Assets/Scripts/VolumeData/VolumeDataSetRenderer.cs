@@ -57,9 +57,7 @@ namespace VolumeData
         public MaskMode MaskMode = MaskMode.Disabled;
         [Range(0, 1)] public float MaskVoxelSize = 1.0f;
         public Color MaskVoxelColor = new Color(0.5f, 0.5f, 0.5f, 0.2f);
-        public short MaskPaintValue = 0;
-        public int MaskCursorSize = 1;
-       
+
         // Foveated rendering controls
         [Header("Foveated Rendering Controls")]
         public bool FoveatedRendering = false;
@@ -593,16 +591,16 @@ namespace VolumeData
             return true;
         }
 
-        public bool PaintCursor()
+        public bool PaintCursor(short value, int cursorSize)
         {
-            var maskCursorLimit = (MaskCursorSize - 1) / 2;
+            var maskCursorLimit = (cursorSize - 1) / 2;
             for (int i = -maskCursorLimit; i <= maskCursorLimit; i++)
             {
                 for (int j = -maskCursorLimit; j <= maskCursorLimit; j++)
                 {
                     for (int k = -maskCursorLimit; k <= maskCursorLimit; k++)
                     {
-                        PaintMask(new Vector3Int(CursorVoxel.x + i, CursorVoxel.y + j, CursorVoxel.z + k), MaskPaintValue);
+                        PaintMask(new Vector3Int(CursorVoxel.x + i, CursorVoxel.y + j, CursorVoxel.z + k), value);
                     }
                 } 
             }
