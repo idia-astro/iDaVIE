@@ -611,10 +611,18 @@ public class VolumeInputController : MonoBehaviour
 
             foreach (var dataSet in _volumeDataSets)
             {
-                dataSet.SetCursorPosition(_handTransforms[0].position);
-                if (_interactionState == InteractionState.PaintMode && _isPainting)
+                
+                if (_interactionState == InteractionState.PaintMode)
                 {
-                    dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0, BrushSize);
+                    if (_isPainting)
+                    {
+                        dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0, BrushSize);
+                    }
+                    dataSet.SetCursorPosition(_handTransforms[0].position, BrushSize);
+                }
+                else
+                {
+                    dataSet.SetCursorPosition(_handTransforms[0].position, 1);
                 }
                 if (dataSet.isActiveAndEnabled)
                 {

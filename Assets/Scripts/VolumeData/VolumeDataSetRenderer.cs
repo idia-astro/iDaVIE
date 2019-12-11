@@ -225,43 +225,10 @@ namespace VolumeData
             InitialRotation = transform.rotation;
             InitialThresholdMax = ThresholdMax;
             InitialThresholdMin = ThresholdMin;
-
-            // Bounding box outline and axes
-            Vector3 axesIndicatorOrigin = -0.5f * Vector3.one;
-            Vector3 axesIndicatorOpposite = 0.5f * Vector3.one;
-            var cubeOutlinePoints = new List<Vector3>
-            {
-                // axis indicators
-                axesIndicatorOrigin, axesIndicatorOrigin + Vector3.right,
-                axesIndicatorOrigin, axesIndicatorOrigin + Vector3.up,
-                axesIndicatorOrigin, axesIndicatorOrigin + Vector3.forward,
-                // opposite axes
-                axesIndicatorOpposite, axesIndicatorOpposite - Vector3.right,
-                axesIndicatorOpposite, axesIndicatorOpposite - Vector3.up,
-                axesIndicatorOpposite, axesIndicatorOpposite - Vector3.forward,
-                // remaining vertices
-                axesIndicatorOrigin + Vector3.right, axesIndicatorOrigin + Vector3.right + Vector3.up,
-                axesIndicatorOrigin + Vector3.right, axesIndicatorOrigin + Vector3.right + Vector3.forward,
-                axesIndicatorOrigin + Vector3.up, axesIndicatorOrigin + Vector3.up + Vector3.right,
-                axesIndicatorOrigin + Vector3.up, axesIndicatorOrigin + Vector3.up + Vector3.forward,
-                axesIndicatorOrigin + Vector3.forward, axesIndicatorOrigin + Vector3.forward + Vector3.right,
-                axesIndicatorOrigin + Vector3.forward, axesIndicatorOrigin + Vector3.forward + Vector3.up
-            };
-
-            var defaultColor = Color.white;
-            var axesLineColors = new List<Color32>
-            {
-                new Color(1.0f, 0.4f, 0.4f),
-                new Color(0.4f, 1.0f, 0.4f),
-                new Color(0.4f, 0.4f, 1.0f),
-                defaultColor, defaultColor, defaultColor,
-                defaultColor, defaultColor,
-                defaultColor, defaultColor,
-                defaultColor, defaultColor
-            };
-
-            _cubeOutline = new VectorLine("CubeAxes", cubeOutlinePoints, 2.0f, LineType.Discrete);
-            _cubeOutline.SetColors(axesLineColors);
+            
+            _cubeOutline = new VectorLine("CubeAxes", new List<Vector3>(24), 2.0f);
+            _cubeOutline.MakeCube(Vector3.zero, 1, 1, 1);
+            SetCubeColors(_cubeOutline, Color.white, true);
             _cubeOutline.drawTransform = transform;
             _cubeOutline.Draw3DAuto();
 
@@ -298,7 +265,7 @@ namespace VolumeData
             ColorMap = ColorMapUtils.FromHashCode(newIndex);
         }
 
-        public void SetCursorPosition(Vector3 cursor)
+        public void SetCursorPosition(Vector3 cursor, float cursorSize)
         {
             Vector3 objectSpacePosition = transform.InverseTransformPoint(cursor);
             Bounds objectBounds = new Bounds(Vector3.zero, Vector3.one);
@@ -318,7 +285,7 @@ namespace VolumeData
                     else
                         CursorSource = 0;
                     Vector3 voxelCenterObjectSpace = new Vector3(voxelCenterCubeSpace.x / _dataSet.XDim - 0.5f, voxelCenterCubeSpace.y / _dataSet.YDim - 0.5f, voxelCenterCubeSpace.z / _dataSet.ZDim - 0.5f);
-                    _voxelOutline.MakeCube(voxelCenterObjectSpace, 1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
+                    _voxelOutline.MakeCube(voxelCenterObjectSpace, cursorSize / _dataSet.XDim, cursorSize / _dataSet.YDim, cursorSize / _dataSet.ZDim);
                 }
 
                 _voxelOutline.active = true;
@@ -373,6 +340,10 @@ namespace VolumeData
 
                     Vector3 regionCenterObjectSpace = new Vector3(regionCenter.x / _dataSet.XDim - 0.5f, regionCenter.y / _dataSet.YDim - 0.5f, regionCenter.z / _dataSet.ZDim - 0.5f);
                     _regionOutline.MakeCube(regionCenterObjectSpace, regionSize.x / _dataSet.XDim, regionSize.y / _dataSet.YDim, regionSize.z / _dataSet.ZDim);
+
+                    var regionSizeBytes = regionSize.x * regionSize.y * regionSize.z * sizeof(float);
+                    bool regionIsFullResolution = (regionSizeBytes <= MaximumCubeSizeInMB * 1e6);
+                    SetCubeColors(_regionOutline, regionIsFullResolution ? Color.white : Color.yellow, regionIsFullResolution);
                 }
 
                 _regionOutline.active = true;
@@ -675,6 +646,21 @@ namespace VolumeData
             _dataSet.CleanUp();
             if (_maskDataSet != null)
                 _maskDataSet.CleanUp();
+        }
+
+        private void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes)
+        {
+            cube.SetColor(baseColor);
+
+            if (colorAxes)
+            {
+                var colorAxisX = new Color(1.0f, 0.3f, 0.3f);
+                var colorAxisY = new Color(0.3f, 1.0f, 0.3f);
+                var colorAxisZ = new Color(0.3f, 0.3f, 1.0f);
+                cube.SetColor(colorAxisX, 8);
+                cube.SetColor(colorAxisY, 11);
+                cube.SetColor(colorAxisZ, 4);
+            }
         }
     }
 }
