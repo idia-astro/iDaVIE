@@ -98,6 +98,26 @@
               "output": "/actions/default/in/grabpinch"
             }
           }
+        },
+        {
+          "path": "/user/hand/left/input/application_menu",
+          "mode": "button",
+          "parameters": {},
+          "inputs": {
+            "click": {
+              "output": "/actions/default/in/quickmenu"
+            }
+          }
+        },
+        {
+          "path": "/user/hand/right/input/application_menu",
+          "mode": "button",
+          "parameters": {},
+          "inputs": {
+            "click": {
+              "output": "/actions/default/in/quickmenu"
+            }
+          }
         }
       ],
       "skeleton": [
@@ -121,5 +141,5 @@
   },
   "controller_type": "vive_controller",
   "description": "",
-  "name": "vive_controller"
+  "name": "My idia_unity_vr [Testing] configuration for Vive Controller"
 }

@@ -66,9 +66,45 @@ public class CanvassDesktop : MonoBehaviour
 
     }
 
+    public void BrowseImageFile()
+    {
+
+        // Open file with filter
+        var extensions = new[] {
+            new ExtensionFilter("Fits Files", "fits" ),
+            new ExtensionFilter("All Files", "*" ),
+        };
+
+        paths = StandaloneFileBrowser.OpenFilePanel("Open File", "", extensions, false);
+
+        if (paths != null)
+        {
+
+            VolumeDataSet _dataSet = VolumeDataSet.LoadDataFromFitsFile(paths[0].ToString(), false);
+            // ValidateCube(_dataSet);
+
+            //set the path of selected file to the ui
+            informationPanelContent.gameObject.transform.Find("ImageFile_container").gameObject.transform.Find("ImageFilePath_text").GetComponent<Text>().text = paths[0].ToString();
+
+            //visualize the header into the scroll view
+            string _header = "";
+            IDictionary<string, string> _headerDictionary = _dataSet.GetHeaderDictionary();
+            //fileLoadCanvassDesktop.transform.Find("LeftPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("InformationPanel").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Header").GetComponent<Text>().text = "ciaon2";
+            foreach (KeyValuePair<string, string> entry in _headerDictionary)
+            {
+                _header += entry.Key + "\t\t " + entry.Value + "\n";
+
+            }
+            informationPanelContent.gameObject.transform.Find("Header_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Header").GetComponent<Text>().text = _header;
+
+            informationPanelContent.gameObject.transform.Find("Header_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Scrollbar Vertical").GetComponent<Scrollbar>().value = 1;
+
+        }
+    }
+
     public void LoadFileFromFileSystem()
     {
-        Debug.Log("LoadFileFromFileSystem");
+       
 
         // Open file with filter
         var extensions = new[] {
