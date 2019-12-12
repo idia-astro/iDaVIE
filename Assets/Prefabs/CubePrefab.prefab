@@ -108,10 +108,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MaxSteps: 384
   MaximumCubeSizeInMB: 250
-  MaskMode: 0
   ProjectionMode: 0
   TextureFilter: 0
   Jitter: 1
+  DisplayMask: 0
+  MaskMode: 0
+  MaskVoxelSize: 1
+  MaskVoxelColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.2}
   FoveatedRendering: 1
   FoveationStart: 0.015
   FoveationEnd: 0.4
@@ -133,6 +136,7 @@ MonoBehaviour:
   FileName: 
   MaskFileName: 
   RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
+  MaskMaterial: {fileID: 2100000, guid: 287ca90aafa6d1e439653b9d7378a7d5, type: 2}
   FactorOverride: 0
   XFactor: 1
   YFactor: 1
