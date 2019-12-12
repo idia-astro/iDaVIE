@@ -1,6 +1,11 @@
-﻿using SFB;
+﻿
+using SimpleFileBrowser;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
@@ -21,7 +26,13 @@ public class CanvassDesktop : MonoBehaviour
     private string textPopUp = "";
     private VolumeInputController _volumeInputController;
     private VolumeSpeechController _volumeSpeechController;
-    string []paths ;
+    string imagePath = "";
+    string maskPath = "";
+
+    private double imageNAxis = 0;
+    private double imageSize = 1;
+    private double maskNAxis = 0;
+    private double maskSize = 1;
     // Start is called before the first frame update
     void Start()
     {
@@ -49,7 +60,7 @@ public class CanvassDesktop : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-       // InformationTab();
+        // InformationTab();
 
 
     }
@@ -57,190 +68,367 @@ public class CanvassDesktop : MonoBehaviour
     public void InformationTab()
     {
 
+    }
 
-        informationPanelContent.gameObject.transform.Find("Filename_Value").GetComponent<Text>().text = getFirstActiveDataSet().FileName;
-        //informationPanelContent.gameObject.transform.Find("Maskname_Value").GetComponent<Text>().text = getFirstActiveDataSet().MaskFileName;
-
-        
-
+    public void RenderingTab()
+    {
 
     }
 
     public void BrowseImageFile()
     {
 
-        // Open file with filter
-        var extensions = new[] {
-            new ExtensionFilter("Fits Files", "fits" ),
-            new ExtensionFilter("All Files", "*" ),
-        };
 
-        paths = StandaloneFileBrowser.OpenFilePanel("Open File", "", extensions, false);
+        FileBrowser.SetFilters(true, new FileBrowser.Filter("Fits File", ".fits", ".fit"));
 
-        if (paths != null)
+        // Set default filter that is selected when the dialog is shown (optional)
+        // Returns true if the default filter is set successfully
+        // In this case, set Images filter as the default filter
+        FileBrowser.SetDefaultFilter(".fits");
+        StartCoroutine(ShowLoadDialogCoroutine(0));
+
+
+    }
+
+
+    private void _browseImageFile(string path)
+    {
+        if (path != null)
         {
 
-            VolumeDataSet _dataSet = VolumeDataSet.LoadDataFromFitsFile(paths[0].ToString(), false);
-            // ValidateCube(_dataSet);
+            imageSize = 1;
+            bool loadable = false;
+            string localMsg = "";
+
+            imagePath = path;
+            
+            //each time you select a fits image, reset the mask and disable loading button
+            maskPath = "";
+            informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;
+            informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("MaskFilePath_text").GetComponent<TextMeshProUGUI>().text = "...";
+            informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;
+
+            IntPtr fptr;
+            int status = 0;
+           
+
+            if (FitsReader.FitsOpenFile(out fptr, imagePath, out status) != 0)
+            {
+                Debug.Log("Fits open failure... code #" + status.ToString());
+            }
+
+            List<Tuple<double, double>> axisSize = new List<Tuple<double, double>>();
+            List<double> list = new List<double>();
 
             //set the path of selected file to the ui
-            informationPanelContent.gameObject.transform.Find("ImageFile_container").gameObject.transform.Find("ImageFilePath_text").GetComponent<Text>().text = paths[0].ToString();
+            informationPanelContent.gameObject.transform.Find("ImageFile_container").gameObject.transform.Find("ImageFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(imagePath);
 
             //visualize the header into the scroll view
             string _header = "";
-            IDictionary<string, string> _headerDictionary = _dataSet.GetHeaderDictionary();
+            IDictionary<string, string> _headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
             //fileLoadCanvassDesktop.transform.Find("LeftPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("InformationPanel").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Header").GetComponent<Text>().text = "ciaon2";
             foreach (KeyValuePair<string, string> entry in _headerDictionary)
             {
+
+                //switch (entry.Key)
+                if (entry.Key.Length>4)
+                    switch (entry.Key.Substring(0, 5))
+                    {
+
+                        case "NAXIS":
+                            string sub = entry.Key.Substring(5);
+
+                            if (sub == "")
+                                imageNAxis = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
+                            else
+                                axisSize.Add(new Tuple<double, double>(Convert.ToDouble(sub, CultureInfo.InvariantCulture), Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture)));
+                            break;
+
+                    }
                 _header += entry.Key + "\t\t " + entry.Value + "\n";
-
             }
-            informationPanelContent.gameObject.transform.Find("Header_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Header").GetComponent<Text>().text = _header;
-
+            informationPanelContent.gameObject.transform.Find("Header_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Header").GetComponent<TextMeshProUGUI>().text = _header;
             informationPanelContent.gameObject.transform.Find("Header_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Scrollbar Vertical").GetComponent<Scrollbar>().value = 1;
 
+            //check if it is a valid fits cube
+            if (imageNAxis > 2)
+            {
+                if (imageNAxis == 3)
+                {
+
+                    //check if all 3 axis dim are > 1
+                    foreach (var axes in axisSize)
+                    {
+
+
+                        localMsg += "Axis[" + axes.Item1 + "]: " + axes.Item2 + "\n";
+                        if (axes.Item2 > 1)
+                        {
+                            list.Add(axes.Item1);
+                            imageSize *= axes.Item2;
+                        }
+                    }
+
+                    //if the cube have just 3 axis with n element > 3 is valid
+                    if (list.Count == 3)
+                    {
+                        loadable = true;
+                    }
+                }
+                //more than 3 axis
+                else
+                {
+                    // more than 3 axis, check if axis dim are > 1
+                    foreach (var axes in axisSize)
+                    {
+
+                        localMsg += "Axis[" + axes.Item1 + "]: " + axes.Item2 + "\n";
+                        if (axes.Item2 > 1)
+                        {
+                            list.Add(axes.Item1);
+                            imageSize *= axes.Item2;
+                        }
+                    }
+                    //more than 3 axis but just 3 axis have nelement > 1
+                    if (list.Count == 3)
+                    {
+                        loadable = true;
+                    }
+                }
+
+                //update dropdow
+                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().interactable = false;
+                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().interactable = false;
+                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().interactable = false;
+
+                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().options.Clear();
+                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().options.Clear();
+                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options.Clear();
+
+
+
+                foreach (var axes in axisSize)
+                {
+                    if (axes.Item2 > 1)
+                    {
+                        informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().options.Add((new TMP_Dropdown.OptionData() { text = axes.Item1.ToString() }));
+                        informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().options.Add((new TMP_Dropdown.OptionData() { text = axes.Item1.ToString() }));
+                        informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options.Add((new TMP_Dropdown.OptionData() { text = axes.Item1.ToString() }));
+                    }
+                }
+
+                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().RefreshShownValue();
+                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().RefreshShownValue();
+                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().RefreshShownValue();
+                //end update dropdown
+
+                //Cube is not loadable with valid axis < 3
+                if (!loadable && list.Count < 3)
+                {
+                    showPopUp = true;
+                    textPopUp = "NAxis_ " + imageNAxis + "\n" + localMsg;
+                }
+                //cube is not loadable with more than 3 axis with nelement
+                else if (!loadable && list.Count > 3)
+                {
+                   
+                    informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().interactable = true;
+                    informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().interactable = true;
+                    informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().interactable = true;
+
+                    loadable = true;
+
+
+
+                }
+
+
+
+            }
+            else { loadable = false; localMsg = "Please select a valid cube!"; }
+            //if it is valid enable loading button
+            if (loadable)
+            {
+                informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
+                informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
+
+            }
         }
     }
+
+    public void BrowseMaskFile()
+    {
+        FileBrowser.SetFilters(true, new FileBrowser.Filter("Fits File", ".fits", ".fit"));
+
+        // Set default filter that is selected when the dialog is shown (optional)
+        // Returns true if the default filter is set successfully
+        // In this case, set Images filter as the default filter
+        FileBrowser.SetDefaultFilter(".fits");
+        StartCoroutine(ShowLoadDialogCoroutine(1));
+    }
+
+    private void _browseMaskFile(string path)
+    {
+
+
+        if (maskPath != null)
+        {
+            informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;
+            maskSize = 1;
+            maskPath = path;
+           
+            IntPtr fptr;
+            int status = 0;
+
+
+            if (FitsReader.FitsOpenFile(out fptr, maskPath, out status) != 0)
+            {
+                Debug.Log("Fits open failure... code #" + status.ToString());
+            }
+
+            informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("MaskFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(maskPath);
+
+
+            List<Tuple<double, double>> axisSize = new List<Tuple<double, double>>();
+            List<double> list = new List<double>();
+
+           
+            //visualize the header into the scroll view
+            string _header = "";
+            IDictionary<string, string> _headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
+            //fileLoadCanvassDesktop.transform.Find("LeftPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("InformationPanel").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Header").GetComponent<Text>().text = "ciaon2";
+            foreach (KeyValuePair<string, string> entry in _headerDictionary)
+            {
+
+                //switch (entry.Key)
+                if (entry.Key.Length > 4)
+                    switch (entry.Key.Substring(0, 5))
+                    {
+
+                        case "NAXIS":
+                            string sub = entry.Key.Substring(5);
+
+                            if (sub == "")
+                                maskNAxis = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
+                            else
+                            {
+                                axisSize.Add(new Tuple<double, double>(Convert.ToDouble(sub, CultureInfo.InvariantCulture), Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture)));
+                                maskSize *= Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
+                            }
+                            break;
+
+                    }
+                _header += entry.Key + "\t\t " + entry.Value + "\n";
+            }
+
+
+            //check if is equal in size with the image fits
+            //if mask NAxis is equal to image Naxis -> compare the size
+            if (imageNAxis >= maskNAxis)
+            {
+                if (maskSize == imageSize)
+                {
+                    //it is ok
+                    informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
+
+                }
+                else
+                {
+                    //mask is not valid
+                    informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("MaskFilePath_text").GetComponent<TextMeshProUGUI>().text = "...";
+                    maskPath = "";
+                    showPopUp = true;
+                    textPopUp = "Selected Mask\ndoesn't match image file";
+                }
+            
+            }
+            else 
+            {
+               //mask is bigger than file, not valid mask
+            }
+            
+            
+            
+        }
+    }
+
+
+    IEnumerator ShowLoadDialogCoroutine(int type)
+    {
+        // Show a load file dialog and wait for a response from user
+        // Load file/folder: file, Initial path: default (Documents), Title: "Load File", submit button text: "Load"
+        yield return FileBrowser.WaitForLoadDialog(false, null, "Load File", "Load");
+
+        // Dialog is closed
+        // Print whether a file is chosen (FileBrowser.Success)
+        // and the path to the selected file (FileBrowser.Result) (null, if FileBrowser.Success is false)
+
+        if (FileBrowser.Success)
+        {
+            // If a file was chosen, read its bytes via FileBrowserHelpers
+            // Contrary to File.ReadAllBytes, this function works on Android 10+, as well
+            switch (type)
+            {
+                case 0:
+                    _browseImageFile(FileBrowser.Result);
+                    break;
+                case 1:
+                    _browseMaskFile(FileBrowser.Result);
+                    break;
+            }
+            //byte[] bytes = FileBrowserHelpers.ReadBytesFromFile(FileBrowser.Result);
+        }
+
+        yield return null;
+    }
+
 
     public void LoadFileFromFileSystem()
     {
-       
 
-        // Open file with filter
-        var extensions = new[] {
-            new ExtensionFilter("Fits Files", "fits" ),
-            new ExtensionFilter("All Files", "*" ),
-        };
 
-        paths = StandaloneFileBrowser.OpenFilePanel("Open File", "", extensions, true);
 
-        if (paths != null)
+
+        StartCoroutine(LoadCubeCoroutine(imagePath, maskPath));
+
+        //here should check if loading is ok
+        if(true)
         {
-         
-            VolumeDataSet _dataSet = VolumeDataSet.LoadDataFromFitsFile(paths[0].ToString(), false);
-            ValidateCube(_dataSet);
-         
-           
-          
+            //move to rendering tab
+           // mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().interactable = true;
+           // mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().onClick.Invoke();
+      
+
+
 
         }
+
+        //ValidateCube(_dataSet);
+
         //volumeDataSetManager.;
     }
 
-    public void LoadCubeWithSpecifiedAxis()
+  
+
+    /*
+    //not used, replaced in _browseImageFile
+    private void ValidateCube(VolumeDataSet _dataSet)
     {
-        int i0=fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis1").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().value;
-        int i1=fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis2").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().value;
-        int i2=fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis3").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().value;
        
-        VolumeDataSet _dataSet = VolumeDataSet.LoadDataFromFitsFile(paths[0].ToString(), false,i0,i1,i2);
-        loadCube(_dataSet);
-        DismissFileLoad();
+
     }
 
+    */
 
-   private void ValidateCube(VolumeDataSet _dataSet)
-   {
-       bool loadable = false;
-        string localMsg = "";
-       Debug.Log("NAxis_ " + _dataSet.NAxis);
-       var list = new List<int>();
-
-        if (_dataSet.NAxis > 2  )
-       {
-           if (_dataSet.NAxis == 3)
-           {
-              
-               //check if all 3 axis dim are > 1
-               for (int i = 0; i < _dataSet.NAxis; i++)
-                {
-                    Debug.Log("Axis[" + i + "]: " + _dataSet.cubeSize[i]);
-                    localMsg += "Axis[" + i + "]: " + _dataSet.cubeSize[i] + "\n";
-                    if (_dataSet.cubeSize[i] > 1)
-                        list.Add(i);
-                }
-
-                if (list.Count == 3)
-                {
-                    loadable = true;
-                }
-            }
-           else
-           {
-                // more than 3 axis, check if 3..n axis dim are > 1
-                for (int i = 0; i < _dataSet.NAxis; i++)
-                {
-                    Debug.Log("Axis[" + i + "]: " + _dataSet.cubeSize[i]);
-                    localMsg += "Axis[" + i + "]: " + _dataSet.cubeSize[i]+"\n";
-                    if (_dataSet.cubeSize[i] > 1)
-                        list.Add(i);
-                 }
-
-                if (list.Count == 3)
-                {
-                    loadable = true;
-                }
-           }
-       }
-
-       if(!loadable && list.Count < 3)
-       {
-           showPopUp = true;
-           textPopUp = "NAxis_ " + _dataSet.NAxis + "\n" + localMsg ;
-       }
-        else if (!loadable && list.Count > 3)
-        {
-            // showPopUp = true;
-            //textPopUp = "NEED TO SELECT SOME AXIS";
-
-            fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis1").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().options.Clear();
-            fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis2").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().options.Clear();
-            fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis3").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().options.Clear();
-            for (int i = 0; i < _dataSet.NAxis; i++)
-            {
-                if (_dataSet.cubeSize[i] > 1)
-                    fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis1").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().options.Add((new Dropdown.OptionData() { text = "NAxis" + (i + 1) }));
-                    fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis2").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().options.Add((new Dropdown.OptionData() { text = "NAxis" + (i + 1) }));
-                    fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis3").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().options.Add((new Dropdown.OptionData() { text = "NAxis" + (i + 1) }));
-            }
-
-            fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis1").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().RefreshShownValue();
-            fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis2").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().RefreshShownValue();
-            fileLoadCanvassDesktop.transform.Find("RightPanel").gameObject.transform.Find("Axis3").gameObject.transform.Find("Dropdown").GetComponent<Dropdown>().RefreshShownValue();
-
-                /*
-                //fill the dropdown menu OptionData with all COM's Name in ports[]
-                foreach (string c in ports)
-                {
-                    Maindropdown.options.Add(new Dropdown.OptionData() { text = c });
-                }
-                */
-                string _header = "";
-
-            mainCanvassDesktop.SetActive(false);
-            fileLoadCanvassDesktop.SetActive(true);
-            //GameObject.Find("FileLoadCanvassDesktop").gameObject.SetActive(true);
-
-            IDictionary<string, string> _headerDictionary = _dataSet.GetHeaderDictionary();
-            //fileLoadCanvassDesktop.transform.Find("LeftPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("InformationPanel").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Header").GetComponent<Text>().text = "ciaon2";
-            foreach (KeyValuePair<string, string> entry in _headerDictionary)
-            {
-                _header +=entry.Key + "\t\t " + entry.Value+"\n";
-
-            }
-            fileLoadCanvassDesktop.transform.Find("LeftPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("InformationPanel").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Header").GetComponent<Text>().text += _header;
-
-        }
-        else
-        {
-
-            loadCube(_dataSet);
-        }
-      
-   }
-
-    private void loadCube(VolumeDataSet _dataSet)
+    //private void loadCube(VolumeDataSet _dataSet)
+    IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath)
     {
+
+        int i0 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().value;
+        int i1 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().value;
+        int i2 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value;
+
+
         Vector3 oldpos = new Vector3(0, 0f, 0);
         Quaternion oldrot = Quaternion.identity;
         Vector3 oldscale = new Vector3(1, 1, 1);
@@ -264,8 +452,8 @@ public class CanvassDesktop : MonoBehaviour
         newCube.transform.localPosition = oldpos;
         newCube.transform.localRotation = oldrot;
         newCube.transform.localScale = oldscale;
-        newCube.GetComponent<VolumeDataSetRenderer>().FileName = _dataSet.FileName.ToString();
-        newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _dataSet.FileName.ToString();
+        newCube.GetComponent<VolumeDataSetRenderer>().FileName = _imagePath;//_dataSet.FileName.ToString();
+        newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _maskPath;// _maskDataSet.FileName.ToString();
 
 
         newCube.SetActive(true);
@@ -278,7 +466,10 @@ public class CanvassDesktop : MonoBehaviour
 
         _volumeSpeechController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
 
-        InformationTab();
+        yield return null;
+
+
+        
     }
 
     public void DismissFileLoad()
@@ -287,32 +478,13 @@ public class CanvassDesktop : MonoBehaviour
         mainCanvassDesktop.SetActive(true);
     }
 
-   /*
-    private void ValidateCube(GameObject newCube)
+    public void Exit()
     {
-        bool isValid = true;
-        newCube.SetActive(true);
+        Application.Quit();
+    }
 
-
-
-        checkCubesDataSet();
-
-        //Deactivate and reactivate VolumeInputController to update VolumeInputController's list of datasets
-
-        _volumeInputController.gameObject.SetActive(false);
-        _volumeInputController.gameObject.SetActive(true);
-
-        InformationTab();
-
-
-        //Debug.Log("NAxis_ " + newCube.GetComponent<VolumeDataSetRenderer>().GetDatsSet().XDim);
-
-        
-
-
-            }
-             */
-        private VolumeDataSetRenderer getFirstActiveDataSet()
+    
+    private VolumeDataSetRenderer getFirstActiveDataSet()
     {
         foreach (var dataSet in _volumeDataSets)
         {
@@ -325,32 +497,32 @@ public class CanvassDesktop : MonoBehaviour
         return null;
     }
 
-        void OnGUI()
+    void OnGUI()
+    {
+        if (showPopUp)
         {
-            if (showPopUp)
-            {
-                GUI.Window(0, new Rect((Screen.width / 2) - 150, (Screen.height / 2) - 75
-                       , 300, 250), ShowGUI, "Invalid Cube");
+            GUI.Window(0, new Rect((Screen.width / 2) - 150, (Screen.height / 2) - 75
+                   , 300, 250), ShowGUI, "Invalid Cube");
 
-            }
         }
+    }
 
-        void ShowGUI(int windowID)
+    void ShowGUI(int windowID)
+    {
+        // You may put a label to show a message to the player
+
+        GUI.Label(new Rect(65, 40, 300, 250), textPopUp);
+
+        // You may put a button to close the pop up too
+
+        if (GUI.Button(new Rect(50, 150, 75, 30), "OK"))
         {
-            // You may put a label to show a message to the player
-
-            GUI.Label(new Rect(65, 40, 300, 250), textPopUp);
-
-            // You may put a button to close the pop up too
-
-            if (GUI.Button(new Rect(50, 150, 75, 30), "OK"))
-            {
-                showPopUp = false;
-                textPopUp = "";
-                // you may put other code to run according to your game too
+            showPopUp = false;
+            textPopUp = "";
+            // you may put other code to run according to your game too
         }
 
-        }
- 
+    }
+
 
 }
