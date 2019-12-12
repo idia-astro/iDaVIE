@@ -45,8 +45,7 @@ namespace VolumeData
 
         [Header("Rendering Settings")]
         // Step control
-        [Range(16, 512)]
-        public int MaxSteps = 192;
+        [Range(16, 512)] public int MaxSteps = 192;
         public long MaximumCubeSizeInMB = 250;
         public ProjectionMode ProjectionMode = ProjectionMode.MaximumIntensityProjection;
         public TextureFilterEnum TextureFilter = TextureFilterEnum.Point;
@@ -117,8 +116,7 @@ namespace VolumeData
 
         public FeatureSetManager FeatureSetManagerPrefab;
 
-        private VectorLine _voxelOutline, _cubeOutline, _regionOutline;
-
+        public VectorLine _voxelOutline, _cubeOutline, _regionOutline;
 
         private FeatureSetManager _featureManager = null;
         private MeshRenderer _renderer;
@@ -210,7 +208,6 @@ namespace VolumeData
             _materialInstance.SetInt(MaterialID.NumColorMaps, ColorMapUtils.NumColorMaps);
             _materialInstance.SetFloat(MaterialID.FoveationStart, FoveationStart);
             _materialInstance.SetFloat(MaterialID.FoveationEnd, FoveationEnd);
-
             _maskMaterialInstance = Instantiate(MaskMaterial);
 
             if (_maskDataSet != null)
@@ -257,7 +254,12 @@ namespace VolumeData
 
             Shader.WarmupAllShaders();
         }
-
+        
+        public VolumeDataSet GetDatsSet()
+        {
+            return _dataSet;
+        }
+        
         public void ShiftColorMap(int delta)
         {
             int numColorMaps = ColorMapUtils.NumColorMaps;
@@ -524,6 +526,7 @@ namespace VolumeData
             _materialInstance.SetFloat(MaterialID.VignetteIntensity, VignetteIntensity);
             _materialInstance.SetColor(MaterialID.VignetteColor, VignetteColor);
         }
+        
         void OnRenderObject()
         {
             if (DisplayMask && _maskDataSet?.ExistingMaskBuffer != null)

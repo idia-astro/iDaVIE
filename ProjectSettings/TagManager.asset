@@ -7,6 +7,7 @@ TagManager:
   - projectile
   - FxTemporaire
   - customSet
+  - PowerUI
   layers:
   - Default
   - TransparentFX
@@ -16,7 +17,7 @@ TagManager:
   - UI
   - 
   - 
-  - 
+  - PowerUI
   - 
   - 
   - 

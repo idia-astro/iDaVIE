@@ -96,7 +96,8 @@
       "/actions/default/in/MenuDown": "Menu Down",
       "/actions/default/in/MenuUp": "Menu Up",
       "/actions/default/in/MenuLeft": "Menu Left",
-      "/actions/default/in/MenuRight": "Menu Right"
+      "/actions/default/in/MenuRight": "Menu Right",
+      "/actions/default/in/QuickMenu": "QuickMenu"
     }
   ]
 }

@@ -65,7 +65,7 @@ public class VolumeInputController : MonoBehaviour
     private SteamVR_Action_Boolean _grabGripAction;
     private SteamVR_Action_Boolean _grabPinchAction;
     private SteamVR_Action_Boolean _quickMenuAction;
-    private VolumeDataSetRenderer[] _volumeDataSets;
+    public VolumeDataSetRenderer[] _volumeDataSets;
     private float[] _startDataSetScales;
     private Vector3[] _currentGripPositions;
     private Vector3 _startGripSeparation;
@@ -314,7 +314,6 @@ public class VolumeInputController : MonoBehaviour
 
     private void StartRequestQuickMenu(int handIndex)
     {
-        Debug.Log("Request Quick menu!");
         CanvassQuickMenu.transform.SetParent(_handTransforms[handIndex], false);
         CanvassQuickMenu.transform.localPosition= new Vector3(-0.1f,(handIndex == 0 ? 1: -1) * 0.175f, 0.10f);
         CanvassQuickMenu.transform.localRotation= Quaternion.Euler((handIndex == 0 ? 1: -1) * -3.25f,15f, 90f);

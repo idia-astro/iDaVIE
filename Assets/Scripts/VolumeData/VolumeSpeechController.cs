@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Windows.Speech;
@@ -23,7 +24,7 @@ namespace VolumeData
             EditThresholdMax
         }
 
-        private VolumeDataSetRenderer[] _dataSets;
+        private List<VolumeDataSetRenderer> _dataSets;
 
         private SpeechControllerState _state;
         // Keywords
@@ -74,7 +75,8 @@ namespace VolumeData
 
         void Start()
         {
-            _dataSets = GetComponentsInChildren<VolumeDataSetRenderer>(true);            
+            _dataSets = new List<VolumeDataSetRenderer>();
+            _dataSets.AddRange(GetComponentsInChildren<VolumeDataSetRenderer>(true));            
             _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, ConfidenceLevel.Medium);
             _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
 
@@ -85,6 +87,7 @@ namespace VolumeData
                 Debug.Log("Editing Hand not set. Please set in Editor.");
             }
             EditingHand.uiInteractAction.AddOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
+            
         }
 
         private void OnUiInteractDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
@@ -223,6 +226,7 @@ namespace VolumeData
         // Update is called once per frame
         void Update()
         {
+            
             var firstActive = getFirstActiveDataSet();
             if (firstActive && _activeDataSet != firstActive)
             {
@@ -243,6 +247,12 @@ namespace VolumeData
                         break;
                 }
             }
+            
+        }
+
+        public void AddDataSet(VolumeDataSetRenderer setToAdd)
+        {
+            _dataSets.Add(setToAdd);
         }
 
         public void UpdateThreshold(bool editingMax)
@@ -297,13 +307,13 @@ namespace VolumeData
 
         public void stepDataSet(bool forwards)
         {
-            for (var i = 0; i < _dataSets.Length; i++)
+            for (var i = 0; i < _dataSets.Count; i++)
             {
                 var dataSet = _dataSets[i];
                 Debug.Log(dataSet);
                 if (dataSet == _activeDataSet)
                 {
-                    var newIndex = (i + _dataSets.Length + (forwards ? 1 : -1)) % _dataSets.Length;
+                    var newIndex = (i + _dataSets.Count + (forwards ? 1 : -1)) % _dataSets.Count;
                     _activeDataSet.gameObject.SetActive(false);
                     _dataSets[newIndex].gameObject.SetActive(true);
                     Debug.Log("Switching from dataset " + i + " to dataset " + newIndex);

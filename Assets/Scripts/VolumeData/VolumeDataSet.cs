@@ -28,8 +28,6 @@ namespace VolumeData
         );
     }
     
-    
-
     public struct BrushStrokeTransaction
     {
         public int NewValue;
@@ -59,6 +57,7 @@ namespace VolumeData
         public int XDimDecimal { get; private set; }
         public int YDimDecimal { get; private set; }
         public int ZDimDecimal { get; private set; }
+        private IDictionary<string, string> HeaderDictionary;
 
         public int VelDecimal { get; private set; }
 
@@ -68,8 +67,11 @@ namespace VolumeData
         public bool IsMask { get; private set; }
 
         private IDictionary<string, string> _headerDictionary;
+        
         private double _xRef, _yRef, _zRef, _xRefPix, _yRefPix, _zRefPix, _xDelt, _yDelt, _zDelt, _rot;
         private string _xCoord, _yCoord, _zCoord, _wcsProj;
+
+        public double NAxis;
         private List<VoxelEntry> _existingRegionMaskEntries;
         private List<VoxelEntry> _addedRegionMaskEntries;
         private Texture2D _updateTexture;
@@ -78,11 +80,13 @@ namespace VolumeData
         private static int BrushStrokeLimit = 25000;
         
         public IntPtr FitsData;
+        public long[] cubeSize;
 
-        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask)
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, int index0=0, int index1 = 1, int index2 = 2)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
             volumeDataSet.IsMask = isMask;
+            volumeDataSet.FileName = fileName;
             IntPtr fptr;
             int status = 0;
             int cubeDimensions;
@@ -110,10 +114,11 @@ namespace VolumeData
                 Debug.Log("Fits Read cube size error #" + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
             }
-            long[] cubeSize = new long[cubeDimensions];
-            Marshal.Copy(dataPtr, cubeSize, 0, cubeDimensions);
+            
+            volumeDataSet.cubeSize = new long[cubeDimensions];
+            Marshal.Copy(dataPtr, volumeDataSet.cubeSize, 0, cubeDimensions);
             FitsReader.FreeMemory(dataPtr);
-            long numberDataPoints = cubeSize[0] * cubeSize[1] * cubeSize[2];
+            long numberDataPoints = volumeDataSet.cubeSize[index0] * volumeDataSet.cubeSize[index1] * volumeDataSet.cubeSize[index2];
             IntPtr fitsDataPtr;
             if (isMask)
             {
@@ -134,12 +139,13 @@ namespace VolumeData
             FitsReader.FitsCloseFile(fptr, out status);
 
             volumeDataSet.FitsData = fitsDataPtr;
-            volumeDataSet.XDim = cubeSize[0];
-            volumeDataSet.YDim = cubeSize[1];
-            volumeDataSet.ZDim = cubeSize[2];
-            volumeDataSet.XDimDecimal = cubeSize[0].ToString().Length;
-            volumeDataSet.YDimDecimal = cubeSize[1].ToString().Length;
-            volumeDataSet.ZDimDecimal = cubeSize[2].ToString().Length;
+            volumeDataSet.XDim = volumeDataSet.cubeSize[index0];
+            volumeDataSet.YDim = volumeDataSet.cubeSize[index1];
+            volumeDataSet.ZDim = volumeDataSet.cubeSize[index2];
+            volumeDataSet.XDimDecimal = volumeDataSet.cubeSize[index0].ToString().Length;
+            volumeDataSet.YDimDecimal = volumeDataSet.cubeSize[index1].ToString().Length;
+            volumeDataSet.YDimDecimal = volumeDataSet.cubeSize[index2].ToString().Length;
+            volumeDataSet.HeaderDictionary = volumeDataSet._headerDictionary;
             
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
@@ -355,6 +361,12 @@ namespace VolumeData
             Debug.Log($"Cropped into {cubeSize.x} x {cubeSize.y} x {cubeSize.z} region ({cubeSize.x * cubeSize.y * cubeSize.z * 4e-6} MB) in {sw.ElapsedMilliseconds} ms");
         }
 
+        public IDictionary<string, string> GetHeaderDictionary()
+        {
+            Debug.Log(_headerDictionary);
+            return _headerDictionary;
+        }
+
         private static int VoxelActiveFaces(int i, Vector3Int cubeSize, short[] voxels)
         {
             short voxelValue = voxels[i];
@@ -487,6 +499,9 @@ namespace VolumeData
             {
                 switch (entry.Key)
                 {
+                    case "NAXIS":
+                        NAxis = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
+                        break;
                     case "CTYPE1":
                         _xCoord = entry.Value.Substring(0, 4);
                         xProj = entry.Value.Substring(5, 4);
