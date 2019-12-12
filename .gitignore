@@ -443,9 +443,7 @@ Assets/Plugins/Fits/
 Assets/Plugins/
 Assets/Resources.meta
 Assets/Vectrosity.meta
-/Assets/GracesGames.meta
 /Assets/SteamVR_Resources.meta
-Assets/GracesGames
 
 # exclude lib_source solution files
 !lib_source/fits_reader/*.sln
