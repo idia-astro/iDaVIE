@@ -114,7 +114,7 @@ namespace VolumeData
 
         public FeatureSetManager FeatureSetManagerPrefab;
 
-        private VectorLine _voxelOutline, _cubeOutline, _regionOutline;
+        public VectorLine _voxelOutline, _cubeOutline, _regionOutline;
         
 
         private FeatureSetManager _featureManager = null;
@@ -166,6 +166,8 @@ namespace VolumeData
 
         public void Start()
         {
+
+            
             _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false);
 
             _volumeInputController = FindObjectOfType<VolumeInputController>();
@@ -272,6 +274,11 @@ namespace VolumeData
 
         }
 
+
+        public VolumeDataSet GetDatsSet()
+        {
+            return _dataSet;
+        }
         public void ShiftColorMap(int delta)
         {
             int numColorMaps = ColorMapUtils.NumColorMaps;
@@ -379,8 +386,10 @@ namespace VolumeData
 
         public void CropToRegion()
         {
+            Debug.Log("Start Crop to region");
             if (_featureManager != null && _featureManager.SelectedFeature != null)
             {
+                
                 var cornerMin = _featureManager.SelectedFeature.CornerMin;
                 var cornerMax = _featureManager.SelectedFeature.CornerMax;
                 Vector3Int startVoxel = new Vector3Int(Convert.ToInt32(cornerMin.x), Convert.ToInt32(cornerMin.y), Convert.ToInt32(cornerMin.z));
