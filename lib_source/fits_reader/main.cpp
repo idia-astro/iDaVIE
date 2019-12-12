@@ -1,5 +1,6 @@
 #include <cfitsio/fitsio.h>
 #include <iostream>
+#include <cstring>
 
 
 #define DllExport __declspec (dllexport)
@@ -120,6 +121,15 @@ extern "C"
 		delete[] startPix;
 		*array = dataarray;
 		return success;
+	}
+
+	DllExport int CreateEmptyImageInt16(int64_t sizeX, int64_t sizeY, int64_t sizeZ, int16_t** array)
+	{
+		int64_t nelem = sizeX * sizeY * sizeZ;
+		int16_t* dataarray = new int16_t[nelem];
+		std::memset(dataarray, 0, nelem * sizeof(int16_t));
+		*array = dataarray;
+		return 0;
 	}
 
 	DllExport int FreeMemory(void* ptrToDelete)

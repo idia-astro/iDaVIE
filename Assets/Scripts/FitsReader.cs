@@ -54,6 +54,9 @@ public class FitsReader {
     public static extern int FitsReadImageInt16(IntPtr fptr, int dims, long nelem, out IntPtr array, out int status);
 
     [DllImport("fits_reader")]
+    public static extern int CreateEmptyImageInt16(long sizeX, long sizeY, long sizeZ, out IntPtr array);
+    
+    [DllImport("fits_reader")]
     public static extern int FreeMemory(IntPtr pointerToDelete);
 
     public static IDictionary<string,string> ExtractHeaders(IntPtr fptr, out int status)

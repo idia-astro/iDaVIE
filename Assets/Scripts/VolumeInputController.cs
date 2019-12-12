@@ -751,10 +751,32 @@ public class VolumeInputController : MonoBehaviour
 
     public void SetInteractionState(InteractionState interactionState)
     {
+        // Ignore transitions to same state
         if (interactionState != _interactionState)
         {
-            // TODO: handle state transitions properly
-            _interactionState = interactionState;
+            if (interactionState == InteractionState.PaintMode)
+            {
+                StateTransitionSelectionToPaint();
+            }
+            else
+            {
+                StateTransitionPaintToSelection();
+            }
         }
+    }
+
+    private void StateTransitionSelectionToPaint()
+    {
+        foreach (var dataSet in _volumeDataSets)
+        {
+            // Ensure a mask is present for each dataset
+            dataSet.InitialiseMask();
+        }
+        _interactionState = InteractionState.PaintMode;
+    }
+
+    private void StateTransitionPaintToSelection()
+    {
+        _interactionState = InteractionState.SelectionMode;
     }
 }

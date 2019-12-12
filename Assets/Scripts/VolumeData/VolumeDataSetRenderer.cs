@@ -385,16 +385,12 @@ namespace VolumeData
                 if (_maskDataSet != null)
                 {
                     _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
-                    if (_maskDataSet.ExistingMaskBuffer != null)
-                    {
-                        _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, _maskDataSet.ExistingMaskBuffer);
-                        var regionMin = Vector3.Min(RegionStartVoxel, RegionEndVoxel);
-                        _maskMaterialInstance.SetVector(MaterialID.RegionOffset, new Vector4(regionMin.x, regionMin.y, regionMin.z, 0));
-                        var regionDimensions = new Vector4(_maskDataSet.RegionCube.width, _maskDataSet.RegionCube.height, _maskDataSet.RegionCube.width, 0);
-                        _maskMaterialInstance.SetVector(MaterialID.RegionDimensions, regionDimensions);
-                        var cubeDimensions = new Vector4(_maskDataSet.XDim, _maskDataSet.YDim, _maskDataSet.ZDim, 1);
-                        _maskMaterialInstance.SetVector(MaterialID.CubeDimensions, cubeDimensions);
-                    }
+                    var regionMin = Vector3.Min(RegionStartVoxel, RegionEndVoxel);
+                    _maskMaterialInstance.SetVector(MaterialID.RegionOffset, new Vector4(regionMin.x, regionMin.y, regionMin.z, 0));
+                    var regionDimensions = new Vector4(_maskDataSet.RegionCube.width, _maskDataSet.RegionCube.height, _maskDataSet.RegionCube.width, 0);
+                    _maskMaterialInstance.SetVector(MaterialID.RegionDimensions, regionDimensions);
+                    var cubeDimensions = new Vector4(_maskDataSet.XDim, _maskDataSet.YDim, _maskDataSet.ZDim, 1);
+                    _maskMaterialInstance.SetVector(MaterialID.CubeDimensions, cubeDimensions);
                 }
             }
         }
@@ -535,8 +531,17 @@ namespace VolumeData
                 Graphics.DrawProceduralNow(MeshTopology.Points, _maskDataSet.AddedMaskEntryCount);
             }
         }
-        
 
+        public void InitialiseMask()
+        {
+            if (_dataSet != null && _maskDataSet == null)
+            {
+                _maskDataSet = VolumeDataSet.GenerateEmptyMask(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim);
+                // Re-crop both datasets to ensure that they match correctly
+                CropToRegion();
+            }
+        }
+        
         public bool PaintMask(Vector3Int position, short value)
         {
             if (_maskDataSet == null || _maskDataSet.RegionCube == null)
