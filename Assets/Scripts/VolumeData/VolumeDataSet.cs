@@ -357,6 +357,7 @@ namespace VolumeData
 
         private static int VoxelActiveFaces(int i, Vector3Int cubeSize, short[] voxels)
         {
+            short voxelValue = voxels[i];
             Vector3Int voxelIndices = Vector3Int.zero;
             voxelIndices.x = i % cubeSize.x;
             int j = (i - voxelIndices.x) / cubeSize.x;
@@ -366,19 +367,19 @@ namespace VolumeData
             int activeFaces = 0;
             
             // -x face
-            if (voxelIndices.x <= 0 || voxels[i - 1] == 0)
+            if (voxelIndices.x <= 0 || voxels[i - 1] != voxelValue)
             {
                 activeFaces += 1;
             }
 
             // +x face
-            if (voxelIndices.x >= cubeSize.x - 1 || voxels[i + 1] == 0)
+            if (voxelIndices.x >= cubeSize.x - 1 || voxels[i + 1] != voxelValue)
             {
                 activeFaces += 2;
             }
             
             // -y face
-            if (voxelIndices.y <= 0 || voxels[i - cubeSize.x] == 0)
+            if (voxelIndices.y <= 0 || voxels[i - cubeSize.x] != voxelValue)
             {
                 activeFaces += 4;
             }

@@ -129,6 +129,7 @@ namespace VolumeData
         private VolumeInputController _volumeInputController;
         private Vector3Int _previousPaintLocation;
         private short _previousPaintValue;
+        private int _previousBrushSize = 1;
 
         #region Material Property IDs
 
@@ -265,7 +266,7 @@ namespace VolumeData
             ColorMap = ColorMapUtils.FromHashCode(newIndex);
         }
 
-        public void SetCursorPosition(Vector3 cursor, float cursorSize)
+        public void SetCursorPosition(Vector3 cursor, int brushSize)
         {
             Vector3 objectSpacePosition = transform.InverseTransformPoint(cursor);
             Bounds objectBounds = new Bounds(Vector3.zero, Vector3.one);
@@ -276,16 +277,23 @@ namespace VolumeData
                 Vector3 voxelCenterCubeSpace = voxelCornerCubeSpace + 0.5f * Vector3.one;
                 Vector3Int newVoxelCursor = new Vector3Int(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1);
 
-                if (!newVoxelCursor.Equals(CursorVoxel))
+                if (!newVoxelCursor.Equals(CursorVoxel) || brushSize != _previousBrushSize)
                 {
+                    _previousBrushSize = brushSize;
                     CursorVoxel = newVoxelCursor;
                     CursorValue = _dataSet.GetDataValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
                     if (_maskDataSet != null)
+                    {
                         CursorSource = _maskDataSet.GetMaskValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
+                    }
                     else
+                    {
                         CursorSource = 0;
-                    Vector3 voxelCenterObjectSpace = new Vector3(voxelCenterCubeSpace.x / _dataSet.XDim - 0.5f, voxelCenterCubeSpace.y / _dataSet.YDim - 0.5f, voxelCenterCubeSpace.z / _dataSet.ZDim - 0.5f);
-                    _voxelOutline.MakeCube(voxelCenterObjectSpace, cursorSize / _dataSet.XDim, cursorSize / _dataSet.YDim, cursorSize / _dataSet.ZDim);
+                    }
+
+                    Vector3 voxelCenterObjectSpace = new Vector3(voxelCenterCubeSpace.x / _dataSet.XDim - 0.5f, voxelCenterCubeSpace.y / _dataSet.YDim - 0.5f,
+                        voxelCenterCubeSpace.z / _dataSet.ZDim - 0.5f);
+                    _voxelOutline.MakeCube(voxelCenterObjectSpace, (float) brushSize / _dataSet.XDim, (float) brushSize / _dataSet.YDim, (float) brushSize / _dataSet.ZDim);
                 }
 
                 _voxelOutline.active = true;
@@ -542,7 +550,7 @@ namespace VolumeData
             }
         }
         
-        public bool PaintMask(Vector3Int position, short value)
+        private bool PaintMask(Vector3Int position, short value)
         {
             if (_maskDataSet == null || _maskDataSet.RegionCube == null)
             {
@@ -567,9 +575,9 @@ namespace VolumeData
             return true;
         }
 
-        public bool PaintCursor(short value, int cursorSize)
+        public bool PaintCursor(short value)
         {
-            var maskCursorLimit = (cursorSize - 1) / 2;
+            var maskCursorLimit = (_previousBrushSize - 1) / 2;
             for (int i = -maskCursorLimit; i <= maskCursorLimit; i++)
             {
                 for (int j = -maskCursorLimit; j <= maskCursorLimit; j++)

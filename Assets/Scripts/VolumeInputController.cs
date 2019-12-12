@@ -151,6 +151,8 @@ public class VolumeInputController : MonoBehaviour
         _grabPinchAction.AddOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.RightHand);
         _quickMenuAction.AddOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.LeftHand);
         _quickMenuAction.AddOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.RightHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.AddOnStateDownListener(OnMenuUpPressed, SteamVR_Input_Sources.Any);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateDownListener(OnMenuDownPressed, SteamVR_Input_Sources.Any);
 
         var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
         if (volumeDataSetManager)
@@ -191,6 +193,34 @@ public class VolumeInputController : MonoBehaviour
             _grabPinchAction.RemoveOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.RightHand);
             _quickMenuAction.RemoveOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.LeftHand);
             _quickMenuAction.RemoveOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.RightHand);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.RemoveOnStateDownListener(OnMenuUpPressed, SteamVR_Input_Sources.Any);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.RemoveOnStateDownListener(OnMenuDownPressed, SteamVR_Input_Sources.Any);
+        }
+    }
+
+    private void OnMenuUpPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        if (_interactionState == InteractionState.PaintMode)
+        {
+            BrushSize += 2;
+            UpdatePaintCursors();
+        }
+    }
+    
+    private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        if (_interactionState == InteractionState.PaintMode)
+        {
+            BrushSize = Math.Max(1, BrushSize - 2);
+            UpdatePaintCursors();
+        }
+    }
+
+    private void UpdatePaintCursors()
+    {
+        foreach (var dataSet in _volumeDataSets)
+        {
+            dataSet.SetCursorPosition(_handTransforms[0].position, BrushSize);
         }
     }
 
@@ -611,12 +641,11 @@ public class VolumeInputController : MonoBehaviour
 
             foreach (var dataSet in _volumeDataSets)
             {
-                
                 if (_interactionState == InteractionState.PaintMode)
                 {
                     if (_isPainting)
                     {
-                        dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0, BrushSize);
+                        dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0);
                     }
                     dataSet.SetCursorPosition(_handTransforms[0].position, BrushSize);
                 }
