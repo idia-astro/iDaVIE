@@ -62,8 +62,6 @@ public class FitsReader {
     public static IDictionary<string,string> ExtractHeaders(IntPtr fptr, out int status)
     {
         int numberKeys, keysLeft;
-        StringBuilder keyName = new StringBuilder(70);
-        StringBuilder keyValue = new StringBuilder(70);
         if (FitsGetNumHeaderKeys(fptr, out numberKeys, out keysLeft, out status) != 0)
         {
             Debug.Log("Fits extract header error #" + status.ToString());
@@ -72,6 +70,8 @@ public class FitsReader {
         IDictionary<string, string> dict = new Dictionary<string, string>();
         for (int i = 1; i <= numberKeys; i++)
         {
+            StringBuilder keyName = new StringBuilder(70);
+            StringBuilder keyValue = new StringBuilder(70);
             FitsReadKeyN(fptr, i, keyName, keyValue, null, out status);
             string key = keyName.ToString();
             if (!dict.ContainsKey(key))
