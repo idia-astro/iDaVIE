@@ -1,7 +1,7 @@
 // Ray marching fragment shader, partially adapted from NVIDIA OpenGL SDK sample "Render to 3D Texture"
 // http://developer.download.nvidia.com/SDK/10/opengl/samples.html
 
-#include "./Shared/Vignette.cginc"
+#include "../Shared/Vignette.cginc"
 
 #define LINEAR 0
 #define LOG 1
@@ -14,9 +14,6 @@
 #define MASK_ENABLED 1
 #define MASK_INVERTED 2
 #define MASK_ISOLATED 3
-
-//#define SHADER_MIP 0
-//#define SHADER_AIP 1
 
 struct Ray
 {
