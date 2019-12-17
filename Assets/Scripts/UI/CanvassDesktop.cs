@@ -294,7 +294,7 @@ public class CanvassDesktop : MonoBehaviour
 
            
             //visualize the header into the scroll view
-            string _header = "";
+           
             IDictionary<string, string> _headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
             //fileLoadCanvassDesktop.transform.Find("LeftPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("InformationPanel").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Header").GetComponent<Text>().text = "ciaon2";
             foreach (KeyValuePair<string, string> entry in _headerDictionary)
@@ -318,7 +318,7 @@ public class CanvassDesktop : MonoBehaviour
                             break;
 
                     }
-                _header += entry.Key + "\t\t " + entry.Value + "\n";
+               
             }
 
 
