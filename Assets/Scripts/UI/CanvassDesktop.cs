@@ -33,6 +33,10 @@ public class CanvassDesktop : MonoBehaviour
     private double imageSize = 1;
     private double maskNAxis = 0;
     private double maskSize = 1;
+
+   // List<Tuple<double, double>> axisSize = null;
+    Dictionary<double, double> axisSize = null;
+    Dictionary<double, double> maskAxisSize = null;
     // Start is called before the first frame update
     void Start()
     {
@@ -117,7 +121,10 @@ public class CanvassDesktop : MonoBehaviour
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
 
-            List<Tuple<double, double>> axisSize = new List<Tuple<double, double>>();
+            //axisSize = new List<Tuple<double, double>>();
+
+            axisSize = new Dictionary<double, double>();
+
             List<double> list = new List<double>();
 
             //set the path of selected file to the ui
@@ -126,8 +133,8 @@ public class CanvassDesktop : MonoBehaviour
             //visualize the header into the scroll view
             string _header = "";
             IDictionary<string, string> _headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
-            //fileLoadCanvassDesktop.transform.Find("LeftPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("InformationPanel").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Header").GetComponent<Text>().text = "ciaon2";
-            foreach (KeyValuePair<string, string> entry in _headerDictionary)
+            
+             foreach (KeyValuePair<string, string> entry in _headerDictionary)
             {
 
                 //switch (entry.Key)
@@ -141,7 +148,7 @@ public class CanvassDesktop : MonoBehaviour
                             if (sub == "")
                                 imageNAxis = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                             else
-                                axisSize.Add(new Tuple<double, double>(Convert.ToDouble(sub, CultureInfo.InvariantCulture), Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture)));
+                                axisSize.Add(Convert.ToDouble(sub, CultureInfo.InvariantCulture), Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture));
                             break;
 
                     }
@@ -157,15 +164,14 @@ public class CanvassDesktop : MonoBehaviour
                 {
 
                     //check if all 3 axis dim are > 1
-                    foreach (var axes in axisSize)
+                    //foreach (var axes in axisSize)
+                    foreach (KeyValuePair<double, double> axes in axisSize)
                     {
-
-
-                        localMsg += "Axis[" + axes.Item1 + "]: " + axes.Item2 + "\n";
-                        if (axes.Item2 > 1)
+                        localMsg += "Axis[" + axes.Key + "]: " + axes.Value + "\n";
+                        if (axes.Value > 1)
                         {
-                            list.Add(axes.Item1);
-                            imageSize *= axes.Item2;
+                            list.Add(axes.Key);
+                            imageSize *= axes.Value;
                         }
                     }
 
@@ -179,14 +185,13 @@ public class CanvassDesktop : MonoBehaviour
                 else
                 {
                     // more than 3 axis, check if axis dim are > 1
-                    foreach (var axes in axisSize)
+                    foreach (KeyValuePair<double, double> axes in axisSize)
                     {
-
-                        localMsg += "Axis[" + axes.Item1 + "]: " + axes.Item2 + "\n";
-                        if (axes.Item2 > 1)
+                        localMsg += "Axis[" + axes.Key + "]: " + axes.Value + "\n";
+                        if (axes.Value > 1)
                         {
-                            list.Add(axes.Item1);
-                            imageSize *= axes.Item2;
+                            list.Add(axes.Key);
+                            imageSize *= axes.Value;
                         }
                     }
                     //more than 3 axis but just 3 axis have nelement > 1
@@ -207,13 +212,13 @@ public class CanvassDesktop : MonoBehaviour
 
 
 
-                foreach (var axes in axisSize)
+                foreach (KeyValuePair<double, double> axes in axisSize)
                 {
-                    if (axes.Item2 > 1)
+                    if (axes.Value > 1)
                     {
-                        informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().options.Add((new TMP_Dropdown.OptionData() { text = axes.Item1.ToString() }));
-                        informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().options.Add((new TMP_Dropdown.OptionData() { text = axes.Item1.ToString() }));
-                        informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options.Add((new TMP_Dropdown.OptionData() { text = axes.Item1.ToString() }));
+                        informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().options.Add((new TMP_Dropdown.OptionData() { text = axes.Key.ToString() }));
+                        informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().options.Add((new TMP_Dropdown.OptionData() { text = axes.Key.ToString() }));
+                        informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options.Add((new TMP_Dropdown.OptionData() { text = axes.Key.ToString() }));
                     }
                 }
 
@@ -259,6 +264,7 @@ public class CanvassDesktop : MonoBehaviour
     public void BrowseMaskFile()
     {
         FileBrowser.SetFilters(true, new FileBrowser.Filter("Fits File", ".fits", ".fit"));
+        FileBrowser.SetExcludedExtensions(".lnk", ".tmp", ".zip", ".rar", ".exe", ".sys");
 
         // Set default filter that is selected when the dialog is shown (optional)
         // Returns true if the default filter is set successfully
@@ -270,6 +276,7 @@ public class CanvassDesktop : MonoBehaviour
     private void _browseMaskFile(string path)
     {
 
+        bool loadable = false;
 
         if (maskPath != null)
         {
@@ -289,14 +296,13 @@ public class CanvassDesktop : MonoBehaviour
             informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("MaskFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(maskPath);
 
 
-            List<Tuple<double, double>> axisSize = new List<Tuple<double, double>>();
+            maskAxisSize = new Dictionary<double, double>();
             List<double> list = new List<double>();
 
            
             //visualize the header into the scroll view
            
             IDictionary<string, string> _headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
-            //fileLoadCanvassDesktop.transform.Find("LeftPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("InformationPanel").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Header").GetComponent<Text>().text = "ciaon2";
             foreach (KeyValuePair<string, string> entry in _headerDictionary)
             {
 
@@ -312,43 +318,65 @@ public class CanvassDesktop : MonoBehaviour
                                 maskNAxis = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                             else
                             {
-                                axisSize.Add(new Tuple<double, double>(Convert.ToDouble(sub, CultureInfo.InvariantCulture), Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture)));
-                                maskSize *= Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
+                                maskAxisSize.Add(Convert.ToDouble(sub, CultureInfo.InvariantCulture), Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture));
                             }
                             break;
 
                     }
                
             }
+         
 
 
-            //check if is equal in size with the image fits
-            //if mask NAxis is equal to image Naxis -> compare the size
-            if (imageNAxis >= maskNAxis)
+            if (maskNAxis > 2)
             {
-                if (maskSize == imageSize)
-                {
-                    //it is ok
-                    informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
 
+                //Get Axis size from Image Cube
+                int i0 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().value;
+                int i1 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().value;
+                int i2 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value;
+
+                if(axisSize[i0 + 1] == maskAxisSize[1] && axisSize[i1 + 1] == maskAxisSize[2] && axisSize[i2 + 1] == maskAxisSize[3])
+                {
+                    loadable = true;
+                    informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
                 }
                 else
-                {
-                    //mask is not valid
-                    informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("MaskFilePath_text").GetComponent<TextMeshProUGUI>().text = "...";
-                    maskPath = "";
-                    showPopUp = true;
-                    textPopUp = "Selected Mask\ndoesn't match image file";
-                }
-            
+                    loadable = false;
+
             }
-            else 
+
+            if(!loadable)
             {
-               //mask is bigger than file, not valid mask
+                //mask is not valid
+                informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("MaskFilePath_text").GetComponent<TextMeshProUGUI>().text = "...";
+                maskPath = "";
+                showPopUp = true;
+                textPopUp = "Selected Mask\ndoesn't match image file";
             }
-            
-            
-            
+        }
+    }
+
+    public void CheckImgMaskAxisSize()
+    {
+        if (maskPath != "")
+        {
+            //Get Axis size from Image Cube
+            int i0 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().value;
+            int i1 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().value;
+            int i2 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value;
+
+            if (axisSize[i0 + 1] != maskAxisSize[1] || axisSize[i1 + 1] != maskAxisSize[2] || axisSize[i2 + 1] != maskAxisSize[3])
+            {
+                informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("MaskFilePath_text").GetComponent<TextMeshProUGUI>().text = "...";
+                showPopUp = true;
+                textPopUp = "Selected axis size \ndoesn't match mask axis size";
+                informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;
+            }
+            else
+            {
+                informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
+            }
         }
     }
 
@@ -403,24 +431,11 @@ public class CanvassDesktop : MonoBehaviour
 
         }
 
-        //ValidateCube(_dataSet);
-
-        //volumeDataSetManager.;
+       
     }
 
   
 
-    /*
-    //not used, replaced in _browseImageFile
-    private void ValidateCube(VolumeDataSet _dataSet)
-    {
-       
-
-    }
-
-    */
-
-    //private void loadCube(VolumeDataSet _dataSet)
     IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath)
     {
 
@@ -501,6 +516,8 @@ public class CanvassDesktop : MonoBehaviour
     {
         if (showPopUp)
         {
+            GUI.backgroundColor = new Color(1, 0, 0, 1f);
+
             GUI.Window(0, new Rect((Screen.width / 2) - 150, (Screen.height / 2) - 75
                    , 300, 250), ShowGUI, "Invalid Cube");
 
