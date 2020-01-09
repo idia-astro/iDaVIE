@@ -12,7 +12,7 @@
 
 extern "C"
 {
-	DllExport int FindMaxMin(float *dataPtr, int64_t numberElements, float *maxResult, float *minResult)
+	DllExport int FindMaxMin(const float *dataPtr, int64_t numberElements, float *maxResult, float *minResult)
 	{
 		float maxVal = -std::numeric_limits<float>::max();
 		float minVal = std::numeric_limits<float>::max();
@@ -38,7 +38,7 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int GetVoxelFloatValue(float *dataPtr, float *voxelValue, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y, int64_t z)
+	DllExport int GetVoxelFloatValue(const float *dataPtr, float *voxelValue, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y, int64_t z)
 	{
 		float outValue;
 		if (x > xDim || y > yDim || z > zDim || x < 1 || y < 1 || z < 1)
@@ -49,7 +49,7 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int GetVoxelInt16Value(int16_t *dataPtr, int16_t *voxelValue, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y, int64_t z)
+	DllExport int GetVoxelInt16Value(const int16_t *dataPtr, int16_t *voxelValue, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y, int64_t z)
 	{
 		int16_t outValue;
 		if (x > xDim || y > yDim || z > zDim || x < 1 || y < 1 || z < 1)
@@ -61,7 +61,7 @@ extern "C"
 	}
 	
 	//TODO make compatible with int64_t
-	DllExport int GetXProfile(float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t y, int64_t z)
+	DllExport int GetXProfile(const float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t y, int64_t z)
 	{
 		float* newProfile = new float[xDim];
 		if (y > yDim || z > zDim || y < 1 || z < 1)
@@ -72,7 +72,7 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int GetYProfile(float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t z)
+	DllExport int GetYProfile(const float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t z)
 	{
 		float* newProfile = new float[yDim];
 		if (x > xDim || z > zDim || x < 1 || z < 1)
@@ -84,7 +84,7 @@ extern "C"
 
 	}
 
-	DllExport int GetZProfile(float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y)
+	DllExport int GetZProfile(const float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y)
 	{
 		float* newProfile = new float[xDim];
 		if (x > xDim || y > yDim || x < 1 || y < 1)
@@ -230,6 +230,18 @@ extern "C"
 			}
 		}
 		*newDataPtr = reducedCube;
+		return EXIT_SUCCESS;
+	}
+
+	DllExport int GetHistogram(const float* dataPtr, int numElements, int numBins, float minVal, float maxVal, int** histogram)
+	{
+		int* histogramArray = new int[numBins]();
+		for (int i = 0; i < numElements; i++)
+		{
+			int histogramIndex = (dataPtr[i] - minVal) / maxVal * numBins;
+			histogramArray[histogramIndex] += 1;
+		}
+		*histogram = histogramArray;
 		return EXIT_SUCCESS;
 	}
 
