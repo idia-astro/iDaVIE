@@ -38,6 +38,38 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
+	DllExport int FindStats(const float* dataPtr, int64_t numberElements, float* maxResult, float* minResult, float* meanResult, float* stdDevResult)
+	{
+		float maxVal = -std::numeric_limits<float>::max();
+		float minVal = std::numeric_limits<float>::max();
+		double sum = 0;
+		double squareSum = 0;
+		#pragma omp parallel 
+		{
+			float currentMax = -std::numeric_limits<float>::max();
+			float currentMin = std::numeric_limits<float>::max();
+			#pragma omp for reduction(+:sum) reduction(+:squareSum) 
+			for (int64_t i = 0; i < numberElements; i++)
+			{
+				double val = dataPtr[i];
+				sum += val;
+				squareSum += val * val;
+				currentMax = fmax(currentMax, val);
+				currentMin = fmin(currentMin, val);
+			}
+			#pragma omp critical
+			{
+				maxVal = fmax(currentMax, maxVal);
+				minVal = fmin(currentMin, minVal);
+			}
+			*maxResult = maxVal;
+			*minResult = minVal;
+			*meanResult = sum / numberElements;
+			*stdDevResult = sqrt((numberElements * squareSum - sum * sum) / (numberElements * (numberElements - 1)));
+		}
+		return EXIT_SUCCESS;
+	}
+
 	DllExport int GetVoxelFloatValue(const float *dataPtr, float *voxelValue, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y, int64_t z)
 	{
 		float outValue;
@@ -233,15 +265,20 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int GetHistogram(const float* dataPtr, int numElements, int numBins, float minVal, float maxVal, int** histogram)
+	DllExport int GetHistogram(const float* dataPtr, int64_t numElements, int numBins, float minVal, float maxVal, int** histogram)
 	{
-		int* histogramArray = new int[numBins]();
-		for (int i = 0; i < numElements; i++)
-		{
-			int histogramIndex = (dataPtr[i] - minVal) / maxVal * numBins;
-			histogramArray[histogramIndex] += 1;
-		}
-		*histogram = histogramArray;
+			int* histogramArray = new int[numBins]();
+				for (int64_t i = 0; i < numElements; i++)
+				{
+					if (dataPtr[i] == maxVal)
+						histogramArray[numBins - 1] += 1;
+					else
+					{
+						int histogramIndex = floor((dataPtr[i] - minVal) / maxVal * (float)numBins);
+						histogramArray[histogramIndex] += 1;
+					}
+				}
+				* histogram = histogramArray;
 		return EXIT_SUCCESS;
 	}
 

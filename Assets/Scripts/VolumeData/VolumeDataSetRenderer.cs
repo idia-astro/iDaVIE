@@ -167,37 +167,32 @@ namespace VolumeData
         public void Start()
         {
             _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false);
-
             _volumeInputController = FindObjectOfType<VolumeInputController>();
             _featureManager = GetComponentInChildren<FeatureSetManager>();
             if (_featureManager == null)
                 Debug.Log($"No FeatureManager attached to VolumeDataSetRenderer. Attach prefab for use of Features.");
-
             if (!FactorOverride)
             {
                 _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
             }
-
             _dataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
-            DataAnalysis.FindMaxMin(_dataSet.FitsData, _dataSet.NumPoints, out ScaleMax, out ScaleMin);
+            ScaleMax = _dataSet.MaxValue;
+            ScaleMin = _dataSet.MinValue;
             if (!String.IsNullOrEmpty(MaskFileName))
             {
                 _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, true);
                 _maskDataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
             }
-
             _renderer = GetComponent<MeshRenderer>();
             _materialInstance = Instantiate(RayMarchingMaterial);
             _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.DataCube);
             _materialInstance.SetInt(MaterialID.NumColorMaps, ColorMapUtils.NumColorMaps);
             _materialInstance.SetFloat(MaterialID.FoveationStart, FoveationStart);
             _materialInstance.SetFloat(MaterialID.FoveationEnd, FoveationEnd);
-
             if (_maskDataSet != null)
             {
                 _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.DataCube);
             }
-
             _renderer.material = _materialInstance;
 
             // Set initial values (for resetting later)

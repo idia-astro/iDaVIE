@@ -27,22 +27,29 @@ namespace VolumeData
         public long NumPoints => XDim * YDim * ZDim;
         public long[] Dims => new[] {XDim, YDim, ZDim};
 
+       
+
         public bool IsMask { get; private set; }
 
         private IDictionary<string, string> _headerDictionary;
         private double _xRef, _yRef, _zRef, _xRefPix, _yRefPix, _zRefPix, _xDelt, _yDelt, _zDelt, _rot;
         private string _xCoord, _yCoord, _zCoord, _wcsProj;
 
-        public IntPtr FitsData;
+        public IntPtr FitsData = IntPtr.Zero;
+        public int[] Histogram;
+        public float MaxValue;
+        public float MinValue;
+        public float MeanValue;
+        public float StanDev;
 
         public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
             volumeDataSet.IsMask = isMask;
-            IntPtr fptr;
+            IntPtr fptr = IntPtr.Zero;
             int status = 0;
             int cubeDimensions;
-            IntPtr dataPtr;
+            IntPtr dataPtr = IntPtr.Zero;
             if (FitsReader.FitsOpenFile(out fptr, fileName, out status) != 0)
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
@@ -68,9 +75,10 @@ namespace VolumeData
             }
             long[] cubeSize = new long[cubeDimensions];
             Marshal.Copy(dataPtr, cubeSize, 0, cubeDimensions);
-            FitsReader.FreeMemory(dataPtr);
+            if (dataPtr != IntPtr.Zero)
+                FitsReader.FreeMemory(dataPtr);
             long numberDataPoints = cubeSize[0] * cubeSize[1] * cubeSize[2];
-            IntPtr fitsDataPtr;
+            IntPtr fitsDataPtr = IntPtr.Zero;
             if (isMask)
             {
                 if (FitsReader.FitsReadImageInt16(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
@@ -88,9 +96,12 @@ namespace VolumeData
                 }
             }
             FitsReader.FitsCloseFile(fptr, out status);
-
-
-
+            DataAnalysis.FindStats(fitsDataPtr, numberDataPoints, out volumeDataSet.MaxValue, out volumeDataSet.MinValue, out volumeDataSet.MeanValue, out volumeDataSet.StanDev);
+            int histogramSize = Mathf.RoundToInt(Mathf.Sqrt(numberDataPoints));
+            volumeDataSet.Histogram = new int[histogramSize];
+            IntPtr histogramPtr = IntPtr.Zero;
+            DataAnalysis.GetHistogram(fitsDataPtr, numberDataPoints, histogramSize, volumeDataSet.MinValue, volumeDataSet.MaxValue, out histogramPtr);
+            Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = cubeSize[0];
             volumeDataSet.YDim = cubeSize[1];
@@ -98,6 +109,8 @@ namespace VolumeData
             volumeDataSet.XDimDecimal = cubeSize[0].ToString().Length;
             volumeDataSet.YDimDecimal = cubeSize[1].ToString().Length;
             volumeDataSet.ZDimDecimal = cubeSize[2].ToString().Length;
+            if (histogramPtr != IntPtr.Zero)
+                DataAnalysis.FreeMemory(histogramPtr);
             return volumeDataSet;
         }
 
@@ -115,7 +128,7 @@ namespace VolumeData
                 textureFormat = TextureFormat.RFloat;
                 elementSize = sizeof(float);
             }
-            IntPtr reducedData;
+            IntPtr reducedData = IntPtr.Zero;
             bool downsampled = false;
             if (xDownsample != 1 || yDownsample != 1 || zDownsample != 1)
             {
@@ -171,7 +184,7 @@ namespace VolumeData
             }
             DataCube = dataCube;
             //TODO output cached file
-            if (downsampled)
+            if (downsampled && reducedData != IntPtr.Zero)
                 DataAnalysis.FreeMemory(reducedData);
         }
         
@@ -181,7 +194,7 @@ namespace VolumeData
             sw.Start();
             TextureFormat textureFormat;
             int elementSize;
-            IntPtr regionData;
+            IntPtr regionData = IntPtr.Zero;
             if (IsMask)
             {
                 textureFormat = TextureFormat.R16;
@@ -235,7 +248,8 @@ namespace VolumeData
                 textureSlice.Apply();
                 Graphics.CopyTexture(textureSlice, 0, 0, 0, 0, cubeSize.x, cubeSize.y, RegionCube, slice, 0, 0, 0);
             }
-            DataAnalysis.FreeMemory(regionData);
+            if (regionData != IntPtr.Zero)
+               DataAnalysis.FreeMemory(regionData);
             sw.Stop();            
             Debug.Log($"Cropped into {cubeSize.x} x {cubeSize.y} x {cubeSize.z} region ({cubeSize.x * cubeSize.y * cubeSize.z * 4e-6} MB) in {sw.ElapsedMilliseconds} ms");
         }
