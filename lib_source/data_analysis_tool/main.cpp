@@ -267,18 +267,18 @@ extern "C"
 
 	DllExport int GetHistogram(const float* dataPtr, int64_t numElements, int numBins, float minVal, float maxVal, int** histogram)
 	{
-			int* histogramArray = new int[numBins]();
+		int* histogramArray = new int[numBins]();
 				for (int64_t i = 0; i < numElements; i++)
 				{
 					if (dataPtr[i] == maxVal)
-						histogramArray[numBins - 1] += 1;
+						histogramArray[numBins - 1]++;
 					else
 					{
 						int histogramIndex = floor((dataPtr[i] - minVal) / maxVal * (float)numBins);
-						histogramArray[histogramIndex] += 1;
+						histogramArray[histogramIndex]++;
 					}
 				}
-				* histogram = histogramArray;
+				* histogram = histogramArray;	
 		return EXIT_SUCCESS;
 	}
 

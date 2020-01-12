@@ -37,6 +37,7 @@ namespace VolumeData
 
         public IntPtr FitsData = IntPtr.Zero;
         public int[] Histogram;
+        public float HistogramBinWidth;
         public float MaxValue;
         public float MinValue;
         public float MeanValue;
@@ -100,6 +101,7 @@ namespace VolumeData
             int histogramSize = Mathf.RoundToInt(Mathf.Sqrt(numberDataPoints));
             volumeDataSet.Histogram = new int[histogramSize];
             IntPtr histogramPtr = IntPtr.Zero;
+            volumeDataSet.HistogramBinWidth = (volumeDataSet.MaxValue - volumeDataSet.MinValue) / histogramSize;
             DataAnalysis.GetHistogram(fitsDataPtr, numberDataPoints, histogramSize, volumeDataSet.MinValue, volumeDataSet.MaxValue, out histogramPtr);
             Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
             volumeDataSet.FitsData = fitsDataPtr;
