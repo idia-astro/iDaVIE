@@ -54,10 +54,13 @@ extern "C"
 			for (int64_t i = 0; i < numberElements; i++)
 			{
 				double val = dataPtr[i];
-				sum += val;
-				squareSum += val * val;
-				currentMax = fmax(currentMax, val);
-				currentMin = fmin(currentMin, val);
+				if (!isnan(val))
+				{
+					sum += val;
+					squareSum += val * val;
+					currentMax = fmax(currentMax, val);
+					currentMin = fmin(currentMin, val);
+				}
 			}
 			#pragma omp critical
 			{
