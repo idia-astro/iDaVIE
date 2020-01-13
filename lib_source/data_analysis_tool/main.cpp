@@ -282,8 +282,47 @@ extern "C"
 					}
 				}
 				* histogram = histogramArray;	
-		return EXIT_SUCCESS;
-	}
+				
+				//OpenMP version... returns all zeros for some cubes!
+				/*
+					int* histogramArray = new int[numBins]();
+					//histogramArray[numBins - 1]++;
+					int* hist_private;
+					#pragma omp parallel
+					{
+						const int nthreads = omp_get_num_threads();
+						const int ithread = omp_get_thread_num();
+						#pragma omp single 
+						{
+							hist_private = new int[numBins * nthreads]();
+						}
+						#pragma omp for
+						for (int n = 0; n < numElements; ++n)
+						{
+							float dataValue = dataPtr[n];
+							if (dataValue == maxVal)			//inclusive of max value for final bin
+							{
+								hist_private[ithread * numBins + numBins - 1]++;
+							}
+							else if (!isnan(dataValue))
+							{
+								int histogramIndex = floor(((double)dataPtr[n] - (double)minVal) * (double)numBins / ((double)maxVal - (double)minVal));
+								hist_private[ithread * numBins + histogramIndex]++;
+							}
+						}
+						#pragma omp for
+						for (int i = 0; i < numBins; i++) {
+							for (int t = 0; t < nthreads; t++) {
+								histogramArray[i] += hist_private[numBins * t + i];
+							}
+						}
+					}
+					delete[] hist_private;
+					*histogram = histogramArray;
+					*/
+
+					return EXIT_SUCCESS;
+				}
 
 	DllExport int FreeMemory(void* ptrToDelete)
 	{
