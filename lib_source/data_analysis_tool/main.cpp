@@ -277,7 +277,7 @@ extern "C"
 						histogramArray[numBins - 1]++;
 					else if (!isnan(dataValue))
 					{
-						unsigned histogramIndex = floor(((double)dataPtr[i] - (double)minVal) * (double)numBins / (double)maxVal );
+						unsigned histogramIndex = floor(((double)dataPtr[i] - (double)minVal) * (double)numBins / ((double)maxVal - (double)minVal) );
 						histogramArray[histogramIndex]++;
 					}
 				}
