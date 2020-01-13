@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <math.h>
 #include <omp.h>
+#include "DebugCpp.h"
+
 
 #define DllExport __declspec (dllexport)
 
@@ -270,11 +272,12 @@ extern "C"
 		int* histogramArray = new int[numBins]();
 				for (int64_t i = 0; i < numElements; i++)
 				{
-					if (dataPtr[i] == maxVal)
+					float dataValue = dataPtr[i];
+					if (dataValue == maxVal)
 						histogramArray[numBins - 1]++;
-					else
+					else if (!isnan(dataValue))
 					{
-						int histogramIndex = floor((dataPtr[i] - minVal) / maxVal * (float)numBins);
+						unsigned histogramIndex = floor(((double)dataPtr[i] - (double)minVal) * (double)numBins / (double)maxVal );
 						histogramArray[histogramIndex]++;
 					}
 				}
