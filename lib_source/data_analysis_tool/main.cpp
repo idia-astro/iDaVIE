@@ -269,24 +269,7 @@ extern "C"
 
 	DllExport int GetHistogram(const float* dataPtr, int64_t numElements, int numBins, float minVal, float maxVal, int** histogram)
 	{
-		int* histogramArray = new int[numBins]();
-				for (int64_t i = 0; i < numElements; i++)
-				{
-					float dataValue = dataPtr[i];
-					if (dataValue == maxVal)
-						histogramArray[numBins - 1]++;
-					else if (!isnan(dataValue))
-					{
-						unsigned histogramIndex = floor(((double)dataPtr[i] - (double)minVal) * (double)numBins / ((double)maxVal - (double)minVal) );
-						histogramArray[histogramIndex]++;
-					}
-				}
-				* histogram = histogramArray;	
-				
-				//OpenMP version... returns all zeros for some cubes!
-				/*
 					int* histogramArray = new int[numBins]();
-					//histogramArray[numBins - 1]++;
 					int* hist_private;
 					#pragma omp parallel
 					{
@@ -297,7 +280,7 @@ extern "C"
 							hist_private = new int[numBins * nthreads]();
 						}
 						#pragma omp for
-						for (int n = 0; n < numElements; ++n)
+						for (int64_t n = 0; n < numElements; ++n)
 						{
 							float dataValue = dataPtr[n];
 							if (dataValue == maxVal)			//inclusive of max value for final bin
@@ -319,8 +302,6 @@ extern "C"
 					}
 					delete[] hist_private;
 					*histogram = histogramArray;
-					*/
-
 					return EXIT_SUCCESS;
 				}
 
