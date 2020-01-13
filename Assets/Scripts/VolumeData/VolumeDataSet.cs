@@ -80,11 +80,10 @@ namespace VolumeData
         private byte[] _cachedBrush;
         private short[] _regionMaskVoxels;
         private static int BrushStrokeLimit = 25000;
-        
-        public IntPtr FitsData;
-        public long[] cubeSize;
 
         public IntPtr FitsData = IntPtr.Zero;
+        public long[] cubeSize;
+
         public int[] Histogram;
         public float HistogramBinWidth;
         public float MaxValue;
@@ -92,7 +91,7 @@ namespace VolumeData
         public float MeanValue;
         public float StanDev;
 
-        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask)
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, int index0 = 0, int index1 = 1, int index2 = 2)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
             volumeDataSet.IsMask = isMask;
@@ -166,7 +165,8 @@ namespace VolumeData
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
             volumeDataSet._cachedBrush = new byte[2];
-            
+            if (histogramPtr != IntPtr.Zero)
+                DataAnalysis.FreeMemory(histogramPtr);
             return volumeDataSet;
         }
 
@@ -188,8 +188,6 @@ namespace VolumeData
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
             volumeDataSet._cachedBrush = new byte[2];
-            if (histogramPtr != IntPtr.Zero)
-                DataAnalysis.FreeMemory(histogramPtr);
 
             return volumeDataSet;
         }
