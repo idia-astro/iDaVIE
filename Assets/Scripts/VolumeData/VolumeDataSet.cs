@@ -64,6 +64,8 @@ namespace VolumeData
         public long NumPoints => XDim * YDim * ZDim;
         public long[] Dims => new[] {XDim, YDim, ZDim};
 
+       
+
         public bool IsMask { get; private set; }
 
         private IDictionary<string, string> _headerDictionary;
@@ -78,19 +80,26 @@ namespace VolumeData
         private byte[] _cachedBrush;
         private short[] _regionMaskVoxels;
         private static int BrushStrokeLimit = 25000;
-        
-        public IntPtr FitsData;
+
+        public IntPtr FitsData = IntPtr.Zero;
         public long[] cubeSize;
 
-        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, int index0=0, int index1 = 1, int index2 = 2)
+        public int[] Histogram;
+        public float HistogramBinWidth;
+        public float MaxValue;
+        public float MinValue;
+        public float MeanValue;
+        public float StanDev;
+
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, int index0 = 0, int index1 = 1, int index2 = 2)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
             volumeDataSet.IsMask = isMask;
             volumeDataSet.FileName = fileName;
-            IntPtr fptr;
+            IntPtr fptr = IntPtr.Zero;
             int status = 0;
             int cubeDimensions;
-            IntPtr dataPtr;
+            IntPtr dataPtr = IntPtr.Zero;
             if (FitsReader.FitsOpenFile(out fptr, fileName, out status) != 0)
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
@@ -114,12 +123,12 @@ namespace VolumeData
                 Debug.Log("Fits Read cube size error #" + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
             }
-            
             volumeDataSet.cubeSize = new long[cubeDimensions];
             Marshal.Copy(dataPtr, volumeDataSet.cubeSize, 0, cubeDimensions);
-            FitsReader.FreeMemory(dataPtr);
+	    if (dataPtr != IntPtr.Zero)
+                FitsReader.FreeMemory(dataPtr);
             long numberDataPoints = volumeDataSet.cubeSize[index0] * volumeDataSet.cubeSize[index1] * volumeDataSet.cubeSize[index2];
-            IntPtr fitsDataPtr;
+            IntPtr fitsDataPtr = IntPtr.Zero;
             if (isMask)
             {
                 if (FitsReader.FitsReadImageInt16(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
@@ -137,7 +146,13 @@ namespace VolumeData
                 }
             }
             FitsReader.FitsCloseFile(fptr, out status);
-
+            DataAnalysis.FindStats(fitsDataPtr, numberDataPoints, out volumeDataSet.MaxValue, out volumeDataSet.MinValue, out volumeDataSet.MeanValue, out volumeDataSet.StanDev);
+            int histogramSize = Mathf.RoundToInt(Mathf.Sqrt(numberDataPoints));
+            volumeDataSet.Histogram = new int[histogramSize];
+            IntPtr histogramPtr = IntPtr.Zero;
+            volumeDataSet.HistogramBinWidth = (volumeDataSet.MaxValue - volumeDataSet.MinValue) / histogramSize;
+            DataAnalysis.GetHistogram(fitsDataPtr, numberDataPoints, histogramSize, volumeDataSet.MinValue, volumeDataSet.MaxValue, out histogramPtr);
+            Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = volumeDataSet.cubeSize[index0];
             volumeDataSet.YDim = volumeDataSet.cubeSize[index1];
@@ -150,7 +165,8 @@ namespace VolumeData
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
             volumeDataSet._cachedBrush = new byte[2];
-            
+            if (histogramPtr != IntPtr.Zero)
+                DataAnalysis.FreeMemory(histogramPtr);
             return volumeDataSet;
         }
 
@@ -172,7 +188,7 @@ namespace VolumeData
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
             volumeDataSet._cachedBrush = new byte[2];
-            
+
             return volumeDataSet;
         }
 
@@ -190,7 +206,7 @@ namespace VolumeData
                 textureFormat = TextureFormat.RFloat;
                 elementSize = sizeof(float);
             }
-            IntPtr reducedData;
+            IntPtr reducedData = IntPtr.Zero;
             bool downsampled = false;
             if (xDownsample != 1 || yDownsample != 1 || zDownsample != 1)
             {
@@ -246,7 +262,7 @@ namespace VolumeData
             }
             DataCube = dataCube;
             //TODO output cached file
-            if (downsampled)
+            if (downsampled && reducedData != IntPtr.Zero)
                 DataAnalysis.FreeMemory(reducedData);
         }
         
@@ -256,7 +272,7 @@ namespace VolumeData
             sw.Start();
             TextureFormat textureFormat;
             int elementSize;
-            IntPtr regionData;
+            IntPtr regionData = IntPtr.Zero;
             if (IsMask)
             {
                 textureFormat = TextureFormat.R16;
@@ -355,8 +371,8 @@ namespace VolumeData
                 AddedMaskEntryCount = 0;
                 BrushStrokeHistory = new List<BrushStrokeTransaction>();
             }
-
-            DataAnalysis.FreeMemory(regionData);
+            if (regionData != IntPtr.Zero)
+            	DataAnalysis.FreeMemory(regionData);
             sw.Stop();            
             Debug.Log($"Cropped into {cubeSize.x} x {cubeSize.y} x {cubeSize.z} region ({cubeSize.x * cubeSize.y * cubeSize.z * 4e-6} MB) in {sw.ElapsedMilliseconds} ms");
         }
