@@ -422,6 +422,20 @@ public class CanvassDesktop : MonoBehaviour
         //here should check if loading is ok
         if(true)
         {
+
+            if (getFirstActiveDataSet().MaskFileName!="")
+            {
+                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+            .gameObject.transform.Find("Line_7").gameObject.transform.Find("Dropdown_mask").GetComponent<TMP_Dropdown>().interactable = true;
+
+            }
+            else
+                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+            .gameObject.transform.Find("Line_7").gameObject.transform.Find("Dropdown_mask").GetComponent<TMP_Dropdown>().interactable = false;
+
+
+            populateColorMapDropdown();
+
             //move to rendering tab
             mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().interactable = true;
             mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().onClick.Invoke();
@@ -538,6 +552,29 @@ public class CanvassDesktop : MonoBehaviour
             textPopUp = "";
             // you may put other code to run according to your game too
         }
+
+    }
+
+    private void populateColorMapDropdown()
+    {
+        //LabelColormap.gameObject.GetComponent<Text>().text = ColorMapUtils.FromHashCode(colorIndex) + "";
+
+        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+            .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().options.Clear();
+
+        foreach (var colorMap in Enum.GetValues(typeof(ColorMapEnum)))
+        {
+            //ColorMapUtils.FromHashCode(colorIndex) + ""
+            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+                .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().options.Add((new TMP_Dropdown.OptionData() { text = colorMap.ToString() }));
+        }
+
+        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+      .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value=45;
+
+
+
+
 
     }
 
