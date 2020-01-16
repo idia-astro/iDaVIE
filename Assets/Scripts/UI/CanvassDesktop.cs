@@ -34,9 +34,12 @@ public class CanvassDesktop : MonoBehaviour
     private double maskNAxis = 0;
     private double maskSize = 1;
 
-   // List<Tuple<double, double>> axisSize = null;
+    // List<Tuple<double, double>> axisSize = null;
     Dictionary<double, double> axisSize = null;
     Dictionary<double, double> maskAxisSize = null;
+
+    private ColorMapEnum activeColorMap = ColorMapEnum.None;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -66,6 +69,12 @@ public class CanvassDesktop : MonoBehaviour
     {
         // InformationTab();
 
+
+        if (getFirstActiveDataSet() && (getFirstActiveDataSet().ColorMap != activeColorMap))
+        {
+           mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+     .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value = (int)getFirstActiveDataSet().ColorMap;
+        }
 
     }
 
@@ -105,7 +114,7 @@ public class CanvassDesktop : MonoBehaviour
             string localMsg = "";
 
             imagePath = path;
-            
+
             //each time you select a fits image, reset the mask and disable loading button
             maskPath = "";
             informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;
@@ -114,7 +123,7 @@ public class CanvassDesktop : MonoBehaviour
 
             IntPtr fptr;
             int status = 0;
-           
+
 
             if (FitsReader.FitsOpenFile(out fptr, imagePath, out status) != 0)
             {
@@ -133,12 +142,12 @@ public class CanvassDesktop : MonoBehaviour
             //visualize the header into the scroll view
             string _header = "";
             IDictionary<string, string> _headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
-            
-             foreach (KeyValuePair<string, string> entry in _headerDictionary)
+
+            foreach (KeyValuePair<string, string> entry in _headerDictionary)
             {
 
                 //switch (entry.Key)
-                if (entry.Key.Length>4)
+                if (entry.Key.Length > 4)
                     switch (entry.Key.Substring(0, 5))
                     {
 
@@ -236,7 +245,7 @@ public class CanvassDesktop : MonoBehaviour
                 //cube is not loadable with more than 3 axis with nelement
                 else if (!loadable && list.Count > 3)
                 {
-                   
+
                     informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().interactable = true;
                     informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().interactable = true;
                     informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().interactable = true;
@@ -283,7 +292,7 @@ public class CanvassDesktop : MonoBehaviour
             informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;
             maskSize = 1;
             maskPath = path;
-           
+
             IntPtr fptr;
             int status = 0;
 
@@ -299,9 +308,9 @@ public class CanvassDesktop : MonoBehaviour
             maskAxisSize = new Dictionary<double, double>();
             List<double> list = new List<double>();
 
-           
+
             //visualize the header into the scroll view
-           
+
             IDictionary<string, string> _headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
             foreach (KeyValuePair<string, string> entry in _headerDictionary)
             {
@@ -323,9 +332,9 @@ public class CanvassDesktop : MonoBehaviour
                             break;
 
                     }
-               
+
             }
-         
+
 
 
             if (maskNAxis > 2)
@@ -336,7 +345,7 @@ public class CanvassDesktop : MonoBehaviour
                 int i1 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().value;
                 int i2 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value;
 
-                if(axisSize[i0 + 1] == maskAxisSize[1] && axisSize[i1 + 1] == maskAxisSize[2] && axisSize[i2 + 1] == maskAxisSize[3])
+                if (axisSize[i0 + 1] == maskAxisSize[1] && axisSize[i1 + 1] == maskAxisSize[2] && axisSize[i2 + 1] == maskAxisSize[3])
                 {
                     loadable = true;
                     informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
@@ -346,7 +355,7 @@ public class CanvassDesktop : MonoBehaviour
 
             }
 
-            if(!loadable)
+            if (!loadable)
             {
                 //mask is not valid
                 informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("MaskFilePath_text").GetComponent<TextMeshProUGUI>().text = "...";
@@ -420,10 +429,10 @@ public class CanvassDesktop : MonoBehaviour
         StartCoroutine(LoadCubeCoroutine(imagePath, maskPath));
 
         //here should check if loading is ok
-        if(true)
+        if (true)
         {
 
-            if (getFirstActiveDataSet().MaskFileName!="")
+            if (getFirstActiveDataSet().MaskFileName != "")
             {
                 mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
             .gameObject.transform.Find("Line_7").gameObject.transform.Find("Dropdown_mask").GetComponent<TMP_Dropdown>().interactable = true;
@@ -439,16 +448,16 @@ public class CanvassDesktop : MonoBehaviour
             //move to rendering tab
             mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().interactable = true;
             mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().onClick.Invoke();
-      
+
 
 
 
         }
 
-       
+
     }
 
-  
+
 
     IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath)
     {
@@ -498,7 +507,7 @@ public class CanvassDesktop : MonoBehaviour
         yield return null;
 
 
-        
+
     }
 
     public void DismissFileLoad()
@@ -512,7 +521,7 @@ public class CanvassDesktop : MonoBehaviour
         Application.Quit();
     }
 
-    
+
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
         foreach (var dataSet in _volumeDataSets)
@@ -525,6 +534,8 @@ public class CanvassDesktop : MonoBehaviour
 
         return null;
     }
+
+   
 
     void OnGUI()
     {
@@ -570,13 +581,18 @@ public class CanvassDesktop : MonoBehaviour
         }
 
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-      .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value=45;
-
-
-
-
+      .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value=33;
 
     }
 
+    public void ChangeColorMap()
+    {
+        if (getFirstActiveDataSet())
+        {
+             activeColorMap = ColorMapUtils.FromHashCode(mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+      .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value);
+            getFirstActiveDataSet().ColorMap = activeColorMap;
+        }
+    }
 
 }

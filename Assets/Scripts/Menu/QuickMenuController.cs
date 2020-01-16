@@ -24,7 +24,7 @@ public class QuickMenuController : MonoBehaviour
        
         if ( volumeDatasetRendererObj!= null )
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
-
+        
    
 
     }
@@ -35,13 +35,12 @@ public class QuickMenuController : MonoBehaviour
 
         if (_dataSets != null)
         {
-           
         }
 
         var firstActive = getFirstActiveDataSet();
         if (firstActive && _activeDataSet != firstActive)
         {
-           // Debug.Log("in foreach --- Update");
+            Debug.Log("in foreach --- Update");
             _activeDataSet = firstActive;
         }
        
@@ -71,7 +70,8 @@ public class QuickMenuController : MonoBehaviour
 
     public void OpenMainMenu()
     {
-        mainMenuCanvas.SetActive(!mainMenuCanvas.activeSelf);
+      //  mainMenuCanvas.SetActive(!mainMenuCanvas.activeSelf);
+        mainMenuCanvas.SetActive(true);
     }
 
     public void ToggleFeatures()

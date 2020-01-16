@@ -16550,13 +16550,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ab1e9334e419a7468e6e284c4dddc07, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CatalogDataSetManager: {fileID: 0}
-  ButtonPrevDataSet: {fileID: 0}
-  ButtonNextDataSet: {fileID: 0}
-  LabelDataSet: {fileID: 0}
-  ButtonPrevColorMap: {fileID: 0}
-  ButtonNextColorMap: {fileID: 0}
-  LabelColormap: {fileID: 0}
 --- !u!114 &822478521
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -35106,7 +35099,18 @@ MonoBehaviour:
     m_Options: []
   m_OnValueChanged:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1173555221}
+        m_MethodName: ChangeColorMap
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1953489020
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -38229,7 +38233,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2104593474}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1307c42efc0dad84ea2f9e303b4c8596, type: 3}
   m_Name: 
@@ -38368,13 +38372,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2106689973}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e84a72dc261851a4b907e58c03e0dad8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   volumeDatasetRendererObj: {fileID: 379208438}
-  notificationText: {fileID: 0}
+  notificationText: {fileID: 1257161245}
   mainMenuCanvas: {fileID: 822478519}
 --- !u!114 &2106689976
 MonoBehaviour:

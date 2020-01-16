@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class RenderMenu : MonoBehaviour
 {
+ /*
     public CatalogDataSetManager CatalogDataSetManager;
 
     // Data Set
@@ -20,6 +21,7 @@ public class RenderMenu : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        
         ButtonPrevDataSet.onClick.AddListener(OnPrevDataSetClicked);
         ButtonNextDataSet.onClick.AddListener(OnNextDataSetClicked);
         ButtonNextColorMap.onClick.AddListener(OnPrevColorMapClicked);
@@ -33,6 +35,7 @@ public class RenderMenu : MonoBehaviour
 
         CatalogDataSetManager.OnActiveDataSetChanged += HandleDataSetChanged;
         CatalogDataSetManager.OnColorMapChanged += HandleColorMapChanged;
+        
     }
 
     private void OnDestroy()
@@ -77,4 +80,6 @@ public class RenderMenu : MonoBehaviour
     {
         CatalogDataSetManager.ShiftColorMap(-1);
     }
+*/
+    
 }

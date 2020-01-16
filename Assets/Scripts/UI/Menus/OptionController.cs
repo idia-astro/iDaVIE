@@ -18,8 +18,8 @@ public class OptionController : MonoBehaviour
     public GameObject volumeDatasetRendererObj = null;
 
 
-    int defaultColorIndex = 45;
-    int colorIndex;
+    int defaultColorIndex = 33;
+    int colorIndex = -1;
 
 
 
@@ -49,6 +49,11 @@ public class OptionController : MonoBehaviour
             _activeDataSet = firstActive;
         }
 
+        if (_activeDataSet.ColorMap != ColorMapUtils.FromHashCode(colorIndex))
+        {
+            colorIndex = (int)_activeDataSet.ColorMap;
+            LabelColormap.gameObject.GetComponent<Text>().text = ColorMapUtils.FromHashCode(colorIndex) + "";
+        }
     }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
