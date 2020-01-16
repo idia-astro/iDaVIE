@@ -146,13 +146,18 @@ namespace VolumeData
                 }
             }
             FitsReader.FitsCloseFile(fptr, out status);
-            DataAnalysis.FindStats(fitsDataPtr, numberDataPoints, out volumeDataSet.MaxValue, out volumeDataSet.MinValue, out volumeDataSet.MeanValue, out volumeDataSet.StanDev);
-            int histogramSize = Mathf.RoundToInt(Mathf.Sqrt(numberDataPoints));
-            volumeDataSet.Histogram = new int[histogramSize];
-            IntPtr histogramPtr = IntPtr.Zero;
-            volumeDataSet.HistogramBinWidth = (volumeDataSet.MaxValue - volumeDataSet.MinValue) / histogramSize;
-            DataAnalysis.GetHistogram(fitsDataPtr, numberDataPoints, histogramSize, volumeDataSet.MinValue, volumeDataSet.MaxValue, out histogramPtr);
-            Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
+            if (!isMask)
+            {
+                DataAnalysis.FindStats(fitsDataPtr, numberDataPoints, out volumeDataSet.MaxValue, out volumeDataSet.MinValue, out volumeDataSet.MeanValue, out volumeDataSet.StanDev);
+                int histogramSize = Mathf.RoundToInt(Mathf.Sqrt(numberDataPoints));
+                volumeDataSet.Histogram = new int[histogramSize];
+                IntPtr histogramPtr = IntPtr.Zero;
+                volumeDataSet.HistogramBinWidth = (volumeDataSet.MaxValue - volumeDataSet.MinValue) / histogramSize;
+                DataAnalysis.GetHistogram(fitsDataPtr, numberDataPoints, histogramSize, volumeDataSet.MinValue, volumeDataSet.MaxValue, out histogramPtr);
+                Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
+                if (histogramPtr != IntPtr.Zero)
+                    DataAnalysis.FreeMemory(histogramPtr);
+            }
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = volumeDataSet.cubeSize[index0];
             volumeDataSet.YDim = volumeDataSet.cubeSize[index1];
@@ -165,8 +170,6 @@ namespace VolumeData
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
             volumeDataSet._cachedBrush = new byte[2];
-            if (histogramPtr != IntPtr.Zero)
-                DataAnalysis.FreeMemory(histogramPtr);
             return volumeDataSet;
         }
 
