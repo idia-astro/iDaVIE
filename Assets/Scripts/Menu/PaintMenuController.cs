@@ -18,21 +18,27 @@ public class PaintMenuController : MonoBehaviour
     int maskstatus=0;
     int cropstatus = 0;
     int featureStatus = 0;
+
+    private VolumeInputController _volumeInputController;
+
     // Start is called before the first frame update
     void Start()
     {
-       
+        _volumeInputController = FindObjectOfType<VolumeInputController>();
+       /*
         if ( volumeDatasetRendererObj!= null )
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
-
+            */
+        _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.PaintMode);
    
+    
 
     }
 
     // Update is called once per frame
     void Update()
     {
-
+        /*
         if (_dataSets != null)
         {
            
@@ -44,9 +50,10 @@ public class PaintMenuController : MonoBehaviour
            // Debug.Log("in foreach --- Update");
             _activeDataSet = firstActive;
         }
+        */
        
     }
-
+    /*
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
 
@@ -61,11 +68,12 @@ public class PaintMenuController : MonoBehaviour
         return null;
 
     }
-
+    */
 
 
     public void ExitPaintMode()
     {
+        _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.SelectionMode);
         this.gameObject.SetActive(false);
     }
 

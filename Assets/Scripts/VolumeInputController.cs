@@ -104,7 +104,7 @@ public class VolumeInputController : MonoBehaviour
     // VR-family dependent values
     private VRFamily _vrFamily;
 
-    private bool paintModeOn =false;
+    private bool paintMenuOn = false;
 
     // Used for moving the pointer transform to an acceptable position for each controller type
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsLeft = new Dictionary<VRFamily, Vector3>
@@ -232,12 +232,12 @@ public class VolumeInputController : MonoBehaviour
     private void OnQuickMenuChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
 
-        paintModeOn = CanvassQuickMenu.GetComponent<QuickMenuController>().paintMenu.activeSelf;
+        paintMenuOn = CanvassQuickMenu.GetComponent<QuickMenuController>().paintMenu.activeSelf;
 
 
 
         //paintModeOn = ;
-        if (newState && !paintModeOn)
+        if (newState && !paintMenuOn)
         {
             //  StartSelection(hand);
             StartRequestQuickMenu(fromSource == SteamVR_Input_Sources.LeftHand ? 0 : 1);
