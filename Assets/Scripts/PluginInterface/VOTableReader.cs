@@ -71,6 +71,12 @@ public class VOTableReader
     public static extern int FieldGetName(IntPtr field_ptr, out IntPtr name_ptr, out int status);
 
     [DllImport("votable_reader")]
+    public static extern int FieldGetDataType(IntPtr field_ptr, out int datatype, out int status);
+
+    [DllImport("votable_reader")]
+    public static extern int ColumnGetFloatArray(IntPtr col_ptr, IntPtr float_array, out int number_elements, out int status);
+
+    [DllImport("votable_reader")]
     public static extern int FreeMemory(IntPtr ptr);
 
 }

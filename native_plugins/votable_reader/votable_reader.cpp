@@ -108,6 +108,22 @@ int FieldGetName(Field* field_ptr, char*& name_ptr, int* status)
 	return field_ptr->getName(name_ptr, status);
 }
 
+int FieldGetDataType(Field* field_ptr, int* datatype_ptr, int* status)
+{
+	field_datatype datatype = datatype_not_specified;
+	int result = field_ptr->getDatatype(datatype, status);
+	*datatype_ptr = datatype;
+	return result;
+}
+/*
+int ColumnGetFloatArray(Column* col_ptr, float*& float_array, int* numELements, int* status)
+{
+	int number_elements;
+	int result = col_ptr->getFloatArray(float_array, number_elements, status);
+	*numELements = number_elements;
+	return result;
+}
+*/
 
 int FreeMemory(void* ptrToDelete)
 {

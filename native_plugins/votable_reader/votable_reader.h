@@ -38,6 +38,32 @@ extern "C"
 
 	DllExport int FieldGetName(Field*, char*&, int*);
 
+	DllExport int FieldGetDataType(Field*, int*, int*);
+
+	DllExport int ColumnGetBoolArray(Column*, Bool*&, int*, int*);
+
+	DllExport int ColumnGetBitArray(Column*, char*&, int*, int*);
+
+	DllExport int ColumnGetByteArray(Column*, unsigned char*&, int*, int*);
+
+	DllExport int ColumnGetShortArray(Column*, short*&, int*, int*);
+
+	DllExport int ColumnGetIntArray(Column*, int*&, int*, int*);
+
+	DllExport int ColumnGetLongArray(Column*, long*&, int*, int*);
+
+	DllExport int ColumnGetCharArray(Column*, char*&, int*, int*);
+
+	DllExport int ColumnGetUnicodeArray(Column*, unsigned short*&, int*, int*);
+
+	DllExport int ColumnGetFloatArray(Column*, float*&, int*, int*);
+
+	DllExport int ColumnGetDoubleArray(double*&, int*, int*);
+
+	//DllExport int ColumnGetFloatComplexArray(float*& array, int& numOfElements, int* status);
+
+	//DllExport int ColumnGetDoubleComplexArray(double*& array, int& numOfElements, int* status);
+
 	DllExport int FreeMemory(void*);
 
 }
