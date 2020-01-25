@@ -29,6 +29,12 @@ public class VolumeInputController : MonoBehaviour
         Moving,
         Scaling
     }
+    
+    public enum InteractionState
+    {
+        SelectionMode,
+        PaintMode
+    }
 
     [Flags]
     private enum RotationAxes
@@ -48,19 +54,28 @@ public class VolumeInputController : MonoBehaviour
 
     [Range(0.1f, 5.0f)] public float VignetteFadeSpeed = 2.0f;
 
+    // Painting
+    public bool AdditiveBrush = true;
+    public int BrushSize = 1;
+    public short BrushValue = 1;
+    
     private Player _player;
     private VRHand[] _hands;
     private Transform[] _handTransforms;
     private SteamVR_Action_Boolean _grabGripAction;
     private SteamVR_Action_Boolean _grabPinchAction;
     private SteamVR_Action_Boolean _quickMenuAction;
-    private VolumeDataSetRenderer[] _volumeDataSets;
+    public VolumeDataSetRenderer[] _volumeDataSets;
     private float[] _startDataSetScales;
     private Vector3[] _currentGripPositions;
     private Vector3 _startGripSeparation;
     private Vector3 _startGripCenter;
     private Vector3 _starGripForwardAxis;
     private LocomotionState _locomotionState;
+    
+    // Interactions
+    private InteractionState _interactionState;
+    private bool _isPainting;
     private bool _isSelecting;
     private bool _isQuickMenu;
 
@@ -136,6 +151,8 @@ public class VolumeInputController : MonoBehaviour
         _grabPinchAction.AddOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.RightHand);
         _quickMenuAction.AddOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.LeftHand);
         _quickMenuAction.AddOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.RightHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.AddOnStateDownListener(OnMenuUpPressed, SteamVR_Input_Sources.Any);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateDownListener(OnMenuDownPressed, SteamVR_Input_Sources.Any);
 
         var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
         if (volumeDataSetManager)
@@ -163,6 +180,7 @@ public class VolumeInputController : MonoBehaviour
         _startGripCenter = Vector3.zero;
 
         _locomotionState = LocomotionState.Idle;
+        _interactionState = InteractionState.SelectionMode;
     }
 
     private void OnDisable()
@@ -175,6 +193,34 @@ public class VolumeInputController : MonoBehaviour
             _grabPinchAction.RemoveOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.RightHand);
             _quickMenuAction.RemoveOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.LeftHand);
             _quickMenuAction.RemoveOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.RightHand);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.RemoveOnStateDownListener(OnMenuUpPressed, SteamVR_Input_Sources.Any);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.RemoveOnStateDownListener(OnMenuDownPressed, SteamVR_Input_Sources.Any);
+        }
+    }
+
+    private void OnMenuUpPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        if (_interactionState == InteractionState.PaintMode)
+        {
+            BrushSize += 2;
+            UpdatePaintCursors();
+        }
+    }
+    
+    private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        if (_interactionState == InteractionState.PaintMode)
+        {
+            BrushSize = Math.Max(1, BrushSize - 2);
+            UpdatePaintCursors();
+        }
+    }
+
+    private void UpdatePaintCursors()
+    {
+        foreach (var dataSet in _volumeDataSets)
+        {
+            dataSet.SetCursorPosition(_handTransforms[0].position, BrushSize);
         }
     }
 
@@ -185,7 +231,7 @@ public class VolumeInputController : MonoBehaviour
             //  StartSelection(hand);
             StartRequestQuickMenu(fromSource == SteamVR_Input_Sources.LeftHand ? 0 : 1);
         }
-        else if (!newState )
+        else
         {
             //  EndSelection();
             EndRequestQuickMenu();
@@ -222,30 +268,35 @@ public class VolumeInputController : MonoBehaviour
                 StateTransitionMovingToScaling();
                 break;
         }
-
-
-       
-
-
-     
-
     }
 
 
     private void OnPinchChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
-
-
-        var hand = fromSource == SteamVR_Input_Sources.LeftHand ? _hands[0] : _hands[1];
-        if (newState && _selectingHand == null)
+        if (_interactionState == InteractionState.PaintMode)
         {
-            StartSelection(hand);
-       
+            // Handle painting brush stroke ending
+            if (_isPainting && !newState)
+            {
+                foreach (var dataSet in _volumeDataSets)
+                {
+                    dataSet.FinishBrushStroke();
+                }
+            }
+            _isPainting = newState;
         }
-        else if (!newState && _selectingHand == hand)
+        else
         {
-            EndSelection();
+            var hand = fromSource == SteamVR_Input_Sources.LeftHand ? _hands[0] : _hands[1];
+            if (newState && _selectingHand == null)
+            {
+                StartSelection(hand);
 
+            }
+            else if (!newState && _selectingHand == hand)
+            {
+                EndSelection();
+            }
         }
     }
 
@@ -263,7 +314,6 @@ public class VolumeInputController : MonoBehaviour
 
     private void StartRequestQuickMenu(int handIndex)
     {
-        Debug.Log("Request Quick menu!");
         CanvassQuickMenu.transform.SetParent(_handTransforms[handIndex], false);
         CanvassQuickMenu.transform.localPosition= new Vector3(-0.1f,(handIndex == 0 ? 1: -1) * 0.175f, 0.10f);
         CanvassQuickMenu.transform.localRotation= Quaternion.Euler((handIndex == 0 ? 1: -1) * -3.25f,15f, 90f);
@@ -590,7 +640,18 @@ public class VolumeInputController : MonoBehaviour
 
             foreach (var dataSet in _volumeDataSets)
             {
-                dataSet.SetCursorPosition(_handTransforms[0].position);
+                if (_interactionState == InteractionState.PaintMode)
+                {
+                    if (_isPainting)
+                    {
+                        dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0);
+                    }
+                    dataSet.SetCursorPosition(_handTransforms[0].position, BrushSize);
+                }
+                else
+                {
+                    dataSet.SetCursorPosition(_handTransforms[0].position, 1);
+                }
                 if (dataSet.isActiveAndEnabled)
                 {
                     string sourceIndex = "";
@@ -714,5 +775,36 @@ public class VolumeInputController : MonoBehaviour
     public void VibrateController(SteamVR_Input_Sources hand, float duration, float frequency, float amplitude)
     {
         _player.leftHand.hapticAction.Execute(0, duration, frequency, amplitude, hand);
+    }
+
+    public void SetInteractionState(InteractionState interactionState)
+    {
+        // Ignore transitions to same state
+        if (interactionState != _interactionState)
+        {
+            if (interactionState == InteractionState.PaintMode)
+            {
+                StateTransitionSelectionToPaint();
+            }
+            else
+            {
+                StateTransitionPaintToSelection();
+            }
+        }
+    }
+
+    private void StateTransitionSelectionToPaint()
+    {
+        foreach (var dataSet in _volumeDataSets)
+        {
+            // Ensure a mask is present for each dataset
+            dataSet.InitialiseMask();
+        }
+        _interactionState = InteractionState.PaintMode;
+    }
+
+    private void StateTransitionPaintToSelection()
+    {
+        _interactionState = InteractionState.SelectionMode;
     }
 }

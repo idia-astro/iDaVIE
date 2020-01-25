@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Windows.Speech;
@@ -23,7 +24,7 @@ namespace VolumeData
             EditThresholdMax
         }
 
-        private VolumeDataSetRenderer[] _dataSets;
+        private List<VolumeDataSetRenderer> _dataSets;
 
         private SpeechControllerState _state;
         // Keywords
@@ -51,11 +52,17 @@ namespace VolumeData
             public static readonly string MaskIsolated = "mask isolate";
             public static readonly string ProjectionMaximum = "projection maximum";
             public static readonly string ProjectionAverage = "projection average";
+            public static readonly string PaintMode = "paint mode";
+            public static readonly string ExitPaintMode = "exit paint mode";
+            public static readonly string BrushAdd = "brush add";
+            public static readonly string BrushErase = "brush erase";
+            public static readonly string ShowMaskOutline = "show mask outline";
+            public static readonly string HideMaskOutline = "hide mask outline";
             
             public static readonly string[] All = { EditThresholdMin, EditThresholdMax, SaveThreshold, ResetThreshold, ResetTransform, 
                 ColormapPlasma, ColormapRainbow, ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix,
                 NextDataSet, PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated,
-                ProjectionMaximum, ProjectionAverage
+                ProjectionMaximum, ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline
             };
         }
    
@@ -68,7 +75,8 @@ namespace VolumeData
 
         void Start()
         {
-            _dataSets = GetComponentsInChildren<VolumeDataSetRenderer>(true);            
+            _dataSets = new List<VolumeDataSetRenderer>();
+            _dataSets.AddRange(GetComponentsInChildren<VolumeDataSetRenderer>(true));            
             _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, ConfidenceLevel.Medium);
             _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
 
@@ -79,6 +87,7 @@ namespace VolumeData
                 Debug.Log("Editing Hand not set. Please set in Editor.");
             }
             EditingHand.uiInteractAction.AddOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
+            
         }
 
         private void OnUiInteractDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
@@ -188,11 +197,36 @@ namespace VolumeData
             {
                 setProjection(ProjectionMode.AverageIntensityProjection);
             }
+            else if (args.text == Keywords.PaintMode)
+            {
+                EnablePaintMode();
+            }
+            else if (args.text == Keywords.ExitPaintMode)
+            {
+                DisablePaintMode();
+            }
+            else if (args.text == Keywords.BrushAdd)
+            {
+                SetBrushAdditive();
+            }
+            else if (args.text == Keywords.BrushErase)
+            {
+                SetBrushSubtractive();
+            }
+            else if (args.text == Keywords.ShowMaskOutline)
+            {
+                ShowMaskOutline();
+            }
+            else if (args.text == Keywords.HideMaskOutline)
+            {
+                HideMaskOutline();
+            }
         }
 
         // Update is called once per frame
         void Update()
         {
+            
             var firstActive = getFirstActiveDataSet();
             if (firstActive && _activeDataSet != firstActive)
             {
@@ -213,6 +247,12 @@ namespace VolumeData
                         break;
                 }
             }
+            
+        }
+
+        public void AddDataSet(VolumeDataSetRenderer setToAdd)
+        {
+            _dataSets.Add(setToAdd);
         }
 
         public void UpdateThreshold(bool editingMax)
@@ -267,13 +307,13 @@ namespace VolumeData
 
         public void stepDataSet(bool forwards)
         {
-            for (var i = 0; i < _dataSets.Length; i++)
+            for (var i = 0; i < _dataSets.Count; i++)
             {
                 var dataSet = _dataSets[i];
                 Debug.Log(dataSet);
                 if (dataSet == _activeDataSet)
                 {
-                    var newIndex = (i + _dataSets.Length + (forwards ? 1 : -1)) % _dataSets.Length;
+                    var newIndex = (i + _dataSets.Count + (forwards ? 1 : -1)) % _dataSets.Count;
                     _activeDataSet.gameObject.SetActive(false);
                     _dataSets[newIndex].gameObject.SetActive(true);
                     Debug.Log("Switching from dataset " + i + " to dataset " + newIndex);
@@ -319,6 +359,42 @@ namespace VolumeData
             if (_activeDataSet)
             {
                 _activeDataSet.ProjectionMode = mode;
+            }
+        }
+
+        public void EnablePaintMode()
+        {
+            _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.PaintMode);
+        }
+
+        public void DisablePaintMode()
+        {
+            _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.SelectionMode);
+        }
+
+        public void SetBrushAdditive()
+        {
+            _volumeInputController.AdditiveBrush = true;
+        }
+
+        public void SetBrushSubtractive()
+        {
+            _volumeInputController.AdditiveBrush = false;
+        }
+
+        public void ShowMaskOutline()
+        {
+            foreach (var dataSet in _dataSets)
+            {
+                dataSet.DisplayMask = true;
+            }
+        }
+
+        public void HideMaskOutline()
+        {
+            foreach (var dataSet in _dataSets)
+            {
+                dataSet.DisplayMask = false;
             }
         }
 
