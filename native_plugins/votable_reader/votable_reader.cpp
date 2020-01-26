@@ -28,27 +28,10 @@ int VOTableGetTableData(VTable* table_ptr, TableData** data_ptr, int* status)
 	return result;
 }
 
-
-
 int VOTableGetName(VTable* table_ptr, char*& name_ptr, int* status)
 {
 	name_ptr = new char[STRING_SIZE];
-	//char* str = new char[70];
-	//vptr->getName(str, status);
-	/*
-	if (vptr->getName(*name_ptr, status) == SUCCESS && str != NULL)
-	{
-		name_ptr = &str;
-		//freopen("native_plugins/debug.txt", "a", stdout);
-		//printf("%s\n", str);
-		return 0;
-	}
-	return 1;
-	*/
 	return table_ptr->getName(name_ptr, status);
-	//name_ptr = new char[70];
-	//strcpy(str,"dude");
-	//name_ptr = str;
 	return 0;
 }
 
@@ -115,7 +98,7 @@ int FieldGetDataType(Field* field_ptr, int* datatype_ptr, int* status)
 	*datatype_ptr = datatype;
 	return result;
 }
-/*
+
 int ColumnGetFloatArray(Column* col_ptr, float*& float_array, int* numELements, int* status)
 {
 	int number_elements;
@@ -123,7 +106,22 @@ int ColumnGetFloatArray(Column* col_ptr, float*& float_array, int* numELements, 
 	*numELements = number_elements;
 	return result;
 }
-*/
+
+int ColumnGetIntArray(Column* col_ptr, int*& int_array, int* numELements, int* status)
+{
+	int number_elements;
+	int result = col_ptr->getIntArray(int_array, number_elements, status);
+	*numELements = number_elements;
+	return result;
+}
+
+int ColumnGetCharArray(Column* col_ptr, char*& char_array, int* numELements, int* status)
+{
+	int number_elements;
+	int result = col_ptr->getCharArray(char_array, number_elements, status);
+	*numELements = number_elements;
+	return result;
+}
 
 int FreeMemory(void* ptrToDelete)
 {

@@ -7,6 +7,7 @@ using UnityEngine;
 using System.Globalization;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace DataFeatures
 {
@@ -60,35 +61,24 @@ namespace DataFeatures
         {
             string mappingJson = File.ReadAllText(mappingFileName);
             FeatureSetImporter featureSet = JsonConvert.DeserializeObject<FeatureSetImporter>(mappingJson);
-            FeatureSetImporter featureSetImporter = new FeatureSetImporter();
-            featureSetImporter.FileName = fileName;
+            featureSet.FileName = fileName;
             int status, ncols, nrows;
             IntPtr votable_ptr, meta_ptr, field_ptr, name_ptr, data_ptr, row_ptr, column_ptr, float_ptr;
             votable_ptr = meta_ptr = field_ptr = name_ptr = data_ptr = row_ptr = column_ptr = float_ptr = IntPtr.Zero;
-            //StringBuilder fieldName = new StringBuilder(70);
             string xpath = "/RESOURCE[1]/TABLE[1]";
             Debug.Log($"xpath: " + xpath );
             VOTableReader.VOTableInitialize(out votable_ptr);
             VOTableReader.VOTableOpenFile(votable_ptr, fileName, xpath, out status);
-            if (VOTableReader.VOTableGetName(votable_ptr, out name_ptr, out status) == 0)
-            {
-                //Debug.Log($"Name of VOTable: " + Marshal.PtrToStringAnsi(name_ptr));
-                Debug.Log($"Name of VOTable: " + Marshal.PtrToStringAnsi(name_ptr));
-                //Debug.Log($"Name of VOTable: " + Marshal.PtrToStringAnsi(name_ptr));
-            }
+            VOTableReader.VOTableGetName(votable_ptr, out name_ptr, out status);
             VOTableReader.VOTableGetTableData(votable_ptr, out data_ptr, out status);
             VOTableReader.VOTableGetMetaData(votable_ptr, out meta_ptr, out status);
             VOTableReader.MetaDataGetNumCols(meta_ptr, out ncols, out status);
             VOTableReader.TableDataGetNumRows(data_ptr, out nrows, out status);
-            Debug.Log($"Number of rows: " + nrows);
-            Debug.Log($"Number of columns: " + ncols);
             string[] colNames = new string[ncols];
             for (int i = 0; i < ncols; i++)
             {
                 VOTableReader.MetaDataGetField(meta_ptr, out field_ptr, i, out status);
                 VOTableReader.FieldGetName(field_ptr, out name_ptr, out status);
-                //string name = fieldName.ToString();
-                //Debug.Log($"Column name: " + Marshal.PtrToStringAnsi(name_ptr));
                 colNames[i] = Marshal.PtrToStringAnsi(name_ptr);
             }
             int[] xyzIndices = { Array.IndexOf(colNames, featureSet.Mapping.X.Source),
@@ -99,64 +89,121 @@ namespace DataFeatures
                 Debug.Log($"Minimum column parameters not found!");
                 return featureSet;
             }
-
-            int sourceIndex = 0;
-            int numElements = 0;
-            for (int row = 0; row < nrows; row++)
+            int[] boxIndices =
             {
-                if (VOTableReader.TableDataGetRow(data_ptr, out row_ptr, out status) == 0)
+                Array.IndexOf(colNames, featureSet.Mapping.XMin.Source),
+                Array.IndexOf(colNames, featureSet.Mapping.XMax.Source),
+                Array.IndexOf(colNames, featureSet.Mapping.YMin.Source),
+                Array.IndexOf(colNames, featureSet.Mapping.YMax.Source),
+                Array.IndexOf(colNames, featureSet.Mapping.ZMin.Source),
+                Array.IndexOf(colNames, featureSet.Mapping.ZMax.Source),
+            };
+            int nameIndex = Array.IndexOf(colNames, featureSet.Mapping.Name.Source);
+            int numElements = 0;
+            featureSet.NumberFeatures = nrows;
+            featureSet.FeatureNames = new string[featureSet.NumberFeatures];
+            featureSet.FeaturePositions = new Vector3[featureSet.NumberFeatures];
+            if (boxIndices.Min() > 0)
+            {
+                featureSet.BoxMinPositions = new Vector3[featureSet.NumberFeatures];
+                featureSet.BoxMaxPositions = new Vector3[featureSet.NumberFeatures];
+            }
+            else
+            {
+                featureSet.BoxMinPositions = new Vector3[0];
+                featureSet.BoxMaxPositions = new Vector3[0];
+            }
+                for (int row = 0; row < nrows; row++)   // For each row (feature)
+            {
+                if (VOTableReader.TableDataGetRow(data_ptr, out row_ptr, row, out status) == 0)
                 {
-                    for (int col = 0; col < ncols; col++)
+                    // Get x,y,z positions
+                    for (int i = 0; i < xyzIndices.Length; i++)
                     {
-                        if (VOTableReader.RowGetColumn(row_ptr, out column_ptr, out status) == 0)
+                        if (VOTableReader.RowGetColumn(row_ptr, out column_ptr, xyzIndices[i], out status) == 0)
                         {
-                            if (col == xyzIndices[0])
+                            if (VOTableReader.ColumnGetFloatArray(column_ptr, out float_ptr, out numElements, out status) == 0) ;
                             {
-                                VOTableReader.ColumnGetFloatArray(column_ptr, out float_ptr, out numElements, out status);
                                 if (numElements > 1)
                                 {
                                     Debug.Log("Please use Feature Table with single element values");
                                     return featureSet;
                                 }
-                                
+                                float[] valueHolder = new float[1];
+                                Marshal.Copy(column_ptr, valueHolder, 0, 1);
+                                switch (i)
+                                {
+                                    case 0:
+                                        featureSet.FeaturePositions[row].x = valueHolder[0];
+                                        break;
+                                    case 1:
+                                        featureSet.FeaturePositions[row].y = valueHolder[0];
+                                        break;
+                                    case 2:
+                                        featureSet.FeaturePositions[row].z = valueHolder[0];
+                                        break;
+                                }
                             }
-                            else if (col == xyzIndices[1])
-                            {
+                        }
+                    }
 
+                    // Get box bounds if they exist
+                    if (boxIndices.Min() > 0)
+                    {
+                        for (int i = 0; i < boxIndices.Length; i++)
+                        {
+                            if (VOTableReader.RowGetColumn(row_ptr, out column_ptr, boxIndices[i], out status) == 0)
+                            {
+                                if (VOTableReader.ColumnGetFloatArray(column_ptr, out float_ptr, out numElements, out status) == 0) ;
+                                {
+                                    if (numElements > 1)
+                                    {
+                                        Debug.Log("Please use Feature Table with single element values");
+                                        return featureSet;
+                                    }
+                                    float[] valueHolder = new float[1];
+                                    Marshal.Copy(float_ptr, valueHolder, 0, 1);
+                                    switch (i)
+                                    {
+                                        case 0:
+                                            featureSet.BoxMinPositions[row].x = valueHolder[0];
+                                            break;
+                                        case 1:
+                                            featureSet.BoxMaxPositions[row].x = valueHolder[0];
+                                            break;
+                                        case 2:
+                                            featureSet.BoxMinPositions[row].y = valueHolder[0];
+                                            break;
+                                        case 3:
+                                            featureSet.BoxMaxPositions[row].y = valueHolder[0];
+                                            break;
+                                        case 4:
+                                            featureSet.BoxMinPositions[row].z = valueHolder[0];
+                                            break;
+                                        case 5:
+                                            featureSet.BoxMaxPositions[row].z = valueHolder[0];
+                                            break;
+                                    }
+                                }
                             }
-                            else if (col == xyzIndices[2])
-                            {
+                        }
+                    }
 
+                    // Get name if exists
+                    if (nameIndex > 0)
+                    {
+                        if (VOTableReader.RowGetColumn(row_ptr, out column_ptr, nameIndex, out status) == 0)
+                        {
+                            if (VOTableReader.ColumnGetCharArray(column_ptr, out name_ptr, out numElements, out status) == 0) ;
+                            {
+                                featureSet.FeatureNames[row] = Marshal.PtrToStringAnsi(name_ptr);
                             }
                         }
                     }
                 }
-                /*
-                VOTableReader.TableDataGetRow(data_ptr, out row_ptr, out status);
-                if (sourceIndex == 0)
-                    featureSet.FeatureData = new Dictionary<string, string>[lines.Length - i];
-                featureSet.FeatureData[sourceIndex] = new Dictionary<string, string>();
-                string[] values = System.Text.RegularExpressions.Regex.Split(lines[i], @"\s{2,}");
-                for (int j = 0; j < values.Length; j++)
-                {
-                    featureSet.FeatureData[sourceIndex].Add(keys[j], values[j]);
-                }
-                sourceIndex++;
-                */
-            }
-
-
-
-            featureSet.NumberFeatures = featureSet.FeatureData.Length;
-            featureSet.FeatureNames = new string[featureSet.NumberFeatures];
-            featureSet.FeaturePositions = new Vector3[featureSet.NumberFeatures];
-            for (int i = 0; i < featureSet.NumberFeatures; i++)
-            {
-                featureSet.FeaturePositions[i].x = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.X.Source], CultureInfo.InvariantCulture);
-                featureSet.FeaturePositions[i].y = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.Y.Source], CultureInfo.InvariantCulture);
-                featureSet.FeaturePositions[i].z = Convert.ToSingle(featureSet.FeatureData[i][featureSet.Mapping.Z.Source], CultureInfo.InvariantCulture);
             }
             
+            // Clear allocated space if pointers used
             if (votable_ptr != IntPtr.Zero)
                 VOTableReader.FreeMemory(votable_ptr);
             if (meta_ptr != IntPtr.Zero)
@@ -171,8 +218,9 @@ namespace DataFeatures
                 VOTableReader.FreeMemory(row_ptr);
             if (column_ptr != IntPtr.Zero)
                 VOTableReader.FreeMemory(column_ptr);
-
-            return featureSetImporter;
+            if (float_ptr != IntPtr.Zero)
+                VOTableReader.FreeMemory(float_ptr);
+            return featureSet;
         }
 
         public static FeatureSetImporter CreateSetFromAscii(string fileName, string mappingFileName)

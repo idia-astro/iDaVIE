@@ -36,6 +36,8 @@ extern "C"
 
 	DllExport int TableDataGetNumRows(TableData*, int*, int*);
 
+	DllExport int RowGetColumn(Row*, Column**, int, int*);
+
 	DllExport int FieldGetName(Field*, char*&, int*);
 
 	DllExport int FieldGetDataType(Field*, int*, int*);
@@ -59,10 +61,6 @@ extern "C"
 	DllExport int ColumnGetFloatArray(Column*, float*&, int*, int*);
 
 	DllExport int ColumnGetDoubleArray(double*&, int*, int*);
-
-	//DllExport int ColumnGetFloatComplexArray(float*& array, int& numOfElements, int* status);
-
-	//DllExport int ColumnGetDoubleComplexArray(double*& array, int& numOfElements, int* status);
 
 	DllExport int FreeMemory(void*);
 
