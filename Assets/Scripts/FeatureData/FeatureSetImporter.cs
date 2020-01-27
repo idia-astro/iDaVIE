@@ -73,6 +73,11 @@ namespace DataFeatures
             VOTableReader.VOTableGetMetaData(votable_ptr, out meta_ptr, out status);
             VOTableReader.MetaDataGetNumCols(meta_ptr, out ncols, out status);
             VOTableReader.TableDataGetNumRows(data_ptr, out nrows, out status);
+            if (nrows == 0 || ncols == 0)
+            {
+                Debug.Log($"Error reading VOTable! Note: Currently the VOTable may not contain xmlns declarations.");
+                return featureSet;
+            }
             string[] colNames = new string[ncols];
             for (int i = 0; i < ncols; i++)
             {
