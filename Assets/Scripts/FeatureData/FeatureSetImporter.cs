@@ -102,6 +102,8 @@ namespace DataFeatures
             featureSet.NumberFeatures = nrows;
             featureSet.FeatureNames = new string[featureSet.NumberFeatures];
             featureSet.FeaturePositions = new Vector3[featureSet.NumberFeatures];
+
+            // if there are box dimensions, initialize array with number of features, otherwise initialize empty array
             if (boxIndices.Min() > 0)
             {
                 featureSet.BoxMinPositions = new Vector3[featureSet.NumberFeatures];
@@ -112,11 +114,11 @@ namespace DataFeatures
                 featureSet.BoxMinPositions = new Vector3[0];
                 featureSet.BoxMaxPositions = new Vector3[0];
             }
-                for (int row = 0; row < nrows; row++)   // For each row (feature)
+                for (int row = 0; row < nrows; row++)   // For each row (feature)...
             {
                 if (VOTableReader.TableDataGetRow(data_ptr, out row_ptr, row, out status) == 0)
                 {
-                    // Get x,y,z positions
+                    // ...get x,y,z positions
                     for (int i = 0; i < xyzIndices.Length; i++)
                     {
                         if (VOTableReader.RowGetColumn(row_ptr, out column_ptr, xyzIndices[i], out status) == 0)
@@ -129,7 +131,7 @@ namespace DataFeatures
                                     return featureSet;
                                 }
                                 float[] valueHolder = new float[1];
-                                Marshal.Copy(column_ptr, valueHolder, 0, 1);
+                                Marshal.Copy(float_ptr, valueHolder, 0, 1);
                                 switch (i)
                                 {
                                     case 0:
@@ -146,7 +148,7 @@ namespace DataFeatures
                         }
                     }
 
-                    // Get box bounds if they exist
+                    // ...get box bounds if they exist
                     if (boxIndices.Min() > 0)
                     {
                         for (int i = 0; i < boxIndices.Length; i++)
@@ -187,8 +189,12 @@ namespace DataFeatures
                             }
                         }
                     }
+                    else
+                    {
 
-                    // Get name if exists
+                    }
+
+                    // ...get name if exists
                     if (nameIndex > 0)
                     {
                         if (VOTableReader.RowGetColumn(row_ptr, out column_ptr, nameIndex, out status) == 0)
@@ -198,6 +204,10 @@ namespace DataFeatures
                                 featureSet.FeatureNames[row] = Marshal.PtrToStringAnsi(name_ptr);
                             }
                         }
+                    }
+                    else
+                    {
+                        featureSet.FeatureNames[row] = "Source #" + row;
                     }
                 }
             }
@@ -285,7 +295,7 @@ namespace DataFeatures
             {
                 for (int i = 0; i < featureSet.NumberFeatures; i++)
                 {
-                    featureSet.FeatureNames[i] = i.ToString();
+                    featureSet.FeatureNames[i] = "Source #" + i;
                 }
             }
 
@@ -308,6 +318,7 @@ namespace DataFeatures
             }
             else
             {
+                // If there are no box dimensions, give empty arrays
                 featureSet.BoxMinPositions = new Vector3[0];
                 featureSet.BoxMaxPositions = new Vector3[0];
             }
