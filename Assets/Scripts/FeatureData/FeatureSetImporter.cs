@@ -66,7 +66,6 @@ namespace DataFeatures
             IntPtr votable_ptr, meta_ptr, field_ptr, name_ptr, data_ptr, row_ptr, column_ptr, float_ptr;
             votable_ptr = meta_ptr = field_ptr = name_ptr = data_ptr = row_ptr = column_ptr = float_ptr = IntPtr.Zero;
             string xpath = "/RESOURCE[1]/TABLE[1]";
-            Debug.Log($"xpath: " + xpath );
             VOTableReader.VOTableInitialize(out votable_ptr);
             VOTableReader.VOTableOpenFile(votable_ptr, fileName, xpath, out status);
             VOTableReader.VOTableGetName(votable_ptr, out name_ptr, out status);
