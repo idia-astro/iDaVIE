@@ -7,9 +7,19 @@
 
 extern "C"
 {
-	DllExport int FitsOpenFile(fitsfile **fptr, char* filename,  int *status)
+	DllExport int FitsOpenFileReadOnly(fitsfile **fptr, char* filename,  int *status)
 	{
 		return fits_open_file(fptr, filename, READONLY, status);
+	}
+
+	DllExport int FitsOpenFileReadWrite(fitsfile** fptr, char* filename, int* status)
+	{
+		return fits_open_file(fptr, filename, READWRITE, status);
+	}
+
+	DllExport int FitsCreateFile(fitsfile** fptr, char* filename, int* status)
+	{
+		return fits_create_file(fptr, filename, status);
 	}
 
 	DllExport int FitsCloseFile(fitsfile *fptr, int *status)
@@ -62,7 +72,7 @@ extern "C"
 	DllExport int FitsCreateImg(fitsfile *fptr, int bitpix, int naxis, int64_t *naxes, int *status)
 	{
 		int success = fits_create_imgll(fptr, bitpix, naxis, naxes, status);
-		return 0;
+		return success;
 	}
 
 	DllExport int FitsCopyHeader(fitsfile *infptr, fitsfile *outfptr, int *status)
@@ -71,9 +81,12 @@ extern "C"
 		return success;
 	}
 
-	DllExport int FitsWriteImageFloat(fitsfile* fptr, int64_t* fpixel, int64_t nelements, float* array, int* status)
+	DllExport int FitsWriteImageInt16(fitsfile* fptr, int dims, int64_t nelements, float* array, int* status)
 	{
-		int success = fits_write_pixll(fptr, TFLOAT, fpixel, nelements, array, status);
+		int64_t* startPix = new int64_t[dims];
+		for (int i = 0; i < dims; i++)
+			startPix[i] = 1;
+		int success = fits_write_pixll(fptr, TSHORT, startPix, nelements, array, status);
 		return success;
 	}
 	

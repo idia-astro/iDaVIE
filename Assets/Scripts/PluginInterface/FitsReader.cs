@@ -9,7 +9,10 @@ using System.Text;
 public class FitsReader {
 
     [DllImport("fits_reader")]
-    public static extern int FitsOpenFile(out IntPtr fptr, string filename, out int status);
+    public static extern int FitsOpenFileReadOnly(out IntPtr fptr, string filename, out int status);
+
+    [DllImport("fits_reader")]
+    public static extern int FitsOpenFileReadWrite(out IntPtr fptr, string filename, out int status);
 
     [DllImport("fits_reader")]
     public static extern int FitsCloseFile(IntPtr fptr, out int status);
@@ -31,6 +34,21 @@ public class FitsReader {
 
     [DllImport("fits_reader")]
     public static extern int FitsGetImageSize(IntPtr fptr, int dims, out IntPtr naxes, out int status);
+
+    [DllImport("fits_reader")]
+    public static extern int FitsCreateImg(IntPtr fptr, int bitpix, int naxis, IntPtr naxes, out int status);
+
+    [DllImport("fits_reader")]
+    public static extern int FitsCopyHeader(IntPtr infptr, IntPtr outfptr, out int status);
+
+    [DllImport("fits_reader")]
+    public static extern int FitsWriteImageInt16(IntPtr fptr, int dims, long nelements, IntPtr array, out int status);
+
+    [DllImport("fits_reader")]
+    public static extern int FitsWriteKey(IntPtr fptr, int datatype, string keyname, IntPtr value, string comment, out int status);
+
+    [DllImport("fits_reader")]
+    public static extern int FitsUpdateKey(IntPtr fptr, int datatype, string keyname, IntPtr value, string comment, out int status);
 
     [DllImport("fits_reader")]
     public static extern int FitsMakeKeyN(string keyroot, int value, StringBuilder keyname, out int status);
@@ -82,5 +100,16 @@ public class FitsReader {
             keyValue.Clear();
         }
         return dict;
+    }
+
+    public static void SaveNewMask(IntPtr cubeFitsPtr, IntPtr maskData, string fileName)
+    {
+        IntPtr fitsPtr;
+        fitsOpen
+    }
+
+    public static void UpdateOldMask(IntPtr oldMaskFitsPtr, IntPtr oldMaskData, IntPtr maskDataUpdate)
+    {
+
     }
 }

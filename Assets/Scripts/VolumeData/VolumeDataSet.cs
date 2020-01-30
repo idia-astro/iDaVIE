@@ -100,12 +100,19 @@ namespace VolumeData
             int status = 0;
             int cubeDimensions;
             IntPtr dataPtr = IntPtr.Zero;
-            if (FitsReader.FitsOpenFile(out fptr, fileName, out status) != 0)
+            if (isMask)
             {
-                Debug.Log("Fits open failure... code #" + status.ToString());
+                if (FitsReader.FitsOpenFileReadWrite(out fptr, fileName, out status) != 0)
+                {
+                    Debug.Log("Fits open failure... code #" + status.ToString());
+                }
             }
-            if (!isMask)
+            else
             {
+                if (FitsReader.FitsOpenFileReadOnly(out fptr, fileName, out status) != 0)
+                {
+                    Debug.Log("Fits open failure... code #" + status.ToString());
+                }
                 volumeDataSet._headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
                 volumeDataSet.ParseHeaderDict();
             }
