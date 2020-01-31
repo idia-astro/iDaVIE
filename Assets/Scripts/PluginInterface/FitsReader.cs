@@ -15,6 +15,9 @@ public class FitsReader {
     public static extern int FitsOpenFileReadWrite(out IntPtr fptr, string filename, out int status);
 
     [DllImport("fits_reader")]
+    public static extern int FitsCreateFile(out IntPtr fptr, string filename, out int status);
+
+    [DllImport("fits_reader")]
     public static extern int FitsCloseFile(IntPtr fptr, out int status);
 
     [DllImport("fits_reader")]
@@ -102,13 +105,42 @@ public class FitsReader {
         return dict;
     }
 
-    public static void SaveNewMask(IntPtr cubeFitsPtr, IntPtr maskData, string fileName)
+    public static void SaveNewInt16Mask(IntPtr cubeFitsPtr, IntPtr maskData, long[] dims, string fileName)
     {
-        IntPtr fitsPtr;
-        fitsOpen
+        IntPtr maskPtr = IntPtr.Zero;
+        IntPtr keyValue = (IntPtr)21;
+        int status;
+        long nelements = dims[0] * dims[1] * dims[2];
+        IntPtr naxes = IntPtr.Zero;
+        Marshal.Copy(dims, 0, naxes, dims.Length);
+        if (FitsCreateFile(out maskPtr, fileName, out status) != 0)
+        {
+            Debug.Log("Fits create file error #" + status.ToString());
+        }
+        if (FitsCopyHeader(cubeFitsPtr, maskData, out status) != 0)
+        {
+            Debug.Log("Fits copy header error #" + status.ToString());
+        }
+        if (FitsUpdateKey(maskData, 14, "BITPIX", keyValue, null, out status) != 0)
+        {
+            Debug.Log("Fits update key error #" + status.ToString());
+        }
+        if (FitsCreateImg(maskPtr, 21, 3, naxes, out status) != 0)
+        {
+            Debug.Log("Fits create image error #" + status.ToString());
+        }
+        if (FitsWriteImageInt16(maskPtr, 3, nelements, maskData, out status) != 0)
+        {
+            Debug.Log("Fits write image error #" + status.ToString());
+        }
+        if (FitsCloseFile(maskPtr, out status) != 0)
+        {
+            Debug.Log("Fits close file error #" + status.ToString());
+
+        }
     }
 
-    public static void UpdateOldMask(IntPtr oldMaskFitsPtr, IntPtr oldMaskData, IntPtr maskDataUpdate)
+    public static void UpdateOldInt16Mask(IntPtr oldMaskFitsPtr, IntPtr oldMaskData, IntPtr maskDataUpdate)
     {
 
     }
