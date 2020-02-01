@@ -27,6 +27,11 @@ extern "C"
 		return fits_close_file(fptr, status);
 	}
 	
+	DllExport int FitsFlushFile(fitsfile* fptr, int* status)
+	{
+		return fits_flush_file(fptr, status);
+	}
+
 	DllExport int FitsMovabsHdu(fitsfile *fptr, int hdunum, int *hdutype, int *status)
 	{
 		return fits_movabs_hdu(fptr, hdunum, hdutype, status);
@@ -179,14 +184,11 @@ extern "C"
 		return 0;
 	}
 
-	DllExport int InsertSubInt16Array(int16_t* mainArray, int64_t mainArraySize, int16_t* subArray, int64_t subArraySize, int64_t startIndex, int16_t** resultArray)
+	DllExport int InsertSubArrayInt16(int16_t* mainArray, int64_t mainArraySize, int16_t* subArray, int64_t subArraySize, int64_t startIndex)
 	{
-		int16_t* result = new int16_t[mainArraySize];
 		if (subArraySize > mainArraySize|| startIndex > mainArraySize || startIndex + subArraySize > mainArraySize)
 			return EXIT_FAILURE;
-		memcpy(result, mainArray, mainArraySize*sizeof(int16_t));
-		memcpy(result + startIndex, subArray, subArraySize*sizeof(int16_t));
-		*resultArray = result;
+		memcpy(mainArray + startIndex, subArray, subArraySize*sizeof(int16_t));
 		return EXIT_SUCCESS;
 	}
 }
