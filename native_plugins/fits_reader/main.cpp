@@ -92,6 +92,7 @@ extern "C"
 		for (int i = 0; i < dims; i++)
 			startPix[i] = 1;
 		int success = fits_write_pixll(fptr, TSHORT, startPix, nelements, array, status);
+		delete[] startPix;
 		return success;
 	}
 	
