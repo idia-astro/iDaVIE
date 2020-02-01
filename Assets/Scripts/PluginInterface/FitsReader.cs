@@ -4,9 +4,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.InteropServices;
 using System.Text;
+using Unity.Collections;
 
-
-public class FitsReader {
+public class FitsReader
+{
 
     [DllImport("fits_reader")]
     public static extern int FitsOpenFileReadOnly(out IntPtr fptr, string filename, out int status);
@@ -63,7 +64,7 @@ public class FitsReader {
     public static extern int FitsReadKeyN(IntPtr fptr, int keynum, StringBuilder keyname, StringBuilder keyvalue, StringBuilder comment, out int status);
 
     [DllImport("fits_reader")]
-    public static extern int FitsReadColFloat(IntPtr fptr, int colnum, long firstrow, long firstelem, long nelem,  out IntPtr array,  out int status);
+    public static extern int FitsReadColFloat(IntPtr fptr, int colnum, long firstrow, long firstelem, long nelem, out IntPtr array, out int status);
 
     [DllImport("fits_reader")]
     public static extern int FitsReadColString(IntPtr fptr, int colnum, long firstrow, long firstelem, long nelem, out IntPtr ptrarray, out IntPtr chararray, out int status);
@@ -76,11 +77,14 @@ public class FitsReader {
 
     [DllImport("fits_reader")]
     public static extern int CreateEmptyImageInt16(long sizeX, long sizeY, long sizeZ, out IntPtr array);
-    
+
     [DllImport("fits_reader")]
     public static extern int FreeMemory(IntPtr pointerToDelete);
 
-    public static IDictionary<string,string> ExtractHeaders(IntPtr fptr, out int status)
+    [DllImport("fits_reader")]
+    public static extern int InsertSubFloatArray(IntPtr mainArray, long mainArraySize, IntPtr subArray, long subArraySize, long startIndex, IntPtr resultArray);
+
+    public static IDictionary<string, string> ExtractHeaders(IntPtr fptr, out int status)
     {
         int numberKeys, keysLeft;
         if (FitsGetNumHeaderKeys(fptr, out numberKeys, out keysLeft, out status) != 0)
@@ -105,23 +109,23 @@ public class FitsReader {
         return dict;
     }
 
-    public static void SaveNewInt16Mask(IntPtr cubeFitsPtr, IntPtr maskData, long[] dims, string fileName)
+    public static void SaveNewInt16Mask(IntPtr cubeFitsPtr, IntPtr maskData, int[] maskDataDims, string fileName)
     {
         IntPtr maskPtr = IntPtr.Zero;
         IntPtr keyValue = (IntPtr)21;
         int status;
-        long nelements = dims[0] * dims[1] * dims[2];
+        long nelements = maskDataDims[0] * maskDataDims[1] * maskDataDims[2];
         IntPtr naxes = IntPtr.Zero;
-        Marshal.Copy(dims, 0, naxes, dims.Length);
+        Marshal.Copy(maskDataDims, 0, naxes, maskDataDims.Length);
         if (FitsCreateFile(out maskPtr, fileName, out status) != 0)
         {
             Debug.Log("Fits create file error #" + status.ToString());
         }
-        if (FitsCopyHeader(cubeFitsPtr, maskData, out status) != 0)
+        if (FitsCopyHeader(cubeFitsPtr, maskPtr, out status) != 0)
         {
             Debug.Log("Fits copy header error #" + status.ToString());
         }
-        if (FitsUpdateKey(maskData, 14, "BITPIX", keyValue, null, out status) != 0)
+        if (FitsUpdateKey(maskPtr, 14, "BITPIX", keyValue, null, out status) != 0)
         {
             Debug.Log("Fits update key error #" + status.ToString());
         }
@@ -140,8 +144,41 @@ public class FitsReader {
         }
     }
 
-    public static void UpdateOldInt16Mask(IntPtr oldMaskFitsPtr, IntPtr oldMaskData, IntPtr maskDataUpdate)
+    public static void UpdateOldInt16Mask(IntPtr oldMaskPtr, IntPtr maskDataToSave, int[] maskDataDims)
     {
+        int status;
+        long nelements = maskDataDims[0] * maskDataDims[1] * maskDataDims[2];
+        IntPtr naxes = IntPtr.Zero;
+        Marshal.Copy(maskDataDims, 0, naxes, maskDataDims.Length);
+        if (FitsWriteImageInt16(oldMaskPtr, 3, nelements, maskDataToSave, out status) != 0)
+        {
+            Debug.Log("Fits write image error #" + status.ToString());
+        }
+        if (FitsCloseFile(oldMaskPtr, out status) != 0)
+        {
+            Debug.Log("Fits close file error #" + status.ToString());
 
+        }
+    }
+
+    unsafe public static void SaveMask(IntPtr fitsPtr, IntPtr oldMaskData, int[] oldMaskDims, short[] regionData, long[] regionDims, long[] regionStartPix, string fileName)
+    {
+        bool isNewFile = (fileName != null);
+        IntPtr maskDataToSave = IntPtr.Zero;
+        IntPtr regionDataPtr = IntPtr.Zero;
+        using (var regionDataNArray = new NativeArray<short>(regionData, Allocator.TempJob))
+            {
+                regionDataPtr = (IntPtr)Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(regionDataNArray);
+            }
+        long startIndex = regionStartPix[2] * oldMaskDims[0] * oldMaskDims[1] + regionStartPix[1] * oldMaskDims[0] + regionStartPix[0];
+        InsertSubFloatArray(oldMaskData, oldMaskDims[0] * oldMaskDims[1] * oldMaskDims[2], regionDataPtr, regionDims[0] * regionDims[1] * regionDims[2], startIndex, maskDataToSave);
+        if (isNewFile)
+        {
+            SaveNewInt16Mask(fitsPtr, maskDataToSave, oldMaskDims, fileName);
+        }
+        else
+        {
+            UpdateOldInt16Mask(fitsPtr, maskDataToSave, oldMaskDims);
+        }
     }
 }

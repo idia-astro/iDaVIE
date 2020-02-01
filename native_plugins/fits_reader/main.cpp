@@ -135,7 +135,7 @@ extern "C"
 		*chararray = dataArrayElements;
 		return success;
 	}
-	
+
 	DllExport int FitsReadImageFloat(fitsfile *fptr, int dims, int64_t nelem, float **array, int *status)
 	{
 		int anynul;
@@ -177,5 +177,15 @@ extern "C"
 	{
 		delete[] ptrToDelete;
 		return 0;
+	}
+
+	DllExport int InsertSubFloatArray(float* mainArray, int64_t mainArraySize, float* subArray, int64_t subArraySize, int64_t startIndex, float** resultArray)
+	{
+		*resultArray = new float[mainArraySize];
+		if (mainArraySize > subArraySize || startIndex > mainArraySize || startIndex + subArraySize > mainArraySize)
+			return EXIT_FAILURE;
+		memcpy(resultArray, mainArray, sizeof(float)*mainArraySize);
+		memcpy(resultArray + startIndex, subArray, sizeof(float)*subArraySize);
+		return EXIT_SUCCESS;
 	}
 }
