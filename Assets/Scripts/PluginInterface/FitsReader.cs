@@ -82,7 +82,7 @@ public class FitsReader
     public static extern int FreeMemory(IntPtr pointerToDelete);
 
     [DllImport("fits_reader")]
-    public static extern int InsertSubFloatArray(IntPtr mainArray, long mainArraySize, IntPtr subArray, long subArraySize, long startIndex, IntPtr resultArray);
+    public static extern int InsertSubInt16Array(IntPtr mainArray, long mainArraySize, IntPtr subArray, long subArraySize, long startIndex, out IntPtr resultArray);
 
     public static IDictionary<string, string> ExtractHeaders(IntPtr fptr, out int status)
     {
@@ -109,59 +109,68 @@ public class FitsReader
         return dict;
     }
 
-    public static void SaveNewInt16Mask(IntPtr cubeFitsPtr, IntPtr maskData, int[] maskDataDims, string fileName)
+    public static void SaveNewInt16Mask(IntPtr cubeFitsPtr, IntPtr maskData, long[] maskDataDims, string fileName)
     {
         IntPtr maskPtr = IntPtr.Zero;
-        IntPtr keyValue = (IntPtr)21;
-        int status;
+        IntPtr keyValue = Marshal.AllocHGlobal(sizeof(int));
+        Marshal.WriteInt32(keyValue, 16);
+        int status = 0;
         long nelements = maskDataDims[0] * maskDataDims[1] * maskDataDims[2];
-        IntPtr naxes = IntPtr.Zero;
+        IntPtr naxes = Marshal.AllocHGlobal(3 * sizeof(long));
         Marshal.Copy(maskDataDims, 0, naxes, maskDataDims.Length);
         if (FitsCreateFile(out maskPtr, fileName, out status) != 0)
         {
             Debug.Log("Fits create file error #" + status.ToString());
+            return;
         }
         if (FitsCopyHeader(cubeFitsPtr, maskPtr, out status) != 0)
         {
             Debug.Log("Fits copy header error #" + status.ToString());
+            return;
         }
-        if (FitsUpdateKey(maskPtr, 14, "BITPIX", keyValue, null, out status) != 0)
+        if (FitsUpdateKey(maskPtr, 21, "BITPIX", keyValue, null, out status) != 0)
         {
             Debug.Log("Fits update key error #" + status.ToString());
+            return;
         }
-        if (FitsCreateImg(maskPtr, 21, 3, naxes, out status) != 0)
+        /*if (FitsCreateImg(maskPtr, 16, 3, naxes, out status) != 0)
         {
             Debug.Log("Fits create image error #" + status.ToString());
+            return;
         }
+        */
         if (FitsWriteImageInt16(maskPtr, 3, nelements, maskData, out status) != 0)
         {
             Debug.Log("Fits write image error #" + status.ToString());
+            return;
         }
         if (FitsCloseFile(maskPtr, out status) != 0)
         {
             Debug.Log("Fits close file error #" + status.ToString());
+            return;
 
         }
     }
 
-    public static void UpdateOldInt16Mask(IntPtr oldMaskPtr, IntPtr maskDataToSave, int[] maskDataDims)
+    public static void UpdateOldInt16Mask(IntPtr oldMaskPtr, IntPtr maskDataToSave, long[] maskDataDims)
     {
         int status;
         long nelements = maskDataDims[0] * maskDataDims[1] * maskDataDims[2];
-        IntPtr naxes = IntPtr.Zero;
-        Marshal.Copy(maskDataDims, 0, naxes, maskDataDims.Length);
-        if (FitsWriteImageInt16(oldMaskPtr, 3, nelements, maskDataToSave, out status) != 0)
+       // IntPtr naxes = Marshal.AllocHGlobal(3 * sizeof(long));
+       // Marshal.Copy(maskDataDims, 0, naxes, maskDataDims.Length);
+        if (FitsWriteImageInt16(oldMaskPtr, 3, nelements, maskDataToSave, out status) != 0) ////Try deleting hdu
         {
             Debug.Log("Fits write image error #" + status.ToString());
+            return;
         }
         if (FitsCloseFile(oldMaskPtr, out status) != 0)
         {
             Debug.Log("Fits close file error #" + status.ToString());
-
+            return;
         }
     }
 
-    unsafe public static void SaveMask(IntPtr fitsPtr, IntPtr oldMaskData, int[] oldMaskDims, short[] regionData, long[] regionDims, long[] regionStartPix, string fileName)
+    unsafe public static void SaveMask(IntPtr fitsPtr, IntPtr oldMaskData, long[] oldMaskDims, short[] regionData, long[] regionDims, long[] regionStartPix, string fileName)
     {
         bool isNewFile = (fileName != null);
         IntPtr maskDataToSave = IntPtr.Zero;
@@ -171,7 +180,11 @@ public class FitsReader
                 regionDataPtr = (IntPtr)Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(regionDataNArray);
             }
         long startIndex = regionStartPix[2] * oldMaskDims[0] * oldMaskDims[1] + regionStartPix[1] * oldMaskDims[0] + regionStartPix[0];
-        InsertSubFloatArray(oldMaskData, oldMaskDims[0] * oldMaskDims[1] * oldMaskDims[2], regionDataPtr, regionDims[0] * regionDims[1] * regionDims[2], startIndex, maskDataToSave);
+        if (InsertSubInt16Array(oldMaskData, oldMaskDims[0] * oldMaskDims[1] * oldMaskDims[2], regionDataPtr, regionDims[0] * regionDims[1] * regionDims[2], startIndex, out maskDataToSave) != 0)
+        {
+            Debug.Log("Error inserting submask into mask data!");
+            return;
+        }
         if (isNewFile)
         {
             SaveNewInt16Mask(fitsPtr, maskDataToSave, oldMaskDims, fileName);

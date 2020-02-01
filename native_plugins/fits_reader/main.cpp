@@ -81,7 +81,7 @@ extern "C"
 		return success;
 	}
 
-	DllExport int FitsWriteImageInt16(fitsfile* fptr, int dims, int64_t nelements, float* array, int* status)
+	DllExport int FitsWriteImageInt16(fitsfile* fptr, int dims, int64_t nelements, int16_t* array, int* status)
 	{
 		int64_t* startPix = new int64_t[dims];
 		for (int i = 0; i < dims; i++)
@@ -179,13 +179,14 @@ extern "C"
 		return 0;
 	}
 
-	DllExport int InsertSubFloatArray(float* mainArray, int64_t mainArraySize, float* subArray, int64_t subArraySize, int64_t startIndex, float** resultArray)
+	DllExport int InsertSubInt16Array(int16_t* mainArray, int64_t mainArraySize, int16_t* subArray, int64_t subArraySize, int64_t startIndex, int16_t** resultArray)
 	{
-		*resultArray = new float[mainArraySize];
-		if (mainArraySize > subArraySize || startIndex > mainArraySize || startIndex + subArraySize > mainArraySize)
+		int16_t* result = new int16_t[mainArraySize];
+		if (subArraySize > mainArraySize|| startIndex > mainArraySize || startIndex + subArraySize > mainArraySize)
 			return EXIT_FAILURE;
-		memcpy(resultArray, mainArray, sizeof(float)*mainArraySize);
-		memcpy(resultArray + startIndex, subArray, sizeof(float)*subArraySize);
+		memcpy(result, mainArray, mainArraySize*sizeof(int16_t));
+		memcpy(result + startIndex, subArray, subArraySize*sizeof(int16_t));
+		*resultArray = result;
 		return EXIT_SUCCESS;
 	}
 }
