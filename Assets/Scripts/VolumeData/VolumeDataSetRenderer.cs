@@ -122,12 +122,14 @@ namespace VolumeData
         private MeshRenderer _renderer;
         private Material _materialInstance;
         private Material _maskMaterialInstance;
-        private VolumeDataSet _dataSet;
-        private VolumeDataSet _maskDataSet = null;
+       
         private VolumeInputController _volumeInputController;
         private Vector3Int _previousPaintLocation;
         private short _previousPaintValue;
         private int _previousBrushSize = 1;
+
+        private VolumeDataSet _dataSet = null;
+        private VolumeDataSet _maskDataSet = null;
 
         #region Material Property IDs
 
@@ -179,6 +181,8 @@ namespace VolumeData
         }
 
         #endregion
+
+        public bool started = false;
 
         public void Start()
         {
@@ -249,10 +253,14 @@ namespace VolumeData
             }
 
             Shader.WarmupAllShaders();
+
+            started = true;
+
         }
         
         public VolumeDataSet GetDatsSet()
         {
+            
             return _dataSet;
         }
         

@@ -170,6 +170,7 @@ namespace VolumeData
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
             volumeDataSet._cachedBrush = new byte[2];
+
             return volumeDataSet;
         }
 

@@ -5,10 +5,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using System.Threading;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
+
+
 
 public class CanvassDesktop : MonoBehaviour
 {
@@ -39,6 +42,7 @@ public class CanvassDesktop : MonoBehaviour
     Dictionary<double, double> maskAxisSize = null;
 
     private ColorMapEnum activeColorMap = ColorMapEnum.None;
+
 
     // Start is called before the first frame update
     void Start()
@@ -75,7 +79,10 @@ public class CanvassDesktop : MonoBehaviour
            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
      .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value = (int)getFirstActiveDataSet().ColorMap;
         }
-
+/*
+        if (getFirstActiveDataSet() != null)
+            Debug.Log(getFirstActiveDataSet().started);
+            */
     }
 
     public void InformationTab()
@@ -420,14 +427,15 @@ public class CanvassDesktop : MonoBehaviour
     }
 
 
+
     public void LoadFileFromFileSystem()
     {
 
-
-
-
         StartCoroutine(LoadCubeCoroutine(imagePath, maskPath));
+    }
 
+    private void postLoadFileFileSystem()
+    { 
         //here should check if loading is ok
         if (true)
         {
@@ -444,29 +452,26 @@ public class CanvassDesktop : MonoBehaviour
 
 
             populateColorMapDropdown();
+            populateStatsValue();
 
             //move to rendering tab
             mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().interactable = true;
             mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().onClick.Invoke();
-
-
-
-
         }
-
+        
 
     }
 
 
 
-    IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath)
+    public IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath)
     {
 
         int i0 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().value;
         int i1 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().value;
         int i2 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value;
 
-
+       
         Vector3 oldpos = new Vector3(0, 0f, 0);
         Quaternion oldrot = Quaternion.identity;
         Vector3 oldscale = new Vector3(1, 1, 1);
@@ -484,29 +489,40 @@ public class CanvassDesktop : MonoBehaviour
             getFirstActiveDataSet().transform.gameObject.SetActive(false);
 
         }
+       
+       GameObject newCube = Instantiate(cubeprefab, new Vector3(0, 0f, 0), Quaternion.identity);
+       newCube.SetActive(true);
 
-        GameObject newCube = Instantiate(cubeprefab, new Vector3(0, 0f, 0), Quaternion.identity);
-        newCube.transform.parent = volumeDataSetManager.transform;
-        newCube.transform.localPosition = oldpos;
-        newCube.transform.localRotation = oldrot;
-        newCube.transform.localScale = oldscale;
-        newCube.GetComponent<VolumeDataSetRenderer>().FileName = _imagePath;//_dataSet.FileName.ToString();
-        newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _maskPath;// _maskDataSet.FileName.ToString();
+       
 
+       newCube.transform.parent = volumeDataSetManager.transform;
+       newCube.transform.localPosition = oldpos;
+       newCube.transform.localRotation = oldrot;
+       newCube.transform.localScale = oldscale;
 
-        newCube.SetActive(true);
-        checkCubesDataSet();
+       
 
-        //Deactivate and reactivate VolumeInputController to update VolumeInputController's list of datasets
-
-        _volumeInputController.gameObject.SetActive(false);
-        _volumeInputController.gameObject.SetActive(true);
-
-        _volumeSpeechController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
-
-        yield return null;
+       newCube.GetComponent<VolumeDataSetRenderer>().FileName = _imagePath;//_dataSet.FileName.ToString();
+       newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _maskPath;// _maskDataSet.FileName.ToString();
 
 
+       
+       checkCubesDataSet();
+
+       //Deactivate and reactivate VolumeInputController to update VolumeInputController's list of datasets
+
+       _volumeInputController.gameObject.SetActive(false);
+       _volumeInputController.gameObject.SetActive(true);
+
+       _volumeSpeechController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
+
+        while (!newCube.GetComponent<VolumeDataSetRenderer>().started)
+        {
+            yield return new WaitForSeconds(.1f);
+        }
+
+
+        postLoadFileFileSystem();
 
     }
 
@@ -566,6 +582,32 @@ public class CanvassDesktop : MonoBehaviour
 
     }
 
+    private void populateStatsValue()
+    {
+
+        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+          .gameObject.transform.Find("Line_1").gameObject.transform.Find("InputField_min").GetComponent<TMP_InputField>().text= getFirstActiveDataSet().GetDatsSet().MinValue.ToString();
+
+        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+          .gameObject.transform.Find("Line_1").gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text = getFirstActiveDataSet().GetDatsSet().MaxValue.ToString();
+
+        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+          .gameObject.transform.Find("Line_2").gameObject.transform.Find("Text_std").GetComponent<TextMeshProUGUI>().text = getFirstActiveDataSet().GetDatsSet().StanDev.ToString();
+
+        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+          .gameObject.transform.Find("Line_2").gameObject.transform.Find("Text_mean").GetComponent<TextMeshProUGUI>().text = getFirstActiveDataSet().GetDatsSet().MeanValue.ToString();
+
+
+
+        Debug.Log("Min: " + getFirstActiveDataSet().GetDatsSet().MinValue);
+        Debug.Log("Max: " + getFirstActiveDataSet().GetDatsSet().MaxValue);
+        Debug.Log("Std: " + getFirstActiveDataSet().GetDatsSet().StanDev);
+        Debug.Log("Mean: " + getFirstActiveDataSet().GetDatsSet().MeanValue);
+        Debug.Log("Bin: " + getFirstActiveDataSet().GetDatsSet().HistogramBinWidth);
+        Debug.Log("Hist: " + getFirstActiveDataSet().GetDatsSet().Histogram);
+
+        Debug.Log("CANVASS END :::::::::");
+    }
     private void populateColorMapDropdown()
     {
         //LabelColormap.gameObject.GetComponent<Text>().text = ColorMapUtils.FromHashCode(colorIndex) + "";
