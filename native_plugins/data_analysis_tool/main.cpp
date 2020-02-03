@@ -12,6 +12,11 @@
 #define EXIT_FAILURE 1
 
 
+	///Insert these three lines to debug directly out to a file:
+		//char* str = new char[70];
+		//freopen("debug.txt", "a", stdout);
+		//printf("%s\n", str);
+
 extern "C"
 {
 	DllExport int FindMaxMin(const float *dataPtr, int64_t numberElements, float *maxResult, float *minResult)
