@@ -5,10 +5,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using System.Threading;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
+
+
 
 public class CanvassDesktop : MonoBehaviour
 {
@@ -20,6 +23,7 @@ public class CanvassDesktop : MonoBehaviour
     public GameObject informationPanelContent;
     public GameObject mainCanvassDesktop;
     public GameObject fileLoadCanvassDesktop;
+    public GameObject VolumePlayer;
 
 
     private bool showPopUp = false;
@@ -34,9 +38,13 @@ public class CanvassDesktop : MonoBehaviour
     private double maskNAxis = 0;
     private double maskSize = 1;
 
-   // List<Tuple<double, double>> axisSize = null;
+    // List<Tuple<double, double>> axisSize = null;
     Dictionary<double, double> axisSize = null;
     Dictionary<double, double> maskAxisSize = null;
+
+    private ColorMapEnum activeColorMap = ColorMapEnum.None;
+
+
     // Start is called before the first frame update
     void Start()
     {
@@ -64,9 +72,7 @@ public class CanvassDesktop : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // InformationTab();
-
-
+        
     }
 
     public void InformationTab()
@@ -105,7 +111,7 @@ public class CanvassDesktop : MonoBehaviour
             string localMsg = "";
 
             imagePath = path;
-            
+
             //each time you select a fits image, reset the mask and disable loading button
             maskPath = "";
             informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;
@@ -114,7 +120,7 @@ public class CanvassDesktop : MonoBehaviour
 
             IntPtr fptr;
             int status = 0;
-           
+
 
             if (FitsReader.FitsOpenFile(out fptr, imagePath, out status) != 0)
             {
@@ -133,12 +139,12 @@ public class CanvassDesktop : MonoBehaviour
             //visualize the header into the scroll view
             string _header = "";
             IDictionary<string, string> _headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
-            
-             foreach (KeyValuePair<string, string> entry in _headerDictionary)
+
+            foreach (KeyValuePair<string, string> entry in _headerDictionary)
             {
 
                 //switch (entry.Key)
-                if (entry.Key.Length>4)
+                if (entry.Key.Length > 4)
                     switch (entry.Key.Substring(0, 5))
                     {
 
@@ -236,7 +242,7 @@ public class CanvassDesktop : MonoBehaviour
                 //cube is not loadable with more than 3 axis with nelement
                 else if (!loadable && list.Count > 3)
                 {
-                   
+
                     informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().interactable = true;
                     informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().interactable = true;
                     informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().interactable = true;
@@ -283,7 +289,7 @@ public class CanvassDesktop : MonoBehaviour
             informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;
             maskSize = 1;
             maskPath = path;
-           
+
             IntPtr fptr;
             int status = 0;
 
@@ -299,9 +305,9 @@ public class CanvassDesktop : MonoBehaviour
             maskAxisSize = new Dictionary<double, double>();
             List<double> list = new List<double>();
 
-           
+
             //visualize the header into the scroll view
-           
+
             IDictionary<string, string> _headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
             foreach (KeyValuePair<string, string> entry in _headerDictionary)
             {
@@ -323,9 +329,9 @@ public class CanvassDesktop : MonoBehaviour
                             break;
 
                     }
-               
+
             }
-         
+
 
 
             if (maskNAxis > 2)
@@ -336,7 +342,7 @@ public class CanvassDesktop : MonoBehaviour
                 int i1 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().value;
                 int i2 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value;
 
-                if(axisSize[i0 + 1] == maskAxisSize[1] && axisSize[i1 + 1] == maskAxisSize[2] && axisSize[i2 + 1] == maskAxisSize[3])
+                if (axisSize[i0 + 1] == maskAxisSize[1] && axisSize[i1 + 1] == maskAxisSize[2] && axisSize[i2 + 1] == maskAxisSize[3])
                 {
                     loadable = true;
                     informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
@@ -346,7 +352,7 @@ public class CanvassDesktop : MonoBehaviour
 
             }
 
-            if(!loadable)
+            if (!loadable)
             {
                 //mask is not valid
                 informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("MaskFilePath_text").GetComponent<TextMeshProUGUI>().text = "...";
@@ -411,32 +417,31 @@ public class CanvassDesktop : MonoBehaviour
     }
 
 
+
     public void LoadFileFromFileSystem()
     {
 
-
-
-
         StartCoroutine(LoadCubeCoroutine(imagePath, maskPath));
+    }
 
+    private void postLoadFileFileSystem()
+    {
         //here should check if loading is ok
-        if(true)
+        if (true)
         {
-            //move to rendering tab
-           // mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().interactable = true;
-           // mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().onClick.Invoke();
-      
 
 
+            VolumePlayer.SetActive(false);
+            VolumePlayer.SetActive(true);
 
         }
 
-       
+
     }
 
-  
 
-    IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath)
+
+    public IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath)
     {
 
         int i0 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().value;
@@ -463,15 +468,22 @@ public class CanvassDesktop : MonoBehaviour
         }
 
         GameObject newCube = Instantiate(cubeprefab, new Vector3(0, 0f, 0), Quaternion.identity);
+        newCube.SetActive(true);
+
+
+
         newCube.transform.parent = volumeDataSetManager.transform;
         newCube.transform.localPosition = oldpos;
         newCube.transform.localRotation = oldrot;
         newCube.transform.localScale = oldscale;
+
+
+
         newCube.GetComponent<VolumeDataSetRenderer>().FileName = _imagePath;//_dataSet.FileName.ToString();
         newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _maskPath;// _maskDataSet.FileName.ToString();
 
 
-        newCube.SetActive(true);
+
         checkCubesDataSet();
 
         //Deactivate and reactivate VolumeInputController to update VolumeInputController's list of datasets
@@ -481,10 +493,14 @@ public class CanvassDesktop : MonoBehaviour
 
         _volumeSpeechController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
 
-        yield return null;
+        while (!newCube.GetComponent<VolumeDataSetRenderer>().started)
+        {
+            yield return new WaitForSeconds(.1f);
+        }
 
 
-        
+        postLoadFileFileSystem();
+
     }
 
     public void DismissFileLoad()
@@ -498,7 +514,7 @@ public class CanvassDesktop : MonoBehaviour
         Application.Quit();
     }
 
-    
+
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
         foreach (var dataSet in _volumeDataSets)
@@ -511,6 +527,8 @@ public class CanvassDesktop : MonoBehaviour
 
         return null;
     }
+
+
 
     void OnGUI()
     {
@@ -540,6 +558,8 @@ public class CanvassDesktop : MonoBehaviour
         }
 
     }
+
+
 
 
 }

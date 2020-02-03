@@ -7,7 +7,7 @@ using VolumeData;
 
 public class SofiaListCreator : MonoBehaviour
 {
-
+    /*
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
 
@@ -117,4 +117,6 @@ public class SofiaListCreator : MonoBehaviour
         return null;
 
     }
+
+    */
 }

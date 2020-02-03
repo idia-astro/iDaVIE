@@ -1732,6 +1732,12 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 134187537}
   m_CullTransparentMesh: 0
+--- !u!1 &135890493 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8885129616151867811, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+    type: 3}
+  m_PrefabInstance: {fileID: 1613529188}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &145495419
 GameObject:
   m_ObjectHideFlags: 0
@@ -2284,7 +2290,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1798270351}
   m_HandleRect: {fileID: 1798270350}
   m_Direction: 0
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -19462,6 +19468,7 @@ MonoBehaviour:
   informationPanelContent: {fileID: 1149666354}
   mainCanvassDesktop: {fileID: 538474599}
   fileLoadCanvassDesktop: {fileID: 709142449}
+  VolumePlayer: {fileID: 135890493}
 --- !u!1 &1184257644
 GameObject:
   m_ObjectHideFlags: 0
@@ -32512,11 +32519,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1307c42efc0dad84ea2f9e303b4c8596, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SpawnPoint: {fileID: 2144118750}
-  item: {fileID: 6689441930889237779, guid: 9a39e30b8605d414092f651b44805ef2, type: 3}
-  content: {fileID: 1314261018}
-  volumeDatasetRendererObj: {fileID: 379208438}
-  SofiaNewListController: {fileID: 1774593165}
 --- !u!114 &2104593477
 MonoBehaviour:
   m_ObjectHideFlags: 0
