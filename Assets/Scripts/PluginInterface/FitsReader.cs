@@ -8,6 +8,13 @@ using Unity.Collections;
 
 public class FitsReader
 {
+    public static int FitsOpenFile(out IntPtr fptr, string filename, out int status, bool isReadOnly)
+    {
+        if (isReadOnly)
+            return FitsOpenFileReadOnly(out fptr, filename, out status);
+        else
+            return FitsOpenFileReadWrite(out fptr, filename, out status);
+    }
 
     [DllImport("fits_reader")]
     public static extern int FitsOpenFileReadOnly(out IntPtr fptr, string filename, out int status);
@@ -174,14 +181,9 @@ public class FitsReader
         }
     }
 
-    unsafe public static void SaveMask(IntPtr fitsPtr, IntPtr oldMaskData, long[] oldMaskDims, short[] regionData, long[] regionDims, long[] regionStartPix, string fileName)
+    public static void SaveMask(IntPtr fitsPtrHeaderToCopy, IntPtr oldMaskData, long[] oldMaskDims, IntPtr regionData, long[] regionDims, long[] regionStartPix, string fileName)
     {
         bool isNewFile = (fileName != null);
-        IntPtr regionDataPtr = IntPtr.Zero;
-        using (var regionDataNArray = new NativeArray<short>(regionData, Allocator.TempJob))
-        {
-            regionDataPtr = (IntPtr)Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(regionDataNArray);
-        }
         long startIndex = 0;
         for (var z = regionStartPix[2] - 1; z < regionDims[2]; z++)
         {
@@ -189,7 +191,7 @@ public class FitsReader
             {
                 startIndex = z * oldMaskDims[0] * oldMaskDims[1] + y * oldMaskDims[0] + regionStartPix[0] - 1;
                 if (InsertSubArrayInt16(oldMaskData, oldMaskDims[0]* oldMaskDims[1]* oldMaskDims[2], 
-                    regionDataPtr, regionDims[0], startIndex) != 0)
+                    regionData, regionDims[0], startIndex) != 0)
                 {
                     Debug.Log("Error inserting submask into mask data!");
                     return;
@@ -198,11 +200,11 @@ public class FitsReader
         }
         if (isNewFile)
         {
-            SaveNewInt16Mask(fitsPtr, oldMaskData, oldMaskDims, fileName);
+            SaveNewInt16Mask(fitsPtrHeaderToCopy, oldMaskData, oldMaskDims, fileName);
         }
         else
         {
-            UpdateOldInt16Mask(fitsPtr, oldMaskData, oldMaskDims);
+            UpdateOldInt16Mask(fitsPtrHeaderToCopy, oldMaskData, oldMaskDims);
         }
     }
 }

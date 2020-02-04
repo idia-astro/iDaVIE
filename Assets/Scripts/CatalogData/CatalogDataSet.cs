@@ -245,7 +245,7 @@ namespace CatalogData
             IntPtr fptr; // pointer to the FITS file, defined in fitsio.h
             int status, hdunum, hdutype, ncols;
             long nrows;
-            if (FitsReader.FitsOpenFileReadOnly(out fptr, dataSet.FileName, out status) != 0)
+            if (FitsReader.FitsOpenFile(out fptr, dataSet.FileName, out status, true) != 0)
             {
                 Debug.Log("Fits Failure... cfits code #" + status.ToString());
                 return dataSet;
