@@ -132,6 +132,9 @@ namespace VolumeData
         private VolumeDataSet _dataSet = null;
         private VolumeDataSet _maskDataSet = null;
 
+
+        public bool IsCropped { get; private set; }
+
         #region Material Property IDs
 
         private struct MaterialID
@@ -407,6 +410,7 @@ namespace VolumeData
                     var cubeDimensions = new Vector4(_maskDataSet.XDim, _maskDataSet.YDim, _maskDataSet.ZDim, 1);
                     _maskMaterialInstance.SetVector(MaterialID.CubeDimensions, cubeDimensions);
                 }
+                IsCropped = true;
             }
         }
 
@@ -420,6 +424,8 @@ namespace VolumeData
                 _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.DataCube);
                 _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, null);
             }
+
+            IsCropped = false;
         }
 
         public void LoadRegionData(Vector3Int startVoxel, Vector3Int endVoxel)

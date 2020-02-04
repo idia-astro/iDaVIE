@@ -26,7 +26,7 @@ public class QuickMenuController : MonoBehaviour
         if ( volumeDatasetRendererObj!= null )
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
 
-   
+        
 
     }
 
@@ -73,6 +73,8 @@ public class QuickMenuController : MonoBehaviour
     public void OpenMainMenu()
     {
         mainMenuCanvas.SetActive(!mainMenuCanvas.activeSelf);
+
+
     }
 
     public void ToggleFeatures()
@@ -155,9 +157,7 @@ public class QuickMenuController : MonoBehaviour
     public void cropDataSet()
     {
 
-        if (cropstatus == 1)
-            cropstatus = -1;
-        cropstatus++;
+        
 
 
         this.gameObject.transform.Find("Image_dis").gameObject.SetActive(false);
@@ -165,18 +165,18 @@ public class QuickMenuController : MonoBehaviour
 
         if (_activeDataSet)
         {
-            switch (cropstatus)
+
+            if (_activeDataSet.IsCropped)
             {
-                case 0:
-                    this.gameObject.transform.Find("Image_dis").gameObject.SetActive(true);
-                    notificationText.GetComponent<Text>().text = "Crop disabled";
-                    _activeDataSet.ResetCrop();
-                    break;
-                case 1:
-                    this.gameObject.transform.Find("Image_en").gameObject.SetActive(true);
-                    notificationText.GetComponent<Text>().text = "Crop enabled";
-                    _activeDataSet.CropToRegion();
-                    break;
+                this.gameObject.transform.Find("Image_dis").gameObject.SetActive(true);
+                notificationText.GetComponent<Text>().text = "Crop disabled";
+                _activeDataSet.ResetCrop();
+            }
+            else
+            {
+                this.gameObject.transform.Find("Image_en").gameObject.SetActive(true);
+                notificationText.GetComponent<Text>().text = "Crop enabled";
+                _activeDataSet.CropToRegion();
             }
         }
     }
@@ -193,6 +193,10 @@ public class QuickMenuController : MonoBehaviour
         CanvassQuickMenu.transform.localRotation = Quaternion.Euler((handIndex == 0 ? 1 : -1) * -3.25f, 15f, 90f);
         CanvassQuickMenu.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
         */
+
+       
+        
+
         this.gameObject.SetActive(false);
         paintMenu.SetActive(true);
     }

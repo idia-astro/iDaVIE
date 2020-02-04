@@ -212,6 +212,26 @@ public class VolumeInputController : MonoBehaviour
         }
     }
     
+    public void IncreaseBrushSize()
+    {
+        BrushSize += 2;
+        UpdatePaintCursors();
+    }
+
+
+    public void DecreaseBrushSize()
+    {
+        BrushSize = Math.Max(1, BrushSize - 2);
+        UpdatePaintCursors();
+    }
+
+    public void ResetBrushSize()
+    {
+        BrushSize = 1;
+        UpdatePaintCursors();
+    }
+
+
     private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
         if (_interactionState == InteractionState.PaintMode)
