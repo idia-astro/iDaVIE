@@ -102,14 +102,14 @@ namespace VolumeData
             IntPtr dataPtr = IntPtr.Zero;
             if (isMask)
             {
-                if (FitsReader.FitsOpenFileReadWrite(out fptr, fileName, out status) != 0)
+                if (FitsReader.FitsOpenFile(out volumeDataSet.FitsPtr, fileName, out status, false) != 0)
                 {
                     Debug.Log("Fits open failure... code #" + status.ToString());
                 }
             }
             else
             {
-                if (FitsReader.FitsOpenFileReadOnly(out fptr, fileName, out status) != 0)
+                if (FitsReader.FitsOpenFile(out volumeDataSet.FitsPtr, fileName, out status, true) != 0)
                 {
                     Debug.Log("Fits open failure... code #" + status.ToString());
                 }
