@@ -47,6 +47,9 @@ public class VolumeInputController : MonoBehaviour
     public GameObject CanvassQuickMenu;
 
 
+
+    
+
     // Scaling/Rotation options
     public bool InPlaceScaling = true;
     public bool ScalingEnabled = true;
@@ -100,6 +103,8 @@ public class VolumeInputController : MonoBehaviour
 
     // VR-family dependent values
     private VRFamily _vrFamily;
+
+    private bool paintMenuOn = false;
 
     // Used for moving the pointer transform to an acceptable position for each controller type
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsLeft = new Dictionary<VRFamily, Vector3>
@@ -207,6 +212,26 @@ public class VolumeInputController : MonoBehaviour
         }
     }
     
+    public void IncreaseBrushSize()
+    {
+        BrushSize += 2;
+        UpdatePaintCursors();
+    }
+
+
+    public void DecreaseBrushSize()
+    {
+        BrushSize = Math.Max(1, BrushSize - 2);
+        UpdatePaintCursors();
+    }
+
+    public void ResetBrushSize()
+    {
+        BrushSize = 1;
+        UpdatePaintCursors();
+    }
+
+
     private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
         if (_interactionState == InteractionState.PaintMode)
@@ -226,7 +251,13 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnQuickMenuChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
-        if (newState )
+
+        paintMenuOn = CanvassQuickMenu.GetComponent<QuickMenuController>().paintMenu.activeSelf;
+
+
+
+        //paintModeOn = ;
+        if (newState && !paintMenuOn)
         {
             //  StartSelection(hand);
             StartRequestQuickMenu(fromSource == SteamVR_Input_Sources.LeftHand ? 0 : 1);

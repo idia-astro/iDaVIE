@@ -10,6 +10,8 @@ namespace UI
         public bool IsDragHandle = false;
         public UserDraggableMenu MenuRoot;
 
+
+
         private void Start()
         {
             if (MenuRoot == null)
@@ -30,6 +32,7 @@ namespace UI
             _boxCollider.center = new Vector3(rect.width / 2 - rect.width * pivot.x, rect.height / 2 - rect.height * pivot.y, _rectTransform.anchoredPosition3D.z);
         }
 
-        
+
+
     }
 }
