@@ -15,7 +15,7 @@ public class PaintMenuController : MonoBehaviour
     private VolumeDataSetRenderer[] _dataSets;
 
     public GameObject mainMenuCanvas;
-    int maskstatus=0;
+    int maskstatus = 0;
     int cropstatus = 0;
     int featureStatus = 0;
 
@@ -25,9 +25,9 @@ public class PaintMenuController : MonoBehaviour
     void Start()
     {
 
-       
 
-       
+
+
 
 
 
@@ -66,13 +66,18 @@ public class PaintMenuController : MonoBehaviour
         }
 
     }
-    
+
+    public VolumeInputController getVolumeInputController()
+    {
+        return _volumeInputController;
+    }
+
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
 
         foreach (var dataSet in _dataSets)
         {
-        
+
             if (dataSet.isActiveAndEnabled)
             {
                 return dataSet;
@@ -81,7 +86,7 @@ public class PaintMenuController : MonoBehaviour
         return null;
 
     }
-    
+
 
 
     public void ExitPaintMode()
@@ -89,18 +94,23 @@ public class PaintMenuController : MonoBehaviour
         _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.SelectionMode);
         getFirstActiveDataSet().DisplayMask = false;
         this.gameObject.SetActive(false);
-        
+
     }
 
 
     public void BrushSizeIncrease()
     {
         _volumeInputController.IncreaseBrushSize();
+        this.gameObject.transform.Find("BottomPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Increase brush size (actual: " + _volumeInputController.BrushSize + ")";
+
     }
 
     public void BrushSizeDecrease()
     {
+
         _volumeInputController.DecreaseBrushSize();
+        this.gameObject.transform.Find("BottomPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Decrease brush size (actual: " + _volumeInputController.BrushSize + ")";
+
     }
 
     public void BrushSizeReset()
@@ -110,13 +120,23 @@ public class PaintMenuController : MonoBehaviour
 
     public void PaintingAdditive()
     {
-        _volumeInputController.AdditiveBrush = true;
+        this.gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Additive Paint Mode";
+        _volumeInputController.AdditiveBrush = true; ;
         //_volumeInputController.ResetBrushSize();
     }
 
     public void PaintingSubtractive()
     {
+        this.gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Subtractive Paint Mode";
         _volumeInputController.AdditiveBrush = false;
         // _volumeInputController.ResetBrushSize();
     }
+
+    public void OpenMainMenu()
+    {
+        mainMenuCanvas.SetActive(!mainMenuCanvas.activeSelf);
+
+
+    }
+
 }
