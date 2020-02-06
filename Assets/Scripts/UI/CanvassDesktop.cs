@@ -122,7 +122,7 @@ public class CanvassDesktop : MonoBehaviour
             int status = 0;
 
 
-            if (FitsReader.FitsOpenFile(out fptr, imagePath, out status) != 0)
+            if (FitsReader.FitsOpenFile(out fptr, imagePath, out status, true) != 0)
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
@@ -294,7 +294,7 @@ public class CanvassDesktop : MonoBehaviour
             int status = 0;
 
 
-            if (FitsReader.FitsOpenFile(out fptr, maskPath, out status) != 0)
+            if (FitsReader.FitsOpenFile(out fptr, maskPath, out status, false) != 0)
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
