@@ -19,6 +19,7 @@ public class QuickMenuController : MonoBehaviour
     int maskstatus=0;
     int cropstatus = 0;
     int featureStatus = 0;
+    string oldMaskLoaded = "";
     // Start is called before the first frame update
     void Start()
     {
@@ -26,8 +27,12 @@ public class QuickMenuController : MonoBehaviour
         if ( volumeDatasetRendererObj!= null )
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
 
-        
+    }
 
+    public void OnEnable()
+    {
+        if (volumeDatasetRendererObj != null)
+            _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
     }
 
     // Update is called once per frame
@@ -42,10 +47,10 @@ public class QuickMenuController : MonoBehaviour
         var firstActive = getFirstActiveDataSet();
         if (firstActive && _activeDataSet != firstActive)
         {
-           // Debug.Log("in foreach --- Update");
             _activeDataSet = firstActive;
         }
        
+
     }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
