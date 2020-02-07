@@ -124,7 +124,7 @@ namespace VolumeData
         private Material _materialInstance;
         private Material _maskMaterialInstance;
 
-        private VolumeInputController _volumeInputController;
+        public VolumeInputController _volumeInputController;
         private Vector3Int _previousPaintLocation;
         private short _previousPaintValue;
         private int _previousBrushSize = 1;

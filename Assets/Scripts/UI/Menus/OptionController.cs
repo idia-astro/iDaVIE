@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Valve.VR;
 using VolumeData;
 
 public class OptionController : MonoBehaviour
@@ -25,7 +26,7 @@ public class OptionController : MonoBehaviour
 
     public enum Hand
     {
-        Left, Right
+        Right, Left
     }
 
     void Start()
@@ -128,12 +129,15 @@ public class OptionController : MonoBehaviour
         if (hand == 0)
         {
             hand = 1;
+            _activeDataSet._volumeInputController.PrimaryHand = SteamVR_Input_Sources.LeftHand;
         }
         else
         {
             hand = 0;
+            _activeDataSet._volumeInputController.PrimaryHand = SteamVR_Input_Sources.RightHand;
         }
         LabelHand.gameObject.GetComponent<Text>().text = (Hand)hand + "";
+        
 
 
     }
