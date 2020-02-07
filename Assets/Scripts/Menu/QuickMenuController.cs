@@ -48,11 +48,6 @@ public class QuickMenuController : MonoBehaviour
         if (firstActive && _activeDataSet != firstActive)
         {
             _activeDataSet = firstActive;
-
-            if (_activeDataSet.MaskFileName != "")
-                this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Paint").GetComponent<Button>().interactable = true;
-            else
-                this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Paint").GetComponent<Button>().interactable = false;
         }
        
 
