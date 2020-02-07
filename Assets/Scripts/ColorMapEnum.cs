@@ -24,6 +24,7 @@ public static class ColorMapUtils
             }
         }
 
+
         // If we can't find a color map, return the default one
         return ColorMapEnum.Accent;
     }
