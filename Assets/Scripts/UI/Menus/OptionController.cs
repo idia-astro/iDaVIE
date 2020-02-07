@@ -15,13 +15,18 @@ public class OptionController : MonoBehaviour
     public Button ButtonPrevColorMap;
     public Button ButtonNextColorMap;
     public Text LabelColormap;
+    public Text LabelHand;
     public GameObject volumeDatasetRendererObj = null;
 
 
     int defaultColorIndex = 45;
     int colorIndex;
+    int hand = 0;
 
-
+    public enum Hand
+    {
+        Left, Right
+    }
 
     void Start()
     {
@@ -31,6 +36,8 @@ public class OptionController : MonoBehaviour
 
 
         LabelColormap.gameObject.GetComponent<Text>().text = ColorMapUtils.FromHashCode(colorIndex) + "";
+        LabelHand.gameObject.GetComponent<Text>().text = (Hand)0 + "";
+
 
     }
 
@@ -68,12 +75,12 @@ public class OptionController : MonoBehaviour
 
     public void SetNextColorMap()
     {
-        if (colorIndex == ColorMapUtils.NumColorMaps-1)
+        if (colorIndex == ColorMapUtils.NumColorMaps - 1)
         {
             colorIndex = -1;
         }
-            colorIndex++;
-       
+        colorIndex++;
+
         SetColorMap(ColorMapUtils.FromHashCode(colorIndex));
     }
 
@@ -84,13 +91,13 @@ public class OptionController : MonoBehaviour
             colorIndex = ColorMapUtils.NumColorMaps;
         }
         colorIndex--;
-        
+
         SetColorMap(ColorMapUtils.FromHashCode(colorIndex));
     }
 
     public void SetColorMap(ColorMapEnum colorMap)
     {
-        
+
         LabelColormap.gameObject.GetComponent<Text>().text = colorMap + "";
         if (_activeDataSet)
         {
@@ -110,9 +117,24 @@ public class OptionController : MonoBehaviour
         if (_activeDataSet)
         {
             _activeDataSet.GetComponentInChildren<FeatureSetManager>().ImportFeatureSet();
-            
+
         }
         //featureSetManager.ImportFeatureSet();
+
+    }
+
+    public void SetPrimaryHand()
+    {
+        if (hand == 0)
+        {
+            hand = 1;
+        }
+        else
+        {
+            hand = 0;
+        }
+        LabelHand.gameObject.GetComponent<Text>().text = (Hand)hand + "";
+
 
     }
 
