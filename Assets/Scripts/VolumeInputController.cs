@@ -45,11 +45,10 @@ public class VolumeInputController : MonoBehaviour
     }
     //reference to quick menu canvass
     public GameObject CanvassQuickMenu;
-
-
-
     
-
+    // Choice of left/right primary hand
+    public SteamVR_Input_Sources PrimaryHand = SteamVR_Input_Sources.RightHand;
+    
     // Scaling/Rotation options
     public bool InPlaceScaling = true;
     public bool ScalingEnabled = true;
@@ -98,7 +97,6 @@ public class VolumeInputController : MonoBehaviour
     private float _targetVignetteIntensity = 0;
 
     // Selecting
-    private VRHand _selectingHand;
     private Stopwatch selectionStopwatch = new Stopwatch();
 
     // VR-family dependent values
@@ -251,20 +249,21 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnQuickMenuChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
+        Debug.Log(fromSource);
+        // Menu is only available on the second hand
+        if (fromSource == PrimaryHand)
+        {
+            return;
+        }
 
         paintMenuOn = CanvassQuickMenu.GetComponent<QuickMenuController>().paintMenu.activeSelf;
 
-
-
-        //paintModeOn = ;
         if (newState && !paintMenuOn)
         {
-            //  StartSelection(hand);
             StartRequestQuickMenu(fromSource == SteamVR_Input_Sources.LeftHand ? 0 : 1);
         }
         else
         {
-            //  EndSelection();
             EndRequestQuickMenu();
         }
     }
@@ -304,6 +303,12 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnPinchChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
+        // Skip input from secondary hand
+        if (fromSource != PrimaryHand)
+        {
+            return;
+        }
+        
         if (_interactionState == InteractionState.PaintMode)
         {
             // Handle painting brush stroke ending
@@ -318,13 +323,11 @@ public class VolumeInputController : MonoBehaviour
         }
         else
         {
-            var hand = fromSource == SteamVR_Input_Sources.LeftHand ? _hands[0] : _hands[1];
-            if (newState && _selectingHand == null)
+            if (newState)
             {
-                StartSelection(hand);
-
+                StartSelection();
             }
-            else if (!newState && _selectingHand == hand)
+            else
             {
                 EndSelection();
             }
@@ -355,16 +358,14 @@ public class VolumeInputController : MonoBehaviour
 
     private void EndRequestQuickMenu()
     {
-        Debug.Log("END Request Quick menu!");
         CanvassQuickMenu.SetActive(false);
         _isQuickMenu = false;
     }
 
-    private void StartSelection(VRHand selectingHand)
+    private void StartSelection()
     {
-        _selectingHand = selectingHand;
         _isSelecting = true;
-        int handIndex = _selectingHand.handType == SteamVR_Input_Sources.LeftHand ? 0 : 1;
+        int handIndex = PrimaryHand == SteamVR_Input_Sources.LeftHand ? 0 : 1;
         var startPosition = _handTransforms[handIndex].position;
         foreach (var dataSet in _volumeDataSets)
         {
@@ -374,15 +375,14 @@ public class VolumeInputController : MonoBehaviour
         selectionStopwatch.Reset();
         selectionStopwatch.Start();
 
-        Debug.Log($"Entering selecting state with hand {selectingHand.handType}!");
+        Debug.Log($"Entering selecting state");
     }
 
     private void EndSelection()
     {
-        int handIndex = _selectingHand.handType == SteamVR_Input_Sources.LeftHand ? 0 : 1;
+        int handIndex = PrimaryHand == SteamVR_Input_Sources.LeftHand ? 0 : 1;
         var endPosition = _handTransforms[handIndex].position;
 
-        _selectingHand = null;
         _isSelecting = false;
 
         selectionStopwatch.Stop();
@@ -710,13 +710,8 @@ public class VolumeInputController : MonoBehaviour
 
     private void UpdateSelecting()
     {
-        if (_selectingHand == null)
-        {
-            return;
-        }
-
         string cursorString = "";
-        int handIndex = _selectingHand.handType == SteamVR_Input_Sources.LeftHand ? 0 : 1;
+        int handIndex = PrimaryHand == SteamVR_Input_Sources.LeftHand ? 0 : 1;
         var endPosition = _handTransforms[handIndex].position;
 
         foreach (var dataSet in _volumeDataSets)
