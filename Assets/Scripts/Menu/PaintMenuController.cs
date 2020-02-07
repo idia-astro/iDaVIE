@@ -37,7 +37,6 @@ public class PaintMenuController : MonoBehaviour
     void OnEnable()
     {
 
-        Debug.Log("IMIZIO PAINT");
         if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
 
@@ -87,6 +86,72 @@ public class PaintMenuController : MonoBehaviour
 
     }
 
+    public void ShowOutline()
+    {
+
+        this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Outline").gameObject.transform.Find("Image_out_on").gameObject.SetActive(false);
+        this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Outline").gameObject.transform.Find("Image_out_off").gameObject.SetActive(false);
+
+        if (getFirstActiveDataSet().DisplayMask)
+        {
+            getFirstActiveDataSet().DisplayMask = false;
+            notificationText.GetComponent<Text>().text = "Outline disabled";
+            this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Outline").gameObject.transform.Find("Image_out_on").gameObject.SetActive(true);
+
+        }
+        else
+        {
+            getFirstActiveDataSet().DisplayMask = true;
+            notificationText.GetComponent<Text>().text = "Outline enabled";
+            this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Outline").gameObject.transform.Find("Image_out_off").gameObject.SetActive(true);
+        }
+    }
+
+    public void ToggleMask()
+    {
+        if (maskstatus == 3)
+            maskstatus = -1;
+        maskstatus++;
+
+
+        this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_nf").gameObject.SetActive(false);
+        this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f1").gameObject.SetActive(false);
+        this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f2").gameObject.SetActive(false);
+        this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f3").gameObject.SetActive(false);
+
+        switch (maskstatus)
+        {
+            case 0:
+                setMask(MaskMode.Disabled);
+                notificationText.GetComponent<Text>().text = "Mask disabled";
+                this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_nf").gameObject.SetActive(true);
+                break;
+            case 1:
+                setMask(MaskMode.Enabled);
+                notificationText.GetComponent<Text>().text = "Mask enabled";
+                this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f1").gameObject.SetActive(true);
+                break;
+            case 2:
+                setMask(MaskMode.Inverted);
+                notificationText.GetComponent<Text>().text = "Mask inverted";
+                this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f2").gameObject.SetActive(true);
+                break;
+            case 3:
+                setMask(MaskMode.Isolated);
+                notificationText.GetComponent<Text>().text = "Mask Isolated";
+                this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f3").gameObject.SetActive(true);
+                break;
+        }
+
+    }
+    private void setMask(MaskMode mode)
+    {
+
+        if (_activeDataSet)
+        {
+            _activeDataSet.MaskMode = mode;
+        }
+    }
 
 
     public void ExitPaintMode()

@@ -17,7 +17,7 @@ using UnityEngine.EventSystems;// Required when using Event data.
         public void OnSelect(BaseEventData eventData)
         {
         
-                TootipText.text = TootipString +" (actual: "+ PaintMenuControllerObj.getVolumeInputController().BrushSize+")";
+                TootipText.text = TootipString +" (current: "+ PaintMenuControllerObj.getVolumeInputController().BrushSize+")";
         }
 
 
