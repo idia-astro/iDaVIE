@@ -439,6 +439,7 @@ public class VolumeInputController : MonoBehaviour
         if (_handInfoComponents != null)
         {
             _handInfoComponents[PrimaryHandIndex].enabled = true;
+            _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
         }
     }
 
@@ -707,6 +708,7 @@ public class VolumeInputController : MonoBehaviour
             if (_handInfoComponents != null)
             {
                 _handInfoComponents[PrimaryHandIndex].enabled = true;
+                _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
                 _handInfoComponents[PrimaryHandIndex].text = cursorString;
             }
         }
@@ -732,6 +734,7 @@ public class VolumeInputController : MonoBehaviour
         if (_handInfoComponents != null)
         {
             _handInfoComponents[PrimaryHandIndex].enabled = true;
+            _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
             _handInfoComponents[PrimaryHandIndex].text = cursorString;
         }
     }
