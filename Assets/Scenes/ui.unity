@@ -5649,6 +5649,18 @@ MonoBehaviour:
   defaultColor: {r: 0.36862746, g: 0.5686275, b: 0.9490196, a: 1}
   selectedColor: {r: 0, g: 0.23137255, b: 0.5568628, a: 1}
   defaultTabIndex: 0
+--- !u!114 &344721945 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8885129615458038562, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+    type: 3}
+  m_PrefabInstance: {fileID: 1613529188}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29e3e4511966ba94d8ba0b98c6c62f82, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &352289810
 GameObject:
   m_ObjectHideFlags: 0
@@ -6277,7 +6289,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ee1380870bab3724d96eb307cfcc9f9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  EditingHand: {fileID: 1082528673}
+  EditingHand: {fileID: 344721945}
   VibrationDuration: 0.25
   VibrationFrequency: 100
   VibrationAmplitude: 1
@@ -20298,18 +20310,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1068006342}
   m_CullTransparentMesh: 0
---- !u!114 &1082528673 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8885129614113093037, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
-    type: 3}
-  m_PrefabInstance: {fileID: 1613529188}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 29e3e4511966ba94d8ba0b98c6c62f82, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1088401396
 GameObject:
   m_ObjectHideFlags: 0
@@ -27466,6 +27466,16 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1463224261516483535, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+        type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 3552230526854978153, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+        type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 4928587070514594467, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
         type: 3}
       propertyPath: CanvassQuickMenu

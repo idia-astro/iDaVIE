@@ -48,7 +48,9 @@ public class VolumeInputController : MonoBehaviour
     
     // Choice of left/right primary hand
     public SteamVR_Input_Sources PrimaryHand = SteamVR_Input_Sources.RightHand;
-    
+
+    public int PrimaryHandIndex => PrimaryHand == SteamVR_Input_Sources.LeftHand ? 0 : 1;
+
     // Scaling/Rotation options
     public bool InPlaceScaling = true;
     public bool ScalingEnabled = true;
@@ -86,7 +88,7 @@ public class VolumeInputController : MonoBehaviour
 
     private Vector3Int _coordDecimcalPlaces;
 
-    private TextMeshPro _scalingTextComponent;
+    private TextMeshPro[] _handInfoComponents;
 
     private float _rotationYawCumulative = 0;
     private float _rotationRollCumulative = 0;
@@ -176,7 +178,7 @@ public class VolumeInputController : MonoBehaviour
         _lineAxisSeparation.color = Color.red;
         _lineAxisSeparation.Draw3DAuto();
 
-        _scalingTextComponent = _hands[0].GetComponentInChildren<TextMeshPro>();
+        _handInfoComponents = new[] {_hands[0].GetComponentInChildren<TextMeshPro>(), _hands[1].GetComponentInChildren<TextMeshPro>()};
         _startDataSetScales = new float[_volumeDataSets.Length];
         _currentGripPositions = new Vector3[2];
         _startGripSeparation = Vector3.zero;
@@ -243,7 +245,7 @@ public class VolumeInputController : MonoBehaviour
     {
         foreach (var dataSet in _volumeDataSets)
         {
-            dataSet.SetCursorPosition(_handTransforms[0].position, BrushSize);
+            dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, BrushSize);
         }
     }
 
@@ -365,8 +367,7 @@ public class VolumeInputController : MonoBehaviour
     private void StartSelection()
     {
         _isSelecting = true;
-        int handIndex = PrimaryHand == SteamVR_Input_Sources.LeftHand ? 0 : 1;
-        var startPosition = _handTransforms[handIndex].position;
+        var startPosition = _handTransforms[PrimaryHandIndex].position;
         foreach (var dataSet in _volumeDataSets)
         {
             dataSet.SetRegionPosition(startPosition, true);
@@ -380,8 +381,7 @@ public class VolumeInputController : MonoBehaviour
 
     private void EndSelection()
     {
-        int handIndex = PrimaryHand == SteamVR_Input_Sources.LeftHand ? 0 : 1;
-        var endPosition = _handTransforms[handIndex].position;
+        var endPosition = _handTransforms[PrimaryHandIndex].position;
 
         _isSelecting = false;
 
@@ -436,9 +436,9 @@ public class VolumeInputController : MonoBehaviour
         _lineRotationAxes.points3[2] = _startGripCenter + Vector3.up * 0.1f;
         _lineRotationAxes.active = true;
 
-        if (_scalingTextComponent)
+        if (_handInfoComponents != null)
         {
-            _scalingTextComponent.enabled = true;
+            _handInfoComponents[PrimaryHandIndex].enabled = true;
         }
     }
 
@@ -448,9 +448,10 @@ public class VolumeInputController : MonoBehaviour
         _lineRotationAxes.active = false;
         _lineAxisSeparation.active = false;
 
-        if (_scalingTextComponent)
+        if (_handInfoComponents != null)
         {
-            _scalingTextComponent.enabled = false;
+            _handInfoComponents[PrimaryHandIndex].enabled = false;
+            _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
         }
     }
 
@@ -677,11 +678,11 @@ public class VolumeInputController : MonoBehaviour
                     {
                         dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0);
                     }
-                    dataSet.SetCursorPosition(_handTransforms[0].position, BrushSize);
+                    dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, BrushSize);
                 }
                 else
                 {
-                    dataSet.SetCursorPosition(_handTransforms[0].position, 1);
+                    dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, 1);
                 }
                 if (dataSet.isActiveAndEnabled)
                 {
@@ -689,7 +690,7 @@ public class VolumeInputController : MonoBehaviour
                     if (dataSet.CursorSource != 0)
                         sourceIndex = $"Source # {dataSet.CursorSource}";
                     var voxelCoordinate = dataSet.CursorVoxel;
-                    if (voxelCoordinate.x >= 0 && _scalingTextComponent != null)
+                    if (voxelCoordinate.x >= 0 && _handInfoComponents != null)
                     {
                         Vector3Int coordDecimcalPlaces = dataSet.GetDimDecimals();
                         var voxelValue = dataSet.CursorValue;
@@ -702,17 +703,19 @@ public class VolumeInputController : MonoBehaviour
                     }
                 }
             }
-
-            _scalingTextComponent.enabled = true;
-            _scalingTextComponent.text = cursorString;
+            
+            if (_handInfoComponents != null)
+            {
+                _handInfoComponents[PrimaryHandIndex].enabled = true;
+                _handInfoComponents[PrimaryHandIndex].text = cursorString;
+            }
         }
     }
 
     private void UpdateSelecting()
     {
         string cursorString = "";
-        int handIndex = PrimaryHand == SteamVR_Input_Sources.LeftHand ? 0 : 1;
-        var endPosition = _handTransforms[handIndex].position;
+        var endPosition = _handTransforms[PrimaryHandIndex].position;
 
         foreach (var dataSet in _volumeDataSets)
         {
@@ -726,8 +729,11 @@ public class VolumeInputController : MonoBehaviour
             }
         }
 
-        _scalingTextComponent.enabled = true;
-        _scalingTextComponent.text = cursorString;
+        if (_handInfoComponents != null)
+        {
+            _handInfoComponents[PrimaryHandIndex].enabled = true;
+            _handInfoComponents[PrimaryHandIndex].text = cursorString;
+        }
     }
 
 
