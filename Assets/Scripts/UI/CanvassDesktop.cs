@@ -431,7 +431,7 @@ public class CanvassDesktop : MonoBehaviour
     }
 
     private void postLoadFileFileSystem()
-    { 
+    { /*
         //here should check if loading is ok
         if (true)
         {
@@ -458,8 +458,38 @@ public class CanvassDesktop : MonoBehaviour
             //move to rendering tab
             mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().interactable = true;
             mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().onClick.Invoke();
+        }*/
+
+
+        if (true)
+        {
+
+
+            VolumePlayer.SetActive(false);
+            VolumePlayer.SetActive(true);
+
+
+            if (getFirstActiveDataSet().MaskFileName != "")
+            {
+                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+            .gameObject.transform.Find("Line_7").gameObject.transform.Find("Dropdown_mask").GetComponent<TMP_Dropdown>().interactable = true;
+
+            }
+            else
+                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+            .gameObject.transform.Find("Line_7").gameObject.transform.Find("Dropdown_mask").GetComponent<TMP_Dropdown>().interactable = false;
+
+
+            populateColorMapDropdown();
+            populateStatsValue();
+
+
+            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().interactable = true;
+            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().onClick.Invoke();
+
         }
-        
+
+
 
     }
 
@@ -490,27 +520,32 @@ public class CanvassDesktop : MonoBehaviour
             getFirstActiveDataSet().transform.gameObject.SetActive(false);
 
         }
-       
-       GameObject newCube = Instantiate(cubeprefab, new Vector3(0, 0f, 0), Quaternion.identity);
-       newCube.SetActive(true);
+
+        GameObject newCube = Instantiate(cubeprefab, new Vector3(0, 0f, 0), Quaternion.identity);
+        newCube.SetActive(true);
 
 
-       newCube.GetComponent<VolumeDataSetRenderer>().FileName = _imagePath;//_dataSet.FileName.ToString();
-       newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _maskPath;// _maskDataSet.FileName.ToString();
+
+        newCube.transform.parent = volumeDataSetManager.transform;
+        newCube.transform.localPosition = oldpos;
+        newCube.transform.localRotation = oldrot;
+        newCube.transform.localScale = oldscale;
 
 
-       
-       checkCubesDataSet();
 
-        while (!newCube.GetComponent<VolumeDataSetRenderer>().started)
-        {
-            yield return new WaitForSeconds(.1f);
-        }
+        newCube.GetComponent<VolumeDataSetRenderer>().FileName = _imagePath;//_dataSet.FileName.ToString();
+        newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _maskPath;// _maskDataSet.FileName.ToString();
 
-       _volumeInputController.gameObject.SetActive(false);
-       _volumeInputController.gameObject.SetActive(true);
 
-       _volumeSpeechController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
+
+        checkCubesDataSet();
+
+        //Deactivate and reactivate VolumeInputController to update VolumeInputController's list of datasets
+
+        _volumeInputController.gameObject.SetActive(false);
+        _volumeInputController.gameObject.SetActive(true);
+
+        _volumeSpeechController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
 
         while (!newCube.GetComponent<VolumeDataSetRenderer>().started)
         {
