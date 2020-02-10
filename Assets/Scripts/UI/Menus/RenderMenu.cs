@@ -17,7 +17,7 @@ public class RenderMenu : MonoBehaviour
     public Button ButtonPrevColorMap;
     public Button ButtonNextColorMap;
     public Text LabelColormap;
-
+/*
     // Use this for initialization
     void Start()
     {
@@ -26,6 +26,7 @@ public class RenderMenu : MonoBehaviour
         ButtonNextDataSet.onClick.AddListener(OnNextDataSetClicked);
         ButtonNextColorMap.onClick.AddListener(OnPrevColorMapClicked);
         ButtonPrevColorMap.onClick.AddListener(OnNextColorMapClicked);
+        
         var activeDataSet = CatalogDataSetManager.ActiveDataSet;
         if (activeDataSet != null)
         {
@@ -60,7 +61,7 @@ public class RenderMenu : MonoBehaviour
     {
         LabelColormap.text = colorMap.ToString();
     }
-
+    
     private void OnPrevDataSetClicked()
     {
         CatalogDataSetManager.SelectNextSet();
@@ -82,4 +83,5 @@ public class RenderMenu : MonoBehaviour
     }
 */
     
+
 }

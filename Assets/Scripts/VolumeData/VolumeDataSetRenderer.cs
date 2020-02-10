@@ -51,7 +51,7 @@ namespace VolumeData
         public TextureFilterEnum TextureFilter = TextureFilterEnum.Point;
         [Range(0, 1)] public float Jitter = 1.0f;
 
-        [Header("Mask Rendering and Editing Settings")] 
+        [Header("Mask Rendering and Editing Settings")]
         public bool DisplayMask = false;
         public MaskMode MaskMode = MaskMode.Disabled;
         [Range(0, 1)] public float MaskVoxelSize = 1.0f;
@@ -68,7 +68,8 @@ namespace VolumeData
         [Range(16, 512)] public int FoveatedStepsHigh = 384;
 
         // Vignette Rendering
-        [Header("Vignette Rendering Controls")] [Range(0, 0.5f)]
+        [Header("Vignette Rendering Controls")]
+        [Range(0, 0.5f)]
         public float VignetteFadeStart = 0.15f;
 
         [Range(0, 0.5f)] public float VignetteFadeEnd = 0.40f;
@@ -122,14 +123,20 @@ namespace VolumeData
         private MeshRenderer _renderer;
         private Material _materialInstance;
         private Material _maskMaterialInstance;
-       
-        private VolumeInputController _volumeInputController;
+
+        public VolumeInputController _volumeInputController;
+
         private Vector3Int _previousPaintLocation;
         private short _previousPaintValue;
         private int _previousBrushSize = 1;
 
         private VolumeDataSet _dataSet = null;
         private VolumeDataSet _maskDataSet = null;
+
+
+
+        public bool IsCropped { get; private set; }
+
 
         #region Material Property IDs
 
@@ -169,7 +176,7 @@ namespace VolumeData
             public static readonly int HighlightMin = Shader.PropertyToID("HighlightMin");
             public static readonly int HighlightMax = Shader.PropertyToID("HighlightMax");
             public static readonly int HighlightSaturateFactor = Shader.PropertyToID("HighlightSaturateFactor");
-            
+
             public static readonly int CubeDimensions = Shader.PropertyToID("CubeDimensions");
             public static readonly int RegionDimensions = Shader.PropertyToID("RegionDimensions");
             public static readonly int RegionOffset = Shader.PropertyToID("RegionOffset");
@@ -223,7 +230,7 @@ namespace VolumeData
             InitialRotation = transform.rotation;
             InitialThresholdMax = ThresholdMax;
             InitialThresholdMin = ThresholdMin;
-            
+
             _cubeOutline = new VectorLine("CubeAxes", new List<Vector3>(24), 2.0f);
             _cubeOutline.MakeCube(Vector3.zero, 1, 1, 1);
             SetCubeColors(_cubeOutline, Color.white, true);
@@ -257,13 +264,12 @@ namespace VolumeData
             started = true;
 
         }
-        
+
         public VolumeDataSet GetDatsSet()
         {
-            
             return _dataSet;
         }
-        
+
         public void ShiftColorMap(int delta)
         {
             int numColorMaps = ColorMapUtils.NumColorMaps;
@@ -299,7 +305,7 @@ namespace VolumeData
 
                     Vector3 voxelCenterObjectSpace = new Vector3(voxelCenterCubeSpace.x / _dataSet.XDim - 0.5f, voxelCenterCubeSpace.y / _dataSet.YDim - 0.5f,
                         voxelCenterCubeSpace.z / _dataSet.ZDim - 0.5f);
-                    _voxelOutline.MakeCube(voxelCenterObjectSpace, (float) brushSize / _dataSet.XDim, (float) brushSize / _dataSet.YDim, (float) brushSize / _dataSet.ZDim);
+                    _voxelOutline.MakeCube(voxelCenterObjectSpace, (float)brushSize / _dataSet.XDim, (float)brushSize / _dataSet.YDim, (float)brushSize / _dataSet.ZDim);
                 }
 
                 _voxelOutline.active = true;
@@ -329,9 +335,9 @@ namespace VolumeData
                 Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
                 Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
                 Vector3Int newVoxelCursor = new Vector3Int(
-                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int) _dataSet.XDim),
-                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, 1, (int) _dataSet.YDim),
-                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1, 1, (int) _dataSet.ZDim)
+                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),
+                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, 1, (int)_dataSet.YDim),
+                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1, 1, (int)_dataSet.ZDim)
                 );
 
                 var existingVoxel = start ? RegionStartVoxel : RegionEndVoxel;
@@ -406,6 +412,7 @@ namespace VolumeData
                     var cubeDimensions = new Vector4(_maskDataSet.XDim, _maskDataSet.YDim, _maskDataSet.ZDim, 1);
                     _maskMaterialInstance.SetVector(MaterialID.CubeDimensions, cubeDimensions);
                 }
+                IsCropped = true;
             }
         }
 
@@ -419,6 +426,8 @@ namespace VolumeData
                 _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.DataCube);
                 _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, null);
             }
+
+            IsCropped = false;
         }
 
         public void LoadRegionData(Vector3Int startVoxel, Vector3Int endVoxel)
@@ -479,8 +488,8 @@ namespace VolumeData
 
             if (_regionOutline.active)
             {
-                Vector3 regionStartObjectSpace = new Vector3((float) (RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float) (RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float) (RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
-                Vector3 regionEndObjectSpace = new Vector3((float) (RegionEndVoxel.x) / _dataSet.XDim - 0.5f, (float) (RegionEndVoxel.y) / _dataSet.YDim - 0.5f, (float) (RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
+                Vector3 regionStartObjectSpace = new Vector3((float)(RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
+                Vector3 regionEndObjectSpace = new Vector3((float)(RegionEndVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionEndVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
                 Vector3 padding = new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
                 var highlightMin = Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
                 var highlightMax = Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
@@ -499,7 +508,7 @@ namespace VolumeData
                 _materialInstance.SetInt(MaterialID.MaskMode, MaskMode.GetHashCode());
                 _maskMaterialInstance.SetFloat(MaterialID.MaskVoxelSize, MaskVoxelSize);
                 _maskMaterialInstance.SetColor(MaterialID.MaskVoxelColor, MaskVoxelColor);
-                
+
                 // Calculate and update voxel corner offsets
                 var offsets = new Vector4[4];
                 var modelMatrix = transform.localToWorldMatrix;
@@ -509,7 +518,7 @@ namespace VolumeData
                 offsets[3] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new Vector3(-1.0f / _maskDataSet.XDim, +1.0f / _maskDataSet.YDim, +1.0f / _maskDataSet.ZDim));
                 _maskMaterialInstance.SetVectorArray(MaterialID.MaskVoxelOffsets, offsets);
                 _maskMaterialInstance.SetMatrix(MaterialID.ModelMatrix, modelMatrix);
-                
+
             }
             else
             {
@@ -530,7 +539,7 @@ namespace VolumeData
             _materialInstance.SetFloat(MaterialID.VignetteIntensity, VignetteIntensity);
             _materialInstance.SetColor(MaterialID.VignetteColor, VignetteColor);
         }
-        
+
         void OnRenderObject()
         {
             if (DisplayMask && _maskDataSet?.ExistingMaskBuffer != null)
@@ -556,7 +565,7 @@ namespace VolumeData
                 CropToRegion();
             }
         }
-        
+
         private bool PaintMask(Vector3Int position, short value)
         {
             if (_maskDataSet == null || _maskDataSet.RegionCube == null)
@@ -593,7 +602,7 @@ namespace VolumeData
                     {
                         PaintMask(new Vector3Int(CursorVoxel.x + i, CursorVoxel.y + j, CursorVoxel.z + k), value);
                     }
-                } 
+                }
             }
             return true;
         }
@@ -606,23 +615,23 @@ namespace VolumeData
         public Vector3 GetFitsCoords(double X, double Y, double Z)
         {
             Vector2 raDec = _dataSet.GetRADecFromXY(X, Y);
-            float z = (float) _dataSet.GetVelocityFromZ(Z);
+            float z = (float)_dataSet.GetVelocityFromZ(Z);
             return new Vector3(raDec.x, raDec.y, z);
         }
 
         public Vector3 GetFitsLengths(double X, double Y, double Z)
         {
             Vector3 wcsConversion = _dataSet.GetWCSDeltas();
-            float xLength = Math.Abs((float) X * wcsConversion.x);
-            float yLength = Math.Abs((float) Y * wcsConversion.y);
-            float zLength = Math.Abs((float) Z * wcsConversion.z);
+            float xLength = Math.Abs((float)X * wcsConversion.x);
+            float yLength = Math.Abs((float)Y * wcsConversion.y);
+            float zLength = Math.Abs((float)Z * wcsConversion.z);
             return new Vector3(xLength, yLength, zLength);
         }
 
         public string GetFitsCoordsString(double X, double Y, double Z)
         {
             Vector2 raDec = _dataSet.GetRADecFromXY(X, Y);
-            string vel = string.Format("{0,8:F2} km/s", (float) _dataSet.GetVelocityFromZ(Z) / 1000);
+            string vel = string.Format("{0,8:F2} km/s", (float)_dataSet.GetVelocityFromZ(Z) / 1000);
             double raHours = (raDec.x * 12.0 / 180.0);
             double raMin = (raHours - Math.Truncate(raHours)) * 60;
             double raSec = Math.Truncate((raMin - Math.Truncate(raMin)) * 60 * 100) / 100;
@@ -642,7 +651,7 @@ namespace VolumeData
 
         public Vector3Int GetCubeDimensions()
         {
-            return new Vector3Int((int) _dataSet.XDim, (int) _dataSet.YDim, (int) _dataSet.ZDim);
+            return new Vector3Int((int)_dataSet.XDim, (int)_dataSet.YDim, (int)_dataSet.ZDim);
         }
 
         // Converts volume space to local space

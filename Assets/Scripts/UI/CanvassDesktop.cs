@@ -23,6 +23,7 @@ public class CanvassDesktop : MonoBehaviour
     public GameObject informationPanelContent;
     public GameObject mainCanvassDesktop;
     public GameObject fileLoadCanvassDesktop;
+    public GameObject VolumePlayer;
 
 
     private bool showPopUp = false;
@@ -71,18 +72,12 @@ public class CanvassDesktop : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // InformationTab();
-
-
         if (getFirstActiveDataSet() && (getFirstActiveDataSet().ColorMap != activeColorMap))
         {
            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
      .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value = (int)getFirstActiveDataSet().ColorMap;
         }
-/*
-        if (getFirstActiveDataSet() != null)
-            Debug.Log(getFirstActiveDataSet().started);
-            */
+
     }
 
     public void InformationTab()
@@ -132,7 +127,8 @@ public class CanvassDesktop : MonoBehaviour
             int status = 0;
 
 
-            if (FitsReader.FitsOpenFile(out fptr, imagePath, out status) != 0)
+
+            if (FitsReader.FitsOpenFile(out fptr, imagePath, out status, true) != 0)
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
@@ -304,7 +300,7 @@ public class CanvassDesktop : MonoBehaviour
             int status = 0;
 
 
-            if (FitsReader.FitsOpenFile(out fptr, maskPath, out status) != 0)
+            if (FitsReader.FitsOpenFile(out fptr, maskPath, out status, false) != 0)
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
@@ -454,6 +450,11 @@ public class CanvassDesktop : MonoBehaviour
             populateColorMapDropdown();
             populateStatsValue();
 
+
+            VolumePlayer.SetActive(false);
+            VolumePlayer.SetActive(true);
+
+
             //move to rendering tab
             mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().interactable = true;
             mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().onClick.Invoke();
@@ -493,14 +494,6 @@ public class CanvassDesktop : MonoBehaviour
        GameObject newCube = Instantiate(cubeprefab, new Vector3(0, 0f, 0), Quaternion.identity);
        newCube.SetActive(true);
 
-       
-
-       newCube.transform.parent = volumeDataSetManager.transform;
-       newCube.transform.localPosition = oldpos;
-       newCube.transform.localRotation = oldrot;
-       newCube.transform.localScale = oldscale;
-
-       
 
        newCube.GetComponent<VolumeDataSetRenderer>().FileName = _imagePath;//_dataSet.FileName.ToString();
        newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _maskPath;// _maskDataSet.FileName.ToString();
@@ -509,7 +502,10 @@ public class CanvassDesktop : MonoBehaviour
        
        checkCubesDataSet();
 
-       //Deactivate and reactivate VolumeInputController to update VolumeInputController's list of datasets
+        while (!newCube.GetComponent<VolumeDataSetRenderer>().started)
+        {
+            yield return new WaitForSeconds(.1f);
+        }
 
        _volumeInputController.gameObject.SetActive(false);
        _volumeInputController.gameObject.SetActive(true);
@@ -523,7 +519,6 @@ public class CanvassDesktop : MonoBehaviour
 
 
         postLoadFileFileSystem();
-
     }
 
     public void DismissFileLoad()
@@ -551,7 +546,6 @@ public class CanvassDesktop : MonoBehaviour
         return null;
     }
 
-   
 
     void OnGUI()
     {
@@ -636,5 +630,7 @@ public class CanvassDesktop : MonoBehaviour
             getFirstActiveDataSet().ColorMap = activeColorMap;
         }
     }
+
+
 
 }

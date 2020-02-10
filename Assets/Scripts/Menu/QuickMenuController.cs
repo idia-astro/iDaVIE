@@ -15,18 +15,24 @@ public class QuickMenuController : MonoBehaviour
     private VolumeDataSetRenderer[] _dataSets;
 
     public GameObject mainMenuCanvas;
+    public GameObject paintMenu;
     int maskstatus=0;
     int cropstatus = 0;
     int featureStatus = 0;
+    string oldMaskLoaded = "";
     // Start is called before the first frame update
     void Start()
     {
        
         if ( volumeDatasetRendererObj!= null )
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
-        
-   
 
+    }
+
+    public void OnEnable()
+    {
+        if (volumeDatasetRendererObj != null)
+            _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
     }
 
     // Update is called once per frame
@@ -40,10 +46,10 @@ public class QuickMenuController : MonoBehaviour
         var firstActive = getFirstActiveDataSet();
         if (firstActive && _activeDataSet != firstActive)
         {
-            Debug.Log("in foreach --- Update");
             _activeDataSet = firstActive;
         }
        
+
     }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
@@ -70,8 +76,8 @@ public class QuickMenuController : MonoBehaviour
 
     public void OpenMainMenu()
     {
-      //  mainMenuCanvas.SetActive(!mainMenuCanvas.activeSelf);
-        mainMenuCanvas.SetActive(true);
+
+        mainMenuCanvas.SetActive(!mainMenuCanvas.activeSelf);
     }
 
     public void ToggleFeatures()
@@ -153,34 +159,48 @@ public class QuickMenuController : MonoBehaviour
 
     public void cropDataSet()
     {
-        Debug.Log("Inizio Crop "+ cropstatus);
 
-        if (cropstatus == 1)
-            cropstatus = -1;
-        cropstatus++;
+        
 
-        Debug.Log("dopo Crop " + cropstatus);
 
         this.gameObject.transform.Find("Image_dis").gameObject.SetActive(false);
         this.gameObject.transform.Find("Image_en").gameObject.SetActive(false);
 
-        Debug.Log("dopo disable  " );
         if (_activeDataSet)
         {
-            Debug.Log("dentro if  "+cropstatus);
-            switch (cropstatus)
+
+            if (_activeDataSet.IsCropped)
             {
-                case 0:
-                    this.gameObject.transform.Find("Image_dis").gameObject.SetActive(true);
-                    notificationText.GetComponent<Text>().text = "Crop disabled";
-                    _activeDataSet.ResetCrop();
-                    break;
-                case 1:
-                    this.gameObject.transform.Find("Image_en").gameObject.SetActive(true);
-                    notificationText.GetComponent<Text>().text = "Crop enabled";
-                    _activeDataSet.CropToRegion();
-                    break;
+                this.gameObject.transform.Find("Image_dis").gameObject.SetActive(true);
+                notificationText.GetComponent<Text>().text = "Crop disabled";
+                _activeDataSet.ResetCrop();
+            }
+            else
+            {
+                this.gameObject.transform.Find("Image_en").gameObject.SetActive(true);
+                notificationText.GetComponent<Text>().text = "Crop enabled";
+                _activeDataSet.CropToRegion();
             }
         }
+    }
+
+    public void OpenPaintMenu()
+    {
+        paintMenu.transform.SetParent(this.transform.parent,false);
+        paintMenu.transform.localPosition = this.transform.localPosition;
+        paintMenu.transform.localRotation = this.transform.localRotation;
+        paintMenu.transform.localScale = this.transform.localScale;
+        /*
+        CanvassQuickMenu.transform.SetParent(_handTransforms[handIndex], false);
+        CanvassQuickMenu.transform.localPosition = new Vector3(-0.1f, (handIndex == 0 ? 1 : -1) * 0.175f, 0.10f);
+        CanvassQuickMenu.transform.localRotation = Quaternion.Euler((handIndex == 0 ? 1 : -1) * -3.25f, 15f, 90f);
+        CanvassQuickMenu.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
+        */
+
+       
+        
+
+        this.gameObject.SetActive(false);
+        paintMenu.SetActive(true);
     }
 }

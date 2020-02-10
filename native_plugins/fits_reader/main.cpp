@@ -7,9 +7,19 @@
 
 extern "C"
 {
-	DllExport int FitsOpenFile(fitsfile **fptr, char* filename,  int *status)
+	DllExport int FitsOpenFileReadOnly(fitsfile **fptr, char* filename,  int *status)
 	{
 		return fits_open_file(fptr, filename, READONLY, status);
+	}
+
+	DllExport int FitsOpenFileReadWrite(fitsfile** fptr, char* filename, int* status)
+	{
+		return fits_open_file(fptr, filename, READWRITE, status);
+	}
+
+	DllExport int FitsCreateFile(fitsfile** fptr, char* filename, int* status)
+	{
+		return fits_create_file(fptr, filename, status);
 	}
 
 	DllExport int FitsCloseFile(fitsfile *fptr, int *status)
@@ -17,6 +27,11 @@ extern "C"
 		return fits_close_file(fptr, status);
 	}
 	
+	DllExport int FitsFlushFile(fitsfile* fptr, int* status)
+	{
+		return fits_flush_file(fptr, status);
+	}
+
 	DllExport int FitsMovabsHdu(fitsfile *fptr, int hdunum, int *hdutype, int *status)
 	{
 		return fits_movabs_hdu(fptr, hdunum, hdutype, status);
@@ -59,15 +74,47 @@ extern "C"
 		return fits_get_img_dim(fptr, dims, status);
 	}
 
+	DllExport int FitsCreateImg(fitsfile *fptr, int bitpix, int naxis, int64_t *naxes, int *status)
+	{
+		int success = fits_create_imgll(fptr, bitpix, naxis, naxes, status);
+		return success;
+	}
+
+	DllExport int FitsCopyHeader(fitsfile *infptr, fitsfile *outfptr, int *status)
+	{
+		int success = fits_copy_header(infptr, outfptr, status);
+		return success;
+	}
+
+	DllExport int FitsWriteImageInt16(fitsfile* fptr, int dims, int64_t nelements, int16_t* array, int* status)
+	{
+		int64_t* startPix = new int64_t[dims];
+		for (int i = 0; i < dims; i++)
+			startPix[i] = 1;
+		int success = fits_write_pixll(fptr, TSHORT, startPix, nelements, array, status);
+		delete[] startPix;
+		return success;
+	}
 	
+	DllExport int FitsWriteKey(fitsfile* fptr, int datatype, char *keyname, void *value, char *comment, int *status)
+	{
+		int success = fits_write_key(fptr, datatype, keyname, value, comment, status);
+		return success;
+	}
+
+	DllExport int FitsUpdateKey(fitsfile* fptr, int datatype, char* keyname, void* value, char* comment, int* status)
+	{
+		int success = fits_update_key(fptr, datatype, keyname, value, comment, status);
+		return success;
+	}
+
 	DllExport int FitsGetImageSize(fitsfile *fptr, int dims, int64_t **naxes, int *status)
 	{
 		int64_t* imageSize = new int64_t[dims];
-		fits_get_img_sizell(fptr, dims, imageSize, status);
+		int success = fits_get_img_sizell(fptr, dims, imageSize, status);
 		*naxes = imageSize;
-		return 0;
+		return success;
 	}
-
 
 	DllExport int FitsReadColFloat(fitsfile *fptr, int colnum, long firstrow,
 		long firstelem, int64_t nelem, float **array, int  *status)
@@ -94,7 +141,7 @@ extern "C"
 		*chararray = dataArrayElements;
 		return success;
 	}
-	
+
 	DllExport int FitsReadImageFloat(fitsfile *fptr, int dims, int64_t nelem, float **array, int *status)
 	{
 		int anynul;
@@ -136,5 +183,13 @@ extern "C"
 	{
 		delete[] ptrToDelete;
 		return 0;
+	}
+
+	DllExport int InsertSubArrayInt16(int16_t* mainArray, int64_t mainArraySize, int16_t* subArray, int64_t subArraySize, int64_t startIndex)
+	{
+		if (subArraySize > mainArraySize|| startIndex > mainArraySize || startIndex + subArraySize > mainArraySize)
+			return EXIT_FAILURE;
+		memcpy(mainArray + startIndex, subArray, subArraySize*sizeof(int16_t));
+		return EXIT_SUCCESS;
 	}
 }

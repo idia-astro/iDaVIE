@@ -335,6 +335,8 @@ namespace VolumeData
             if (_activeDataSet)
             {
                 _activeDataSet.ResetCrop();
+
+                Debug.Log("cropped: "+_activeDataSet.IsCropped);
             }
         }
 
@@ -343,6 +345,7 @@ namespace VolumeData
             if (_activeDataSet)
             {
                 _activeDataSet.TeleportToRegion();
+                Debug.Log("cropped: " + _activeDataSet.IsCropped);
             }
         }
 
@@ -365,6 +368,7 @@ namespace VolumeData
         public void EnablePaintMode()
         {
             _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.PaintMode);
+
         }
 
         public void DisablePaintMode()

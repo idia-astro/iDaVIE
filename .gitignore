@@ -445,9 +445,10 @@ Assets/Resources.meta
 Assets/Vectrosity.meta
 Assets/SteamVR_Resources.meta
 
-# exclude lib_source solution files
-!lib_source/fits_reader/*.sln
-!lib_source/data_analysis_tool/*.sln
+# exclude native_plugins solution files
+!native_plugins/*.sln
+!native_plugins/*/*.sln
+
 
 # feature tables
 *.ascii
