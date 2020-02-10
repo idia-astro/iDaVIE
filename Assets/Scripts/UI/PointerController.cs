@@ -14,6 +14,7 @@ public class PointerController : MonoBehaviour
     private UserDraggableMenu _draggingMenu;
 
     private void OnEnable()
+    public void Start()
     {
         _laserPointer = GetComponent<LaserPointer>();
         Hand = GetComponentInParent<Hand>();
