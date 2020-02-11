@@ -15,6 +15,8 @@ public class PaintMenuController : MonoBehaviour
     private VolumeDataSetRenderer[] _dataSets;
 
     public GameObject mainMenuCanvas;
+    public GameObject paintMenu;
+    public GameObject savePopup;
     int maskstatus = 0;
     int cropstatus = 0;
     int featureStatus = 0;
@@ -204,4 +206,40 @@ public class PaintMenuController : MonoBehaviour
 
     }
 
+    public void SaveMask()
+    {
+        savePopup.transform.SetParent(this.transform.parent, false);
+        savePopup.transform.localPosition = this.transform.localPosition;
+        savePopup.transform.localRotation = this.transform.localRotation;
+        savePopup.transform.localScale = this.transform.localScale;
+        /*
+        CanvassQuickMenu.transform.SetParent(_handTransforms[handIndex], false);
+        CanvassQuickMenu.transform.localPosition = new Vector3(-0.1f, (handIndex == 0 ? 1 : -1) * 0.175f, 0.10f);
+        CanvassQuickMenu.transform.localRotation = Quaternion.Euler((handIndex == 0 ? 1 : -1) * -3.25f, 15f, 90f);
+        CanvassQuickMenu.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
+        */
+
+
+
+        _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.SelectionMode);
+        this.gameObject.SetActive(false);
+        savePopup.SetActive(true);
+    }
+
+    public void SaveCancel()
+    {
+
+        paintMenu.SetActive(true);
+        savePopup.SetActive(false);
+    }
+
+    public void SaveOverwriteMask()
+    {
+        
+    }
+
+    public void SaveNewMask()
+    {
+        
+    }
 }
