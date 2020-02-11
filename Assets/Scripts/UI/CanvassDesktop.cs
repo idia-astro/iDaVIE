@@ -11,7 +11,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
 
-
+using OxyPlot;
+using OxyPlot.WindowsForms;
+using System.IO;
+using OxyPlot.Axes;
+using OxyPlot.Series;
 
 public class CanvassDesktop : MonoBehaviour
 {
@@ -52,7 +56,7 @@ public class CanvassDesktop : MonoBehaviour
         _volumeSpeechController = FindObjectOfType<VolumeSpeechController>();
         checkCubesDataSet();
 
-
+        //createHistogramImg();
 
     }
 
@@ -636,6 +640,8 @@ public class CanvassDesktop : MonoBehaviour
         Debug.Log("Hist: " + getFirstActiveDataSet().GetDatsSet().Histogram);
 
         Debug.Log("CANVASS END :::::::::");
+
+        createHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram);
     }
     private void populateColorMapDropdown()
     {
@@ -667,5 +673,50 @@ public class CanvassDesktop : MonoBehaviour
     }
 
 
+    public void createHistogramImg(int []h)
+    {
+
+        var Timestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+
+        using (var stream = File.Create("./plot"+ Timestamp.ToString()+ ".pdf"))
+        {
+            /*
+            var plotModel = new PlotModel();
+            plotModel.Title = "Inside";
+            var linearAxis1 = new LinearAxis();
+            linearAxis1.TickStyle = TickStyle.Inside;
+            plotModel.Axes.Add(linearAxis1);
+            var linearAxis2 = new LinearAxis();
+            linearAxis2.Position = AxisPosition.Bottom;
+            linearAxis2.TickStyle = TickStyle.Inside;
+            plotModel.Axes.Add(linearAxis2);
+            */
+
+            var model = new PlotModel { Title = "Histogram" };
+
+            //var s1 = new HistogramSeries { LabelPlacement = LabelPlacement.Base, LabelFormatString = "Base", StrokeThickness = 1, LabelMargin = 5 };
+            var s1 = new HistogramSeries {  StrokeThickness = 1 };
+            
+             for (int i=0;i<h.Length;i++)
+             {
+                 s1.Items.Add(new HistogramItem(i, i+1, h[i], 1));
+             }
+            
+
+
+
+            model.Series.Add(s1);
+           
+      
+            var pdfExporter = new PdfExporter { Width = 600, Height = 400 };
+            pdfExporter.Export(model, stream);
+         
+      
+
+
+        }
+
+    }
+    
 
 }
