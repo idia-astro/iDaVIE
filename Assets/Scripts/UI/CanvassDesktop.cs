@@ -4,18 +4,19 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Text;
-using System.Threading;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
 
 using OxyPlot;
-using OxyPlot.WindowsForms;
+
 using System.IO;
-using OxyPlot.Axes;
 using OxyPlot.Series;
+
+
+using OxyPlot.WindowsForms;
+
 
 public class CanvassDesktop : MonoBehaviour
 {
@@ -676,22 +677,12 @@ public class CanvassDesktop : MonoBehaviour
     public void createHistogramImg(int []h)
     {
 
+        /*
         var Timestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
-
+        
         using (var stream = File.Create("./plot"+ Timestamp.ToString()+ ".pdf"))
         {
-            /*
-            var plotModel = new PlotModel();
-            plotModel.Title = "Inside";
-            var linearAxis1 = new LinearAxis();
-            linearAxis1.TickStyle = TickStyle.Inside;
-            plotModel.Axes.Add(linearAxis1);
-            var linearAxis2 = new LinearAxis();
-            linearAxis2.Position = AxisPosition.Bottom;
-            linearAxis2.TickStyle = TickStyle.Inside;
-            plotModel.Axes.Add(linearAxis2);
-            */
-
+           
             var model = new PlotModel { Title = "Histogram" };
 
             //var s1 = new HistogramSeries { LabelPlacement = LabelPlacement.Base, LabelFormatString = "Base", StrokeThickness = 1, LabelMargin = 5 };
@@ -706,17 +697,57 @@ public class CanvassDesktop : MonoBehaviour
 
 
             model.Series.Add(s1);
-           
-      
-            var pdfExporter = new PdfExporter { Width = 600, Height = 400 };
-            pdfExporter.Export(model, stream);
-         
-      
 
+
+            int width = 600;
+            int height = 300;
+
+
+
+            var pdfExporter = new PdfExporter { Width = width, Height = height };
+            pdfExporter.Export(model, stream);
+          
+
+/
 
         }
 
+        */
+
+
+        int width = 600;
+        int height = 300;
+
+        var stream = new MemoryStream();
+
+        var model = new PlotModel { Title = "Histogram" };
+
+        //var s1 = new HistogramSeries { LabelPlacement = LabelPlacement.Base, LabelFormatString = "Base", StrokeThickness = 1, LabelMargin = 5 };
+        var s1 = new HistogramSeries { StrokeThickness = 1 };
+
+        for (int i = 0; i < h.Length; i++)
+        {
+            s1.Items.Add(new HistogramItem(i, i + 1, h[i], 1));
+        }
+
+        model.Series.Add(s1);
+
+        var exporter = new OxyPlot.WindowsForms.PngExporter { Width = width, Height = height };
+        exporter.Export(model, stream);
+        
+
+        Texture2D tex = new Texture2D(width, height);
+        tex.LoadImage(stream.ToArray());
+        Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(tex.width / 2, tex.height / 2));
+
+        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Histogram_container")
+    .gameObject.transform.Find("GameObject").GetComponent<Image>().sprite = sprite;
+
+  
+
+
     }
-    
+
+
 
 }
