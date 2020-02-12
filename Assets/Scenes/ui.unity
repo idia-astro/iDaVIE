@@ -2015,6 +2015,18 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 1613529188}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &135890494 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4928587070514594467, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+    type: 3}
+  m_PrefabInstance: {fileID: 1613529188}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 135890493}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a6857598aee4ffba39b7279fe73e7c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &136987714
 GameObject:
   m_ObjectHideFlags: 0
@@ -6367,6 +6379,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   EditingHand: {fileID: 344721945}
+  VolumeInputController: {fileID: 135890494}
+  QuickMenuController: {fileID: 379983799}
+  PaintMenuController: {fileID: 1393187943}
   VibrationDuration: 0.25
   VibrationFrequency: 100
   VibrationAmplitude: 1
@@ -19846,11 +19861,22 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 0
+  m_Interactable: 1
   m_TargetGraphic: {fileID: 1030398474}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1393187943}
+        m_MethodName: SaveMask
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1030398474
 MonoBehaviour:
   m_ObjectHideFlags: 0
