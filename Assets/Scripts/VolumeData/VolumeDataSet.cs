@@ -104,7 +104,7 @@ namespace VolumeData
             IntPtr dataPtr = IntPtr.Zero;
             if (isMask)
             {
-                if (FitsReader.FitsOpenFile(out fptr, fileName, out status, false) != 0)
+                if (FitsReader.FitsOpenFile(out fptr, fileName, out status, true) != 0)
                 {
                     Debug.Log("Fits open failure... code #" + status.ToString());
                 }
@@ -132,9 +132,10 @@ namespace VolumeData
                 Debug.Log("Fits Read cube size error #" + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
             }
+
             volumeDataSet.cubeSize = new long[cubeDimensions];
             Marshal.Copy(dataPtr, volumeDataSet.cubeSize, 0, cubeDimensions);
-	    if (dataPtr != IntPtr.Zero)
+            if (dataPtr != IntPtr.Zero)
                 FitsReader.FreeMemory(dataPtr);
             long numberDataPoints = volumeDataSet.cubeSize[index0] * volumeDataSet.cubeSize[index1] * volumeDataSet.cubeSize[index2];
             IntPtr fitsDataPtr = IntPtr.Zero;
@@ -745,7 +746,6 @@ namespace VolumeData
                 return;
             }
             
-            int status;
             int unmangedMemorySize = Marshal.SizeOf(_regionMaskVoxels[0]) * _regionMaskVoxels.Length;
             IntPtr unmanagedCopy = Marshal.AllocHGlobal(unmangedMemorySize);
             long[] regionDims = {RegionCube.width, RegionCube.height, RegionCube.depth};
