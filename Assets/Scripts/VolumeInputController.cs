@@ -718,7 +718,8 @@ public class VolumeInputController : MonoBehaviour
             var range = dataSet.ScaleMax - dataSet.ScaleMin;
             var effectiveMin = dataSet.ScaleMin + dataSet.ThresholdMin * range;
             var effectiveMax = dataSet.ScaleMin + dataSet.ThresholdMax * range;
-            cursorString = $"Min: {effectiveMin.ToString("0.###E+000").PadLeft(11)}\nMax: {effectiveMax.ToString("0.###E+000").PadLeft(11)}";
+            cursorString = $"Min: {effectiveMin.ToString("0.###E+000").PadLeft(11)} ({(dataSet.ThresholdMin * 100):0.0}%)\n";
+            cursorString += $"Max: {effectiveMax.ToString("0.###E+000").PadLeft(11)} ({(dataSet.ThresholdMax * 100):0.0}%)";
         }
         
         if (_handInfoComponents != null)
