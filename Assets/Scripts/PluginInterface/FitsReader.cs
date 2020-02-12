@@ -186,19 +186,19 @@ public class FitsReader
         bool isNewFile = (fileName != null);
         long startIndex = 0;
         int offset = (int)(regionDims[0] * sizeof(short)); 
-        IntPtr regionStartIndex = regionData;
+        IntPtr regionPtr = regionData;
         for (var z = regionStartPix[2] - 1; z < regionDims[2]; z++)
         {
             for (var y = regionStartPix[1] - 1; y < regionDims[1]; y++)
             {
                 startIndex = z * oldMaskDims[0] * oldMaskDims[1] + y * oldMaskDims[0] + regionStartPix[0] - 1;
                 if (InsertSubArrayInt16(oldMaskData, oldMaskDims[0]* oldMaskDims[1]* oldMaskDims[2], 
-                        regionStartIndex, regionDims[0], startIndex) != 0)
+                        regionPtr, regionDims[0], startIndex) != 0)
                 {
                     Debug.Log("Error inserting submask into mask data!");
                     return;
                 }
-                regionStartIndex = IntPtr.Add(regionStartIndex, offset);
+                regionPtr = IntPtr.Add(regionPtr, offset);
             }
         }
         if (isNewFile)

@@ -671,7 +671,11 @@ namespace VolumeData
 
         public void SaveMask()
         {
-            _maskDataSet?.SaveMask();
+            IntPtr cubeFitsPtr;
+            int status;
+            FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _dataSet.FileName, out status);
+            _maskDataSet?.SaveMask(cubeFitsPtr, null);
+            FitsReader.FitsCloseFile(cubeFitsPtr, out status);
         }
 
         public void OnDestroy()
