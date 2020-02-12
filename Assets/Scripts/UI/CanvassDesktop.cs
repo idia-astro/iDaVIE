@@ -57,8 +57,7 @@ public class CanvassDesktop : MonoBehaviour
         _volumeSpeechController = FindObjectOfType<VolumeSpeechController>();
         checkCubesDataSet();
 
-        //createHistogramImg();
-
+    
     }
 
     void checkCubesDataSet()
@@ -436,35 +435,7 @@ public class CanvassDesktop : MonoBehaviour
     }
 
     private void postLoadFileFileSystem()
-    { /*
-        //here should check if loading is ok
-        if (true)
-        {
-
-            if (getFirstActiveDataSet().MaskFileName != "")
-            {
-                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-            .gameObject.transform.Find("Line_7").gameObject.transform.Find("Dropdown_mask").GetComponent<TMP_Dropdown>().interactable = true;
-
-            }
-            else
-                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-            .gameObject.transform.Find("Line_7").gameObject.transform.Find("Dropdown_mask").GetComponent<TMP_Dropdown>().interactable = false;
-
-
-            populateColorMapDropdown();
-            populateStatsValue();
-
-
-            VolumePlayer.SetActive(false);
-            VolumePlayer.SetActive(true);
-
-
-            //move to rendering tab
-            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().interactable = true;
-            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().onClick.Invoke();
-        }*/
-
+    { 
 
         if (true)
         {
@@ -474,23 +445,6 @@ public class CanvassDesktop : MonoBehaviour
             VolumePlayer.SetActive(true);
 
 
-            if (getFirstActiveDataSet().MaskFileName != "")
-            {
-                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-            .gameObject.transform.Find("Line_7").gameObject.transform.Find("Dropdown_mask").GetComponent<TMP_Dropdown>().interactable = true;
-
-            }
-            else
-                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-            .gameObject.transform.Find("Line_7").gameObject.transform.Find("Dropdown_mask").GetComponent<TMP_Dropdown>().interactable = false;
-
-
-            populateColorMapDropdown();
-            populateStatsValue();
-
-
-            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().interactable = true;
-            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().onClick.Invoke();
 
         }
 
@@ -616,53 +570,6 @@ public class CanvassDesktop : MonoBehaviour
 
     }
 
-    private void populateStatsValue()
-    {
-
-        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-          .gameObject.transform.Find("Line_1").gameObject.transform.Find("InputField_min").GetComponent<TMP_InputField>().text= getFirstActiveDataSet().GetDatsSet().MinValue.ToString();
-
-        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-          .gameObject.transform.Find("Line_1").gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text = getFirstActiveDataSet().GetDatsSet().MaxValue.ToString();
-
-        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-          .gameObject.transform.Find("Line_2").gameObject.transform.Find("Text_std").GetComponent<TextMeshProUGUI>().text = getFirstActiveDataSet().GetDatsSet().StanDev.ToString();
-
-        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-          .gameObject.transform.Find("Line_2").gameObject.transform.Find("Text_mean").GetComponent<TextMeshProUGUI>().text = getFirstActiveDataSet().GetDatsSet().MeanValue.ToString();
-
-
-
-        Debug.Log("Min: " + getFirstActiveDataSet().GetDatsSet().MinValue);
-        Debug.Log("Max: " + getFirstActiveDataSet().GetDatsSet().MaxValue);
-        Debug.Log("Std: " + getFirstActiveDataSet().GetDatsSet().StanDev);
-        Debug.Log("Mean: " + getFirstActiveDataSet().GetDatsSet().MeanValue);
-        Debug.Log("Bin: " + getFirstActiveDataSet().GetDatsSet().HistogramBinWidth);
-        Debug.Log("Hist: " + getFirstActiveDataSet().GetDatsSet().Histogram);
-
-        Debug.Log("CANVASS END :::::::::");
-
-        createHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram);
-    }
-    private void populateColorMapDropdown()
-    {
-        //LabelColormap.gameObject.GetComponent<Text>().text = ColorMapUtils.FromHashCode(colorIndex) + "";
-
-        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-            .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().options.Clear();
-
-        foreach (var colorMap in Enum.GetValues(typeof(ColorMapEnum)))
-        {
-            //ColorMapUtils.FromHashCode(colorIndex) + ""
-            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-                .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().options.Add((new TMP_Dropdown.OptionData() { text = colorMap.ToString() }));
-        }
-
-        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-      .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value=33;
-
-    }
-
     public void ChangeColorMap()
     {
         if (getFirstActiveDataSet())
@@ -671,81 +578,6 @@ public class CanvassDesktop : MonoBehaviour
       .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value);
             getFirstActiveDataSet().ColorMap = activeColorMap;
         }
-    }
-
-
-    public void createHistogramImg(int []h)
-    {
-
-        /*
-        var Timestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
-        
-        using (var stream = File.Create("./plot"+ Timestamp.ToString()+ ".pdf"))
-        {
-           
-            var model = new PlotModel { Title = "Histogram" };
-
-            //var s1 = new HistogramSeries { LabelPlacement = LabelPlacement.Base, LabelFormatString = "Base", StrokeThickness = 1, LabelMargin = 5 };
-            var s1 = new HistogramSeries {  StrokeThickness = 1 };
-            
-             for (int i=0;i<h.Length;i++)
-             {
-                 s1.Items.Add(new HistogramItem(i, i+1, h[i], 1));
-             }
-            
-
-
-
-            model.Series.Add(s1);
-
-
-            int width = 600;
-            int height = 300;
-
-
-
-            var pdfExporter = new PdfExporter { Width = width, Height = height };
-            pdfExporter.Export(model, stream);
-          
-
-/
-
-        }
-
-        */
-
-
-        int width = 600;
-        int height = 300;
-
-        var stream = new MemoryStream();
-
-        var model = new PlotModel { Title = "Histogram" };
-
-        //var s1 = new HistogramSeries { LabelPlacement = LabelPlacement.Base, LabelFormatString = "Base", StrokeThickness = 1, LabelMargin = 5 };
-        var s1 = new HistogramSeries { StrokeThickness = 1 };
-
-        for (int i = 0; i < h.Length; i++)
-        {
-            s1.Items.Add(new HistogramItem(i, i + 1, h[i], 1));
-        }
-
-        model.Series.Add(s1);
-
-        var exporter = new OxyPlot.WindowsForms.PngExporter { Width = width, Height = height };
-        exporter.Export(model, stream);
-        
-
-        Texture2D tex = new Texture2D(width, height);
-        tex.LoadImage(stream.ToArray());
-        Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(tex.width / 2, tex.height / 2));
-
-        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Histogram_container")
-    .gameObject.transform.Find("GameObject").GetComponent<Image>().sprite = sprite;
-
-  
-
-
     }
 
 
