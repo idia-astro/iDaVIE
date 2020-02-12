@@ -9,13 +9,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
 
-using OxyPlot;
-
-using System.IO;
-using OxyPlot.Series;
 
 
-using OxyPlot.WindowsForms;
+
 
 
 public class CanvassDesktop : MonoBehaviour
