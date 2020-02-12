@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using DataFeatures;
+using JetBrains.Annotations;
 using UnityEngine.XR;
 using Vectrosity;
 using Random = System.Random;
@@ -668,11 +669,15 @@ namespace VolumeData
             return volumePosition;
         }
 
+        public void SaveMask()
+        {
+            _maskDataSet?.SaveMask();
+        }
+
         public void OnDestroy()
         {
             _dataSet.CleanUp();
-            if (_maskDataSet != null)
-                _maskDataSet.CleanUp();
+            _maskDataSet?.CleanUp();
         }
 
         private void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes)

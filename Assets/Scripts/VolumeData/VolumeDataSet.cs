@@ -63,6 +63,8 @@ namespace VolumeData
 
         public long NumPoints => XDim * YDim * ZDim;
         public long[] Dims => new[] {XDim, YDim, ZDim};
+        
+        public Vector3Int RegionOffset { get; private set; }
 
        
 
@@ -303,6 +305,7 @@ namespace VolumeData
                     Debug.Log("Data cube downsample error!");
                 }
             }
+            RegionOffset = Vector3Int.Min(cropStart, cropEnd);
             Vector3Int cubeSize = new Vector3Int();
             cubeSize.x = (Math.Abs(cropStart.x - cropEnd.x) + 1) / downsample.x;
             cubeSize.y = (Math.Abs(cropStart.y - cropEnd.y) + 1) / downsample.y;
@@ -732,6 +735,28 @@ namespace VolumeData
             _addedRegionMaskEntries = new List<VoxelEntry>();
             AddedMaskEntryCount = 0;
             
+        }
+
+        public void SaveMask()
+        {
+            if (_regionMaskVoxels == null || _regionMaskVoxels.Length == 0)
+            {
+                Debug.Log("Can't save empty region to mask");
+                return;
+            }
+            
+            IntPtr fitsPtr;
+            int status;
+            FitsReader.FitsOpenFileReadOnly(out fitsPtr, FileName, out status);
+            Debug.Log(fitsPtr);
+            Debug.Log(status);
+            int unmangedMemorySize = Marshal.SizeOf(_regionMaskVoxels[0]) * _regionMaskVoxels.Length;
+            IntPtr unmanagedCopy = Marshal.AllocHGlobal(unmangedMemorySize);
+            long[] regionDims = {RegionCube.width, RegionCube.height, RegionCube.depth};
+            long[] regionOffset = {RegionOffset.x, RegionOffset.y, RegionOffset.z};
+            Marshal.Copy(_regionMaskVoxels, 0, unmanagedCopy, _regionMaskVoxels.Length);
+            FitsReader.SaveMask(fitsPtr, FitsData, Dims, unmanagedCopy, regionDims, regionOffset, "test.fits");
+            FitsReader.FitsCloseFile(fitsPtr, out status);
         }
 
         public void CleanUp()
