@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using DataFeatures;
 using JetBrains.Annotations;
@@ -671,16 +672,31 @@ namespace VolumeData
 
         public void SaveMask()
         {
-            if (_maskDataSet != null && _maskDataSet.FileName != null)
+            if (_maskDataSet == null)
             {
-                // TODO: check this
+                Debug.LogError("Could not find mask data!");
+                return;
             }
-            
-            IntPtr cubeFitsPtr;
-            int status;
-            FitsReader.FitsOpenFileReadWrite(out cubeFitsPtr, $"{_maskDataSet.FileName}", out status);
-            _maskDataSet?.SaveMask(cubeFitsPtr, null);
-            FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+
+            // Empty mask
+            if (_maskDataSet.FileName == null || _maskDataSet.FileName.Length == 0)
+            {
+                IntPtr cubeFitsPtr;
+                int status;
+                FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _dataSet.FileName, out status);
+                string directory = Path.GetDirectoryName(_dataSet.FileName);
+                string filename = $"!{directory}/{Path.GetFileNameWithoutExtension(_dataSet.FileName)}-mask.fits";
+                _maskDataSet?.SaveMask(cubeFitsPtr, filename);
+                FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+            }
+            else
+            {
+                IntPtr cubeFitsPtr;
+                int status;
+                FitsReader.FitsOpenFileReadWrite(out cubeFitsPtr, $"{_maskDataSet.FileName}", out status);
+                _maskDataSet?.SaveMask(cubeFitsPtr, null);
+                FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+            }
         }
 
         public void OnDestroy()
