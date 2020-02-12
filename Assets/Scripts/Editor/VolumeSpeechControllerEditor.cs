@@ -29,17 +29,17 @@ public class VolumeSpeechControllerEditor : Editor
 
         if (GUILayout.Button("Edit Min Threshold"))
         {
-            volumeSpeechController.ChangeSpeechControllerState(VolumeSpeechController.SpeechControllerState.EditThresholdMin);
+            volumeSpeechController.startThresholdEditing(false);
         }
 
         if (GUILayout.Button("Edit Max Threshold"))
         {
-            volumeSpeechController.ChangeSpeechControllerState(VolumeSpeechController.SpeechControllerState.EditThresholdMax);
+            volumeSpeechController.startThresholdEditing(true);
         }
 
         if (GUILayout.Button("Save Threshold"))
         {
-            volumeSpeechController.ChangeSpeechControllerState(VolumeSpeechController.SpeechControllerState.Idle);
+            volumeSpeechController.endThresholdEditing();
         }
 
         EditorGUILayout.LabelField("Color Map");
