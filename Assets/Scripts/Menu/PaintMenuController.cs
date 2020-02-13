@@ -27,13 +27,6 @@ public class PaintMenuController : MonoBehaviour
     void Start()
     {
 
-
-
-
-
-
-
-
     }
 
     void OnEnable()
@@ -189,14 +182,12 @@ public class PaintMenuController : MonoBehaviour
     {
         this.gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Additive Paint Mode";
         _volumeInputController.AdditiveBrush = true; ;
-        //_volumeInputController.ResetBrushSize();
     }
 
     public void PaintingSubtractive()
     {
         this.gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Subtractive Paint Mode";
         _volumeInputController.AdditiveBrush = false;
-        // _volumeInputController.ResetBrushSize();
     }
 
     public void OpenMainMenu()
@@ -212,15 +203,7 @@ public class PaintMenuController : MonoBehaviour
         savePopup.transform.localPosition = this.transform.localPosition;
         savePopup.transform.localRotation = this.transform.localRotation;
         savePopup.transform.localScale = this.transform.localScale;
-        /*
-        CanvassQuickMenu.transform.SetParent(_handTransforms[handIndex], false);
-        CanvassQuickMenu.transform.localPosition = new Vector3(-0.1f, (handIndex == 0 ? 1 : -1) * 0.175f, 0.10f);
-        CanvassQuickMenu.transform.localRotation = Quaternion.Euler((handIndex == 0 ? 1 : -1) * -3.25f, 15f, 90f);
-        CanvassQuickMenu.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
-        */
-
-
-
+  
         _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.SelectionMode);
         this.gameObject.SetActive(false);
         savePopup.SetActive(true);

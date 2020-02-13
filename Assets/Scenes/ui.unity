@@ -19103,7 +19103,6 @@ GameObject:
   - component: {fileID: 822478523}
   - component: {fileID: 822478522}
   - component: {fileID: 822478521}
-  - component: {fileID: 822478520}
   m_Layer: 5
   m_Name: RenderMenu
   m_TagString: Untagged
@@ -19111,18 +19110,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 0
---- !u!114 &822478520
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 822478519}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7ab1e9334e419a7468e6e284c4dddc07, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &822478521
 MonoBehaviour:
   m_ObjectHideFlags: 0

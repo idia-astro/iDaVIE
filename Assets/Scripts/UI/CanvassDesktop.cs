@@ -9,11 +9,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
 
-
-
-
-
-
 public class CanvassDesktop : MonoBehaviour
 {
 
@@ -39,12 +34,10 @@ public class CanvassDesktop : MonoBehaviour
     private double maskNAxis = 0;
     private double maskSize = 1;
 
-    // List<Tuple<double, double>> axisSize = null;
     Dictionary<double, double> axisSize = null;
     Dictionary<double, double> maskAxisSize = null;
 
     private ColorMapEnum activeColorMap = ColorMapEnum.None;
-
 
     // Start is called before the first frame update
     void Start()
@@ -132,8 +125,6 @@ public class CanvassDesktop : MonoBehaviour
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
-
-            //axisSize = new List<Tuple<double, double>>();
 
             axisSize = new Dictionary<double, double>();
 
@@ -255,11 +246,7 @@ public class CanvassDesktop : MonoBehaviour
 
                     loadable = true;
 
-
-
                 }
-
-
 
             }
             else { loadable = false; localMsg = "Please select a valid cube!"; }
@@ -435,13 +422,8 @@ public class CanvassDesktop : MonoBehaviour
 
         if (true)
         {
-
-
             VolumePlayer.SetActive(false);
             VolumePlayer.SetActive(true);
-
-
-
         }
 
 
@@ -575,7 +557,5 @@ public class CanvassDesktop : MonoBehaviour
             getFirstActiveDataSet().ColorMap = activeColorMap;
         }
     }
-
-
 
 }
