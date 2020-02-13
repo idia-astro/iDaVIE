@@ -10,6 +10,10 @@ namespace VolumeData
 {
     public class VolumeSpeechController : MonoBehaviour
     {
+        public VolumeInputController VolumeInputController;
+        public QuickMenuController QuickMenuController;
+        public PaintMenuController PaintMenuController;
+
         public float VibrationDuration = 0.25f;
         public float VibrationFrequency = 100.0f;
         public float VibrationAmplitude = 1.0f;
@@ -61,7 +65,7 @@ namespace VolumeData
         private VolumeDataSetRenderer _activeDataSet;
 
 
-        void Start()
+        void OnEnable()
         {
             _dataSets = new List<VolumeDataSetRenderer>();
             _dataSets.AddRange(GetComponentsInChildren<VolumeDataSetRenderer>(true));            
@@ -309,23 +313,22 @@ namespace VolumeData
 
         public void EnablePaintMode()
         {
-            _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.PaintMode);
-
+            QuickMenuController.OpenPaintMenu();
         }
 
         public void DisablePaintMode()
         {
-            _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.SelectionMode);
+            PaintMenuController.ExitPaintMode();
         }
 
         public void SetBrushAdditive()
         {
-            _volumeInputController.AdditiveBrush = true;
+            VolumeInputController.AdditiveBrush = true;
         }
 
         public void SetBrushSubtractive()
         {
-            _volumeInputController.AdditiveBrush = false;
+            VolumeInputController.AdditiveBrush = false;
         }
 
         public void ShowMaskOutline()
