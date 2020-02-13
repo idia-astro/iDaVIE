@@ -103,7 +103,6 @@ public class CanvassDesktop : MonoBehaviour
     {
         if (path != null)
         {
-
             imageSize = 1;
             bool loadable = false;
             string localMsg = "";
@@ -136,6 +135,7 @@ public class CanvassDesktop : MonoBehaviour
             //visualize the header into the scroll view
             string _header = "";
             IDictionary<string, string> _headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
+            FitsReader.FitsCloseFile(fptr, out status);
 
             foreach (KeyValuePair<string, string> entry in _headerDictionary)
             {
@@ -287,21 +287,21 @@ public class CanvassDesktop : MonoBehaviour
             int status = 0;
 
 
-            if (FitsReader.FitsOpenFile(out fptr, maskPath, out status, false) != 0)
+            if (FitsReader.FitsOpenFile(out fptr, maskPath, out status, true) != 0)
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
 
             informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("MaskFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(maskPath);
 
-
             maskAxisSize = new Dictionary<double, double>();
             List<double> list = new List<double>();
 
 
             //visualize the header into the scroll view
-
             IDictionary<string, string> _headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
+            FitsReader.FitsCloseFile(fptr, out status);
+            
             foreach (KeyValuePair<string, string> entry in _headerDictionary)
             {
 

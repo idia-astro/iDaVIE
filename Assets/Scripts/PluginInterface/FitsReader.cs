@@ -184,18 +184,20 @@ public class FitsReader
     public static void SaveMask(IntPtr fitsPtrHeaderToCopy, IntPtr oldMaskData, long[] oldMaskDims, IntPtr regionData, long[] regionDims, long[] regionStartPix, string fileName)
     {
         bool isNewFile = (fileName != null);
-        long startIndex = 0;
-        for (var z = regionStartPix[2] - 1; z < regionDims[2]; z++)
+        int srcJump = (int)(regionDims[0] * sizeof(short));
+        IntPtr srcPtr = regionData;
+        for (var z = 0; z < regionDims[2]; z++)
         {
-            for (var y = regionStartPix[1] - 1; y < regionDims[1]; y++)
+            for (var y = 0; y < regionDims[1]; y++)
             {
-                startIndex = z * oldMaskDims[0] * oldMaskDims[1] + y * oldMaskDims[0] + regionStartPix[0] - 1;
+                long startIndex = (z + regionStartPix[2] - 1) * oldMaskDims[0] * oldMaskDims[1] + (y +  regionStartPix[1] - 1) * oldMaskDims[0] + (regionStartPix[0] - 1);
                 if (InsertSubArrayInt16(oldMaskData, oldMaskDims[0]* oldMaskDims[1]* oldMaskDims[2], 
-                    regionData, regionDims[0], startIndex) != 0)
+                        srcPtr, regionDims[0], startIndex) != 0)
                 {
                     Debug.Log("Error inserting submask into mask data!");
                     return;
                 }
+                srcPtr = IntPtr.Add(srcPtr, srcJump);
             }
         }
         if (isNewFile)

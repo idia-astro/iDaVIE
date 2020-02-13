@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using DataFeatures;
+using JetBrains.Annotations;
 using UnityEngine.XR;
 using Vectrosity;
 using Random = System.Random;
@@ -670,11 +672,39 @@ namespace VolumeData
             return volumePosition;
         }
 
+        public void SaveMask()
+        {
+            if (_maskDataSet == null)
+            {
+                Debug.LogError("Could not find mask data!");
+                return;
+            }
+
+            // Empty mask
+            if (_maskDataSet.FileName == null || _maskDataSet.FileName.Length == 0)
+            {
+                IntPtr cubeFitsPtr;
+                int status;
+                FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _dataSet.FileName, out status);
+                string directory = Path.GetDirectoryName(_dataSet.FileName);
+                string filename = $"!{directory}/{Path.GetFileNameWithoutExtension(_dataSet.FileName)}-mask.fits";
+                _maskDataSet?.SaveMask(cubeFitsPtr, filename);
+                FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+            }
+            else
+            {
+                IntPtr cubeFitsPtr;
+                int status;
+                FitsReader.FitsOpenFileReadWrite(out cubeFitsPtr, $"{_maskDataSet.FileName}", out status);
+                _maskDataSet?.SaveMask(cubeFitsPtr, null);
+                FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+            }
+        }
+
         public void OnDestroy()
         {
             _dataSet.CleanUp();
-            if (_maskDataSet != null)
-                _maskDataSet.CleanUp();
+            _maskDataSet?.CleanUp();
         }
 
         private void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes)

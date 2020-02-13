@@ -2815,6 +2815,18 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 1613529188}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &135890494 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4928587070514594467, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+    type: 3}
+  m_PrefabInstance: {fileID: 1613529188}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 135890493}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a6857598aee4ffba39b7279fe73e7c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &136987714
 GameObject:
   m_ObjectHideFlags: 0
@@ -8254,6 +8266,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   EditingHand: {fileID: 344721945}
+  VolumeInputController: {fileID: 135890494}
+  QuickMenuController: {fileID: 379983799}
+  PaintMenuController: {fileID: 1393187943}
   VibrationDuration: 0.25
   VibrationFrequency: 100
   VibrationAmplitude: 1

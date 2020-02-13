@@ -834,6 +834,7 @@ public class VolumeInputController : MonoBehaviour
         {
             // Ensure a mask is present for each dataset
             dataSet.InitialiseMask();
+            dataSet.DisplayMask = true;
         }
         _interactionState = InteractionState.PaintMode;
     }
@@ -841,5 +842,9 @@ public class VolumeInputController : MonoBehaviour
     private void StateTransitionPaintToSelection()
     {
         _interactionState = InteractionState.SelectionMode;
+        foreach (var dataSet in _volumeDataSets)
+        {
+            dataSet.DisplayMask = false;
+        }
     }
 }

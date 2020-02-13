@@ -31,15 +31,12 @@ public class PaintMenuController : MonoBehaviour
 
     void OnEnable()
     {
-
         if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
 
         if (_volumeInputController == null)
             _volumeInputController = FindObjectOfType<VolumeInputController>();
-
-        getFirstActiveDataSet().DisplayMask = true;
-
+        
         _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.PaintMode);
 
     }
@@ -47,18 +44,11 @@ public class PaintMenuController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (_dataSets != null)
-        {
-
-        }
-
         var firstActive = getFirstActiveDataSet();
         if (firstActive && _activeDataSet != firstActive)
         {
-            // Debug.Log("in foreach --- Update");
             _activeDataSet = firstActive;
         }
-
     }
 
     public VolumeInputController getVolumeInputController()
@@ -108,7 +98,6 @@ public class PaintMenuController : MonoBehaviour
             maskstatus = -1;
         maskstatus++;
 
-
         this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_nf").gameObject.SetActive(false);
         this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f1").gameObject.SetActive(false);
         this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f2").gameObject.SetActive(false);
@@ -141,20 +130,21 @@ public class PaintMenuController : MonoBehaviour
     }
     private void setMask(MaskMode mode)
     {
-
         if (_activeDataSet)
         {
             _activeDataSet.MaskMode = mode;
         }
     }
 
-
+    public void SaveMask()
+    {
+        _activeDataSet?.SaveMask();
+    }
+    
     public void ExitPaintMode()
     {
         _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.SelectionMode);
-        getFirstActiveDataSet().DisplayMask = false;
         this.gameObject.SetActive(false);
-
     }
 
 
@@ -162,15 +152,12 @@ public class PaintMenuController : MonoBehaviour
     {
         _volumeInputController.IncreaseBrushSize();
         this.gameObject.transform.Find("BottomPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Increase brush size (actual: " + _volumeInputController.BrushSize + ")";
-
     }
 
     public void BrushSizeDecrease()
     {
-
         _volumeInputController.DecreaseBrushSize();
         this.gameObject.transform.Find("BottomPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Decrease brush size (actual: " + _volumeInputController.BrushSize + ")";
-
     }
 
     public void BrushSizeReset()
@@ -193,8 +180,6 @@ public class PaintMenuController : MonoBehaviour
     public void OpenMainMenu()
     {
         mainMenuCanvas.SetActive(!mainMenuCanvas.activeSelf);
-
-
     }
 
     public void SaveMask()
