@@ -753,6 +753,11 @@ namespace VolumeData
             long[] regionOffset = {RegionOffset.x, RegionOffset.y, RegionOffset.z};
             Marshal.Copy(_regionMaskVoxels, 0, unmanagedCopy, _regionMaskVoxels.Length);
             FitsReader.SaveMask(cubeFitsPtr, FitsData, Dims, unmanagedCopy, regionDims, regionOffset, filename);
+            if (!string.IsNullOrEmpty(filename))
+            {
+                // Update filename after stripping out exclamation mark indicating overwrite flag
+                FileName = filename.Replace("!", "");
+            }
         }
 
         public void CleanUp()

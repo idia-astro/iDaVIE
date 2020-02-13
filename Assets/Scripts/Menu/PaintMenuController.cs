@@ -136,11 +136,6 @@ public class PaintMenuController : MonoBehaviour
         }
     }
 
-    public void SaveMask()
-    {
-        _activeDataSet?.SaveMask();
-    }
-    
     public void ExitPaintMode()
     {
         _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.SelectionMode);
@@ -203,11 +198,11 @@ public class PaintMenuController : MonoBehaviour
 
     public void SaveOverwriteMask()
     {
-        
+        _activeDataSet?.SaveMask(true);
     }
 
     public void SaveNewMask()
     {
-        
+        _activeDataSet?.SaveMask(false);
     }
 }
