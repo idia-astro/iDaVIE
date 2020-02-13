@@ -15,11 +15,19 @@ public class PaintMenuController : MonoBehaviour
     private VolumeDataSetRenderer[] _dataSets;
 
     public GameObject mainMenuCanvas;
+    public GameObject paintMenu;
+    public GameObject savePopup;
     int maskstatus = 0;
     int cropstatus = 0;
     int featureStatus = 0;
 
     private VolumeInputController _volumeInputController = null;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+
+    }
 
     void OnEnable()
     {
@@ -128,11 +136,6 @@ public class PaintMenuController : MonoBehaviour
         }
     }
 
-    public void SaveMask()
-    {
-        _activeDataSet?.SaveMask();
-    }
-    
     public void ExitPaintMode()
     {
         _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.SelectionMode);
@@ -174,4 +177,32 @@ public class PaintMenuController : MonoBehaviour
         mainMenuCanvas.SetActive(!mainMenuCanvas.activeSelf);
     }
 
+    public void SaveMask()
+    {
+        savePopup.transform.SetParent(this.transform.parent, false);
+        savePopup.transform.localPosition = this.transform.localPosition;
+        savePopup.transform.localRotation = this.transform.localRotation;
+        savePopup.transform.localScale = this.transform.localScale;
+  
+        _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.SelectionMode);
+        this.gameObject.SetActive(false);
+        savePopup.SetActive(true);
+    }
+
+    public void SaveCancel()
+    {
+
+        paintMenu.SetActive(true);
+        savePopup.SetActive(false);
+    }
+
+    public void SaveOverwriteMask()
+    {
+        _activeDataSet?.SaveMask(true);
+    }
+
+    public void SaveNewMask()
+    {
+        _activeDataSet?.SaveMask(false);
+    }
 }

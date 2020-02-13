@@ -127,6 +127,7 @@ namespace VolumeData
         private Material _maskMaterialInstance;
 
         public VolumeInputController _volumeInputController;
+
         private Vector3Int _previousPaintLocation;
         private short _previousPaintValue;
         private int _previousBrushSize = 1;
@@ -135,7 +136,9 @@ namespace VolumeData
         private VolumeDataSet _maskDataSet = null;
 
 
+
         public bool IsCropped { get; private set; }
+
 
         #region Material Property IDs
 
@@ -266,7 +269,6 @@ namespace VolumeData
 
         public VolumeDataSet GetDatsSet()
         {
-
             return _dataSet;
         }
 
@@ -670,7 +672,7 @@ namespace VolumeData
             return volumePosition;
         }
 
-        public void SaveMask()
+        public void SaveMask(bool overwrite)
         {
             if (_maskDataSet == null)
             {
@@ -678,25 +680,32 @@ namespace VolumeData
                 return;
             }
 
-            // Empty mask
-            if (_maskDataSet.FileName == null || _maskDataSet.FileName.Length == 0)
+            IntPtr cubeFitsPtr;
+            int status;
+            
+            if (string.IsNullOrEmpty(_maskDataSet.FileName))
             {
-                IntPtr cubeFitsPtr;
-                int status;
+                // Save new mask
                 FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _dataSet.FileName, out status);
                 string directory = Path.GetDirectoryName(_dataSet.FileName);
                 string filename = $"!{directory}/{Path.GetFileNameWithoutExtension(_dataSet.FileName)}-mask.fits";
-                _maskDataSet?.SaveMask(cubeFitsPtr, filename);
-                FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+                _maskDataSet.SaveMask(cubeFitsPtr, filename);
+            }
+            else if (!overwrite)
+            {
+                // Save a copy (overwrites existing copy)
+                FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _maskDataSet.FileName, out status);
+                string directory = Path.GetDirectoryName(_maskDataSet.FileName);
+                string filename = $"!{directory}/{Path.GetFileNameWithoutExtension(_maskDataSet.FileName)}-copy.fits";
+                _maskDataSet.SaveMask(cubeFitsPtr, filename);
             }
             else
             {
-                IntPtr cubeFitsPtr;
-                int status;
-                FitsReader.FitsOpenFileReadWrite(out cubeFitsPtr, $"{_maskDataSet.FileName}", out status);
-                _maskDataSet?.SaveMask(cubeFitsPtr, null);
-                FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+                // Overwrite existing mask
+                FitsReader.FitsOpenFileReadWrite(out cubeFitsPtr, _maskDataSet.FileName, out status);
+                _maskDataSet.SaveMask(cubeFitsPtr, null);
             }
+            FitsReader.FitsCloseFile(cubeFitsPtr, out status);
         }
 
         public void OnDestroy()

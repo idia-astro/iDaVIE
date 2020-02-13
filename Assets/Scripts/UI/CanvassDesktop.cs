@@ -4,14 +4,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Text;
-using System.Threading;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
-
-
 
 public class CanvassDesktop : MonoBehaviour
 {
@@ -38,12 +34,10 @@ public class CanvassDesktop : MonoBehaviour
     private double maskNAxis = 0;
     private double maskSize = 1;
 
-    // List<Tuple<double, double>> axisSize = null;
     Dictionary<double, double> axisSize = null;
     Dictionary<double, double> maskAxisSize = null;
 
     private ColorMapEnum activeColorMap = ColorMapEnum.None;
-
 
     // Start is called before the first frame update
     void Start()
@@ -52,8 +46,7 @@ public class CanvassDesktop : MonoBehaviour
         _volumeSpeechController = FindObjectOfType<VolumeSpeechController>();
         checkCubesDataSet();
 
-
-
+    
     }
 
     void checkCubesDataSet()
@@ -72,7 +65,12 @@ public class CanvassDesktop : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (getFirstActiveDataSet() && (getFirstActiveDataSet().ColorMap != activeColorMap))
+        {
+           mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+     .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value = (int)getFirstActiveDataSet().ColorMap;
+        }
+
     }
 
     public void InformationTab()
@@ -119,6 +117,7 @@ public class CanvassDesktop : MonoBehaviour
 
             IntPtr fptr;
             int status = 0;
+
 
 
             if (FitsReader.FitsOpenFile(out fptr, imagePath, out status, true) != 0)
@@ -247,11 +246,7 @@ public class CanvassDesktop : MonoBehaviour
 
                     loadable = true;
 
-
-
                 }
-
-
 
             }
             else { loadable = false; localMsg = "Please select a valid cube!"; }
@@ -423,16 +418,14 @@ public class CanvassDesktop : MonoBehaviour
     }
 
     private void postLoadFileFileSystem()
-    {
-        //here should check if loading is ok
+    { 
+
         if (true)
         {
-
-
             VolumePlayer.SetActive(false);
             VolumePlayer.SetActive(true);
-
         }
+
 
 
     }
@@ -446,7 +439,7 @@ public class CanvassDesktop : MonoBehaviour
         int i1 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().value;
         int i2 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value;
 
-
+       
         Vector3 oldpos = new Vector3(0, 0f, 0);
         Quaternion oldrot = Quaternion.identity;
         Vector3 oldscale = new Vector3(1, 1, 1);
@@ -498,7 +491,6 @@ public class CanvassDesktop : MonoBehaviour
 
 
         postLoadFileFileSystem();
-
     }
 
     public void DismissFileLoad()
@@ -525,7 +517,6 @@ public class CanvassDesktop : MonoBehaviour
 
         return null;
     }
-
 
 
     void OnGUI()
@@ -557,7 +548,14 @@ public class CanvassDesktop : MonoBehaviour
 
     }
 
-
-
+    public void ChangeColorMap()
+    {
+        if (getFirstActiveDataSet())
+        {
+             activeColorMap = ColorMapUtils.FromHashCode(mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+      .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value);
+            getFirstActiveDataSet().ColorMap = activeColorMap;
+        }
+    }
 
 }
