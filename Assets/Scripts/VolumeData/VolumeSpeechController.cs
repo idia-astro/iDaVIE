@@ -10,7 +10,6 @@ namespace VolumeData
 {
     public class VolumeSpeechController : MonoBehaviour
     {
-        public Hand EditingHand;
         public VolumeInputController VolumeInputController;
         public QuickMenuController QuickMenuController;
         public PaintMenuController PaintMenuController;
@@ -19,17 +18,8 @@ namespace VolumeData
         public float VibrationFrequency = 100.0f;
         public float VibrationAmplitude = 1.0f;
 
-
-        public enum SpeechControllerState
-        {
-            Idle,
-            EditThresholdMin,
-            EditThresholdMax
-        }
-
         private List<VolumeDataSetRenderer> _dataSets;
 
-        private SpeechControllerState _state;
         // Keywords
         private struct Keywords
         {
@@ -70,7 +60,7 @@ namespace VolumeData
         }
    
         private KeywordRecognizer _speechKeywordRecognizer;
-        private float previousControllerHeight;
+        private VolumeInputController _volumeInputController;
 
         private VolumeDataSetRenderer _activeDataSet;
 
@@ -83,26 +73,12 @@ namespace VolumeData
             _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
 
             _speechKeywordRecognizer.Start();
-            
-            if (EditingHand == null)
-            {
-                Debug.Log("Editing Hand not set. Please set in Editor.");
-            }
-            EditingHand.uiInteractAction.AddOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
-            
-        }
-
-        private void OnUiInteractDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
-        {
-            _state = SpeechControllerState.Idle;
+            _volumeInputController = FindObjectOfType<VolumeInputController>();
         }
 
         private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
         {
-            if (EditingHand)
-            {
-                VolumeInputController.VibrateController(EditingHand.handType, VibrationDuration, VibrationFrequency, VibrationAmplitude);
-            }
+            _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
 
             StringBuilder builder = new StringBuilder();
             builder.AppendFormat("{0} ({1}){2}", args.text, args.confidence, Environment.NewLine);
@@ -111,17 +87,15 @@ namespace VolumeData
             Debug.Log(builder.ToString());
             if (args.text == Keywords.EditThresholdMin)
             {
-                _state = SpeechControllerState.EditThresholdMin;
-                previousControllerHeight = EditingHand.transform.position.y;
+                startThresholdEditing(false);
             }
             else if (args.text == Keywords.EditThresholdMax)
             {
-                _state = SpeechControllerState.EditThresholdMax;
-                previousControllerHeight = EditingHand.transform.position.y;
+                startThresholdEditing(true);
             }
             else if (args.text == Keywords.SaveThreshold)
             {
-                _state = SpeechControllerState.Idle;
+                endThresholdEditing();
             }
             else if (args.text == Keywords.ResetThreshold)
             {
@@ -228,56 +202,16 @@ namespace VolumeData
         // Update is called once per frame
         void Update()
         {
-            
             var firstActive = getFirstActiveDataSet();
             if (firstActive && _activeDataSet != firstActive)
             {
                 _activeDataSet = firstActive;
             }
-
-            if (_activeDataSet)
-            {
-                switch (_state)
-                {
-                    case SpeechControllerState.EditThresholdMin:
-                        UpdateThreshold(false);
-                        break;
-                    case SpeechControllerState.EditThresholdMax:
-                        UpdateThreshold(true);
-                        break;
-                    case SpeechControllerState.Idle:
-                        break;
-                }
-            }
-            
         }
 
         public void AddDataSet(VolumeDataSetRenderer setToAdd)
         {
             _dataSets.Add(setToAdd);
-        }
-
-        public void UpdateThreshold(bool editingMax)
-        {
-            if (EditingHand)
-            {
-                float controllerHeight = EditingHand.transform.position.y;
-                float controlerDelta = controllerHeight - previousControllerHeight;
-                previousControllerHeight = controllerHeight;
-                if (_activeDataSet)
-                {
-                    if (editingMax)
-                    {
-                        var newValue = _activeDataSet.ThresholdMax + controlerDelta;
-                        _activeDataSet.ThresholdMax = Mathf.Clamp(newValue, _activeDataSet.ThresholdMin, 1);
-                    }
-                    else
-                    {
-                        var newValue = _activeDataSet.ThresholdMin + controlerDelta;
-                        _activeDataSet.ThresholdMin = Mathf.Clamp(newValue, 0, _activeDataSet.ThresholdMax);
-                    }
-                }
-            }
         }
 
         public void resetThreshold()
@@ -287,6 +221,16 @@ namespace VolumeData
                 _activeDataSet.ThresholdMin = _activeDataSet.InitialThresholdMin;
                 _activeDataSet.ThresholdMax = _activeDataSet.InitialThresholdMax;
             }
+        }
+
+        public void startThresholdEditing(bool editingMax)
+        {
+            _volumeInputController.StartThresholdEditing(editingMax);
+        }
+
+        public void endThresholdEditing()
+        {
+            _volumeInputController.EndThresholdEditing();
         }
 
         public void resetTransform()
@@ -414,11 +358,6 @@ namespace VolumeData
             }
 
             return null;
-        }
-
-        public void ChangeSpeechControllerState(SpeechControllerState state)
-        {
-            _state = state;
         }
     }
 }
