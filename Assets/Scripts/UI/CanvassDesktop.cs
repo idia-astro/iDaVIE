@@ -16,7 +16,7 @@ using OxyPlot.Series;
 
 
 using OxyPlot.WindowsForms;
-
+using OxyPlot.Annotations;
 
 public class CanvassDesktop : MonoBehaviour
 {
@@ -57,7 +57,6 @@ public class CanvassDesktop : MonoBehaviour
         _volumeSpeechController = FindObjectOfType<VolumeSpeechController>();
         checkCubesDataSet();
 
-        //createHistogramImg();
 
     }
 
@@ -642,7 +641,7 @@ public class CanvassDesktop : MonoBehaviour
 
         Debug.Log("CANVASS END :::::::::");
 
-        createHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram);
+        createHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram, getFirstActiveDataSet().GetDatsSet().HistogramBinWidth, getFirstActiveDataSet().GetDatsSet().MinValue, getFirstActiveDataSet().GetDatsSet().MaxValue);
     }
     private void populateColorMapDropdown()
     {
@@ -674,45 +673,8 @@ public class CanvassDesktop : MonoBehaviour
     }
 
 
-    public void createHistogramImg(int []h)
+    public void createHistogramImg(int []h, float binWidth, float min, float max)
     {
-
-        /*
-        var Timestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
-        
-        using (var stream = File.Create("./plot"+ Timestamp.ToString()+ ".pdf"))
-        {
-           
-            var model = new PlotModel { Title = "Histogram" };
-
-            //var s1 = new HistogramSeries { LabelPlacement = LabelPlacement.Base, LabelFormatString = "Base", StrokeThickness = 1, LabelMargin = 5 };
-            var s1 = new HistogramSeries {  StrokeThickness = 1 };
-            
-             for (int i=0;i<h.Length;i++)
-             {
-                 s1.Items.Add(new HistogramItem(i, i+1, h[i], 1));
-             }
-            
-
-
-
-            model.Series.Add(s1);
-
-
-            int width = 600;
-            int height = 300;
-
-
-
-            var pdfExporter = new PdfExporter { Width = width, Height = height };
-            pdfExporter.Export(model, stream);
-          
-
-/
-
-        }
-
-        */
 
 
         int width = 600;
@@ -722,15 +684,37 @@ public class CanvassDesktop : MonoBehaviour
 
         var model = new PlotModel { Title = "Histogram" };
 
-        //var s1 = new HistogramSeries { LabelPlacement = LabelPlacement.Base, LabelFormatString = "Base", StrokeThickness = 1, LabelMargin = 5 };
-        var s1 = new HistogramSeries { StrokeThickness = 1 };
-
-        for (int i = 0; i < h.Length; i++)
-        {
-            s1.Items.Add(new HistogramItem(i, i + 1, h[i], 1));
+        var s1 = new HistogramSeries { StrokeThickness = 1};
+        int c = 0;
+        //for (int i = 0; i < h.Length; i++)
+        for (float i = min; i <= max; i+= binWidth)
+         {
+            s1.Items.Add(new HistogramItem(i, i + binWidth, h[c], 1));
+            c++;
         }
 
+        Debug.Log("c: " + c + " h:" + h.Length);
+
         model.Series.Add(s1);
+
+        var min_annotation = new LineAnnotation();
+        min_annotation.Color = OxyColors.Blue;
+
+        min_annotation.X = min;
+        min_annotation.LineStyle = LineStyle.Solid;
+        min_annotation.Type = LineAnnotationType.Vertical;
+        model.Annotations.Add(min_annotation);
+
+
+        var max_annotation = new LineAnnotation();
+        max_annotation.Color = OxyColors.Red;
+
+        max_annotation.X = max;
+        max_annotation.LineStyle = LineStyle.Solid;
+        max_annotation.Type = LineAnnotationType.Vertical;
+        model.Annotations.Add(max_annotation);
+
+
 
         var exporter = new OxyPlot.WindowsForms.PngExporter { Width = width, Height = height };
         exporter.Export(model, stream);
