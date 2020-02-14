@@ -681,7 +681,7 @@ namespace VolumeData
             }
 
             IntPtr cubeFitsPtr;
-            int status;
+            int status = 0;
             
             if (string.IsNullOrEmpty(_maskDataSet.FileName))
             {
@@ -689,7 +689,12 @@ namespace VolumeData
                 FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _dataSet.FileName, out status);
                 string directory = Path.GetDirectoryName(_dataSet.FileName);
                 string filename = $"!{directory}/{Path.GetFileNameWithoutExtension(_dataSet.FileName)}-mask.fits";
-                _maskDataSet.SaveMask(cubeFitsPtr, filename);
+                if (_maskDataSet.SaveMask(cubeFitsPtr, filename) != 0)
+                {
+                    Debug.LogError("Error saving new mask!");
+                    FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+                }
+
             }
             else if (!overwrite)
             {
@@ -697,13 +702,21 @@ namespace VolumeData
                 FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _maskDataSet.FileName, out status);
                 string directory = Path.GetDirectoryName(_maskDataSet.FileName);
                 string filename = $"!{directory}/{Path.GetFileNameWithoutExtension(_maskDataSet.FileName)}-copy.fits";
-                _maskDataSet.SaveMask(cubeFitsPtr, filename);
+                if (_maskDataSet.SaveMask(cubeFitsPtr, filename) != 0)
+                {
+                    Debug.LogError("Error saving copy!");
+                    FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+                }
             }
             else
             {
                 // Overwrite existing mask
                 FitsReader.FitsOpenFileReadWrite(out cubeFitsPtr, _maskDataSet.FileName, out status);
-                _maskDataSet.SaveMask(cubeFitsPtr, null);
+                if (_maskDataSet.SaveMask(cubeFitsPtr, null) != 0)
+                {
+                    Debug.LogError("Error overwriting existing mask!");
+                    FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+                }
             }
             FitsReader.FitsCloseFile(cubeFitsPtr, out status);
         }

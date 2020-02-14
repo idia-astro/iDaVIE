@@ -121,11 +121,13 @@ namespace VolumeData
             if (FitsReader.FitsGetImageDims(fptr, out cubeDimensions, out status) != 0)
             {
                 Debug.Log("Fits read image dimensions failed... code #" + status.ToString());
+                FitsReader.FitsCloseFile(fptr, out status);
             }
             if (cubeDimensions < 3)
             {
                 Debug.Log("Only " + cubeDimensions.ToString() +
                           " found. Please use Fits cube with at least 3 dimensions.");
+                FitsReader.FitsCloseFile(fptr, out status);
             }
             if (FitsReader.FitsGetImageSize(fptr, cubeDimensions, out dataPtr, out status) != 0)
             {
@@ -739,12 +741,13 @@ namespace VolumeData
             
         }
 
-        public void SaveMask(IntPtr cubeFitsPtr, string filename)
+        public int SaveMask(IntPtr cubeFitsPtr, string filename)
         {
+            int status = 0;
             if (_regionMaskVoxels == null || _regionMaskVoxels.Length == 0)
             {
                 Debug.Log("Can't save empty region to mask");
-                return;
+                return -1;
             }
             
             int unmangedMemorySize = Marshal.SizeOf(_regionMaskVoxels[0]) * _regionMaskVoxels.Length;
@@ -752,12 +755,13 @@ namespace VolumeData
             long[] regionDims = {RegionCube.width, RegionCube.height, RegionCube.depth};
             long[] regionOffset = {RegionOffset.x, RegionOffset.y, RegionOffset.z};
             Marshal.Copy(_regionMaskVoxels, 0, unmanagedCopy, _regionMaskVoxels.Length);
-            FitsReader.SaveMask(cubeFitsPtr, FitsData, Dims, unmanagedCopy, regionDims, regionOffset, filename);
+            status = FitsReader.SaveMask(cubeFitsPtr, FitsData, Dims, unmanagedCopy, regionDims, regionOffset, filename);
             if (!string.IsNullOrEmpty(filename))
             {
                 // Update filename after stripping out exclamation mark indicating overwrite flag
                 FileName = filename.Replace("!", "");
             }
+            return status;
         }
 
         public void CleanUp()
