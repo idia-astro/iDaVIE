@@ -39,6 +39,9 @@ public class CanvassDesktop : MonoBehaviour
 
     private ColorMapEnum activeColorMap = ColorMapEnum.None;
 
+    protected Coroutine loadCubeCoroutine;
+    protected Coroutine showLoadDialogCoroutine;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -93,7 +96,7 @@ public class CanvassDesktop : MonoBehaviour
         // Returns true if the default filter is set successfully
         // In this case, set Images filter as the default filter
         FileBrowser.SetDefaultFilter(".fits");
-        StartCoroutine(ShowLoadDialogCoroutine(0));
+        showLoadDialogCoroutine = StartCoroutine(ShowLoadDialogCoroutine(0));
 
 
     }
@@ -258,6 +261,9 @@ public class CanvassDesktop : MonoBehaviour
 
             }
         }
+
+        if (showLoadDialogCoroutine != null)
+            StopCoroutine(showLoadDialogCoroutine);
     }
 
     public void BrowseMaskFile()
@@ -269,7 +275,7 @@ public class CanvassDesktop : MonoBehaviour
         // Returns true if the default filter is set successfully
         // In this case, set Images filter as the default filter
         FileBrowser.SetDefaultFilter(".fits");
-        StartCoroutine(ShowLoadDialogCoroutine(1));
+        showLoadDialogCoroutine = StartCoroutine(ShowLoadDialogCoroutine(1));
     }
 
     private void _browseMaskFile(string path)
@@ -354,6 +360,9 @@ public class CanvassDesktop : MonoBehaviour
                 textPopUp = "Selected Mask\ndoesn't match image file";
             }
         }
+
+        if (showLoadDialogCoroutine != null)
+            StopCoroutine(showLoadDialogCoroutine);
     }
 
     public void CheckImgMaskAxisSize()
@@ -414,7 +423,7 @@ public class CanvassDesktop : MonoBehaviour
     public void LoadFileFromFileSystem()
     {
 
-        StartCoroutine(LoadCubeCoroutine(imagePath, maskPath));
+        loadCubeCoroutine = StartCoroutine(LoadCubeCoroutine(imagePath, maskPath));
     }
 
     private void postLoadFileFileSystem()
@@ -422,8 +431,12 @@ public class CanvassDesktop : MonoBehaviour
 
         if (true)
         {
+             if (loadCubeCoroutine != null)
+                StopCoroutine(loadCubeCoroutine);
             VolumePlayer.SetActive(false);
             VolumePlayer.SetActive(true);
+
+           
         }
 
 
@@ -501,6 +514,7 @@ public class CanvassDesktop : MonoBehaviour
 
     public void Exit()
     {
+        StopAllCoroutines();
         Application.Quit();
     }
 
