@@ -761,6 +761,11 @@ namespace VolumeData
                 // Update filename after stripping out exclamation mark indicating overwrite flag
                 FileName = filename.Replace("!", "");
             }
+            if (unmanagedCopy != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(unmanagedCopy);
+                unmanagedCopy = IntPtr.Zero;
+            }
             return status;
         }
 

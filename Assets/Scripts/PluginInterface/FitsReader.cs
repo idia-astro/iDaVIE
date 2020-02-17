@@ -123,7 +123,6 @@ public class FitsReader
     {
         IntPtr maskPtr = IntPtr.Zero;
         IntPtr keyValue = Marshal.AllocHGlobal(sizeof(int));
-        Marshal.WriteInt32(keyValue, 16);
         int status = 0;
         long nelements = maskDataDims[0] * maskDataDims[1] * maskDataDims[2];
         IntPtr naxes = Marshal.AllocHGlobal(3 * sizeof(long));
@@ -138,7 +137,14 @@ public class FitsReader
             Debug.Log("Fits copy header error #" + status.ToString());
             return status;
         }
+        Marshal.WriteInt32(keyValue, 16);
         if (FitsUpdateKey(maskPtr, 21, "BITPIX", keyValue, null, out status) != 0)
+        {
+            Debug.Log("Fits update key error #" + status.ToString());
+            return status;
+        }
+        Marshal.WriteInt32(keyValue, 3);
+        if (FitsUpdateKey(maskPtr, 21, "NAXIS", keyValue, null, out status) != 0)   //Make sure new header has 3 dimensions
         {
             Debug.Log("Fits update key error #" + status.ToString());
             return status;
@@ -158,14 +164,26 @@ public class FitsReader
             Debug.Log("Fits close file error #" + status.ToString());
             return status;
         }
+        if (keyValue != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(keyValue);
+            keyValue = IntPtr.Zero;
+        }
         return status;
     }
 
     public static int UpdateOldInt16Mask(IntPtr oldMaskPtr, IntPtr maskDataToSave, long[] maskDataDims)
     {
         int status = 0;
+        IntPtr keyValue = Marshal.AllocHGlobal(sizeof(int));
         long nelements = maskDataDims[0] * maskDataDims[1] * maskDataDims[2];
-        if (FitsWriteImageInt16(oldMaskPtr, 3, nelements, maskDataToSave, out status) != 0) ////Try deleting hdu
+        Marshal.WriteInt32(keyValue, 3);
+        if (FitsUpdateKey(oldMaskPtr, 21, "NAXIS", keyValue, null, out status) != 0)    //Make sure new header has 3 dimensions
+        {
+            Debug.Log("Fits update key error #" + status.ToString());
+            return status;
+        }
+        if (FitsWriteImageInt16(oldMaskPtr, 3, nelements, maskDataToSave, out status) != 0)
         {
             Debug.Log("Fits write image error #" + status.ToString());
             return status;
@@ -179,6 +197,11 @@ public class FitsReader
         {
             Debug.Log("Fits close file error #" + status.ToString());
             return status;
+        }
+        if (keyValue != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(keyValue);
+            keyValue = IntPtr.Zero;
         }
         return status;
     }
