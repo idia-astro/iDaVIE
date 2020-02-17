@@ -48,8 +48,6 @@ public class CanvassDesktop : MonoBehaviour
         _volumeInputController = FindObjectOfType<VolumeInputController>();
         _volumeSpeechController = FindObjectOfType<VolumeSpeechController>();
         checkCubesDataSet();
-
-    
     }
 
     void checkCubesDataSet()
@@ -88,8 +86,6 @@ public class CanvassDesktop : MonoBehaviour
 
     public void BrowseImageFile()
     {
-
-
         FileBrowser.SetFilters(true, new FileBrowser.Filter("Fits File", ".fits", ".fit"));
 
         // Set default filter that is selected when the dialog is shown (optional)
@@ -97,10 +93,7 @@ public class CanvassDesktop : MonoBehaviour
         // In this case, set Images filter as the default filter
         FileBrowser.SetDefaultFilter(".fits");
         showLoadDialogCoroutine = StartCoroutine(ShowLoadDialogCoroutine(0));
-
-
     }
-
 
     private void _browseImageFile(string path)
     {
@@ -121,8 +114,6 @@ public class CanvassDesktop : MonoBehaviour
             IntPtr fptr;
             int status = 0;
 
-
-
             if (FitsReader.FitsOpenFile(out fptr, imagePath, out status, true) != 0)
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
@@ -142,7 +133,6 @@ public class CanvassDesktop : MonoBehaviour
 
             foreach (KeyValuePair<string, string> entry in _headerDictionary)
             {
-
                 //switch (entry.Key)
                 if (entry.Key.Length > 4)
                     switch (entry.Key.Substring(0, 5))
@@ -156,7 +146,6 @@ public class CanvassDesktop : MonoBehaviour
                             else
                                 axisSize.Add(Convert.ToDouble(sub, CultureInfo.InvariantCulture), Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture));
                             break;
-
                     }
                 _header += entry.Key + "\t\t " + entry.Value + "\n";
             }
@@ -216,8 +205,6 @@ public class CanvassDesktop : MonoBehaviour
                 informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().options.Clear();
                 informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options.Clear();
 
-
-
                 foreach (KeyValuePair<double, double> axes in axisSize)
                 {
                     if (axes.Value > 1)
@@ -258,7 +245,6 @@ public class CanvassDesktop : MonoBehaviour
             {
                 informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
                 informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
-
             }
         }
 
@@ -292,7 +278,6 @@ public class CanvassDesktop : MonoBehaviour
             IntPtr fptr;
             int status = 0;
 
-
             if (FitsReader.FitsOpenFile(out fptr, maskPath, out status, true) != 0)
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
@@ -310,8 +295,6 @@ public class CanvassDesktop : MonoBehaviour
             
             foreach (KeyValuePair<string, string> entry in _headerDictionary)
             {
-
-                //switch (entry.Key)
                 if (entry.Key.Length > 4)
                     switch (entry.Key.Substring(0, 5))
                     {
@@ -326,16 +309,11 @@ public class CanvassDesktop : MonoBehaviour
                                 maskAxisSize.Add(Convert.ToDouble(sub, CultureInfo.InvariantCulture), Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture));
                             }
                             break;
-
                     }
-
             }
-
-
 
             if (maskNAxis > 2)
             {
-
                 //Get Axis size from Image Cube
                 int i0 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().value;
                 int i1 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().value;
@@ -348,7 +326,6 @@ public class CanvassDesktop : MonoBehaviour
                 }
                 else
                     loadable = false;
-
             }
 
             if (!loadable)
@@ -417,9 +394,7 @@ public class CanvassDesktop : MonoBehaviour
 
         yield return null;
     }
-
-
-
+    
     public void LoadFileFromFileSystem()
     {
 
@@ -428,38 +403,26 @@ public class CanvassDesktop : MonoBehaviour
 
     private void postLoadFileFileSystem()
     { 
-
         if (true)
         {
              if (loadCubeCoroutine != null)
                 StopCoroutine(loadCubeCoroutine);
             VolumePlayer.SetActive(false);
             VolumePlayer.SetActive(true);
-
-           
         }
-
-
-
     }
-
-
-
+    
     public IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath)
     {
-
         int i0 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().value;
         int i1 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().value;
         int i2 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value;
-
        
         Vector3 oldpos = new Vector3(0, 0f, 0);
         Quaternion oldrot = Quaternion.identity;
         Vector3 oldscale = new Vector3(1, 1, 1);
         if (getFirstActiveDataSet() != null)
         {
-
-
             getFirstActiveDataSet()._voxelOutline.active = false;
             getFirstActiveDataSet()._regionOutline.active = false;
             getFirstActiveDataSet()._cubeOutline.active = false;
@@ -474,24 +437,17 @@ public class CanvassDesktop : MonoBehaviour
         GameObject newCube = Instantiate(cubeprefab, new Vector3(0, 0f, 0), Quaternion.identity);
         newCube.SetActive(true);
 
-
-
         newCube.transform.parent = volumeDataSetManager.transform;
         newCube.transform.localPosition = oldpos;
         newCube.transform.localRotation = oldrot;
         newCube.transform.localScale = oldscale;
 
-
-
         newCube.GetComponent<VolumeDataSetRenderer>().FileName = _imagePath;//_dataSet.FileName.ToString();
         newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _maskPath;// _maskDataSet.FileName.ToString();
-
-
 
         checkCubesDataSet();
 
         //Deactivate and reactivate VolumeInputController to update VolumeInputController's list of datasets
-
         _volumeInputController.gameObject.SetActive(false);
         _volumeInputController.gameObject.SetActive(true);
 
@@ -501,8 +457,6 @@ public class CanvassDesktop : MonoBehaviour
         {
             yield return new WaitForSeconds(.1f);
         }
-
-
         postLoadFileFileSystem();
     }
 
@@ -541,18 +495,15 @@ public class CanvassDesktop : MonoBehaviour
 
             GUI.Window(0, new Rect((Screen.width / 2) - 150, (Screen.height / 2) - 75
                    , 300, 250), ShowGUI, "Invalid Cube");
-
         }
     }
 
     void ShowGUI(int windowID)
     {
         // You may put a label to show a message to the player
-
         GUI.Label(new Rect(65, 40, 300, 250), textPopUp);
 
         // You may put a button to close the pop up too
-
         if (GUI.Button(new Rect(50, 150, 75, 30), "OK"))
         {
             showPopUp = false;
