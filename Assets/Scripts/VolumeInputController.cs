@@ -823,7 +823,7 @@ public class VolumeInputController : MonoBehaviour
             return VRFamily.Oculus;
         }
 
-        if (vrModel.Contains("vive"))
+        if (vrModel.Contains("vive") || vrModel.Contains("index"))
         {
             return VRFamily.Vive;
         }

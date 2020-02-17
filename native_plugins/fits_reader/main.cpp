@@ -74,9 +74,9 @@ extern "C"
 		return fits_get_img_dim(fptr, dims, status);
 	}
 
-	DllExport int FitsCreateImg(fitsfile *fptr, int bitpix, int naxis, int64_t *naxes, int *status)
+	DllExport int FitsCreateImg(fitsfile *fptr, int bitpix, int naxis, long *naxes, int *status)
 	{
-		int success = fits_create_imgll(fptr, bitpix, naxis, naxes, status);
+		int success = fits_create_img(fptr, bitpix, naxis, naxes, status);
 		return success;
 	}
 
@@ -88,10 +88,10 @@ extern "C"
 
 	DllExport int FitsWriteImageInt16(fitsfile* fptr, int dims, int64_t nelements, int16_t* array, int* status)
 	{
-		int64_t* startPix = new int64_t[dims];
+		long* startPix = new long[dims];
 		for (int i = 0; i < dims; i++)
 			startPix[i] = 1;
-		int success = fits_write_pixll(fptr, TSHORT, startPix, nelements, array, status);
+		int success = fits_write_pix(fptr, TSHORT, startPix, nelements, array, status);
 		delete[] startPix;
 		return success;
 	}
