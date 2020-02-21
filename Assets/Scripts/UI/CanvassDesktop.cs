@@ -9,8 +9,12 @@ using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
 
+using Valve;
+using Valve.VR;
+
 public class CanvassDesktop : MonoBehaviour
 {
+
 
     private VolumeDataSetRenderer[] _volumeDataSets;
     private GameObject volumeDataSetManager;
@@ -469,7 +473,14 @@ public class CanvassDesktop : MonoBehaviour
     public void Exit()
     {
         StopAllCoroutines();
+
+        var initOpenVR = (!SteamVR.active && !SteamVR.usingNativeSupport);
+        if (initOpenVR)
+            OpenVR.Shutdown();
+
         Application.Quit();
+       
+
     }
 
 
