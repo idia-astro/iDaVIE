@@ -737,8 +737,8 @@ namespace VolumeData
                 var colorAxisY = new Color(0.3f, 1.0f, 0.3f);
                 var colorAxisZ = new Color(0.3f, 0.3f, 1.0f);
                 cube.SetColor(colorAxisX, 8);
-                cube.SetColor(colorAxisY, 11);
-                cube.SetColor(colorAxisZ, 4);
+                cube.SetColor(colorAxisY, 4);
+                cube.SetColor(colorAxisZ, 11);
             }
         }
     }
