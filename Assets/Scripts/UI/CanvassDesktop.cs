@@ -30,6 +30,9 @@ public class CanvassDesktop : MonoBehaviour
     public GameObject fileLoadCanvassDesktop;
     public GameObject VolumePlayer;
 
+    public GameObject WelcomeMenu;
+    public GameObject LoadingText;
+
 
     private bool showPopUp = false;
     private string textPopUp = "";
@@ -430,7 +433,7 @@ public class CanvassDesktop : MonoBehaviour
 
     public void LoadFileFromFileSystem()
     {
-
+        
         StartCoroutine(LoadCubeCoroutine(imagePath, maskPath));
     }
 
@@ -491,6 +494,8 @@ public class CanvassDesktop : MonoBehaviour
             mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().interactable = true;
             mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().onClick.Invoke();
 
+            LoadingText.gameObject.SetActive(false);
+            WelcomeMenu.gameObject.SetActive(false);
         }
 
 
@@ -501,7 +506,8 @@ public class CanvassDesktop : MonoBehaviour
 
     public IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath)
     {
-
+        LoadingText.gameObject.SetActive(true);
+        yield return new WaitForSeconds(0.001f);
         int i0 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().value;
         int i1 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().value;
         int i2 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value;
@@ -686,8 +692,8 @@ public class CanvassDesktop : MonoBehaviour
 
         var s1 = new HistogramSeries { StrokeThickness = 1};
         int c = 0;
-        //for (int i = 0; i < h.Length; i++)
-        for (float i = min; i <= max; i+= binWidth)
+        //for (float i = min; i <= max; i+= binWidth)
+        for (int i = 0; i < h.Length; i++)
          {
             s1.Items.Add(new HistogramItem(i, i + binWidth, h[c], 1));
             c++;
