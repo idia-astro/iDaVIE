@@ -692,9 +692,10 @@ public class CanvassDesktop : MonoBehaviour
 
         var s1 = new HistogramSeries { StrokeThickness = 1};
         int c = 0;
-        //for (float i = min; i <= max; i+= binWidth)
-        for (int i = 0; i < h.Length; i++)
-         {
+
+        //for (int i = 0; i < h.Length; i++)
+        for (float i = min; i <= max; i+= binWidth)
+        {
             s1.Items.Add(new HistogramItem(i, i + binWidth, h[c], 1));
             c++;
         }
@@ -738,6 +739,20 @@ public class CanvassDesktop : MonoBehaviour
 
     }
 
+    private float Normalize(float value, float min, float max)
+    {
+        return Mathf.Clamp((value - min) / (max - min), 0, 1f);
+    }
 
+    public void UpdateThresholdMin(String value)
+    {
+        float newValue = Normalize(float.Parse(value), getFirstActiveDataSet().GetDatsSet().MinValue, getFirstActiveDataSet().GetDatsSet().MaxValue);
+        getFirstActiveDataSet().ThresholdMin = Mathf.Clamp(newValue, 0, getFirstActiveDataSet().ThresholdMax);
+    }
 
+    public void UpdateThresholdMax(String value)
+    {
+        float newValue = Normalize(float.Parse(value), getFirstActiveDataSet().GetDatsSet().MinValue, getFirstActiveDataSet().GetDatsSet().MaxValue);
+        getFirstActiveDataSet().ThresholdMax = Mathf.Clamp(newValue, getFirstActiveDataSet().ThresholdMin, 1);
+    }
 }
