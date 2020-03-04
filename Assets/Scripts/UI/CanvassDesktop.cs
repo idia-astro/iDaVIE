@@ -58,7 +58,8 @@ public class CanvassDesktop : MonoBehaviour
 
 
     private PlotModel model = null;
-
+    private float histMin = 0;
+    private float histMax = 1;
 
     protected Coroutine loadCubeCoroutine;
     protected Coroutine showLoadDialogCoroutine;
@@ -588,6 +589,8 @@ public class CanvassDesktop : MonoBehaviour
           .gameObject.transform.Find("Line_2").gameObject.transform.Find("Text_mean").GetComponent<TextMeshProUGUI>().text = getFirstActiveDataSet().GetDatsSet().MeanValue.ToString();
 
 
+        histMin = getFirstActiveDataSet().GetDatsSet().MinValue;
+        histMax = getFirstActiveDataSet().GetDatsSet().MaxValue;
         createHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram, getFirstActiveDataSet().GetDatsSet().HistogramBinWidth, getFirstActiveDataSet().GetDatsSet().MinValue, getFirstActiveDataSet().GetDatsSet().MaxValue);
     }
     private void populateColorMapDropdown()
@@ -685,45 +688,27 @@ public class CanvassDesktop : MonoBehaviour
         return Mathf.Clamp((value - min) / (max - min), 0, 1f);
     }
 
-    private void UpdateThresholdLine(bool updateMin, double newValue)
-    {
-        int index = updateMin ? 0 : 1;
-        LineAnnotation line = model.Annotations[index] as LineAnnotation;
-        line.X = newValue;
-        ShowHistogram();
-    }
-
     public void UpdateThresholdMin(String min)
     {
         float newMin = float.Parse(min);
+        histMin = newMin;
+
         float newThreshold = Normalize(newMin, getFirstActiveDataSet().GetDatsSet().MinValue, getFirstActiveDataSet().GetDatsSet().MaxValue);
         getFirstActiveDataSet().ThresholdMin = Mathf.Clamp(newThreshold, 0, getFirstActiveDataSet().ThresholdMax);
 
-        VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().GetDatsSet(), newMin, getFirstActiveDataSet().GetDatsSet().MaxValue);
-        createHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram, getFirstActiveDataSet().GetDatsSet().HistogramBinWidth, newMin, getFirstActiveDataSet().GetDatsSet().MaxValue);
-
-        /*
-        if (model != null)
-        {
-            UpdateThresholdLine(true, newMin);
-        }
-        */
+        VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().GetDatsSet(), histMin, histMax);
+        createHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram, getFirstActiveDataSet().GetDatsSet().HistogramBinWidth, histMin, histMax);
     }
 
     public void UpdateThresholdMax(String max)
     {
         float newMax = float.Parse(max);
+        histMax = newMax;
+
         float newThreshold = Normalize(newMax, getFirstActiveDataSet().GetDatsSet().MinValue, getFirstActiveDataSet().GetDatsSet().MaxValue);
         getFirstActiveDataSet().ThresholdMax = Mathf.Clamp(newThreshold, getFirstActiveDataSet().ThresholdMin, 1);
 
-        VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().GetDatsSet(), getFirstActiveDataSet().GetDatsSet().MinValue, newMax);
-        createHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram, getFirstActiveDataSet().GetDatsSet().HistogramBinWidth, getFirstActiveDataSet().GetDatsSet().MinValue, newMax);
-
-        /*
-        if (model != null)
-        {
-            UpdateThresholdLine(false, newMax);
-        }
-        */
+        VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().GetDatsSet(), histMin, histMax);
+        createHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram, getFirstActiveDataSet().GetDatsSet().HistogramBinWidth, histMin, histMax);
     }
 }
