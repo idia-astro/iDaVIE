@@ -291,11 +291,13 @@ extern "C"
 						for (int64_t n = 0; n < numElements; ++n)
 						{
 							float dataValue = dataPtr[n];
+							if (isnan(dataValue) || dataValue < minVal || dataValue > maxVal)
+								continue;
 							if (dataValue == maxVal)			//inclusive of max value for final bin
 							{
 								hist_private[ithread * numBins + numBins - 1]++;
 							}
-							else if (!isnan(dataValue))
+							else
 							{
 								int histogramIndex = floor(((double)dataPtr[n] - (double)minVal) * (double)numBins / ((double)maxVal - (double)minVal));
 								hist_private[ithread * numBins + histogramIndex]++;
