@@ -181,6 +181,17 @@ namespace VolumeData
             return volumeDataSet;
         }
 
+        public static void UpdateHistogram(VolumeDataSet volumeDataSet, float min, float max)
+        {
+            long numberDataPoints = volumeDataSet.XDim * volumeDataSet.YDim * volumeDataSet.ZDim;
+            IntPtr histogramPtr = IntPtr.Zero;
+            volumeDataSet.HistogramBinWidth = (max - min) / volumeDataSet.Histogram.Length;
+            DataAnalysis.GetHistogram(volumeDataSet.FitsData, numberDataPoints, volumeDataSet.Histogram.Length, min, max, out histogramPtr);
+            Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, volumeDataSet.Histogram.Length);
+            if (histogramPtr != IntPtr.Zero)
+                DataAnalysis.FreeMemory(histogramPtr);
+        }
+
         public static VolumeDataSet GenerateEmptyMask(long cubeSizeX, long cubeSizeY, long cubeSizeZ)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();

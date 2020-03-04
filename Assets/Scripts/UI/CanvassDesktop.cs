@@ -52,6 +52,8 @@ public class CanvassDesktop : MonoBehaviour
 
     private ColorMapEnum activeColorMap = ColorMapEnum.None;
 
+    private PlotModel model = null;
+
 
     // Start is called before the first frame update
     void Start()
@@ -681,20 +683,14 @@ public class CanvassDesktop : MonoBehaviour
 
     public void createHistogramImg(int []h, float binWidth, float min, float max)
     {
-
-
-        int width = 600;
-        int height = 300;
-
-        var stream = new MemoryStream();
-
-        var model = new PlotModel { Title = "Histogram" };
+        // var model = new PlotModel { Title = "Histogram" };
+        model = new PlotModel { Title = "Histogram " };
 
         var s1 = new HistogramSeries { StrokeThickness = 1};
         int c = 0;
 
         //for (int i = 0; i < h.Length; i++)
-        for (float i = min; i <= max; i+= binWidth)
+        for (float i = min; i <= max && c < h.Length; i+= binWidth)
         {
             s1.Items.Add(new HistogramItem(i, i + binWidth, h[c], 1));
             c++;
@@ -721,11 +717,19 @@ public class CanvassDesktop : MonoBehaviour
         max_annotation.Type = LineAnnotationType.Vertical;
         model.Annotations.Add(max_annotation);
 
+        ShowHistogram();
+    }
 
+    private void ShowHistogram()
+    {
+        int width = 600;
+        int height = 300;
+
+        var stream = new MemoryStream();
 
         var exporter = new OxyPlot.WindowsForms.PngExporter { Width = width, Height = height };
         exporter.Export(model, stream);
-        
+
 
         Texture2D tex = new Texture2D(width, height);
         tex.LoadImage(stream.ToArray());
@@ -733,10 +737,6 @@ public class CanvassDesktop : MonoBehaviour
 
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Histogram_container")
     .gameObject.transform.Find("GameObject").GetComponent<Image>().sprite = sprite;
-
-  
-
-
     }
 
     private float Normalize(float value, float min, float max)
@@ -744,15 +744,45 @@ public class CanvassDesktop : MonoBehaviour
         return Mathf.Clamp((value - min) / (max - min), 0, 1f);
     }
 
-    public void UpdateThresholdMin(String value)
+    private void UpdateThresholdLine(bool updateMin, double newValue)
     {
-        float newValue = Normalize(float.Parse(value), getFirstActiveDataSet().GetDatsSet().MinValue, getFirstActiveDataSet().GetDatsSet().MaxValue);
-        getFirstActiveDataSet().ThresholdMin = Mathf.Clamp(newValue, 0, getFirstActiveDataSet().ThresholdMax);
+        int index = updateMin ? 0 : 1;
+        LineAnnotation line = model.Annotations[index] as LineAnnotation;
+        line.X = newValue;
+        ShowHistogram();
     }
 
-    public void UpdateThresholdMax(String value)
+    public void UpdateThresholdMin(String min)
     {
-        float newValue = Normalize(float.Parse(value), getFirstActiveDataSet().GetDatsSet().MinValue, getFirstActiveDataSet().GetDatsSet().MaxValue);
-        getFirstActiveDataSet().ThresholdMax = Mathf.Clamp(newValue, getFirstActiveDataSet().ThresholdMin, 1);
+        float newMin = float.Parse(min);
+        float newThreshold = Normalize(newMin, getFirstActiveDataSet().GetDatsSet().MinValue, getFirstActiveDataSet().GetDatsSet().MaxValue);
+        getFirstActiveDataSet().ThresholdMin = Mathf.Clamp(newThreshold, 0, getFirstActiveDataSet().ThresholdMax);
+
+        VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().GetDatsSet(), newMin, getFirstActiveDataSet().GetDatsSet().MaxValue);
+        createHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram, getFirstActiveDataSet().GetDatsSet().HistogramBinWidth, newMin, getFirstActiveDataSet().GetDatsSet().MaxValue);
+
+        /*
+        if (model != null)
+        {
+            UpdateThresholdLine(true, newMin);
+        }
+        */
+    }
+
+    public void UpdateThresholdMax(String max)
+    {
+        float newMax = float.Parse(max);
+        float newThreshold = Normalize(newMax, getFirstActiveDataSet().GetDatsSet().MinValue, getFirstActiveDataSet().GetDatsSet().MaxValue);
+        getFirstActiveDataSet().ThresholdMax = Mathf.Clamp(newThreshold, getFirstActiveDataSet().ThresholdMin, 1);
+
+        VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().GetDatsSet(), getFirstActiveDataSet().GetDatsSet().MinValue, newMax);
+        createHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram, getFirstActiveDataSet().GetDatsSet().HistogramBinWidth, getFirstActiveDataSet().GetDatsSet().MinValue, newMax);
+
+        /*
+        if (model != null)
+        {
+            UpdateThresholdLine(false, newMax);
+        }
+        */
     }
 }
