@@ -27,7 +27,9 @@ public class VolumeInputController : MonoBehaviour
     {
         Idle,
         Moving,
-        Scaling
+        Scaling,
+        EditingThresholdMin,
+        EditingThresholdMax
     }
     
     public enum InteractionState
@@ -75,6 +77,7 @@ public class VolumeInputController : MonoBehaviour
     private Vector3 _startGripSeparation;
     private Vector3 _startGripCenter;
     private Vector3 _starGripForwardAxis;
+    private float _previousControllerHeight;
     private LocomotionState _locomotionState;
     
     // Interactions
@@ -156,6 +159,8 @@ public class VolumeInputController : MonoBehaviour
         _grabPinchAction.AddOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.RightHand);
         _quickMenuAction.AddOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.LeftHand);
         _quickMenuAction.AddOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.RightHand);
+        _hands[0].uiInteractAction.AddOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
+        _hands[1].uiInteractAction.AddOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
         SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.AddOnStateDownListener(OnMenuUpPressed, SteamVR_Input_Sources.Any);
         SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateDownListener(OnMenuDownPressed, SteamVR_Input_Sources.Any);
 
@@ -198,8 +203,18 @@ public class VolumeInputController : MonoBehaviour
             _grabPinchAction.RemoveOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.RightHand);
             _quickMenuAction.RemoveOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.LeftHand);
             _quickMenuAction.RemoveOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.RightHand);
+            _hands[0].uiInteractAction.RemoveOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
+            _hands[1].uiInteractAction.RemoveOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.RemoveOnStateDownListener(OnMenuUpPressed, SteamVR_Input_Sources.Any);
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.RemoveOnStateDownListener(OnMenuDownPressed, SteamVR_Input_Sources.Any);
+        }
+    }
+
+    private void OnUiInteractDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        if (_locomotionState == LocomotionState.EditingThresholdMax || _locomotionState == LocomotionState.EditingThresholdMin)
+        {
+            EndThresholdEditing();;
         }
     }
 
@@ -211,7 +226,7 @@ public class VolumeInputController : MonoBehaviour
             UpdatePaintCursors();
         }
     }
-    
+
     public void IncreaseBrushSize()
     {
         BrushSize += 2;
@@ -347,6 +362,19 @@ public class VolumeInputController : MonoBehaviour
         _locomotionState = LocomotionState.Moving;
         _targetVignetteIntensity = 1;
     }
+    
+    public void StartThresholdEditing(bool editingMax)
+    {
+        _locomotionState = editingMax?LocomotionState.EditingThresholdMax: LocomotionState.EditingThresholdMin;
+        _targetVignetteIntensity = 0;
+        _previousControllerHeight =  _hands[PrimaryHandIndex].transform.position.y;
+    }
+
+    public void EndThresholdEditing()
+    {
+        _locomotionState = LocomotionState.Idle;
+        _targetVignetteIntensity = 0;
+    }
 
     private void StartRequestQuickMenu(int handIndex)
     {
@@ -475,6 +503,12 @@ public class VolumeInputController : MonoBehaviour
                 break;
             case LocomotionState.Idle:
                 UpdateIdle();
+                break;
+            case LocomotionState.EditingThresholdMax:
+                UpdateEditingThreshold(true);
+                break;
+            case LocomotionState.EditingThresholdMin:
+                UpdateEditingThreshold(false);
                 break;
         }
 
@@ -660,6 +694,42 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
+    private void UpdateEditingThreshold(bool editingMax)
+    {
+        var controllerHeight = _hands[PrimaryHandIndex].transform.position.y;
+        var delta = controllerHeight - _previousControllerHeight;
+        _previousControllerHeight = controllerHeight;
+
+        string cursorString = "";
+        
+        foreach (var dataSet in _volumeDataSets)
+        {
+            if (editingMax)
+            {
+                var newValue = dataSet.ThresholdMax + delta;
+                dataSet.ThresholdMax = Mathf.Clamp(newValue, dataSet.ThresholdMin, 1);
+            }
+            else
+            {
+                var newValue = dataSet.ThresholdMin + delta;
+                dataSet.ThresholdMin = Mathf.Clamp(newValue, 0, dataSet.ThresholdMax);
+            }
+
+            var range = dataSet.ScaleMax - dataSet.ScaleMin;
+            var effectiveMin = dataSet.ScaleMin + dataSet.ThresholdMin * range;
+            var effectiveMax = dataSet.ScaleMin + dataSet.ThresholdMax * range;
+            cursorString = $"Min: {effectiveMin.ToString("0.###E+000").PadLeft(11)} ({(dataSet.ThresholdMin * 100):0.0}%)\n";
+            cursorString += $"Max: {effectiveMax.ToString("0.###E+000").PadLeft(11)} ({(dataSet.ThresholdMax * 100):0.0}%)";
+        }
+        
+        if (_handInfoComponents != null)
+        {
+            _handInfoComponents[PrimaryHandIndex].enabled = true;
+            _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
+            _handInfoComponents[PrimaryHandIndex].text = cursorString;
+        }
+    }
+
     private void UpdateIdle()
     {
         if (_volumeDataSets == null)
@@ -753,7 +823,7 @@ public class VolumeInputController : MonoBehaviour
             return VRFamily.Oculus;
         }
 
-        if (vrModel.Contains("vive"))
+        if (vrModel.Contains("vive") || vrModel.Contains("index"))
         {
             return VRFamily.Vive;
         }
@@ -834,6 +904,7 @@ public class VolumeInputController : MonoBehaviour
         {
             // Ensure a mask is present for each dataset
             dataSet.InitialiseMask();
+            dataSet.DisplayMask = true;
         }
         _interactionState = InteractionState.PaintMode;
     }
@@ -841,5 +912,9 @@ public class VolumeInputController : MonoBehaviour
     private void StateTransitionPaintToSelection()
     {
         _interactionState = InteractionState.SelectionMode;
+        foreach (var dataSet in _volumeDataSets)
+        {
+            dataSet.DisplayMask = false;
+        }
     }
 }

@@ -48,7 +48,6 @@ public class QuickMenuController : MonoBehaviour
         {
             _activeDataSet = firstActive;
         }
-       
 
     }
 
@@ -66,8 +65,6 @@ public class QuickMenuController : MonoBehaviour
         return null;
 
     }
-
-
 
     public void Exit()
     {
@@ -160,9 +157,6 @@ public class QuickMenuController : MonoBehaviour
     public void cropDataSet()
     {
 
-        
-
-
         this.gameObject.transform.Find("Image_dis").gameObject.SetActive(false);
         this.gameObject.transform.Find("Image_en").gameObject.SetActive(false);
 
@@ -190,16 +184,7 @@ public class QuickMenuController : MonoBehaviour
         paintMenu.transform.localPosition = this.transform.localPosition;
         paintMenu.transform.localRotation = this.transform.localRotation;
         paintMenu.transform.localScale = this.transform.localScale;
-        /*
-        CanvassQuickMenu.transform.SetParent(_handTransforms[handIndex], false);
-        CanvassQuickMenu.transform.localPosition = new Vector3(-0.1f, (handIndex == 0 ? 1 : -1) * 0.175f, 0.10f);
-        CanvassQuickMenu.transform.localRotation = Quaternion.Euler((handIndex == 0 ? 1 : -1) * -3.25f, 15f, 90f);
-        CanvassQuickMenu.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
-        */
-
-       
-        
-
+      
         this.gameObject.SetActive(false);
         paintMenu.SetActive(true);
     }

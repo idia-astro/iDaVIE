@@ -119,11 +119,10 @@ public class FitsReader
         return dict;
     }
 
-    public static void SaveNewInt16Mask(IntPtr cubeFitsPtr, IntPtr maskData, long[] maskDataDims, string fileName)
+    public static int SaveNewInt16Mask(IntPtr cubeFitsPtr, IntPtr maskData, long[] maskDataDims, string fileName)
     {
         IntPtr maskPtr = IntPtr.Zero;
         IntPtr keyValue = Marshal.AllocHGlobal(sizeof(int));
-        Marshal.WriteInt32(keyValue, 16);
         int status = 0;
         long nelements = maskDataDims[0] * maskDataDims[1] * maskDataDims[2];
         IntPtr naxes = Marshal.AllocHGlobal(3 * sizeof(long));
@@ -131,80 +130,108 @@ public class FitsReader
         if (FitsCreateFile(out maskPtr, fileName, out status) != 0)
         {
             Debug.Log("Fits create file error #" + status.ToString());
-            return;
+            return status;
         }
         if (FitsCopyHeader(cubeFitsPtr, maskPtr, out status) != 0)
         {
             Debug.Log("Fits copy header error #" + status.ToString());
-            return;
+            return status;
         }
+        Marshal.WriteInt32(keyValue, 16);
         if (FitsUpdateKey(maskPtr, 21, "BITPIX", keyValue, null, out status) != 0)
         {
             Debug.Log("Fits update key error #" + status.ToString());
-            return;
+            return status;
+        }
+        Marshal.WriteInt32(keyValue, 3);
+        if (FitsUpdateKey(maskPtr, 21, "NAXIS", keyValue, null, out status) != 0)   //Make sure new header has 3 dimensions
+        {
+            Debug.Log("Fits update key error #" + status.ToString());
+            return status;
         }
         if (FitsWriteImageInt16(maskPtr, 3, nelements, maskData, out status) != 0)
         {
             Debug.Log("Fits write image error #" + status.ToString());
-            return;
+            return status;
         }
         if (FitsFlushFile(maskPtr, out status) != 0)
         {
             Debug.Log("Fits flush file error #" + status.ToString());
-            return;
+            return status;
         }
         if (FitsCloseFile(maskPtr, out status) != 0)
         {
             Debug.Log("Fits close file error #" + status.ToString());
-            return;
+            return status;
         }
+        if (keyValue != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(keyValue);
+            keyValue = IntPtr.Zero;
+        }
+        return status;
     }
 
-    public static void UpdateOldInt16Mask(IntPtr oldMaskPtr, IntPtr maskDataToSave, long[] maskDataDims)
+    public static int UpdateOldInt16Mask(IntPtr oldMaskPtr, IntPtr maskDataToSave, long[] maskDataDims)
     {
-        int status;
+        int status = 0;
+        IntPtr keyValue = Marshal.AllocHGlobal(sizeof(int));
         long nelements = maskDataDims[0] * maskDataDims[1] * maskDataDims[2];
-        if (FitsWriteImageInt16(oldMaskPtr, 3, nelements, maskDataToSave, out status) != 0) ////Try deleting hdu
+        Marshal.WriteInt32(keyValue, 3);
+        if (FitsUpdateKey(oldMaskPtr, 21, "NAXIS", keyValue, null, out status) != 0)    //Make sure new header has 3 dimensions
+        {
+            Debug.Log("Fits update key error #" + status.ToString());
+            return status;
+        }
+        if (FitsWriteImageInt16(oldMaskPtr, 3, nelements, maskDataToSave, out status) != 0)
         {
             Debug.Log("Fits write image error #" + status.ToString());
-            return;
+            return status;
         }
         if (FitsFlushFile(oldMaskPtr, out status) != 0)
         {
             Debug.Log("Fits flush file error #" + status.ToString());
-            return;
+            return status;
         }
         if (FitsCloseFile(oldMaskPtr, out status) != 0)
         {
             Debug.Log("Fits close file error #" + status.ToString());
-            return;
+            return status;
         }
+        if (keyValue != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(keyValue);
+            keyValue = IntPtr.Zero;
+        }
+        return status;
     }
 
-    public static void SaveMask(IntPtr fitsPtrHeaderToCopy, IntPtr oldMaskData, long[] oldMaskDims, IntPtr regionData, long[] regionDims, long[] regionStartPix, string fileName)
+    public static int SaveMask(IntPtr fitsPtrHeaderToCopy, IntPtr oldMaskData, long[] oldMaskDims, IntPtr regionData, long[] regionDims, long[] regionStartPix, string fileName)
     {
         bool isNewFile = (fileName != null);
-        long startIndex = 0;
-        for (var z = regionStartPix[2] - 1; z < regionDims[2]; z++)
+        int srcJump = (int)(regionDims[0] * sizeof(short));
+        IntPtr srcPtr = regionData;
+        for (var z = 0; z < regionDims[2]; z++)
         {
-            for (var y = regionStartPix[1] - 1; y < regionDims[1]; y++)
+            for (var y = 0; y < regionDims[1]; y++)
             {
-                startIndex = z * oldMaskDims[0] * oldMaskDims[1] + y * oldMaskDims[0] + regionStartPix[0] - 1;
-                if (InsertSubArrayInt16(oldMaskData, oldMaskDims[0]* oldMaskDims[1]* oldMaskDims[2], 
-                    regionData, regionDims[0], startIndex) != 0)
+                long startIndex = (z + regionStartPix[2] - 1) * oldMaskDims[0] * oldMaskDims[1] + (y + regionStartPix[1] - 1) * oldMaskDims[0] + (regionStartPix[0] - 1);
+                if (InsertSubArrayInt16(oldMaskData, oldMaskDims[0] * oldMaskDims[1] * oldMaskDims[2],
+                        srcPtr, regionDims[0], startIndex) != 0)
                 {
                     Debug.Log("Error inserting submask into mask data!");
-                    return;
+                    return -1;
                 }
+                srcPtr = IntPtr.Add(srcPtr, srcJump);
             }
         }
         if (isNewFile)
         {
-            SaveNewInt16Mask(fitsPtrHeaderToCopy, oldMaskData, oldMaskDims, fileName);
+            return SaveNewInt16Mask(fitsPtrHeaderToCopy, oldMaskData, oldMaskDims, fileName);
         }
         else
         {
-            UpdateOldInt16Mask(fitsPtrHeaderToCopy, oldMaskData, oldMaskDims);
+            return UpdateOldInt16Mask(fitsPtrHeaderToCopy, oldMaskData, oldMaskDims);
         }
-    }
+    }   
 }

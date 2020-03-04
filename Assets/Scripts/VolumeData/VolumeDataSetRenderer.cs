@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using DataFeatures;
+using JetBrains.Annotations;
 using UnityEngine.XR;
 using Vectrosity;
 using Random = System.Random;
@@ -670,11 +672,59 @@ namespace VolumeData
             return volumePosition;
         }
 
+        public void SaveMask(bool overwrite)
+        {
+            if (_maskDataSet == null)
+            {
+                Debug.LogError("Could not find mask data!");
+                return;
+            }
+
+            IntPtr cubeFitsPtr;
+            int status = 0;
+            
+            if (string.IsNullOrEmpty(_maskDataSet.FileName))
+            {
+                // Save new mask
+                FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _dataSet.FileName, out status);
+                string directory = Path.GetDirectoryName(_dataSet.FileName);
+                string filename = $"!{directory}/{Path.GetFileNameWithoutExtension(_dataSet.FileName)}-mask.fits";
+                if (_maskDataSet.SaveMask(cubeFitsPtr, filename) != 0)
+                {
+                    Debug.LogError("Error saving new mask!");
+                    FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+                }
+
+            }
+            else if (!overwrite)
+            {
+                // Save a copy (overwrites existing copy)
+                FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _maskDataSet.FileName, out status);
+                string directory = Path.GetDirectoryName(_maskDataSet.FileName);
+                string filename = $"!{directory}/{Path.GetFileNameWithoutExtension(_maskDataSet.FileName)}-copy.fits";
+                if (_maskDataSet.SaveMask(cubeFitsPtr, filename) != 0)
+                {
+                    Debug.LogError("Error saving copy!");
+                    FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+                }
+            }
+            else
+            {
+                // Overwrite existing mask
+                FitsReader.FitsOpenFileReadWrite(out cubeFitsPtr, _maskDataSet.FileName, out status);
+                if (_maskDataSet.SaveMask(cubeFitsPtr, null) != 0)
+                {
+                    Debug.LogError("Error overwriting existing mask!");
+                    FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+                }
+            }
+            FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+        }
+
         public void OnDestroy()
         {
             _dataSet.CleanUp();
-            if (_maskDataSet != null)
-                _maskDataSet.CleanUp();
+            _maskDataSet?.CleanUp();
         }
 
         private void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes)
@@ -687,8 +737,8 @@ namespace VolumeData
                 var colorAxisY = new Color(0.3f, 1.0f, 0.3f);
                 var colorAxisZ = new Color(0.3f, 0.3f, 1.0f);
                 cube.SetColor(colorAxisX, 8);
-                cube.SetColor(colorAxisY, 11);
-                cube.SetColor(colorAxisZ, 4);
+                cube.SetColor(colorAxisY, 4);
+                cube.SetColor(colorAxisZ, 11);
             }
         }
     }
