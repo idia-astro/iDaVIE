@@ -60,6 +60,7 @@ public class CanvassDesktop : MonoBehaviour
     private PlotModel model = null;
     private float histMin = 0;
     private float histMax = 1;
+    private float sigma = 1;
 
     protected Coroutine loadCubeCoroutine;
     protected Coroutine showLoadDialogCoroutine;
@@ -90,8 +91,8 @@ public class CanvassDesktop : MonoBehaviour
     {
         if (getFirstActiveDataSet() && (getFirstActiveDataSet().ColorMap != activeColorMap))
         {
-           mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-     .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value = (int)getFirstActiveDataSet().ColorMap;
+            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+      .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value = (int)getFirstActiveDataSet().ColorMap;
         }
 
     }
@@ -314,7 +315,7 @@ public class CanvassDesktop : MonoBehaviour
             //visualize the header into the scroll view
             IDictionary<string, string> _headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
             FitsReader.FitsCloseFile(fptr, out status);
-            
+
             foreach (KeyValuePair<string, string> entry in _headerDictionary)
             {
                 if (entry.Key.Length > 4)
@@ -416,10 +417,10 @@ public class CanvassDesktop : MonoBehaviour
 
         yield return null;
     }
-    
+
     public void LoadFileFromFileSystem()
     {
-        
+
         StartCoroutine(LoadCubeCoroutine(imagePath, maskPath));
     }
 
@@ -429,8 +430,8 @@ public class CanvassDesktop : MonoBehaviour
         if (true)
         {
 
-     
-             if (loadCubeCoroutine != null)
+
+            if (loadCubeCoroutine != null)
                 StopCoroutine(loadCubeCoroutine);
             VolumePlayer.SetActive(false);
             VolumePlayer.SetActive(true);
@@ -460,7 +461,7 @@ public class CanvassDesktop : MonoBehaviour
     }
 
 
-    
+
     public IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath)
     {
         LoadingText.gameObject.SetActive(true);
@@ -470,7 +471,7 @@ public class CanvassDesktop : MonoBehaviour
         int i2 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value;
 
 
-       
+
         Vector3 oldpos = new Vector3(0, 0f, 0);
         Quaternion oldrot = Quaternion.identity;
         Vector3 oldscale = new Vector3(1, 1, 1);
@@ -528,7 +529,7 @@ public class CanvassDesktop : MonoBehaviour
             OpenVR.Shutdown();
 
         Application.Quit();
-       
+
 
     }
 
@@ -575,23 +576,26 @@ public class CanvassDesktop : MonoBehaviour
 
     private void populateStatsValue()
     {
+        VolumeDataSet volumeDataSet = getFirstActiveDataSet().GetDatsSet();
 
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-          .gameObject.transform.Find("Line_1").gameObject.transform.Find("InputField_min").GetComponent<TMP_InputField>().text= getFirstActiveDataSet().GetDatsSet().MinValue.ToString();
+          .gameObject.transform.Find("Line_1").gameObject.transform.Find("InputField_min").GetComponent<TMP_InputField>().text = volumeDataSet.MinValue.ToString();
 
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-          .gameObject.transform.Find("Line_1").gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text = getFirstActiveDataSet().GetDatsSet().MaxValue.ToString();
+          .gameObject.transform.Find("Line_1").gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text = volumeDataSet.MaxValue.ToString();
 
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-          .gameObject.transform.Find("Line_2").gameObject.transform.Find("Text_std").GetComponent<TextMeshProUGUI>().text = getFirstActiveDataSet().GetDatsSet().StanDev.ToString();
+          .gameObject.transform.Find("Line_2").gameObject.transform.Find("Text_std").GetComponent<TextMeshProUGUI>().text = volumeDataSet.StanDev.ToString();
 
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-          .gameObject.transform.Find("Line_2").gameObject.transform.Find("Text_mean").GetComponent<TextMeshProUGUI>().text = getFirstActiveDataSet().GetDatsSet().MeanValue.ToString();
+          .gameObject.transform.Find("Line_2").gameObject.transform.Find("Text_mean").GetComponent<TextMeshProUGUI>().text = volumeDataSet.MeanValue.ToString();
 
+        // Default values
+        sigma = 1;
+        histMin = volumeDataSet.MinValue;
+        histMax = volumeDataSet.MaxValue;
 
-        histMin = getFirstActiveDataSet().GetDatsSet().MinValue;
-        histMax = getFirstActiveDataSet().GetDatsSet().MaxValue;
-        createHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram, getFirstActiveDataSet().GetDatsSet().HistogramBinWidth, getFirstActiveDataSet().GetDatsSet().MinValue, getFirstActiveDataSet().GetDatsSet().MaxValue);
+        createHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, volumeDataSet.MinValue, volumeDataSet.MaxValue, volumeDataSet.MeanValue, volumeDataSet.StanDev);
     }
     private void populateColorMapDropdown()
     {
@@ -608,7 +612,7 @@ public class CanvassDesktop : MonoBehaviour
         }
 
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-      .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value=33;
+      .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value = 33;
 
     }
 
@@ -616,32 +620,58 @@ public class CanvassDesktop : MonoBehaviour
     {
         if (getFirstActiveDataSet())
         {
-             activeColorMap = ColorMapUtils.FromHashCode(mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
-      .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value);
+            activeColorMap = ColorMapUtils.FromHashCode(mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+     .gameObject.transform.Find("Line_6").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value);
             getFirstActiveDataSet().ColorMap = activeColorMap;
         }
     }
 
+    public void UpdateSigma(Int32 optionIndex)
+    {
+        sigma = optionIndex + 1f;
+        VolumeDataSet volumeDataSet = getFirstActiveDataSet().GetDatsSet();
+        createHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, histMin, histMax, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
+    }
 
+    public void RestoreDefaults()
+    {
+        getFirstActiveDataSet().ScaleMax = getFirstActiveDataSet().GetDatsSet().MaxValue;
+        getFirstActiveDataSet().ScaleMin = getFirstActiveDataSet().GetDatsSet().MinValue;
 
-    public void createHistogramImg(int []h, float binWidth, float min, float max)
+        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Colormap_container")
+          .gameObject.transform.Find("Line_4").gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value = 0;
+
+        VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().GetDatsSet(), getFirstActiveDataSet().GetDatsSet().MinValue, getFirstActiveDataSet().GetDatsSet().MaxValue);
+        populateStatsValue();
+    }
+
+    public void createHistogramImg(int []h, float binWidth, float min, float max, float mean, float stanDev, float sigma = 1f)
     {
         // var model = new PlotModel { Title = "Histogram" };
         model = new PlotModel { Title = "Histogram " };
 
-        var s1 = new HistogramSeries { StrokeThickness = 1};
+        var s1 = new HistogramSeries { StrokeThickness = 1 };
+        var s2 = new HistogramSeries { StrokeThickness = 1, StrokeColor = OxyColors.Green };
+
         int c = 0;
 
         //for (int i = 0; i < h.Length; i++)
         for (float i = min; i <= max && c < h.Length; i+= binWidth)
         {
             s1.Items.Add(new HistogramItem(i, i + binWidth, h[c], 1));
+            
+            if (Mathf.Abs(i - mean) <= (stanDev * sigma))
+            {
+                s2.Items.Add(new HistogramItem(i, i + binWidth, h[c], 1));
+            }
+
             c++;
         }
 
         Debug.Log("c: " + c + " h:" + h.Length);
 
         model.Series.Add(s1);
+        model.Series.Add(s2);
 
         var min_annotation = new LineAnnotation();
         min_annotation.Color = OxyColors.Blue;
@@ -683,32 +713,23 @@ public class CanvassDesktop : MonoBehaviour
     .gameObject.transform.Find("GameObject").GetComponent<Image>().sprite = sprite;
     }
 
-    private float Normalize(float value, float min, float max)
+    public void UpdateScaleMin(String min)
     {
-        return Mathf.Clamp((value - min) / (max - min), 0, 1f);
-    }
-
-    public void UpdateThresholdMin(String min)
-    {
+        VolumeDataSet volumeDataSet = getFirstActiveDataSet().GetDatsSet();
         float newMin = float.Parse(min);
         histMin = newMin;
-
-        float newThreshold = Normalize(newMin, getFirstActiveDataSet().GetDatsSet().MinValue, getFirstActiveDataSet().GetDatsSet().MaxValue);
-        getFirstActiveDataSet().ThresholdMin = Mathf.Clamp(newThreshold, 0, getFirstActiveDataSet().ThresholdMax);
-
-        VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().GetDatsSet(), histMin, histMax);
-        createHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram, getFirstActiveDataSet().GetDatsSet().HistogramBinWidth, histMin, histMax);
+        getFirstActiveDataSet().ScaleMin = Mathf.Clamp(newMin, volumeDataSet.MinValue, histMax);
+        VolumeDataSet.UpdateHistogram(volumeDataSet, histMin, histMax);
+        createHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, histMin, histMax, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
     }
 
-    public void UpdateThresholdMax(String max)
+    public void UpdateScaleMax(String max)
     {
+        VolumeDataSet volumeDataSet = getFirstActiveDataSet().GetDatsSet();
         float newMax = float.Parse(max);
         histMax = newMax;
-
-        float newThreshold = Normalize(newMax, getFirstActiveDataSet().GetDatsSet().MinValue, getFirstActiveDataSet().GetDatsSet().MaxValue);
-        getFirstActiveDataSet().ThresholdMax = Mathf.Clamp(newThreshold, getFirstActiveDataSet().ThresholdMin, 1);
-
-        VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().GetDatsSet(), histMin, histMax);
-        createHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram, getFirstActiveDataSet().GetDatsSet().HistogramBinWidth, histMin, histMax);
+        getFirstActiveDataSet().ScaleMax = Mathf.Clamp(newMax, histMin, volumeDataSet.MaxValue);
+        VolumeDataSet.UpdateHistogram(volumeDataSet, histMin, histMax);
+        createHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, histMin, histMax, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
     }
 }
