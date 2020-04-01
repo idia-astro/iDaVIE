@@ -213,6 +213,7 @@ public class PaintMenuController : MonoBehaviour
 
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
         savePopup.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = oldSaveText;
+        SaveCancel();
     }
 
 
@@ -225,6 +226,7 @@ public class PaintMenuController : MonoBehaviour
 
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
         savePopup.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = oldSaveText;
+        SaveCancel();
 
     }
 }
