@@ -73,6 +73,7 @@ public class QuickMenuController : MonoBehaviour
 
     public void OpenMainMenu()
     {
+
         mainMenuCanvas.SetActive(!mainMenuCanvas.activeSelf);
     }
 

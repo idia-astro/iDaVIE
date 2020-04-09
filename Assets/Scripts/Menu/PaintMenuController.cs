@@ -23,6 +23,12 @@ public class PaintMenuController : MonoBehaviour
 
     private VolumeInputController _volumeInputController = null;
 
+    public float VibrationDuration = 0.25f;
+    public float VibrationFrequency = 100.0f;
+    public float VibrationAmplitude = 1.0f;
+
+
+    private string oldSaveText = "";
     // Start is called before the first frame update
     void Start()
     {
@@ -179,6 +185,8 @@ public class PaintMenuController : MonoBehaviour
 
     public void SaveMask()
     {
+        oldSaveText = savePopup.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Saving Maks";
+
         savePopup.transform.SetParent(this.transform.parent, false);
         savePopup.transform.localPosition = this.transform.localPosition;
         savePopup.transform.localRotation = this.transform.localRotation;
@@ -196,13 +204,29 @@ public class PaintMenuController : MonoBehaviour
         savePopup.SetActive(false);
     }
 
-    public void SaveOverwriteMask()
+    public IEnumerator SaveOverwriteMask()
     {
+        savePopup.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Saving Maks";
+        yield return new WaitForSeconds(0.001f);
+
         _activeDataSet?.SaveMask(true);
+
+        _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
+        savePopup.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = oldSaveText;
+        SaveCancel();
     }
 
-    public void SaveNewMask()
+
+    public IEnumerator SaveNewMask()
     {
+        savePopup.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Saving Maks";
+        yield return new WaitForSeconds(0.001f);
+
         _activeDataSet?.SaveMask(false);
+
+        _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
+        savePopup.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = oldSaveText;
+        SaveCancel();
+
     }
 }

@@ -452,3 +452,7 @@ Assets/SteamVR_Resources.meta
 
 # feature tables
 *.ascii
+
+#NuGet
+Assets/NuGet/
+Assets/NuGet.meta
