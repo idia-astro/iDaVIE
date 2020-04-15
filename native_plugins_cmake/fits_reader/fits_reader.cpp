@@ -2,8 +2,6 @@
 
 int FitsOpenFileReadOnly(fitsfile **fptr, char* filename,  int *status)
 {
-    std::string dude(filename);
-    Debug::Log("file name: " + dude);
     return fits_open_file(fptr, filename, READONLY, status);
 }
 

@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <math.h>
 #include <omp.h>
-#include "../DebugCpp/DebugCpp.h"
 
 ///Insert these three lines to debug directly out to a file:
 //char* str = new char[70];

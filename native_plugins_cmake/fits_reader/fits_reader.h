@@ -7,7 +7,6 @@
 #include <iostream>
 #include <cstring>
 
-#include "DebugCpp.h"
 ///Insert these three lines to debug directly out to a file:
 //char* str = new char[70];
 //freopen("debug.txt", "a", stdout);

@@ -2,6 +2,7 @@ file(GLOB VOPARSER_SRC_FILES
         "VOTableParser/*.cpp"
         )
 include_directories(VOTableParser)
+
 find_path(XALANC_INCLUDE xalanc)
 find_path(XERCESC_INCLUDE xercesc)
 include_directories(${XALANC_INCLUDE})
