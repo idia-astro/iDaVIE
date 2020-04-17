@@ -8,21 +8,20 @@ find_path(XERCESC_INCLUDE xercesc)
 include_directories(${XALANC_INCLUDE})
 include_directories(${XERCESC_INCLUDE})
 add_library(votable_reader SHARED votable_reader.cpp votable_reader.h ${VOPARSER_SRC_FILES})
-#find_library(XalanC CONFIG REQUIRED)
-#target_link_libraries(votable_reader PRIVATE xalan_xalan-c XalanC::XalanC)
-
-
-#find_package(XercesC CONFIG REQUIRED)
-#target_link_libraries(votable_reader PRIVATE xerces_xerces-c XercesC::XercesC)
-
-#find_library(XALAN_LIB xalan-c)
-#find_library(XERCES_LIB xerceslib)
 target_link_options(votable_reader PUBLIC "-static-libgcc" "-static-libstdc++")
-target_link_libraries(votable_reader libxalan-c)
-target_link_libraries(votable_reader libxerces-c)
-#target_link_libraries(votable_reader ${XALAN_LIB} ${XERCES_LIB})
 
-set_target_properties(votable_reader PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY_DEBUG ..
-        RUNTIME_OUTPUT_DIRECTORY_RELEASE ..
-        )
+find_library(XALAN_LIB libxalan-c)
+find_library(XERCES_LIB libxerces-c)
+
+target_link_libraries(votable_reader ${XALAN_LIB})
+target_link_libraries(votable_reader ${XERCES_LIB})
+
+#find_library(CURL_LIB libcurl)
+#find_library(WINPTHREAD_LIB libwinpthreads)
+#find_library(STDCPP_LIB libstdc++)
+
+#file(COPY ${CURL_LIB} DESTINATION ${${CMAKE_PROJECT_NAME}_BINARY_DIR})
+#file(COPY ${WINPTHREAD_LIB} DESTINATION ${${CMAKE_PROJECT_NAME}_BINARY_DIR})
+#file(COPY ${XALAN_LIB} DESTINATION ${${CMAKE_PROJECT_NAME}_BINARY_DIR})
+#file(COPY ${XERCES_LIB} DESTINATION ${${CMAKE_PROJECT_NAME}_BINARY_DIR})
+#file(COPY ${STDCPP_LIB} DESTINATION ${${CMAKE_PROJECT_NAME}_BINARY_DIR})
