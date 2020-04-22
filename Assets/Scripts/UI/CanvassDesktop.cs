@@ -391,9 +391,13 @@ public class CanvassDesktop : MonoBehaviour
 
     IEnumerator ShowLoadDialogCoroutine(int type)
     {
+        string lastPath = PlayerPrefs.GetString("LastPath");
+        if (!FileBrowserHelpers.DirectoryExists(lastPath))
+            lastPath = null;
+
         // Show a load file dialog and wait for a response from user
-        // Load file/folder: file, Initial path: default (Documents), Title: "Load File", submit button text: "Load"
-        yield return FileBrowser.WaitForLoadDialog(false, null, "Load File", "Load");
+        // Load file/folder: file, Initial path: last path or default (Documents), Title: "Load File", submit button text: "Load"
+        yield return FileBrowser.WaitForLoadDialog(false, lastPath, "Load File", "Load");
 
         // Dialog is closed
         // Print whether a file is chosen (FileBrowser.Success)
@@ -401,6 +405,9 @@ public class CanvassDesktop : MonoBehaviour
 
         if (FileBrowser.Success)
         {
+            PlayerPrefs.SetString("LastPath", Path.GetDirectoryName(FileBrowser.Result));
+            PlayerPrefs.Save();
+
             // If a file was chosen, read its bytes via FileBrowserHelpers
             // Contrary to File.ReadAllBytes, this function works on Android 10+, as well
             switch (type)
