@@ -19,7 +19,6 @@ DllExport int FitsOpenFileReadOnly(fitsfile**, char*,  int*);
 
 DllExport int FitsOpenFileReadWrite(fitsfile** , char* , int* );
 
-
 DllExport int FitsCreateFile(fitsfile** , char* , int* );
 
 
