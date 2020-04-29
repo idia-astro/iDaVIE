@@ -17,6 +17,6 @@ pacman -U mingw-w64-x86_64-cfitsio-3.450-1-any.pkg.tar.zst
 Next, use Windows Powershell to navigate to the native_plugins_cmake directory in the idia_unity_vr folder. Then build the plugins with the following commands:
 ```
 cmake -DCMAKE_C_COMPILER:FILEPATH=C:\msys64\mingw64\bin\x86_64-w64-mingw32-gcc.exe -DCMAKE_CXX_COMPILER:FILEPATH=C:\msys64\mingw64\bin\x86_64-w64-mingw32-g++.exe -B./build -G "MinGW Makefiles"
-mingw32-make.exe
+cmake --build c:/Users/sivi/Documents/idia_unity_vr_test/native_plugins_cmake/build --config Release --target all -- -j 18
 ```
 Copy the libfits_reader.dll, libdata_analysis_tool.dll, and libvotable_reader.dll libraries into Unity by dragging and dropping into the Assets/Plugins directory when the project is open.
