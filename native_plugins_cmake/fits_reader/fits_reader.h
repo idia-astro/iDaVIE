@@ -95,10 +95,5 @@ DllExport int InsertSubArrayInt16(int16_t* , int64_t , int16_t* , int64_t , int6
 }
 
 
-class fits_unity
-{
-};
-
-
 
 #endif //FITS_UNITY_LIBRARY_H
