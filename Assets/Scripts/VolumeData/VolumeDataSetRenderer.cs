@@ -135,7 +135,18 @@ namespace VolumeData
         private VolumeDataSet _dataSet = null;
         private VolumeDataSet _maskDataSet = null;
 
-
+        public float ZScale
+        {
+            get
+            {
+                return gameObject.transform.localScale.z;
+            }
+            set
+            {
+                Vector3 oldScale = gameObject.transform.localScale;
+                gameObject.transform.localScale = new Vector3(oldScale.x, oldScale.y, value);
+            }
+        }
 
         public bool IsCropped { get; private set; }
 

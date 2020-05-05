@@ -176,7 +176,7 @@ namespace VolumeData
             volumeDataSet.ZDim = volumeDataSet.cubeSize[index2];
             volumeDataSet.XDimDecimal = volumeDataSet.cubeSize[index0].ToString().Length;
             volumeDataSet.YDimDecimal = volumeDataSet.cubeSize[index1].ToString().Length;
-            volumeDataSet.YDimDecimal = volumeDataSet.cubeSize[index2].ToString().Length;
+            volumeDataSet.ZDimDecimal = volumeDataSet.cubeSize[index2].ToString().Length;
             volumeDataSet.HeaderDictionary = volumeDataSet._headerDictionary;
             
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);

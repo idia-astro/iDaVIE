@@ -54,6 +54,8 @@ public class CanvassDesktop : MonoBehaviour
     Dictionary<double, double> axisSize = null;
     Dictionary<double, double> maskAxisSize = null;
 
+    private int ratioDropdownIndex = 0;
+
     private ColorMapEnum activeColorMap = ColorMapEnum.None;
 
 
@@ -473,15 +475,25 @@ public class CanvassDesktop : MonoBehaviour
     {
         LoadingText.gameObject.SetActive(true);
         yield return new WaitForSeconds(0.001f);
-        int i0 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().value;
-        int i1 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().value;
-        int i2 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value;
 
+        float zScale = 1f;
+        if (ratioDropdownIndex == 1)
+        {
+            // case X=Y, calculate z scale from NAXIS1 and NAXIS3
+            int i0 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().value;
+            int i2 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value;
 
+            double x, z;
+            if (axisSize.TryGetValue(i0 + 1, out x) && axisSize.TryGetValue(i2 + 1, out z))
+            {
+                zScale = (float)(z / x);
+            }
+        }
 
         Vector3 oldpos = new Vector3(0, 0f, 0);
         Quaternion oldrot = Quaternion.identity;
-        Vector3 oldscale = new Vector3(1, 1, 1);
+        Vector3 oldscale = new Vector3(1, 1, zScale);
+
         if (getFirstActiveDataSet() != null)
         {
             getFirstActiveDataSet()._voxelOutline.active = false;
@@ -519,6 +531,24 @@ public class CanvassDesktop : MonoBehaviour
             yield return new WaitForSeconds(.1f);
         }
         postLoadFileFileSystem();
+    }
+
+    public void OnRatioDropdownValueChanged(int optionIndex)
+    {
+        ratioDropdownIndex = optionIndex;
+        if (getFirstActiveDataSet() != null)
+        {
+            if (optionIndex == 0)
+            {
+                // X=Y=Z
+                getFirstActiveDataSet().ZScale = 1f;
+            }
+            else
+            {
+                // X=Y
+                getFirstActiveDataSet().ZScale = 1f * getFirstActiveDataSet().GetCubeDimensions().z / getFirstActiveDataSet().GetCubeDimensions().x;
+            }
+        }
     }
 
     public void DismissFileLoad()
@@ -652,7 +682,7 @@ public class CanvassDesktop : MonoBehaviour
         populateStatsValue();
     }
 
-    public void createHistogramImg(int []h, float binWidth, float min, float max, float mean, float stanDev, float sigma = 1f)
+    public void createHistogramImg(int[] h, float binWidth, float min, float max, float mean, float stanDev, float sigma = 1f)
     {
         // var model = new PlotModel { Title = "Histogram" };
         model = new PlotModel { Title = "Histogram " };
@@ -663,10 +693,10 @@ public class CanvassDesktop : MonoBehaviour
         int c = 0;
 
         //for (int i = 0; i < h.Length; i++)
-        for (float i = min; i <= max && c < h.Length; i+= binWidth)
+        for (float i = min; i <= max && c < h.Length; i += binWidth)
         {
             s1.Items.Add(new HistogramItem(i, i + binWidth, h[c], 1));
-            
+
             if (Mathf.Abs(i - mean) <= (stanDev * sigma))
             {
                 s2.Items.Add(new HistogramItem(i, i + binWidth, h[c], 1));
