@@ -5,21 +5,20 @@ No datasets are currently packaged with the repo, to keep the size down to a min
 
 You should also download and install [msys2](https://www.msys2.org/) and [CMake](https://cmake.org/download/). Remember to add the binary directory `/mingw64/bin/` to the system PATH.
 
-Run msys2 and install xalan-c package with the following commands:
+Run msys2 and install xalan-c package (and other dependencies needed later) with the following commands:
 ```
 pacman -Syu --noconfirm
-pacman -S mingw64/mingw-w64-x86_64-xalan-c --noconfirm
+pacman -S mingw64/mingw-w64-x86_64-xalan-c mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake patch make --noconfirm
 ```
 Take note of any instructions in the terminal during package update & installation as sometimes you must terminate the msys2 shell to proceed.
 
-The cfitsio package needs a special compiler flag, so a patched version of the package is in the `native_plugins_cmake/mingw-w64-cfitsio` directory in the project folder. Navigate here with msys2 (note: the Windows C: drive is under /c/ in msys2) and run the following commands:
+The cfitsio package needs a special compiler flag, so a patched version of the package is in the `native_plugins_cmake/mingw-w64-cfitsio` directory in the project folder. Navigate here with msys2 (note: the Windows C drive is under /c/ in msys2) and run the following commands:
 ```
-pacman -S mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake patch make --noconfirm
 makepkg-mingw
-pacman -U mingw-w64-x86_64-cfitsio-3.450-1-any.pkg.tar.zst
+pacman -U mingw-w64-x86_64-cfitsio-3.450-1-any.pkg.tar.zst --noconfirm
 ```
 
-If you get an error regarding CRLF, you will need to replace them with LF (we recommend using Notepad++).
+If you get an error regarding CRLF, you will need to replace them with LF. [We recommend using Notepad++](http://sql313.com/index.php/43-main-blogs/maincat-dba/62-using-notepad-to-change-end-of-line-characters).
 
 Next, use Windows Powershell to navigate to the native_plugins_cmake directory in the idia_unity_vr folder. Then build the plugins with the following commands:
 ```
