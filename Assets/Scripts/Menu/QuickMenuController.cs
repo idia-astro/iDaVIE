@@ -16,6 +16,8 @@ public class QuickMenuController : MonoBehaviour
 
     public GameObject mainMenuCanvas;
     public GameObject paintMenu;
+    public GameObject histogramMenu;
+
     int maskstatus=0;
     int cropstatus = 0;
     int featureStatus = 0;
@@ -38,17 +40,11 @@ public class QuickMenuController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
-        if (_dataSets != null)
-        {
-        }
-
         var firstActive = getFirstActiveDataSet();
         if (firstActive && _activeDataSet != firstActive)
         {
             _activeDataSet = firstActive;
         }
-
     }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
@@ -187,5 +183,16 @@ public class QuickMenuController : MonoBehaviour
       
         this.gameObject.SetActive(false);
         paintMenu.SetActive(true);
+    }
+
+    public void OpenHistogramMenu()
+    {
+        histogramMenu.transform.SetParent(this.transform.parent, false);
+        histogramMenu.transform.localPosition = this.transform.localPosition;
+        histogramMenu.transform.localRotation = this.transform.localRotation;
+        histogramMenu.transform.localScale = this.transform.localScale;
+
+        this.gameObject.SetActive(false);
+        histogramMenu.SetActive(true);
     }
 }
