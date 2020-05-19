@@ -9,10 +9,7 @@ include_directories(${XALANC_INCLUDE})
 include_directories(${XERCESC_INCLUDE})
 add_library(votable_reader SHARED votable_reader.cpp votable_reader.h ${VOPARSER_SRC_FILES})
 target_link_options(votable_reader PUBLIC "-static-libgcc" "-static-libstdc++")
-set_target_properties(votable_reader
-    PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<CONFIG>/
-)
+
 find_library(XALAN_LIB libxalan-c)
 find_library(XERCES_LIB libxerces-c)
 
