@@ -12,3 +12,8 @@ install(TARGETS fits_reader data_analysis_tool votable_reader
         RUNTIME
             DESTINATION ${PROJECT_SOURCE_DIR}/../Assets/Plugins
         )
+install(FILES ${OPENMP_DLL} ${SEH_DLL} ${PTHREAD_DLL} DESTINATION ${PROJECT_SOURCE_DIR}/../Assets/Plugins)
+install(FILES ${BRO_DLL} ${BRODEC_DLL}	${CRY_DLL} ${CUR_DLL} ${ICO_DLL} ${ICU_DLL} ${ICUU_DLL} 
+            ${IDN_DLL} ${INT_DLL} ${NGH_DLL} ${PSL_DLL} ${SSH_DLL} ${SSL_DLL} ${STD_DLL} 
+            ${UNI_DLL} ${XAL_DLL} ${XALMSG_DLL} ${XER_DLL} ${Z_DLL}
+        DESTINATION ${PROJECT_SOURCE_DIR}/../Assets/Plugins) 
