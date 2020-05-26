@@ -9,13 +9,29 @@ include_directories(${XALANC_INCLUDE})
 include_directories(${XERCESC_INCLUDE})
 add_library(votable_reader SHARED votable_reader.cpp votable_reader.h ${VOPARSER_SRC_FILES})
 target_link_options(votable_reader PUBLIC "-static-libgcc" "-static-libstdc++")
-set_target_properties(votable_reader
-    PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<CONFIG>/
-)
+
 find_library(XALAN_LIB libxalan-c)
 find_library(XERCES_LIB libxerces-c)
 
 target_link_libraries(votable_reader ${XALAN_LIB})
 target_link_libraries(votable_reader ${XERCES_LIB})
 
+find_file(BRO_DLL libbrotlicommon.dll)
+find_file(BRODEC_DLL libbrotlidec.dll)
+find_file(CRY_DLL libcrypto-1_1-x64.dll)
+find_file(CUR_DLL libcurl-4.dll)
+find_file(ICO_DLL libiconv-2.dll)
+find_file(ICU_DLL libicudt67.dll)
+find_file(ICUU_DLL libicuuc67.dll)
+find_file(IDN_DLL libidn2-0.dll)
+find_file(INT_DLL libintl-8.dll)
+find_file(NGH_DLL libnghttp2-14.dll)
+find_file(PSL_DLL libpsl-5.dll)
+find_file(SSH_DLL libssh2-1.dll)
+find_file(SSL_DLL libssl-1_1-x64.dll)
+find_file(STD_DLL libstdc++-6.dll)
+find_file(UNI_DLL libunistring-2.dll)
+find_file(XAL_DLL libxalan-c.dll)
+find_file(XALMSG_DLL libxalanmsg1_11_0.dll)
+find_file(XER_DLL libxerces-c-3-2.dll)
+find_file(Z_DLL	zlib1.dll)
