@@ -25,4 +25,4 @@ Next, use Windows Powershell to navigate to the native_plugins_cmake directory i
 cmake -DCMAKE_C_COMPILER:FILEPATH=C:\msys64\mingw64\bin\x86_64-w64-mingw32-gcc.exe -DCMAKE_CXX_COMPILER:FILEPATH=C:\msys64\mingw64\bin\x86_64-w64-mingw32-g++.exe -B./build -G "MinGW Makefiles"
 cmake --build ./build --config Release --target install -- -j
 ```
-Copy the libfits_reader.dll, libdata_analysis_tool.dll, and libvotable_reader.dll libraries into Unity by dragging and dropping into the Assets/Plugins directory when the project is open.
+The required DLL files will be copied to the `Assets/Plugins` directory automatically.
