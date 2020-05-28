@@ -26481,7 +26481,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1677918002}
+      - m_Target: {fileID: 0}
         m_MethodName: MaxSliderHandler
         m_Mode: 0
         m_Arguments:
@@ -35238,7 +35238,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1677918002}
+      - m_Target: {fileID: 0}
         m_MethodName: MinSliderHandler
         m_Mode: 0
         m_Arguments:
@@ -42806,12 +42806,6 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
---- !u!4 &1605000649 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4025094218494138, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05,
-    type: 3}
-  m_PrefabInstance: {fileID: 1642712808}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1613529188
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -43065,79 +43059,6 @@ RectTransform:
   m_AnchoredPosition: {x: 50, y: -50}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!1001 &1642712808
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    m_TransformParent: {fileID: 1677918001}
-    m_Modifications:
-    - target: {fileID: 1958434334325142, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
-      propertyPath: m_Name
-      value: VRkeyboard_v1.0_conTastoVocale
-      objectReference: {fileID: 0}
-    - target: {fileID: 1958434334325142, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4025094218494138, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -20
-      objectReference: {fileID: 0}
-    - target: {fileID: 4025094218494138, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -525
-      objectReference: {fileID: 0}
-    - target: {fileID: 4025094218494138, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4025094218494138, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4025094218494138, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4025094218494138, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4025094218494138, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4025094218494138, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
-      propertyPath: m_RootOrder
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 4025094218494138, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4025094218494138, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4025094218494138, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4025094218494138, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 60
-      objectReference: {fileID: 0}
-    - target: {fileID: 4025094218494138, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 60
-      objectReference: {fileID: 0}
-    - target: {fileID: 4025094218494138, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 72e34fd3bc9fa7c4d8528b8bbf513c05, type: 3}
 --- !u!1 &1643443310
 GameObject:
   m_ObjectHideFlags: 0
@@ -45123,7 +45044,7 @@ RectTransform:
   m_Children:
   - {fileID: 742470561}
   - {fileID: 682771046}
-  - {fileID: 1605000649}
+  - {fileID: 1852906485}
   m_Father: {fileID: 0}
   m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -45141,11 +45062,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1677917995}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b34b0996f6dfc64d9842617d5627bef, type: 3}
+  m_Script: {fileID: 11500000, guid: 369201028109efa45a6fb0427bbe42b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   volumeDataSetManager: {fileID: 379208438}
-  img: {fileID: 387872823}
+  img: {fileID: 1690044254}
   minSlider: {fileID: 1229376323}
   minText: {fileID: 1985623913}
   maxSlider: {fileID: 965568301}
@@ -50652,6 +50573,69 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -20, y: -20}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1001 &1852906484
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 1677918001}
+    m_Modifications:
+    - target: {fileID: 1958434334325142, guid: 6c4da035b26b23345bbe8ee17edaf98d, type: 3}
+      propertyPath: m_Name
+      value: VRkeyboard_v1.0_conTastoVocale
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025094218494138, guid: 6c4da035b26b23345bbe8ee17edaf98d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.62
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025094218494138, guid: 6c4da035b26b23345bbe8ee17edaf98d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.18
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025094218494138, guid: 6c4da035b26b23345bbe8ee17edaf98d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 15.960001
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025094218494138, guid: 6c4da035b26b23345bbe8ee17edaf98d, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025094218494138, guid: 6c4da035b26b23345bbe8ee17edaf98d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025094218494138, guid: 6c4da035b26b23345bbe8ee17edaf98d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025094218494138, guid: 6c4da035b26b23345bbe8ee17edaf98d, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025094218494138, guid: 6c4da035b26b23345bbe8ee17edaf98d, type: 3}
+      propertyPath: m_RootOrder
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025094218494138, guid: 6c4da035b26b23345bbe8ee17edaf98d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025094218494138, guid: 6c4da035b26b23345bbe8ee17edaf98d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025094218494138, guid: 6c4da035b26b23345bbe8ee17edaf98d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 6c4da035b26b23345bbe8ee17edaf98d, type: 3}
+--- !u!4 &1852906485 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4025094218494138, guid: 6c4da035b26b23345bbe8ee17edaf98d,
+    type: 3}
+  m_PrefabInstance: {fileID: 1852906484}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1854419929
 GameObject:
   m_ObjectHideFlags: 0
@@ -52396,7 +52380,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1677918002}
+      - m_Target: {fileID: 0}
         m_MethodName: UpdateButtonHandler
         m_Mode: 1
         m_Arguments:
@@ -53874,7 +53858,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1985214973}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 367bbe8ff429ab14688b289987fa0d5f, type: 3}
+  m_Script: {fileID: 11500000, guid: 087dc8c0b11f1864fba2cf92aaacb64e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   histogramMenu: {fileID: 1677918002}
@@ -56585,7 +56569,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1677918002}
+      - m_Target: {fileID: 0}
         m_MethodName: ResetButtonHandler
         m_Mode: 1
         m_Arguments:

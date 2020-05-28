@@ -67,37 +67,33 @@
   ],
   "default_bindings": [
     {
-      "controller_type": "vive_controller",
-      "binding_url": "bindings_vive_controller.json"
-    },
-    {
-      "controller_type": "oculus_touch",
-      "binding_url": "bindings_oculus_touch.json"
-    },
-    {
       "controller_type": "knuckles",
       "binding_url": "bindings_knuckles.json"
     },
     {
       "controller_type": "holographic_controller",
       "binding_url": "bindings_holographic_controller.json"
+    },
+    {
+      "controller_type": "oculus_touch",
+      "binding_url": "application_generated_unity_idaviev_exe_binding_oculus_touch.json"
     }
   ],
   "localization": [
     {
       "language_tag": "en_US",
-      "/actions/default/in/InteractUI": "Interact With UI",
-      "/actions/default/in/GrabPinch": "Grab Pinch",
       "/actions/default/in/GrabGrip": "Grab Grip",
-      "/actions/default/in/SkeletonLeftHand": "Skeleton (Left)",
-      "/actions/default/in/SkeletonRightHand": "Skeleton (Right)",
-      "/actions/default/in/Pose": "Pose",
-      "/actions/default/out/Haptic": "Haptic",
+      "/actions/default/in/GrabPinch": "Grab Pinch",
+      "/actions/default/in/InteractUI": "Interact With UI",
       "/actions/default/in/MenuDown": "Menu Down",
-      "/actions/default/in/MenuUp": "Menu Up",
       "/actions/default/in/MenuLeft": "Menu Left",
       "/actions/default/in/MenuRight": "Menu Right",
-      "/actions/default/in/QuickMenu": "QuickMenu"
+      "/actions/default/in/MenuUp": "Menu Up",
+      "/actions/default/in/Pose": "Pose",
+      "/actions/default/in/QuickMenu": "QuickMenu",
+      "/actions/default/in/SkeletonLeftHand": "Skeleton (Left)",
+      "/actions/default/in/SkeletonRightHand": "Skeleton (Right)",
+      "/actions/default/out/Haptic": "Haptic"
     }
   ]
 }
