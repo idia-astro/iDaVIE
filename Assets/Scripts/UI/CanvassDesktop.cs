@@ -717,4 +717,13 @@ public class CanvassDesktop : MonoBehaviour
         getFirstActiveDataSet().ThresholdMax = getFirstActiveDataSet().InitialThresholdMax;
         maxThreshold.value = getFirstActiveDataSet().ThresholdMax;
     }
+
+    public void UpdateUI(float min, float max, Sprite img)
+    {
+        statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_min")
+            .gameObject.transform.Find("InputField_min").GetComponent<TMP_InputField>().text = min.ToString();
+        statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_max")
+            .gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text = max.ToString();
+        statsPanelContent.gameObject.transform.Find("Histogram_container").gameObject.transform.Find("Histogram").GetComponent<Image>().sprite = img;
+    }
 }

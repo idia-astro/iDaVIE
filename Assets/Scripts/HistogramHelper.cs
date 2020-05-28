@@ -10,15 +10,10 @@ using UnityEngine.UI;
 
 public class HistogramHelper : MonoBehaviour
 {
-    public Image[] images;
+    public HistogramMenuController histogramMenu;
+    public CanvassDesktop canvassDesktop;
 
-    public Slider minSlider;
-    public TMP_InputField minText;
     public float CurrentMin { get; private set; }
-
-
-    public Slider maxSlider;
-    public TMP_InputField maxText;
     public float CurrentMax { get; private set; }
 
     // Start is called before the first frame update
@@ -84,12 +79,8 @@ public class HistogramHelper : MonoBehaviour
         Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(tex.width / 2, tex.height / 2));
 
         // Updates UI elements
-        minSlider.value = min;
-        maxSlider.value = max;
-        minText.text = min.ToString();
-        maxText.text = max.ToString();
-        foreach (var image in images)
-            image.sprite = sprite;
+        histogramMenu.UpdateUI(min, max, sprite);
+        canvassDesktop.UpdateUI(min, max, sprite);
     }
 
 }

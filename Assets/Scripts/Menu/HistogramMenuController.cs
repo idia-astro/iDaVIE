@@ -12,61 +12,47 @@ public class HistogramMenuController : MonoBehaviour
     private VolumeDataSetRenderer[] dataSets;
     private HistogramHelper histogramHelper;
 
-    private Slider minSlider;
-    private TMP_InputField minText;
-    
-    private Slider maxSlider;
-    private TMP_InputField maxText;
+    [SerializeField] private Image img;
+
+    [SerializeField] private Slider minSlider;
+    [SerializeField] private InputField minText;
+
+    [SerializeField] private Slider maxSlider;
+    [SerializeField] private InputField maxText;
 
     // Start is called before the first frame update
     void Start()
     {
         histogramHelper = FindObjectOfType<HistogramHelper>();
 
-        minSlider = gameObject.transform.Find("PanelContents").gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_1")
-            .gameObject.transform.Find("Slider_min").GetComponent<Slider>();
-        maxSlider = gameObject.transform.Find("PanelContents").gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_2")
-            .gameObject.transform.Find("Slider_max").GetComponent<Slider>();
-
-        minText = gameObject.transform.Find("PanelContents").gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_1")
-            .gameObject.transform.Find("Text_min").GetComponent<TMP_InputField>();
-        maxText = gameObject.transform.Find("PanelContents").gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_2")
-            .gameObject.transform.Find("Text_max").GetComponent<TMP_InputField>();
-
         if (volumeDataSetManager != null)
         {
             dataSets = volumeDataSetManager.GetComponentsInChildren<VolumeDataSetRenderer>(true);
 
-            VolumeDataSet dataSet = getFirstActiveDataSet().GetDatsSet();
-            if (dataSet != null)
+            if (getFirstActiveDataSet() != null)
             {
+                VolumeDataSet dataSet = getFirstActiveDataSet().GetDatsSet();
                 minSlider.minValue = dataSet.MinValue;
                 minSlider.maxValue = dataSet.MaxValue;
                 minSlider.value = histogramHelper.CurrentMin;
+                minText.text = minSlider.value.ToString();
 
                 maxSlider.minValue = dataSet.MinValue;
                 maxSlider.maxValue = dataSet.MaxValue;
                 maxSlider.value = histogramHelper.CurrentMax;
+                maxText.text = maxSlider.value.ToString();
             }
         }
-
-
-        gameObject.SetActive(false);
     }
 
-    private void OnEnable()
+    public void MinSliderHandler(float value)
     {
-        if (volumeDataSetManager != null)
-        {
-            dataSets = volumeDataSetManager.GetComponentsInChildren<VolumeDataSetRenderer>(true);
-        }
+        minText.text = value.ToString();
     }
 
-    // Update is called once per frame
-    void Update()
+    public void MaxSliderHandler(float value)
     {
-        minText.text = minSlider.value.ToString();
-        maxText.text = maxSlider.value.ToString();
+        maxText.text = value.ToString();
     }
 
     public void UpdateButtonHandler()
@@ -79,6 +65,15 @@ public class HistogramMenuController : MonoBehaviour
     {
         VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().GetDatsSet(), getFirstActiveDataSet().GetDatsSet().MinValue, getFirstActiveDataSet().GetDatsSet().MaxValue);
         histogramHelper.CreateHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram, getFirstActiveDataSet().GetDatsSet().HistogramBinWidth, getFirstActiveDataSet().GetDatsSet().MinValue, getFirstActiveDataSet().GetDatsSet().MaxValue, getFirstActiveDataSet().GetDatsSet().MeanValue, getFirstActiveDataSet().GetDatsSet().StanDev);
+    }
+
+    public void UpdateUI(float min, float max, Sprite img)
+    {
+        minSlider.value = min;
+        minText.text = min.ToString();
+        maxSlider.value = max;
+        maxText.text = max.ToString();
+        this.img.sprite = img;
     }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
