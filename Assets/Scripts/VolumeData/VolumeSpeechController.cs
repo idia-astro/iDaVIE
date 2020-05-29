@@ -25,6 +25,9 @@ namespace VolumeData
         {
             public static readonly string EditThresholdMin = "edit min";
             public static readonly string EditThresholdMax = "edit max";
+            public static readonly string EditZAxis = "edit zee axis";
+            public static readonly string SaveZAxis = "save zee axis";
+            public static readonly string ResetZAxis = "reset zee axis";
             public static readonly string SaveThreshold = "save threshold";
             public static readonly string ResetThreshold = "reset threshold";
             public static readonly string ResetTransform = "reset transform";
@@ -52,8 +55,8 @@ namespace VolumeData
             public static readonly string ShowMaskOutline = "show mask outline";
             public static readonly string HideMaskOutline = "hide mask outline";
             
-            public static readonly string[] All = { EditThresholdMin, EditThresholdMax, SaveThreshold, ResetThreshold, ResetTransform, 
-                ColormapPlasma, ColormapRainbow, ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix,
+            public static readonly string[] All = { EditThresholdMin, EditThresholdMax, EditZAxis, SaveThreshold, ResetThreshold, ResetTransform, 
+                ColormapPlasma, ColormapRainbow, ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ResetZAxis, SaveZAxis,
                 NextDataSet, PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated,
                 ProjectionMaximum, ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline
             };
@@ -92,6 +95,18 @@ namespace VolumeData
             else if (args.text == Keywords.EditThresholdMax)
             {
                 startThresholdEditing(true);
+            }
+            else if (args.text == Keywords.EditZAxis)
+            {
+                startZAxisEditing();
+            }
+            else if (args.text == Keywords.SaveZAxis)
+            {
+                endZAxisEditing();
+            }
+            else if (args.text == Keywords.ResetZAxis)
+            {
+                resetZAxis();
             }
             else if (args.text == Keywords.SaveThreshold)
             {
@@ -223,6 +238,14 @@ namespace VolumeData
             }
         }
 
+        public void resetZAxis()
+        {
+            if (_activeDataSet)
+            {   //TODO: change setting z axis to proper ratio
+                _activeDataSet.transform.localScale = new Vector3(_activeDataSet.transform.localScale.x, _activeDataSet.transform.localScale.y, _activeDataSet.transform.localScale.x);
+            }
+        }
+
         public void startThresholdEditing(bool editingMax)
         {
             _volumeInputController.StartThresholdEditing(editingMax);
@@ -230,9 +253,19 @@ namespace VolumeData
 
         public void endThresholdEditing()
         {
-            _volumeInputController.EndThresholdEditing();
+            _volumeInputController.EndEditing();
         }
 
+        public void startZAxisEditing()
+        {
+            _volumeInputController.StartZAxisEditing();
+        }
+
+        public void endZAxisEditing()
+        {
+            _volumeInputController.EndEditing();
+        }
+        
         public void resetTransform()
         {
             if (_activeDataSet)
