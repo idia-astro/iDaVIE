@@ -331,7 +331,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7da762646b489e945ade5ffbe65a506b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MaxSteps: 16
+  MaxSteps: 512
   MaximumCubeSizeInMB: 1500
   ProjectionMode: 0
   TextureFilter: 0
@@ -340,7 +340,7 @@ MonoBehaviour:
   MaskMode: 0
   MaskVoxelSize: 1
   MaskVoxelColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.2}
-  FoveatedRendering: 1
+  FoveatedRendering: 0
   FoveationStart: 0.015
   FoveationEnd: 0.326
   FoveationJitter: 0.1
@@ -362,7 +362,7 @@ MonoBehaviour:
   MaskFileName: 
   RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
   MaskMaterial: {fileID: 2100000, guid: 287ca90aafa6d1e439653b9d7378a7d5, type: 2}
-  FactorOverride: 0
+  FactorOverride: 1
   XFactor: 1
   YFactor: 1
   ZFactor: 1
@@ -626,7 +626,7 @@ MonoBehaviour:
     m_alignOddWidthToPixels: 0
   _volumeInputController: {fileID: 0}
   RandomVolume: 1
-  RandomCubeSize: 700
+  RandomCubeSize: 64
   started: 0
 --- !u!65 &1201799887
 BoxCollider:
