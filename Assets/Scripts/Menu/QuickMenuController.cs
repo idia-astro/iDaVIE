@@ -15,9 +15,11 @@ public class QuickMenuController : MonoBehaviour
     private VolumeDataSetRenderer[] _dataSets;
 
     public GameObject mainMenuCanvas;
+    public GameObject paintMenu;
     int maskstatus=0;
     int cropstatus = 0;
     int featureStatus = 0;
+    string oldMaskLoaded = "";
     // Start is called before the first frame update
     void Start()
     {
@@ -25,8 +27,12 @@ public class QuickMenuController : MonoBehaviour
         if ( volumeDatasetRendererObj!= null )
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
 
-   
+    }
 
+    public void OnEnable()
+    {
+        if (volumeDatasetRendererObj != null)
+            _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
     }
 
     // Update is called once per frame
@@ -35,16 +41,14 @@ public class QuickMenuController : MonoBehaviour
 
         if (_dataSets != null)
         {
-            //Debug.Log("_dataSets size " + _dataSets.Length);
         }
 
         var firstActive = getFirstActiveDataSet();
         if (firstActive && _activeDataSet != firstActive)
         {
-            Debug.Log("in foreach --- Update");
             _activeDataSet = firstActive;
         }
-       
+
     }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
@@ -62,8 +66,6 @@ public class QuickMenuController : MonoBehaviour
 
     }
 
-
-
     public void Exit()
     {
         Application.Quit();
@@ -71,6 +73,7 @@ public class QuickMenuController : MonoBehaviour
 
     public void OpenMainMenu()
     {
+
         mainMenuCanvas.SetActive(!mainMenuCanvas.activeSelf);
     }
 
@@ -154,28 +157,35 @@ public class QuickMenuController : MonoBehaviour
     public void cropDataSet()
     {
 
-        if (cropstatus == 1)
-            cropstatus = -1;
-        cropstatus++;
-
         this.gameObject.transform.Find("Image_dis").gameObject.SetActive(false);
         this.gameObject.transform.Find("Image_en").gameObject.SetActive(false);
 
         if (_activeDataSet)
         {
-            switch (cropstatus)
+
+            if (_activeDataSet.IsCropped)
             {
-                case 0:
-                    this.gameObject.transform.Find("Image_dis").gameObject.SetActive(true);
-                    notificationText.GetComponent<Text>().text = "Crop disabled";
-                    _activeDataSet.ResetCrop();
-                    break;
-                case 1:
-                    this.gameObject.transform.Find("Image_en").gameObject.SetActive(true);
-                    notificationText.GetComponent<Text>().text = "Crop enabled";
-                    _activeDataSet.CropToRegion();
-                    break;
+                this.gameObject.transform.Find("Image_dis").gameObject.SetActive(true);
+                notificationText.GetComponent<Text>().text = "Crop disabled";
+                _activeDataSet.ResetCrop();
+            }
+            else
+            {
+                this.gameObject.transform.Find("Image_en").gameObject.SetActive(true);
+                notificationText.GetComponent<Text>().text = "Crop enabled";
+                _activeDataSet.CropToRegion();
             }
         }
+    }
+
+    public void OpenPaintMenu()
+    {
+        paintMenu.transform.SetParent(this.transform.parent,false);
+        paintMenu.transform.localPosition = this.transform.localPosition;
+        paintMenu.transform.localRotation = this.transform.localRotation;
+        paintMenu.transform.localScale = this.transform.localScale;
+      
+        this.gameObject.SetActive(false);
+        paintMenu.SetActive(true);
     }
 }

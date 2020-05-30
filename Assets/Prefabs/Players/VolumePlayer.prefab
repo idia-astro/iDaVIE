@@ -12,10 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a6857598aee4ffba39b7279fe73e7c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  CanvassQuickMenu: {fileID: 0}
+  PrimaryHand: 2
   InPlaceScaling: 1
   ScalingEnabled: 1
   RotationAxisCutoff: 5
   VignetteFadeSpeed: 2
+  AdditiveBrush: 1
+  BrushSize: 1
+  BrushValue: 1
+  _volumeDataSets: []
 --- !u!1001 &8833955704422217956
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -23,36 +29,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 132523757760137543, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
-        type: 3}
-      propertyPath: m_Name
-      value: VolumePlayer
-      objectReference: {fileID: 0}
-    - target: {fileID: 132523757760137563, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
-        type: 3}
-      propertyPath: m_RootOrder
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 132523757760137563, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 132523757760137563, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 132523757760137563, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 132523756916079100, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
-        type: 3}
-      propertyPath: m_Mesh
-      value: 
-      objectReference: {fileID: 0}
     - target: {fileID: 132523756916079098, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
         type: 3}
       propertyPath: m_textInfo.characterCount
@@ -76,6 +52,36 @@ PrefabInstance:
     - target: {fileID: 132523756916079098, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
         type: 3}
       propertyPath: m_textInfo.pageCount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 132523756916079100, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
+        type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 132523757760137543, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
+        type: 3}
+      propertyPath: m_Name
+      value: VolumePlayer
+      objectReference: {fileID: 0}
+    - target: {fileID: 132523757760137563, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 132523757760137563, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 132523757760137563, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 132523757760137563, guid: 10cf855ed1c6f0c419b6bfadc8b37cfa,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []

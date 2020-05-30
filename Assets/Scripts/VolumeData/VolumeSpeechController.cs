@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Windows.Speech;
@@ -9,23 +10,16 @@ namespace VolumeData
 {
     public class VolumeSpeechController : MonoBehaviour
     {
-        public Hand EditingHand;
+        public VolumeInputController VolumeInputController;
+        public QuickMenuController QuickMenuController;
+        public PaintMenuController PaintMenuController;
 
         public float VibrationDuration = 0.25f;
         public float VibrationFrequency = 100.0f;
         public float VibrationAmplitude = 1.0f;
 
+        private List<VolumeDataSetRenderer> _dataSets;
 
-        public enum SpeechControllerState
-        {
-            Idle,
-            EditThresholdMin,
-            EditThresholdMax
-        }
-
-        private VolumeDataSetRenderer[] _dataSets;
-
-        private SpeechControllerState _state;
         // Keywords
         private struct Keywords
         {
@@ -51,47 +45,40 @@ namespace VolumeData
             public static readonly string MaskIsolated = "mask isolate";
             public static readonly string ProjectionMaximum = "projection maximum";
             public static readonly string ProjectionAverage = "projection average";
+            public static readonly string PaintMode = "paint mode";
+            public static readonly string ExitPaintMode = "exit paint mode";
+            public static readonly string BrushAdd = "brush add";
+            public static readonly string BrushErase = "brush erase";
+            public static readonly string ShowMaskOutline = "show mask outline";
+            public static readonly string HideMaskOutline = "hide mask outline";
             
             public static readonly string[] All = { EditThresholdMin, EditThresholdMax, SaveThreshold, ResetThreshold, ResetTransform, 
                 ColormapPlasma, ColormapRainbow, ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix,
                 NextDataSet, PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated,
-                ProjectionMaximum, ProjectionAverage
+                ProjectionMaximum, ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline
             };
         }
    
         private KeywordRecognizer _speechKeywordRecognizer;
-        private float previousControllerHeight;
         private VolumeInputController _volumeInputController;
 
         private VolumeDataSetRenderer _activeDataSet;
 
 
-        void Start()
+        void OnEnable()
         {
-            _dataSets = GetComponentsInChildren<VolumeDataSetRenderer>(true);            
+            _dataSets = new List<VolumeDataSetRenderer>();
+            _dataSets.AddRange(GetComponentsInChildren<VolumeDataSetRenderer>(true));            
             _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, ConfidenceLevel.Medium);
             _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
 
             _speechKeywordRecognizer.Start();
             _volumeInputController = FindObjectOfType<VolumeInputController>();
-            if (EditingHand == null)
-            {
-                Debug.Log("Editing Hand not set. Please set in Editor.");
-            }
-            EditingHand.uiInteractAction.AddOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
-        }
-
-        private void OnUiInteractDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
-        {
-            _state = SpeechControllerState.Idle;
         }
 
         private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
         {
-            if (EditingHand)
-            {
-                _volumeInputController.VibrateController(EditingHand.handType, VibrationDuration, VibrationFrequency, VibrationAmplitude);
-            }
+            _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
 
             StringBuilder builder = new StringBuilder();
             builder.AppendFormat("{0} ({1}){2}", args.text, args.confidence, Environment.NewLine);
@@ -100,17 +87,15 @@ namespace VolumeData
             Debug.Log(builder.ToString());
             if (args.text == Keywords.EditThresholdMin)
             {
-                _state = SpeechControllerState.EditThresholdMin;
-                previousControllerHeight = EditingHand.transform.position.y;
+                startThresholdEditing(false);
             }
             else if (args.text == Keywords.EditThresholdMax)
             {
-                _state = SpeechControllerState.EditThresholdMax;
-                previousControllerHeight = EditingHand.transform.position.y;
+                startThresholdEditing(true);
             }
             else if (args.text == Keywords.SaveThreshold)
             {
-                _state = SpeechControllerState.Idle;
+                endThresholdEditing();
             }
             else if (args.text == Keywords.ResetThreshold)
             {
@@ -188,6 +173,30 @@ namespace VolumeData
             {
                 setProjection(ProjectionMode.AverageIntensityProjection);
             }
+            else if (args.text == Keywords.PaintMode)
+            {
+                EnablePaintMode();
+            }
+            else if (args.text == Keywords.ExitPaintMode)
+            {
+                DisablePaintMode();
+            }
+            else if (args.text == Keywords.BrushAdd)
+            {
+                SetBrushAdditive();
+            }
+            else if (args.text == Keywords.BrushErase)
+            {
+                SetBrushSubtractive();
+            }
+            else if (args.text == Keywords.ShowMaskOutline)
+            {
+                ShowMaskOutline();
+            }
+            else if (args.text == Keywords.HideMaskOutline)
+            {
+                HideMaskOutline();
+            }
         }
 
         // Update is called once per frame
@@ -198,44 +207,11 @@ namespace VolumeData
             {
                 _activeDataSet = firstActive;
             }
-
-            if (_activeDataSet)
-            {
-                switch (_state)
-                {
-                    case SpeechControllerState.EditThresholdMin:
-                        UpdateThreshold(false);
-                        break;
-                    case SpeechControllerState.EditThresholdMax:
-                        UpdateThreshold(true);
-                        break;
-                    case SpeechControllerState.Idle:
-                        break;
-                }
-            }
         }
 
-        public void UpdateThreshold(bool editingMax)
+        public void AddDataSet(VolumeDataSetRenderer setToAdd)
         {
-            if (EditingHand)
-            {
-                float controllerHeight = EditingHand.transform.position.y;
-                float controlerDelta = controllerHeight - previousControllerHeight;
-                previousControllerHeight = controllerHeight;
-                if (_activeDataSet)
-                {
-                    if (editingMax)
-                    {
-                        var newValue = _activeDataSet.ThresholdMax + controlerDelta;
-                        _activeDataSet.ThresholdMax = Mathf.Clamp(newValue, _activeDataSet.ThresholdMin, 1);
-                    }
-                    else
-                    {
-                        var newValue = _activeDataSet.ThresholdMin + controlerDelta;
-                        _activeDataSet.ThresholdMin = Mathf.Clamp(newValue, 0, _activeDataSet.ThresholdMax);
-                    }
-                }
-            }
+            _dataSets.Add(setToAdd);
         }
 
         public void resetThreshold()
@@ -245,6 +221,16 @@ namespace VolumeData
                 _activeDataSet.ThresholdMin = _activeDataSet.InitialThresholdMin;
                 _activeDataSet.ThresholdMax = _activeDataSet.InitialThresholdMax;
             }
+        }
+
+        public void startThresholdEditing(bool editingMax)
+        {
+            _volumeInputController.StartThresholdEditing(editingMax);
+        }
+
+        public void endThresholdEditing()
+        {
+            _volumeInputController.EndThresholdEditing();
         }
 
         public void resetTransform()
@@ -267,13 +253,13 @@ namespace VolumeData
 
         public void stepDataSet(bool forwards)
         {
-            for (var i = 0; i < _dataSets.Length; i++)
+            for (var i = 0; i < _dataSets.Count; i++)
             {
                 var dataSet = _dataSets[i];
                 Debug.Log(dataSet);
                 if (dataSet == _activeDataSet)
                 {
-                    var newIndex = (i + _dataSets.Length + (forwards ? 1 : -1)) % _dataSets.Length;
+                    var newIndex = (i + _dataSets.Count + (forwards ? 1 : -1)) % _dataSets.Count;
                     _activeDataSet.gameObject.SetActive(false);
                     _dataSets[newIndex].gameObject.SetActive(true);
                     Debug.Log("Switching from dataset " + i + " to dataset " + newIndex);
@@ -295,6 +281,8 @@ namespace VolumeData
             if (_activeDataSet)
             {
                 _activeDataSet.ResetCrop();
+
+                Debug.Log("cropped: "+_activeDataSet.IsCropped);
             }
         }
 
@@ -303,6 +291,7 @@ namespace VolumeData
             if (_activeDataSet)
             {
                 _activeDataSet.TeleportToRegion();
+                Debug.Log("cropped: " + _activeDataSet.IsCropped);
             }
         }
 
@@ -322,6 +311,42 @@ namespace VolumeData
             }
         }
 
+        public void EnablePaintMode()
+        {
+            QuickMenuController.OpenPaintMenu();
+        }
+
+        public void DisablePaintMode()
+        {
+            PaintMenuController.ExitPaintMode();
+        }
+
+        public void SetBrushAdditive()
+        {
+            VolumeInputController.AdditiveBrush = true;
+        }
+
+        public void SetBrushSubtractive()
+        {
+            VolumeInputController.AdditiveBrush = false;
+        }
+
+        public void ShowMaskOutline()
+        {
+            foreach (var dataSet in _dataSets)
+            {
+                dataSet.DisplayMask = true;
+            }
+        }
+
+        public void HideMaskOutline()
+        {
+            foreach (var dataSet in _dataSets)
+            {
+                dataSet.DisplayMask = false;
+            }
+        }
+
         public VolumeDataSetRenderer getFirstActiveDataSet()
         {
             foreach (var dataSet in _dataSets)
@@ -333,11 +358,6 @@ namespace VolumeData
             }
 
             return null;
-        }
-
-        public void ChangeSpeechControllerState(SpeechControllerState state)
-        {
-            _state = state;
         }
     }
 }

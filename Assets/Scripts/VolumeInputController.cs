@@ -27,7 +27,15 @@ public class VolumeInputController : MonoBehaviour
     {
         Idle,
         Moving,
-        Scaling
+        Scaling,
+        EditingThresholdMin,
+        EditingThresholdMax
+    }
+    
+    public enum InteractionState
+    {
+        SelectionMode,
+        PaintMode
     }
 
     [Flags]
@@ -39,7 +47,11 @@ public class VolumeInputController : MonoBehaviour
     }
     //reference to quick menu canvass
     public GameObject CanvassQuickMenu;
+    
+    // Choice of left/right primary hand
+    public SteamVR_Input_Sources PrimaryHand = SteamVR_Input_Sources.RightHand;
 
+    public int PrimaryHandIndex => PrimaryHand == SteamVR_Input_Sources.LeftHand ? 0 : 1;
 
     // Scaling/Rotation options
     public bool InPlaceScaling = true;
@@ -48,19 +60,29 @@ public class VolumeInputController : MonoBehaviour
 
     [Range(0.1f, 5.0f)] public float VignetteFadeSpeed = 2.0f;
 
+    // Painting
+    public bool AdditiveBrush = true;
+    public int BrushSize = 1;
+    public short BrushValue = 1;
+    
     private Player _player;
     private VRHand[] _hands;
     private Transform[] _handTransforms;
     private SteamVR_Action_Boolean _grabGripAction;
     private SteamVR_Action_Boolean _grabPinchAction;
     private SteamVR_Action_Boolean _quickMenuAction;
-    private VolumeDataSetRenderer[] _volumeDataSets;
+    public VolumeDataSetRenderer[] _volumeDataSets;
     private float[] _startDataSetScales;
     private Vector3[] _currentGripPositions;
     private Vector3 _startGripSeparation;
     private Vector3 _startGripCenter;
     private Vector3 _starGripForwardAxis;
+    private float _previousControllerHeight;
     private LocomotionState _locomotionState;
+    
+    // Interactions
+    private InteractionState _interactionState;
+    private bool _isPainting;
     private bool _isSelecting;
     private bool _isQuickMenu;
 
@@ -69,7 +91,7 @@ public class VolumeInputController : MonoBehaviour
 
     private Vector3Int _coordDecimcalPlaces;
 
-    private TextMeshPro _scalingTextComponent;
+    private TextMeshPro[] _handInfoComponents;
 
     private float _rotationYawCumulative = 0;
     private float _rotationRollCumulative = 0;
@@ -80,11 +102,12 @@ public class VolumeInputController : MonoBehaviour
     private float _targetVignetteIntensity = 0;
 
     // Selecting
-    private VRHand _selectingHand;
     private Stopwatch selectionStopwatch = new Stopwatch();
 
     // VR-family dependent values
     private VRFamily _vrFamily;
+
+    private bool paintMenuOn = false;
 
     // Used for moving the pointer transform to an acceptable position for each controller type
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsLeft = new Dictionary<VRFamily, Vector3>
@@ -136,6 +159,10 @@ public class VolumeInputController : MonoBehaviour
         _grabPinchAction.AddOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.RightHand);
         _quickMenuAction.AddOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.LeftHand);
         _quickMenuAction.AddOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.RightHand);
+        _hands[0].uiInteractAction.AddOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
+        _hands[1].uiInteractAction.AddOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.AddOnStateDownListener(OnMenuUpPressed, SteamVR_Input_Sources.Any);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateDownListener(OnMenuDownPressed, SteamVR_Input_Sources.Any);
 
         var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
         if (volumeDataSetManager)
@@ -156,13 +183,14 @@ public class VolumeInputController : MonoBehaviour
         _lineAxisSeparation.color = Color.red;
         _lineAxisSeparation.Draw3DAuto();
 
-        _scalingTextComponent = _hands[0].GetComponentInChildren<TextMeshPro>();
+        _handInfoComponents = new[] {_hands[0].GetComponentInChildren<TextMeshPro>(), _hands[1].GetComponentInChildren<TextMeshPro>()};
         _startDataSetScales = new float[_volumeDataSets.Length];
         _currentGripPositions = new Vector3[2];
         _startGripSeparation = Vector3.zero;
         _startGripCenter = Vector3.zero;
 
         _locomotionState = LocomotionState.Idle;
+        _interactionState = InteractionState.SelectionMode;
     }
 
     private void OnDisable()
@@ -175,19 +203,84 @@ public class VolumeInputController : MonoBehaviour
             _grabPinchAction.RemoveOnChangeListener(OnPinchChanged, SteamVR_Input_Sources.RightHand);
             _quickMenuAction.RemoveOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.LeftHand);
             _quickMenuAction.RemoveOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.RightHand);
+            _hands[0].uiInteractAction.RemoveOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
+            _hands[1].uiInteractAction.RemoveOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.RemoveOnStateDownListener(OnMenuUpPressed, SteamVR_Input_Sources.Any);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.RemoveOnStateDownListener(OnMenuDownPressed, SteamVR_Input_Sources.Any);
+        }
+    }
+
+    private void OnUiInteractDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        if (_locomotionState == LocomotionState.EditingThresholdMax || _locomotionState == LocomotionState.EditingThresholdMin)
+        {
+            EndThresholdEditing();;
+        }
+    }
+
+    private void OnMenuUpPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        if (_interactionState == InteractionState.PaintMode)
+        {
+            BrushSize += 2;
+            UpdatePaintCursors();
+        }
+    }
+
+    public void IncreaseBrushSize()
+    {
+        BrushSize += 2;
+        UpdatePaintCursors();
+    }
+
+
+    public void DecreaseBrushSize()
+    {
+        BrushSize = Math.Max(1, BrushSize - 2);
+        UpdatePaintCursors();
+    }
+
+    public void ResetBrushSize()
+    {
+        BrushSize = 1;
+        UpdatePaintCursors();
+    }
+
+
+    private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        if (_interactionState == InteractionState.PaintMode)
+        {
+            BrushSize = Math.Max(1, BrushSize - 2);
+            UpdatePaintCursors();
+        }
+    }
+
+    private void UpdatePaintCursors()
+    {
+        foreach (var dataSet in _volumeDataSets)
+        {
+            dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, BrushSize);
         }
     }
 
     private void OnQuickMenuChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
-        if (newState )
+        Debug.Log(fromSource);
+        // Menu is only available on the second hand
+        if (fromSource == PrimaryHand)
         {
-            //  StartSelection(hand);
+            return;
+        }
+
+        paintMenuOn = CanvassQuickMenu.GetComponent<QuickMenuController>().paintMenu.activeSelf;
+
+        if (newState && !paintMenuOn)
+        {
             StartRequestQuickMenu(fromSource == SteamVR_Input_Sources.LeftHand ? 0 : 1);
         }
-        else if (!newState )
+        else
         {
-            //  EndSelection();
             EndRequestQuickMenu();
         }
     }
@@ -222,30 +315,39 @@ public class VolumeInputController : MonoBehaviour
                 StateTransitionMovingToScaling();
                 break;
         }
-
-
-       
-
-
-     
-
     }
 
 
     private void OnPinchChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
-
-
-        var hand = fromSource == SteamVR_Input_Sources.LeftHand ? _hands[0] : _hands[1];
-        if (newState && _selectingHand == null)
+        // Skip input from secondary hand
+        if (fromSource != PrimaryHand)
         {
-            StartSelection(hand);
-       
+            return;
         }
-        else if (!newState && _selectingHand == hand)
+        
+        if (_interactionState == InteractionState.PaintMode)
         {
-            EndSelection();
-
+            // Handle painting brush stroke ending
+            if (_isPainting && !newState)
+            {
+                foreach (var dataSet in _volumeDataSets)
+                {
+                    dataSet.FinishBrushStroke();
+                }
+            }
+            _isPainting = newState;
+        }
+        else
+        {
+            if (newState)
+            {
+                StartSelection();
+            }
+            else
+            {
+                EndSelection();
+            }
         }
     }
 
@@ -260,10 +362,22 @@ public class VolumeInputController : MonoBehaviour
         _locomotionState = LocomotionState.Moving;
         _targetVignetteIntensity = 1;
     }
+    
+    public void StartThresholdEditing(bool editingMax)
+    {
+        _locomotionState = editingMax?LocomotionState.EditingThresholdMax: LocomotionState.EditingThresholdMin;
+        _targetVignetteIntensity = 0;
+        _previousControllerHeight =  _hands[PrimaryHandIndex].transform.position.y;
+    }
+
+    public void EndThresholdEditing()
+    {
+        _locomotionState = LocomotionState.Idle;
+        _targetVignetteIntensity = 0;
+    }
 
     private void StartRequestQuickMenu(int handIndex)
     {
-        Debug.Log("Request Quick menu!");
         CanvassQuickMenu.transform.SetParent(_handTransforms[handIndex], false);
         CanvassQuickMenu.transform.localPosition= new Vector3(-0.1f,(handIndex == 0 ? 1: -1) * 0.175f, 0.10f);
         CanvassQuickMenu.transform.localRotation= Quaternion.Euler((handIndex == 0 ? 1: -1) * -3.25f,15f, 90f);
@@ -274,17 +388,14 @@ public class VolumeInputController : MonoBehaviour
 
     private void EndRequestQuickMenu()
     {
-        Debug.Log("END Request Quick menu!");
         CanvassQuickMenu.SetActive(false);
         _isQuickMenu = false;
     }
 
-    private void StartSelection(VRHand selectingHand)
+    private void StartSelection()
     {
-        _selectingHand = selectingHand;
         _isSelecting = true;
-        int handIndex = _selectingHand.handType == SteamVR_Input_Sources.LeftHand ? 0 : 1;
-        var startPosition = _handTransforms[handIndex].position;
+        var startPosition = _handTransforms[PrimaryHandIndex].position;
         foreach (var dataSet in _volumeDataSets)
         {
             dataSet.SetRegionPosition(startPosition, true);
@@ -293,15 +404,13 @@ public class VolumeInputController : MonoBehaviour
         selectionStopwatch.Reset();
         selectionStopwatch.Start();
 
-        Debug.Log($"Entering selecting state with hand {selectingHand.handType}!");
+        Debug.Log($"Entering selecting state");
     }
 
     private void EndSelection()
     {
-        int handIndex = _selectingHand.handType == SteamVR_Input_Sources.LeftHand ? 0 : 1;
-        var endPosition = _handTransforms[handIndex].position;
+        var endPosition = _handTransforms[PrimaryHandIndex].position;
 
-        _selectingHand = null;
         _isSelecting = false;
 
         selectionStopwatch.Stop();
@@ -355,9 +464,10 @@ public class VolumeInputController : MonoBehaviour
         _lineRotationAxes.points3[2] = _startGripCenter + Vector3.up * 0.1f;
         _lineRotationAxes.active = true;
 
-        if (_scalingTextComponent)
+        if (_handInfoComponents != null)
         {
-            _scalingTextComponent.enabled = true;
+            _handInfoComponents[PrimaryHandIndex].enabled = true;
+            _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
         }
     }
 
@@ -367,9 +477,10 @@ public class VolumeInputController : MonoBehaviour
         _lineRotationAxes.active = false;
         _lineAxisSeparation.active = false;
 
-        if (_scalingTextComponent)
+        if (_handInfoComponents != null)
         {
-            _scalingTextComponent.enabled = false;
+            _handInfoComponents[PrimaryHandIndex].enabled = false;
+            _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
         }
     }
 
@@ -392,6 +503,12 @@ public class VolumeInputController : MonoBehaviour
                 break;
             case LocomotionState.Idle:
                 UpdateIdle();
+                break;
+            case LocomotionState.EditingThresholdMax:
+                UpdateEditingThreshold(true);
+                break;
+            case LocomotionState.EditingThresholdMin:
+                UpdateEditingThreshold(false);
                 break;
         }
 
@@ -577,6 +694,42 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
+    private void UpdateEditingThreshold(bool editingMax)
+    {
+        var controllerHeight = _hands[PrimaryHandIndex].transform.position.y;
+        var delta = controllerHeight - _previousControllerHeight;
+        _previousControllerHeight = controllerHeight;
+
+        string cursorString = "";
+        
+        foreach (var dataSet in _volumeDataSets)
+        {
+            if (editingMax)
+            {
+                var newValue = dataSet.ThresholdMax + delta;
+                dataSet.ThresholdMax = Mathf.Clamp(newValue, dataSet.ThresholdMin, 1);
+            }
+            else
+            {
+                var newValue = dataSet.ThresholdMin + delta;
+                dataSet.ThresholdMin = Mathf.Clamp(newValue, 0, dataSet.ThresholdMax);
+            }
+
+            var range = dataSet.ScaleMax - dataSet.ScaleMin;
+            var effectiveMin = dataSet.ScaleMin + dataSet.ThresholdMin * range;
+            var effectiveMax = dataSet.ScaleMin + dataSet.ThresholdMax * range;
+            cursorString = $"Min: {effectiveMin.ToString("0.###E+000").PadLeft(11)} ({(dataSet.ThresholdMin * 100):0.0}%)\n";
+            cursorString += $"Max: {effectiveMax.ToString("0.###E+000").PadLeft(11)} ({(dataSet.ThresholdMax * 100):0.0}%)";
+        }
+        
+        if (_handInfoComponents != null)
+        {
+            _handInfoComponents[PrimaryHandIndex].enabled = true;
+            _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
+            _handInfoComponents[PrimaryHandIndex].text = cursorString;
+        }
+    }
+
     private void UpdateIdle()
     {
         if (_volumeDataSets == null)
@@ -590,14 +743,25 @@ public class VolumeInputController : MonoBehaviour
 
             foreach (var dataSet in _volumeDataSets)
             {
-                dataSet.SetCursorPosition(_handTransforms[0].position);
+                if (_interactionState == InteractionState.PaintMode)
+                {
+                    if (_isPainting)
+                    {
+                        dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0);
+                    }
+                    dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, BrushSize);
+                }
+                else
+                {
+                    dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, 1);
+                }
                 if (dataSet.isActiveAndEnabled)
                 {
                     string sourceIndex = "";
                     if (dataSet.CursorSource != 0)
                         sourceIndex = $"Source # {dataSet.CursorSource}";
                     var voxelCoordinate = dataSet.CursorVoxel;
-                    if (voxelCoordinate.x >= 0 && _scalingTextComponent != null)
+                    if (voxelCoordinate.x >= 0 && _handInfoComponents != null)
                     {
                         Vector3Int coordDecimcalPlaces = dataSet.GetDimDecimals();
                         var voxelValue = dataSet.CursorValue;
@@ -610,22 +774,20 @@ public class VolumeInputController : MonoBehaviour
                     }
                 }
             }
-
-            _scalingTextComponent.enabled = true;
-            _scalingTextComponent.text = cursorString;
+            
+            if (_handInfoComponents != null)
+            {
+                _handInfoComponents[PrimaryHandIndex].enabled = true;
+                _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
+                _handInfoComponents[PrimaryHandIndex].text = cursorString;
+            }
         }
     }
 
     private void UpdateSelecting()
     {
-        if (_selectingHand == null)
-        {
-            return;
-        }
-
         string cursorString = "";
-        int handIndex = _selectingHand.handType == SteamVR_Input_Sources.LeftHand ? 0 : 1;
-        var endPosition = _handTransforms[handIndex].position;
+        var endPosition = _handTransforms[PrimaryHandIndex].position;
 
         foreach (var dataSet in _volumeDataSets)
         {
@@ -639,8 +801,12 @@ public class VolumeInputController : MonoBehaviour
             }
         }
 
-        _scalingTextComponent.enabled = true;
-        _scalingTextComponent.text = cursorString;
+        if (_handInfoComponents != null)
+        {
+            _handInfoComponents[PrimaryHandIndex].enabled = true;
+            _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
+            _handInfoComponents[PrimaryHandIndex].text = cursorString;
+        }
     }
 
 
@@ -657,7 +823,7 @@ public class VolumeInputController : MonoBehaviour
             return VRFamily.Oculus;
         }
 
-        if (vrModel.Contains("vive"))
+        if (vrModel.Contains("vive") || vrModel.Contains("index"))
         {
             return VRFamily.Vive;
         }
@@ -714,5 +880,41 @@ public class VolumeInputController : MonoBehaviour
     public void VibrateController(SteamVR_Input_Sources hand, float duration, float frequency, float amplitude)
     {
         _player.leftHand.hapticAction.Execute(0, duration, frequency, amplitude, hand);
+    }
+
+    public void SetInteractionState(InteractionState interactionState)
+    {
+        // Ignore transitions to same state
+        if (interactionState != _interactionState)
+        {
+            if (interactionState == InteractionState.PaintMode)
+            {
+                StateTransitionSelectionToPaint();
+            }
+            else
+            {
+                StateTransitionPaintToSelection();
+            }
+        }
+    }
+
+    private void StateTransitionSelectionToPaint()
+    {
+        foreach (var dataSet in _volumeDataSets)
+        {
+            // Ensure a mask is present for each dataset
+            dataSet.InitialiseMask();
+            dataSet.DisplayMask = true;
+        }
+        _interactionState = InteractionState.PaintMode;
+    }
+
+    private void StateTransitionPaintToSelection()
+    {
+        _interactionState = InteractionState.SelectionMode;
+        foreach (var dataSet in _volumeDataSets)
+        {
+            dataSet.DisplayMask = false;
+        }
     }
 }
