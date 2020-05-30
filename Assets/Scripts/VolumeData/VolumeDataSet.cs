@@ -115,7 +115,7 @@ namespace VolumeData
             return volumeDataSet;
         }
 
-        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask)
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, int index0 = 0, int index1 = 1, int index2 = 2)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
             volumeDataSet.IsMask = isMask;

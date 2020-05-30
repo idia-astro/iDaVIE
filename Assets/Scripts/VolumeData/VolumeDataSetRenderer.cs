@@ -138,7 +138,6 @@ namespace VolumeData
 
         public bool IsCropped { get; private set; }
 
-        private VolumeInputController _volumeInputController;
 
         public bool RandomVolume = false;
         public int RandomCubeSize = 512;
