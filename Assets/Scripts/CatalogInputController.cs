@@ -453,7 +453,7 @@ public class CatalogInputController : MonoBehaviour
 
     private VRFamily DetermineVRFamily()
     {
-        string vrModel = XRDevice.model.ToLower();
+        string vrModel = InputDevices.GetDeviceAtXRNode(XRNode.Head).name.ToLower();
         if (vrModel.Contains("oculus"))
         {
             return VRFamily.Oculus;
@@ -468,7 +468,7 @@ public class CatalogInputController : MonoBehaviour
             return VRFamily.WindowsMixedReality;
         }
         
-        Debug.Log($"Unknown VR model {XRDevice.model}!");
+        Debug.Log($"Unknown VR model {vrModel}!");
         return VRFamily.Unknown;
     }
 }
