@@ -217,7 +217,7 @@ public class VolumeInputController : MonoBehaviour
             _locomotionState == LocomotionState.EditingThresholdMin ||
              _locomotionState == LocomotionState.EditingZAxis)
         {
-            EndEditing();;
+            EndEditing();
         }
     }
 

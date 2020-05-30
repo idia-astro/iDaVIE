@@ -28,6 +28,9 @@ namespace VolumeData
             public static readonly string EditZAxis = "edit zee axis";
             public static readonly string SaveZAxis = "save zee axis";
             public static readonly string ResetZAxis = "reset zee axis";
+            public static readonly string EditZAxisAlt = "edit zed axis";
+            public static readonly string SaveZAxisAlt = "save zed axis";
+            public static readonly string ResetZAxisAlt = "reset zed axis";
             public static readonly string SaveThreshold = "save threshold";
             public static readonly string ResetThreshold = "reset threshold";
             public static readonly string ResetTransform = "reset transform";
@@ -54,11 +57,13 @@ namespace VolumeData
             public static readonly string BrushErase = "brush erase";
             public static readonly string ShowMaskOutline = "show mask outline";
             public static readonly string HideMaskOutline = "hide mask outline";
-            
-            public static readonly string[] All = { EditThresholdMin, EditThresholdMax, EditZAxis, SaveThreshold, ResetThreshold, ResetTransform, 
-                ColormapPlasma, ColormapRainbow, ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ResetZAxis, SaveZAxis,
-                NextDataSet, PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated,
-                ProjectionMaximum, ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline
+
+            public static readonly string[] All =
+            {
+                EditThresholdMin, EditThresholdMax, EditZAxis, EditZAxisAlt, SaveThreshold, ResetThreshold, ResetTransform, ColormapPlasma, ColormapRainbow, 
+                ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
+                PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
+                ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline
             };
         }
    
@@ -72,7 +77,7 @@ namespace VolumeData
         {
             _dataSets = new List<VolumeDataSetRenderer>();
             _dataSets.AddRange(GetComponentsInChildren<VolumeDataSetRenderer>(true));            
-            _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, ConfidenceLevel.Medium);
+            _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, ConfidenceLevel.Low);
             _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
 
             _speechKeywordRecognizer.Start();
@@ -96,15 +101,15 @@ namespace VolumeData
             {
                 startThresholdEditing(true);
             }
-            else if (args.text == Keywords.EditZAxis)
+            else if (args.text == Keywords.EditZAxis || args.text == Keywords.EditZAxisAlt)
             {
                 startZAxisEditing();
             }
-            else if (args.text == Keywords.SaveZAxis)
+            else if (args.text == Keywords.SaveZAxis || args.text == Keywords.SaveZAxisAlt)
             {
                 endZAxisEditing();
             }
-            else if (args.text == Keywords.ResetZAxis)
+            else if (args.text == Keywords.ResetZAxis || args.text == Keywords.ResetZAxisAlt)
             {
                 resetZAxis();
             }
