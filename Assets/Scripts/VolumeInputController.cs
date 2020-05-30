@@ -750,8 +750,12 @@ public class VolumeInputController : MonoBehaviour
         _previousControllerHeight = controllerHeight;
         foreach (var dataSet in _volumeDataSets)
         {
+            float zxRatio = dataSet.InitialScale.z/dataSet.InitialScale.x;
             var newValue = dataSet.transform.localScale.z + delta;
-            dataSet.transform.localScale = new Vector3(dataSet.transform.localScale.x, dataSet.transform.localScale.y, Mathf.Clamp(newValue, 0.001f, 10)); //TODO: change max to something that scales with dimension ratios
+            dataSet.transform.localScale = new Vector3(dataSet.transform.localScale.x, dataSet.transform.localScale.y, 
+                                                        Mathf.Clamp(newValue,
+                                                                    dataSet.transform.localScale.x * zxRatio * dataSet.ZAxisMinFactor,
+                                                                    dataSet.transform.localScale.x * zxRatio * dataSet.ZAxisMaxFactor));
         }
     }
 

@@ -241,8 +241,9 @@ namespace VolumeData
         public void resetZAxis()
         {
             if (_activeDataSet)
-            {   //TODO: change setting z axis to proper ratio
-                _activeDataSet.transform.localScale = new Vector3(_activeDataSet.transform.localScale.x, _activeDataSet.transform.localScale.y, _activeDataSet.transform.localScale.x);
+            {
+                float zxRatio = _activeDataSet.InitialScale.z / _activeDataSet.InitialScale.x;
+                _activeDataSet.transform.localScale = new Vector3(_activeDataSet.transform.localScale.x, _activeDataSet.transform.localScale.y, zxRatio * _activeDataSet.transform.localScale.x);
             }
         }
 

@@ -99,6 +99,8 @@ namespace VolumeData
         public int ZFactor = 1;
         public float ScaleMax;
         public float ScaleMin;
+        public float ZAxisMaxFactor = 10.0f;
+        public float ZAxisMinFactor = 0.001f;
         public Vector3 SliceMin = Vector3.zero;
         public Vector3 SliceMax = Vector3.one;
 
