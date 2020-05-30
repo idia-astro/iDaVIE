@@ -96,6 +96,7 @@ LightmapSettings:
     m_PVRFilteringAtrousPositionSigmaAO: 1
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
+    m_LightProbeSampleCountMultiplier: 4
   m_LightingDataAsset: {fileID: 0}
   m_UseShadowmask: 1
 --- !u!196 &4
@@ -133,6 +134,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 1851532298}
     m_Modifications:
+    - target: {fileID: 8885129614990983448, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+        type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 8885129616151867811, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
         type: 3}
       propertyPath: m_Name
@@ -193,11 +199,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8885129614990983448, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
-        type: 3}
-      propertyPath: m_Mesh
-      value: 
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c2e4286f4db4a2f4e8c310a78ae178f2, type: 3}
 --- !u!4 &1076865376 stripped
@@ -231,8 +232,9 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1160091284}
   m_Enabled: 1
-  serializedVersion: 9
+  serializedVersion: 10
   m_Type: 1
+  m_Shape: 0
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
   m_Intensity: 1
   m_Range: 10
@@ -331,10 +333,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MaxSteps: 16
   MaximumCubeSizeInMB: 1500
-  MaskMode: 0
   ProjectionMode: 0
   TextureFilter: 0
   Jitter: 1
+  DisplayMask: 0
+  MaskMode: 0
+  MaskVoxelSize: 1
+  MaskVoxelColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.2}
   FoveatedRendering: 1
   FoveationStart: 0.015
   FoveationEnd: 0.326
@@ -353,9 +358,10 @@ MonoBehaviour:
   ScalingContrast: 1
   ScalingAlpha: 1000
   ScalingGamma: 1
-  FileName: Data/SampleData/test_volume.fits
+  FileName: 
   MaskFileName: 
   RayMarchingMaterial: {fileID: 2100000, guid: 6ba52aecfd9234d45b9e33c0da710082, type: 2}
+  MaskMaterial: {fileID: 2100000, guid: 287ca90aafa6d1e439653b9d7378a7d5, type: 2}
   FactorOverride: 0
   XFactor: 1
   YFactor: 1
@@ -366,8 +372,262 @@ MonoBehaviour:
   SliceMax: {x: 0.5, y: 0.5, z: 0.5}
   SelectionSaturateFactor: 0.7
   FeatureSetManagerPrefab: {fileID: 0}
+  _voxelOutline:
+    m_lineVertices: []
+    m_lineUVs: []
+    m_lineColors: []
+    m_lineTriangles: 
+    m_vertexCount: 0
+    m_go: {fileID: 0}
+    m_rectTransform: {fileID: 0}
+    m_color:
+      serializedVersion: 2
+      rgba: 0
+    m_canvasState: 0
+    m_is2D: 0
+    m_points2: []
+    m_points3: []
+    m_pointsCount: 0
+    m_screenPoints: []
+    m_lineWidths: []
+    m_lineWidth: 0
+    m_maxWeldDistance: 0
+    m_distances: []
+    m_name: 
+    m_material: {fileID: 0}
+    m_originalTexture: {fileID: 0}
+    m_texture: {fileID: 0}
+    m_active: 0
+    m_lineType: 0
+    m_capLength: 0
+    m_smoothWidth: 0
+    m_smoothColor: 0
+    m_joins: 0
+    m_isAutoDrawing: 0
+    m_drawStart: 0
+    m_drawEnd: 0
+    m_endPointsUpdate: 0
+    m_useNormals: 0
+    m_useTangents: 0
+    m_normalsCalculated: 0
+    m_tangentsCalculated: 0
+    m_capType: 0
+    m_endCap: 
+    m_useCapColors: 0
+    m_frontColor:
+      serializedVersion: 2
+      rgba: 0
+    m_backColor:
+      serializedVersion: 2
+      rgba: 0
+    m_frontEndCapIndex: 0
+    m_backEndCapIndex: 0
+    m_lineUVBottom: 0
+    m_lineUVTop: 0
+    m_frontCapUVBottom: 0
+    m_frontCapUVTop: 0
+    m_backCapUVBottom: 0
+    m_backCapUVTop: 0
+    m_continuousTexture: 0
+    m_drawTransform: {fileID: 0}
+    m_viewportDraw: 0
+    m_textureScale: 0
+    m_useTextureScale: 0
+    m_textureOffset: 0
+    m_useMatrix: 0
+    m_matrix:
+      e00: 0
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 0
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 0
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 0
+    m_collider: 0
+    m_trigger: 0
+    m_physicsMaterial: {fileID: 0}
+    m_alignOddWidthToPixels: 0
+  _cubeOutline:
+    m_lineVertices: []
+    m_lineUVs: []
+    m_lineColors: []
+    m_lineTriangles: 
+    m_vertexCount: 0
+    m_go: {fileID: 0}
+    m_rectTransform: {fileID: 0}
+    m_color:
+      serializedVersion: 2
+      rgba: 0
+    m_canvasState: 0
+    m_is2D: 0
+    m_points2: []
+    m_points3: []
+    m_pointsCount: 0
+    m_screenPoints: []
+    m_lineWidths: []
+    m_lineWidth: 0
+    m_maxWeldDistance: 0
+    m_distances: []
+    m_name: 
+    m_material: {fileID: 0}
+    m_originalTexture: {fileID: 0}
+    m_texture: {fileID: 0}
+    m_active: 0
+    m_lineType: 0
+    m_capLength: 0
+    m_smoothWidth: 0
+    m_smoothColor: 0
+    m_joins: 0
+    m_isAutoDrawing: 0
+    m_drawStart: 0
+    m_drawEnd: 0
+    m_endPointsUpdate: 0
+    m_useNormals: 0
+    m_useTangents: 0
+    m_normalsCalculated: 0
+    m_tangentsCalculated: 0
+    m_capType: 0
+    m_endCap: 
+    m_useCapColors: 0
+    m_frontColor:
+      serializedVersion: 2
+      rgba: 0
+    m_backColor:
+      serializedVersion: 2
+      rgba: 0
+    m_frontEndCapIndex: 0
+    m_backEndCapIndex: 0
+    m_lineUVBottom: 0
+    m_lineUVTop: 0
+    m_frontCapUVBottom: 0
+    m_frontCapUVTop: 0
+    m_backCapUVBottom: 0
+    m_backCapUVTop: 0
+    m_continuousTexture: 0
+    m_drawTransform: {fileID: 0}
+    m_viewportDraw: 0
+    m_textureScale: 0
+    m_useTextureScale: 0
+    m_textureOffset: 0
+    m_useMatrix: 0
+    m_matrix:
+      e00: 0
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 0
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 0
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 0
+    m_collider: 0
+    m_trigger: 0
+    m_physicsMaterial: {fileID: 0}
+    m_alignOddWidthToPixels: 0
+  _regionOutline:
+    m_lineVertices: []
+    m_lineUVs: []
+    m_lineColors: []
+    m_lineTriangles: 
+    m_vertexCount: 0
+    m_go: {fileID: 0}
+    m_rectTransform: {fileID: 0}
+    m_color:
+      serializedVersion: 2
+      rgba: 0
+    m_canvasState: 0
+    m_is2D: 0
+    m_points2: []
+    m_points3: []
+    m_pointsCount: 0
+    m_screenPoints: []
+    m_lineWidths: []
+    m_lineWidth: 0
+    m_maxWeldDistance: 0
+    m_distances: []
+    m_name: 
+    m_material: {fileID: 0}
+    m_originalTexture: {fileID: 0}
+    m_texture: {fileID: 0}
+    m_active: 0
+    m_lineType: 0
+    m_capLength: 0
+    m_smoothWidth: 0
+    m_smoothColor: 0
+    m_joins: 0
+    m_isAutoDrawing: 0
+    m_drawStart: 0
+    m_drawEnd: 0
+    m_endPointsUpdate: 0
+    m_useNormals: 0
+    m_useTangents: 0
+    m_normalsCalculated: 0
+    m_tangentsCalculated: 0
+    m_capType: 0
+    m_endCap: 
+    m_useCapColors: 0
+    m_frontColor:
+      serializedVersion: 2
+      rgba: 0
+    m_backColor:
+      serializedVersion: 2
+      rgba: 0
+    m_frontEndCapIndex: 0
+    m_backEndCapIndex: 0
+    m_lineUVBottom: 0
+    m_lineUVTop: 0
+    m_frontCapUVBottom: 0
+    m_frontCapUVTop: 0
+    m_backCapUVBottom: 0
+    m_backCapUVTop: 0
+    m_continuousTexture: 0
+    m_drawTransform: {fileID: 0}
+    m_viewportDraw: 0
+    m_textureScale: 0
+    m_useTextureScale: 0
+    m_textureOffset: 0
+    m_useMatrix: 0
+    m_matrix:
+      e00: 0
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 0
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 0
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 0
+    m_collider: 0
+    m_trigger: 0
+    m_physicsMaterial: {fileID: 0}
+    m_alignOddWidthToPixels: 0
+  _volumeInputController: {fileID: 0}
   RandomVolume: 1
   RandomCubeSize: 700
+  started: 0
 --- !u!65 &1201799887
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -395,6 +655,7 @@ MeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
   m_RenderingLayerMask: 4294967295
   m_RendererPriority: 0
   m_Materials:

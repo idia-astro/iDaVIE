@@ -98,7 +98,8 @@ namespace VolumeData
             VolumeDataSet volumeDataSet = new VolumeDataSet();
             //volumeDataSet.IsMask = isMask;
             int cubeSize = xDim * yDim * zDim;
-            IntPtr dataPtr = Marshal.AllocHGlobal(sizeof(float) * cubeSize);
+            IntPtr dataPtr = IntPtr.Zero;
+            dataPtr = Marshal.AllocHGlobal(sizeof(float) * cubeSize);
             float[] generatedData = new float[cubeSize];
             for (int i = 0; i < cubeSize; i++)
             {
@@ -112,6 +113,16 @@ namespace VolumeData
             volumeDataSet.XDimDecimal = xDim.ToString().Length;
             volumeDataSet.YDimDecimal = yDim.ToString().Length;
             volumeDataSet.ZDimDecimal = zDim.ToString().Length;
+            long numberDataPoints = xDim * yDim * zDim;
+            DataAnalysis.FindStats(dataPtr, numberDataPoints, out volumeDataSet.MaxValue, out volumeDataSet.MinValue, out volumeDataSet.MeanValue, out volumeDataSet.StanDev);
+            int histogramSize = Mathf.RoundToInt(Mathf.Sqrt(numberDataPoints));
+            volumeDataSet.Histogram = new int[histogramSize];
+            IntPtr histogramPtr = IntPtr.Zero;
+            volumeDataSet.HistogramBinWidth = (volumeDataSet.MaxValue - volumeDataSet.MinValue) / histogramSize;
+            DataAnalysis.GetHistogram(dataPtr, numberDataPoints, histogramSize, volumeDataSet.MinValue, volumeDataSet.MaxValue, out histogramPtr);
+            Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
+            if (histogramPtr != IntPtr.Zero)
+                DataAnalysis.FreeMemory(histogramPtr);
             return volumeDataSet;
         }
 
@@ -802,9 +813,15 @@ namespace VolumeData
             return status;
         }
 
-        public void CleanUp()
+        public void CleanUp(bool randomCube)
         {
-            FitsReader.FreeMemory(FitsData);
+            if (FitsData != IntPtr.Zero)
+            {
+                if (randomCube)
+                    Marshal.FreeHGlobal(FitsData);
+                else
+                    FitsReader.FreeMemory(FitsData);
+            }
             ExistingMaskBuffer?.Release();
             AddedMaskBuffer?.Release();
         }

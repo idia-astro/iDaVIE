@@ -138,7 +138,7 @@ namespace VolumeData
 
         public bool IsCropped { get; private set; }
 
-
+        [Header("Benchmarking")]
         public bool RandomVolume = false;
         public int RandomCubeSize = 512;
         
@@ -192,11 +192,15 @@ namespace VolumeData
 
         #endregion
 
+        [Header("Miscellaneous")]
         public bool started = false;
 
         public void Start()
         {
-            _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false);
+            if (RandomVolume)
+                _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);
+            else
+                _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false);
 
             _volumeInputController = FindObjectOfType<VolumeInputController>();
             _featureManager = GetComponentInChildren<FeatureSetManager>();
@@ -725,8 +729,8 @@ namespace VolumeData
 
         public void OnDestroy()
         {
-            _dataSet.CleanUp();
-            _maskDataSet?.CleanUp();
+            _dataSet.CleanUp(RandomVolume);
+            _maskDataSet?.CleanUp(false);
         }
 
         private void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes)
