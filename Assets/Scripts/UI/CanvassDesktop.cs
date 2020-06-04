@@ -440,7 +440,6 @@ public class CanvassDesktop : MonoBehaviour
                     _browseMaskFile(FileBrowser.Result);
                     break;
             }
-            //byte[] bytes = FileBrowserHelpers.ReadBytesFromFile(FileBrowser.Result);
         }
 
         yield return null;
@@ -471,7 +470,7 @@ public class CanvassDesktop : MonoBehaviour
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().interactable = true;
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Stats_Button").GetComponent<Button>().interactable = true;
 
-        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().onClick.Invoke();
+        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Stats_Button").GetComponent<Button>().onClick.Invoke();
     }
 
 
