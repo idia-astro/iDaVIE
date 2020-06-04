@@ -176,12 +176,18 @@ public class QuickMenuController : MonoBehaviour
 
     public void OpenPaintMenu()
     {
+        // Prevent painting of downsampled data
+        if (!_activeDataSet.IsFullResolution)
+        {
+            notificationText.GetComponent<Text>().text = "Cannot paint downsampled region";
+            return;
+        }
         paintMenu.transform.SetParent(this.transform.parent,false);
         paintMenu.transform.localPosition = this.transform.localPosition;
         paintMenu.transform.localRotation = this.transform.localRotation;
         paintMenu.transform.localScale = this.transform.localScale;
       
-        this.gameObject.SetActive(false);
+        gameObject.SetActive(false);
         paintMenu.SetActive(true);
     }
 

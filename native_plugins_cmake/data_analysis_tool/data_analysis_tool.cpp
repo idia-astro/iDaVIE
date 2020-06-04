@@ -1,25 +1,8 @@
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <math.h>
-#include <omp.h>
-#include "DebugCpp.h"
+#include "data_analysis_tool.h"
 
 
-#define DllExport __declspec (dllexport)
 
-#define EXIT_SUCCESS 0
-#define EXIT_FAILURE 1
-
-
-	///Insert these three lines to debug directly out to a file:
-		//char* str = new char[70];
-		//freopen("debug.txt", "a", stdout);
-		//printf("%s\n", str);
-
-extern "C"
-{
-	DllExport int FindMaxMin(const float *dataPtr, int64_t numberElements, float *maxResult, float *minResult)
+	int FindMaxMin(const float *dataPtr, int64_t numberElements, float *maxResult, float *minResult)
 	{
 		float maxVal = -std::numeric_limits<float>::max();
 		float minVal = std::numeric_limits<float>::max();
@@ -45,7 +28,7 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int FindStats(const float* dataPtr, int64_t numberElements, float* maxResult, float* minResult, float* meanResult, float* stdDevResult)
+	int FindStats(const float* dataPtr, int64_t numberElements, float* maxResult, float* minResult, float* meanResult, float* stdDevResult)
 	{
 		float maxVal = -std::numeric_limits<float>::max();
 		float minVal = std::numeric_limits<float>::max();
@@ -80,7 +63,7 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int GetVoxelFloatValue(const float *dataPtr, float *voxelValue, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y, int64_t z)
+	int GetVoxelFloatValue(const float *dataPtr, float *voxelValue, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y, int64_t z)
 	{
 		float outValue;
 		if (x > xDim || y > yDim || z > zDim || x < 1 || y < 1 || z < 1)
@@ -91,7 +74,7 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int GetVoxelInt16Value(const int16_t *dataPtr, int16_t *voxelValue, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y, int64_t z)
+	int GetVoxelInt16Value(const int16_t *dataPtr, int16_t *voxelValue, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y, int64_t z)
 	{
 		int16_t outValue;
 		if (x > xDim || y > yDim || z > zDim || x < 1 || y < 1 || z < 1)
@@ -103,7 +86,7 @@ extern "C"
 	}
 	
 	//TODO make compatible with int64_t
-	DllExport int GetXProfile(const float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t y, int64_t z)
+	int GetXProfile(const float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t y, int64_t z)
 	{
 		float* newProfile = new float[xDim];
 		if (y > yDim || z > zDim || y < 1 || z < 1)
@@ -114,7 +97,7 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int GetYProfile(const float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t z)
+	int GetYProfile(const float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t z)
 	{
 		float* newProfile = new float[yDim];
 		if (x > xDim || z > zDim || x < 1 || z < 1)
@@ -126,7 +109,7 @@ extern "C"
 
 	}
 
-	DllExport int GetZProfile(const float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y)
+	int GetZProfile(const float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y)
 	{
 		float* newProfile = new float[xDim];
 		if (x > xDim || y > yDim || x < 1 || y < 1)
@@ -137,7 +120,7 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int DataCropAndDownsample(const float *dataPtr, float **newDataPtr, int64_t dimX, int64_t dimY, int64_t dimZ,
+	int DataCropAndDownsample(const float *dataPtr, float **newDataPtr, int64_t dimX, int64_t dimY, int64_t dimZ,
 		int64_t cropX1, int64_t cropY1, int64_t cropZ1, int64_t cropX2, int64_t cropY2, int64_t cropZ2, int factorX, int factorY, int factorZ)
 	{
 		if (cropX1 > dimX || cropX2 > dimX || cropY1 > dimY || cropY2 > dimY || cropZ1 > dimZ || cropZ2 > dimZ || cropX1 < 1 || cropX2 < 1 || cropY1 < 1 || cropY2 < 1 || cropZ1 < 1 || cropZ2 < 1)
@@ -206,7 +189,7 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 	
-	DllExport int MaskCropAndDownsample(const int16_t *dataPtr, int16_t **newDataPtr, int64_t dimX, int64_t dimY, int64_t dimZ,
+	int MaskCropAndDownsample(const int16_t *dataPtr, int16_t **newDataPtr, int64_t dimX, int64_t dimY, int64_t dimZ,
 		int64_t cropX1, int64_t cropY1, int64_t cropZ1, int64_t cropX2, int64_t cropY2, int64_t cropZ2, int factorX, int factorY, int factorZ)
 	{
 		if (cropX1 > dimX || cropX2 > dimX || cropY1 > dimY || cropY2 > dimY || cropZ1 > dimZ || cropZ2 > dimZ || cropX1 < 1 || cropX2 < 1 || cropY1 < 1 || cropY2 < 1 || cropZ1 < 1 || cropZ2 < 1)
@@ -275,7 +258,7 @@ extern "C"
 		return EXIT_SUCCESS;
 	}
 
-	DllExport int GetHistogram(const float* dataPtr, int64_t numElements, int numBins, float minVal, float maxVal, int** histogram)
+	int GetHistogram(const float* dataPtr, int64_t numElements, int numBins, float minVal, float maxVal, int** histogram)
 	{
 					int* histogramArray = new int[numBins]();
 					int* hist_private;
@@ -315,9 +298,9 @@ extern "C"
 					return EXIT_SUCCESS;
 				}
 
-	DllExport int FreeMemory(void* ptrToDelete)
+	int FreeMemory(void* ptrToDelete)
 	{
-		delete[] ptrToDelete;
+        free(ptrToDelete);
 		return EXIT_SUCCESS;
 	}
-}
+

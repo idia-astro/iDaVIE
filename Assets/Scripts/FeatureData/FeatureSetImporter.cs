@@ -128,7 +128,7 @@ namespace DataFeatures
                     {
                         if (VOTableReader.RowGetColumn(row_ptr, out column_ptr, xyzIndices[i], out status) == 0)
                         {
-                            if (VOTableReader.ColumnGetFloatArray(column_ptr, out float_ptr, out numElements, out status) == 0) ;
+                            if (VOTableReader.ColumnGetFloatArray(column_ptr, out float_ptr, out numElements, out status) == 0)
                             {
                                 if (numElements > 1)
                                 {
@@ -160,7 +160,7 @@ namespace DataFeatures
                         {
                             if (VOTableReader.RowGetColumn(row_ptr, out column_ptr, boxIndices[i], out status) == 0)
                             {
-                                if (VOTableReader.ColumnGetFloatArray(column_ptr, out float_ptr, out numElements, out status) == 0) ;
+                                if (VOTableReader.ColumnGetFloatArray(column_ptr, out float_ptr, out numElements, out status) == 0)
                                 {
                                     if (numElements > 1)
                                     {
@@ -204,7 +204,7 @@ namespace DataFeatures
                     {
                         if (VOTableReader.RowGetColumn(row_ptr, out column_ptr, nameIndex, out status) == 0)
                         {
-                            if (VOTableReader.ColumnGetCharArray(column_ptr, out name_ptr, out numElements, out status) == 0) ;
+                            if (VOTableReader.ColumnGetCharArray(column_ptr, out name_ptr, out numElements, out status) == 0)
                             {
                                 featureSet.FeatureNames[row] = Marshal.PtrToStringAnsi(name_ptr);
                             }

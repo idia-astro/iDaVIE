@@ -1,8 +1,7 @@
-#include "DebugCPP.h"
+#include "DebugCpp.h"
 
 #include<stdio.h>
-#include <string>
-#include <stdio.h>
+#include <string.h>
 #include <sstream>
 
 //-------------------------------------------------------------------

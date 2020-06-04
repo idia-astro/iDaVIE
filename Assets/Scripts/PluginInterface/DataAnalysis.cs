@@ -6,39 +6,39 @@ using UnityEngine;
 
 public class DataAnalysis
 {
-    [DllImport("data_analysis_tool")]
+    [DllImport("liblibdata_analysis_tool")]
     public static extern int FindMaxMin(IntPtr dataPtr, long numberElements, out float maxResult, out float minResult);
 
-    [DllImport("data_analysis_tool")]
+    [DllImport("libdata_analysis_tool")]
     public static extern int FindStats(IntPtr dataPtr, long numberElements, out float maxResult, out float minResult, out float meanResult, out float stdDevResult);
 
-    [DllImport("data_analysis_tool")]
+    [DllImport("libdata_analysis_tool")]
     public static extern int DataCropAndDownsample(IntPtr dataPtr, out IntPtr newDataPtr, long dimX, long dimY, long dimZ, long cropX1, long cropY1, long cropZ1, 
        long cropX2, long cropY2, long cropZ2, int factorX, int factorY, int factorZ);
 
-    [DllImport("data_analysis_tool")]
+    [DllImport("libdata_analysis_tool")]
     public static extern int MaskCropAndDownsample(IntPtr dataPtr, out IntPtr newDataPtr, long dimX, long dimY, long dimZ, long cropX1, long cropY1, long cropZ1,
    long cropX2, long cropY2, long cropZ2, int factorX, int factorY, int factorZ);
 
-    [DllImport("data_analysis_tool")]
+    [DllImport("libdata_analysis_tool")]
     public static extern int GetVoxelFloatValue(IntPtr dataPtr, out float voxelValue, long dimX, long dimY, long dimZ, long x, long y, long z);
 
-    [DllImport("data_analysis_tool")]
+    [DllImport("libdata_analysis_tool")]
     public static extern int GetVoxelInt16Value(IntPtr dataPtr, out Int16 voxelValue, long dimX, long dimY, long dimZ, long x, long y, long z);
 
-    [DllImport("data_analysis_tool")]
+    [DllImport("libdata_analysis_tool")]
     public static extern int GetXProfile(IntPtr dataPtr, out IntPtr profile, long dimX, long dimY, long dimZ, long y, long z);
 
-    [DllImport("data_analysis_tool")]
+    [DllImport("libdata_analysis_tool")]
     public static extern int GetYProfile(IntPtr dataPtr, out IntPtr profile, long dimX, long dimY, long dimZ, long x, long z);
 
-    [DllImport("data_analysis_tool")]
+    [DllImport("libdata_analysis_tool")]
     public static extern int GetZProfile(IntPtr dataPtr, out IntPtr profile, long dimX, long dimY, long dimZ, long x, long y);
 
-    [DllImport("data_analysis_tool")]
+    [DllImport("libdata_analysis_tool")]
     public static extern int GetHistogram(IntPtr dataPtr, long numElements, int numBins, float minVal, float maxVal, out IntPtr histogram);
 
-    [DllImport("data_analysis_tool")]
+    [DllImport("libdata_analysis_tool")]
     public static extern int FreeMemory(IntPtr pointerToDelete);
 
 

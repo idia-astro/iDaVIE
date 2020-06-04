@@ -99,6 +99,8 @@ namespace VolumeData
         public int ZFactor = 1;
         public float ScaleMax;
         public float ScaleMin;
+        public float ZAxisMaxFactor = 10.0f;
+        public float ZAxisMinFactor = 0.001f;
         public Vector3 SliceMin = Vector3.zero;
         public Vector3 SliceMax = Vector3.one;
 
@@ -147,6 +149,10 @@ namespace VolumeData
                 gameObject.transform.localScale = new Vector3(oldScale.x, oldScale.y, value);
             }
         }
+
+        
+        private int _currentXFactor, _currentYFactor, _currentZFactor;
+        public bool IsFullResolution => _currentXFactor * _currentYFactor * _currentZFactor == 1;
 
         public bool IsCropped { get; private set; }
 
@@ -216,6 +222,9 @@ namespace VolumeData
                 _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
             }
             _dataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
+            _currentXFactor = XFactor;
+            _currentYFactor = YFactor;
+            _currentZFactor = ZFactor;
             ScaleMax = _dataSet.MaxValue;
             ScaleMin = _dataSet.MinValue;
             if (!String.IsNullOrEmpty(MaskFileName))
@@ -447,12 +456,13 @@ namespace VolumeData
         {
             Vector3Int deltaRegion = startVoxel - endVoxel;
             Vector3Int regionSize = new Vector3Int(Math.Abs(deltaRegion.x) + 1, Math.Abs(deltaRegion.y) + 1, Math.Abs(deltaRegion.z) + 1);
-            int xFactor, yFactor, zFactor;
-            _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, regionSize.x, regionSize.y, regionSize.z, out xFactor, out yFactor, out zFactor);
-            _dataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel, new Vector3Int(xFactor, yFactor, zFactor));
+            _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, regionSize.x, regionSize.y, regionSize.z, out _currentXFactor, out _currentYFactor,
+                out _currentZFactor);
+            _dataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel, new Vector3Int(_currentXFactor, _currentYFactor, _currentZFactor));
             if (_maskDataSet != null)
             {
-                _maskDataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel, new Vector3Int(xFactor, yFactor, zFactor));
+                _maskDataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel,
+                    new Vector3Int(_currentXFactor, _currentYFactor, _currentZFactor));
             }
         }
 
