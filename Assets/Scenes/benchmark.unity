@@ -332,7 +332,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MaxSteps: 512
-  MaximumCubeSizeInMB: 1500
+  MaximumCubeSizeInMB: 2048
   ProjectionMode: 0
   TextureFilter: 0
   Jitter: 1

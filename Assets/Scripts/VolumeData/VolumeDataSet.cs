@@ -96,16 +96,15 @@ namespace VolumeData
         public static VolumeDataSet LoadRandomFitsCube(float min, float max, int xDim, int yDim, int zDim)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
-            //volumeDataSet.IsMask = isMask;
-            int cubeSize = xDim * yDim * zDim;
+            long numberDataPoints = xDim * yDim * zDim;
             IntPtr dataPtr = IntPtr.Zero;
-            dataPtr = Marshal.AllocHGlobal(sizeof(float) * cubeSize);
-            float[] generatedData = new float[cubeSize];
-            for (int i = 0; i < cubeSize; i++)
+            dataPtr = Marshal.AllocHGlobal(sizeof(float) * (int)numberDataPoints);
+            float[] generatedData = new float[numberDataPoints];
+            for (int i = 0; i < numberDataPoints; i++)
             {
                 generatedData[i] = UnityEngine.Random.Range(min, max);
             }
-            Marshal.Copy(generatedData, 0, dataPtr, cubeSize);
+            Marshal.Copy(generatedData, 0, dataPtr, (int)numberDataPoints);
             volumeDataSet.FitsData = dataPtr;
             volumeDataSet.XDim = xDim;
             volumeDataSet.YDim = yDim;
@@ -113,7 +112,6 @@ namespace VolumeData
             volumeDataSet.XDimDecimal = xDim.ToString().Length;
             volumeDataSet.YDimDecimal = yDim.ToString().Length;
             volumeDataSet.ZDimDecimal = zDim.ToString().Length;
-            long numberDataPoints = xDim * yDim * zDim;
             DataAnalysis.FindStats(dataPtr, numberDataPoints, out volumeDataSet.MaxValue, out volumeDataSet.MinValue, out volumeDataSet.MeanValue, out volumeDataSet.StanDev);
             int histogramSize = Mathf.RoundToInt(Mathf.Sqrt(numberDataPoints));
             volumeDataSet.Histogram = new int[histogramSize];

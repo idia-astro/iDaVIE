@@ -25,7 +25,6 @@ public class BenchmarkManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        //double _timeInSeconds = 0;
         vr = SteamVR.instance;
         if (vr != null)
         {
@@ -54,7 +53,6 @@ public class BenchmarkManager : MonoBehaviour
     {
         if (_running)
         {
-            //float prevAngle = _testVolume.transform.localRotation.eulerAngles.y;
             if (_numberRotations < RotationTimes)
             {
                 float deltaAngle = Time.deltaTime * RotationSpeed;
@@ -70,20 +68,14 @@ public class BenchmarkManager : MonoBehaviour
                         _testVolume.transform.Rotate(deltaAngle, 0, 0, Space.Self);
                         break;
                 }
-                //float currentAngle = _testVolume.transform.localRotation.eulerAngles.y;
-                //float angleChange = Mathf.Abs(currentAngle - prevAngle);
                 _totalAngle += deltaAngle;
-                //Debug.Log("Rotation: " + _totalAngle);
                 _numberRotations = (int)(_totalAngle / 360f);
-                //Debug.Log("Rotation#: " + _numberRotations);
             }
             else
             {
                 _totalAngle = 0;
                 _numberRotations = 0;
                 _testVolume.transform.localEulerAngles = new Vector3(0, -45, 0);
-                //_testVolume.transform.Rotate(0, 0, 90, Space.Self);
-
                 switch (_rotationAxis)
                 {
                     case 0:
@@ -98,9 +90,7 @@ public class BenchmarkManager : MonoBehaviour
                         break;
 
                     case 1:
-                        //_testVolume.transform.Rotate(90, 0, 0, Space.Self);
                         _testVolume.transform.Rotate(0, 90, 90, Space.Self);
-                        //_testVolume.transform.Rotate(0, 180, 0, Space.Self);
                         _rotationAxis++;
                         if (vr != null)
                         {
