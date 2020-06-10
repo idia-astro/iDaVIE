@@ -93,6 +93,37 @@ namespace VolumeData
         public float MeanValue;
         public float StanDev;
 
+        public static VolumeDataSet LoadRandomFitsCube(float min, float max, int xDim, int yDim, int zDim)
+        {
+            VolumeDataSet volumeDataSet = new VolumeDataSet();
+            long numberDataPoints = xDim * yDim * zDim;
+            IntPtr dataPtr = IntPtr.Zero;
+            dataPtr = Marshal.AllocHGlobal(sizeof(float) * (int)numberDataPoints);
+            float[] generatedData = new float[numberDataPoints];
+            for (int i = 0; i < numberDataPoints; i++)
+            {
+                generatedData[i] = UnityEngine.Random.Range(min, max);
+            }
+            Marshal.Copy(generatedData, 0, dataPtr, (int)numberDataPoints);
+            volumeDataSet.FitsData = dataPtr;
+            volumeDataSet.XDim = xDim;
+            volumeDataSet.YDim = yDim;
+            volumeDataSet.ZDim = zDim;
+            volumeDataSet.XDimDecimal = xDim.ToString().Length;
+            volumeDataSet.YDimDecimal = yDim.ToString().Length;
+            volumeDataSet.ZDimDecimal = zDim.ToString().Length;
+            DataAnalysis.FindStats(dataPtr, numberDataPoints, out volumeDataSet.MaxValue, out volumeDataSet.MinValue, out volumeDataSet.MeanValue, out volumeDataSet.StanDev);
+            int histogramSize = Mathf.RoundToInt(Mathf.Sqrt(numberDataPoints));
+            volumeDataSet.Histogram = new int[histogramSize];
+            IntPtr histogramPtr = IntPtr.Zero;
+            volumeDataSet.HistogramBinWidth = (volumeDataSet.MaxValue - volumeDataSet.MinValue) / histogramSize;
+            DataAnalysis.GetHistogram(dataPtr, numberDataPoints, histogramSize, volumeDataSet.MinValue, volumeDataSet.MaxValue, out histogramPtr);
+            Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
+            if (histogramPtr != IntPtr.Zero)
+                DataAnalysis.FreeMemory(histogramPtr);
+            return volumeDataSet;
+        }
+
         public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, int index0 = 0, int index1 = 1, int index2 = 2)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
@@ -780,9 +811,15 @@ namespace VolumeData
             return status;
         }
 
-        public void CleanUp()
+        public void CleanUp(bool randomCube)
         {
-            FitsReader.FreeMemory(FitsData);
+            if (FitsData != IntPtr.Zero)
+            {
+                if (randomCube)
+                    Marshal.FreeHGlobal(FitsData);
+                else
+                    FitsReader.FreeMemory(FitsData);
+            }
             ExistingMaskBuffer?.Release();
             AddedMaskBuffer?.Release();
         }

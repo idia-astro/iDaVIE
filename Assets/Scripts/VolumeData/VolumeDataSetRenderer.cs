@@ -137,28 +137,17 @@ namespace VolumeData
         private VolumeDataSet _dataSet = null;
         private VolumeDataSet _maskDataSet = null;
 
-        public float ZScale
-        {
-            get
-            {
-                return gameObject.transform.localScale.z;
-            }
-            set
-            {
-                Vector3 oldScale = gameObject.transform.localScale;
-                gameObject.transform.localScale = new Vector3(oldScale.x, oldScale.y, value);
-            }
-        }
 
-        
         private int _currentXFactor, _currentYFactor, _currentZFactor;
         public bool IsFullResolution => _currentXFactor * _currentYFactor * _currentZFactor == 1;
 
         public bool IsCropped { get; private set; }
 
-
+        [Header("Benchmarking")]
+        public bool RandomVolume = false;
+        public int RandomCubeSize = 512;
+        
         #region Material Property IDs
-
         private struct MaterialID
         {
             public static readonly int DataCube = Shader.PropertyToID("_DataCube");
@@ -208,11 +197,30 @@ namespace VolumeData
 
         #endregion
 
+        [Header("Miscellaneous")]
         public bool started = false;
+		
+        public float ZScale
+        {
+            get
+            {
+                return gameObject.transform.localScale.z;
+            }
+            set
+            {
+                Vector3 oldScale = gameObject.transform.localScale;
+                gameObject.transform.localScale = new Vector3(oldScale.x, oldScale.y, value);
+            }
+        }
 
+        
         public void Start()
         {
-            _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false);
+            if (RandomVolume)
+                _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);
+            else
+                _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false);
+
             _volumeInputController = FindObjectOfType<VolumeInputController>();
             _featureManager = GetComponentInChildren<FeatureSetManager>();
             if (_featureManager == null)
@@ -744,8 +752,8 @@ namespace VolumeData
 
         public void OnDestroy()
         {
-            _dataSet.CleanUp();
-            _maskDataSet?.CleanUp();
+            _dataSet.CleanUp(RandomVolume);
+            _maskDataSet?.CleanUp(false);
         }
 
         private void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes)
