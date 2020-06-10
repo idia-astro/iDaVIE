@@ -93,7 +93,7 @@ namespace VolumeData
         public float MeanValue;
         public float StanDev;
 
-        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, int index0 = 0, int index1 = 1, int index2 = 2)
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, int index2 = 2, int sliceDim = 1)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
             volumeDataSet.IsMask = isMask;
@@ -102,19 +102,12 @@ namespace VolumeData
             int status = 0;
             int cubeDimensions;
             IntPtr dataPtr = IntPtr.Zero;
-            if (isMask)
+            if (FitsReader.FitsOpenFile(out fptr, fileName, out status, true) != 0)
             {
-                if (FitsReader.FitsOpenFile(out fptr, fileName, out status, true) != 0)
-                {
-                    Debug.Log("Fits open failure... code #" + status.ToString());
-                }
+                Debug.Log("Fits open failure... code #" + status.ToString());
             }
-            else
+            if (!isMask)
             {
-                if (FitsReader.FitsOpenFile(out fptr, fileName, out status, true) != 0)
-                {
-                    Debug.Log("Fits open failure... code #" + status.ToString());
-                }
                 volumeDataSet._headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
                 volumeDataSet.ParseHeaderDict();
             }
@@ -129,17 +122,21 @@ namespace VolumeData
                           " found. Please use Fits cube with at least 3 dimensions.");
                 FitsReader.FitsCloseFile(fptr, out status);
             }
+            if (index2 < 0 || index2 > cubeDimensions - 1)
+            {
+                Debug.Log("Invalid cube slice index!");
+                FitsReader.FitsCloseFile(fptr, out status);
+            }
             if (FitsReader.FitsGetImageSize(fptr, cubeDimensions, out dataPtr, out status) != 0)
             {
                 Debug.Log("Fits Read cube size error #" + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
             }
-
             volumeDataSet.cubeSize = new long[cubeDimensions];
             Marshal.Copy(dataPtr, volumeDataSet.cubeSize, 0, cubeDimensions);
             if (dataPtr != IntPtr.Zero)
                 FitsReader.FreeMemory(dataPtr);
-            long numberDataPoints = volumeDataSet.cubeSize[index0] * volumeDataSet.cubeSize[index1] * volumeDataSet.cubeSize[index2];
+            long numberDataPoints = volumeDataSet.cubeSize[0] * volumeDataSet.cubeSize[1] * volumeDataSet.cubeSize[index2];
             IntPtr fitsDataPtr = IntPtr.Zero;
             if (isMask)
             {
@@ -151,11 +148,39 @@ namespace VolumeData
             }
             else
             {
-                if (FitsReader.FitsReadImageFloat(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
+                int[] startPix = new int[cubeDimensions];
+                int[] finalPix = new int[cubeDimensions];
+                for (var i = 0; i < cubeDimensions; i++)
+                {
+                    startPix[i] = 1;
+                    if (i < 4)
+                        finalPix[i] = (int)volumeDataSet.cubeSize[i];
+                    else
+                        finalPix[i] = 1;
+                }
+                if (index2 == 3)
+                {
+                    startPix[2] = sliceDim;
+                    finalPix[2] = sliceDim;
+                }
+                else if (cubeDimensions > 3)
+                {
+                    startPix[3] = sliceDim;
+                    finalPix[3] = sliceDim;
+                }
+                IntPtr startPixPtr = Marshal.AllocHGlobal(sizeof(int) * startPix.Length);
+                IntPtr finalPixPtr = Marshal.AllocHGlobal(sizeof(int) * finalPix.Length);
+                Marshal.Copy(startPix, 0, startPixPtr, startPix.Length);
+                Marshal.Copy(finalPix, 0, finalPixPtr, finalPix.Length);
+                if (FitsReader.FitsReadSubImageFloat(fptr, cubeDimensions, startPixPtr, finalPixPtr, numberDataPoints, out fitsDataPtr, out status) != 0)
                 {
                     Debug.Log("Fits Read cube data error #" + status.ToString());
                     FitsReader.FitsCloseFile(fptr, out status);
                 }
+                if (startPixPtr == IntPtr.Zero)
+                    Marshal.FreeHGlobal(startPixPtr);
+                if (finalPixPtr == IntPtr.Zero)
+                    Marshal.FreeHGlobal(finalPixPtr);
             }
             FitsReader.FitsCloseFile(fptr, out status);
             if (!isMask)
@@ -171,11 +196,11 @@ namespace VolumeData
                     DataAnalysis.FreeMemory(histogramPtr);
             }
             volumeDataSet.FitsData = fitsDataPtr;
-            volumeDataSet.XDim = volumeDataSet.cubeSize[index0];
-            volumeDataSet.YDim = volumeDataSet.cubeSize[index1];
+            volumeDataSet.XDim = volumeDataSet.cubeSize[0];
+            volumeDataSet.YDim = volumeDataSet.cubeSize[1];
             volumeDataSet.ZDim = volumeDataSet.cubeSize[index2];
-            volumeDataSet.XDimDecimal = volumeDataSet.cubeSize[index0].ToString().Length;
-            volumeDataSet.YDimDecimal = volumeDataSet.cubeSize[index1].ToString().Length;
+            volumeDataSet.XDimDecimal = volumeDataSet.cubeSize[0].ToString().Length;
+            volumeDataSet.YDimDecimal = volumeDataSet.cubeSize[1].ToString().Length;
             volumeDataSet.YDimDecimal = volumeDataSet.cubeSize[index2].ToString().Length;
             volumeDataSet.HeaderDictionary = volumeDataSet._headerDictionary;
             

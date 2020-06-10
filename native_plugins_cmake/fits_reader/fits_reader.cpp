@@ -149,6 +149,20 @@ int FitsReadImageFloat(fitsfile *fptr, int dims, int64_t nelem, float **array, i
     return success;
 }
 
+int FitsReadSubImageFloat(fitsfile *fptr, int dims, long *startPix, long *finalPix, int64_t nelem, float **array, int *status)
+{
+    int anynul;
+    float nulval = 0;
+    float* dataarray = new float[nelem];
+    long* increment = new long[dims];
+    for (int i = 0; i < dims; i++)
+        increment[i] = 1;
+    int success = fits_read_subset(fptr, TFLOAT, startPix, finalPix, increment, &nulval, dataarray, &anynul, status);
+    delete[] increment;
+    *array = dataarray;
+    return success;
+}
+
 int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array, int *status)
 {
     int anynul;
@@ -174,7 +188,7 @@ int CreateEmptyImageInt16(int64_t sizeX, int64_t sizeY, int64_t sizeZ, int16_t**
 
 int FreeMemory(void* ptrToDelete)
 {
-    free(ptrToDelete);
+    delete[] ptrToDelete;
     return 0;
 }
 

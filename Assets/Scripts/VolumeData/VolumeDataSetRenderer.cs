@@ -103,6 +103,8 @@ namespace VolumeData
         public float ZAxisMinFactor = 0.001f;
         public Vector3 SliceMin = Vector3.zero;
         public Vector3 SliceMax = Vector3.one;
+        public int CubeDepthAxis = 2;
+        public int CubeSlice = 1;
 
         public Vector3 InitialPosition { get; private set; }
         public Quaternion InitialRotation { get; private set; }
@@ -197,7 +199,7 @@ namespace VolumeData
 
         public void Start()
         {
-            _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false);
+            _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false, CubeDepthAxis, CubeSlice);
             _volumeInputController = FindObjectOfType<VolumeInputController>();
             _featureManager = GetComponentInChildren<FeatureSetManager>();
             if (_featureManager == null)
