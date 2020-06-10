@@ -204,29 +204,24 @@ public class PaintMenuController : MonoBehaviour
         savePopup.SetActive(false);
     }
 
-    public IEnumerator SaveOverwriteMask()
+    public void SaveOverwriteMask()
     {
-        savePopup.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Saving Maks";
-        yield return new WaitForSeconds(0.001f);
 
-        _activeDataSet?.SaveMask(true);
+        _activeDataSet.SaveMask(true);
 
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
-        savePopup.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = oldSaveText;
         SaveCancel();
     }
 
 
-    public IEnumerator SaveNewMask()
-    {
-        savePopup.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Saving Maks";
-        yield return new WaitForSeconds(0.001f);
+   
 
-        _activeDataSet?.SaveMask(false);
 
+    public void SaveNewMask()
+    { 
+        _activeDataSet.SaveMask(false);
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
-        savePopup.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = oldSaveText;
         SaveCancel();
-
     }
+
 }
