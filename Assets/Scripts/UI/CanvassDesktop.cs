@@ -97,6 +97,8 @@ public class CanvassDesktop : MonoBehaviour
     {
         if (getFirstActiveDataSet() != null)
         {
+
+           ;
             VolumeDataSetRenderer dataSet = getFirstActiveDataSet();
 
             if (minThreshold.value > maxThreshold.value)
@@ -108,6 +110,16 @@ public class CanvassDesktop : MonoBehaviour
             var effectiveMax = dataSet.ScaleMin + dataSet.ThresholdMax * (dataSet.ScaleMax - dataSet.ScaleMin);
             minThresholdLabel.text = effectiveMin.ToString();
             maxThresholdLabel.text = effectiveMax.ToString();
+
+            if(dataSet.ThresholdMin != minThreshold.value)
+            {
+                minThreshold.value = dataSet.ThresholdMin;
+            }
+            if (dataSet.ThresholdMax != maxThreshold.value)
+            {
+                maxThreshold.value = dataSet.ThresholdMax;
+            }
+
 
             if (dataSet.ColorMap != activeColorMap)
             {
