@@ -122,9 +122,9 @@ namespace VolumeData
                           " found. Please use Fits cube with at least 3 dimensions.");
                 FitsReader.FitsCloseFile(fptr, out status);
             }
-            if (index2 < 0 || index2 > cubeDimensions - 1)
+            if (index2 != 2 && index2 != 3)
             {
-                Debug.Log("Invalid cube slice index!");
+                Debug.Log("Depth index must be either 2 or 3." + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
             }
             if (FitsReader.FitsGetImageSize(fptr, cubeDimensions, out dataPtr, out status) != 0)
