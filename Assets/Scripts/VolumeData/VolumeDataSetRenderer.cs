@@ -139,13 +139,16 @@ namespace VolumeData
         private VolumeDataSet _dataSet = null;
         private VolumeDataSet _maskDataSet = null;
 
-
+        private int _currentXFactor, _currentYFactor, _currentZFactor;
+        public bool IsFullResolution => _currentXFactor * _currentYFactor * _currentZFactor == 1;
 
         public bool IsCropped { get; private set; }
 
-
+        [Header("Benchmarking")]
+        public bool RandomVolume = false;
+        public int RandomCubeSize = 512;
+        
         #region Material Property IDs
-
         private struct MaterialID
         {
             public static readonly int DataCube = Shader.PropertyToID("_DataCube");
@@ -195,11 +198,15 @@ namespace VolumeData
 
         #endregion
 
+        [Header("Miscellaneous")]
         public bool started = false;
 
         public void Start()
         {
-            _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false, CubeDepthAxis, CubeSlice);
+            if (RandomVolume)
+                _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);
+            else
+                _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false, CubeDepthAxis, CubeSlice);
             _volumeInputController = FindObjectOfType<VolumeInputController>();
             _featureManager = GetComponentInChildren<FeatureSetManager>();
             if (_featureManager == null)
@@ -209,6 +216,9 @@ namespace VolumeData
                 _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
             }
             _dataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
+            _currentXFactor = XFactor;
+            _currentYFactor = YFactor;
+            _currentZFactor = ZFactor;
             ScaleMax = _dataSet.MaxValue;
             ScaleMin = _dataSet.MinValue;
             if (!String.IsNullOrEmpty(MaskFileName))
@@ -440,12 +450,13 @@ namespace VolumeData
         {
             Vector3Int deltaRegion = startVoxel - endVoxel;
             Vector3Int regionSize = new Vector3Int(Math.Abs(deltaRegion.x) + 1, Math.Abs(deltaRegion.y) + 1, Math.Abs(deltaRegion.z) + 1);
-            int xFactor, yFactor, zFactor;
-            _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, regionSize.x, regionSize.y, regionSize.z, out xFactor, out yFactor, out zFactor);
-            _dataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel, new Vector3Int(xFactor, yFactor, zFactor));
+            _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, regionSize.x, regionSize.y, regionSize.z, out _currentXFactor, out _currentYFactor,
+                out _currentZFactor);
+            _dataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel, new Vector3Int(_currentXFactor, _currentYFactor, _currentZFactor));
             if (_maskDataSet != null)
             {
-                _maskDataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel, new Vector3Int(xFactor, yFactor, zFactor));
+                _maskDataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel,
+                    new Vector3Int(_currentXFactor, _currentYFactor, _currentZFactor));
             }
         }
 
@@ -727,8 +738,8 @@ namespace VolumeData
 
         public void OnDestroy()
         {
-            _dataSet.CleanUp();
-            _maskDataSet?.CleanUp();
+            _dataSet.CleanUp(RandomVolume);
+            _maskDataSet?.CleanUp(false);
         }
 
         private void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes)

@@ -929,6 +929,14 @@ public class VolumeInputController : MonoBehaviour
 
     private void StateTransitionSelectionToPaint()
     {
+        // Prevent transition if volumes aren't full resolution
+        foreach (var dataSet in _volumeDataSets)
+        {
+            if (!dataSet.IsFullResolution)
+            {
+                return;
+            }
+        }
         foreach (var dataSet in _volumeDataSets)
         {
             // Ensure a mask is present for each dataset
