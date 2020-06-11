@@ -9,7 +9,7 @@ namespace UI
         private RectTransform _rectTransform;
         public bool IsDragHandle = false;
         public UserDraggableMenu MenuRoot;
-
+        public bool isPressed;
 
 
         private void Start()

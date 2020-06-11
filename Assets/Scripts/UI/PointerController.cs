@@ -12,6 +12,7 @@ public class PointerController : MonoBehaviour
     public Hand Hand;
     private Button _hoveredElement;
     private UserDraggableMenu _draggingMenu;
+    UserSelectableItem selectableItem = null;
 
     public void Start()
     {
@@ -27,19 +28,24 @@ public class PointerController : MonoBehaviour
 
     private void OnUiInteractionChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
-
       
         // Mouse down
         if (newState)
         {
-           
+            
             if (_hoveredElement)
             {
               
-                UserSelectableItem selectableItem = _hoveredElement.GetComponent<UserSelectableItem>();
+                 selectableItem = _hoveredElement.GetComponent<UserSelectableItem>();
+
+
+
                 if (selectableItem )
                 {
-                   
+
+                    selectableItem.isPressed = true;
+
+
                     if (selectableItem.IsDragHandle && selectableItem.MenuRoot != null)
                     {
                         _draggingMenu = selectableItem.MenuRoot;
@@ -60,6 +66,12 @@ public class PointerController : MonoBehaviour
         // Mouse up
         else
         {
+
+            if (selectableItem)
+            {
+                selectableItem.isPressed = false;
+                selectableItem = null;
+            }
             if (_draggingMenu)
             {
                 _draggingMenu.OnDragEnded();

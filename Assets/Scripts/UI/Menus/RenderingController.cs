@@ -6,6 +6,8 @@ using UnityEngine.UI;
 using Valve.VR;
 using VolumeData;
 
+using Valve.VR.InteractionSystem;
+
 public class RenderingController : MonoBehaviour
 {
 
@@ -23,12 +25,11 @@ public class RenderingController : MonoBehaviour
     int defaultColorIndex = 33;
     int colorIndex = -1;
 
+    public static bool mouseDown;
+    public static bool mouseClick;
+    public float timeMouseDown;
 
-    public enum Hand
-    {
-        Right, Left
-    }
-
+    public Hand Hand;
     void Start()
     {
         colorIndex = defaultColorIndex;
@@ -37,12 +38,13 @@ public class RenderingController : MonoBehaviour
 
 
         LabelColormap.gameObject.GetComponent<Text>().text = ColorMapUtils.FromHashCode(colorIndex) + "";
+        
 
 
     }
 
-    // Update is called once per frame
-    void Update()
+// Update is called once per frame
+void Update()
     {
 
         if (_dataSets != null)
@@ -72,7 +74,34 @@ public class RenderingController : MonoBehaviour
             this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Max_thresholdObject").gameObject.transform.Find("maxThresholdValue").gameObject.GetComponent<Text>().text = (_activeDataSet.ScaleMin + _activeDataSet.ThresholdMax * (_activeDataSet.ScaleMax - _activeDataSet.ScaleMin)).ToString();
         }
 
+        if ( this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Min_thresholdObject").gameObject.transform.Find("ButtonDecreaseMinThreshold").gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
+        {
+            DecreaseMinThreshold();
+        }
+
+        if (this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Min_thresholdObject").gameObject.transform.Find("ButtonIncreaseMinThreshold").gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
+        {
+            IncreaseMinThreshold();
+        }
+
+        if (this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Max_thresholdObject").gameObject.transform.Find("ButtonDecreaseMaxThreshold").gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
+        {
+            DecreaseMaxThreshold();
+        }
+
+        if (this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Max_thresholdObject").gameObject.transform.Find("ButtonIncreaseMaxThreshold").gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
+        {
+            IncreaseMaxThreshold();
+        }
+
+
+
+
     }
+
+
+    
+
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
@@ -167,7 +196,8 @@ public class RenderingController : MonoBehaviour
 
         if (_activeDataSet)
         {
-            _activeDataSet.ThresholdMin = Mathf.Clamp(_activeDataSet.ThresholdMin-0.001f, 0, _activeDataSet.ThresholdMax);
+            
+            _activeDataSet.ThresholdMin = Mathf.Clamp(_activeDataSet.ThresholdMin - 0.001f, 0, _activeDataSet.ThresholdMax);
             SetThreshold();
         }
     }
@@ -214,6 +244,23 @@ public class RenderingController : MonoBehaviour
 
         }
         //featureSetManager.ImportFeatureSet();
+
+    }
+
+ 
+
+    public void OnSelectButtonDecreaseMin()
+    {
+
+        mouseDown = true;
+    }
+    public void OnDeselectButtonDecreaseMin()
+    {
+        Debug.Log("odiddidi");
+       
+        mouseDown = false;
+        mouseClick = false;
+        timeMouseDown = 0;
 
     }
 
