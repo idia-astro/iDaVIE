@@ -300,7 +300,7 @@
 
 	int FreeMemory(void* ptrToDelete)
 	{
-        free(ptrToDelete);
+        delete[] ptrToDelete;
 		return EXIT_SUCCESS;
 	}
 

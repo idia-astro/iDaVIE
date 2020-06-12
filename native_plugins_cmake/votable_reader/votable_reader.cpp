@@ -125,6 +125,6 @@ int ColumnGetCharArray(Column* col_ptr, char*& char_array, int* numELements, int
 
 int FreeMemory(void* ptrToDelete)
 {
-	free(ptrToDelete);
+	delete[] ptrToDelete;
 	return 0;
 }
