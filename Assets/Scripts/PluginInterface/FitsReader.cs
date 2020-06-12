@@ -81,6 +81,9 @@ public class FitsReader
 
     [DllImport("libfits_reader")]
     public static extern int FitsReadImageFloat(IntPtr fptr, int dims, long nelem, out IntPtr array, out int status);
+    
+    [DllImport("libfits_reader")]
+    public static extern int FitsReadSubImageFloat(IntPtr fptr, int dims, IntPtr startPix, IntPtr finalPix, long nelem, out IntPtr array, out int status);
 
     [DllImport("libfits_reader")]
     public static extern int FitsReadImageInt16(IntPtr fptr, int dims, long nelem, out IntPtr array, out int status);
