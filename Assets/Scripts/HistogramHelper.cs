@@ -36,25 +36,6 @@ public class HistogramHelper : MonoBehaviour
 
         var model = new PlotModel { Title = "Histogram " };
 
-
-
-/*        model.Axes.Clear();
-      
-            LogarithmicAxis axisY = new LogarithmicAxis
-            {
-                Position = AxisPosition.Left,
-                Minimum = 0,
-                Maximum=1000000000
-               
-               
-            };
-        axisY.AbsoluteMinimum = 0;
-        axisY.AbsoluteMaximum = 1000000000;
-        model.Axes.Add(axisY);
-        
-        */
-
-
         var s1 = new HistogramSeries { StrokeThickness = 1 };
         var s2 = new HistogramSeries { StrokeThickness = 1, StrokeColor = OxyColors.Green };
 
@@ -75,23 +56,7 @@ public class HistogramHelper : MonoBehaviour
         model.Series.Add(s1);
         //data
         model.Series.Add(s2);
-
-        /*
-        var currentIsLogarithmic = model.Axes[1].GetType() == typeof(LogarithmicAxis);
-        if (currentIsLogarithmic)
-        {
-            model.Axes[1] = new LinearAxis { Position = AxisPosition.Left };
-            model.Axes[1] = new LinearAxis { Position = AxisPosition.Left };
-        }
-        else
-        {
-            model.Axes[1] = new LogarithmicAxis { Position = AxisPosition.Left };
-        }
-        */
-
         model.InvalidatePlot(true);
-
-
         var min_annotation = new LineAnnotation();
         min_annotation.Color = OxyColors.Blue;
         min_annotation.X = min;
@@ -118,5 +83,4 @@ public class HistogramHelper : MonoBehaviour
         histogramMenu.UpdateUI(min, max, sprite);
         canvassDesktop.UpdateUI(min, max, sprite);
     }
-
 }

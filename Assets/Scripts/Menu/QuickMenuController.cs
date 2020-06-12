@@ -193,15 +193,6 @@ public class QuickMenuController : MonoBehaviour
 
     public void OpenHistogramMenu()
     {
-        /*
-        histogramMenu.transform.SetParent(this.transform.parent, false);
-        histogramMenu.transform.localPosition = this.transform.localPosition;
-        histogramMenu.transform.localRotation = this.transform.localRotation;
-        histogramMenu.transform.localScale = this.transform.localScale;
-
-        this.gameObject.SetActive(false);
-        histogramMenu.SetActive(true);
-        */
         histogramMenu.SetActive(!histogramMenu.activeSelf);
     }
 }

@@ -32,20 +32,12 @@ public class PointerController : MonoBehaviour
         // Mouse down
         if (newState)
         {
-            
             if (_hoveredElement)
             {
-              
-                 selectableItem = _hoveredElement.GetComponent<UserSelectableItem>();
-
-
-
+                selectableItem = _hoveredElement.GetComponent<UserSelectableItem>();
                 if (selectableItem )
                 {
-
                     selectableItem.isPressed = true;
-
-
                     if (selectableItem.IsDragHandle && selectableItem.MenuRoot != null)
                     {
                         _draggingMenu = selectableItem.MenuRoot;
@@ -66,7 +58,6 @@ public class PointerController : MonoBehaviour
         // Mouse up
         else
         {
-
             if (selectableItem)
             {
                 selectableItem.isPressed = false;

@@ -7,7 +7,6 @@ using VolumeData;
 
 public class PaintMenuController : MonoBehaviour
 {
-
     public GameObject volumeDatasetRendererObj = null;
     public GameObject notificationText = null;
 
@@ -44,7 +43,6 @@ public class PaintMenuController : MonoBehaviour
             _volumeInputController = FindObjectOfType<VolumeInputController>();
         
         _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.PaintMode);
-
     }
 
     // Update is called once per frame
@@ -64,17 +62,14 @@ public class PaintMenuController : MonoBehaviour
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
-
         foreach (var dataSet in _dataSets)
         {
-
             if (dataSet.isActiveAndEnabled)
             {
                 return dataSet;
             }
         }
         return null;
-
     }
 
     public void ShowOutline()
@@ -213,15 +208,10 @@ public class PaintMenuController : MonoBehaviour
         SaveCancel();
     }
 
-
-   
-
-
     public void SaveNewMask()
     { 
         _activeDataSet.SaveMask(false);
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
         SaveCancel();
     }
-
 }

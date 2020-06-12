@@ -16,8 +16,6 @@ using Valve.VR;
 
 public class CanvassDesktop : MonoBehaviour
 {
-
-
     private VolumeDataSetRenderer[] _volumeDataSets;
     private GameObject volumeDataSetManager;
 
@@ -582,10 +580,7 @@ public class CanvassDesktop : MonoBehaviour
             OpenVR.Shutdown();
 
         Application.Quit();
-
-
     }
-
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
@@ -596,7 +591,6 @@ public class CanvassDesktop : MonoBehaviour
                 return dataSet;
             }
         }
-
         return null;
     }
 
@@ -606,7 +600,6 @@ public class CanvassDesktop : MonoBehaviour
         if (showPopUp)
         {
             GUI.backgroundColor = new Color(1, 0, 0, 1f);
-
             GUI.Window(0, new Rect((Screen.width / 2) - 150, (Screen.height / 2) - 75
                    , 300, 250), ShowGUI, "Invalid Cube");
         }
@@ -616,7 +609,6 @@ public class CanvassDesktop : MonoBehaviour
     {
         // You may put a label to show a message to the player
         GUI.Label(new Rect(65, 40, 300, 250), textPopUp);
-
         // You may put a button to close the pop up too
         if (GUI.Button(new Rect(50, 150, 75, 30), "OK"))
         {
@@ -636,23 +628,17 @@ public class CanvassDesktop : MonoBehaviour
         stats.gameObject.transform.Find("Line_max").gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text = volumeDataSet.MaxValue.ToString();
         stats.gameObject.transform.Find("Line_std").gameObject.transform.Find("Text_std").GetComponent<TextMeshProUGUI>().text = volumeDataSet.StanDev.ToString();
         stats.gameObject.transform.Find("Line_mean").gameObject.transform.Find("Text_mean").GetComponent<TextMeshProUGUI>().text = volumeDataSet.MeanValue.ToString();
-
         histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, volumeDataSet.MinValue, volumeDataSet.MaxValue, volumeDataSet.MeanValue, volumeDataSet.StanDev);
     }
     private void populateColorMapDropdown()
     {
-        //LabelColormap.gameObject.GetComponent<Text>().text = ColorMapUtils.FromHashCode(colorIndex) + "";
-
         renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Colormap_container").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().options.Clear();
 
         foreach (var colorMap in Enum.GetValues(typeof(ColorMapEnum)))
         {
-            //ColorMapUtils.FromHashCode(colorIndex) + ""
             renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Colormap_container").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().options.Add((new TMP_Dropdown.OptionData() { text = colorMap.ToString() }));
         }
-
         renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Colormap_container").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value = 33;
-
     }
 
     public void ChangeColorMap()

@@ -8,20 +8,15 @@ using VolumeData;
 
 public class OptionController : MonoBehaviour
 {
-
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
 
     // Color Map
     public Text LabelHand;
     public GameObject volumeDatasetRendererObj = null;
-
-
-
     int defaultColorIndex = 33;
     int colorIndex = -1;
     int hand = 0;
-
 
     public enum Hand
     {
@@ -33,45 +28,29 @@ public class OptionController : MonoBehaviour
        
         if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
-
-
-       
         LabelHand.gameObject.GetComponent<Text>().text = (Hand)0 + "";
-
-
     }
 
     // Update is called once per frame
     void Update()
     {
-
-        if (_dataSets != null)
-        {
-            //Debug.Log("_dataSets size " + _dataSets.Length);
-        }
-
         var firstActive = getFirstActiveDataSet();
         if (firstActive && _activeDataSet != firstActive)
         {
             _activeDataSet = firstActive;
         }
-
-      
     }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
-
         foreach (var dataSet in _dataSets)
         {
-
             if (dataSet.isActiveAndEnabled)
             {
                 return dataSet;
             }
         }
         return null;
-
     }
 
 
@@ -88,9 +67,5 @@ public class OptionController : MonoBehaviour
             _activeDataSet._volumeInputController.PrimaryHand = SteamVR_Input_Sources.RightHand;
         }
         LabelHand.gameObject.GetComponent<Text>().text = (Hand)hand + "";
-        
-
-
     }
-
 }

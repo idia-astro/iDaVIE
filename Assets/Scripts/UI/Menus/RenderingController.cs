@@ -20,38 +20,21 @@ public class RenderingController : MonoBehaviour
     public Text LabelColormap;
     public GameObject volumeDatasetRendererObj = null;
 
-
-
     int defaultColorIndex = 33;
     int colorIndex = -1;
 
-    public static bool mouseDown;
-    public static bool mouseClick;
-    public float timeMouseDown;
-
-    public Hand Hand;
     void Start()
     {
         colorIndex = defaultColorIndex;
         if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
 
-
         LabelColormap.gameObject.GetComponent<Text>().text = ColorMapUtils.FromHashCode(colorIndex) + "";
-        
-
-
     }
 
 // Update is called once per frame
-void Update()
+	void Update()
     {
-
-        if (_dataSets != null)
-        {
-            //Debug.Log("_dataSets size " + _dataSets.Length);
-        }
-
         var firstActive = getFirstActiveDataSet();
         if (firstActive && _activeDataSet != firstActive)
         {
@@ -66,8 +49,7 @@ void Update()
 
         if ( (_activeDataSet.ScaleMin + _activeDataSet.ThresholdMin * (_activeDataSet.ScaleMax - _activeDataSet.ScaleMin)).ToString() != this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Min_thresholdObject").gameObject.transform.Find("minThresholdValue").gameObject.GetComponent<Text>().text )
         {
-                      this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Min_thresholdObject").gameObject.transform.Find("minThresholdValue").gameObject.GetComponent<Text>().text = (_activeDataSet.ScaleMin + _activeDataSet.ThresholdMin * (_activeDataSet.ScaleMax - _activeDataSet.ScaleMin)).ToString();
-
+            this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Min_thresholdObject").gameObject.transform.Find("minThresholdValue").gameObject.GetComponent<Text>().text = (_activeDataSet.ScaleMin + _activeDataSet.ThresholdMin * (_activeDataSet.ScaleMax - _activeDataSet.ScaleMin)).ToString();
         }
         if ((_activeDataSet.ScaleMin + _activeDataSet.ThresholdMax * (_activeDataSet.ScaleMax - _activeDataSet.ScaleMin)).ToString() != this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Max_thresholdObject").gameObject.transform.Find("maxThresholdValue").gameObject.GetComponent<Text>().text)
         {
@@ -93,29 +75,18 @@ void Update()
         {
             IncreaseMaxThreshold();
         }
-
-
-
-
     }
-
-
-    
-
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
-
         foreach (var dataSet in _dataSets)
         {
-
             if (dataSet.isActiveAndEnabled)
             {
                 return dataSet;
             }
         }
         return null;
-
     }
 
     public void SetNextColorMap()
@@ -157,9 +128,7 @@ void Update()
     }
 
     public void SetThreshold()
-    {
-
-       
+    {     
         if (_activeDataSet)
         {
             this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Min_thresholdObject").gameObject.transform.Find("minThresholdValue").gameObject.GetComponent<Text>().text = (_activeDataSet.ScaleMin + _activeDataSet.ThresholdMin * (_activeDataSet.ScaleMax - _activeDataSet.ScaleMin)).ToString();
@@ -167,11 +136,8 @@ void Update()
         }
     }
 
-
     public void IncreaseMinThreshold()
     {
-
-
         if (_activeDataSet)
         {
             _activeDataSet.ThresholdMin = Mathf.Clamp(_activeDataSet.ThresholdMin + 0.001f, 0, _activeDataSet.ThresholdMax);
@@ -181,8 +147,6 @@ void Update()
 
     public void IncreaseMaxThreshold()
     {
-
-
         if (_activeDataSet)
         {
             _activeDataSet.ThresholdMax = Mathf.Clamp(_activeDataSet.ThresholdMax + 0.001f, _activeDataSet.ThresholdMin, 1);
@@ -192,11 +156,8 @@ void Update()
 
     public void DecreaseMinThreshold()
     {
-
-
         if (_activeDataSet)
         {
-            
             _activeDataSet.ThresholdMin = Mathf.Clamp(_activeDataSet.ThresholdMin - 0.001f, 0, _activeDataSet.ThresholdMax);
             SetThreshold();
         }
@@ -204,8 +165,6 @@ void Update()
 
     public void DecreaseMaxThreshold()
     {
-
-
         if (_activeDataSet)
         {
             _activeDataSet.ThresholdMax = Mathf.Clamp(_activeDataSet.ThresholdMax-0.001f, _activeDataSet.ThresholdMin, 1);
@@ -213,16 +172,12 @@ void Update()
         }
     }
 
-
-
-
     public void ResetMinThreshold()
     {
         if (_activeDataSet)
         {
             _activeDataSet.ThresholdMin = _activeDataSet.InitialThresholdMin;
             this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Min_thresholdObject").gameObject.transform.Find("minThresholdValue").gameObject.GetComponent<Text>().text = _activeDataSet.ThresholdMin.ToString();
-
         }
     }
 
@@ -232,38 +187,11 @@ void Update()
         this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Max_thresholdObject").gameObject.transform.Find("maxThresholdValue").gameObject.GetComponent<Text>().text = _activeDataSet.ThresholdMax.ToString();
     }
 
-
-
-
-        public void LoadFeature()
+    public void LoadFeature()
     {
-
         if (_activeDataSet)
         {
             _activeDataSet.GetComponentInChildren<FeatureSetManager>().ImportFeatureSet();
-
         }
-        //featureSetManager.ImportFeatureSet();
-
     }
-
- 
-
-    public void OnSelectButtonDecreaseMin()
-    {
-
-        mouseDown = true;
-    }
-    public void OnDeselectButtonDecreaseMin()
-    {
-        Debug.Log("odiddidi");
-       
-        mouseDown = false;
-        mouseClick = false;
-        timeMouseDown = 0;
-
-    }
-
-
-
 }
