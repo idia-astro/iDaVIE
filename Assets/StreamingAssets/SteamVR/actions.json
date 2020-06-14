@@ -2,18 +2,19 @@
   "actions": [
     {
       "name": "/actions/default/in/InteractUI",
-      "type": "boolean",
-      "requirement": "mandatory"
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/default/in/Teleport",
+      "type": "boolean"
     },
     {
       "name": "/actions/default/in/GrabPinch",
-      "type": "boolean",
-      "requirement": "mandatory"
+      "type": "boolean"
     },
     {
       "name": "/actions/default/in/GrabGrip",
-      "type": "boolean",
-      "requirement": "mandatory"
+      "type": "boolean"
     },
     {
       "name": "/actions/default/in/Pose",
@@ -28,6 +29,25 @@
       "name": "/actions/default/in/SkeletonRightHand",
       "type": "skeleton",
       "skeleton": "/skeleton/hand/right"
+    },
+    {
+      "name": "/actions/default/in/Squeeze",
+      "type": "vector1",
+      "requirement": "optional"
+    },
+    {
+      "name": "/actions/default/in/HeadsetOnHead",
+      "type": "boolean",
+      "requirement": "optional"
+    },
+    {
+      "name": "/actions/default/in/SnapTurnLeft",
+      "type": "boolean",
+      "requirement": "suggested"
+    },
+    {
+      "name": "/actions/default/in/SnapTurnRight",
+      "type": "boolean"
     },
     {
       "name": "/actions/default/in/MenuDown",
@@ -57,11 +77,52 @@
     {
       "name": "/actions/default/out/Haptic",
       "type": "vibration"
+    },
+    {
+      "name": "/actions/platformer/in/Move",
+      "type": "vector2"
+    },
+    {
+      "name": "/actions/platformer/in/Jump",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/buggy/in/Steering",
+      "type": "vector2"
+    },
+    {
+      "name": "/actions/buggy/in/Throttle",
+      "type": "vector1"
+    },
+    {
+      "name": "/actions/buggy/in/Brake",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/buggy/in/Reset",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/mixedreality/in/ExternalCamera",
+      "type": "pose",
+      "requirement": "optional"
     }
   ],
   "action_sets": [
     {
       "name": "/actions/default",
+      "usage": "single"
+    },
+    {
+      "name": "/actions/platformer",
+      "usage": "single"
+    },
+    {
+      "name": "/actions/buggy",
+      "usage": "single"
+    },
+    {
+      "name": "/actions/mixedreality",
       "usage": "single"
     }
   ],
@@ -81,23 +142,55 @@
     {
       "controller_type": "holographic_controller",
       "binding_url": "bindings_holographic_controller.json"
+    },
+    {
+      "controller_type": "vive_cosmos_controller",
+      "binding_url": "bindings_vive_cosmos_controller.json"
+    },
+    {
+      "controller_type": "vive_cosmos",
+      "binding_url": "binding_vive_cosmos.json"
+    },
+    {
+      "controller_type": "vive",
+      "binding_url": "binding_vive.json"
+    },
+    {
+      "controller_type": "indexhmd",
+      "binding_url": "binding_index_hmd.json"
+    },
+    {
+      "controller_type": "vive_pro",
+      "binding_url": "binding_vive_pro.json"
+    },
+    {
+      "controller_type": "rift",
+      "binding_url": "binding_rift.json"
+    },
+    {
+      "controller_type": "holographic_hmd",
+      "binding_url": "binding_holographic_hmd.json"
+    },
+    {
+      "controller_type": "vive_tracker_camera",
+      "binding_url": "binding_vive_tracker_camera.json"
     }
   ],
   "localization": [
     {
       "language_tag": "en_US",
-      "/actions/default/in/InteractUI": "Interact With UI",
-      "/actions/default/in/GrabPinch": "Grab Pinch",
       "/actions/default/in/GrabGrip": "Grab Grip",
+      "/actions/default/in/GrabPinch": "Grab Pinch",
+      "/actions/default/in/HeadsetOnHead": "Headset on head (proximity sensor)",
+      "/actions/default/in/InteractUI": "Interact With UI",
+      "/actions/default/in/Pose": "Pose",
       "/actions/default/in/SkeletonLeftHand": "Skeleton (Left)",
       "/actions/default/in/SkeletonRightHand": "Skeleton (Right)",
-      "/actions/default/in/Pose": "Pose",
+      "/actions/default/in/Teleport": "Teleport",
       "/actions/default/out/Haptic": "Haptic",
-      "/actions/default/in/MenuDown": "Menu Down",
-      "/actions/default/in/MenuUp": "Menu Up",
-      "/actions/default/in/MenuLeft": "Menu Left",
-      "/actions/default/in/MenuRight": "Menu Right",
-      "/actions/default/in/QuickMenu": "QuickMenu"
+      "/actions/platformer/in/Jump": "Jump",
+      "/actions/default/in/SnapTurnLeft": "Snap Turn (Left)",
+      "/actions/default/in/SnapTurnRight": "Snap Turn (Right)"
     }
   ]
 }

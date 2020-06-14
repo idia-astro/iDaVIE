@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Windows.Speech;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
@@ -10,6 +12,8 @@ namespace VolumeData
 {
     public class VolumeSpeechController : MonoBehaviour
     {
+        public GameObject mainCanvassDesktop;
+
         public VolumeInputController VolumeInputController;
         public QuickMenuController QuickMenuController;
         public PaintMenuController PaintMenuController;
@@ -239,7 +243,12 @@ namespace VolumeData
             if (_activeDataSet)
             {
                 _activeDataSet.ThresholdMin = _activeDataSet.InitialThresholdMin;
+                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_min")
+                .gameObject.transform.Find("Slider").GetComponent<Slider>().value = _activeDataSet.ThresholdMin;
+
                 _activeDataSet.ThresholdMax = _activeDataSet.InitialThresholdMax;
+                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max")
+                .gameObject.transform.Find("Slider").GetComponent<Slider>().value = _activeDataSet.ThresholdMax;
             }
         }
 
@@ -260,6 +269,12 @@ namespace VolumeData
         public void endThresholdEditing()
         {
             _volumeInputController.EndEditing();
+
+            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_min")
+                .gameObject.transform.Find("Slider").GetComponent<Slider>().value = _activeDataSet.ThresholdMin;
+            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max")
+                .gameObject.transform.Find("Slider").GetComponent<Slider>().value = _activeDataSet.ThresholdMax;
+            _volumeInputController.EndEditing();
         }
 
         public void startZAxisEditing()
@@ -279,6 +294,10 @@ namespace VolumeData
                 _activeDataSet.transform.position = _activeDataSet.InitialPosition;
                 _activeDataSet.transform.rotation = _activeDataSet.InitialRotation;
                 _activeDataSet.transform.localScale = _activeDataSet.InitialScale;
+
+                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel")
+                    .gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings")
+                    .gameObject.transform.Find("Ratio_container").gameObject.transform.Find("Ratio_Dropdown").GetComponent<TMP_Dropdown>().value = 0;
             }
         }
 

@@ -139,6 +139,7 @@ namespace VolumeData
         private VolumeDataSet _dataSet = null;
         private VolumeDataSet _maskDataSet = null;
 
+
         private int _currentXFactor, _currentYFactor, _currentZFactor;
         public bool IsFullResolution => _currentXFactor * _currentYFactor * _currentZFactor == 1;
 
@@ -200,7 +201,21 @@ namespace VolumeData
 
         [Header("Miscellaneous")]
         public bool started = false;
+		
+        public float ZScale
+        {
+            get
+            {
+                return gameObject.transform.localScale.z;
+            }
+            set
+            {
+                Vector3 oldScale = gameObject.transform.localScale;
+                gameObject.transform.localScale = new Vector3(oldScale.x, oldScale.y, value);
+            }
+        }
 
+        
         public void Start()
         {
             if (RandomVolume)
