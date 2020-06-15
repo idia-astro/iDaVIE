@@ -269,7 +269,6 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnQuickMenuChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
-        Debug.Log(fromSource);
         // Menu is only available on the second hand
         if (fromSource == PrimaryHand)
         {

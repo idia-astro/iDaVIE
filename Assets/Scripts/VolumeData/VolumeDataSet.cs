@@ -14,8 +14,8 @@ namespace VolumeData
 {
     public struct VoxelEntry
     {
-        public int Index;
-        public int Value;
+        public readonly int Index;
+        public readonly int Value;
 
         public VoxelEntry(int index, int value)
         {
@@ -23,8 +23,8 @@ namespace VolumeData
             this.Value = value;
         }
 
-        public static Comparer<VoxelEntry> IndexComparer = Comparer<VoxelEntry>.Create(
-            (a, b) => a.Index > b.Index ? 1 : a.Index < b.Index ? -1 : 0
+        public static readonly Comparer<VoxelEntry> IndexComparer = Comparer<VoxelEntry>.Create(
+            (a, b) => a.Index - b.Index
         );
     }
 
@@ -839,7 +839,6 @@ namespace VolumeData
 
         public void FlushBrushStroke()
         {
-            Debug.Log($"Brush stroke: New Value: {CurrentBrushStroke.NewValue}; {CurrentBrushStroke.Voxels.Count} voxels");
             ConsolidateMaskEntries();
             BrushStrokeHistory.Add(CurrentBrushStroke);
             CurrentBrushStroke = new BrushStrokeTransaction(CurrentBrushStroke.NewValue);

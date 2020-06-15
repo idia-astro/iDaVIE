@@ -41,7 +41,7 @@ VertexShaderOutput vsMask(uint id : SV_VertexID)
     VoxelEntry entry = MaskEntries[id];
     
     int value = entry.value % 32768;
-    int activeEdges = entry.value / 32768;
+    int activeEdges = (entry.value - value) / 32768;
         
     if (!activeEdges || !value)
     {
@@ -49,14 +49,13 @@ VertexShaderOutput vsMask(uint id : SV_VertexID)
     }
     
     output.value = entry.value;
-    float i = entry.index;
-    float3 voxelIndices;
-    
-    voxelIndices.x = i % RegionDimensions.x;
-    float j = (i - voxelIndices.x) / RegionDimensions.x;
-    voxelIndices.y = j % RegionDimensions.y;
-    voxelIndices.z = (j - voxelIndices.y) / RegionDimensions.y;
-    
+    uint3 regDims = RegionDimensions;
+    uint3 voxelIndices;
+    uint i = entry.index; 
+    voxelIndices.x = i % regDims.x;    
+    uint j = (i - voxelIndices.x) / regDims.x;
+    voxelIndices.y = j % regDims.y;    
+    voxelIndices.z = (j - voxelIndices.y) / regDims.y;
     float3 voxelLocation = (RegionOffset + voxelIndices - 0.5) / CubeDimensions.xyz - 0.5;   
          
     // Transform position from local space to screen space    
