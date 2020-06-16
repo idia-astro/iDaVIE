@@ -248,6 +248,8 @@ public class CanvassDesktop : MonoBehaviour
                     {
                         loadable = true;
                     }
+                    else
+                        informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.SetActive(true);
                 }
 
                 //update dropdow

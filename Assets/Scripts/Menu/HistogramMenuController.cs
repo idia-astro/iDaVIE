@@ -14,11 +14,13 @@ public class HistogramMenuController : MonoBehaviour
 
     [SerializeField] private Image img;
 
-    [SerializeField] private Slider minSlider;
-    [SerializeField] private InputField minText;
+    [SerializeField] private Button DecreaseMinScaleButton;
+    [SerializeField] private Button IncreaseMinScaleButton;
+    [SerializeField] private Text minText;
 
-    [SerializeField] private Slider maxSlider;
-    [SerializeField] private InputField maxText;
+    [SerializeField] private Button DecreaseMaxScaleButton;
+    [SerializeField] private Button IncreaseMaxScaleButton;
+    [SerializeField] private Text maxText;
 
     // Start is called before the first frame update
     void Start()
@@ -32,17 +34,35 @@ public class HistogramMenuController : MonoBehaviour
             if (getFirstActiveDataSet() != null)
             {
                 VolumeDataSet dataSet = getFirstActiveDataSet().GetDatsSet();
-                minSlider.minValue = dataSet.MinValue;
-                minSlider.maxValue = dataSet.MaxValue;
-                minSlider.value = histogramHelper.CurrentMin;
-                minText.text = minSlider.value.ToString();
-
-                maxSlider.minValue = dataSet.MinValue;
-                maxSlider.maxValue = dataSet.MaxValue;
-                maxSlider.value = histogramHelper.CurrentMax;
-                maxText.text = maxSlider.value.ToString();
+             
+                minText.text = histogramHelper.CurrentMin.ToString();  
+                maxText.text = histogramHelper.CurrentMax.ToString();
             }
         }
+    }
+
+    void Update()
+    {
+        if (DecreaseMinScaleButton.gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
+        {
+           minText.text = Mathf.Clamp(float.Parse(minText.text) - 0.01f, getFirstActiveDataSet().GetDatsSet().MinValue* 2, float.Parse(maxText.text)).ToString(); 
+        }
+
+        if (DecreaseMaxScaleButton.gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
+        {
+            maxText.text = Mathf.Clamp(float.Parse(maxText.text) - 0.01f, float.Parse(minText.text), getFirstActiveDataSet().GetDatsSet().MaxValue* 2).ToString();
+        }
+
+        if (IncreaseMinScaleButton.gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
+        {
+            minText.text = Mathf.Clamp(float.Parse(minText.text) + 0.01f, getFirstActiveDataSet().GetDatsSet().MinValue * 2, float.Parse(maxText.text)).ToString();
+        }
+
+        if (IncreaseMaxScaleButton.gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
+        {
+            maxText.text = Mathf.Clamp(float.Parse(maxText.text) + 0.01f, float.Parse(minText.text), getFirstActiveDataSet().GetDatsSet().MaxValue * 2).ToString();
+        }
+
     }
 
     public void MinSliderHandler(float value)
@@ -57,8 +77,8 @@ public class HistogramMenuController : MonoBehaviour
 
     public void UpdateButtonHandler()
     {
-        VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().GetDatsSet(), minSlider.value, maxSlider.value);
-        histogramHelper.CreateHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram, getFirstActiveDataSet().GetDatsSet().HistogramBinWidth, minSlider.value, maxSlider.value, getFirstActiveDataSet().GetDatsSet().MeanValue, getFirstActiveDataSet().GetDatsSet().StanDev);
+      VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().GetDatsSet(), float.Parse(minText.text), float.Parse(maxText.text));
+      histogramHelper.CreateHistogramImg(getFirstActiveDataSet().GetDatsSet().Histogram, getFirstActiveDataSet().GetDatsSet().HistogramBinWidth, float.Parse(minText.text), float.Parse(maxText.text), getFirstActiveDataSet().GetDatsSet().MeanValue, getFirstActiveDataSet().GetDatsSet().StanDev);
     }
 
     public void ResetButtonHandler()
@@ -69,9 +89,7 @@ public class HistogramMenuController : MonoBehaviour
 
     public void UpdateUI(float min, float max, Sprite img)
     {
-        minSlider.value = min;
         minText.text = min.ToString();
-        maxSlider.value = max;
         maxText.text = max.ToString();
         this.img.sprite = img;
     }
