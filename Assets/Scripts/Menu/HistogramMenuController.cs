@@ -34,17 +34,8 @@ public class HistogramMenuController : MonoBehaviour
             if (getFirstActiveDataSet() != null)
             {
                 VolumeDataSet dataSet = getFirstActiveDataSet().GetDatsSet();
-                /*minSlider.minValue = dataSet.MinValue;
-                minSlider.maxValue = dataSet.MaxValue;
-                minSlider.value = histogramHelper.CurrentMin;
-                minText.text = minSlider.value.ToString();
-                */
-                minText.text = histogramHelper.CurrentMin.ToString();
-
-               /* maxSlider.minValue = dataSet.MinValue;
-                maxSlider.maxValue = dataSet.MaxValue;
-                maxSlider.value = histogramHelper.CurrentMax;
-        */        
+             
+                minText.text = histogramHelper.CurrentMin.ToString();  
                 maxText.text = histogramHelper.CurrentMax.ToString();
             }
         }
@@ -52,17 +43,6 @@ public class HistogramMenuController : MonoBehaviour
 
     void Update()
     {
-        /*
-
-        if ((_activeDataSet.ScaleMin + _activeDataSet.ThresholdMin * (_activeDataSet.ScaleMax - _activeDataSet.ScaleMin)).ToString() != this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Min_thresholdObject").gameObject.transform.Find("minThresholdValue").gameObject.GetComponent<Text>().text)
-        {
-            this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Min_thresholdObject").gameObject.transform.Find("minThresholdValue").gameObject.GetComponent<Text>().text = (_activeDataSet.ScaleMin + _activeDataSet.ThresholdMin * (_activeDataSet.ScaleMax - _activeDataSet.ScaleMin)).ToString();
-        }
-        if ((_activeDataSet.ScaleMin + _activeDataSet.ThresholdMax * (_activeDataSet.ScaleMax - _activeDataSet.ScaleMin)).ToString() != this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Max_thresholdObject").gameObject.transform.Find("maxThresholdValue").gameObject.GetComponent<Text>().text)
-        {
-            this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Max_thresholdObject").gameObject.transform.Find("maxThresholdValue").gameObject.GetComponent<Text>().text = (_activeDataSet.ScaleMin + _activeDataSet.ThresholdMax * (_activeDataSet.ScaleMax - _activeDataSet.ScaleMin)).ToString();
-        }
-        */
         if (DecreaseMinScaleButton.gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
         {
            minText.text = Mathf.Clamp(float.Parse(minText.text) - 0.01f, getFirstActiveDataSet().GetDatsSet().MinValue* 2, float.Parse(maxText.text)).ToString(); 
@@ -109,9 +89,7 @@ public class HistogramMenuController : MonoBehaviour
 
     public void UpdateUI(float min, float max, Sprite img)
     {
-       // minSlider.value = min;
         minText.text = min.ToString();
-      //  maxSlider.value = max;
         maxText.text = max.ToString();
         this.img.sprite = img;
     }
