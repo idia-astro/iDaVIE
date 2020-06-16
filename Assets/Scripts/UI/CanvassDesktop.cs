@@ -360,11 +360,8 @@ public class CanvassDesktop : MonoBehaviour
             if (maskNAxis > 2)
             {
                 //Get Axis size from Image Cube
-                int i0 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().value;
-                int i1 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().value;
-                int i2 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value;
-
-                if (axisSize[i0 + 1] == maskAxisSize[1] && axisSize[i1 + 1] == maskAxisSize[2] && axisSize[i2 + 1] == maskAxisSize[3])
+                int i2= int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
+                if (axisSize[1] == maskAxisSize[1] && axisSize[2] == maskAxisSize[2] && axisSize[i2 + 1] == maskAxisSize[3])
                 {
                     loadable = true;
                     informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
@@ -392,11 +389,9 @@ public class CanvassDesktop : MonoBehaviour
         if (maskPath != "")
         {
             //Get Axis size from Image Cube
-            int i0 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().value;
-            int i1 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Y_Dropdown").GetComponent<TMP_Dropdown>().value;
-            int i2 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value;
+            int i2 = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
 
-            if (axisSize[i0 + 1] != maskAxisSize[1] || axisSize[i1 + 1] != maskAxisSize[2] || axisSize[i2 + 1] != maskAxisSize[3])
+            if (axisSize[1] != maskAxisSize[1] || axisSize[2] != maskAxisSize[2] || axisSize[i2 + 1] != maskAxisSize[3])
             {
                 informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("MaskFilePath_text").GetComponent<TextMeshProUGUI>().text = "...";
                 showPopUp = true;
@@ -485,11 +480,10 @@ public class CanvassDesktop : MonoBehaviour
         if (ratioDropdownIndex == 1)
         {
             // case X=Y, calculate z scale from NAXIS1 and NAXIS3
-            int i0 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("X_Dropdown").GetComponent<TMP_Dropdown>().value;
-            int i2 = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value;
+            int i2 = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
 
             double x, z;
-            if (axisSize.TryGetValue(i0 + 1, out x) && axisSize.TryGetValue(i2 + 1, out z))
+            if (axisSize.TryGetValue( 1, out x) && axisSize.TryGetValue(i2 + 1, out z))
             {
                 zScale = (float)(z / x);
             }
