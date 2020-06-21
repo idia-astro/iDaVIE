@@ -14,11 +14,10 @@ Take note of any instructions in the terminal during package update & installati
 
 The cfitsio package needs a special compiler flag, so a patched version of the package is in the `native_plugins_cmake/mingw-w64-cfitsio` directory in the project folder. Navigate here with msys2 (note: the Windows C drive is under /c/ in msys2) and run the following commands:
 ```
+dos2unix.exe ./*
 makepkg-mingw
 pacman -U mingw-w64-x86_64-cfitsio-3.450-1-any.pkg.tar.zst --noconfirm
 ```
-
-If you get an error regarding CRLF, you will need to replace them with LF. [We recommend using Notepad++](http://sql313.com/index.php/43-main-blogs/maincat-dba/62-using-notepad-to-change-end-of-line-characters).
 
 Next, use Windows Powershell to navigate to the native_plugins_cmake directory in the idia_unity_vr folder. Then build the plugins with the following commands:
 ```
