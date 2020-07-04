@@ -3,9 +3,9 @@ Base project for IDIA's VR experiments with VR
 
 No datasets are currently packaged with the repo, to keep the size down to a minimum. In addition, the SteamVR plugin (v2.2.0), TextMeshPro (v1.3.0), Vectrosity (5.6), and [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity/releases/download/v2.0.0/NuGetForUnity.2.0.0.unitypackage) assets need to be added to the project before running.
 
-You should also download and install [msys2](https://www.msys2.org/) and [CMake](https://cmake.org/download/). Remember to add the binary directory `C:\msys64\mingw64\bin` to the system PATH.
+You will need to download and install [msys2](https://www.msys2.org/) and [CMake](https://cmake.org/download/). Remember to add the binary directory `C:\msys64\mingw64\bin` to the system PATH.
 
-Run msys2 and install xalan-c package (and other dependencies needed later) with the following commands:
+Run `MSYS2 MinGW 64-bit` and install xalan-c package (and other dependencies needed later) with the following commands:
 ```
 pacman -Syu --noconfirm
 pacman -S mingw64/mingw-w64-x86_64-xalan-c mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake patch make --noconfirm
