@@ -414,7 +414,7 @@ public class CanvassDesktop : MonoBehaviour
 
         // Show a load file dialog and wait for a response from user
         // Load file/folder: file, Initial path: last path or default (Documents), Title: "Load File", submit button text: "Load"
-        yield return FileBrowser.WaitForLoadDialog(false, lastPath, "Load File", "Load");
+        yield return FileBrowser.WaitForLoadDialog(false, false, lastPath, "Load File", "Load");
 
         // Dialog is closed
         // Print whether a file is chosen (FileBrowser.Success)
@@ -422,7 +422,7 @@ public class CanvassDesktop : MonoBehaviour
 
         if (FileBrowser.Success)
         {
-            PlayerPrefs.SetString("LastPath", Path.GetDirectoryName(FileBrowser.Result));
+            PlayerPrefs.SetString("LastPath", Path.GetDirectoryName(FileBrowser.Result[0]));
             PlayerPrefs.Save();
 
             // If a file was chosen, read its bytes via FileBrowserHelpers
@@ -430,10 +430,10 @@ public class CanvassDesktop : MonoBehaviour
             switch (type)
             {
                 case 0:
-                    _browseImageFile(FileBrowser.Result);
+                    _browseImageFile(FileBrowser.Result[0]);
                     break;
                 case 1:
-                    _browseMaskFile(FileBrowser.Result);
+                    _browseMaskFile(FileBrowser.Result[0]);
                     break;
             }
         }
