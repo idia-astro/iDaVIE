@@ -296,7 +296,7 @@ namespace VolumeData
 
         }
 
-        public VolumeDataSet GetDatsSet()
+        public VolumeDataSet GetDataSet()
         {
             return _dataSet;
         }
