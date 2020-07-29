@@ -659,26 +659,30 @@ public class CanvassDesktop : MonoBehaviour
     
     public void UpdateScaleMin(String min)
     {
-        VolumeDataSet volumeDataSet = getFirstActiveDataSet().GetDatsSet();
+        VolumeDataSetRenderer volumeDataSetRenderer = getFirstActiveDataSet();
+        VolumeDataSet volumeDataSet = volumeDataSetRenderer.GetDatsSet();
         float newMin = float.Parse(min);
         float histMin = newMin;
         float histMax = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_max")
             .gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text);
         float sigma = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_sigma")
             .gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value +1f;
+        volumeDataSetRenderer.ScaleMin = newMin;
         VolumeDataSet.UpdateHistogram(volumeDataSet, histMin, histMax);
         histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, histMin, histMax, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
     }
 
     public void UpdateScaleMax(String max)
     {
-        VolumeDataSet volumeDataSet = getFirstActiveDataSet().GetDatsSet();
+        VolumeDataSetRenderer volumeDataSetRenderer = getFirstActiveDataSet();
+        VolumeDataSet volumeDataSet = volumeDataSetRenderer.GetDatsSet();
         float newMax = float.Parse(max);
         float histMin = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_min")
             .gameObject.transform.Find("InputField_min").GetComponent<TMP_InputField>().text);
         float histMax = newMax;
         float sigma = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_sigma")
             .gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value + 1f;
+        volumeDataSetRenderer.ScaleMax = newMax;
         VolumeDataSet.UpdateHistogram(volumeDataSet, histMin, histMax);
         histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, histMin, histMax, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
     }
