@@ -138,6 +138,7 @@ namespace VolumeData
 
         private VolumeDataSet _dataSet = null;
         private VolumeDataSet _maskDataSet = null;
+        private bool _dirtyMask = false;
 
 
         private int _currentXFactor, _currentYFactor, _currentZFactor;
@@ -618,6 +619,7 @@ namespace VolumeData
             {
                 _previousPaintLocation = coordsRegionSpace;
                 _previousPaintValue = value;
+                _dirtyMask = true;
                 return _maskDataSet.PaintMaskVoxel(coordsRegionSpace, value);
             }
             return true;
@@ -702,6 +704,17 @@ namespace VolumeData
             return volumePosition;
         }
 
+        public void CommitMask()
+        {
+            // Update cropped region and recalculate downsampled cube if it has been updated
+            if (_dirtyMask)
+            {
+                _maskDataSet?.CommitMask();
+                _maskDataSet?.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
+                _dirtyMask = false;
+            }
+        }
+        
         public void SaveMask(bool overwrite)
         {
             if (_maskDataSet == null)
@@ -709,6 +722,8 @@ namespace VolumeData
                 Debug.LogError("Could not find mask data!");
                 return;
             }
+
+            _maskDataSet.CommitMask();
 
             IntPtr cubeFitsPtr;
             int status = 0;
