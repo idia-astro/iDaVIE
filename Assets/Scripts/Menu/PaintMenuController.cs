@@ -139,6 +139,7 @@ public class PaintMenuController : MonoBehaviour
 
     public void ExitPaintMode()
     {
+        _activeDataSet?.CommitMask();
         _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.SelectionMode);
         this.gameObject.SetActive(false);
     }
@@ -196,15 +197,13 @@ public class PaintMenuController : MonoBehaviour
 
     public void SaveCancel()
     {
-
         paintMenu.SetActive(true);
         savePopup.SetActive(false);
     }
 
     public void SaveOverwriteMask()
     {
-
-        _activeDataSet.SaveMask(true);
+        _activeDataSet?.SaveMask(true);
 
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
         SaveCancel();
@@ -212,7 +211,7 @@ public class PaintMenuController : MonoBehaviour
 
     public void SaveNewMask()
     { 
-        _activeDataSet.SaveMask(false);
+        _activeDataSet?.SaveMask(false);
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
         SaveCancel();
     }

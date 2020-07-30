@@ -209,9 +209,8 @@ public class FitsReader
         return status;
     }
 
-    public static int SaveMask(IntPtr fitsPtrHeaderToCopy, IntPtr oldMaskData, long[] oldMaskDims, IntPtr regionData, long[] regionDims, long[] regionStartPix, string fileName)
+    public static bool UpdateMask(IntPtr oldMaskData, long[] oldMaskDims, IntPtr regionData, long[] regionDims, long[] regionStartPix)
     {
-        bool isNewFile = (fileName != null);
         int srcJump = (int)(regionDims[0] * sizeof(short));
         IntPtr srcPtr = regionData;
         for (var z = 0; z < regionDims[2]; z++)
@@ -220,21 +219,28 @@ public class FitsReader
             {
                 long startIndex = (z + regionStartPix[2] - 1) * oldMaskDims[0] * oldMaskDims[1] + (y + regionStartPix[1] - 1) * oldMaskDims[0] + (regionStartPix[0] - 1);
                 if (InsertSubArrayInt16(oldMaskData, oldMaskDims[0] * oldMaskDims[1] * oldMaskDims[2],
-                        srcPtr, regionDims[0], startIndex) != 0)
+                    srcPtr, regionDims[0], startIndex) != 0)
                 {
                     Debug.Log("Error inserting submask into mask data!");
-                    return -1;
+                    return false;
                 }
                 srcPtr = IntPtr.Add(srcPtr, srcJump);
             }
         }
+
+        return true;
+    }
+
+    public static int SaveMask(IntPtr fitsPtrHeaderToCopy, IntPtr maskData, long[] maskDims, string fileName)
+    {
+        bool isNewFile = (fileName != null);
         if (isNewFile)
         {
-            return SaveNewInt16Mask(fitsPtrHeaderToCopy, oldMaskData, oldMaskDims, fileName);
+            return SaveNewInt16Mask(fitsPtrHeaderToCopy, maskData, maskDims, fileName);
         }
         else
         {
-            return UpdateOldInt16Mask(fitsPtrHeaderToCopy, oldMaskData, oldMaskDims);
+            return UpdateOldInt16Mask(fitsPtrHeaderToCopy, maskData, maskDims);
         }
     }   
 }

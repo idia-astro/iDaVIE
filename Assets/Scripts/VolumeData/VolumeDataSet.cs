@@ -877,7 +877,7 @@ namespace VolumeData
             AddedMaskEntryCount = 0;
         }
 
-        public int SaveMask(IntPtr cubeFitsPtr, string filename)
+        public int CommitMask()
         {
             int status = 0;
             if (_regionMaskVoxels == null || _regionMaskVoxels.Length == 0)
@@ -891,19 +891,28 @@ namespace VolumeData
             long[] regionDims = {RegionCube.width, RegionCube.height, RegionCube.depth};
             long[] regionOffset = {RegionOffset.x, RegionOffset.y, RegionOffset.z};
             Marshal.Copy(_regionMaskVoxels, 0, unmanagedCopy, _regionMaskVoxels.Length);
-            status = FitsReader.SaveMask(cubeFitsPtr, FitsData, Dims, unmanagedCopy, regionDims, regionOffset, filename);
-            if (!string.IsNullOrEmpty(filename))
+            if (!FitsReader.UpdateMask(FitsData, Dims, unmanagedCopy, regionDims, regionOffset))
             {
-                // Update filename after stripping out exclamation mark indicating overwrite flag
-                FileName = filename.Replace("!", "");
+                Debug.Log("Error updating mask");
+                return - 1;
             }
 
             if (unmanagedCopy != IntPtr.Zero)
             {
                 Marshal.FreeHGlobal(unmanagedCopy);
-                unmanagedCopy = IntPtr.Zero;
             }
 
+            return status;
+        }
+
+        public int SaveMask(IntPtr cubeFitsPtr, string filename)
+        {
+            int status = FitsReader.SaveMask(cubeFitsPtr, FitsData, Dims, filename);
+            if (!string.IsNullOrEmpty(filename))
+            {
+                // Update filename after stripping out exclamation mark indicating overwrite flag
+                FileName = filename.Replace("!", "");
+            }
             return status;
         }
 
