@@ -17,11 +17,22 @@ public class QuickMenuController : MonoBehaviour
     public GameObject mainMenuCanvas;
     public GameObject paintMenu;
     public GameObject histogramMenu;
+    public GameObject savePopup;
+
 
     int maskstatus=0;
     int cropstatus = 0;
     int featureStatus = 0;
     string oldMaskLoaded = "";
+
+    private VolumeInputController _volumeInputController = null;
+
+
+    public float VibrationDuration = 0.25f;
+    public float VibrationFrequency = 100.0f;
+    public float VibrationAmplitude = 1.0f;
+
+
     // Start is called before the first frame update
     void Start()
     {
@@ -35,6 +46,9 @@ public class QuickMenuController : MonoBehaviour
     {
         if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
+
+        if (_volumeInputController == null)
+            _volumeInputController = FindObjectOfType<VolumeInputController>();
     }
 
     // Update is called once per frame
@@ -45,6 +59,11 @@ public class QuickMenuController : MonoBehaviour
         {
             _activeDataSet = firstActive;
         }
+    }
+
+    public VolumeInputController getVolumeInputController()
+    {
+        return _volumeInputController;
     }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
@@ -195,4 +214,52 @@ public class QuickMenuController : MonoBehaviour
     {
         histogramMenu.SetActive(!histogramMenu.activeSelf);
     }
+
+
+    public void SaveMask()
+    {
+        savePopup.transform.SetParent(this.transform.parent, false);
+        savePopup.transform.localPosition = this.transform.localPosition;
+        savePopup.transform.localRotation = this.transform.localRotation;
+        savePopup.transform.localScale = this.transform.localScale;
+
+
+        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
+        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.RemoveAllListeners();
+        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.RemoveAllListeners();
+
+        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(SaveCancel);
+        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
+        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
+        
+        _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.SelectionMode);
+        this.gameObject.SetActive(false);
+        savePopup.SetActive(true);
+
+    }
+
+    public void SaveCancel()
+    {
+
+        Debug.Log("Cancel");
+        savePopup.SetActive(false);
+    }
+
+    public void SaveOverwriteMask()
+    {
+
+        _activeDataSet.SaveMask(true);
+
+        _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
+        SaveCancel();
+    }
+
+    public void SaveNewMask()
+    {
+        _activeDataSet.SaveMask(false);
+        _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
+        SaveCancel();
+    }
+
+
 }

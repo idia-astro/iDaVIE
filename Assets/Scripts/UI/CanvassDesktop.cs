@@ -50,7 +50,7 @@ public class CanvassDesktop : MonoBehaviour
     private int ratioDropdownIndex = 0;
 
     private ColorMapEnum activeColorMap = ColorMapEnum.None;
-    
+
     private Slider minThreshold;
     private TextMeshProUGUI minThresholdLabel;
 
@@ -72,7 +72,7 @@ public class CanvassDesktop : MonoBehaviour
 
         minThreshold = renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_min").gameObject.transform.Find("Slider").GetComponent<Slider>();
         minThresholdLabel = renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_min").gameObject.transform.Find("Min_label").GetComponent<TextMeshProUGUI>();
-        
+
         maxThreshold = renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max").gameObject.transform.Find("Slider").GetComponent<Slider>();
         maxThresholdLabel = renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max").gameObject.transform.Find("Max_label").GetComponent<TextMeshProUGUI>();
     }
@@ -96,7 +96,7 @@ public class CanvassDesktop : MonoBehaviour
         if (getFirstActiveDataSet() != null)
         {
 
-           ;
+            ;
             VolumeDataSetRenderer dataSet = getFirstActiveDataSet();
 
             if (minThreshold.value > maxThreshold.value)
@@ -109,7 +109,7 @@ public class CanvassDesktop : MonoBehaviour
             minThresholdLabel.text = effectiveMin.ToString();
             maxThresholdLabel.text = effectiveMax.ToString();
 
-            if(dataSet.ThresholdMin != minThreshold.value)
+            if (dataSet.ThresholdMin != minThreshold.value)
             {
                 minThreshold.value = dataSet.ThresholdMin;
             }
@@ -123,7 +123,7 @@ public class CanvassDesktop : MonoBehaviour
             {
                 renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
                     .gameObject.transform.Find("Settings").gameObject.transform.Find("Colormap_container")
-                    .gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value = (int) dataSet.ColorMap;
+                    .gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value = (int)dataSet.ColorMap;
             }
         }
     }
@@ -258,7 +258,7 @@ public class CanvassDesktop : MonoBehaviour
 
                 foreach (KeyValuePair<double, double> axes in axisSize)
                 {
-                    if (axes.Value > 1 && axes.Key>2)
+                    if (axes.Value > 1 && axes.Key > 2)
                     {
                         informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options.Add((new TMP_Dropdown.OptionData() { text = axes.Key.ToString() }));
                     }
@@ -360,7 +360,7 @@ public class CanvassDesktop : MonoBehaviour
             if (maskNAxis > 2)
             {
                 //Get Axis size from Image Cube
-                int i2= int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
+                int i2 = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
                 if (axisSize[1] == maskAxisSize[1] && axisSize[2] == maskAxisSize[2] && axisSize[i2 + 1] == maskAxisSize[3])
                 {
                     loadable = true;
@@ -483,7 +483,7 @@ public class CanvassDesktop : MonoBehaviour
             int i2 = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
 
             double x, z;
-            if (axisSize.TryGetValue( 1, out x) && axisSize.TryGetValue(i2 + 1, out z))
+            if (axisSize.TryGetValue(1, out x) && axisSize.TryGetValue(i2 + 1, out z))
             {
                 zScale = (float)(z / x);
             }
@@ -518,7 +518,7 @@ public class CanvassDesktop : MonoBehaviour
         newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _maskPath;// _maskDataSet.FileName.ToString();
         newCube.GetComponent<VolumeDataSetRenderer>().CubeDepthAxis = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
         informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().interactable = false;
-        
+
         checkCubesDataSet();
 
         //Deactivate and reactivate VolumeInputController to update VolumeInputController's list of datasets
@@ -656,7 +656,7 @@ public class CanvassDesktop : MonoBehaviour
         VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().GetDataSet(), getFirstActiveDataSet().GetDataSet().MinValue, getFirstActiveDataSet().GetDataSet().MaxValue);
         populateStatsValue();
     }
-    
+
     public void UpdateScaleMin(String min)
     {
         VolumeDataSetRenderer volumeDataSetRenderer = getFirstActiveDataSet();
@@ -666,7 +666,7 @@ public class CanvassDesktop : MonoBehaviour
         float histMax = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_max")
             .gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text);
         float sigma = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_sigma")
-            .gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value +1f;
+            .gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value + 1f;
         volumeDataSetRenderer.ScaleMin = newMin;
         VolumeDataSet.UpdateHistogram(volumeDataSet, histMin, histMax);
         histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, histMin, histMax, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
