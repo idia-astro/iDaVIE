@@ -25,7 +25,7 @@ namespace VolumeData
         private List<VolumeDataSetRenderer> _dataSets;
 
         // Keywords
-        private struct Keywords
+        public struct Keywords
         {
             public static readonly string EditThresholdMin = "edit min";
             public static readonly string EditThresholdMax = "edit max";
