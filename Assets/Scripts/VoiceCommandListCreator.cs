@@ -20,6 +20,8 @@ public class VoiceCommandListCreator : MonoBehaviour
     [SerializeField]
     private RectTransform content = null;
 
+    private VolumeSpeechController _volumeSpeechController;
+
     /*
     public GameObject volumeDatasetRendererObj = null;
     public GameObject SofiaNewListController = null;
@@ -93,13 +95,14 @@ public class VoiceCommandListCreator : MonoBehaviour
 
                 }
         */
+
+        _volumeSpeechController = FindObjectOfType<VolumeSpeechController>();
+
         int i = 0;
         foreach (string keyword in VolumeSpeechController.Keywords.All)
         {
-            Debug.Log(keyword);
-
             // 100 Height of item
-            float spawnY = i * 100;
+            float spawnY = i * 60;
             //newSpawn Position
             Vector3 pos = new Vector3(SpawnPoint.position.x + 300, -spawnY, SpawnPoint.position.z);
             //instantiate item
@@ -109,9 +112,13 @@ public class VoiceCommandListCreator : MonoBehaviour
 
             //get ItemDetails Component
             VoiceCommandListItem itemDetails = SpawnedItem.GetComponent<VoiceCommandListItem>();
-
+          
+            itemDetails.executeCommand.GetComponent<Button>().onClick.RemoveAllListeners();
+            itemDetails.executeCommand.GetComponent<Button>().onClick.AddListener(delegate { _volumeSpeechController.ExecuteVoiceCommandFromList(keyword); });
+            
             //set name
             itemDetails.commandName.text = keyword;
+           // itemDetails...= ExecuteVoiceCommandFromList()
             if (i % 2 != 0)
                 itemDetails.GetComponent<Image>().color = new Color(0.4039216f, 0.5333334f, 0.5882353f, 1f);
             i++;

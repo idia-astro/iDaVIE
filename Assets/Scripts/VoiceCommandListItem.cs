@@ -9,6 +9,7 @@ public class VoiceCommandListItem : MonoBehaviour
 {
 
     public Text commandName = null;
+    public Button executeCommand = null;
 
 
 
@@ -24,5 +25,6 @@ public class VoiceCommandListItem : MonoBehaviour
       {
       
       }
+
 
 }
