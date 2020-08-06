@@ -18,6 +18,8 @@ public class QuickMenuController : MonoBehaviour
     public GameObject paintMenu;
     public GameObject histogramMenu;
     public GameObject savePopup;
+    public GameObject ExitPopup;
+    public GameObject ExitSavePopup;
 
 
     int maskstatus=0;
@@ -83,7 +85,33 @@ public class QuickMenuController : MonoBehaviour
 
     public void Exit()
     {
-        Application.Quit();
+
+        if (_activeDataSet.FileChanged)
+        {
+            ExitSavePopup.GetComponent<ExitController>()._volumeInputController = _volumeInputController;
+            ExitSavePopup.GetComponent<ExitController>()._activeDataSet = _activeDataSet;
+            ExitSavePopup.GetComponent<ExitController>().VibrationAmplitude = VibrationAmplitude;
+            ExitSavePopup.GetComponent<ExitController>().VibrationDuration = VibrationDuration;
+            ExitSavePopup.GetComponent<ExitController>().VibrationFrequency = VibrationFrequency;
+
+            ExitSavePopup.transform.SetParent(this.transform.parent, false);
+            ExitSavePopup.transform.localPosition = this.transform.localPosition;
+            ExitSavePopup.transform.localRotation = this.transform.localRotation;
+            ExitSavePopup.transform.localScale = this.transform.localScale;
+
+            gameObject.SetActive(false);
+            ExitSavePopup.SetActive(true);
+        }
+        else
+        {
+            ExitPopup.transform.SetParent(this.transform.parent, false);
+            ExitPopup.transform.localPosition = this.transform.localPosition;
+            ExitPopup.transform.localRotation = this.transform.localRotation;
+            ExitPopup.transform.localScale = this.transform.localScale;
+
+            gameObject.SetActive(false);
+            ExitPopup.SetActive(true);
+        }
     }
 
     public void OpenMainMenu()
@@ -241,7 +269,6 @@ public class QuickMenuController : MonoBehaviour
     public void SaveCancel()
     {
 
-        Debug.Log("Cancel");
         savePopup.SetActive(false);
     }
 

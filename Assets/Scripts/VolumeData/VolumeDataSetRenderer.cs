@@ -202,6 +202,8 @@ namespace VolumeData
 
         [Header("Miscellaneous")]
         public bool started = false;
+
+        public bool FileChanged = true;
 		
         public float ZScale
         {
