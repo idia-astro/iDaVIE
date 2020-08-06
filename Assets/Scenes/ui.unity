@@ -5211,7 +5211,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1798270351}
   m_HandleRect: {fileID: 1798270350}
   m_Direction: 0
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -20209,7 +20209,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: Exit from iDAVIDE withouth saving
+            m_StringArgument: Exit from iDAVIDE without saving
             m_BoolArgument: 0
           m_CallState: 2
   - eventID: 10
@@ -47048,7 +47048,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 845581046}
   m_HandleRect: {fileID: 845581045}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
