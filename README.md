@@ -1,7 +1,7 @@
 IDIA Unity VR
 Base project for IDIA's VR experiments with VR
 
-No datasets are currently packaged with the repo, to keep the size down to a minimum. In addition, the SteamVR plugin (v2.2.0), TextMeshPro (v1.3.0), Vectrosity (5.6), and [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity/releases/download/v2.0.0/NuGetForUnity.2.0.0.unitypackage) assets need to be added to the project before running.
+No datasets are currently packaged with the repo, to keep the size down to a minimum. 
 
 You will need to download and install [msys2](https://www.msys2.org/) and [CMake](https://cmake.org/download/). Remember to add the binary directory `C:\msys64\mingw64\bin` to the system PATH.
 
@@ -25,3 +25,9 @@ cmake -DCMAKE_C_COMPILER:FILEPATH=C:\msys64\mingw64\bin\x86_64-w64-mingw32-gcc.e
 cmake --build ./build --config Release --target install -- -j
 ```
 The required DLL files will be copied to the `Assets/Plugins` directory automatically.
+
+You will need to install the following Unity plugins as well before running:
+[SteamVR plugin (v2.2.0)](https://github.com/ValveSoftware/steamvr_unity_plugin/releases/download/2.2.0/SteamVR_v220.unitypackage)
+[UnitySimpleFileBrowser (v1.3.0)](https://github.com/yasirkula/UnitySimpleFileBrowser/releases/download/v1.3.0/SimpleFileBrowser.unitypackage)
+[NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity/releases/download/v2.0.0/NuGetForUnity.2.0.0.unitypackage)
+Vectrosity (5.6)
