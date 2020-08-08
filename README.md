@@ -27,7 +27,15 @@ cmake --build ./build --config Release --target install -- -j
 The required DLL files will be copied to the `Assets/Plugins` directory automatically.
 
 You will need to install the following Unity plugins as well before running:
-[SteamVR plugin (v2.2.0)](https://github.com/ValveSoftware/steamvr_unity_plugin/releases/download/2.2.0/SteamVR_v220.unitypackage)
-[UnitySimpleFileBrowser (v1.3.0)](https://github.com/yasirkula/UnitySimpleFileBrowser/releases/download/v1.3.0/SimpleFileBrowser.unitypackage)
-[NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity/releases/download/v2.0.0/NuGetForUnity.2.0.0.unitypackage)
-Vectrosity (5.6)
+
+1) [SteamVR plugin (v2.2.0)](https://github.com/ValveSoftware/steamvr_unity_plugin/releases/download/2.2.0/SteamVR_v220.unitypackage)
+
+2) [UnitySimpleFileBrowser (v1.3.0)](https://github.com/yasirkula/UnitySimpleFileBrowser/releases/download/v1.3.0/SimpleFileBrowser.unitypackage)
+
+3) [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity/releases/download/v2.0.0/NuGetForUnity.2.0.0.unitypackage)
+
+4) Vectrosity (5.6)
+
+Remember to exit and relaunch the project in the Unity Editor after installing the plugins the first time.
+
+You may also need to generate SteamVR action files before running the first time. In the Unity Editor go to **Window>SteamVR Input** and click the **Save and generate** button.
