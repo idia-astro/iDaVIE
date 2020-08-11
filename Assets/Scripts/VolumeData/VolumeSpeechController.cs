@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Windows.Speech;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
@@ -10,6 +12,8 @@ namespace VolumeData
 {
     public class VolumeSpeechController : MonoBehaviour
     {
+        public GameObject mainCanvassDesktop;
+
         public VolumeInputController VolumeInputController;
         public QuickMenuController QuickMenuController;
         public PaintMenuController PaintMenuController;
@@ -25,6 +29,12 @@ namespace VolumeData
         {
             public static readonly string EditThresholdMin = "edit min";
             public static readonly string EditThresholdMax = "edit max";
+            public static readonly string EditZAxis = "edit zee axis";
+            public static readonly string SaveZAxis = "save zee axis";
+            public static readonly string ResetZAxis = "reset zee axis";
+            public static readonly string EditZAxisAlt = "edit zed axis";
+            public static readonly string SaveZAxisAlt = "save zed axis";
+            public static readonly string ResetZAxisAlt = "reset zed axis";
             public static readonly string SaveThreshold = "save threshold";
             public static readonly string ResetThreshold = "reset threshold";
             public static readonly string ResetTransform = "reset transform";
@@ -51,11 +61,13 @@ namespace VolumeData
             public static readonly string BrushErase = "brush erase";
             public static readonly string ShowMaskOutline = "show mask outline";
             public static readonly string HideMaskOutline = "hide mask outline";
-            
-            public static readonly string[] All = { EditThresholdMin, EditThresholdMax, SaveThreshold, ResetThreshold, ResetTransform, 
-                ColormapPlasma, ColormapRainbow, ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix,
-                NextDataSet, PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated,
-                ProjectionMaximum, ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline
+
+            public static readonly string[] All =
+            {
+                EditThresholdMin, EditThresholdMax, EditZAxis, EditZAxisAlt, SaveThreshold, ResetThreshold, ResetTransform, ColormapPlasma, ColormapRainbow, 
+                ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
+                PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
+                ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline
             };
         }
    
@@ -69,7 +81,7 @@ namespace VolumeData
         {
             _dataSets = new List<VolumeDataSetRenderer>();
             _dataSets.AddRange(GetComponentsInChildren<VolumeDataSetRenderer>(true));            
-            _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, ConfidenceLevel.Medium);
+            _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, ConfidenceLevel.Low);
             _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
 
             _speechKeywordRecognizer.Start();
@@ -92,6 +104,18 @@ namespace VolumeData
             else if (args.text == Keywords.EditThresholdMax)
             {
                 startThresholdEditing(true);
+            }
+            else if (args.text == Keywords.EditZAxis || args.text == Keywords.EditZAxisAlt)
+            {
+                startZAxisEditing();
+            }
+            else if (args.text == Keywords.SaveZAxis || args.text == Keywords.SaveZAxisAlt)
+            {
+                endZAxisEditing();
+            }
+            else if (args.text == Keywords.ResetZAxis || args.text == Keywords.ResetZAxisAlt)
+            {
+                resetZAxis();
             }
             else if (args.text == Keywords.SaveThreshold)
             {
@@ -219,7 +243,21 @@ namespace VolumeData
             if (_activeDataSet)
             {
                 _activeDataSet.ThresholdMin = _activeDataSet.InitialThresholdMin;
+                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_min")
+                .gameObject.transform.Find("Slider").GetComponent<Slider>().value = _activeDataSet.ThresholdMin;
+
                 _activeDataSet.ThresholdMax = _activeDataSet.InitialThresholdMax;
+                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max")
+                .gameObject.transform.Find("Slider").GetComponent<Slider>().value = _activeDataSet.ThresholdMax;
+            }
+        }
+
+        public void resetZAxis()
+        {
+            if (_activeDataSet)
+            {
+                float zxRatio = _activeDataSet.InitialScale.z / _activeDataSet.InitialScale.x;
+                _activeDataSet.transform.localScale = new Vector3(_activeDataSet.transform.localScale.x, _activeDataSet.transform.localScale.y, zxRatio * _activeDataSet.transform.localScale.x);
             }
         }
 
@@ -230,9 +268,25 @@ namespace VolumeData
 
         public void endThresholdEditing()
         {
-            _volumeInputController.EndThresholdEditing();
+            _volumeInputController.EndEditing();
+
+            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_min")
+                .gameObject.transform.Find("Slider").GetComponent<Slider>().value = _activeDataSet.ThresholdMin;
+            mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel").gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max")
+                .gameObject.transform.Find("Slider").GetComponent<Slider>().value = _activeDataSet.ThresholdMax;
+            _volumeInputController.EndEditing();
         }
 
+        public void startZAxisEditing()
+        {
+            _volumeInputController.StartZAxisEditing();
+        }
+
+        public void endZAxisEditing()
+        {
+            _volumeInputController.EndEditing();
+        }
+        
         public void resetTransform()
         {
             if (_activeDataSet)
@@ -240,6 +294,10 @@ namespace VolumeData
                 _activeDataSet.transform.position = _activeDataSet.InitialPosition;
                 _activeDataSet.transform.rotation = _activeDataSet.InitialRotation;
                 _activeDataSet.transform.localScale = _activeDataSet.InitialScale;
+
+                mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Panel_container").gameObject.transform.Find("RenderingPanel")
+                    .gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings")
+                    .gameObject.transform.Find("Ratio_container").gameObject.transform.Find("Ratio_Dropdown").GetComponent<TMP_Dropdown>().value = 0;
             }
         }
 

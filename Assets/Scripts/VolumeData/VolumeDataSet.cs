@@ -14,8 +14,8 @@ namespace VolumeData
 {
     public struct VoxelEntry
     {
-        public int Index;
-        public int Value;
+        public readonly int Index;
+        public readonly int Value;
 
         public VoxelEntry(int index, int value)
         {
@@ -23,11 +23,11 @@ namespace VolumeData
             this.Value = value;
         }
 
-        public static Comparer<VoxelEntry> IndexComparer = Comparer<VoxelEntry>.Create(
-            (a, b) => a.Index > b.Index ? 1 : a.Index < b.Index ? -1 : 0
+        public static readonly Comparer<VoxelEntry> IndexComparer = Comparer<VoxelEntry>.Create(
+            (a, b) => a.Index - b.Index
         );
     }
-    
+
     public struct BrushStrokeTransaction
     {
         public int NewValue;
@@ -39,7 +39,7 @@ namespace VolumeData
             Voxels = new List<VoxelEntry>();
         }
     }
-    
+
     public class VolumeDataSet
     {
         public Texture3D DataCube { get; private set; }
@@ -49,7 +49,7 @@ namespace VolumeData
         public int AddedMaskEntryCount { get; private set; }
         public BrushStrokeTransaction CurrentBrushStroke { get; private set; }
         public List<BrushStrokeTransaction> BrushStrokeHistory { get; private set; }
-        
+
         public string FileName { get; private set; }
         public long XDim { get; private set; }
         public long YDim { get; private set; }
@@ -63,15 +63,14 @@ namespace VolumeData
 
         public long NumPoints => XDim * YDim * ZDim;
         public long[] Dims => new[] {XDim, YDim, ZDim};
-        
+
         public Vector3Int RegionOffset { get; private set; }
 
-       
 
         public bool IsMask { get; private set; }
 
         private IDictionary<string, string> _headerDictionary;
-        
+
         private double _xRef, _yRef, _zRef, _xRefPix, _yRefPix, _zRefPix, _xDelt, _yDelt, _zDelt, _rot;
         private string _xCoord, _yCoord, _zCoord, _wcsProj;
 
@@ -93,7 +92,40 @@ namespace VolumeData
         public float MeanValue;
         public float StanDev;
 
-        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, int index0 = 0, int index1 = 1, int index2 = 2)
+        public static VolumeDataSet LoadRandomFitsCube(float min, float max, int xDim, int yDim, int zDim)
+        {
+            VolumeDataSet volumeDataSet = new VolumeDataSet();
+            long numberDataPoints = xDim * yDim * zDim;
+            IntPtr dataPtr = IntPtr.Zero;
+            dataPtr = Marshal.AllocHGlobal(sizeof(float) * (int) numberDataPoints);
+            float[] generatedData = new float[numberDataPoints];
+            for (int i = 0; i < numberDataPoints; i++)
+            {
+                generatedData[i] = UnityEngine.Random.Range(min, max);
+            }
+
+            Marshal.Copy(generatedData, 0, dataPtr, (int) numberDataPoints);
+            volumeDataSet.FitsData = dataPtr;
+            volumeDataSet.XDim = xDim;
+            volumeDataSet.YDim = yDim;
+            volumeDataSet.ZDim = zDim;
+            volumeDataSet.XDimDecimal = xDim.ToString().Length;
+            volumeDataSet.YDimDecimal = yDim.ToString().Length;
+            volumeDataSet.ZDimDecimal = zDim.ToString().Length;
+            DataAnalysis.FindStats(dataPtr, numberDataPoints, out volumeDataSet.MaxValue, out volumeDataSet.MinValue, out volumeDataSet.MeanValue,
+                out volumeDataSet.StanDev);
+            int histogramSize = Mathf.RoundToInt(Mathf.Sqrt(numberDataPoints));
+            volumeDataSet.Histogram = new int[histogramSize];
+            IntPtr histogramPtr = IntPtr.Zero;
+            volumeDataSet.HistogramBinWidth = (volumeDataSet.MaxValue - volumeDataSet.MinValue) / histogramSize;
+            DataAnalysis.GetHistogram(dataPtr, numberDataPoints, histogramSize, volumeDataSet.MinValue, volumeDataSet.MaxValue, out histogramPtr);
+            Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
+            if (histogramPtr != IntPtr.Zero)
+                DataAnalysis.FreeMemory(histogramPtr);
+            return volumeDataSet;
+        }
+
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, int index2 = 2, int sliceDim = 1)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
             volumeDataSet.IsMask = isMask;
@@ -102,33 +134,36 @@ namespace VolumeData
             int status = 0;
             int cubeDimensions;
             IntPtr dataPtr = IntPtr.Zero;
-            if (isMask)
+            if (FitsReader.FitsOpenFile(out fptr, fileName, out status, true) != 0)
             {
-                if (FitsReader.FitsOpenFile(out fptr, fileName, out status, true) != 0)
-                {
-                    Debug.Log("Fits open failure... code #" + status.ToString());
-                }
+                Debug.Log("Fits open failure... code #" + status.ToString());
             }
-            else
+
+            if (!isMask)
             {
-                if (FitsReader.FitsOpenFile(out fptr, fileName, out status, true) != 0)
-                {
-                    Debug.Log("Fits open failure... code #" + status.ToString());
-                }
                 volumeDataSet._headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
                 volumeDataSet.ParseHeaderDict();
             }
+
             if (FitsReader.FitsGetImageDims(fptr, out cubeDimensions, out status) != 0)
             {
                 Debug.Log("Fits read image dimensions failed... code #" + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
             }
+
             if (cubeDimensions < 3)
             {
                 Debug.Log("Only " + cubeDimensions.ToString() +
                           " found. Please use Fits cube with at least 3 dimensions.");
                 FitsReader.FitsCloseFile(fptr, out status);
             }
+
+            if (index2 != 2 && index2 != 3)
+            {
+                Debug.Log("Depth index must be either 2 or 3." + status.ToString());
+                FitsReader.FitsCloseFile(fptr, out status);
+            }
+
             if (FitsReader.FitsGetImageSize(fptr, cubeDimensions, out dataPtr, out status) != 0)
             {
                 Debug.Log("Fits Read cube size error #" + status.ToString());
@@ -139,7 +174,7 @@ namespace VolumeData
             Marshal.Copy(dataPtr, volumeDataSet.cubeSize, 0, cubeDimensions);
             if (dataPtr != IntPtr.Zero)
                 FitsReader.FreeMemory(dataPtr);
-            long numberDataPoints = volumeDataSet.cubeSize[index0] * volumeDataSet.cubeSize[index1] * volumeDataSet.cubeSize[index2];
+            long numberDataPoints = volumeDataSet.cubeSize[0] * volumeDataSet.cubeSize[1] * volumeDataSet.cubeSize[index2];
             IntPtr fitsDataPtr = IntPtr.Zero;
             if (isMask)
             {
@@ -151,16 +186,49 @@ namespace VolumeData
             }
             else
             {
-                if (FitsReader.FitsReadImageFloat(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
+                int[] startPix = new int[cubeDimensions];
+                int[] finalPix = new int[cubeDimensions];
+                for (var i = 0; i < cubeDimensions; i++)
+                {
+                    startPix[i] = 1;
+                    if (i < 4)
+                        finalPix[i] = (int) volumeDataSet.cubeSize[i];
+                    else
+                        finalPix[i] = 1;
+                }
+
+                if (index2 == 3)
+                {
+                    startPix[2] = sliceDim;
+                    finalPix[2] = sliceDim;
+                }
+                else if (cubeDimensions > 3)
+                {
+                    startPix[3] = sliceDim;
+                    finalPix[3] = sliceDim;
+                }
+
+                IntPtr startPixPtr = Marshal.AllocHGlobal(sizeof(int) * startPix.Length);
+                IntPtr finalPixPtr = Marshal.AllocHGlobal(sizeof(int) * finalPix.Length);
+                Marshal.Copy(startPix, 0, startPixPtr, startPix.Length);
+                Marshal.Copy(finalPix, 0, finalPixPtr, finalPix.Length);
+                if (FitsReader.FitsReadSubImageFloat(fptr, cubeDimensions, startPixPtr, finalPixPtr, numberDataPoints, out fitsDataPtr, out status) != 0)
                 {
                     Debug.Log("Fits Read cube data error #" + status.ToString());
                     FitsReader.FitsCloseFile(fptr, out status);
                 }
+
+                if (startPixPtr == IntPtr.Zero)
+                    Marshal.FreeHGlobal(startPixPtr);
+                if (finalPixPtr == IntPtr.Zero)
+                    Marshal.FreeHGlobal(finalPixPtr);
             }
+
             FitsReader.FitsCloseFile(fptr, out status);
             if (!isMask)
             {
-                DataAnalysis.FindStats(fitsDataPtr, numberDataPoints, out volumeDataSet.MaxValue, out volumeDataSet.MinValue, out volumeDataSet.MeanValue, out volumeDataSet.StanDev);
+                DataAnalysis.FindStats(fitsDataPtr, numberDataPoints, out volumeDataSet.MaxValue, out volumeDataSet.MinValue, out volumeDataSet.MeanValue,
+                    out volumeDataSet.StanDev);
                 int histogramSize = Mathf.RoundToInt(Mathf.Sqrt(numberDataPoints));
                 volumeDataSet.Histogram = new int[histogramSize];
                 IntPtr histogramPtr = IntPtr.Zero;
@@ -170,15 +238,16 @@ namespace VolumeData
                 if (histogramPtr != IntPtr.Zero)
                     DataAnalysis.FreeMemory(histogramPtr);
             }
+
             volumeDataSet.FitsData = fitsDataPtr;
-            volumeDataSet.XDim = volumeDataSet.cubeSize[index0];
-            volumeDataSet.YDim = volumeDataSet.cubeSize[index1];
+            volumeDataSet.XDim = volumeDataSet.cubeSize[0];
+            volumeDataSet.YDim = volumeDataSet.cubeSize[1];
             volumeDataSet.ZDim = volumeDataSet.cubeSize[index2];
-            volumeDataSet.XDimDecimal = volumeDataSet.cubeSize[index0].ToString().Length;
-            volumeDataSet.YDimDecimal = volumeDataSet.cubeSize[index1].ToString().Length;
-            volumeDataSet.YDimDecimal = volumeDataSet.cubeSize[index2].ToString().Length;
+            volumeDataSet.XDimDecimal = volumeDataSet.cubeSize[0].ToString().Length;
+            volumeDataSet.YDimDecimal = volumeDataSet.cubeSize[1].ToString().Length;
+            volumeDataSet.ZDimDecimal = volumeDataSet.cubeSize[index2].ToString().Length;
             volumeDataSet.HeaderDictionary = volumeDataSet._headerDictionary;
-            
+
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
             volumeDataSet._cachedBrush = new byte[2];
@@ -211,7 +280,7 @@ namespace VolumeData
             volumeDataSet.XDimDecimal = volumeDataSet.XDim.ToString().Length;
             volumeDataSet.YDimDecimal = volumeDataSet.YDim.ToString().Length;
             volumeDataSet.ZDimDecimal = volumeDataSet.ZDim.ToString().Length;
-            
+
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
             volumeDataSet._cachedBrush = new byte[2];
@@ -233,29 +302,34 @@ namespace VolumeData
                 textureFormat = TextureFormat.RFloat;
                 elementSize = sizeof(float);
             }
+
             IntPtr reducedData = IntPtr.Zero;
             bool downsampled = false;
             if (xDownsample != 1 || yDownsample != 1 || zDownsample != 1)
             {
                 if (IsMask)
                 {
-                    if (DataAnalysis.MaskCropAndDownsample(FitsData, out reducedData, XDim, YDim, ZDim, 1, 1, 1, XDim, YDim, ZDim, xDownsample, yDownsample, zDownsample) != 0)
+                    if (DataAnalysis.MaskCropAndDownsample(FitsData, out reducedData, XDim, YDim, ZDim, 1, 1, 1, XDim, YDim, ZDim, xDownsample, yDownsample,
+                        zDownsample) != 0)
                     {
                         Debug.Log("Data cube downsample error!");
                     }
                 }
                 else
                 {
-                    if (DataAnalysis.DataCropAndDownsample(FitsData, out reducedData, XDim, YDim, ZDim, 1, 1, 1, XDim, YDim, ZDim, xDownsample, yDownsample, zDownsample) != 0)
+                    if (DataAnalysis.DataCropAndDownsample(FitsData, out reducedData, XDim, YDim, ZDim, 1, 1, 1, XDim, YDim, ZDim, xDownsample, yDownsample,
+                        zDownsample) != 0)
                     {
                         Debug.Log("Data cube downsample error!");
                     }
                 }
+
                 downsampled = true;
             }
             else
                 reducedData = FitsData;
-            int[] cubeSize = new int[3];    //assume 3D cube
+
+            int[] cubeSize = new int[3]; //assume 3D cube
             cubeSize[0] = (int) XDim / xDownsample;
             cubeSize[1] = (int) YDim / yDownsample;
             cubeSize[2] = (int) ZDim / zDownsample;
@@ -278,6 +352,7 @@ namespace VolumeData
                     dataCube.filterMode = FilterMode.Trilinear;
                     break;
             }
+
             int sliceSize = cubeSize[0] * cubeSize[1];
             Texture2D textureSlice = new Texture2D(cubeSize[0], cubeSize[1], textureFormat, false);
             for (int slice = 0; slice < cubeSize[2]; slice++)
@@ -287,12 +362,13 @@ namespace VolumeData
                 textureSlice.Apply();
                 Graphics.CopyTexture(textureSlice, 0, 0, 0, 0, cubeSize[0], cubeSize[1], dataCube, slice, 0, 0, 0);
             }
+
             DataCube = dataCube;
             //TODO output cached file
             if (downsampled && reducedData != IntPtr.Zero)
                 DataAnalysis.FreeMemory(reducedData);
         }
-        
+
         public void GenerateCroppedVolumeTexture(TextureFilterEnum textureFilter, Vector3Int cropStart, Vector3Int cropEnd, Vector3Int downsample)
         {
             Stopwatch sw = new Stopwatch();
@@ -320,6 +396,7 @@ namespace VolumeData
                     Debug.Log("Data cube downsample error!");
                 }
             }
+
             RegionOffset = Vector3Int.Min(cropStart, cropEnd);
             Vector3Int cubeSize = new Vector3Int();
             cubeSize.x = (Math.Abs(cropStart.x - cropEnd.x) + 1) / downsample.x;
@@ -331,7 +408,7 @@ namespace VolumeData
                 cubeSize.y++;
             if ((Math.Abs(cropStart.z - cropEnd.z) + 1) % downsample.z != 0)
                 cubeSize.z++;
-                               
+
             RegionCube = new Texture3D(cubeSize.x, cubeSize.y, cubeSize.z, textureFormat, false);
             switch (textureFilter)
             {
@@ -345,12 +422,13 @@ namespace VolumeData
                     RegionCube.filterMode = FilterMode.Trilinear;
                     break;
             }
+
             int sliceSize = cubeSize.x * cubeSize.y;
             Texture2D textureSlice = new Texture2D(cubeSize.x, cubeSize.y, textureFormat, false);
 
             for (int slice = 0; slice < cubeSize.z; slice++)
             {
-                textureSlice.LoadRawTextureData(IntPtr.Add(regionData, slice * sliceSize * elementSize),sliceSize * elementSize);
+                textureSlice.LoadRawTextureData(IntPtr.Add(regionData, slice * sliceSize * elementSize), sliceSize * elementSize);
                 textureSlice.Apply();
                 Graphics.CopyTexture(textureSlice, 0, 0, 0, 0, cubeSize.x, cubeSize.y, RegionCube, slice, 0, 0, 0);
             }
@@ -360,7 +438,7 @@ namespace VolumeData
                 var numVoxels = cubeSize.x * cubeSize.y * cubeSize.z;
                 _regionMaskVoxels = new short[numVoxels];
                 Marshal.Copy(regionData, _regionMaskVoxels, 0, numVoxels);
-                
+
                 _existingRegionMaskEntries = new List<VoxelEntry>();
                 for (int i = 0; i < numVoxels; i++)
                 {
@@ -368,12 +446,13 @@ namespace VolumeData
                     if (voxelVal != 0)
                     {
                         // check if voxel is surrounded by other masked voxels and encode the active edges into the value
-                        int compoundValue =  VoxelActiveFaces(i, cubeSize, _regionMaskVoxels) * 32768 + (int) voxelVal;
+                        int compoundValue = VoxelActiveFaces(i, cubeSize, _regionMaskVoxels) * 32768 + (int) voxelVal;
                         _existingRegionMaskEntries.Add(new VoxelEntry(i, compoundValue));
                     }
                 }
+
                 Debug.Log($"Found {_existingRegionMaskEntries.Count} non-empty mask voxels in region");
-                
+
                 ExistingMaskBuffer?.Release();
                 if (_existingRegionMaskEntries.Count > 0)
                 {
@@ -394,15 +473,17 @@ namespace VolumeData
                 {
                     _addedRegionMaskEntries = new List<VoxelEntry>();
                 }
-                
+
                 _addedRegionMaskEntries.Clear();
                 AddedMaskEntryCount = 0;
                 BrushStrokeHistory = new List<BrushStrokeTransaction>();
             }
+
             if (regionData != IntPtr.Zero)
-            	DataAnalysis.FreeMemory(regionData);
-            sw.Stop();            
-            Debug.Log($"Cropped into {cubeSize.x} x {cubeSize.y} x {cubeSize.z} region ({cubeSize.x * cubeSize.y * cubeSize.z * 4e-6} MB) in {sw.ElapsedMilliseconds} ms");
+                DataAnalysis.FreeMemory(regionData);
+            sw.Stop();
+            Debug.Log(
+                $"Cropped into {cubeSize.x} x {cubeSize.y} x {cubeSize.z} region ({cubeSize.x * cubeSize.y * cubeSize.z * 4e-6} MB) in {sw.ElapsedMilliseconds} ms");
         }
 
         public IDictionary<string, string> GetHeaderDictionary()
@@ -421,46 +502,88 @@ namespace VolumeData
             voxelIndices.z = (j - voxelIndices.y) / cubeSize.y;
 
             int activeFaces = 0;
-            
+
             // -x face
-            if (voxelIndices.x <= 0 || voxels[i - 1] != voxelValue)
+            if (voxelIndices.x <= 0)
+            {
+                if (voxelValue != 0)
+                {
+                    activeFaces += 1;
+                }
+            }
+            else if (voxels[i - 1] != voxelValue)
             {
                 activeFaces += 1;
             }
 
             // +x face
-            if (voxelIndices.x >= cubeSize.x - 1 || voxels[i + 1] != voxelValue)
+            if (voxelIndices.x >= cubeSize.x - 1)
+            {
+                if (voxelValue != 0)
+                {
+                    activeFaces += 2;
+                }
+            }
+            else if (voxels[i + 1] != voxelValue)
             {
                 activeFaces += 2;
             }
             
             // -y face
-            if (voxelIndices.y <= 0 || voxels[i - cubeSize.x] != voxelValue)
+            if (voxelIndices.y <= 0)
+            {
+                if (voxelValue != 0)
+                {
+                    activeFaces += 4;
+                }
+            }
+            else if (voxels[i - cubeSize.x] != voxelValue)
             {
                 activeFaces += 4;
             }
-
+            
             // +y face
-            if (voxelIndices.y >= cubeSize.y - 1 || voxels[i + cubeSize.x] == 0)
+            if (voxelIndices.y >= cubeSize.y - 1)
+            {
+                if (voxelValue != 0)
+                {
+                    activeFaces += 8;
+                }
+            }
+            else if (voxels[i + cubeSize.x] == 0)
             {
                 activeFaces += 8;
             }
-            
+
             // -z face
-            if (voxelIndices.z <= 0 || voxels[i - cubeSize.y * cubeSize.x] == 0)
+            if (voxelIndices.z <= 0)
+            {
+                if (voxelValue != 0)
+                {
+                    activeFaces += 16;
+                }
+            }
+            else if (voxels[i - cubeSize.y * cubeSize.x] != voxelValue)
             {
                 activeFaces += 16;
             }
 
             // +z face
-            if (voxelIndices.z >= cubeSize.z - 1 || voxels[i + cubeSize.y * cubeSize.x] == 0)
+            if (voxelIndices.z >= cubeSize.z - 1)
+            {
+                if (voxelValue != 0)
+                {
+                    activeFaces += 32;
+                }
+            }
+            else if (voxels[i + cubeSize.y * cubeSize.x] != voxelValue)
             {
                 activeFaces += 32;
             }
             
             return activeFaces;
         }
-        
+
         public float GetDataValue(int x, int y, int z)
         {
             if (x < 1 || x > XDim || y < 1 || y > YDim || z < 1 || z > ZDim)
@@ -469,7 +592,7 @@ namespace VolumeData
             }
 
             float val;
-            DataAnalysis.GetVoxelFloatValue(FitsData, out val, (int)XDim, (int)YDim, (int)ZDim, x, y, z);
+            DataAnalysis.GetVoxelFloatValue(FitsData, out val, (int) XDim, (int) YDim, (int) ZDim, x, y, z);
             return val;
         }
 
@@ -481,7 +604,7 @@ namespace VolumeData
             }
 
             Int16 val;
-            DataAnalysis.GetVoxelInt16Value(FitsData, out val, (int)XDim, (int)YDim, (int)ZDim, x, y, z);
+            DataAnalysis.GetVoxelInt16Value(FitsData, out val, (int) XDim, (int) YDim, (int) ZDim, x, y, z);
             return val;
         }
 
@@ -490,7 +613,8 @@ namespace VolumeData
             FindDownsampleFactors(maxCubeSizeInMb, XDim, YDim, ZDim, out xFactor, out yFactor, out zFactor);
         }
 
-        public void FindDownsampleFactors(long maxCubeSizeInMB, long regionXDim, long regionYDim, long regionZDim, out int xFactor, out int yFactor, out int zFactor)
+        public void FindDownsampleFactors(long maxCubeSizeInMB, long regionXDim, long regionYDim, long regionZDim, out int xFactor, out int yFactor,
+            out int zFactor)
         {
             xFactor = 1;
             yFactor = 1;
@@ -500,6 +624,7 @@ namespace VolumeData
                 xFactor++;
                 yFactor++;
             }
+
             while (regionZDim / zFactor > 2048)
                 zFactor++;
             long maximumElements = maxCubeSizeInMB * 1000000 / 4;
@@ -519,7 +644,7 @@ namespace VolumeData
         {
             double XPos, YPos;
             MariusSoft.WCSTools.WCSUtil.ffwldp(X, Y, _xRef, _yRef, _xRefPix, _yRefPix, _xDelt, _yDelt, _rot, _wcsProj, out XPos, out YPos);
-            Vector2 raDec= new Vector2((float)XPos, (float)YPos);
+            Vector2 raDec = new Vector2((float) XPos, (float) YPos);
             return raDec;
         }
 
@@ -530,7 +655,7 @@ namespace VolumeData
 
         public Vector3 GetWCSDeltas()
         {
-            return new Vector3((float)_xDelt, (float)_yDelt, (float)_zDelt);
+            return new Vector3((float) _xDelt, (float) _yDelt, (float) _zDelt);
         }
 
         public void ParseHeaderDict()
@@ -592,6 +717,7 @@ namespace VolumeData
                         break;
                 }
             }
+
             if (xProj != yProj)
                 Debug.Log("Warning: WCS projection types do not agree for dimensions! x: " + xProj + ", y: " + yProj);
             _wcsProj = xProj;
@@ -599,22 +725,23 @@ namespace VolumeData
 
         public bool PaintMaskVoxel(Vector3Int coordsRegionSpace, short value)
         {
-            if (coordsRegionSpace.x < 0 || coordsRegionSpace.x >= RegionCube.width || coordsRegionSpace.y < 0 || coordsRegionSpace.y >= RegionCube.height || coordsRegionSpace.z < 0 ||
+            if (coordsRegionSpace.x < 0 || coordsRegionSpace.x >= RegionCube.width || coordsRegionSpace.y < 0 || coordsRegionSpace.y >= RegionCube.height ||
+                coordsRegionSpace.z < 0 ||
                 coordsRegionSpace.z >= RegionCube.depth)
             {
                 return false;
             }
-            
+
             // encode the active edges into the value. For now, edges are all on or all off
             int index = coordsRegionSpace.x + coordsRegionSpace.y * RegionCube.width + coordsRegionSpace.z * (RegionCube.width * RegionCube.height);
             var currentValue = _regionMaskVoxels[index];
-            
+
             // If the voxel already has the correct value, exit
             if (currentValue == value)
             {
                 return true;
             }
-            
+
             // Create transaction if it doesn't exist
             if (CurrentBrushStroke.Voxels == null)
             {
@@ -631,11 +758,11 @@ namespace VolumeData
             Vector3Int cubeSize = new Vector3Int(RegionCube.width, RegionCube.height, RegionCube.depth);
             int compoundValue = VoxelActiveFaces(index, cubeSize, _regionMaskVoxels) * 32768 + (int) value;
             VoxelEntry newEntry = new VoxelEntry(index, compoundValue);
-            
+
             if (_existingRegionMaskEntries != null)
             {
                 int maskEntryIndex = _existingRegionMaskEntries.BinarySearch(newEntry, VoxelEntry.IndexComparer);
-                if (maskEntryIndex > 0)
+                if (maskEntryIndex >= 0)
                 {
                     // Update entry in list
                     _existingRegionMaskEntries[maskEntryIndex] = newEntry;
@@ -652,9 +779,9 @@ namespace VolumeData
                         AddedMaskEntryCount = _addedRegionMaskEntries.Count;
                     }
                 }
-                
+
                 // Update neighbouring entries' active faces
-                int[] neighbourIndices = 
+                int[] neighbourIndices =
                 {
                     index - 1,
                     index + 1,
@@ -678,7 +805,7 @@ namespace VolumeData
                     {
                         continue;
                     }
-                    
+
                     // Re-calculate active edges
                     int compoundNeighbourValue = VoxelActiveFaces(neighbourIndex, cubeSize, _regionMaskVoxels) * 32768 + (int) neighbourValue;
                     var neighbourEntry = new VoxelEntry(neighbourIndex, compoundNeighbourValue);
@@ -704,7 +831,7 @@ namespace VolumeData
                     }
                 }
             }
-            
+
             CurrentBrushStroke.Voxels.Add(new VoxelEntry(newEntry.Index, currentValue));
 
             return true;
@@ -712,7 +839,6 @@ namespace VolumeData
 
         public void FlushBrushStroke()
         {
-            Debug.Log($"Brush stroke: New Value: {CurrentBrushStroke.NewValue}; {CurrentBrushStroke.Voxels.Count} voxels");
             ConsolidateMaskEntries();
             BrushStrokeHistory.Add(CurrentBrushStroke);
             CurrentBrushStroke = new BrushStrokeTransaction(CurrentBrushStroke.NewValue);
@@ -735,7 +861,7 @@ namespace VolumeData
                 _existingRegionMaskEntries.AddRange(_addedRegionMaskEntries);
                 _existingRegionMaskEntries.Sort(VoxelEntry.IndexComparer);
             }
-            
+
             ExistingMaskBuffer?.Release();
             if (_existingRegionMaskEntries.Count > 0)
             {
@@ -746,13 +872,12 @@ namespace VolumeData
             {
                 ExistingMaskBuffer = null;
             }
-            
+
             _addedRegionMaskEntries = new List<VoxelEntry>();
             AddedMaskEntryCount = 0;
-            
         }
 
-        public int SaveMask(IntPtr cubeFitsPtr, string filename)
+        public int CommitMask()
         {
             int status = 0;
             if (_regionMaskVoxels == null || _regionMaskVoxels.Length == 0)
@@ -760,29 +885,47 @@ namespace VolumeData
                 Debug.Log("Can't save empty region to mask");
                 return -1;
             }
-            
+
             int unmangedMemorySize = Marshal.SizeOf(_regionMaskVoxels[0]) * _regionMaskVoxels.Length;
             IntPtr unmanagedCopy = Marshal.AllocHGlobal(unmangedMemorySize);
             long[] regionDims = {RegionCube.width, RegionCube.height, RegionCube.depth};
             long[] regionOffset = {RegionOffset.x, RegionOffset.y, RegionOffset.z};
             Marshal.Copy(_regionMaskVoxels, 0, unmanagedCopy, _regionMaskVoxels.Length);
-            status = FitsReader.SaveMask(cubeFitsPtr, FitsData, Dims, unmanagedCopy, regionDims, regionOffset, filename);
+            if (!FitsReader.UpdateMask(FitsData, Dims, unmanagedCopy, regionDims, regionOffset))
+            {
+                Debug.Log("Error updating mask");
+                return - 1;
+            }
+
+            if (unmanagedCopy != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(unmanagedCopy);
+            }
+
+            return status;
+        }
+
+        public int SaveMask(IntPtr cubeFitsPtr, string filename)
+        {
+            int status = FitsReader.SaveMask(cubeFitsPtr, FitsData, Dims, filename);
             if (!string.IsNullOrEmpty(filename))
             {
                 // Update filename after stripping out exclamation mark indicating overwrite flag
                 FileName = filename.Replace("!", "");
             }
-            if (unmanagedCopy != IntPtr.Zero)
-            {
-                Marshal.FreeHGlobal(unmanagedCopy);
-                unmanagedCopy = IntPtr.Zero;
-            }
             return status;
         }
 
-        public void CleanUp()
+        public void CleanUp(bool randomCube)
         {
-            FitsReader.FreeMemory(FitsData);
+            if (FitsData != IntPtr.Zero)
+            {
+                if (randomCube)
+                    Marshal.FreeHGlobal(FitsData);
+                else
+                    FitsReader.FreeMemory(FitsData);
+            }
+
             ExistingMaskBuffer?.Release();
             AddedMaskBuffer?.Release();
         }

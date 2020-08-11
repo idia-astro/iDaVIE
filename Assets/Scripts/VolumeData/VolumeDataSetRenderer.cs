@@ -99,8 +99,12 @@ namespace VolumeData
         public int ZFactor = 1;
         public float ScaleMax;
         public float ScaleMin;
+        public float ZAxisMaxFactor = 10.0f;
+        public float ZAxisMinFactor = 0.001f;
         public Vector3 SliceMin = Vector3.zero;
         public Vector3 SliceMax = Vector3.one;
+        public int CubeDepthAxis = 2;
+        public int CubeSlice = 1;
 
         public Vector3 InitialPosition { get; private set; }
         public Quaternion InitialRotation { get; private set; }
@@ -134,14 +138,19 @@ namespace VolumeData
 
         private VolumeDataSet _dataSet = null;
         private VolumeDataSet _maskDataSet = null;
+        private bool _dirtyMask = false;
 
 
+        private int _currentXFactor, _currentYFactor, _currentZFactor;
+        public bool IsFullResolution => _currentXFactor * _currentYFactor * _currentZFactor == 1;
 
         public bool IsCropped { get; private set; }
 
-
+        [Header("Benchmarking")]
+        public bool RandomVolume = false;
+        public int RandomCubeSize = 512;
+        
         #region Material Property IDs
-
         private struct MaterialID
         {
             public static readonly int DataCube = Shader.PropertyToID("_DataCube");
@@ -191,11 +200,31 @@ namespace VolumeData
 
         #endregion
 
+        [Header("Miscellaneous")]
         public bool started = false;
 
+        public bool FileChanged = true;
+		
+        public float ZScale
+        {
+            get
+            {
+                return gameObject.transform.localScale.z;
+            }
+            set
+            {
+                Vector3 oldScale = gameObject.transform.localScale;
+                gameObject.transform.localScale = new Vector3(oldScale.x, oldScale.y, value);
+            }
+        }
+
+        
         public void Start()
         {
-            _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false);
+            if (RandomVolume)
+                _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);
+            else
+                _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false, CubeDepthAxis, CubeSlice);
             _volumeInputController = FindObjectOfType<VolumeInputController>();
             _featureManager = GetComponentInChildren<FeatureSetManager>();
             if (_featureManager == null)
@@ -205,6 +234,9 @@ namespace VolumeData
                 _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
             }
             _dataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
+            _currentXFactor = XFactor;
+            _currentYFactor = YFactor;
+            _currentZFactor = ZFactor;
             ScaleMax = _dataSet.MaxValue;
             ScaleMin = _dataSet.MinValue;
             if (!String.IsNullOrEmpty(MaskFileName))
@@ -267,7 +299,7 @@ namespace VolumeData
 
         }
 
-        public VolumeDataSet GetDatsSet()
+        public VolumeDataSet GetDataSet()
         {
             return _dataSet;
         }
@@ -409,7 +441,7 @@ namespace VolumeData
                     _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
                     var regionMin = Vector3.Min(RegionStartVoxel, RegionEndVoxel);
                     _maskMaterialInstance.SetVector(MaterialID.RegionOffset, new Vector4(regionMin.x, regionMin.y, regionMin.z, 0));
-                    var regionDimensions = new Vector4(_maskDataSet.RegionCube.width, _maskDataSet.RegionCube.height, _maskDataSet.RegionCube.width, 0);
+                    var regionDimensions = new Vector4(_maskDataSet.RegionCube.width, _maskDataSet.RegionCube.height, _maskDataSet.RegionCube.depth, 0);
                     _maskMaterialInstance.SetVector(MaterialID.RegionDimensions, regionDimensions);
                     var cubeDimensions = new Vector4(_maskDataSet.XDim, _maskDataSet.YDim, _maskDataSet.ZDim, 1);
                     _maskMaterialInstance.SetVector(MaterialID.CubeDimensions, cubeDimensions);
@@ -436,12 +468,13 @@ namespace VolumeData
         {
             Vector3Int deltaRegion = startVoxel - endVoxel;
             Vector3Int regionSize = new Vector3Int(Math.Abs(deltaRegion.x) + 1, Math.Abs(deltaRegion.y) + 1, Math.Abs(deltaRegion.z) + 1);
-            int xFactor, yFactor, zFactor;
-            _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, regionSize.x, regionSize.y, regionSize.z, out xFactor, out yFactor, out zFactor);
-            _dataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel, new Vector3Int(xFactor, yFactor, zFactor));
+            _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, regionSize.x, regionSize.y, regionSize.z, out _currentXFactor, out _currentYFactor,
+                out _currentZFactor);
+            _dataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel, new Vector3Int(_currentXFactor, _currentYFactor, _currentZFactor));
             if (_maskDataSet != null)
             {
-                _maskDataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel, new Vector3Int(xFactor, yFactor, zFactor));
+                _maskDataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel,
+                    new Vector3Int(_currentXFactor, _currentYFactor, _currentZFactor));
             }
         }
 
@@ -588,6 +621,7 @@ namespace VolumeData
             {
                 _previousPaintLocation = coordsRegionSpace;
                 _previousPaintValue = value;
+                _dirtyMask = true;
                 return _maskDataSet.PaintMaskVoxel(coordsRegionSpace, value);
             }
             return true;
@@ -672,6 +706,17 @@ namespace VolumeData
             return volumePosition;
         }
 
+        public void CommitMask()
+        {
+            // Update cropped region and recalculate downsampled cube if it has been updated
+            if (_dirtyMask)
+            {
+                _maskDataSet?.CommitMask();
+                _maskDataSet?.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
+                _dirtyMask = false;
+            }
+        }
+        
         public void SaveMask(bool overwrite)
         {
             if (_maskDataSet == null)
@@ -679,6 +724,8 @@ namespace VolumeData
                 Debug.LogError("Could not find mask data!");
                 return;
             }
+
+            _maskDataSet.CommitMask();
 
             IntPtr cubeFitsPtr;
             int status = 0;
@@ -723,8 +770,8 @@ namespace VolumeData
 
         public void OnDestroy()
         {
-            _dataSet.CleanUp();
-            _maskDataSet?.CleanUp();
+            _dataSet.CleanUp(RandomVolume);
+            _maskDataSet?.CleanUp(false);
         }
 
         private void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes)

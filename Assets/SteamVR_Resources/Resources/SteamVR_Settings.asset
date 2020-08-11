@@ -20,12 +20,12 @@ MonoBehaviour:
   inputUpdateMode: 2
   poseUpdateMode: 8
   activateFirstActionSetOnStart: 1
-  editorAppKey: application.generated.unity.idia_unityvr.exe
+  editorAppKey: application.generated.unity.idaviev.exe
   autoEnableVR: 1
   legacyMixedRealityCamera: 1
   mixedRealityCameraPose:
-    actionPath: /actions//in/ExternalCamera
-    needsReinit: 1
+    actionPath: /actions/mixedreality/in/ExternalCamera
+    needsReinit: 0
   mixedRealityCameraInputSource: 11
   mixedRealityActionSetAutoEnable: 1
   previewHandLeft: {fileID: 0}

@@ -29,7 +29,8 @@ public class VolumeInputController : MonoBehaviour
         Moving,
         Scaling,
         EditingThresholdMin,
-        EditingThresholdMax
+        EditingThresholdMax,
+        EditingZAxis
     }
     
     public enum InteractionState
@@ -113,7 +114,7 @@ public class VolumeInputController : MonoBehaviour
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsLeft = new Dictionary<VRFamily, Vector3>
     {
         {VRFamily.Unknown, Vector3.zero},
-        {VRFamily.Oculus, new Vector3(0.005f, -0.025f, -0.025f)},
+        {VRFamily.Oculus, new Vector3(0.005f, -0.035f, 0.0f)},
         {VRFamily.Vive, new Vector3(0, -0.09f, 0.06f)},
         {VRFamily.WindowsMixedReality, new Vector3(0.05f, -0.029f, 0.03f)}
     };
@@ -121,7 +122,7 @@ public class VolumeInputController : MonoBehaviour
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsRight = new Dictionary<VRFamily, Vector3>
     {
         {VRFamily.Unknown, Vector3.zero},
-        {VRFamily.Oculus, new Vector3(-0.005f, -0.025f, -0.025f)},
+        {VRFamily.Oculus, new Vector3(-0.005f, -0.035f, 0.0f)},
         {VRFamily.Vive, new Vector3(0, -0.09f, 0.06f)},
         {VRFamily.WindowsMixedReality, new Vector3(-0.05f, -0.029f, 0.03f)}
     };
@@ -212,9 +213,11 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnUiInteractDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
-        if (_locomotionState == LocomotionState.EditingThresholdMax || _locomotionState == LocomotionState.EditingThresholdMin)
+        if (_locomotionState == LocomotionState.EditingThresholdMax || 
+            _locomotionState == LocomotionState.EditingThresholdMin ||
+             _locomotionState == LocomotionState.EditingZAxis)
         {
-            EndThresholdEditing();;
+            EndEditing();
         }
     }
 
@@ -266,7 +269,6 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnQuickMenuChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
-        Debug.Log(fromSource);
         // Menu is only available on the second hand
         if (fromSource == PrimaryHand)
         {
@@ -370,10 +372,17 @@ public class VolumeInputController : MonoBehaviour
         _previousControllerHeight =  _hands[PrimaryHandIndex].transform.position.y;
     }
 
-    public void EndThresholdEditing()
+    public void EndEditing()
     {
         _locomotionState = LocomotionState.Idle;
         _targetVignetteIntensity = 0;
+    }
+
+        public void StartZAxisEditing()
+    {
+        _locomotionState = LocomotionState.EditingZAxis;
+        _targetVignetteIntensity = 0;
+        _previousControllerHeight =  _hands[PrimaryHandIndex].transform.position.y;
     }
 
     private void StartRequestQuickMenu(int handIndex)
@@ -509,6 +518,9 @@ public class VolumeInputController : MonoBehaviour
                 break;
             case LocomotionState.EditingThresholdMin:
                 UpdateEditingThreshold(false);
+                break;
+            case LocomotionState.EditingZAxis:
+                UpdateEditingZAxis();
                 break;
         }
 
@@ -730,6 +742,22 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
+    private void UpdateEditingZAxis()
+    {
+        var controllerHeight = _hands[PrimaryHandIndex].transform.position.y;
+        var delta = controllerHeight - _previousControllerHeight;
+        _previousControllerHeight = controllerHeight;
+        foreach (var dataSet in _volumeDataSets)
+        {
+            float zxRatio = dataSet.InitialScale.z/dataSet.InitialScale.x;
+            var newValue = dataSet.transform.localScale.z + delta;
+            dataSet.transform.localScale = new Vector3(dataSet.transform.localScale.x, dataSet.transform.localScale.y, 
+                                                        Mathf.Clamp(newValue,
+                                                                    dataSet.transform.localScale.x * zxRatio * dataSet.ZAxisMinFactor,
+                                                                    dataSet.transform.localScale.x * zxRatio * dataSet.ZAxisMaxFactor));
+        }
+    }
+
     private void UpdateIdle()
     {
         if (_volumeDataSets == null)
@@ -817,7 +845,7 @@ public class VolumeInputController : MonoBehaviour
 
     private VRFamily DetermineVRFamily()
     {
-        string vrModel = XRDevice.model.ToLower();
+        string vrModel = InputDevices.GetDeviceAtXRNode(XRNode.Head).name.ToLower();
         if (vrModel.Contains("oculus"))
         {
             return VRFamily.Oculus;
@@ -833,7 +861,7 @@ public class VolumeInputController : MonoBehaviour
             return VRFamily.WindowsMixedReality;
         }
 
-        Debug.Log($"Unknown VR model {XRDevice.model}!");
+        Debug.Log($"Unknown VR model {vrModel}!");
         return VRFamily.Unknown;
     }
 
@@ -900,6 +928,14 @@ public class VolumeInputController : MonoBehaviour
 
     private void StateTransitionSelectionToPaint()
     {
+        // Prevent transition if volumes aren't full resolution
+        foreach (var dataSet in _volumeDataSets)
+        {
+            if (!dataSet.IsFullResolution)
+            {
+                return;
+            }
+        }
         foreach (var dataSet in _volumeDataSets)
         {
             // Ensure a mask is present for each dataset
