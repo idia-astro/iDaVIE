@@ -3,14 +3,14 @@
 
 #define DllExport __declspec (dllexport)
 
-
-#include <cfitsio/fitsio.h>
+#include <cstring>
 
 extern "C"
 {
 #include "star/ast.h"
-DllExport int WCSRead();
-DllExport int FitsOpenFileReadOnly(fitsfile**, char*,  int*);
+DllExport int initFrame(const char*, AstFrameSet**);
+DllExport int format(AstFrameSet*, int, double, const char*);
+DllExport int set(AstFrameSet*, const char*)
 }
 
 #endif //NATIVE_PLUGINS_AST_TOOL_H

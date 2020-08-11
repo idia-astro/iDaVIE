@@ -19,7 +19,7 @@ makepkg-mingw
 pacman -U mingw-w64-x86_64-cfitsio-3.450-1-any.pkg.tar.zst --noconfirm
 ```
 
-Now build the AST plugin with the following commands:
+Now build the AST plugin with the following commands in msys2:
 ```
 cd <path to project>/native_plugins_cmake/ast_tool
 wget https://github.com/Starlink/ast/releases/download/v9.1.1/ast-9.1.1.tar.gz
