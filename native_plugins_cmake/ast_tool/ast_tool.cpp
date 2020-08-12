@@ -1,6 +1,6 @@
 #include "ast_tool.h"
 
-int initFrame(const char* header, AstFrameSet** astFrameSetPtr)
+int initFrame(AstFrameSet** astFrameSetPtr, const char* header)
 {
     AstFitsChan* fitschan = nullptr;
     AstFrameSet* wcsinfo = nullptr;

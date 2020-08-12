@@ -8,9 +8,9 @@
 extern "C"
 {
 #include "star/ast.h"
-DllExport int initFrame(const char*, AstFrameSet**);
-DllExport int format(AstFrameSet*, int, double, const char*);
-DllExport int set(AstFrameSet*, const char*)
+DllExport int InitFrame(AstFrameSet**, const char*);
+DllExport int Format(AstFrameSet*, int, double, const char*);
+DllExport int Set(AstFrameSet*, const char*);
 }
 
 #endif //NATIVE_PLUGINS_AST_TOOL_H
