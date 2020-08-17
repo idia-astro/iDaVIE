@@ -8,9 +8,31 @@
 extern "C"
 {
 #include "star/ast.h"
-DllExport int InitFrame(AstFrameSet**, const char*);
-DllExport int Format(AstFrameSet*, int, double, const char*);
-DllExport int Set(AstFrameSet*, const char*);
+
+int InitFrame(AstFrameSet**, const char*);
+
+int Format(AstFrameSet*, int, double, char*, int);
+
+int Set(AstFrameSet*, const char*);
+
+int Clear(AstObject*, const char*);
+
+int GetString(AstFrameSet*, const char*, char*, int);
+
+int Norm(AstFrameSet*, double[]);
+
+int Transform(AstFrameSet*, int, const double[], const double[], int, double[], double[]);
+
+int Transform3D(AstSpecFrame*, double, double, double, const int, double**);
+
+void DeleteObject(AstFrameSet*);
+
+int Copy(AstFrameSet*, AstFrameSet**);
+
+void Invert(AstFrameSet*);
+
+void FreeMemory(void*);
+
 }
 
 #endif //NATIVE_PLUGINS_AST_TOOL_H

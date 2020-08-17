@@ -9,7 +9,7 @@ add_subdirectory(fits_reader)
 add_subdirectory(votable_reader)
 add_subdirectory(ast_tool)
 
-install(TARGETS fits_reader data_analysis_tool votable_reader
+install(TARGETS fits_reader data_analysis_tool votable_reader ast_tool
         RUNTIME
             DESTINATION ${PROJECT_SOURCE_DIR}/../Assets/Plugins
         )
