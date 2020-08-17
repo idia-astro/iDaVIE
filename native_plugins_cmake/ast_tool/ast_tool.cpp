@@ -1,6 +1,6 @@
 #include "ast_tool.h"
 
-int InitFrame(AstFrameSet** astFrameSetPtr, const char* header)
+int InitFrame(AstFrameSet** astFrameSetPtr, const char* header, char * errorMessage)
 {
     AstFitsChan* fitschan = nullptr;
     AstFrameSet* wcsinfo = nullptr;
@@ -14,26 +14,31 @@ int InitFrame(AstFrameSet** astFrameSetPtr, const char* header)
     fitschan = astFitsChan(nullptr, nullptr, "");
     if (!fitschan)
     {
+        errorMessage = "astFitsChan returned null :(";
         astClearStatus;
         return -1;
     }
     if (!header)
     {
+        errorMessage =  "Missing header argument.";
         return -1;
     }
     astPutCards(fitschan, header);
     wcsinfo = static_cast<AstFrameSet*>(astRead(fitschan));
     if (!astOK)
     {
+        errorMessage = "Some AST LIB error, check logs.";
         astClearStatus;
         return -1;
     }
     else if (wcsinfo == AST__NULL)
     {
+        errorMessage = "No WCS found";
         return -1;
     }
     else if (strcmp(astGetC(wcsinfo, "Class"), "FrameSet"))
     {
+        errorMessage = "check FITS header (astlib)";
         return -1;
     }
     *astFrameSetPtr = wcsinfo;
@@ -46,7 +51,7 @@ int Format(AstFrameSet* wcsinfo, int axis, double value, char* formattedVal, int
     {
         return -1;
     }
-    strcpy_s(formattedVal, formattedValLength, astFormat(wcsinfo, axis, value));
+    strcpy_s(formattedVal, formattedValLength, astFormat(wcsinfo, axis, value)); //might not work... need to free
     if (!astOK)
     {
         astClearStatus;
