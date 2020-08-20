@@ -20,6 +20,9 @@ public class AstTool
       public static extern int Clear(IntPtr obj, in string attrib);
 
       [DllImport("ast_tool")]
+      public static extern void Dump(IntPtr wcsinfo, StringBuilder stringToReturn);
+
+      [DllImport("ast_tool")]
       public static extern int GetString(IntPtr wcsinfo, in string attribute, StringBuilder stringToReturn, int stringToReturnLen);
 
       [DllImport("ast_tool")]

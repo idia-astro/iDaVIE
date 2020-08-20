@@ -89,6 +89,9 @@ public class FitsReader
     public static extern int FitsReadImageInt16(IntPtr fptr, int dims, long nelem, out IntPtr array, out int status);
 
     [DllImport("libfits_reader")]
+    public static extern int FitsHdr2String(IntPtr fptr, StringBuilder header, out int nkeys, out int status);
+
+    [DllImport("libfits_reader")]
     public static extern int CreateEmptyImageInt16(long sizeX, long sizeY, long sizeZ, out IntPtr array);
 
     [DllImport("libfits_reader")]

@@ -177,6 +177,12 @@ int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array,
     return success;
 }
 
+int FitsHdr2String(fitsfile *fptr, char **header, int *nkeys, int *status)
+{
+    int success = fits_hdr2str(fptr, 0, NULL, 0, header, nkeys, status);
+    return success;
+}
+
 int CreateEmptyImageInt16(int64_t sizeX, int64_t sizeY, int64_t sizeZ, int16_t** array)
 {
     int64_t nelem = sizeX * sizeY * sizeZ;

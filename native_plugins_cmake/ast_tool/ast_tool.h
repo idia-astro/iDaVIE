@@ -17,6 +17,8 @@ int Set(AstFrameSet*, const char*);
 
 int Clear(AstObject*, const char*);
 
+void Dump(AstFrameSet*, char*);
+
 int GetString(AstFrameSet*, const char*, char*, int);
 
 int Norm(AstFrameSet*, double[]);

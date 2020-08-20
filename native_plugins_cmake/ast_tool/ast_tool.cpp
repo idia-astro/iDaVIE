@@ -91,6 +91,14 @@ int Clear(AstObject* obj, const char* attrib)
     return 0;
 }
 
+void Dump(AstFrameSet* wcsinfo, char* stringToReturn)
+{
+    if (wcsinfo)
+    {
+        stringToReturn = astToString(wcsinfo);
+    }
+}
+
 int GetString(AstFrameSet* wcsinfo, const char* attribute, char* stringToReturn, int stringToReturnLen)
 {
     if (!wcsinfo || !astHasAttribute(wcsinfo, attribute))
