@@ -7,6 +7,7 @@ using JetBrains.Annotations;
 using UnityEngine.XR;
 using Vectrosity;
 using Random = System.Random;
+using System.Text;
 
 namespace VolumeData
 {
@@ -655,6 +656,13 @@ namespace VolumeData
             return new Vector3(raDec.x, raDec.y, z);
         }
 
+        public Vector3 GetFitsCoordsAst(double X, double Y, double Z)
+        {
+            double astx, asty, astz;
+            AstTool.Transform3D(_dataSet.AstFrame, X, Y, Z, 1, out astx, out asty, out astz);
+            return new Vector3((float)astx, (float)asty, (float)astz);
+        }
+
         public Vector3 GetFitsLengths(double X, double Y, double Z)
         {
             Vector3 wcsConversion = _dataSet.GetWCSDeltas();
@@ -679,6 +687,28 @@ namespace VolumeData
             string dec = Math.Truncate(raDec.y).ToString("00").PadLeft(3) + ":" + Math.Truncate(decMin).ToString("00") + ":" + decSec.ToString("00.00");
             return ra + " " + dec + " " + vel;
         }
+
+        public string GetFitsCoordsStringAst(int val, int axis)
+        {
+            int stringLength = 70;
+            StringBuilder coord = new StringBuilder(stringLength);
+            AstTool.Format(_dataSet.AstFrame, axis, (double)val, coord, stringLength);
+            return coord.ToString();
+        }
+
+        public string GetAxisUnit(int axis)
+        {
+            StringBuilder unitAttribute = new StringBuilder("Unit(" + axis.ToString() + ")");
+            int stringLength = 70;
+            StringBuilder unit = new StringBuilder(stringLength);
+            if (AstTool.GetString(_dataSet.AstFrame, unitAttribute, unit,  stringLength)  != 0)
+                {
+                    Debug.Log("Cannot find attribute " + unitAttribute + " in fits header!");
+                    return "Units";
+                }
+            return unit.ToString();
+        }
+
 
         public Vector3Int GetDimDecimals()
         {

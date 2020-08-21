@@ -136,20 +136,24 @@ int Transform(AstFrameSet* wcsinfo, int npoint, const double xin[], const double
     return 0;
 }
 
-int Transform3D(AstSpecFrame* wcsinfo, double x, double y, double z, const int forward, double** output)
+int Transform3D(AstSpecFrame* wcsinfo, double xin, double yin, double zin, const int forward, double* xout, double* yout, double* zout)
 {
     if (!wcsinfo)
     {
         return 1;
     }
 
-    double in[] ={x, y, z};
-    astTranN(wcsinfo, 1, 3, 1, in, forward, 3, 1, *output);
+    double in[] ={xin, yin, zin};
+    double* output = new double[3];
+    astTranN(wcsinfo, 1, 3, 1, in, forward, 3, 1, output);
     if (!astOK)
     {
         astClearStatus;
         return 1;
     }
+    *xout = output[0];
+    *yout = output[1];
+    *zout = output[2]; //do i need to delete output?
     return 0;
 }
 

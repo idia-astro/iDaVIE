@@ -793,12 +793,16 @@ public class VolumeInputController : MonoBehaviour
                     {
                         Vector3Int coordDecimcalPlaces = dataSet.GetDimDecimals();
                         var voxelValue = dataSet.CursorValue;
-                        string raDecVel = dataSet.GetFitsCoordsString(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z);
+                        cursorString = dataSet.GetFitsCoordsStringAst(voxelCoordinate.x, 1) + " " + dataSet.GetAxisUnit(1) + System.Environment.NewLine
+                                        + dataSet.GetFitsCoordsStringAst(voxelCoordinate.y, 2) + " " + dataSet.GetAxisUnit(2) + System.Environment.NewLine
+                                        + dataSet.GetFitsCoordsStringAst(voxelCoordinate.z, 3) + " " + dataSet.GetAxisUnit(3);
+                        /*
                         cursorString = "(" + voxelCoordinate.x.ToString().PadLeft(coordDecimcalPlaces.x)
                                            + "," + voxelCoordinate.y.ToString().PadLeft(coordDecimcalPlaces.y) + ","
                                            + voxelCoordinate.z.ToString().PadLeft(coordDecimcalPlaces.z) + "): "
                                            + voxelValue.ToString("0.###E+000").PadLeft(11) + System.Environment.NewLine
                                            + raDecVel + System.Environment.NewLine + sourceIndex;
+                        */
                     }
                 }
             }

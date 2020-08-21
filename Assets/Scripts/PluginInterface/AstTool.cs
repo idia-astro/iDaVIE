@@ -23,7 +23,7 @@ public class AstTool
       public static extern void Dump(IntPtr wcsinfo, StringBuilder stringToReturn);
 
       [DllImport("libast_tool")]
-      public static extern int GetString(IntPtr wcsinfo, in string attribute, StringBuilder stringToReturn, int stringToReturnLen);
+      public static extern int GetString(IntPtr wcsinfo, StringBuilder attribute, StringBuilder stringToReturn, int stringToReturnLen);
 
       [DllImport("libast_tool")]
       public static extern int Norm(IntPtr wcsinfo, double[] inout);
@@ -32,7 +32,7 @@ public class AstTool
       public static extern int Transform(IntPtr wcsinfo, int npoint, in IntPtr xint, in IntPtr yint, int forward, IntPtr xout, IntPtr yout);
 
       [DllImport("libast_tool")]
-      public static extern int Transform3D(IntPtr wcsinfo, double x, double y, double z, in int forward, IntPtr output);
+      public static extern int Transform3D(IntPtr wcsinfo, double xin, double yin, double zin, in int forward, out double xout, out double yout, out double zout);
 
       [DllImport("libast_tool")]
       public static extern void DeleteObject(IntPtr src);
