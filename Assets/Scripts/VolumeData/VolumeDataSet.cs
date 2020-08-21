@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using Unity.Collections;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -83,6 +84,9 @@ namespace VolumeData
         private static int BrushStrokeLimit = 25000;
 
         public IntPtr FitsData = IntPtr.Zero;
+        public IntPtr FitsHeader = IntPtr.Zero;
+        public int NumberHeaderKeys;
+        public IntPtr AstFrame = IntPtr.Zero;
         public long[] cubeSize;
 
         public int[] Histogram;
@@ -138,7 +142,17 @@ namespace VolumeData
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
-
+            if (FitsReader.FitsCreateHdrPtr(fptr, out volumeDataSet.FitsHeader, out volumeDataSet.NumberHeaderKeys, out status) != 0)
+            {
+                Debug.Log("Fits create header pointer failure... code #" + status.ToString());
+                FitsReader.FitsCloseFile(fptr, out status);
+                return null;
+            }
+            StringBuilder errorMessage = new StringBuilder(70);
+            if (AstTool.InitFrame(out volumeDataSet.AstFrame, volumeDataSet.FitsHeader, errorMessage, errorMessage.Capacity) != 0)
+            {
+                Debug.Log("Warning... Ast Error: " + errorMessage);
+            }
             if (!isMask)
             {
                 volumeDataSet._headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
@@ -149,6 +163,7 @@ namespace VolumeData
             {
                 Debug.Log("Fits read image dimensions failed... code #" + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
+                return null;
             }
 
             if (cubeDimensions < 3)
@@ -156,18 +171,21 @@ namespace VolumeData
                 Debug.Log("Only " + cubeDimensions.ToString() +
                           " found. Please use Fits cube with at least 3 dimensions.");
                 FitsReader.FitsCloseFile(fptr, out status);
+                return null;
             }
 
             if (index2 != 2 && index2 != 3)
             {
                 Debug.Log("Depth index must be either 2 or 3." + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
+                return null;
             }
 
             if (FitsReader.FitsGetImageSize(fptr, cubeDimensions, out dataPtr, out status) != 0)
             {
                 Debug.Log("Fits Read cube size error #" + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
+                return null;
             }
 
             volumeDataSet.cubeSize = new long[cubeDimensions];
@@ -182,6 +200,7 @@ namespace VolumeData
                 {
                     Debug.Log("Fits Read mask cube data error #" + status.ToString());
                     FitsReader.FitsCloseFile(fptr, out status);
+                    return null;
                 }
             }
             else
@@ -216,6 +235,7 @@ namespace VolumeData
                 {
                     Debug.Log("Fits Read cube data error #" + status.ToString());
                     FitsReader.FitsCloseFile(fptr, out status);
+                    return null;
                 }
 
                 if (startPixPtr == IntPtr.Zero)
@@ -918,12 +938,17 @@ namespace VolumeData
 
         public void CleanUp(bool randomCube)
         {
+            int status;
             if (FitsData != IntPtr.Zero)
             {
                 if (randomCube)
                     Marshal.FreeHGlobal(FitsData);
                 else
                     FitsReader.FreeMemory(FitsData);
+            }
+            if (FitsHeader != IntPtr.Zero)
+            {
+                FitsReader.FreeFitsMemory(FitsHeader, out status);
             }
 
             ExistingMaskBuffer?.Release();
