@@ -791,18 +791,11 @@ public class VolumeInputController : MonoBehaviour
                     var voxelCoordinate = dataSet.CursorVoxel;
                     if (voxelCoordinate.x >= 0 && _handInfoComponents != null)
                     {
-                        Vector3Int coordDecimcalPlaces = dataSet.GetDimDecimals();
-                        var voxelValue = dataSet.CursorValue;
-                        cursorString = dataSet.GetFitsCoordsStringAst(voxelCoordinate.x, 1) + " " + dataSet.GetAxisUnit(1) + System.Environment.NewLine
-                                        + dataSet.GetFitsCoordsStringAst(voxelCoordinate.y, 2) + " " + dataSet.GetAxisUnit(2) + System.Environment.NewLine
-                                        + dataSet.GetFitsCoordsStringAst(voxelCoordinate.z, 3) + " " + dataSet.GetAxisUnit(3);
-                        /*
-                        cursorString = "(" + voxelCoordinate.x.ToString().PadLeft(coordDecimcalPlaces.x)
-                                           + "," + voxelCoordinate.y.ToString().PadLeft(coordDecimcalPlaces.y) + ","
-                                           + voxelCoordinate.z.ToString().PadLeft(coordDecimcalPlaces.z) + "): "
-                                           + voxelValue.ToString("0.###E+000").PadLeft(11) + System.Environment.NewLine
-                                           + raDecVel + System.Environment.NewLine + sourceIndex;
-                        */
+                        double physX, physY, physZ;
+                        dataSet.GetFitsCoordsAst(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z, out physX, out physY, out physZ);
+                        cursorString = dataSet.GetFitsCoordsStringAst(physX, 1) + System.Environment.NewLine
+                                        + dataSet.GetFitsCoordsStringAst(physY, 2) + System.Environment.NewLine
+                                        + dataSet.GetFitsCoordsStringAst(physZ, 3) + " " + dataSet.GetAxisUnit(3);
                     }
                 }
             }

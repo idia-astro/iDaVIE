@@ -25,7 +25,7 @@ int Norm(AstFrameSet*, double[]);
 
 int Transform(AstFrameSet*, int, const double[], const double[], int, double[], double[]);
 
-int Transform3D(AstSpecFrame*, double, double, double, const int, double**);
+int Transform3D(AstSpecFrame*, double, double, double, const int, double*, double*, double*);
 
 void DeleteObject(AstFrameSet*);
 

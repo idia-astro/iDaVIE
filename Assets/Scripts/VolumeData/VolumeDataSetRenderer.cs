@@ -656,11 +656,9 @@ namespace VolumeData
             return new Vector3(raDec.x, raDec.y, z);
         }
 
-        public Vector3 GetFitsCoordsAst(double X, double Y, double Z)
+        public void GetFitsCoordsAst(double X, double Y, double Z, out double fitsX, out double fitsY, out double fitsZ)
         {
-            double astx, asty, astz;
-            AstTool.Transform3D(_dataSet.AstFrame, X, Y, Z, 1, out astx, out asty, out astz);
-            return new Vector3((float)astx, (float)asty, (float)astz);
+            AstTool.Transform3D(_dataSet.AstFrame, X, Y, Z, 1, out fitsX, out fitsY, out fitsZ);
         }
 
         public Vector3 GetFitsLengths(double X, double Y, double Z)
@@ -688,11 +686,11 @@ namespace VolumeData
             return ra + " " + dec + " " + vel;
         }
 
-        public string GetFitsCoordsStringAst(int val, int axis)
+        public string GetFitsCoordsStringAst(double val, int axis)
         {
             int stringLength = 70;
             StringBuilder coord = new StringBuilder(stringLength);
-            AstTool.Format(_dataSet.AstFrame, axis, (double)val, coord, stringLength);
+            AstTool.Format(_dataSet.AstFrame, axis, val, coord, stringLength);
             return coord.ToString();
         }
 
