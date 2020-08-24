@@ -658,7 +658,10 @@ namespace VolumeData
 
         public void GetFitsCoordsAst(double X, double Y, double Z, out double fitsX, out double fitsY, out double fitsZ)
         {
-            AstTool.Transform3D(_dataSet.AstFrame, X, Y, Z, 1, out fitsX, out fitsY, out fitsZ);
+            if (AstTool.Transform3D(_dataSet.AstFrame, X, Y, Z, 1, out fitsX, out fitsY, out fitsZ) != 0)
+            {
+                Debug.Log("Error transforming pixel to physical coordinates!");
+            }
         }
 
         public Vector3 GetFitsLengths(double X, double Y, double Z)
@@ -690,7 +693,10 @@ namespace VolumeData
         {
             int stringLength = 70;
             StringBuilder coord = new StringBuilder(stringLength);
-            AstTool.Format(_dataSet.AstFrame, axis, val, coord, stringLength);
+            if (AstTool.Format(_dataSet.AstFrame, axis, val, coord, stringLength) != 0)
+                {
+                    Debug.Log("Error finding formatted WCS coordinate!");
+                }
             return coord.ToString();
         }
 

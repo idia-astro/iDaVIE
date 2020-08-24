@@ -793,9 +793,11 @@ public class VolumeInputController : MonoBehaviour
                     {
                         double physX, physY, physZ;
                         dataSet.GetFitsCoordsAst(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z, out physX, out physY, out physZ);
-                        cursorString = dataSet.GetFitsCoordsStringAst(physX, 1) + System.Environment.NewLine
-                                        + dataSet.GetFitsCoordsStringAst(physY, 2) + System.Environment.NewLine
-                                        + dataSet.GetFitsCoordsStringAst(physZ, 3) + " " + dataSet.GetAxisUnit(3);
+                        cursorString =  "WCS: (" + dataSet.GetFitsCoordsStringAst(physX, 1) + ", "
+                                        + dataSet.GetFitsCoordsStringAst(physY, 2) + ", "
+                                        + dataSet.GetFitsCoordsStringAst(physZ, 3) + " " + dataSet.GetAxisUnit(3) + ")"
+                                        + System.Environment.NewLine + "Pixel: " + "(" + voxelCoordinate.x.ToString()
+                                        + ", " + voxelCoordinate.y.ToString() + ", " + voxelCoordinate.z.ToString() + ")";
                     }
                 }
             }

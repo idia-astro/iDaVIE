@@ -80,14 +80,14 @@ int Clear(AstObject* obj, const char* attrib)
 {
     if (!obj)
     {
-        return 1;
+        return -1;
     }
 
     astSet(obj, attrib);
     if (!astOK)
     {
         astClearStatus;
-        return 1;
+        return -1;
     }
     return 0;
 }
@@ -114,7 +114,7 @@ int Norm(AstFrameSet* wcsinfo, double inout[])
 {
     if (!wcsinfo)
     {
-        return 1;
+        return -1;
     }
     astNorm(wcsinfo, inout);
     return 0;
@@ -124,14 +124,14 @@ int Transform(AstFrameSet* wcsinfo, int npoint, const double xin[], const double
 {
     if (!wcsinfo)
     {
-        return 1;
+        return -1;
     }
 
     astTran2(wcsinfo, npoint, xin, yin, forward, xout, yout);
     if (!astOK)
     {
         astClearStatus;
-        return 1;
+        return -1;
     }
     return 0;
 }
@@ -140,20 +140,31 @@ int Transform3D(AstSpecFrame* wcsinfo, double xin, double yin, double zin, const
 {
     if (!wcsinfo)
     {
-        return 1;
+        return -1;
     }
-
-    double in[] ={xin, yin, zin};
-    double* output = new double[3];
-    astTranN(wcsinfo, 1, 3, 1, in, forward, 3, 1, output);
+    int nDims = astGetI(wcsinfo, "Naxes");
+    double *input = new double[nDims];
+    double* output = new double[nDims];
+    input[0] = xin;
+    input[1] = yin;
+    input[2] = zin;
+    for (int i = 3; i < nDims ; i++)
+    {
+        input[i] = 1;
+    }
+    astTranN(wcsinfo, 1, nDims, 1, input, forward, nDims, 1, output);
     if (!astOK)
     {
         astClearStatus;
-        return 1;
+        delete[] input;
+        delete[] output;
+        return -1;
     }
     *xout = output[0];
     *yout = output[1];
-    *zout = output[2]; //do i need to delete output?
+    *zout = output[2];
+    delete[] input;
+    delete[] output;
     return 0;
 }
 
