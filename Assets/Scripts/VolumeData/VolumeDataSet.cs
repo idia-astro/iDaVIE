@@ -148,10 +148,9 @@ namespace VolumeData
                 FitsReader.FitsCloseFile(fptr, out status);
                 return null;
             }
-            StringBuilder errorMessage = new StringBuilder(70);
-            if (AstTool.InitFrame(out volumeDataSet.AstFrame, volumeDataSet.FitsHeader, errorMessage, errorMessage.Capacity) != 0)
+            if (AstTool.InitFrame(out volumeDataSet.AstFrame, volumeDataSet.FitsHeader) != 0)
             {
-                Debug.Log("Warning... Ast Error: " + errorMessage);
+                Debug.Log("Warning... Ast Error. See Unity Editor logs");
             }
             if (!isMask)
             {

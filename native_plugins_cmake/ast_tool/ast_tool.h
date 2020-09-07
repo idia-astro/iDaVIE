@@ -4,12 +4,13 @@
 #define DllExport __declspec (dllexport)
 
 #include <cstring>
+#include <iostream>
 
 extern "C"
 {
 #include "star/ast.h"
 
-int InitFrame(AstFrameSet**, const char*, char*, int);
+int InitFrame(AstFrameSet**, const char*);
 
 int Format(AstFrameSet*, int, double, char*, int);
 

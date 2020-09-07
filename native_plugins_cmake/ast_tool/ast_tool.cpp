@@ -1,6 +1,6 @@
 #include "ast_tool.h"
 
-int InitFrame(AstFrameSet** astFrameSetPtr, const char* header, char * errorMsg, int errorMsgCapacity)
+int InitFrame(AstFrameSet** astFrameSetPtr, const char* header)
 {
     AstFitsChan* fitschan = nullptr;
     AstFrameSet* wcsinfo = nullptr;
@@ -14,34 +14,34 @@ int InitFrame(AstFrameSet** astFrameSetPtr, const char* header, char * errorMsg,
     fitschan = astFitsChan(nullptr, nullptr, "");
     if (!fitschan)
     {
-        strcpy_s(errorMsg, errorMsgCapacity, "astFitsChan returned null :(");
+        std::cout << "astFitsChan returned null :(" << std::endl;
         astClearStatus;
         return -1;
     }
     if (!header)
     {
-        strcpy_s(errorMsg, errorMsgCapacity, "Missing header argument.");
+        std::cout << "Missing header argument." << std::endl;
         return -1;
     }
     astPutCards(fitschan, header);
     wcsinfo = static_cast<AstFrameSet*>(astRead(fitschan));
     if (!astOK)
     {
-        strcpy_s(errorMsg, errorMsgCapacity, "Some AST LIB error, check logs.");
+        std::cout << "Some AST LIB error, check logs." << std::endl;
         astClearStatus;
         return -1;
     }
     else if (wcsinfo == AST__NULL)
     {
-        strcpy_s(errorMsg, errorMsgCapacity, "No WCS found");
+        std::cout << "No WCS found" << std::endl;
         return -1;
     }
     else if (strcmp(astGetC(wcsinfo, "Class"), "FrameSet"))
     {
-        strcpy_s(errorMsg, errorMsgCapacity, "check FITS header (astlib)");
+        std::cout << "check FITS header (astlib)" << std::endl;
         return -1;
     }
-    strcpy_s(errorMsg, errorMsgCapacity, "Successfully initialized AstFrame!");
+    std::cout << "Successfully initialized AstFrame!" << std::endl;
     *astFrameSetPtr = wcsinfo;
     return 0;
 }

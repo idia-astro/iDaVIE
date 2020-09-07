@@ -8,7 +8,7 @@ using System.Text;
 public class AstTool
 {
       [DllImport("libast_tool")]
-      public static extern int InitFrame(out IntPtr astFramePtr, IntPtr fitsHeader, StringBuilder errorMsg, int errorMsgCapacity);
+      public static extern int InitFrame(out IntPtr astFramePtr, IntPtr fitsHeader);
 
       [DllImport("libast_tool")]
       public static extern int Format(IntPtr wcsinfo, int axis, double value, StringBuilder formattedVal, int formattedValLength);
