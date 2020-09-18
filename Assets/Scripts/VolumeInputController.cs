@@ -824,7 +824,6 @@ public class VolumeInputController : MonoBehaviour
                 var regionSize = Vector3.Max(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) - Vector3.Min(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) + Vector3.one;
                 double xLength, yLength, zLength;
                 dataSet.GetFitsLengthsAst(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel, out xLength, out yLength, out zLength);
-                //Vector3 wcsLengths = dataSet.GetFitsLengths(regionSize.x, regionSize.y, regionSize.z);
                 cursorString = $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}" + System.Environment.NewLine
                                                                                            + $"Physical: " + dataSet.GetFormattedCoord(xLength, 1) + ", " + dataSet.GetFormattedCoord(yLength, 2)+ ", " + dataSet.GetFormattedCoord(zLength, 3) + " " + dataSet.GetAstAttribute("Unit(3)");
             }

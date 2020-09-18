@@ -696,9 +696,12 @@ namespace VolumeData
         {
             IntPtr astCmpFrame = IntPtr.Zero;
             AstTool.GetAstFrame(_dataSet.AstFrameSet, out astCmpFrame, 2);
-            if (AstTool.Distance1D(astCmpFrame, startPoint.x, endPoint.x, 1, out xLength) != 0 ||
-                    AstTool.Distance1D(astCmpFrame, startPoint.y, endPoint.y, 1, out yLength) != 0 ||
-                    AstTool.Distance1D(astCmpFrame, startPoint.z, endPoint.z, 1, out zLength) != 0)
+            double xStart, yStart, zStart, xEnd, yEnd, zEnd;
+            if (AstTool.Transform3D(_dataSet.AstFrameSet, startPoint.x, startPoint.y, startPoint.z, 1, out xStart, out yStart, out zStart) != 0 ||
+                    AstTool.Transform3D(_dataSet.AstFrameSet, endPoint.x, endPoint.y, endPoint.z, 1, out xEnd, out yEnd, out zEnd) != 0 ||
+                    AstTool.Distance1D(astCmpFrame, xStart, xEnd, 1, out xLength) != 0 ||
+                    AstTool.Distance1D(astCmpFrame, yStart, yEnd, 1, out yLength) != 0 ||
+                    AstTool.Distance1D(astCmpFrame, zStart, zEnd, 1, out zLength) != 0)
             {
                 Debug.Log("Error finding WCS distance!");
                 AstTool.DeleteObject(astCmpFrame);

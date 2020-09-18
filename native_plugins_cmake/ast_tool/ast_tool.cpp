@@ -160,26 +160,12 @@ int Distance1D(AstFrame* astFramePtr, double start, double end, int axis, double
     {
         return -1;
     }
-    int nDims = astGetI(astFramePtr, "Naxes");
-    double *startPt = new double[nDims];
-    double* endPt = new double[nDims];
-    for (int i = 0; i < nDims ; i++)
-    {
-        startPt[i] = 1;
-        endPt[i] = 1;
-    }
-    startPt[axis - 1] = start;
-    endPt[axis - 1] = end;
-    *distance = astDistance(astFramePtr, startPt, endPt);
+    *distance = astAxDistance(astFramePtr, axis, start, end);
     if (!astOK)
     {
         astClearStatus;
-        delete[] startPt;
-        delete[] endPt;
         return -1;
     }
-    delete[] startPt;
-    delete[] endPt;
     return 0;
 }
 
