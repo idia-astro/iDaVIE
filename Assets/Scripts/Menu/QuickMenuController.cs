@@ -17,6 +17,7 @@ public class QuickMenuController : MonoBehaviour
     public GameObject mainMenuCanvas;
     public GameObject paintMenu;
     public GameObject histogramMenu;
+    public GameObject voiceCommandsListCanvas;
     public GameObject savePopup;
     public GameObject ExitPopup;
     public GameObject ExitSavePopup;
@@ -118,6 +119,12 @@ public class QuickMenuController : MonoBehaviour
     {
 
         mainMenuCanvas.SetActive(!mainMenuCanvas.activeSelf);
+    }
+
+    public void OpenListOfVoiceCommands()
+    {
+
+        voiceCommandsListCanvas.SetActive(!voiceCommandsListCanvas.activeSelf);
     }
 
     public void ToggleFeatures()
