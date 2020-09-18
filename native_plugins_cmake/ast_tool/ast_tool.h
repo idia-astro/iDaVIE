@@ -10,31 +10,39 @@ extern "C"
 {
 #include "star/ast.h"
 
-int InitFrame(AstFrameSet**, const char*);
+DllExport int InitAstFrameSet(AstFrameSet**, const char*);
 
-int Format(AstFrameSet*, int, double, char*, int);
+DllExport int GetAstFrame(AstFrameSet*, AstFrame**, int index);
 
-int Set(AstFrameSet*, const char*);
+DllExport int Format(AstFrameSet*, int, double, char*, int);
 
-int Clear(AstObject*, const char*);
+DllExport int Set(AstFrameSet*, const char*);
 
-void Dump(AstFrameSet*, char*);
+DllExport int Clear(AstObject*, const char*);
 
-int GetString(AstFrameSet*, const char*, char*, int);
+DllExport void Dump(AstFrameSet*, char*);
 
-int Norm(AstFrameSet*, double[]);
+DllExport int GetString(AstFrameSet*, const char*, char*, int);
 
-int Transform(AstFrameSet*, int, const double[], const double[], int, double[], double[]);
+DllExport int Norm(AstFrameSet*, double, double, double, double*, double*, double*);
 
-int Transform3D(AstSpecFrame*, double, double, double, const int, double*, double*, double*);
+DllExport int Distance1D(AstFrame*, double, double, int, double*);
 
-void DeleteObject(AstFrameSet*);
+DllExport int Distance2D(AstFrame*, double, double, int, double*); //to implement later
 
-int Copy(AstFrameSet*, AstFrameSet**);
+DllExport int Transform(AstFrameSet*, int, const double[], const double[], int, double[], double[]);
 
-void Invert(AstFrameSet*);
+DllExport int Transform3D(AstFrameSet*, double, double, double, const int, double*, double*, double*);
 
-void FreeMemory(void*);
+DllExport int SpectralTransform(AstFrameSet*, const char*, const char*, const char*, const double, const int, double*, char*, int);
+
+DllExport void DeleteObject(AstFrameSet*);
+
+DllExport int Copy(AstFrameSet*, AstFrameSet**);
+
+DllExport void Invert(AstFrameSet*);
+
+DllExport void FreeMemory(void*);
 
 }
 

@@ -86,7 +86,8 @@ namespace VolumeData
         public IntPtr FitsData = IntPtr.Zero;
         public IntPtr FitsHeader = IntPtr.Zero;
         public int NumberHeaderKeys;
-        public IntPtr AstFrame = IntPtr.Zero;
+        public IntPtr AstFrameSet = IntPtr.Zero;
+        
         public long[] cubeSize;
 
         public int[] Histogram;
@@ -95,6 +96,8 @@ namespace VolumeData
         public float MinValue;
         public float MeanValue;
         public float StanDev;
+
+        public string PixelUnit = "units";
 
         public static VolumeDataSet LoadRandomFitsCube(float min, float max, int xDim, int yDim, int zDim)
         {
@@ -129,7 +132,7 @@ namespace VolumeData
             return volumeDataSet;
         }
 
-        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, int index2 = 2, int sliceDim = 1)
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, string astFreqUnit, string astVelUnit, int index2 = 2, int sliceDim = 1)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
             volumeDataSet.IsMask = isMask;
@@ -137,6 +140,8 @@ namespace VolumeData
             IntPtr fptr = IntPtr.Zero;
             int status = 0;
             int cubeDimensions;
+            StringBuilder astFreqUnitSB = new StringBuilder(astFreqUnit);
+            StringBuilder astVelUnitSB = new StringBuilder(astVelUnit);
             IntPtr dataPtr = IntPtr.Zero;
             if (FitsReader.FitsOpenFile(out fptr, fileName, out status, true) != 0)
             {
@@ -148,9 +153,10 @@ namespace VolumeData
                 FitsReader.FitsCloseFile(fptr, out status);
                 return null;
             }
-            if (AstTool.InitFrame(out volumeDataSet.AstFrame, volumeDataSet.FitsHeader) != 0)
+            IntPtr astFrameSet = IntPtr.Zero;
+            if (AstTool.InitAstFrameSet(out volumeDataSet.AstFrameSet, volumeDataSet.FitsHeader) != 0)
             {
-                Debug.Log("Warning... Ast Error. See Unity Editor logs");
+                Debug.Log("Warning... AstFrameSet Error. See Unity Editor logs");
             }
             if (!isMask)
             {
@@ -659,19 +665,6 @@ namespace VolumeData
             }
         }
 
-        public Vector2 GetRADecFromXY(double X, double Y)
-        {
-            double XPos, YPos;
-            MariusSoft.WCSTools.WCSUtil.ffwldp(X, Y, _xRef, _yRef, _xRefPix, _yRefPix, _xDelt, _yDelt, _rot, _wcsProj, out XPos, out YPos);
-            Vector2 raDec = new Vector2((float) XPos, (float) YPos);
-            return raDec;
-        }
-
-        public double GetVelocityFromZ(double z)
-        {
-            return _zRef + _zDelt * (z - _zRefPix);
-        }
-
         public Vector3 GetWCSDeltas()
         {
             return new Vector3((float) _xDelt, (float) _yDelt, (float) _zDelt);
@@ -731,6 +724,9 @@ namespace VolumeData
                         break;
                     case "CROTA2":
                         _rot = Convert.ToDouble(entry.Value.Replace("'", ""), CultureInfo.InvariantCulture);
+                        break;
+                    case "BUNIT":
+                        PixelUnit = entry.Value.Substring(1, entry.Value.Length - 2);
                         break;
                     default:
                         break;

@@ -1,10 +1,10 @@
 #include "ast_tool.h"
 
-int InitFrame(AstFrameSet** astFrameSetPtr, const char* header)
+int InitAstFrameSet(AstFrameSet** astFrameSetPtr, const char* header)
 {
+    std::cout << "Initializing AstFrameSet..." << std::endl;
     AstFitsChan* fitschan = nullptr;
     AstFrameSet* wcsinfo = nullptr;
-    int status = 0;
     if (wcsinfo)
     {
         astEnd;
@@ -41,18 +41,18 @@ int InitFrame(AstFrameSet** astFrameSetPtr, const char* header)
         std::cout << "check FITS header (astlib)" << std::endl;
         return -1;
     }
-    std::cout << "Successfully initialized AstFrame!" << std::endl;
+    astShow(wcsinfo);
     *astFrameSetPtr = wcsinfo;
     return 0;
 }
 
-int Format(AstFrameSet* wcsinfo, int axis, double value, char* formattedVal, int formattedValLength)
+int GetAstFrame(AstFrameSet* frameSetPtr, AstFrame** astFramePtr, int index)
 {
-    if (!wcsinfo)
+    if (!frameSetPtr)
     {
         return -1;
     }
-    strcpy_s(formattedVal, formattedValLength, astFormat(wcsinfo, axis, value)); //might not work... need to free
+    *astFramePtr = static_cast<AstFrame*>(astGetFrame(frameSetPtr, index));
     if (!astOK)
     {
         astClearStatus;
@@ -61,13 +61,28 @@ int Format(AstFrameSet* wcsinfo, int axis, double value, char* formattedVal, int
     return 0;
 }
 
-int Set(AstFrameSet* wcsinfo, const char* attrib)
+int Format(AstFrameSet* frameSetPtr, int axis, double value, char* formattedVal, int formattedValLength)
 {
-    if (!wcsinfo)
+    if (!frameSetPtr)
     {
         return -1;
     }
-    astSet(wcsinfo, attrib);
+    strcpy_s(formattedVal, formattedValLength, astFormat(frameSetPtr, axis, value));
+    if (!astOK)
+    {
+        astClearStatus;
+        return -1;
+    }
+    return 0;
+}
+
+int Set(AstFrameSet* frameSetPtr, const char* attrib)
+{
+    if (!frameSetPtr)
+    {
+        return -1;
+    }
+    astSet(frameSetPtr, attrib);
     if (!astOK)
     {
         astClearStatus;
@@ -92,42 +107,90 @@ int Clear(AstObject* obj, const char* attrib)
     return 0;
 }
 
-void Dump(AstFrameSet* wcsinfo, char* stringToReturn)
+void Dump(AstFrameSet* frameSetPtr, char* stringToReturn)
 {
-    if (wcsinfo)
+    if (frameSetPtr)
     {
-        stringToReturn = astToString(wcsinfo);
+        stringToReturn = astToString(frameSetPtr);
     }
 }
 
-int GetString(AstFrameSet* wcsinfo, const char* attribute, char* stringToReturn, int stringToReturnLen)
+int GetString(AstFrameSet* frameSetPtr, const char* attribute, char* stringToReturn, int stringToReturnLen)
 {
-    if (!wcsinfo || !astHasAttribute(wcsinfo, attribute))
+    if (!frameSetPtr || !astHasAttribute(frameSetPtr, attribute))
     {
         return -1;
     }
-    strcpy_s(stringToReturn, stringToReturnLen, astGetC(wcsinfo, attribute));
+    strcpy_s(stringToReturn, stringToReturnLen, astGetC(frameSetPtr, attribute));
     return 0;
 }
 
-int Norm(AstFrameSet* wcsinfo, double inout[])
+int Norm(AstFrameSet* frameSetPtr, double xIn, double yIn, double zIn, double* xOut, double* yOut, double* zOut)
 {
-    if (!wcsinfo)
+    if (!frameSetPtr)
     {
         return -1;
     }
-    astNorm(wcsinfo, inout);
+    int nDims = astGetI(frameSetPtr, "Naxes");
+    double *coords = new double[nDims];
+    coords[0] = xIn;
+    coords[1] = yIn;
+    coords[2] = zIn;
+    for (int i = 3; i < nDims ; i++)
+    {
+        coords[i] = 1;
+    }
+    astNorm(frameSetPtr, coords);
+    if (!astOK)
+    {
+        astClearStatus;
+        delete[] coords;
+        return -1;
+    }
+    *xOut = coords[0];
+    *yOut = coords[1];
+    *zOut = coords[2];
+    delete[] coords;
     return 0;
 }
 
-int Transform(AstFrameSet* wcsinfo, int npoint, const double xin[], const double yin[], int forward, double xout[], double yout[])
+int Distance1D(AstFrame* astFramePtr, double start, double end, int axis, double* distance)
 {
-    if (!wcsinfo)
+    if (!astFramePtr)
+    {
+        return -1;
+    }
+    int nDims = astGetI(astFramePtr, "Naxes");
+    double *startPt = new double[nDims];
+    double* endPt = new double[nDims];
+    for (int i = 0; i < nDims ; i++)
+    {
+        startPt[i] = 1;
+        endPt[i] = 1;
+    }
+    startPt[axis - 1] = start;
+    endPt[axis - 1] = end;
+    *distance = astDistance(astFramePtr, startPt, endPt);
+    if (!astOK)
+    {
+        astClearStatus;
+        delete[] startPt;
+        delete[] endPt;
+        return -1;
+    }
+    delete[] startPt;
+    delete[] endPt;
+    return 0;
+}
+
+int Transform(AstFrameSet* frameSetPtr, int npoint, const double xin[], const double yin[], int forward, double xout[], double yout[])
+{
+    if (!frameSetPtr)
     {
         return -1;
     }
 
-    astTran2(wcsinfo, npoint, xin, yin, forward, xout, yout);
+    astTran2(frameSetPtr, npoint, xin, yin, forward, xout, yout);
     if (!astOK)
     {
         astClearStatus;
@@ -136,23 +199,23 @@ int Transform(AstFrameSet* wcsinfo, int npoint, const double xin[], const double
     return 0;
 }
 
-int Transform3D(AstSpecFrame* wcsinfo, double xin, double yin, double zin, const int forward, double* xout, double* yout, double* zout)
+int Transform3D(AstFrameSet* frameSetPtr, double xIn, double yIn, double zIn, const int forward, double* xOut, double* yOut, double* zOut)
 {
-    if (!wcsinfo)
+    if (!frameSetPtr)
     {
         return -1;
     }
-    int nDims = astGetI(wcsinfo, "Naxes");
+    int nDims = astGetI(frameSetPtr, "Naxes");
     double *input = new double[nDims];
     double* output = new double[nDims];
-    input[0] = xin;
-    input[1] = yin;
-    input[2] = zin;
+    input[0] = xIn;
+    input[1] = yIn;
+    input[2] = zIn;
     for (int i = 3; i < nDims ; i++)
     {
         input[i] = 1;
     }
-    astTranN(wcsinfo, 1, nDims, 1, input, forward, nDims, 1, output);
+    astTranN(frameSetPtr, 1, nDims, 1, input, forward, nDims, 1, output);
     if (!astOK)
     {
         astClearStatus;
@@ -160,17 +223,77 @@ int Transform3D(AstSpecFrame* wcsinfo, double xin, double yin, double zin, const
         delete[] output;
         return -1;
     }
-    *xout = output[0];
-    *yout = output[1];
-    *zout = output[2];
+    *xOut = output[0];
+    *yOut = output[1];
+    *zOut = output[2];
     delete[] input;
     delete[] output;
     return 0;
 }
 
-void DeleteObject(AstFrameSet* src)
+int SpectralTransform(AstFrameSet* frameSetPtr, const char* specSysTo, const char* specUnitTo, const char* specRestTo, double zIn, const int forward, double* zOut, char* formatZOut, int formatLength)
 {
-    astDelete(src);
+    if (!frameSetPtr)
+    {
+        return 1;
+    }
+
+    AstFrameSet* frameSetTo = nullptr;
+    frameSetTo = static_cast<AstFrameSet*> astCopy(frameSetPtr);
+    if (!frameSetTo)
+    {
+        return 1;
+    }
+
+    char buffer[128];
+    if (specSysTo) {
+        snprintf(buffer, sizeof(buffer), "System(3)=%s", specSysTo);
+        astSet(frameSetTo, buffer);
+    }
+    if (specUnitTo) {
+        snprintf(buffer, sizeof(buffer), "Unit(3)=%s", specUnitTo);
+        astSet(frameSetTo, buffer);
+    }
+    if (specRestTo) {
+        snprintf(buffer, sizeof(buffer), "StdOfRest(3)=%s", specRestTo);
+        astSet(frameSetTo, buffer);
+    }
+
+    AstFrameSet *cvt;
+    cvt = static_cast<AstFrameSet*>astConvert(frameSetPtr, frameSetTo, "");
+    int nDims = astGetI(frameSetPtr, "Naxes");
+    double *input = new double[nDims];
+    double* output = new double[nDims];
+    for (int i = 0; i < nDims ; i++)
+    {
+        input[i] = 1;
+    }
+    input[2] = zIn;
+    astTranN(cvt, 1, nDims, 1, input, forward, nDims, 1, output);
+    if (!astOK)
+    {
+        astClearStatus;
+        delete[] input;
+        delete[] output;
+        return -1;
+    }
+    *zOut = output[2];
+    delete[] input;
+    delete[] output;
+    strcpy_s(formatZOut, formatLength, astFormat(cvt, 3, output[2]));
+    if (!astOK)
+    {
+        astClearStatus;
+        return -1;
+    }
+    return 0;
+}
+
+
+
+void DeleteObject(AstFrameSet* frameSetPtr)
+{
+    astDelete(frameSetPtr);
 }
 
 int Copy(AstFrameSet* src, AstFrameSet** copy)

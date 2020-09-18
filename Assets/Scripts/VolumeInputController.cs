@@ -791,13 +791,13 @@ public class VolumeInputController : MonoBehaviour
                     var voxelCoordinate = dataSet.CursorVoxel;
                     if (voxelCoordinate.x >= 0 && _handInfoComponents != null)
                     {
-                        double physX, physY, physZ;
+                        double physX, physY, physZ, normX, normY, normZ;
                         dataSet.GetFitsCoordsAst(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z, out physX, out physY, out physZ);
-                        cursorString =  "WCS: (" + dataSet.GetFitsCoordsStringAst(physX, 1) + ", "
-                                        + dataSet.GetFitsCoordsStringAst(physY, 2) + ", "
-                                        + dataSet.GetFitsCoordsStringAst(physZ, 3) + " " + dataSet.GetAxisUnit(3) + ")"
-                                        + System.Environment.NewLine + "Pixel: " + "(" + voxelCoordinate.x.ToString()
-                                        + ", " + voxelCoordinate.y.ToString() + ", " + voxelCoordinate.z.ToString() + ")";
+                        dataSet.GetNormCoords(physX, physY, physZ, out normX, out normY, out normZ);
+                        cursorString = String.Format("WCS: ({0}, {1})", dataSet.GetFormattedCoord(normX, 1), dataSet.GetFormattedCoord(normY, 2)) + System.Environment.NewLine
+                                        + String.Format("{0}: {1,10} {2}", dataSet.GetAstAttribute("System(3)"), dataSet.GetFormattedCoord(normZ, 3), dataSet.GetAstAttribute("Unit(3)")) + System.Environment.NewLine
+                                        + String.Format("Image: ({0,5}, {1,5}, {2,5})", voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z) + System.Environment.NewLine
+                                        + String.Format("Value: {0,16} {1}", dataSet.CursorValue, dataSet.GetPixelUnit());
                     }
                 }
             }
@@ -822,9 +822,11 @@ public class VolumeInputController : MonoBehaviour
             if (dataSet.isActiveAndEnabled)
             {
                 var regionSize = Vector3.Max(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) - Vector3.Min(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) + Vector3.one;
-                Vector3 wcsLengths = dataSet.GetFitsLengths(regionSize.x, regionSize.y, regionSize.z);
+                double xLength, yLength, zLength;
+                dataSet.GetFitsLengthsAst(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel, out xLength, out yLength, out zLength);
+                //Vector3 wcsLengths = dataSet.GetFitsLengths(regionSize.x, regionSize.y, regionSize.z);
                 cursorString = $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}" + System.Environment.NewLine
-                                                                                           + $"Physical: {Math.Truncate(wcsLengths.x * 100) / 100}° x {Math.Truncate(wcsLengths.y * 100) / 100}° x {Math.Truncate(wcsLengths.z * 100) / 100 / 1000} km/s";
+                                                                                           + $"Physical: " + dataSet.GetFormattedCoord(xLength, 1) + ", " + dataSet.GetFormattedCoord(yLength, 2)+ ", " + dataSet.GetFormattedCoord(zLength, 3) + " " + dataSet.GetAstAttribute("Unit(3)");
             }
         }
 
