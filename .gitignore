@@ -456,3 +456,6 @@ Assets/SteamVR_Resources.meta
 #NuGet
 Assets/NuGet/
 Assets/NuGet.meta
+
+#Screenshots
+Outputs/
