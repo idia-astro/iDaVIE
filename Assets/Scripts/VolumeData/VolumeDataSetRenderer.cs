@@ -692,20 +692,21 @@ namespace VolumeData
             return new Vector3(xLength, yLength, zLength);
         }
 
-        public void GetFitsLengthsAst(Vector3Int startPoint, Vector3Int endPoint, out double xLength, out double yLength, out double zLength)
+        public void GetFitsLengthsAst(Vector3Int startPoint, Vector3Int endPoint, out double xLength, out double yLength, out double zLength, out double angle)
         {
             IntPtr astCmpFrame = IntPtr.Zero;
             AstTool.GetAstFrame(_dataSet.AstFrameSet, out astCmpFrame, 2);
             double xStart, yStart, zStart, xEnd, yEnd, zEnd;
-            if (AstTool.Transform3D(_dataSet.AstFrameSet, startPoint.x, startPoint.y, startPoint.z, 1, out xStart, out yStart, out zStart) != 0 ||
-                    AstTool.Transform3D(_dataSet.AstFrameSet, endPoint.x, endPoint.y, endPoint.z, 1, out xEnd, out yEnd, out zEnd) != 0 ||
+            if (AstTool.Transform3D(_dataSet.AstFrameSet, (double)startPoint.x, (double)startPoint.y, (double)startPoint.z, 1, out xStart, out yStart, out zStart) != 0 ||
+                    AstTool.Transform3D(_dataSet.AstFrameSet, (double)endPoint.x, (double)endPoint.y, (double)endPoint.z, 1, out xEnd, out yEnd, out zEnd) != 0 ||
                     AstTool.Distance1D(astCmpFrame, xStart, xEnd, 1, out xLength) != 0 ||
-                    AstTool.Distance1D(astCmpFrame, yStart, yEnd, 1, out yLength) != 0 ||
-                    AstTool.Distance1D(astCmpFrame, zStart, zEnd, 1, out zLength) != 0)
+                    AstTool.Distance1D(astCmpFrame, yStart, yEnd, 2, out yLength) != 0 ||
+                    AstTool.Distance1D(astCmpFrame, zStart, zEnd, 3, out zLength) != 0 ||
+                    AstTool.Distance2D(astCmpFrame, xStart, yStart, xEnd, yEnd, out angle) != 0)
             {
-                Debug.Log("Error finding WCS distance!");
+                Debug.Log("Error finding WCS distances!");
                 AstTool.DeleteObject(astCmpFrame);
-                xLength = yLength = zLength = 0;
+                xLength = yLength = zLength = angle = 0;
             }
         }
 

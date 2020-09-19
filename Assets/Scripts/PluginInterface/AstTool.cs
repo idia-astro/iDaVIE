@@ -33,6 +33,9 @@ public class AstTool
 
       [DllImport("libast_tool")]
       public static extern int Distance1D(IntPtr astFrame, double start, double end, int axis, out double distance);
+      
+      [DllImport("libast_tool")]
+      public static extern int Distance2D(IntPtr astFrame, double startX, double startY, double endX, double endY, out double distance);
 
       [DllImport("libast_tool")]
       public static extern int Transform(IntPtr wcsinfo, int npoint, in IntPtr xint, in IntPtr yint, int forward, IntPtr xout, IntPtr yout);

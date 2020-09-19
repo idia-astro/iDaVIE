@@ -822,10 +822,11 @@ public class VolumeInputController : MonoBehaviour
             if (dataSet.isActiveAndEnabled)
             {
                 var regionSize = Vector3.Max(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) - Vector3.Min(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) + Vector3.one;
-                double xLength, yLength, zLength;
-                dataSet.GetFitsLengthsAst(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel, out xLength, out yLength, out zLength);
+                double xLength, yLength, zLength, angle;
+                dataSet.GetFitsLengthsAst(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel, out xLength, out yLength, out zLength, out angle);
                 cursorString = $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}" + System.Environment.NewLine
-                                                                                           + $"Physical: " + dataSet.GetFormattedCoord(xLength, 1) + ", " + dataSet.GetFormattedCoord(yLength, 2)+ ", " + dataSet.GetFormattedCoord(zLength, 3) + " " + dataSet.GetAstAttribute("Unit(3)");
+                                                                                           + $"Physical: " + dataSet.GetFormattedCoord(Math.Abs(xLength), 1) + " x " + dataSet.GetFormattedCoord(Math.Abs(yLength), 2)+ " x " + dataSet.GetFormattedCoord(Math.Abs(zLength), 3) + " " + dataSet.GetAstAttribute("Unit(3)")
+                                                                                           + System.Environment.NewLine + "Angle: " + angle.ToString();
             }
         }
 

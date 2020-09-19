@@ -169,6 +169,37 @@ int Distance1D(AstFrame* astFramePtr, double start, double end, int axis, double
     return 0;
 }
 
+int Distance2D(AstFrame* astFramePtr, double xStart, double yStart, double xEnd, double yEnd, double* distance)
+{
+    if (!astFramePtr)
+    {
+        return -1;
+    }
+    int nDims = astGetI(astFramePtr, "Naxes");
+    double *startPt = new double[nDims];
+    double *endPt = new double[nDims];
+    for (int i = 2; i < nDims ; i++)
+    {
+        startPt[i] = 1;
+        endPt[i] = 1;
+    }
+        startPt[0] = xStart;
+        startPt[1] = yStart;
+        endPt[0] = xEnd;
+        endPt[1] = yEnd;
+    *distance = astDistance(astFramePtr, startPt, endPt);
+    if (!astOK)
+    {
+        astClearStatus;
+        delete[] startPt;
+        delete[] endPt;
+        return -1;
+    }
+    delete[] startPt;
+    delete[] endPt;
+    return 0;
+}
+
 int Transform(AstFrameSet* frameSetPtr, int npoint, const double xin[], const double yin[], int forward, double xout[], double yout[])
 {
     if (!frameSetPtr)

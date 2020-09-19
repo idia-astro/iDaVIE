@@ -28,7 +28,7 @@ DllExport int Norm(AstFrameSet*, double, double, double, double*, double*, doubl
 
 DllExport int Distance1D(AstFrame*, double, double, int, double*);
 
-DllExport int Distance2D(AstFrame*, double, double, int, double*); //to implement later
+DllExport int Distance2D(AstFrame*, double, double, double, double, double*);
 
 DllExport int Transform(AstFrameSet*, int, const double[], const double[], int, double[], double[]);
 
