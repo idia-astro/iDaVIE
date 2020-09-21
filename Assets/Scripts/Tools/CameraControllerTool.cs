@@ -7,7 +7,8 @@ using UnityEngine;
 public class CameraControllerTool : MonoBehaviour
 {
     public GameObject QuickMenuCanvas;
-  
+    public Camera targetCamera;
+
     // Start is called before the first frame update
 
     void Start()
@@ -42,24 +43,26 @@ public class CameraControllerTool : MonoBehaviour
     IEnumerator makeScreenshot()
         {
 
-
             yield return new WaitForSeconds(0.1f);
-
-
             yield return new WaitForEndOfFrame();
-
-            // Create a texture the size of the screen, RGB24 format
+     
             int width = Screen.width;
             int height = Screen.height;
-            Texture2D tex = new Texture2D(width, height, TextureFormat.RGB24, false);
+            var rt = new RenderTexture(width, height, 24);
+            targetCamera.targetTexture=rt;
 
-            // Read screen contents into the texture
-            tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+            RenderTexture.active = targetCamera.targetTexture;
+
+            // Render the camera's view.
+            targetCamera.Render();
+            // Make a new texture and read the active Render Texture into it.
+            Texture2D tex = new Texture2D(targetCamera.targetTexture.width, targetCamera.targetTexture.height, TextureFormat.RGB24, false);
+            tex.ReadPixels(new Rect(0, 0, targetCamera.targetTexture.width, targetCamera.targetTexture.height), 0, 0);
             tex.Apply();
 
             // Encode texture into PNG
             byte[] bytes = tex.EncodeToPNG();
-            Destroy(tex);
+                Destroy(tex);
 
             var directory = new DirectoryInfo(Application.dataPath);
 
