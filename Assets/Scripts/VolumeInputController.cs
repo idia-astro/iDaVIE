@@ -428,6 +428,7 @@ public class VolumeInputController : MonoBehaviour
         if (activeDataSet)
         {
             activeDataSet.ClearRegion();
+            activeDataSet.ClearMeasure();
             var featureSetManager = activeDataSet.GetComponentInChildren<FeatureSetManager>();
             // Clear region selection by clicking selection. Attempt to select feature
             if (selectionStopwatch.ElapsedMilliseconds < 200)
@@ -825,8 +826,8 @@ public class VolumeInputController : MonoBehaviour
                 double xLength, yLength, zLength, angle;
                 dataSet.GetFitsLengthsAst(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel, out xLength, out yLength, out zLength, out angle);
                 cursorString = $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}" + System.Environment.NewLine
-                                                                                           + $"Physical: " + dataSet.GetFormattedCoord(Math.Abs(xLength), 1) + " x " + dataSet.GetFormattedCoord(Math.Abs(yLength), 2)+ " x " + dataSet.GetFormattedCoord(Math.Abs(zLength), 3) + " " + dataSet.GetAstAttribute("Unit(3)")
-                                                                                           + System.Environment.NewLine + "Angle: " + angle.ToString();
+                                + $"Angle: " + FormatAngle(angle) + System.Environment.NewLine
+                                + String.Format("Depth: {0, 15} {1}" ,dataSet.GetFormattedCoord(Math.Abs(zLength), 3), dataSet.GetAstAttribute("Unit(3)"));
             }
         }
 
@@ -838,6 +839,18 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
+    private string FormatAngle(double angleInRad)
+    {
+        double deg = angleInRad / Math.PI * 180.0;
+        if (deg >= 1)
+            return deg.ToString("N3") + "°";
+        else
+        {
+            double angleMin = (deg - Math.Truncate(deg)) * 60;
+            double angleSec = Math.Truncate((angleMin - Math.Truncate(angleMin)) * 60 * 100) / 100;
+            return Math.Truncate(angleMin).ToString("00") + "'" + angleSec.ToString("00.00") + "\"";             
+        }
+    }
 
     private void UpdateScalingText(VolumeDataSetRenderer dataSet)
     {
