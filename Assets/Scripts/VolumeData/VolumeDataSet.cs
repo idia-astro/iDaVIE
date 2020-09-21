@@ -132,7 +132,7 @@ namespace VolumeData
             return volumeDataSet;
         }
 
-        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, string astFreqUnit, string astVelUnit, int index2 = 2, int sliceDim = 1)
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, int index2 = 2, int sliceDim = 1)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
             volumeDataSet.IsMask = isMask;
@@ -140,8 +140,6 @@ namespace VolumeData
             IntPtr fptr = IntPtr.Zero;
             int status = 0;
             int cubeDimensions;
-            StringBuilder astFreqUnitSB = new StringBuilder(astFreqUnit);
-            StringBuilder astVelUnitSB = new StringBuilder(astVelUnit);
             IntPtr dataPtr = IntPtr.Zero;
             if (FitsReader.FitsOpenFile(out fptr, fileName, out status, true) != 0)
             {
@@ -945,7 +943,11 @@ namespace VolumeData
             {
                 FitsReader.FreeFitsMemory(FitsHeader, out status);
             }
-
+            if (AstFrameSet != IntPtr.Zero)
+            {
+                AstTool.DeleteObject(AstFrameSet);
+                AstTool.AstEnd();
+            }
             ExistingMaskBuffer?.Release();
             AddedMaskBuffer?.Release();
         }

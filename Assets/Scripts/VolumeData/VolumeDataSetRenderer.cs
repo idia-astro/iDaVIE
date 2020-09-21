@@ -106,8 +106,6 @@ namespace VolumeData
         public Vector3 SliceMax = Vector3.one;
         public int CubeDepthAxis = 2;
         public int CubeSlice = 1;
-        public string AstFreqUnit = "GHz";
-        public string AstVelUnit = "km/s";
 
         public Vector3 InitialPosition { get; private set; }
         public Quaternion InitialRotation { get; private set; }
@@ -227,7 +225,7 @@ namespace VolumeData
             if (RandomVolume)
                 _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);
             else
-                _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false, AstFreqUnit, AstVelUnit, CubeDepthAxis, CubeSlice);
+                _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false, CubeDepthAxis, CubeSlice);
             _volumeInputController = FindObjectOfType<VolumeInputController>();
             _featureManager = GetComponentInChildren<FeatureSetManager>();
             if (_featureManager == null)
@@ -244,7 +242,7 @@ namespace VolumeData
             ScaleMin = _dataSet.MinValue;
             if (!String.IsNullOrEmpty(MaskFileName))
             {
-                _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, true, "", "");
+                _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, true);
                 _maskDataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
             }
             _renderer = GetComponent<MeshRenderer>();
@@ -699,23 +697,7 @@ namespace VolumeData
                 Debug.Log("Error normalizing physical coordinates!");
             }
         }
-/*
-        public void GetFreqCoordsAst(double Z, out double fitsZ)
-        {
-            if (AstTool.SpectralTransform(_dataSet.AstCmpFrame, new StringBuilder("FREQ"), new StringBuilder(AstFreqUnit), new StringBuilder(GetStdOfRest()), Z, 1, out fitsZ) != 0)
-            {
-                Debug.Log("Error transforming sky pixel to physical coordinates!");
-            }
-        }
 
-        public void GetVelCoordsAst(double Z, out double fitsZ)
-        {
-            if (AstTool.SpectralTransform(_dataSet.AstCmpFrame, new StringBuilder("VELO"), new StringBuilder(AstVelUnit), new StringBuilder(GetStdOfRest()), Z, 1, out fitsZ) != 0)
-           {
-                Debug.Log("Error transforming sky pixel to physical coordinates!");
-           }
-        }
-*/
         public Vector3 GetFitsLengths(double X, double Y, double Z)
         {
             Vector3 wcsConversion = _dataSet.GetWCSDeltas();
@@ -753,55 +735,7 @@ namespace VolumeData
                 }
             return coord.ToString();
         }
-/*
-        public string GetFormattedFreqCoords(double val)
-        {
-            int stringLength = 70;
-            StringBuilder coord = new StringBuilder(stringLength);
-            if (AstTool.Format(_dataSet.AstFreqFrame, 1, val, coord, stringLength) != 0)
-                {
-                    Debug.Log("Error finding formatted spectral coordinate!");
-                }
-            return coord.ToString();
-        }
 
-        public string GetFormattedVelCoords(double val)
-        {
-            int stringLength = 70;
-            StringBuilder coord = new StringBuilder(stringLength);
-            if (AstTool.Format(_dataSet.AstVelFrame, 1, val, coord, stringLength) != 0)
-                {
-                    Debug.Log("Error finding formatted spectral coordinate!");
-                }
-            return coord.ToString();
-        }
-
-        public string GetFreqUnit()
-        {
-            StringBuilder unitAttribute = new StringBuilder("Unit(" + 1 + ")");
-            int stringLength = 70;
-            StringBuilder unit = new StringBuilder(stringLength);
-            if (AstTool.GetString(_dataSet.AstFreqFrame, unitAttribute, unit,  stringLength)  != 0)
-                {
-                    Debug.Log("Cannot find attribute " + unitAttribute + " in Frequency Frame!");
-                    return "Units";
-                }
-            return unit.ToString();
-        }
-
-        public string GetVelUnit()
-        {
-            StringBuilder unitAttribute = new StringBuilder("Unit(" + 1 + ")");
-            int stringLength = 70;
-            StringBuilder unit = new StringBuilder(stringLength);
-            if (AstTool.GetString(_dataSet.AstVelFrame, unitAttribute, unit,  stringLength)  != 0)
-                {
-                    Debug.Log("Cannot find attribute " + unitAttribute + " in Velocity Frame!");
-                    return "Units";
-                }
-            return unit.ToString();
-        }
-*/
         public string GetStdOfRest()
         {
             return GetAstAttribute("StdOfRest");
@@ -920,6 +854,7 @@ namespace VolumeData
         {
             _dataSet.CleanUp(RandomVolume);
             _maskDataSet?.CleanUp(false);
+
         }
 
         private void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes)

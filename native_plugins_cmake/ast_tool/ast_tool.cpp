@@ -329,6 +329,11 @@ void Invert(AstFrameSet* src)
     astInvert(src);
 }
 
+void AstEnd()
+{
+    AstEnd;
+}
+
 void FreeMemory(void* ptrToDelete)
 {
     delete[] ptrToDelete;

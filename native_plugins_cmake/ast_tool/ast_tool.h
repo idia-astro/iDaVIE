@@ -42,6 +42,8 @@ DllExport int Copy(AstFrameSet*, AstFrameSet**);
 
 DllExport void Invert(AstFrameSet*);
 
+DllExport void AstEnd();
+
 DllExport void FreeMemory(void*);
 
 }

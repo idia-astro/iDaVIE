@@ -56,6 +56,9 @@ public class AstTool
       public static extern void Invert(IntPtr src);
 
       [DllImport("libast_tool")]
+      public static extern void AstEnd();
+
+      [DllImport("libast_tool")]
       public static extern void FreeMemory(IntPtr ptrToDelete);
 
 }
