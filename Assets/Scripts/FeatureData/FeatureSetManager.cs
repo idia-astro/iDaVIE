@@ -10,12 +10,15 @@ namespace DataFeatures
     public class FeatureSetManager : MonoBehaviour
     {
         public FeatureSetRenderer FeatureSetRendererPrefab;
+        public GameObject FeatureAnchorPrefab;
         public string FeatureFileToLoad;
         public string FeatureMappingFile;
 
         private string _timeStamp;
         private StreamWriter _streamWriter;
         private Feature _selectedFeature;
+        private GameObject _cubeMinCollider;
+        private GameObject _cubeMaxCollider;
         public Feature SelectedFeature
         {
             get => _selectedFeature;
@@ -26,8 +29,23 @@ namespace DataFeatures
                     DeselectFeature();
                     _selectedFeature = value;
                     _selectedFeature.Selected = true;
+                    if (_activeFeatureSetRenderer)
+                    {
+                        _cubeMinCollider.transform.SetParent(_activeFeatureSetRenderer.transform, false);
+                        _cubeMaxCollider.transform.SetParent(_activeFeatureSetRenderer.transform, false);
+                        _cubeMinCollider.transform.localPosition = _selectedFeature.CornerMin;
+                        _cubeMaxCollider.transform.localPosition = _selectedFeature.CornerMax;
+                        SetGlobalScale(_cubeMinCollider.transform, Vector3.one * 0.01f);
+                        SetGlobalScale(_cubeMaxCollider.transform, Vector3.one * 0.01f);
+                    }
                 }
             }
+        }
+        
+        public static void SetGlobalScale (Transform t, Vector3 globalScale)
+        {
+            t.localScale = Vector3.one;
+            t.localScale = new Vector3 (globalScale.x/t.lossyScale.x, globalScale.y/t.lossyScale.y, globalScale.z/t.lossyScale.z);
         }
 
         public string OutputFile;
@@ -44,6 +62,27 @@ namespace DataFeatures
             _featureSetList = new List<FeatureSetRenderer>();
             _timeStamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             OutputFile = _timeStamp + ".ascii";
+            
+            _cubeMaxCollider = Instantiate(FeatureAnchorPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+            _cubeMaxCollider.name = "front_right_top";
+            _cubeMaxCollider.transform.parent = transform;
+            
+            _cubeMinCollider = Instantiate(FeatureAnchorPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+            _cubeMinCollider.transform.parent = transform;
+            _cubeMaxCollider.name = "back_left_bottom";
+        }
+        
+        public void Update()
+        {
+            if (_activeFeatureSetRenderer && _cubeMinCollider && _selectedFeature != null)
+            {
+                _cubeMinCollider.transform.SetParent(_activeFeatureSetRenderer.transform, false);
+                _cubeMaxCollider.transform.SetParent(_activeFeatureSetRenderer.transform, false);
+                _cubeMinCollider.transform.localPosition = _selectedFeature.CornerMin - Vector3.one * 0.5f;
+                _cubeMaxCollider.transform.localPosition = _selectedFeature.CornerMax + Vector3.one * 0.5f;
+                SetGlobalScale(_cubeMinCollider.transform, Vector3.one * 0.01f);
+                SetGlobalScale(_cubeMaxCollider.transform, Vector3.one * 0.01f);
+            }
         }
 
         // Creates new empty FeatureSetRenderer for adding Features
