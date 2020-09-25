@@ -24,6 +24,8 @@ DllExport void Dump(AstFrameSet*, char*);
 
 DllExport int GetString(AstFrameSet*, const char*, char*, int);
 
+DllExport int SetString(AstFrameSet*, const char*, const char*);
+
 DllExport int Norm(AstFrameSet*, double, double, double, double*, double*, double*);
 
 DllExport int Distance1D(AstFrame*, double, double, int, double*);

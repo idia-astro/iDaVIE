@@ -707,7 +707,7 @@ namespace VolumeData
             return new Vector3(xLength, yLength, zLength);
         }
 
-        public void GetFitsLengthsAst(Vector3Int startPoint, Vector3Int endPoint, out double xLength, out double yLength, out double zLength, out double angle)
+        public void GetFitsLengthsAst(Vector3 startPoint, Vector3 endPoint, out double xLength, out double yLength, out double zLength, out double angle)
         {
             IntPtr astCmpFrame = IntPtr.Zero;
             AstTool.GetAstFrame(_dataSet.AstFrameSet, out astCmpFrame, 2);
@@ -750,6 +750,22 @@ namespace VolumeData
         {
             return GetAstAttribute("Unit(" + axis + ")");
         }
+
+        public void SetAxisUnit(int axis, string unit)
+        {
+            SetAstAttribute("Unit(" + axis + ")", unit);
+        }
+
+        public void SetAstAttribute(string attribute, string value)
+        {
+            StringBuilder attributeSB = new StringBuilder(attribute);
+            StringBuilder valueSB = new StringBuilder(value);
+            if (AstTool.SetString(_dataSet.AstFrameSet, attributeSB, valueSB) != 0)
+            {
+                Debug.Log("Cannot set attribute " + attribute  + " in Frame!");
+            }
+        }
+        
         public string GetAstAttribute(string attributeToGet)
         {
             StringBuilder attributeReceived = new StringBuilder(70);

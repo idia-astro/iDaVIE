@@ -29,6 +29,9 @@ public class AstTool
       public static extern int GetString(IntPtr wcsinfo, StringBuilder attribute, StringBuilder stringToReturn, int stringToReturnLen);
 
       [DllImport("libast_tool")]
+      public static extern int SetString(IntPtr wcsinfo, StringBuilder attribute, StringBuilder stringValue);
+
+      [DllImport("libast_tool")]
       public static extern int Norm(IntPtr frameSetPtr, double xIn, double yIn, double zIn, out double xOut, out double yOut, out double zOut);
 
       [DllImport("libast_tool")]
