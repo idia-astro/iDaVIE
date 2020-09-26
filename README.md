@@ -8,7 +8,7 @@ You will need to download and install [msys2](https://www.msys2.org/) and [CMake
 Run `MSYS2 MinGW 64-bit` and install xalan-c package (and other dependencies needed later) with the following commands:
 ```
 pacman -Syu --noconfirm
-pacman -S mingw64/mingw-w64-x86_64-xalan-c mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake patch make dos2unix --noconfirm
+pacman -S mingw64/mingw-w64-x86_64-xalan-c mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-cross-binutils patch make dos2unix --noconfirm
 ```
 Take note of any instructions in the terminal during package update & installation as sometimes you must terminate the msys2 shell to proceed.
 
