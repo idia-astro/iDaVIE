@@ -54,7 +54,8 @@ public class VolumeInputController : MonoBehaviour
     public SteamVR_Input_Sources PrimaryHand = SteamVR_Input_Sources.RightHand;
 
     public int PrimaryHandIndex => PrimaryHand == SteamVR_Input_Sources.LeftHand ? 0 : 1;
-
+    public bool HasHoverAnchor => (_hoveredAnchor != null && _hoveredFeature != null);
+    
     // Scaling/Rotation options
     public bool InPlaceScaling = true;
     public bool ScalingEnabled = true;
@@ -87,6 +88,8 @@ public class VolumeInputController : MonoBehaviour
     private bool _isPainting;
     private bool _isSelecting;
     private bool _isQuickMenu;
+    private Feature _hoveredFeature;
+    private FeatureAnchor _hoveredAnchor;
 
     private VectorLine _lineAxisSeparation;
     private VectorLine _lineRotationAxes;
@@ -971,10 +974,34 @@ public class VolumeInputController : MonoBehaviour
         _player.leftHand.hapticAction.Execute(0, duration, frequency, amplitude, hand);
     }
 
+    public void SetHoveredFeature(FeatureSetManager featureSetManager, FeatureAnchor featureAnchor)
+    {
+        _hoveredFeature = featureSetManager?.SelectedFeature;
+        _hoveredAnchor = featureAnchor;
+        SetInteractionState(InteractionState.EditMode);
+    }
+
+    public void ClearHoveredFeature(FeatureSetManager featureSetManager, FeatureAnchor featureAnchor)
+    {
+        var hoveredFeature = featureSetManager?.SelectedFeature;
+        if (_hoveredFeature == hoveredFeature && _hoveredAnchor == featureAnchor)
+        {
+            _hoveredFeature = null;
+            _hoveredAnchor = null;
+            SetInteractionState(InteractionState.CreateMode);
+        }
+    }
+
     public void SetInteractionState(InteractionState interactionState)
     {
         // Ignore transitions to same state
         if (interactionState == _interactionState)
+        {
+            return;
+        }
+        
+        // Ignore transitions while selecting or painting
+        if (_isSelecting || _isPainting)
         {
             return;
         }
@@ -1037,11 +1064,13 @@ public class VolumeInputController : MonoBehaviour
 
     private void StateTransitionCreateToEdit()
     {
-        
+        Debug.Log("Entering edit state");
+        _interactionState = InteractionState.EditMode;
     }
 
     private void StateTransitionEditToCreate()
     {
-        
+        Debug.Log("Exiting edit state");
+        _interactionState = InteractionState.CreateMode;
     }
 }

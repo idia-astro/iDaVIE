@@ -5,7 +5,7 @@ namespace DataFeatures
     public class FeatureAnchor : MonoBehaviour
     {
         private Material _material;
-        // Start is called before the first frame update
+        
         void Start()
         {
             _material = GetComponent<Renderer>().material;
@@ -17,8 +17,11 @@ namespace DataFeatures
             Debug.Log(other);
             if (other.CompareTag("cursor"))
             {
+                var featureSetManager = GetComponentInParent<FeatureSetManager>();
+                var inputController = FindObjectOfType<VolumeInputController>();
                 Debug.Log($"Cursor entered {name}");
                 _material.color = Color.white;
+                inputController?.SetHoveredFeature(featureSetManager, this);
             }
         }
 
@@ -26,8 +29,11 @@ namespace DataFeatures
         {
             if (other.CompareTag("cursor"))
             {
+                var featureSetManager = GetComponentInParent<FeatureSetManager>();
+                var inputController = FindObjectOfType<VolumeInputController>();
                 Debug.Log($"Cursor exited {name}");
                 _material.color = Color.gray;
+                inputController?.ClearHoveredFeature(featureSetManager, this);
             } 
         }
     }

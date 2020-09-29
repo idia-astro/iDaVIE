@@ -69,7 +69,7 @@ namespace DataFeatures
             
             _cubeMinCollider = Instantiate(FeatureAnchorPrefab, new Vector3(0, 0, 0), Quaternion.identity);
             _cubeMinCollider.transform.parent = transform;
-            _cubeMaxCollider.name = "back_left_bottom";
+            _cubeMinCollider.name = "back_left_bottom";
         }
         
         public void Update()
