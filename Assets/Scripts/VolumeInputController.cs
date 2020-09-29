@@ -428,6 +428,7 @@ public class VolumeInputController : MonoBehaviour
         if (activeDataSet)
         {
             activeDataSet.ClearRegion();
+            activeDataSet.ClearMeasure();
             var featureSetManager = activeDataSet.GetComponentInChildren<FeatureSetManager>();
             // Clear region selection by clicking selection. Attempt to select feature
             if (selectionStopwatch.ElapsedMilliseconds < 200)
@@ -791,14 +792,35 @@ public class VolumeInputController : MonoBehaviour
                     var voxelCoordinate = dataSet.CursorVoxel;
                     if (voxelCoordinate.x >= 0 && _handInfoComponents != null)
                     {
-                        Vector3Int coordDecimcalPlaces = dataSet.GetDimDecimals();
-                        var voxelValue = dataSet.CursorValue;
-                        string raDecVel = dataSet.GetFitsCoordsString(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z);
-                        cursorString = "(" + voxelCoordinate.x.ToString().PadLeft(coordDecimcalPlaces.x)
-                                           + "," + voxelCoordinate.y.ToString().PadLeft(coordDecimcalPlaces.y) + ","
-                                           + voxelCoordinate.z.ToString().PadLeft(coordDecimcalPlaces.z) + "): "
-                                           + voxelValue.ToString("0.###E+000").PadLeft(11) + System.Environment.NewLine
-                                           + raDecVel + System.Environment.NewLine + sourceIndex;
+                        double physX, physY, physZ, normX, normY, normZ;
+                        dataSet.GetFitsCoordsAst(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z, out physX, out physY, out physZ);
+                        dataSet.GetNormCoords(physX, physY, physZ, out normX, out normY, out normZ);
+                        string depthUnit = dataSet.GetAxisUnit(3);
+                        switch (depthUnit)
+                        {
+                            case "m/s":
+                                if (Mathf.Abs((float)normZ) >= 1000)
+                                    dataSet.SetAxisUnit(3, "km/s");
+                                break;
+                            case "km/s":
+                                 if (Mathf.Abs((float)normZ) < 1)
+                                    dataSet.SetAxisUnit(3, "m/s");
+                                break;
+                            case "Hz":
+                                if (Mathf.Abs((float)normZ) >= 1.0E9)
+                                    dataSet.SetAxisUnit(3, "GHz");
+                                break;
+                            case "GHz":
+                                if (Mathf.Abs((float)normZ) < 1)
+                                    dataSet.SetAxisUnit(3, "Hz");
+                                break;
+                            default:
+                                break;
+                        }
+                        cursorString = String.Format("WCS: ({0}, {1})", dataSet.GetFormattedCoord(normX, 1), dataSet.GetFormattedCoord(normY, 2)) + System.Environment.NewLine
+                                        + String.Format("{0}: {1,10} {2}", dataSet.GetAstAttribute("System(3)"), dataSet.GetFormattedCoord(normZ, 3), dataSet.GetAstAttribute("Unit(3)")) + System.Environment.NewLine
+                                        + String.Format("Image: ({0,5}, {1,5}, {2,5})", voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z) + System.Environment.NewLine
+                                        + String.Format("Value: {0,16} {1}", dataSet.CursorValue, dataSet.GetPixelUnit());
                     }
                 }
             }
@@ -822,10 +844,36 @@ public class VolumeInputController : MonoBehaviour
             dataSet.SetRegionPosition(endPosition, false);
             if (dataSet.isActiveAndEnabled)
             {
-                var regionSize = Vector3.Max(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) - Vector3.Min(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel) + Vector3.one;
-                Vector3 wcsLengths = dataSet.GetFitsLengths(regionSize.x, regionSize.y, regionSize.z);
+                var regionMax = Vector3.Max(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel);
+                var regionMin = Vector3.Min(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel);
+                var regionSize = regionMax - regionMin + Vector3.one;
+                double xLength, yLength, zLength, angle;
+                dataSet.GetFitsLengthsAst(regionMin, regionMax + Vector3.one, out xLength, out yLength, out zLength, out angle);
+                 string depthUnit = dataSet.GetAxisUnit(3);
+                        switch (depthUnit)
+                        {
+                            case "m/s":
+                                if (Mathf.Abs((float)zLength) >= 1000)
+                                    dataSet.SetAxisUnit(3, "km/s");
+                                break;
+                            case "km/s":
+                                 if (Mathf.Abs((float)zLength) < 1)
+                                    dataSet.SetAxisUnit(3, "m/s");
+                                break;
+                            case "Hz":
+                                if (Mathf.Abs((float)zLength) >= 1.0E9)
+                                    dataSet.SetAxisUnit(3, "GHz");
+                                break;
+                            case "GHz":
+                                if (Mathf.Abs((float)zLength) < 1)
+                                    dataSet.SetAxisUnit(3, "Hz");
+                                break;
+                            default:
+                                break;
+                        }
                 cursorString = $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}" + System.Environment.NewLine
-                                                                                           + $"Physical: {Math.Truncate(wcsLengths.x * 100) / 100}° x {Math.Truncate(wcsLengths.y * 100) / 100}° x {Math.Truncate(wcsLengths.z * 100) / 100 / 1000} km/s";
+                                + $"Angle: " + FormatAngle(angle) + System.Environment.NewLine
+                                + String.Format("Depth: {0, 15} {1}" ,dataSet.GetFormattedCoord(Math.Abs(zLength), 3), dataSet.GetAstAttribute("Unit(3)"));
             }
         }
 
@@ -837,6 +885,18 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
+    private string FormatAngle(double angleInRad)
+    {
+        double deg = angleInRad / Math.PI * 180.0;
+        if (deg >= 1)
+            return deg.ToString("N3") + "°";
+        else
+        {
+            double angleMin = (deg - Math.Truncate(deg)) * 60;
+            double angleSec = Math.Truncate((angleMin - Math.Truncate(angleMin)) * 60 * 100) / 100;
+            return Math.Truncate(angleMin).ToString("00") + "'" + angleSec.ToString("00.00") + "\"";             
+        }
+    }
 
     private void UpdateScalingText(VolumeDataSetRenderer dataSet)
     {

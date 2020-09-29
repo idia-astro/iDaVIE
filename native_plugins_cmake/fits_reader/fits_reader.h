@@ -67,18 +67,18 @@ DllExport int FitsReadSubImageFloat(fitsfile *, int, long *, long *, int64_t, fl
 
 DllExport int FitsReadImageInt16(fitsfile *, int , int64_t , int16_t **, int *);
 
+DllExport int FitsCreateHdrPtr(fitsfile *, char **, int *, int *);
+
 DllExport int CreateEmptyImageInt16(int64_t , int64_t , int64_t , int16_t** );
 
 DllExport int FreeMemory(void* );
+
+DllExport void FreeFitsMemory(char* header, int* status);
 
 DllExport int InsertSubArrayInt16(int16_t* , int64_t , int16_t* , int64_t , int64_t );
 
 }
 
-class fits_unity
-{
-};
 
 
-
-#endif //FITS_UNITY_LIBRARY_H
+#endif //FITS_READER_FITS_READER_H

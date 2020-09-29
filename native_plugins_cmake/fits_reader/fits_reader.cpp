@@ -177,6 +177,12 @@ int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array,
     return success;
 }
 
+int FitsCreateHdrPtr(fitsfile *fptr, char **header, int *nkeys, int *status)    //need to free header string with FreeFitsMemory() after use
+{
+    int success = fits_hdr2str(fptr, 0, NULL, 0, header, nkeys, status);
+    return success;
+}
+
 int CreateEmptyImageInt16(int64_t sizeX, int64_t sizeY, int64_t sizeZ, int16_t** array)
 {
     int64_t nelem = sizeX * sizeY * sizeZ;
@@ -190,6 +196,11 @@ int FreeMemory(void* ptrToDelete)
 {
     delete[] ptrToDelete;
     return 0;
+}
+
+void FreeFitsMemory(char* header, int* status)
+{
+    fits_free_memory(header, status);
 }
 
 int InsertSubArrayInt16(int16_t* mainArray, int64_t mainArraySize, int16_t* subArray, int64_t subArraySize, int64_t startIndex)

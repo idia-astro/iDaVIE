@@ -67,7 +67,3 @@ extern "C"
 }
 
 
-class votable_reader
-{
-};
-
