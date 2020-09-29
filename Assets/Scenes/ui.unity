@@ -45149,7 +45149,7 @@ PrefabInstance:
     - target: {fileID: 3002869511723157508, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
         type: 3}
       propertyPath: m_textAlignment
-      value: 65535
+      value: 272
       objectReference: {fileID: 0}
     - target: {fileID: 3002869511723157508, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
         type: 3}
