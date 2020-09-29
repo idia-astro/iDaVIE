@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using Unity.Collections;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -83,6 +84,10 @@ namespace VolumeData
         private static int BrushStrokeLimit = 25000;
 
         public IntPtr FitsData = IntPtr.Zero;
+        public IntPtr FitsHeader = IntPtr.Zero;
+        public int NumberHeaderKeys;
+        public IntPtr AstFrameSet = IntPtr.Zero;
+        
         public long[] cubeSize;
 
         public int[] Histogram;
@@ -91,6 +96,8 @@ namespace VolumeData
         public float MinValue;
         public float MeanValue;
         public float StanDev;
+
+        public string PixelUnit = "units";
 
         public static VolumeDataSet LoadRandomFitsCube(float min, float max, int xDim, int yDim, int zDim)
         {
@@ -138,7 +145,17 @@ namespace VolumeData
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
-
+            if (FitsReader.FitsCreateHdrPtr(fptr, out volumeDataSet.FitsHeader, out volumeDataSet.NumberHeaderKeys, out status) != 0)
+            {
+                Debug.Log("Fits create header pointer failure... code #" + status.ToString());
+                FitsReader.FitsCloseFile(fptr, out status);
+                return null;
+            }
+            IntPtr astFrameSet = IntPtr.Zero;
+            if (AstTool.InitAstFrameSet(out volumeDataSet.AstFrameSet, volumeDataSet.FitsHeader) != 0)
+            {
+                Debug.Log("Warning... AstFrameSet Error. See Unity Editor logs");
+            }
             if (!isMask)
             {
                 volumeDataSet._headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
@@ -149,6 +166,7 @@ namespace VolumeData
             {
                 Debug.Log("Fits read image dimensions failed... code #" + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
+                return null;
             }
 
             if (cubeDimensions < 3)
@@ -156,18 +174,21 @@ namespace VolumeData
                 Debug.Log("Only " + cubeDimensions.ToString() +
                           " found. Please use Fits cube with at least 3 dimensions.");
                 FitsReader.FitsCloseFile(fptr, out status);
+                return null;
             }
 
             if (index2 != 2 && index2 != 3)
             {
                 Debug.Log("Depth index must be either 2 or 3." + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
+                return null;
             }
 
             if (FitsReader.FitsGetImageSize(fptr, cubeDimensions, out dataPtr, out status) != 0)
             {
                 Debug.Log("Fits Read cube size error #" + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
+                return null;
             }
 
             volumeDataSet.cubeSize = new long[cubeDimensions];
@@ -182,6 +203,7 @@ namespace VolumeData
                 {
                     Debug.Log("Fits Read mask cube data error #" + status.ToString());
                     FitsReader.FitsCloseFile(fptr, out status);
+                    return null;
                 }
             }
             else
@@ -216,6 +238,7 @@ namespace VolumeData
                 {
                     Debug.Log("Fits Read cube data error #" + status.ToString());
                     FitsReader.FitsCloseFile(fptr, out status);
+                    return null;
                 }
 
                 if (startPixPtr == IntPtr.Zero)
@@ -640,19 +663,6 @@ namespace VolumeData
             }
         }
 
-        public Vector2 GetRADecFromXY(double X, double Y)
-        {
-            double XPos, YPos;
-            MariusSoft.WCSTools.WCSUtil.ffwldp(X, Y, _xRef, _yRef, _xRefPix, _yRefPix, _xDelt, _yDelt, _rot, _wcsProj, out XPos, out YPos);
-            Vector2 raDec = new Vector2((float) XPos, (float) YPos);
-            return raDec;
-        }
-
-        public double GetVelocityFromZ(double z)
-        {
-            return _zRef + _zDelt * (z - _zRefPix);
-        }
-
         public Vector3 GetWCSDeltas()
         {
             return new Vector3((float) _xDelt, (float) _yDelt, (float) _zDelt);
@@ -712,6 +722,9 @@ namespace VolumeData
                         break;
                     case "CROTA2":
                         _rot = Convert.ToDouble(entry.Value.Replace("'", ""), CultureInfo.InvariantCulture);
+                        break;
+                    case "BUNIT":
+                        PixelUnit = entry.Value.Substring(1, entry.Value.Length - 2);
                         break;
                     default:
                         break;
@@ -918,6 +931,7 @@ namespace VolumeData
 
         public void CleanUp(bool randomCube)
         {
+            int status;
             if (FitsData != IntPtr.Zero)
             {
                 if (randomCube)
@@ -925,7 +939,15 @@ namespace VolumeData
                 else
                     FitsReader.FreeMemory(FitsData);
             }
-
+            if (FitsHeader != IntPtr.Zero)
+            {
+                FitsReader.FreeFitsMemory(FitsHeader, out status);
+            }
+            if (AstFrameSet != IntPtr.Zero)
+            {
+                AstTool.DeleteObject(AstFrameSet);
+                AstTool.AstEnd();
+            }
             ExistingMaskBuffer?.Release();
             AddedMaskBuffer?.Release();
         }

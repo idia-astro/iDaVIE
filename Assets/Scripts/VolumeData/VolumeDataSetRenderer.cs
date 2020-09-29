@@ -7,6 +7,7 @@ using JetBrains.Annotations;
 using UnityEngine.XR;
 using Vectrosity;
 using Random = System.Random;
+using System.Text;
 
 namespace VolumeData
 {
@@ -123,7 +124,7 @@ namespace VolumeData
 
         public FeatureSetManager FeatureSetManagerPrefab;
 
-        public VectorLine _voxelOutline, _cubeOutline, _regionOutline;
+        public VectorLine _voxelOutline, _cubeOutline, _regionOutline, _regionMeasure;
 
         private FeatureSetManager _featureManager = null;
         private MeshRenderer _renderer;
@@ -288,6 +289,13 @@ namespace VolumeData
             _regionOutline.active = false;
             _regionOutline.Draw3DAuto();
 
+            //Region measuring line
+            _regionMeasure = new VectorLine("RegionMeasure", new List<Vector3>(), 1.0f);
+            _regionMeasure.drawTransform = transform;
+            _regionMeasure.color = Color.white;
+            _regionMeasure.active = false;
+            _regionMeasure.Draw3DAuto();
+
             if (_featureManager)
             {
                 _featureManager.CreateNewFeatureSet();
@@ -389,11 +397,28 @@ namespace VolumeData
                     // Calculate full region bounds
                     var regionMin = Vector3.Min(RegionStartVoxel, RegionEndVoxel);
                     var regionMax = Vector3.Max(RegionStartVoxel, RegionEndVoxel);
+                    var measureStart = RegionStartVoxel;
+                    var measureEnd = RegionEndVoxel;
+                    if (measureStart.x < measureEnd.x)
+                        measureStart.x--;
+                    else
+                        measureEnd.x--;
+                    if (measureStart.y < measureEnd.y)
+                        measureStart.y--;
+                    else
+                        measureEnd.y--;
+                    if (measureStart.z < measureEnd.z)
+                        measureStart.z--;
+                    else
+                        measureEnd.z--;
                     var regionSize = regionMax - regionMin + Vector3.one;
                     Vector3 regionCenter = (regionMax + regionMin) / 2.0f - 0.5f * Vector3.one;
 
                     Vector3 regionCenterObjectSpace = new Vector3(regionCenter.x / _dataSet.XDim - 0.5f, regionCenter.y / _dataSet.YDim - 0.5f, regionCenter.z / _dataSet.ZDim - 0.5f);
                     _regionOutline.MakeCube(regionCenterObjectSpace, regionSize.x / _dataSet.XDim, regionSize.y / _dataSet.YDim, regionSize.z / _dataSet.ZDim);
+                    _regionMeasure.points3.Clear();
+                    _regionMeasure.points3.Add(new Vector3((float)measureStart.x/_dataSet.XDim- 0.5f, (float)measureStart.y/_dataSet.YDim- 0.5f, (float)measureStart.z/_dataSet.ZDim- 0.5f));
+                    _regionMeasure.points3.Add(new Vector3((float)measureEnd.x/_dataSet.XDim- 0.5f, (float)measureEnd.y/_dataSet.YDim- 0.5f, (float)measureEnd.z/_dataSet.ZDim- 0.5f));
 
                     var regionSizeBytes = regionSize.x * regionSize.y * regionSize.z * sizeof(float);
                     bool regionIsFullResolution = (regionSizeBytes <= MaximumCubeSizeInMB * 1e6);
@@ -401,6 +426,7 @@ namespace VolumeData
                 }
 
                 _regionOutline.active = true;
+                _regionMeasure.active = true;
             }
         }
 
@@ -409,6 +435,14 @@ namespace VolumeData
             if (_regionOutline != null)
             {
                 _regionOutline.active = false;
+            }
+        }
+
+        public void ClearMeasure()
+        {
+            if (_regionMeasure != null)
+            {
+                _regionMeasure.active = false;
             }
         }
 
@@ -648,11 +682,20 @@ namespace VolumeData
             _maskDataSet?.FlushBrushStroke();
         }
 
-        public Vector3 GetFitsCoords(double X, double Y, double Z)
+        public void GetFitsCoordsAst(double X, double Y, double Z, out double fitsX, out double fitsY, out double fitsZ)
         {
-            Vector2 raDec = _dataSet.GetRADecFromXY(X, Y);
-            float z = (float)_dataSet.GetVelocityFromZ(Z);
-            return new Vector3(raDec.x, raDec.y, z);
+            if (AstTool.Transform3D(_dataSet.AstFrameSet, X, Y, Z, 1, out fitsX, out fitsY, out fitsZ) != 0)
+            {
+                Debug.Log("Error transforming sky pixel to physical coordinates!");
+            }
+        }
+
+            public void GetNormCoords(double X, double Y, double Z, out double normX, out double normY, out double normZ)
+        {
+            if (AstTool.Norm(_dataSet.AstFrameSet, X, Y, Z, out normX, out normY, out normZ) != 0)
+            {
+                Debug.Log("Error normalizing physical coordinates!");
+            }
         }
 
         public Vector3 GetFitsLengths(double X, double Y, double Z)
@@ -664,20 +707,75 @@ namespace VolumeData
             return new Vector3(xLength, yLength, zLength);
         }
 
-        public string GetFitsCoordsString(double X, double Y, double Z)
+        public void GetFitsLengthsAst(Vector3 startPoint, Vector3 endPoint, out double xLength, out double yLength, out double zLength, out double angle)
         {
-            Vector2 raDec = _dataSet.GetRADecFromXY(X, Y);
-            string vel = string.Format("{0,8:F2} km/s", (float)_dataSet.GetVelocityFromZ(Z) / 1000);
-            double raHours = (raDec.x * 12.0 / 180.0);
-            double raMin = (raHours - Math.Truncate(raHours)) * 60;
-            double raSec = Math.Truncate((raMin - Math.Truncate(raMin)) * 60 * 100) / 100;
+            IntPtr astCmpFrame = IntPtr.Zero;
+            AstTool.GetAstFrame(_dataSet.AstFrameSet, out astCmpFrame, 2);
+            double xStart, yStart, zStart, xEnd, yEnd, zEnd;
+            if (AstTool.Transform3D(_dataSet.AstFrameSet, (double)startPoint.x, (double)startPoint.y, (double)startPoint.z, 1, out xStart, out yStart, out zStart) != 0 ||
+                    AstTool.Transform3D(_dataSet.AstFrameSet, (double)endPoint.x, (double)endPoint.y, (double)endPoint.z, 1, out xEnd, out yEnd, out zEnd) != 0 ||
+                    AstTool.Distance1D(astCmpFrame, xStart, xEnd, 1, out xLength) != 0 ||
+                    AstTool.Distance1D(astCmpFrame, yStart, yEnd, 2, out yLength) != 0 ||
+                    AstTool.Distance1D(astCmpFrame, zStart, zEnd, 3, out zLength) != 0 ||
+                    AstTool.Distance2D(astCmpFrame, xStart, yStart, xEnd, yEnd, out angle) != 0)
+            {
+                Debug.Log("Error finding WCS distances!");
+                AstTool.DeleteObject(astCmpFrame);
+                xLength = yLength = zLength = angle = 0;
+            }
+        }
 
-            double decMin = Math.Abs((raDec.y - Math.Truncate(raDec.y)) * 60);
-            double decSec = Math.Truncate((decMin - Math.Truncate(decMin)) * 60 * 100) / 100;
+        public string GetFormattedCoord(double val, int axis)
+        {
+            int stringLength = 70;
+            StringBuilder coord = new StringBuilder(stringLength);
+            if (AstTool.Format(_dataSet.AstFrameSet, axis, val, coord, stringLength) != 0)
+                {
+                    Debug.Log("Error finding formatted sky coordinate!");
+                }
+            return coord.ToString();
+        }
 
-            string ra = Math.Truncate(raHours).ToString("00").PadLeft(3) + ":" + Math.Truncate(raMin).ToString("00") + ":" + raSec.ToString("00.00");
-            string dec = Math.Truncate(raDec.y).ToString("00").PadLeft(3) + ":" + Math.Truncate(decMin).ToString("00") + ":" + decSec.ToString("00.00");
-            return ra + " " + dec + " " + vel;
+        public string GetStdOfRest()
+        {
+            return GetAstAttribute("StdOfRest");
+        }
+
+        public string GetPixelUnit()
+        {
+            return _dataSet.PixelUnit;
+        }
+        
+        public string GetAxisUnit(int axis)
+        {
+            return GetAstAttribute("Unit(" + axis + ")");
+        }
+
+        public void SetAxisUnit(int axis, string unit)
+        {
+            SetAstAttribute("Unit(" + axis + ")", unit);
+        }
+
+        public void SetAstAttribute(string attribute, string value)
+        {
+            StringBuilder attributeSB = new StringBuilder(attribute);
+            StringBuilder valueSB = new StringBuilder(value);
+            if (AstTool.SetString(_dataSet.AstFrameSet, attributeSB, valueSB) != 0)
+            {
+                Debug.Log("Cannot set attribute " + attribute  + " in Frame!");
+            }
+        }
+        
+        public string GetAstAttribute(string attributeToGet)
+        {
+            StringBuilder attributeReceived = new StringBuilder(70);
+            StringBuilder attributeToGetSB = new StringBuilder(attributeToGet);
+            if (AstTool.GetString(_dataSet.AstFrameSet, attributeToGetSB, attributeReceived, attributeReceived.Capacity) != 0)
+            {
+                Debug.Log("Cannot find attribute " + attributeToGet  + " in Frame!");
+                return "";
+            }
+            return attributeReceived.ToString();
         }
 
         public Vector3Int GetDimDecimals()
@@ -772,6 +870,7 @@ namespace VolumeData
         {
             _dataSet.CleanUp(RandomVolume);
             _maskDataSet?.CleanUp(false);
+
         }
 
         private void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes)

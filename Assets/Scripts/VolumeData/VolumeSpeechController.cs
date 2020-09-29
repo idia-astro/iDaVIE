@@ -25,7 +25,7 @@ namespace VolumeData
         private List<VolumeDataSetRenderer> _dataSets;
 
         // Keywords
-        private struct Keywords
+        public struct Keywords
         {
             public static readonly string EditThresholdMin = "edit min";
             public static readonly string EditThresholdMax = "edit max";
@@ -61,13 +61,14 @@ namespace VolumeData
             public static readonly string BrushErase = "brush erase";
             public static readonly string ShowMaskOutline = "show mask outline";
             public static readonly string HideMaskOutline = "hide mask outline";
+            public static readonly string TakePicture = "take picture";
 
             public static readonly string[] All =
             {
                 EditThresholdMin, EditThresholdMax, EditZAxis, EditZAxisAlt, SaveThreshold, ResetThreshold, ResetTransform, ColormapPlasma, ColormapRainbow, 
                 ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
                 PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
-                ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline
+                ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline, TakePicture
             };
         }
    
@@ -88,6 +89,7 @@ namespace VolumeData
             _volumeInputController = FindObjectOfType<VolumeInputController>();
         }
 
+        // private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
         private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
         {
             _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
@@ -97,129 +99,138 @@ namespace VolumeData
             builder.AppendFormat("\tTimestamp: {0}{1}", args.phraseStartTime, Environment.NewLine);
             builder.AppendFormat("\tDuration: {0} seconds{1}", args.phraseDuration.TotalSeconds, Environment.NewLine);
             Debug.Log(builder.ToString());
-            if (args.text == Keywords.EditThresholdMin)
+            executeVoiceCommand(args.text);
+        }
+
+        private void executeVoiceCommand(string args)
+        { 
+            if (args == Keywords.EditThresholdMin)
             {
                 startThresholdEditing(false);
             }
-            else if (args.text == Keywords.EditThresholdMax)
+            else if (args == Keywords.EditThresholdMax)
             {
                 startThresholdEditing(true);
             }
-            else if (args.text == Keywords.EditZAxis || args.text == Keywords.EditZAxisAlt)
+            else if (args == Keywords.EditZAxis || args == Keywords.EditZAxisAlt)
             {
                 startZAxisEditing();
             }
-            else if (args.text == Keywords.SaveZAxis || args.text == Keywords.SaveZAxisAlt)
+            else if (args == Keywords.SaveZAxis || args == Keywords.SaveZAxisAlt)
             {
                 endZAxisEditing();
             }
-            else if (args.text == Keywords.ResetZAxis || args.text == Keywords.ResetZAxisAlt)
+            else if (args == Keywords.ResetZAxis || args == Keywords.ResetZAxisAlt)
             {
                 resetZAxis();
             }
-            else if (args.text == Keywords.SaveThreshold)
+            else if (args == Keywords.SaveThreshold)
             {
                 endThresholdEditing();
             }
-            else if (args.text == Keywords.ResetThreshold)
+            else if (args == Keywords.ResetThreshold)
             {
                 resetThreshold();
             }
-            else if (args.text == Keywords.ResetTransform)
+            else if (args == Keywords.ResetTransform)
             {
                 resetTransform();
             }
-            else if (args.text == Keywords.NextDataSet)
+            else if (args == Keywords.NextDataSet)
             {
                 stepDataSet(true);
             }
-            else if (args.text == Keywords.PreviousDataSet)
+            else if (args == Keywords.PreviousDataSet)
             {
                 stepDataSet(false);
             }
-            else if (args.text == Keywords.ColormapPlasma)
+            else if (args == Keywords.ColormapPlasma)
             {
                 setColorMap(ColorMapEnum.Plasma);
             }
-            else if (args.text == Keywords.ColormapRainbow)
+            else if (args == Keywords.ColormapRainbow)
             {
                 setColorMap(ColorMapEnum.Rainbow);
             }
-            else if (args.text == Keywords.ColormapMagma)
+            else if (args == Keywords.ColormapMagma)
             {
                 setColorMap(ColorMapEnum.Magma);
             }
-            else if (args.text == Keywords.ColormapInferno)
+            else if (args == Keywords.ColormapInferno)
             {
                 setColorMap(ColorMapEnum.Inferno);
             }
-            else if (args.text == Keywords.ColormapViridis)
+            else if (args == Keywords.ColormapViridis)
             {
                 setColorMap(ColorMapEnum.Viridis);
             }
-            else if (args.text == Keywords.ColormapCubeHelix)
+            else if (args == Keywords.ColormapCubeHelix)
             {
                 setColorMap(ColorMapEnum.Cubehelix);
             }
-            else if (args.text == Keywords.CropSelection)
+            else if (args == Keywords.CropSelection)
             {
                 cropDataSet();
             }
-            else if (args.text == Keywords.ResetCropSelection)
+            else if (args == Keywords.ResetCropSelection)
             {
                 resetCropDataSet();
             }
-            else if (args.text == Keywords.Teleport)
+            else if (args == Keywords.Teleport)
             {
                 teleportToSelection();
             }
-            else if (args.text == Keywords.MaskDisabled)
+            else if (args == Keywords.MaskDisabled)
             {
                 setMask(MaskMode.Disabled);
             }
-            else if (args.text == Keywords.MaskEnabled)
+            else if (args == Keywords.MaskEnabled)
             {
                 setMask(MaskMode.Enabled);
             }
-            else if (args.text == Keywords.MaskInverted)
+            else if (args == Keywords.MaskInverted)
             {
                 setMask(MaskMode.Inverted);
             }
-            else if (args.text == Keywords.MaskIsolated)
+            else if (args == Keywords.MaskIsolated)
             {
                 setMask(MaskMode.Isolated);
             }
-            else if (args.text == Keywords.ProjectionMaximum)
+            else if (args == Keywords.ProjectionMaximum)
             {
                 setProjection(ProjectionMode.MaximumIntensityProjection);
             }
-            else if (args.text == Keywords.ProjectionAverage)
+            else if (args == Keywords.ProjectionAverage)
             {
                 setProjection(ProjectionMode.AverageIntensityProjection);
             }
-            else if (args.text == Keywords.PaintMode)
+            else if (args == Keywords.PaintMode)
             {
                 EnablePaintMode();
             }
-            else if (args.text == Keywords.ExitPaintMode)
+            else if (args == Keywords.ExitPaintMode)
             {
                 DisablePaintMode();
             }
-            else if (args.text == Keywords.BrushAdd)
+            else if (args == Keywords.BrushAdd)
             {
                 SetBrushAdditive();
             }
-            else if (args.text == Keywords.BrushErase)
+            else if (args == Keywords.BrushErase)
             {
                 SetBrushSubtractive();
             }
-            else if (args.text == Keywords.ShowMaskOutline)
+            else if (args == Keywords.ShowMaskOutline)
             {
                 ShowMaskOutline();
             }
-            else if (args.text == Keywords.HideMaskOutline)
+            else if (args == Keywords.HideMaskOutline)
             {
                 HideMaskOutline();
+            }
+            else if (args == Keywords.TakePicture)
+            {
+                TakePicture();
             }
         }
 
@@ -405,6 +416,11 @@ namespace VolumeData
             }
         }
 
+        public void TakePicture()
+        {
+            Debug.Log("Cannot take screenshot with voice yet...");
+        }
+
         public VolumeDataSetRenderer getFirstActiveDataSet()
         {
             foreach (var dataSet in _dataSets)
@@ -416,6 +432,12 @@ namespace VolumeData
             }
 
             return null;
+        }
+
+        public void ExecuteVoiceCommandFromList(string cmd)
+        {
+            Debug.Log(cmd);
+            executeVoiceCommand(cmd);
         }
     }
 }
