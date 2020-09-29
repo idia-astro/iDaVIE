@@ -799,19 +799,19 @@ public class VolumeInputController : MonoBehaviour
                         switch (depthUnit)
                         {
                             case "m/s":
-                                if (normZ >= 1000)
+                                if (Mathf.Abs((float)normZ) >= 1000)
                                     dataSet.SetAxisUnit(3, "km/s");
                                 break;
                             case "km/s":
-                                 if (normZ < 1)
+                                 if (Mathf.Abs((float)normZ) < 1)
                                     dataSet.SetAxisUnit(3, "m/s");
                                 break;
                             case "Hz":
-                                if (normZ >= 1.0E9)
+                                if (Mathf.Abs((float)normZ) >= 1.0E9)
                                     dataSet.SetAxisUnit(3, "GHz");
                                 break;
                             case "GHz":
-                                if (normZ < 1)
+                                if (Mathf.Abs((float)normZ) < 1)
                                     dataSet.SetAxisUnit(3, "Hz");
                                 break;
                             default:
@@ -853,19 +853,19 @@ public class VolumeInputController : MonoBehaviour
                         switch (depthUnit)
                         {
                             case "m/s":
-                                if (zLength >= 1000)
+                                if (Mathf.Abs((float)zLength) >= 1000)
                                     dataSet.SetAxisUnit(3, "km/s");
                                 break;
                             case "km/s":
-                                 if (zLength < 1)
+                                 if (Mathf.Abs((float)zLength) < 1)
                                     dataSet.SetAxisUnit(3, "m/s");
                                 break;
                             case "Hz":
-                                if (zLength >= 1.0E9)
+                                if (Mathf.Abs((float)zLength) >= 1.0E9)
                                     dataSet.SetAxisUnit(3, "GHz");
                                 break;
                             case "GHz":
-                                if (zLength < 1)
+                                if (Mathf.Abs((float)zLength) < 1)
                                     dataSet.SetAxisUnit(3, "Hz");
                                 break;
                             default:
