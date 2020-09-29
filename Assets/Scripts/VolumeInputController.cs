@@ -35,7 +35,8 @@ public class VolumeInputController : MonoBehaviour
     
     public enum InteractionState
     {
-        SelectionMode,
+        CreateMode,
+        EditMode,
         PaintMode
     }
 
@@ -191,7 +192,7 @@ public class VolumeInputController : MonoBehaviour
         _startGripCenter = Vector3.zero;
 
         _locomotionState = LocomotionState.Idle;
-        _interactionState = InteractionState.SelectionMode;
+        _interactionState = InteractionState.CreateMode;
     }
 
     private void OnDisable()
@@ -973,20 +974,40 @@ public class VolumeInputController : MonoBehaviour
     public void SetInteractionState(InteractionState interactionState)
     {
         // Ignore transitions to same state
-        if (interactionState != _interactionState)
+        if (interactionState == _interactionState)
         {
-            if (interactionState == InteractionState.PaintMode)
-            {
-                StateTransitionSelectionToPaint();
-            }
-            else
-            {
-                StateTransitionPaintToSelection();
-            }
+            return;
+        }
+
+        switch (interactionState)
+        {
+            case InteractionState.PaintMode:
+                StateTransitionCreateToPaint();
+                return;
+            case InteractionState.CreateMode:
+                if (_interactionState == InteractionState.PaintMode)
+                {
+                    StateTransitionPaintToCreate();
+                }
+                else if (_interactionState == InteractionState.EditMode)
+                {
+                    StateTransitionEditToCreate();
+                }
+
+                return;
+            case InteractionState.EditMode:
+                if (_interactionState == InteractionState.CreateMode)
+                {
+                    StateTransitionCreateToEdit();
+                }
+
+                return;
+            default:
+                return;
         }
     }
 
-    private void StateTransitionSelectionToPaint()
+    private void StateTransitionCreateToPaint()
     {
         // Prevent transition if volumes aren't full resolution
         foreach (var dataSet in _volumeDataSets)
@@ -1005,12 +1026,22 @@ public class VolumeInputController : MonoBehaviour
         _interactionState = InteractionState.PaintMode;
     }
 
-    private void StateTransitionPaintToSelection()
+    private void StateTransitionPaintToCreate()
     {
-        _interactionState = InteractionState.SelectionMode;
+        _interactionState = InteractionState.CreateMode;
         foreach (var dataSet in _volumeDataSets)
         {
             dataSet.DisplayMask = false;
         }
+    }
+
+    private void StateTransitionCreateToEdit()
+    {
+        
+    }
+
+    private void StateTransitionEditToCreate()
+    {
+        
     }
 }

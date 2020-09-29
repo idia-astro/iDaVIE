@@ -140,7 +140,7 @@ public class PaintMenuController : MonoBehaviour
     public void ExitPaintMode()
     {
         _activeDataSet?.CommitMask();
-        _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.SelectionMode);
+        _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.CreateMode);
         this.gameObject.SetActive(false);
     }
 
@@ -194,7 +194,7 @@ public class PaintMenuController : MonoBehaviour
         savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
         savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
 
-        _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.SelectionMode);
+        _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.CreateMode);
          this.gameObject.SetActive(false);
         savePopup.SetActive(true);
         
