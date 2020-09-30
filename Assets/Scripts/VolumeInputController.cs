@@ -528,11 +528,6 @@ public class VolumeInputController : MonoBehaviour
                 UpdateEditingZAxis();
                 break;
         }
-
-        if (_isSelecting)
-        {
-            UpdateSelecting();
-        }
     }
 
     private void UpdateVignette()
@@ -770,10 +765,10 @@ public class VolumeInputController : MonoBehaviour
             return;
         }
 
+        string cursorString = "";
+
         if (!_isSelecting)
         {
-            string cursorString = "";
-
             foreach (var dataSet in _volumeDataSets)
             {
                 if (_interactionState == InteractionState.PaintMode)
@@ -782,102 +777,30 @@ public class VolumeInputController : MonoBehaviour
                     {
                         dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0);
                     }
+
                     dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, BrushSize);
                 }
                 else
                 {
                     dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, 1);
                 }
+
                 if (dataSet.isActiveAndEnabled)
                 {
-                    string sourceIndex = "";
-                    if (dataSet.CursorSource != 0)
-                        sourceIndex = $"Source # {dataSet.CursorSource}";
-                    var voxelCoordinate = dataSet.CursorVoxel;
-                    if (voxelCoordinate.x >= 0 && _handInfoComponents != null)
-                    {
-                        double physX, physY, physZ, normX, normY, normZ;
-                        dataSet.GetFitsCoordsAst(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z, out physX, out physY, out physZ);
-                        dataSet.GetNormCoords(physX, physY, physZ, out normX, out normY, out normZ);
-                        string depthUnit = dataSet.GetAxisUnit(3);
-                        switch (depthUnit)
-                        {
-                            case "m/s":
-                                if (Mathf.Abs((float)normZ) >= 1000)
-                                    dataSet.SetAxisUnit(3, "km/s");
-                                break;
-                            case "km/s":
-                                 if (Mathf.Abs((float)normZ) < 1)
-                                    dataSet.SetAxisUnit(3, "m/s");
-                                break;
-                            case "Hz":
-                                if (Mathf.Abs((float)normZ) >= 1.0E9)
-                                    dataSet.SetAxisUnit(3, "GHz");
-                                break;
-                            case "GHz":
-                                if (Mathf.Abs((float)normZ) < 1)
-                                    dataSet.SetAxisUnit(3, "Hz");
-                                break;
-                            default:
-                                break;
-                        }
-                        cursorString = String.Format("WCS: ({0}, {1})", dataSet.GetFormattedCoord(normX, 1), dataSet.GetFormattedCoord(normY, 2)) + System.Environment.NewLine
-                                        + String.Format("{0}: {1,10} {2}", dataSet.GetAstAttribute("System(3)"), dataSet.GetFormattedCoord(normZ, 3), dataSet.GetAstAttribute("Unit(3)")) + System.Environment.NewLine
-                                        + String.Format("Image: ({0,5}, {1,5}, {2,5})", voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z) + System.Environment.NewLine
-                                        + String.Format("Value: {0,16} {1}", dataSet.CursorValue, dataSet.GetPixelUnit());
-                    }
+                    cursorString = GetFormattedCursorString(dataSet);
                 }
             }
-            
-            if (_handInfoComponents != null)
-            {
-                _handInfoComponents[PrimaryHandIndex].enabled = true;
-                _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
-                _handInfoComponents[PrimaryHandIndex].text = cursorString;
-            }
         }
-    }
-
-    private void UpdateSelecting()
-    {
-        string cursorString = "";
-        var endPosition = _handTransforms[PrimaryHandIndex].position;
-
-        foreach (var dataSet in _volumeDataSets)
+        else
         {
-            dataSet.SetRegionPosition(endPosition, false);
-            if (dataSet.isActiveAndEnabled)
+            var endPosition = _handTransforms[PrimaryHandIndex].position;
+            foreach (var dataSet in _volumeDataSets)
             {
-                var regionMax = Vector3.Max(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel);
-                var regionMin = Vector3.Min(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel);
-                var regionSize = regionMax - regionMin + Vector3.one;
-                double xLength, yLength, zLength, angle;
-                dataSet.GetFitsLengthsAst(regionMin, regionMax + Vector3.one, out xLength, out yLength, out zLength, out angle);
-                 string depthUnit = dataSet.GetAxisUnit(3);
-                        switch (depthUnit)
-                        {
-                            case "m/s":
-                                if (Mathf.Abs((float)zLength) >= 1000)
-                                    dataSet.SetAxisUnit(3, "km/s");
-                                break;
-                            case "km/s":
-                                 if (Mathf.Abs((float)zLength) < 1)
-                                    dataSet.SetAxisUnit(3, "m/s");
-                                break;
-                            case "Hz":
-                                if (Mathf.Abs((float)zLength) >= 1.0E9)
-                                    dataSet.SetAxisUnit(3, "GHz");
-                                break;
-                            case "GHz":
-                                if (Mathf.Abs((float)zLength) < 1)
-                                    dataSet.SetAxisUnit(3, "Hz");
-                                break;
-                            default:
-                                break;
-                        }
-                cursorString = $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}" + System.Environment.NewLine
-                                + $"Angle: " + FormatAngle(angle) + System.Environment.NewLine
-                                + String.Format("Depth: {0, 15} {1}" ,dataSet.GetFormattedCoord(Math.Abs(zLength), 3), dataSet.GetAstAttribute("Unit(3)"));
+                dataSet.SetRegionPosition(endPosition, false);
+                if (dataSet.isActiveAndEnabled)
+                {
+                    cursorString = GetSelectionString(dataSet);
+                }
             }
         }
 
@@ -889,7 +812,73 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
-    private string FormatAngle(double angleInRad)
+    private static string GetSelectionString(VolumeDataSetRenderer dataSet)
+    {
+        var regionMax = Vector3.Max(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel);
+        var regionMin = Vector3.Min(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel);
+        var regionSize = regionMax - regionMin + Vector3.one;
+        double xLength, yLength, zLength, angle;
+        dataSet.GetFitsLengthsAst(regionMin, regionMax + Vector3.one, out xLength, out yLength, out zLength, out angle);
+        string depthUnit = dataSet.GetAxisUnit(3);
+        switch (depthUnit)
+        {
+            case "m/s":
+                if (Mathf.Abs((float) zLength) >= 1000)
+                    dataSet.SetAxisUnit(3, "km/s");
+                break;
+            case "km/s":
+                if (Mathf.Abs((float) zLength) < 1)
+                    dataSet.SetAxisUnit(3, "m/s");
+                break;
+            case "Hz":
+                if (Mathf.Abs((float) zLength) >= 1.0E9)
+                    dataSet.SetAxisUnit(3, "GHz");
+                break;
+            case "GHz":
+                if (Mathf.Abs((float) zLength) < 1)
+                    dataSet.SetAxisUnit(3, "Hz");
+                break;
+        }
+
+        return $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}{Environment.NewLine}"
+               + $"Angle: {FormatAngle(angle)}{Environment.NewLine}"
+               + $"Depth: {dataSet.GetFormattedCoord(Math.Abs(zLength), 3),15} {dataSet.GetAstAttribute("Unit(3)")}";
+    }
+
+    private static string GetFormattedCursorString(VolumeDataSetRenderer dataSet)
+    {
+        var voxelCoordinate = dataSet.CursorVoxel;
+        double physX, physY, physZ, normX, normY, normZ;
+        dataSet.GetFitsCoordsAst(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z, out physX, out physY, out physZ);
+        dataSet.GetNormCoords(physX, physY, physZ, out normX, out normY, out normZ);
+        string depthUnit = dataSet.GetAxisUnit(3);
+        switch (depthUnit)
+        {
+            case "m/s":
+                if (Mathf.Abs((float) normZ) >= 1000)
+                    dataSet.SetAxisUnit(3, "km/s");
+                break;
+            case "km/s":
+                if (Mathf.Abs((float) normZ) < 1)
+                    dataSet.SetAxisUnit(3, "m/s");
+                break;
+            case "Hz":
+                if (Mathf.Abs((float) normZ) >= 1.0E9)
+                    dataSet.SetAxisUnit(3, "GHz");
+                break;
+            case "GHz":
+                if (Mathf.Abs((float) normZ) < 1)
+                    dataSet.SetAxisUnit(3, "Hz");
+                break;
+        }
+
+        return $"WCS: ({dataSet.GetFormattedCoord(normX, 1)}, {dataSet.GetFormattedCoord(normY, 2)}){Environment.NewLine}"
+               + $"{dataSet.GetAstAttribute("System(3)")}: {dataSet.GetFormattedCoord(normZ, 3),10} {dataSet.GetAstAttribute("Unit(3)")}{Environment.NewLine}"
+               + $"Image: ({voxelCoordinate.x,5}, {voxelCoordinate.y,5}, {voxelCoordinate.z,5}){Environment.NewLine}"
+               + $"Value: {dataSet.CursorValue,16} {dataSet.GetPixelUnit()}";
+    }
+
+    private static string FormatAngle(double angleInRad)
     {
         double deg = angleInRad / Math.PI * 180.0;
         if (deg >= 1)
@@ -907,7 +896,7 @@ public class VolumeInputController : MonoBehaviour
         // TODO: update scaling text
     }
 
-    private VRFamily DetermineVRFamily()
+    private static VRFamily DetermineVRFamily()
     {
         string vrModel = InputDevices.GetDeviceAtXRNode(XRNode.Head).name.ToLower();
         if (vrModel.Contains("oculus"))
