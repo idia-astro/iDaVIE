@@ -85,8 +85,7 @@ public class VolumeInputController : MonoBehaviour
     
     // Interactions
     private InteractionState _interactionState;
-    private bool _isPainting;
-    private bool _isSelecting;
+    private bool _isInteracting;
     private bool _isQuickMenu;
     private Feature _hoveredFeature;
     private FeatureAnchor _hoveredAnchor;
@@ -107,12 +106,12 @@ public class VolumeInputController : MonoBehaviour
     private float _targetVignetteIntensity = 0;
 
     // Selecting
-    private Stopwatch selectionStopwatch = new Stopwatch();
+    private readonly Stopwatch _selectionStopwatch = new Stopwatch();
 
     // VR-family dependent values
     private VRFamily _vrFamily;
 
-    private bool paintMenuOn = false;
+    private bool _paintMenuOn = false;
 
     // Used for moving the pointer transform to an acceptable position for each controller type
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsLeft = new Dictionary<VRFamily, Vector3>
@@ -279,9 +278,9 @@ public class VolumeInputController : MonoBehaviour
             return;
         }
 
-        paintMenuOn = CanvassQuickMenu.GetComponent<QuickMenuController>().paintMenu.activeSelf;
+        _paintMenuOn = CanvassQuickMenu.GetComponent<QuickMenuController>().paintMenu.activeSelf;
 
-        if (newState && !paintMenuOn)
+        if (newState && !_paintMenuOn)
         {
             StartRequestQuickMenu(fromSource == SteamVR_Input_Sources.LeftHand ? 0 : 1);
         }
@@ -335,14 +334,14 @@ public class VolumeInputController : MonoBehaviour
         if (_interactionState == InteractionState.PaintMode)
         {
             // Handle painting brush stroke ending
-            if (_isPainting && !newState)
+            if (_isInteracting && !newState)
             {
                 foreach (var dataSet in _volumeDataSets)
                 {
                     dataSet.FinishBrushStroke();
                 }
             }
-            _isPainting = newState;
+            _isInteracting = newState;
         }
         else
         {
@@ -407,15 +406,15 @@ public class VolumeInputController : MonoBehaviour
 
     private void StartSelection()
     {
-        _isSelecting = true;
+        _isInteracting = true;
         var startPosition = _handTransforms[PrimaryHandIndex].position;
         foreach (var dataSet in _volumeDataSets)
         {
             dataSet.SetRegionPosition(startPosition, true);
         }
 
-        selectionStopwatch.Reset();
-        selectionStopwatch.Start();
+        _selectionStopwatch.Reset();
+        _selectionStopwatch.Start();
 
         Debug.Log($"Entering selecting state");
     }
@@ -424,10 +423,10 @@ public class VolumeInputController : MonoBehaviour
     {
         var endPosition = _handTransforms[PrimaryHandIndex].position;
 
-        _isSelecting = false;
+        _isInteracting = false;
 
-        selectionStopwatch.Stop();
-        var activeDataSet = getFirstActiveDataSet();
+        _selectionStopwatch.Stop();
+        var activeDataSet = GetFirstActiveDataSet();
 
         if (activeDataSet)
         {
@@ -435,7 +434,7 @@ public class VolumeInputController : MonoBehaviour
             activeDataSet.ClearMeasure();
             var featureSetManager = activeDataSet.GetComponentInChildren<FeatureSetManager>();
             // Clear region selection by clicking selection. Attempt to select feature
-            if (selectionStopwatch.ElapsedMilliseconds < 200)
+            if (_selectionStopwatch.ElapsedMilliseconds < 200)
             {
                 activeDataSet.SelectFeature(endPosition);
             }
@@ -767,13 +766,27 @@ public class VolumeInputController : MonoBehaviour
 
         string cursorString = "";
 
-        if (!_isSelecting)
+        // Region selection info
+        if (_interactionState != InteractionState.PaintMode && _isInteracting)
         {
+            var endPosition = _handTransforms[PrimaryHandIndex].position;
+            foreach (var dataSet in _volumeDataSets)
+            {
+                dataSet.SetRegionPosition(endPosition, false);
+                if (dataSet.isActiveAndEnabled)
+                {
+                    cursorString = GetSelectionString(dataSet);
+                }
+            }
+        }
+        else 
+        {
+            // Cursor info
             foreach (var dataSet in _volumeDataSets)
             {
                 if (_interactionState == InteractionState.PaintMode)
                 {
-                    if (_isPainting)
+                    if (_isInteracting)
                     {
                         dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0);
                     }
@@ -791,19 +804,7 @@ public class VolumeInputController : MonoBehaviour
                 }
             }
         }
-        else
-        {
-            var endPosition = _handTransforms[PrimaryHandIndex].position;
-            foreach (var dataSet in _volumeDataSets)
-            {
-                dataSet.SetRegionPosition(endPosition, false);
-                if (dataSet.isActiveAndEnabled)
-                {
-                    cursorString = GetSelectionString(dataSet);
-                }
-            }
-        }
-
+        
         if (_handInfoComponents != null)
         {
             _handInfoComponents[PrimaryHandIndex].enabled = true;
@@ -918,7 +919,7 @@ public class VolumeInputController : MonoBehaviour
         return VRFamily.Unknown;
     }
 
-    private VolumeDataSetRenderer getFirstActiveDataSet()
+    private VolumeDataSetRenderer GetFirstActiveDataSet()
     {
         foreach (var dataSet in _volumeDataSets)
         {
@@ -936,7 +937,7 @@ public class VolumeInputController : MonoBehaviour
         float targetSize = 0.3f;
         float targetDistance = 0.5f;
 
-        var activeDataSet = getFirstActiveDataSet();
+        var activeDataSet = GetFirstActiveDataSet();
         if (activeDataSet != null && Camera.main != null)
         {
             var dataSetTransform = activeDataSet.transform;
@@ -989,8 +990,8 @@ public class VolumeInputController : MonoBehaviour
             return;
         }
         
-        // Ignore transitions while selecting or painting
-        if (_isSelecting || _isPainting)
+        // Ignore transitions while already interacting
+        if (_isInteracting)
         {
             return;
         }
