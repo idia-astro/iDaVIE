@@ -42,7 +42,7 @@ public class PaintMenuController : MonoBehaviour
         if (_volumeInputController == null)
             _volumeInputController = FindObjectOfType<VolumeInputController>();
         
-        _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.PaintMode);
+        _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeEnabled);
     }
 
     // Update is called once per frame
@@ -140,7 +140,7 @@ public class PaintMenuController : MonoBehaviour
     public void ExitPaintMode()
     {
         _activeDataSet?.CommitMask();
-        _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.CreateMode);
+        _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
         this.gameObject.SetActive(false);
     }
 
@@ -194,7 +194,7 @@ public class PaintMenuController : MonoBehaviour
         savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
         savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
 
-        _volumeInputController.SetInteractionState(VolumeInputController.InteractionState.CreateMode);
+        _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
          this.gameObject.SetActive(false);
         savePopup.SetActive(true);
         

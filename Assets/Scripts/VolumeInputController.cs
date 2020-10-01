@@ -8,7 +8,10 @@ using Valve.VR;
 using Valve.VR.InteractionSystem;
 using Vectrosity;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using DataFeatures;
+using Appccelerate.StateMachine;
+using Appccelerate.StateMachine.Machine;
 using Debug = UnityEngine.Debug;
 using VRHand = Valve.VR.InteractionSystem.Hand;
 
@@ -35,10 +38,24 @@ public class VolumeInputController : MonoBehaviour
     
     public enum InteractionState
     {
-        CreateMode,
-        EditMode,
-        PaintMode
+        IdleSelecting,
+        IdlePainting,
+        Creating,
+        Editing,
+        Painting
     }
+
+    public enum InteractionEvents
+    {
+        InteractionStarted,
+        InteractionEnded,
+        Update,
+        PaintModeEnabled,
+        PaintModeDisabled,
+        BrushSizeIncreased,
+        BrushSizeDecreased
+    }
+
 
     [Flags]
     private enum RotationAxes
@@ -49,7 +66,7 @@ public class VolumeInputController : MonoBehaviour
     }
     //reference to quick menu canvass
     public GameObject CanvassQuickMenu;
-    
+
     // Choice of left/right primary hand
     public SteamVR_Input_Sources PrimaryHand = SteamVR_Input_Sources.RightHand;
 
@@ -84,8 +101,7 @@ public class VolumeInputController : MonoBehaviour
     private LocomotionState _locomotionState;
     
     // Interactions
-    private InteractionState _interactionState;
-    private bool _isInteracting;
+    public PassiveStateMachine<InteractionState, InteractionEvents> InteractionStateMachine { get; private set; }
     private bool _isQuickMenu;
     private Feature _hoveredFeature;
     private FeatureAnchor _hoveredAnchor;
@@ -194,7 +210,116 @@ public class VolumeInputController : MonoBehaviour
         _startGripCenter = Vector3.zero;
 
         _locomotionState = LocomotionState.Idle;
-        _interactionState = InteractionState.CreateMode;
+        
+        CreateInteractionStateMachine();
+    }
+
+    private void CreateInteractionStateMachine()
+    {
+        var builder = new StateMachineDefinitionBuilder<InteractionState, InteractionEvents>();
+
+        // Switching between region and painting
+        builder
+            .In(InteractionState.IdleSelecting)
+            .On(InteractionEvents.PaintModeEnabled)
+            .Goto(InteractionState.IdlePainting)
+            .Execute(EnterPaintMode);
+
+        builder
+            .In(InteractionState.IdlePainting)
+            .On(InteractionEvents.PaintModeDisabled)
+            .Goto(InteractionState.IdleSelecting)
+            .Execute(ExitPaintMode);
+
+        // Region creation / editing transitions
+        builder
+            .In(InteractionState.IdleSelecting)
+            .On(InteractionEvents.InteractionStarted)
+            .If(() => HasHoverAnchor)
+            .Goto(InteractionState.Editing)
+            .Execute(() =>
+            {
+                //TODO
+            }).Otherwise().Goto(InteractionState.Creating)
+            .Execute(StartSelection);
+
+        builder
+            .In(InteractionState.Editing)
+            .On(InteractionEvents.InteractionEnded)
+            .Goto(InteractionState.IdleSelecting)
+            .Execute(() =>
+            {
+                //TODO
+            });
+
+        builder
+            .In(InteractionState.Creating)
+            .On(InteractionEvents.InteractionEnded)
+            .Goto(InteractionState.IdleSelecting)
+            .Execute(EndSelection);
+
+        // Painting transitions
+        builder
+            .In(InteractionState.IdlePainting)
+            .On(InteractionEvents.InteractionStarted)
+            .Goto(InteractionState.Painting)
+            .Execute(() =>
+            {
+                //TODO
+            });
+
+        builder
+            .In(InteractionState.Painting)
+            .On(InteractionEvents.InteractionEnded)
+            .Goto(InteractionState.IdlePainting)
+            .Execute(() =>
+            {
+                foreach (var dataSet in _volumeDataSets)
+                {
+                    dataSet.FinishBrushStroke();
+                }
+            });
+
+        // Update events
+        builder.In(InteractionState.Painting)
+            .On(InteractionEvents.Update)
+            .Execute(UpdatePaintingCursor)
+            .Execute(UpdatePainting)
+            .Execute(UpdateCursorString);
+
+        builder.In(InteractionState.Creating)
+            .On(InteractionEvents.Update)
+            .Execute(UpdateRegionCreating)
+            .Execute(UpdateRegionString);
+
+        builder.In(InteractionState.Editing)
+            .On(InteractionEvents.Update)
+            .Execute(() => { });
+
+        builder.In(InteractionState.IdlePainting)
+            .On(InteractionEvents.Update)
+            .Execute(UpdatePaintingCursor)
+            .Execute(UpdateCursorString);
+
+        builder.In(InteractionState.IdleSelecting)
+            .On(InteractionEvents.Update)
+            .Execute(UpdateCursor)
+            .Execute(UpdateCursorString);
+
+        builder.In(InteractionState.IdlePainting)
+            .On(InteractionEvents.BrushSizeIncreased)
+            .Execute(IncreaseBrushSize);
+
+        builder.In(InteractionState.IdlePainting)
+            .On(InteractionEvents.BrushSizeDecreased)
+            .Execute(DecreaseBrushSize);
+        
+        builder.WithInitialState(InteractionState.IdleSelecting);
+
+        InteractionStateMachine = builder
+            .Build()
+            .CreatePassiveStateMachine();
+        InteractionStateMachine.Start();
     }
 
     private void OnDisable()
@@ -226,11 +351,12 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnMenuUpPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
-        if (_interactionState == InteractionState.PaintMode)
-        {
-            BrushSize += 2;
-            UpdatePaintCursors();
-        }
+        InteractionStateMachine.Fire(InteractionEvents.BrushSizeIncreased);
+    }
+
+    private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        InteractionStateMachine.Fire(InteractionEvents.BrushSizeDecreased);
     }
 
     public void IncreaseBrushSize()
@@ -250,16 +376,6 @@ public class VolumeInputController : MonoBehaviour
     {
         BrushSize = 1;
         UpdatePaintCursors();
-    }
-
-
-    private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
-    {
-        if (_interactionState == InteractionState.PaintMode)
-        {
-            BrushSize = Math.Max(1, BrushSize - 2);
-            UpdatePaintCursors();
-        }
     }
 
     private void UpdatePaintCursors()
@@ -330,30 +446,8 @@ public class VolumeInputController : MonoBehaviour
         {
             return;
         }
-        
-        if (_interactionState == InteractionState.PaintMode)
-        {
-            // Handle painting brush stroke ending
-            if (_isInteracting && !newState)
-            {
-                foreach (var dataSet in _volumeDataSets)
-                {
-                    dataSet.FinishBrushStroke();
-                }
-            }
-            _isInteracting = newState;
-        }
-        else
-        {
-            if (newState)
-            {
-                StartSelection();
-            }
-            else
-            {
-                EndSelection();
-            }
-        }
+
+        InteractionStateMachine.Fire(newState ? InteractionEvents.InteractionStarted : InteractionEvents.InteractionEnded);
     }
 
     private void StateTransitionMovingToIdle()
@@ -406,7 +500,6 @@ public class VolumeInputController : MonoBehaviour
 
     private void StartSelection()
     {
-        _isInteracting = true;
         var startPosition = _handTransforms[PrimaryHandIndex].position;
         foreach (var dataSet in _volumeDataSets)
         {
@@ -422,8 +515,6 @@ public class VolumeInputController : MonoBehaviour
     private void EndSelection()
     {
         var endPosition = _handTransforms[PrimaryHandIndex].position;
-
-        _isInteracting = false;
 
         _selectionStopwatch.Stop();
         var activeDataSet = GetFirstActiveDataSet();
@@ -515,7 +606,7 @@ public class VolumeInputController : MonoBehaviour
                 UpdateScaling();
                 break;
             case LocomotionState.Idle:
-                UpdateIdle();
+                InteractionStateMachine.Fire(InteractionEvents.Update);
                 break;
             case LocomotionState.EditingThresholdMax:
                 UpdateEditingThreshold(true);
@@ -757,54 +848,69 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
-    private void UpdateIdle()
+    private void UpdatePainting()
     {
-        if (_volumeDataSets == null)
+        foreach (var dataSet in _volumeDataSets)
         {
-            return;
+            dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0);
         }
+    }
+    
+    private void UpdatePaintingCursor()
+    {
+        foreach (var dataSet in _volumeDataSets)
+        {
+            dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, BrushSize);
+        }
+    }
 
+    private void UpdateCursor()
+    {
+        foreach (var dataSet in _volumeDataSets)
+        {
+            dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, 1);
+        }
+    }
+
+    private void UpdateRegionCreating()
+    {
+        var endPosition = _handTransforms[PrimaryHandIndex].position;
+        foreach (var dataSet in _volumeDataSets)
+        {
+            dataSet.SetRegionPosition(endPosition, false);
+        }
+    }
+
+    private void UpdateCursorString()
+    {
         string cursorString = "";
-
-        // Region selection info
-        if (_interactionState != InteractionState.PaintMode && _isInteracting)
+        foreach (var dataSet in _volumeDataSets)
         {
-            var endPosition = _handTransforms[PrimaryHandIndex].position;
-            foreach (var dataSet in _volumeDataSets)
+            if (dataSet.isActiveAndEnabled)
             {
-                dataSet.SetRegionPosition(endPosition, false);
-                if (dataSet.isActiveAndEnabled)
-                {
-                    cursorString = GetSelectionString(dataSet);
-                }
+                cursorString = GetFormattedCursorString(dataSet);
             }
         }
-        else 
+
+        if (_handInfoComponents != null)
         {
-            // Cursor info
-            foreach (var dataSet in _volumeDataSets)
+            _handInfoComponents[PrimaryHandIndex].enabled = true;
+            _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
+            _handInfoComponents[PrimaryHandIndex].text = cursorString;
+        }
+    }
+
+    private void UpdateRegionString()
+    {
+        string cursorString = "";
+        foreach (var dataSet in _volumeDataSets)
+        {
+            if (dataSet.isActiveAndEnabled)
             {
-                if (_interactionState == InteractionState.PaintMode)
-                {
-                    if (_isInteracting)
-                    {
-                        dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0);
-                    }
-
-                    dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, BrushSize);
-                }
-                else
-                {
-                    dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, 1);
-                }
-
-                if (dataSet.isActiveAndEnabled)
-                {
-                    cursorString = GetFormattedCursorString(dataSet);
-                }
+                cursorString = GetSelectionString(dataSet);
             }
         }
-        
+
         if (_handInfoComponents != null)
         {
             _handInfoComponents[PrimaryHandIndex].enabled = true;
@@ -968,7 +1074,6 @@ public class VolumeInputController : MonoBehaviour
     {
         _hoveredFeature = featureSetManager?.SelectedFeature;
         _hoveredAnchor = featureAnchor;
-        SetInteractionState(InteractionState.EditMode);
     }
 
     public void ClearHoveredFeature(FeatureSetManager featureSetManager, FeatureAnchor featureAnchor)
@@ -978,53 +1083,10 @@ public class VolumeInputController : MonoBehaviour
         {
             _hoveredFeature = null;
             _hoveredAnchor = null;
-            SetInteractionState(InteractionState.CreateMode);
         }
     }
 
-    public void SetInteractionState(InteractionState interactionState)
-    {
-        // Ignore transitions to same state
-        if (interactionState == _interactionState)
-        {
-            return;
-        }
-        
-        // Ignore transitions while already interacting
-        if (_isInteracting)
-        {
-            return;
-        }
-
-        switch (interactionState)
-        {
-            case InteractionState.PaintMode:
-                StateTransitionCreateToPaint();
-                return;
-            case InteractionState.CreateMode:
-                if (_interactionState == InteractionState.PaintMode)
-                {
-                    StateTransitionPaintToCreate();
-                }
-                else if (_interactionState == InteractionState.EditMode)
-                {
-                    StateTransitionEditToCreate();
-                }
-
-                return;
-            case InteractionState.EditMode:
-                if (_interactionState == InteractionState.CreateMode)
-                {
-                    StateTransitionCreateToEdit();
-                }
-
-                return;
-            default:
-                return;
-        }
-    }
-
-    private void StateTransitionCreateToPaint()
+    private void EnterPaintMode()
     {
         // Prevent transition if volumes aren't full resolution
         foreach (var dataSet in _volumeDataSets)
@@ -1040,27 +1102,13 @@ public class VolumeInputController : MonoBehaviour
             dataSet.InitialiseMask();
             dataSet.DisplayMask = true;
         }
-        _interactionState = InteractionState.PaintMode;
     }
 
-    private void StateTransitionPaintToCreate()
+    private void ExitPaintMode()
     {
-        _interactionState = InteractionState.CreateMode;
         foreach (var dataSet in _volumeDataSets)
         {
             dataSet.DisplayMask = false;
         }
-    }
-
-    private void StateTransitionCreateToEdit()
-    {
-        Debug.Log("Entering edit state");
-        _interactionState = InteractionState.EditMode;
-    }
-
-    private void StateTransitionEditToCreate()
-    {
-        Debug.Log("Exiting edit state");
-        _interactionState = InteractionState.CreateMode;
     }
 }
