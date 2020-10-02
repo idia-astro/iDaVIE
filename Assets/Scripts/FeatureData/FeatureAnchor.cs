@@ -14,12 +14,10 @@ namespace DataFeatures
         
         private void OnTriggerEnter(Collider other)
         {
-            Debug.Log(other);
             if (other.CompareTag("cursor"))
             {
                 var featureSetManager = GetComponentInParent<FeatureSetManager>();
                 var inputController = FindObjectOfType<VolumeInputController>();
-                Debug.Log($"Cursor entered {name}");
                 _material.color = Color.white;
                 inputController?.SetHoveredFeature(featureSetManager, this);
             }
@@ -31,7 +29,6 @@ namespace DataFeatures
             {
                 var featureSetManager = GetComponentInParent<FeatureSetManager>();
                 var inputController = FindObjectOfType<VolumeInputController>();
-                Debug.Log($"Cursor exited {name}");
                 _material.color = Color.gray;
                 inputController?.ClearHoveredFeature(featureSetManager, this);
             } 

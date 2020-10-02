@@ -32,10 +32,11 @@ namespace DataFeatures
                     if (_activeFeatureSetRenderer)
                     {
                         _cubeMinCollider.transform.SetParent(_activeFeatureSetRenderer.transform, false);
-                        _cubeMaxCollider.transform.SetParent(_activeFeatureSetRenderer.transform, false);
                         _cubeMinCollider.transform.localPosition = _selectedFeature.CornerMin;
-                        _cubeMaxCollider.transform.localPosition = _selectedFeature.CornerMax;
                         SetGlobalScale(_cubeMinCollider.transform, Vector3.one * 0.01f);
+
+                        _cubeMaxCollider.transform.SetParent(_activeFeatureSetRenderer.transform, false);
+                        _cubeMaxCollider.transform.localPosition = _selectedFeature.CornerMax;
                         SetGlobalScale(_cubeMaxCollider.transform, Vector3.one * 0.01f);
                     }
                 }
@@ -63,13 +64,15 @@ namespace DataFeatures
             _timeStamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             OutputFile = _timeStamp + ".ascii";
             
-            _cubeMaxCollider = Instantiate(FeatureAnchorPrefab, new Vector3(0, 0, 0), Quaternion.identity);
-            _cubeMaxCollider.name = "front_right_top";
-            _cubeMaxCollider.transform.parent = transform;
-            
             _cubeMinCollider = Instantiate(FeatureAnchorPrefab, new Vector3(0, 0, 0), Quaternion.identity);
             _cubeMinCollider.transform.parent = transform;
             _cubeMinCollider.name = "back_left_bottom";
+            SetGlobalScale(_cubeMinCollider.transform, Vector3.zero);
+            
+            _cubeMaxCollider = Instantiate(FeatureAnchorPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+            _cubeMaxCollider.name = "front_right_top";
+            _cubeMaxCollider.transform.parent = transform;
+            SetGlobalScale(_cubeMaxCollider.transform, Vector3.zero);
         }
         
         public void Update()
@@ -77,11 +80,16 @@ namespace DataFeatures
             if (_activeFeatureSetRenderer && _cubeMinCollider && _selectedFeature != null)
             {
                 _cubeMinCollider.transform.SetParent(_activeFeatureSetRenderer.transform, false);
-                _cubeMaxCollider.transform.SetParent(_activeFeatureSetRenderer.transform, false);
                 _cubeMinCollider.transform.localPosition = _selectedFeature.CornerMin - Vector3.one * 0.5f;
+                _cubeMaxCollider.transform.SetParent(_activeFeatureSetRenderer.transform, false);
                 _cubeMaxCollider.transform.localPosition = _selectedFeature.CornerMax + Vector3.one * 0.5f;
                 SetGlobalScale(_cubeMinCollider.transform, Vector3.one * 0.01f);
                 SetGlobalScale(_cubeMaxCollider.transform, Vector3.one * 0.01f);
+            }
+            else
+            {
+                SetGlobalScale(_cubeMaxCollider.transform, Vector3.zero);
+                SetGlobalScale(_cubeMinCollider.transform, Vector3.zero);
             }
         }
 

@@ -364,24 +364,36 @@ namespace VolumeData
             }
         }
 
-        public void SetRegionPosition(Vector3 cursor, bool start)
+        public Vector3Int GetVoxelPosition(Vector3 cursorPosWorldSpace)
         {
-            Vector3 objectSpacePosition = transform.InverseTransformPoint(cursor);
+            Vector3 objectSpacePosition = transform.InverseTransformPoint(cursorPosWorldSpace);
             objectSpacePosition = new Vector3(
                 Mathf.Clamp(objectSpacePosition.x, -0.5f, 0.5f),
                 Mathf.Clamp(objectSpacePosition.y, -0.5f, 0.5f),
                 Mathf.Clamp(objectSpacePosition.z, -0.5f, 0.5f)
             );
+
+            if (_dataSet == null)
+            {
+                return Vector3Int.zero;
+            }
+            
+            Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
+            Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
+            Vector3Int newVoxelCursor = new Vector3Int(
+                Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),
+                Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, 1, (int)_dataSet.YDim),
+                Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1, 1, (int)_dataSet.ZDim)
+            );
+
+            return newVoxelCursor;
+        }
+
+        public void SetRegionPosition(Vector3 cursor, bool start)
+        {
             if (_dataSet != null)
             {
-                Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
-                Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
-                Vector3Int newVoxelCursor = new Vector3Int(
-                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),
-                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, 1, (int)_dataSet.YDim),
-                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1, 1, (int)_dataSet.ZDim)
-                );
-
+                var newVoxelCursor = GetVoxelPosition(cursor);
                 var existingVoxel = start ? RegionStartVoxel : RegionEndVoxel;
                 if (!newVoxelCursor.Equals(existingVoxel))
                 {

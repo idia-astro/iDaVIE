@@ -11,6 +11,7 @@ using Vectrosity;
 using System.Diagnostics;
 using System.Linq;
 using DataFeatures;
+using Stateless.Graph;
 using Debug = UnityEngine.Debug;
 using VRHand = Valve.VR.InteractionSystem.Hand;
 
@@ -67,7 +68,8 @@ public class VolumeInputController : MonoBehaviour
     public SteamVR_Input_Sources PrimaryHand = SteamVR_Input_Sources.RightHand;
 
     public int PrimaryHandIndex => PrimaryHand == SteamVR_Input_Sources.LeftHand ? 0 : 1;
-    public bool HasHoverAnchor => (_hoveredAnchor != null && _hoveredFeature != null);
+    public bool HasHoverAnchor => (_hoveredAnchor && _hoveredFeature != null);
+    public bool HasEditingAnchor => (_editingAnchor && _editingFeature != null);
     public VolumeDataSetRenderer ActiveDataSet => _volumeDataSets.FirstOrDefault(dataSet => dataSet.isActiveAndEnabled);
     
     // Scaling/Rotation options
@@ -100,8 +102,8 @@ public class VolumeInputController : MonoBehaviour
     // Interactions
     public StateMachine<InteractionState, InteractionEvents> InteractionStateMachine { get; private set; }
     private bool _isQuickMenu;
-    private Feature _hoveredFeature;
-    private FeatureAnchor _hoveredAnchor;
+    private Feature _hoveredFeature, _editingFeature;
+    private FeatureAnchor _hoveredAnchor, _editingAnchor;
 
     private VectorLine _lineAxisSeparation;
     private VectorLine _lineRotationAxes;
@@ -217,27 +219,29 @@ public class VolumeInputController : MonoBehaviour
 
         InteractionStateMachine.Configure(InteractionState.IdleSelecting)
             .OnEntryFrom(InteractionEvents.PaintModeDisabled, ExitPaintMode)
-            .OnEntryFrom(InteractionEvents.InteractionEnded, EndSelection)
             .Permit(InteractionEvents.PaintModeEnabled, InteractionState.IdlePainting)
             .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Creating, () => !HasHoverAnchor)
             .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Editing, () => HasHoverAnchor);
 
         InteractionStateMachine.Configure(InteractionState.IdlePainting)
             .OnEntryFrom(InteractionEvents.PaintModeEnabled, EnterPaintMode)
-            .OnEntryFrom(InteractionEvents.InteractionEnded, () => ActiveDataSet?.FinishBrushStroke())
             .Permit(InteractionEvents.PaintModeDisabled, InteractionState.IdleSelecting)
             .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Painting, () => ActiveDataSet?.IsFullResolution ?? false);
 
         InteractionStateMachine.Configure(InteractionState.Painting)
+            .OnExit(() => ActiveDataSet?.FinishBrushStroke())
             .Permit(InteractionEvents.InteractionEnded, InteractionState.IdlePainting);
 
         InteractionStateMachine.Configure(InteractionState.Creating)
-            .OnEntryFrom(InteractionEvents.InteractionStarted, StartSelection)
+            .OnEntry(StartSelection)
+            .OnExit(EndSelection)
             .Permit(InteractionEvents.InteractionEnded, InteractionState.IdleSelecting);
 
         InteractionStateMachine.Configure(InteractionState.Editing)
+            .OnEntry(StartRegionEditing)
+            .OnExit(EndRegionEditing)
             .Permit(InteractionEvents.InteractionEnded, InteractionState.IdleSelecting);
-}
+    }
 
     private void OnDisable()
     {
@@ -775,16 +779,29 @@ public class VolumeInputController : MonoBehaviour
         }
 
         var currentState = InteractionStateMachine.State;
+        var cursorPosWorldSpace = _handTransforms[PrimaryHandIndex].position;
         var activeBrushSize = (currentState == InteractionState.Painting || currentState == InteractionState.IdlePainting) ? BrushSize : 1;
-        dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, activeBrushSize);
-        
+        dataSet.SetCursorPosition(cursorPosWorldSpace, activeBrushSize);
+
         if (currentState == InteractionState.Painting)
         {
             dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0);
-        } else if (currentState == InteractionState.Creating)
+        }
+        else if (currentState == InteractionState.Creating)
         {
-            var endPosition = _handTransforms[PrimaryHandIndex].position;
-            dataSet.SetRegionPosition(endPosition, false);
+            dataSet.SetRegionPosition(cursorPosWorldSpace, false);
+        }
+        else if (currentState == InteractionState.Editing && HasEditingAnchor)
+        {
+            var voxelPosition = dataSet.GetVoxelPosition(cursorPosWorldSpace);
+            if (_editingAnchor.name == "front_right_top")
+            {
+                _editingFeature.SetBounds(_editingFeature.CornerMin, voxelPosition);
+            }
+            else
+            {
+                _editingFeature.SetBounds(voxelPosition, _editingFeature.CornerMax);
+            }
         }
         
         string cursorString = "";
@@ -958,6 +975,18 @@ public class VolumeInputController : MonoBehaviour
             _hoveredFeature = null;
             _hoveredAnchor = null;
         }
+    }
+
+    private void StartRegionEditing()
+    {
+        _editingFeature = _hoveredFeature;
+        _editingAnchor = _hoveredAnchor;
+    }
+
+    private void EndRegionEditing()
+    {
+        _editingFeature = null;
+        _editingAnchor = null;
     }
 
     private void EnterPaintMode()
