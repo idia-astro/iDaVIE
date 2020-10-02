@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Stateless;
 using VolumeData;
 using TMPro;
 using UnityEngine;
@@ -8,10 +9,8 @@ using Valve.VR;
 using Valve.VR.InteractionSystem;
 using Vectrosity;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using System.Linq;
 using DataFeatures;
-using Appccelerate.StateMachine;
-using Appccelerate.StateMachine.Machine;
 using Debug = UnityEngine.Debug;
 using VRHand = Valve.VR.InteractionSystem.Hand;
 
@@ -49,11 +48,8 @@ public class VolumeInputController : MonoBehaviour
     {
         InteractionStarted,
         InteractionEnded,
-        Update,
         PaintModeEnabled,
         PaintModeDisabled,
-        BrushSizeIncreased,
-        BrushSizeDecreased
     }
 
 
@@ -72,6 +68,7 @@ public class VolumeInputController : MonoBehaviour
 
     public int PrimaryHandIndex => PrimaryHand == SteamVR_Input_Sources.LeftHand ? 0 : 1;
     public bool HasHoverAnchor => (_hoveredAnchor != null && _hoveredFeature != null);
+    public VolumeDataSetRenderer ActiveDataSet => _volumeDataSets.FirstOrDefault(dataSet => dataSet.isActiveAndEnabled);
     
     // Scaling/Rotation options
     public bool InPlaceScaling = true;
@@ -101,7 +98,7 @@ public class VolumeInputController : MonoBehaviour
     private LocomotionState _locomotionState;
     
     // Interactions
-    public PassiveStateMachine<InteractionState, InteractionEvents> InteractionStateMachine { get; private set; }
+    public StateMachine<InteractionState, InteractionEvents> InteractionStateMachine { get; private set; }
     private bool _isQuickMenu;
     private Feature _hoveredFeature;
     private FeatureAnchor _hoveredAnchor;
@@ -216,111 +213,31 @@ public class VolumeInputController : MonoBehaviour
 
     private void CreateInteractionStateMachine()
     {
-        var builder = new StateMachineDefinitionBuilder<InteractionState, InteractionEvents>();
+        InteractionStateMachine = new StateMachine<InteractionState, InteractionEvents>(InteractionState.IdleSelecting);
 
-        // Switching between region and painting
-        builder
-            .In(InteractionState.IdleSelecting)
-            .On(InteractionEvents.PaintModeEnabled)
-            .Goto(InteractionState.IdlePainting)
-            .Execute(EnterPaintMode);
+        InteractionStateMachine.Configure(InteractionState.IdleSelecting)
+            .OnEntryFrom(InteractionEvents.PaintModeDisabled, ExitPaintMode)
+            .OnEntryFrom(InteractionEvents.InteractionEnded, EndSelection)
+            .Permit(InteractionEvents.PaintModeEnabled, InteractionState.IdlePainting)
+            .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Creating, () => !HasHoverAnchor)
+            .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Editing, () => HasHoverAnchor);
 
-        builder
-            .In(InteractionState.IdlePainting)
-            .On(InteractionEvents.PaintModeDisabled)
-            .Goto(InteractionState.IdleSelecting)
-            .Execute(ExitPaintMode);
+        InteractionStateMachine.Configure(InteractionState.IdlePainting)
+            .OnEntryFrom(InteractionEvents.PaintModeEnabled, EnterPaintMode)
+            .OnEntryFrom(InteractionEvents.InteractionEnded, () => ActiveDataSet?.FinishBrushStroke())
+            .Permit(InteractionEvents.PaintModeDisabled, InteractionState.IdleSelecting)
+            .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Painting, () => ActiveDataSet?.IsFullResolution ?? false);
 
-        // Region creation / editing transitions
-        builder
-            .In(InteractionState.IdleSelecting)
-            .On(InteractionEvents.InteractionStarted)
-            .If(() => HasHoverAnchor)
-            .Goto(InteractionState.Editing)
-            .Execute(() =>
-            {
-                //TODO
-            }).Otherwise().Goto(InteractionState.Creating)
-            .Execute(StartSelection);
+        InteractionStateMachine.Configure(InteractionState.Painting)
+            .Permit(InteractionEvents.InteractionEnded, InteractionState.IdlePainting);
 
-        builder
-            .In(InteractionState.Editing)
-            .On(InteractionEvents.InteractionEnded)
-            .Goto(InteractionState.IdleSelecting)
-            .Execute(() =>
-            {
-                //TODO
-            });
+        InteractionStateMachine.Configure(InteractionState.Creating)
+            .OnEntryFrom(InteractionEvents.InteractionStarted, StartSelection)
+            .Permit(InteractionEvents.InteractionEnded, InteractionState.IdleSelecting);
 
-        builder
-            .In(InteractionState.Creating)
-            .On(InteractionEvents.InteractionEnded)
-            .Goto(InteractionState.IdleSelecting)
-            .Execute(EndSelection);
-
-        // Painting transitions
-        builder
-            .In(InteractionState.IdlePainting)
-            .On(InteractionEvents.InteractionStarted)
-            .Goto(InteractionState.Painting)
-            .Execute(() =>
-            {
-                //TODO
-            });
-
-        builder
-            .In(InteractionState.Painting)
-            .On(InteractionEvents.InteractionEnded)
-            .Goto(InteractionState.IdlePainting)
-            .Execute(() =>
-            {
-                foreach (var dataSet in _volumeDataSets)
-                {
-                    dataSet.FinishBrushStroke();
-                }
-            });
-
-        // Update events
-        builder.In(InteractionState.Painting)
-            .On(InteractionEvents.Update)
-            .Execute(UpdatePaintingCursor)
-            .Execute(UpdatePainting)
-            .Execute(UpdateCursorString);
-
-        builder.In(InteractionState.Creating)
-            .On(InteractionEvents.Update)
-            .Execute(UpdateRegionCreating)
-            .Execute(UpdateRegionString);
-
-        builder.In(InteractionState.Editing)
-            .On(InteractionEvents.Update)
-            .Execute(() => { });
-
-        builder.In(InteractionState.IdlePainting)
-            .On(InteractionEvents.Update)
-            .Execute(UpdatePaintingCursor)
-            .Execute(UpdateCursorString);
-
-        builder.In(InteractionState.IdleSelecting)
-            .On(InteractionEvents.Update)
-            .Execute(UpdateCursor)
-            .Execute(UpdateCursorString);
-
-        builder.In(InteractionState.IdlePainting)
-            .On(InteractionEvents.BrushSizeIncreased)
-            .Execute(IncreaseBrushSize);
-
-        builder.In(InteractionState.IdlePainting)
-            .On(InteractionEvents.BrushSizeDecreased)
-            .Execute(DecreaseBrushSize);
-        
-        builder.WithInitialState(InteractionState.IdleSelecting);
-
-        InteractionStateMachine = builder
-            .Build()
-            .CreatePassiveStateMachine();
-        InteractionStateMachine.Start();
-    }
+        InteractionStateMachine.Configure(InteractionState.Editing)
+            .Permit(InteractionEvents.InteractionEnded, InteractionState.IdleSelecting);
+}
 
     private void OnDisable()
     {
@@ -351,39 +268,42 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnMenuUpPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
-        InteractionStateMachine.Fire(InteractionEvents.BrushSizeIncreased);
+        if (InteractionStateMachine.State == InteractionState.IdlePainting)
+        {
+            IncreaseBrushSize();
+        }
     }
 
     private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
-        InteractionStateMachine.Fire(InteractionEvents.BrushSizeDecreased);
+        if (InteractionStateMachine.State == InteractionState.IdlePainting)
+        {
+            DecreaseBrushSize();
+        }
     }
 
     public void IncreaseBrushSize()
     {
         BrushSize += 2;
-        UpdatePaintCursors();
+        UpdatePaintCursor();
     }
 
 
     public void DecreaseBrushSize()
     {
         BrushSize = Math.Max(1, BrushSize - 2);
-        UpdatePaintCursors();
+        UpdatePaintCursor();
     }
 
     public void ResetBrushSize()
     {
         BrushSize = 1;
-        UpdatePaintCursors();
+        UpdatePaintCursor();
     }
 
-    private void UpdatePaintCursors()
+    private void UpdatePaintCursor()
     {
-        foreach (var dataSet in _volumeDataSets)
-        {
-            dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, BrushSize);
-        }
+        ActiveDataSet?.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, BrushSize);
     }
 
     private void OnQuickMenuChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
@@ -501,11 +421,7 @@ public class VolumeInputController : MonoBehaviour
     private void StartSelection()
     {
         var startPosition = _handTransforms[PrimaryHandIndex].position;
-        foreach (var dataSet in _volumeDataSets)
-        {
-            dataSet.SetRegionPosition(startPosition, true);
-        }
-
+        ActiveDataSet?.SetRegionPosition(startPosition, true);
         _selectionStopwatch.Reset();
         _selectionStopwatch.Start();
 
@@ -517,24 +433,26 @@ public class VolumeInputController : MonoBehaviour
         var endPosition = _handTransforms[PrimaryHandIndex].position;
 
         _selectionStopwatch.Stop();
-        var activeDataSet = GetFirstActiveDataSet();
+        var activeDataSet = ActiveDataSet;
 
-        if (activeDataSet)
+        if (!activeDataSet)
         {
-            activeDataSet.ClearRegion();
-            activeDataSet.ClearMeasure();
-            var featureSetManager = activeDataSet.GetComponentInChildren<FeatureSetManager>();
-            // Clear region selection by clicking selection. Attempt to select feature
-            if (_selectionStopwatch.ElapsedMilliseconds < 200)
+            return;
+        }
+        
+        activeDataSet.ClearRegion();
+        activeDataSet.ClearMeasure();
+        var featureSetManager = activeDataSet.GetComponentInChildren<FeatureSetManager>();
+        // Clear region selection by clicking selection. Attempt to select feature
+        if (_selectionStopwatch.ElapsedMilliseconds < 200)
+        {
+            activeDataSet.SelectFeature(endPosition);
+        }
+        else
+        {
+            if (featureSetManager)
             {
-                activeDataSet.SelectFeature(endPosition);
-            }
-            else
-            {
-                if (featureSetManager)
-                {
-                    featureSetManager.CreateNewFeature(activeDataSet.RegionStartVoxel, activeDataSet.RegionEndVoxel, "selection", true);
-                }
+                featureSetManager.CreateNewFeature(activeDataSet.RegionStartVoxel, activeDataSet.RegionEndVoxel, "selection", true);
             }
         }
     }
@@ -606,7 +524,7 @@ public class VolumeInputController : MonoBehaviour
                 UpdateScaling();
                 break;
             case LocomotionState.Idle:
-                InteractionStateMachine.Fire(InteractionEvents.Update);
+                UpdateInteractions();
                 break;
             case LocomotionState.EditingThresholdMax:
                 UpdateEditingThreshold(true);
@@ -848,69 +766,38 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
-    private void UpdatePainting()
+    private void UpdateInteractions()
     {
-        foreach (var dataSet in _volumeDataSets)
+        var dataSet = ActiveDataSet;
+        if (!dataSet)
+        {
+            return;
+        }
+
+        var currentState = InteractionStateMachine.State;
+        var activeBrushSize = (currentState == InteractionState.Painting || currentState == InteractionState.IdlePainting) ? BrushSize : 1;
+        dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, activeBrushSize);
+        
+        if (currentState == InteractionState.Painting)
         {
             dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0);
-        }
-    }
-    
-    private void UpdatePaintingCursor()
-    {
-        foreach (var dataSet in _volumeDataSets)
+        } else if (currentState == InteractionState.Creating)
         {
-            dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, BrushSize);
-        }
-    }
-
-    private void UpdateCursor()
-    {
-        foreach (var dataSet in _volumeDataSets)
-        {
-            dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, 1);
-        }
-    }
-
-    private void UpdateRegionCreating()
-    {
-        var endPosition = _handTransforms[PrimaryHandIndex].position;
-        foreach (var dataSet in _volumeDataSets)
-        {
+            var endPosition = _handTransforms[PrimaryHandIndex].position;
             dataSet.SetRegionPosition(endPosition, false);
         }
-    }
-
-    private void UpdateCursorString()
-    {
+        
         string cursorString = "";
-        foreach (var dataSet in _volumeDataSets)
-        {
-            if (dataSet.isActiveAndEnabled)
-            {
-                cursorString = GetFormattedCursorString(dataSet);
-            }
-        }
 
-        if (_handInfoComponents != null)
+        if (currentState == InteractionState.Creating || currentState == InteractionState.Editing)
         {
-            _handInfoComponents[PrimaryHandIndex].enabled = true;
-            _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
-            _handInfoComponents[PrimaryHandIndex].text = cursorString;
+            cursorString = GetSelectionString(dataSet);
         }
-    }
-
-    private void UpdateRegionString()
-    {
-        string cursorString = "";
-        foreach (var dataSet in _volumeDataSets)
+        else
         {
-            if (dataSet.isActiveAndEnabled)
-            {
-                cursorString = GetSelectionString(dataSet);
-            }
+            cursorString = GetFormattedCursorString(dataSet);
         }
-
+        
         if (_handInfoComponents != null)
         {
             _handInfoComponents[PrimaryHandIndex].enabled = true;
@@ -1025,25 +912,12 @@ public class VolumeInputController : MonoBehaviour
         return VRFamily.Unknown;
     }
 
-    private VolumeDataSetRenderer GetFirstActiveDataSet()
-    {
-        foreach (var dataSet in _volumeDataSets)
-        {
-            if (dataSet.isActiveAndEnabled)
-            {
-                return dataSet;
-            }
-        }
-
-        return null;
-    }
-
     public void Teleport(Vector3 boundsMin, Vector3 boundsMax)
     {
         float targetSize = 0.3f;
         float targetDistance = 0.5f;
 
-        var activeDataSet = GetFirstActiveDataSet();
+        var activeDataSet = ActiveDataSet;
         if (activeDataSet != null && Camera.main != null)
         {
             var dataSetTransform = activeDataSet.transform;

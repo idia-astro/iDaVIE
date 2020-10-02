@@ -730,9 +730,9 @@ namespace VolumeData
             int stringLength = 70;
             StringBuilder coord = new StringBuilder(stringLength);
             if (AstTool.Format(_dataSet.AstFrameSet, axis, val, coord, stringLength) != 0)
-                {
-                    Debug.Log("Error finding formatted sky coordinate!");
-                }
+            {
+                Debug.Log("Error finding formatted sky coordinate!");
+            }
             return coord.ToString();
         }
 
