@@ -120,7 +120,7 @@ public class Feature
     {
         var boundingBoxSize = Size;
         var center = Center;
-        _boundingBox.MakeCube(center, boundingBoxSize.x, boundingBoxSize.y, boundingBoxSize.z);
+        _boundingBox?.MakeCube(center, boundingBoxSize.x, boundingBoxSize.y, boundingBoxSize.z);
         _unityBounds = new Bounds(center, boundingBoxSize);
     }
 }

@@ -9,7 +9,7 @@ namespace DataFeatures
         void Start()
         {
             _material = GetComponent<Renderer>().material;
-            _material.color = Color.gray;
+            _material.color = new Color(0.7f, 0.7f, 0.7f);
         }
         
         private void OnTriggerEnter(Collider other)

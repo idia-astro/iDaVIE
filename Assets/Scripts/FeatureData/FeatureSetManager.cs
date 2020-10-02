@@ -77,7 +77,7 @@ namespace DataFeatures
         
         public void Update()
         {
-            if (_activeFeatureSetRenderer && _selectedFeature != null)
+            if (_activeFeatureSetRenderer && _selectedFeature != null && _selectedFeature.Selected)
             {
                 UpdateAnchors();
             }
@@ -110,9 +110,9 @@ namespace DataFeatures
 
         private void HideAnchors()
         {
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 8; i++)
             {
-                SetGlobalScale( _anchorColliders[i].transform, Vector3.zero);
+                _anchorColliders[i].transform.localScale = Vector3.zero;
             }
         }
 
@@ -201,6 +201,7 @@ namespace DataFeatures
                 {
                     SelectedFeature.Deactivate();
                 }
+                
             }
         }
         
