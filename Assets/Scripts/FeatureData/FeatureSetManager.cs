@@ -17,8 +17,7 @@ namespace DataFeatures
         private string _timeStamp;
         private StreamWriter _streamWriter;
         private Feature _selectedFeature;
-        private GameObject _cubeMinCollider;
-        private GameObject _cubeMaxCollider;
+        private readonly GameObject[] _anchorColliders = new GameObject[8];
         public Feature SelectedFeature
         {
             get => _selectedFeature;
@@ -31,19 +30,13 @@ namespace DataFeatures
                     _selectedFeature.Selected = true;
                     if (_activeFeatureSetRenderer)
                     {
-                        _cubeMinCollider.transform.SetParent(_activeFeatureSetRenderer.transform, false);
-                        _cubeMinCollider.transform.localPosition = _selectedFeature.CornerMin;
-                        SetGlobalScale(_cubeMinCollider.transform, Vector3.one * 0.01f);
-
-                        _cubeMaxCollider.transform.SetParent(_activeFeatureSetRenderer.transform, false);
-                        _cubeMaxCollider.transform.localPosition = _selectedFeature.CornerMax;
-                        SetGlobalScale(_cubeMaxCollider.transform, Vector3.one * 0.01f);
+                        UpdateAnchors();
                     }
                 }
             }
         }
-        
-        public static void SetGlobalScale (Transform t, Vector3 globalScale)
+
+        private static void SetGlobalScale (Transform t, Vector3 globalScale)
         {
             t.localScale = Vector3.one;
             t.localScale = new Vector3 (globalScale.x/t.lossyScale.x, globalScale.y/t.lossyScale.y, globalScale.z/t.lossyScale.z);
@@ -63,33 +56,63 @@ namespace DataFeatures
             _featureSetList = new List<FeatureSetRenderer>();
             _timeStamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             OutputFile = _timeStamp + ".ascii";
-            
-            _cubeMinCollider = Instantiate(FeatureAnchorPrefab, new Vector3(0, 0, 0), Quaternion.identity);
-            _cubeMinCollider.transform.parent = transform;
-            _cubeMinCollider.name = "back_left_bottom";
-            SetGlobalScale(_cubeMinCollider.transform, Vector3.zero);
-            
-            _cubeMaxCollider = Instantiate(FeatureAnchorPrefab, new Vector3(0, 0, 0), Quaternion.identity);
-            _cubeMaxCollider.name = "front_right_top";
-            _cubeMaxCollider.transform.parent = transform;
-            SetGlobalScale(_cubeMaxCollider.transform, Vector3.zero);
+
+            int anchorIndex = 0;
+            for (int i = 0; i < 2; i++)
+            {
+                for (int j = 0; j < 2; j++)
+                {
+                    for (int k = 0; k < 2; k++)
+                    {
+                        _anchorColliders[anchorIndex] = Instantiate(FeatureAnchorPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+                        _anchorColliders[anchorIndex].transform.parent = transform;
+                        _anchorColliders[anchorIndex].name = $"{(i == 0 ? "left" : "right")}_{(j == 0 ? "bottom" : "top")}_{(k == 0 ? "back" : "front")}";
+                        anchorIndex++;
+                    }
+                }
+            }
+
+            HideAnchors();
         }
         
         public void Update()
         {
-            if (_activeFeatureSetRenderer && _cubeMinCollider && _selectedFeature != null)
+            if (_activeFeatureSetRenderer && _selectedFeature != null)
             {
-                _cubeMinCollider.transform.SetParent(_activeFeatureSetRenderer.transform, false);
-                _cubeMinCollider.transform.localPosition = _selectedFeature.CornerMin - Vector3.one * 0.5f;
-                _cubeMaxCollider.transform.SetParent(_activeFeatureSetRenderer.transform, false);
-                _cubeMaxCollider.transform.localPosition = _selectedFeature.CornerMax + Vector3.one * 0.5f;
-                SetGlobalScale(_cubeMinCollider.transform, Vector3.one * 0.01f);
-                SetGlobalScale(_cubeMaxCollider.transform, Vector3.one * 0.01f);
+                UpdateAnchors();
             }
             else
             {
-                SetGlobalScale(_cubeMaxCollider.transform, Vector3.zero);
-                SetGlobalScale(_cubeMinCollider.transform, Vector3.zero);
+                HideAnchors();
+            }
+        }
+
+        private void UpdateAnchors()
+        {
+            int anchorIndex = 0;
+            for (int i = 0; i < 2; i++)
+            {
+                for (int j = 0; j < 2; j++)
+                {
+                    for (int k = 0; k < 2; k++)
+                    {
+                        var anchor = _anchorColliders[anchorIndex];
+                        anchor.transform.SetParent(_activeFeatureSetRenderer.transform, false);
+                        Vector3 weighting = new Vector3(i, j, k);
+                        anchor.transform.localPosition = Vector3.Scale(_selectedFeature.CornerMax + Vector3.one * 0.5f, weighting)
+                                                         + Vector3.Scale(_selectedFeature.CornerMin - Vector3.one * 0.5f, Vector3.one - weighting);
+                        SetGlobalScale(anchor.transform, Vector3.one * 0.01f);
+                        anchorIndex++;
+                    }
+                }
+            }
+        }
+
+        private void HideAnchors()
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                SetGlobalScale( _anchorColliders[i].transform, Vector3.zero);
             }
         }
 
@@ -172,6 +195,7 @@ namespace DataFeatures
         {
             if (SelectedFeature != null)
             {
+                HideAnchors();
                 SelectedFeature.Selected = false;
                 if (SelectedFeature.Temporary)
                 {

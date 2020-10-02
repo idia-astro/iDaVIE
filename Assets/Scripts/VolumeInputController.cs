@@ -794,14 +794,37 @@ public class VolumeInputController : MonoBehaviour
         else if (currentState == InteractionState.Editing && HasEditingAnchor)
         {
             var voxelPosition = dataSet.GetVoxelPosition(cursorPosWorldSpace);
-            if (_editingAnchor.name == "front_right_top")
+            var newCornerMin = _editingFeature.CornerMin;
+            var newCornerMax = _editingFeature.CornerMax;
+
+            if (_editingAnchor.name.Contains("front"))
             {
-                _editingFeature.SetBounds(_editingFeature.CornerMin, voxelPosition);
+                newCornerMax.z = voxelPosition.z;
             }
-            else
+            else if (_editingAnchor.name.Contains("back"))
             {
-                _editingFeature.SetBounds(voxelPosition, _editingFeature.CornerMax);
+                newCornerMin.z = voxelPosition.z;
             }
+
+            if (_editingAnchor.name.Contains("right"))
+            {
+                newCornerMax.x = voxelPosition.x;
+            }
+            else if (_editingAnchor.name.Contains("left"))
+            {
+                newCornerMin.x = voxelPosition.x;
+            }
+
+            if (_editingAnchor.name.Contains("top"))
+            {
+                newCornerMax.y = voxelPosition.y;
+            }
+            else if (_editingAnchor.name.Contains("bottom"))
+            {
+                newCornerMin.y = voxelPosition.y;
+            }
+            
+            _editingFeature.SetBounds(newCornerMin, newCornerMax);
         }
         
         string cursorString = "";
