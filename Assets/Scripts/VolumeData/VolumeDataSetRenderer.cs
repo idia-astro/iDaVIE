@@ -106,6 +106,7 @@ namespace VolumeData
         public Vector3 SliceMax = Vector3.one;
         public int CubeDepthAxis = 2;
         public int CubeSlice = 1;
+        public bool ShowMeasuringLine = false;
 
         public Vector3 InitialPosition { get; private set; }
         public Quaternion InitialRotation { get; private set; }
@@ -438,7 +439,8 @@ namespace VolumeData
                 }
 
                 _regionOutline.active = true;
-                _regionMeasure.active = true;
+                if (ShowMeasuringLine == true)
+                    _regionMeasure.active = true;
             }
         }
 
