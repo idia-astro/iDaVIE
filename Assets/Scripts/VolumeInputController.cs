@@ -912,10 +912,15 @@ public class VolumeInputController : MonoBehaviour
                 break;
         }
 
-        return $"WCS: ({dataSet.GetFormattedCoord(normX, 1)}, {dataSet.GetFormattedCoord(normY, 2)}){Environment.NewLine}"
+        string stringToReturn = $"WCS: ({dataSet.GetFormattedCoord(normX, 1)}, {dataSet.GetFormattedCoord(normY, 2)}){Environment.NewLine}"
                + $"{dataSet.GetAstAttribute("System(3)")}: {dataSet.GetFormattedCoord(normZ, 3),10} {dataSet.GetAstAttribute("Unit(3)")}{Environment.NewLine}"
                + $"Image: ({voxelCoordinate.x,5}, {voxelCoordinate.y,5}, {voxelCoordinate.z,5}){Environment.NewLine}"
                + $"Value: {dataSet.CursorValue,16} {dataSet.GetPixelUnit()}";
+
+        if (dataSet.CursorSource != 0)
+            stringToReturn += $"{Environment.NewLine}Source: {dataSet.CursorSource}";
+
+        return stringToReturn;
     }
 
     private static string FormatAngle(double angleInRad)
