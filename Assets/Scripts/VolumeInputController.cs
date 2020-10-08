@@ -104,6 +104,7 @@ public class VolumeInputController : MonoBehaviour
     private bool _isQuickMenu;
     private Feature _hoveredFeature, _editingFeature;
     private FeatureAnchor _hoveredAnchor, _editingAnchor;
+    private bool _showCursorInfo = true;
 
     private VectorLine _lineAxisSeparation;
     private VectorLine _lineRotationAxes;
@@ -750,7 +751,7 @@ public class VolumeInputController : MonoBehaviour
         {
             _handInfoComponents[PrimaryHandIndex].enabled = true;
             _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
-            _handInfoComponents[PrimaryHandIndex].text = cursorString;
+            _handInfoComponents[PrimaryHandIndex].text = _showCursorInfo ? cursorString : "";
         }
     }
 
@@ -843,7 +844,7 @@ public class VolumeInputController : MonoBehaviour
         {
             _handInfoComponents[PrimaryHandIndex].enabled = true;
             _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
-            _handInfoComponents[PrimaryHandIndex].text = cursorString;
+            _handInfoComponents[PrimaryHandIndex].text = _showCursorInfo ? cursorString : "";
         }
     }
 
@@ -1047,5 +1048,13 @@ public class VolumeInputController : MonoBehaviour
         {
             dataSet.DisplayMask = false;
         }
+    }
+
+    public void ToggleCursorInfoVisibility()
+    {
+        if (_showCursorInfo)
+            _showCursorInfo = false;
+        else
+            _showCursorInfo = true;
     }
 }
