@@ -825,6 +825,7 @@ public class VolumeInputController : MonoBehaviour
             }
             
             _editingFeature.SetBounds(newCornerMin, newCornerMax);
+            dataSet.SetRegionBounds(Vector3Int.RoundToInt(newCornerMin), Vector3Int.RoundToInt(newCornerMax));
         }
         
         string cursorString = "";

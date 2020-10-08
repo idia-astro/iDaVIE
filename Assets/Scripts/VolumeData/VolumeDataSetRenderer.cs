@@ -407,41 +407,54 @@ namespace VolumeData
                         RegionEndVoxel = newVoxelCursor;
                     }
 
-                    // Calculate full region bounds
-                    var regionMin = Vector3.Min(RegionStartVoxel, RegionEndVoxel);
-                    var regionMax = Vector3.Max(RegionStartVoxel, RegionEndVoxel);
-                    var measureStart = RegionStartVoxel;
-                    var measureEnd = RegionEndVoxel;
-                    if (measureStart.x < measureEnd.x)
-                        measureStart.x--;
-                    else
-                        measureEnd.x--;
-                    if (measureStart.y < measureEnd.y)
-                        measureStart.y--;
-                    else
-                        measureEnd.y--;
-                    if (measureStart.z < measureEnd.z)
-                        measureStart.z--;
-                    else
-                        measureEnd.z--;
-                    var regionSize = regionMax - regionMin + Vector3.one;
-                    Vector3 regionCenter = (regionMax + regionMin) / 2.0f - 0.5f * Vector3.one;
+                    UpdateRegionBounds();
 
-                    Vector3 regionCenterObjectSpace = new Vector3(regionCenter.x / _dataSet.XDim - 0.5f, regionCenter.y / _dataSet.YDim - 0.5f, regionCenter.z / _dataSet.ZDim - 0.5f);
-                    _regionOutline.MakeCube(regionCenterObjectSpace, regionSize.x / _dataSet.XDim, regionSize.y / _dataSet.YDim, regionSize.z / _dataSet.ZDim);
-                    _regionMeasure.points3.Clear();
-                    _regionMeasure.points3.Add(new Vector3((float)measureStart.x/_dataSet.XDim- 0.5f, (float)measureStart.y/_dataSet.YDim- 0.5f, (float)measureStart.z/_dataSet.ZDim- 0.5f));
-                    _regionMeasure.points3.Add(new Vector3((float)measureEnd.x/_dataSet.XDim- 0.5f, (float)measureEnd.y/_dataSet.YDim- 0.5f, (float)measureEnd.z/_dataSet.ZDim- 0.5f));
-
-                    var regionSizeBytes = regionSize.x * regionSize.y * regionSize.z * sizeof(float);
-                    bool regionIsFullResolution = (regionSizeBytes <= MaximumCubeSizeInMB * 1e6);
-                    SetCubeColors(_regionOutline, regionIsFullResolution ? Color.white : Color.yellow, regionIsFullResolution);
                 }
 
                 _regionOutline.active = true;
                 if (ShowMeasuringLine == true)
                     _regionMeasure.active = true;
             }
+        }
+
+        public void SetRegionBounds(Vector3Int min, Vector3Int max)
+        {
+            RegionStartVoxel = min;
+            RegionEndVoxel = max;
+            UpdateRegionBounds();
+        }
+
+        private void UpdateRegionBounds()
+        {
+            // Calculate full region bounds
+            var regionMin = Vector3.Min(RegionStartVoxel, RegionEndVoxel);
+            var regionMax = Vector3.Max(RegionStartVoxel, RegionEndVoxel);
+            var measureStart = RegionStartVoxel;
+            var measureEnd = RegionEndVoxel;
+            if (measureStart.x < measureEnd.x)
+                measureStart.x--;
+            else
+                measureEnd.x--;
+            if (measureStart.y < measureEnd.y)
+                measureStart.y--;
+            else
+                measureEnd.y--;
+            if (measureStart.z < measureEnd.z)
+                measureStart.z--;
+            else
+                measureEnd.z--;
+            var regionSize = regionMax - regionMin + Vector3.one;
+            Vector3 regionCenter = (regionMax + regionMin) / 2.0f - 0.5f * Vector3.one;
+
+            Vector3 regionCenterObjectSpace = new Vector3(regionCenter.x / _dataSet.XDim - 0.5f, regionCenter.y / _dataSet.YDim - 0.5f, regionCenter.z / _dataSet.ZDim - 0.5f);
+            _regionOutline.MakeCube(regionCenterObjectSpace, regionSize.x / _dataSet.XDim, regionSize.y / _dataSet.YDim, regionSize.z / _dataSet.ZDim);
+            _regionMeasure.points3.Clear();
+            _regionMeasure.points3.Add(new Vector3((float)measureStart.x/_dataSet.XDim- 0.5f, (float)measureStart.y/_dataSet.YDim- 0.5f, (float)measureStart.z/_dataSet.ZDim- 0.5f));
+            _regionMeasure.points3.Add(new Vector3((float)measureEnd.x/_dataSet.XDim- 0.5f, (float)measureEnd.y/_dataSet.YDim- 0.5f, (float)measureEnd.z/_dataSet.ZDim- 0.5f));
+
+            var regionSizeBytes = regionSize.x * regionSize.y * regionSize.z * sizeof(float);
+            bool regionIsFullResolution = (regionSizeBytes <= MaximumCubeSizeInMB * 1e6);
+            SetCubeColors(_regionOutline, regionIsFullResolution ? Color.white : Color.yellow, regionIsFullResolution);
         }
 
         public void ClearRegion()
