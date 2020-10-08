@@ -62,13 +62,14 @@ namespace VolumeData
             public static readonly string ShowMaskOutline = "show mask outline";
             public static readonly string HideMaskOutline = "hide mask outline";
             public static readonly string TakePicture = "take picture";
+            public static readonly string CursorInfo = "cursor info";
 
             public static readonly string[] All =
             {
                 EditThresholdMin, EditThresholdMax, EditZAxis, EditZAxisAlt, SaveThreshold, ResetThreshold, ResetTransform, ColormapPlasma, ColormapRainbow, 
                 ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
                 PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
-                ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline, TakePicture
+                ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline, TakePicture, CursorInfo
             };
         }
    
@@ -231,6 +232,10 @@ namespace VolumeData
             else if (args == Keywords.TakePicture)
             {
                 TakePicture();
+            }
+            else if (args == Keywords.CursorInfo)
+            {
+                ToggleCursorInfo();
             }
         }
 
@@ -419,6 +424,11 @@ namespace VolumeData
         public void TakePicture()
         {
             Debug.Log("Cannot take screenshot with voice yet...");
+        }
+
+        public void ToggleCursorInfo()
+        {
+            _volumeInputController.ToggleCursorInfoVisibility();
         }
 
         public VolumeDataSetRenderer getFirstActiveDataSet()

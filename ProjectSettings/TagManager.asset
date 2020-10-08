@@ -8,6 +8,9 @@ TagManager:
   - FxTemporaire
   - customSet
   - PowerUI
+  - VRKeyboard
+  - anchor
+  - cursor
   layers:
   - Default
   - TransparentFX

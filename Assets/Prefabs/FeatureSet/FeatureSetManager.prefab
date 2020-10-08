@@ -45,6 +45,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   FeatureSetRendererPrefab: {fileID: 1034858028007187355, guid: 493ba8bacc07ee34886fa6d7b5c1bb1d,
     type: 3}
+  FeatureAnchorPrefab: {fileID: 5638164140047356293, guid: 97bb79f35f5f771448220a8190150ec5,
+    type: 3}
   FeatureFileToLoad: Data/DataFeatures/newcat.ascii
   FeatureMappingFile: Data/DataFeatures/sofia_list.json
-  ImportAtStart: 0
+  OutputFile: 

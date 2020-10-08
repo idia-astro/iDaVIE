@@ -106,6 +106,7 @@ namespace VolumeData
         public Vector3 SliceMax = Vector3.one;
         public int CubeDepthAxis = 2;
         public int CubeSlice = 1;
+        public bool ShowMeasuringLine = false;
 
         public Vector3 InitialPosition { get; private set; }
         public Quaternion InitialRotation { get; private set; }
@@ -364,24 +365,36 @@ namespace VolumeData
             }
         }
 
-        public void SetRegionPosition(Vector3 cursor, bool start)
+        public Vector3Int GetVoxelPosition(Vector3 cursorPosWorldSpace)
         {
-            Vector3 objectSpacePosition = transform.InverseTransformPoint(cursor);
+            Vector3 objectSpacePosition = transform.InverseTransformPoint(cursorPosWorldSpace);
             objectSpacePosition = new Vector3(
                 Mathf.Clamp(objectSpacePosition.x, -0.5f, 0.5f),
                 Mathf.Clamp(objectSpacePosition.y, -0.5f, 0.5f),
                 Mathf.Clamp(objectSpacePosition.z, -0.5f, 0.5f)
             );
+
+            if (_dataSet == null)
+            {
+                return Vector3Int.zero;
+            }
+            
+            Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
+            Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
+            Vector3Int newVoxelCursor = new Vector3Int(
+                Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),
+                Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, 1, (int)_dataSet.YDim),
+                Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1, 1, (int)_dataSet.ZDim)
+            );
+
+            return newVoxelCursor;
+        }
+
+        public void SetRegionPosition(Vector3 cursor, bool start)
+        {
             if (_dataSet != null)
             {
-                Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
-                Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
-                Vector3Int newVoxelCursor = new Vector3Int(
-                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),
-                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, 1, (int)_dataSet.YDim),
-                    Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1, 1, (int)_dataSet.ZDim)
-                );
-
+                var newVoxelCursor = GetVoxelPosition(cursor);
                 var existingVoxel = start ? RegionStartVoxel : RegionEndVoxel;
                 if (!newVoxelCursor.Equals(existingVoxel))
                 {
@@ -394,40 +407,54 @@ namespace VolumeData
                         RegionEndVoxel = newVoxelCursor;
                     }
 
-                    // Calculate full region bounds
-                    var regionMin = Vector3.Min(RegionStartVoxel, RegionEndVoxel);
-                    var regionMax = Vector3.Max(RegionStartVoxel, RegionEndVoxel);
-                    var measureStart = RegionStartVoxel;
-                    var measureEnd = RegionEndVoxel;
-                    if (measureStart.x < measureEnd.x)
-                        measureStart.x--;
-                    else
-                        measureEnd.x--;
-                    if (measureStart.y < measureEnd.y)
-                        measureStart.y--;
-                    else
-                        measureEnd.y--;
-                    if (measureStart.z < measureEnd.z)
-                        measureStart.z--;
-                    else
-                        measureEnd.z--;
-                    var regionSize = regionMax - regionMin + Vector3.one;
-                    Vector3 regionCenter = (regionMax + regionMin) / 2.0f - 0.5f * Vector3.one;
+                    UpdateRegionBounds();
 
-                    Vector3 regionCenterObjectSpace = new Vector3(regionCenter.x / _dataSet.XDim - 0.5f, regionCenter.y / _dataSet.YDim - 0.5f, regionCenter.z / _dataSet.ZDim - 0.5f);
-                    _regionOutline.MakeCube(regionCenterObjectSpace, regionSize.x / _dataSet.XDim, regionSize.y / _dataSet.YDim, regionSize.z / _dataSet.ZDim);
-                    _regionMeasure.points3.Clear();
-                    _regionMeasure.points3.Add(new Vector3((float)measureStart.x/_dataSet.XDim- 0.5f, (float)measureStart.y/_dataSet.YDim- 0.5f, (float)measureStart.z/_dataSet.ZDim- 0.5f));
-                    _regionMeasure.points3.Add(new Vector3((float)measureEnd.x/_dataSet.XDim- 0.5f, (float)measureEnd.y/_dataSet.YDim- 0.5f, (float)measureEnd.z/_dataSet.ZDim- 0.5f));
-
-                    var regionSizeBytes = regionSize.x * regionSize.y * regionSize.z * sizeof(float);
-                    bool regionIsFullResolution = (regionSizeBytes <= MaximumCubeSizeInMB * 1e6);
-                    SetCubeColors(_regionOutline, regionIsFullResolution ? Color.white : Color.yellow, regionIsFullResolution);
                 }
 
                 _regionOutline.active = true;
-                _regionMeasure.active = true;
+                if (ShowMeasuringLine == true)
+                    _regionMeasure.active = true;
             }
+        }
+
+        public void SetRegionBounds(Vector3Int min, Vector3Int max)
+        {
+            RegionStartVoxel = min;
+            RegionEndVoxel = max;
+            UpdateRegionBounds();
+        }
+
+        private void UpdateRegionBounds()
+        {
+            // Calculate full region bounds
+            var regionMin = Vector3.Min(RegionStartVoxel, RegionEndVoxel);
+            var regionMax = Vector3.Max(RegionStartVoxel, RegionEndVoxel);
+            var measureStart = RegionStartVoxel;
+            var measureEnd = RegionEndVoxel;
+            if (measureStart.x < measureEnd.x)
+                measureStart.x--;
+            else
+                measureEnd.x--;
+            if (measureStart.y < measureEnd.y)
+                measureStart.y--;
+            else
+                measureEnd.y--;
+            if (measureStart.z < measureEnd.z)
+                measureStart.z--;
+            else
+                measureEnd.z--;
+            var regionSize = regionMax - regionMin + Vector3.one;
+            Vector3 regionCenter = (regionMax + regionMin) / 2.0f - 0.5f * Vector3.one;
+
+            Vector3 regionCenterObjectSpace = new Vector3(regionCenter.x / _dataSet.XDim - 0.5f, regionCenter.y / _dataSet.YDim - 0.5f, regionCenter.z / _dataSet.ZDim - 0.5f);
+            _regionOutline.MakeCube(regionCenterObjectSpace, regionSize.x / _dataSet.XDim, regionSize.y / _dataSet.YDim, regionSize.z / _dataSet.ZDim);
+            _regionMeasure.points3.Clear();
+            _regionMeasure.points3.Add(new Vector3((float)measureStart.x/_dataSet.XDim- 0.5f, (float)measureStart.y/_dataSet.YDim- 0.5f, (float)measureStart.z/_dataSet.ZDim- 0.5f));
+            _regionMeasure.points3.Add(new Vector3((float)measureEnd.x/_dataSet.XDim- 0.5f, (float)measureEnd.y/_dataSet.YDim- 0.5f, (float)measureEnd.z/_dataSet.ZDim- 0.5f));
+
+            var regionSizeBytes = regionSize.x * regionSize.y * regionSize.z * sizeof(float);
+            bool regionIsFullResolution = (regionSizeBytes <= MaximumCubeSizeInMB * 1e6);
+            SetCubeColors(_regionOutline, regionIsFullResolution ? Color.white : Color.yellow, regionIsFullResolution);
         }
 
         public void ClearRegion()
@@ -730,9 +757,9 @@ namespace VolumeData
             int stringLength = 70;
             StringBuilder coord = new StringBuilder(stringLength);
             if (AstTool.Format(_dataSet.AstFrameSet, axis, val, coord, stringLength) != 0)
-                {
-                    Debug.Log("Error finding formatted sky coordinate!");
-                }
+            {
+                Debug.Log("Error finding formatted sky coordinate!");
+            }
             return coord.ToString();
         }
 

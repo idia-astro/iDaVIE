@@ -13,8 +13,7 @@ public class Feature
     private bool _selected;
     private Bounds _unityBounds;
     private Vector3 _position;
-    private Vector3 _cornerMin;
-    private Vector3 _cornerMax;
+    private Vector3[] _corners = new Vector3[2];
     private VectorLine _boundingBox;
 
     public bool StatusChanged;
@@ -43,35 +42,19 @@ public class Feature
 
     public Bounds UnityBounds => _unityBounds;
 
-    public Vector3 CornerMin
-    {
-        get => _cornerMin;
-        set
-        {
-            _cornerMin = value;
-            UpdateCube();
-        }
-    }
+    public Vector3 CornerMin => Vector3.Min(_corners[0], _corners[1]);
 
-    public Vector3 CornerMax
-    {
-        get => _cornerMax;
-        set
-        {
-            _cornerMax = value;
-            UpdateCube();
-        }
-    }
+    public Vector3 CornerMax => Vector3.Max(_corners[0], _corners[1]);
 
     public Vector3 Center
     {
-        get => (_cornerMax + _cornerMin) / 2.0f;
+        get => (_corners[0] + _corners[1]) / 2.0f;
         set
         {
             var currentCenter = Center;
             var diff = value - currentCenter;
-            _cornerMin += diff;
-            _cornerMax += diff;
+            _corners[0] += diff;
+            _corners[1] += diff;
             UpdateCube();
         }
     }
@@ -79,12 +62,12 @@ public class Feature
     public Vector3 Size
     {
         //  Size is padded by one, because the bounding box includes both the min and max voxels
-        get => (Vector3.Max(_cornerMax, _cornerMin) - Vector3.Min(_cornerMax, _cornerMin) + Vector3.one);
+        get => (Vector3.Max(_corners[0], _corners[1]) - Vector3.Min(_corners[0], _corners[1]) + Vector3.one);
         set
         {
             var currentCenter = Center;
-            _cornerMin = currentCenter - value / 2.0f;
-            _cornerMax = currentCenter + value / 2.0f;
+            _corners[0] = currentCenter - value / 2.0f;
+            _corners[1] = currentCenter + value / 2.0f;
             UpdateCube();
         }
     }
@@ -121,15 +104,15 @@ public class Feature
 
     public void SetBounds(Vector3 cornerMin, Vector3 cornerMax)
     {
-        _cornerMin = cornerMin;
-        _cornerMax = cornerMax;
+        _corners[0] = cornerMin;
+        _corners[1] = cornerMax;
         UpdateCube();
     }
 
     public void SetVoxel(Vector3Int voxel)
     {
-        _cornerMin = voxel;
-        _cornerMax = voxel;
+        _corners[0] = voxel;
+        _corners[1] = voxel;
         UpdateCube();
     }
 
@@ -137,7 +120,7 @@ public class Feature
     {
         var boundingBoxSize = Size;
         var center = Center;
-        _boundingBox.MakeCube(center, boundingBoxSize.x, boundingBoxSize.y, boundingBoxSize.z);
+        _boundingBox?.MakeCube(center, boundingBoxSize.x, boundingBoxSize.y, boundingBoxSize.z);
         _unityBounds = new Bounds(center, boundingBoxSize);
     }
 }

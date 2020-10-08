@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Stateless;
 using VolumeData;
 using TMPro;
 using UnityEngine;
@@ -8,7 +9,9 @@ using Valve.VR;
 using Valve.VR.InteractionSystem;
 using Vectrosity;
 using System.Diagnostics;
+using System.Linq;
 using DataFeatures;
+using Stateless.Graph;
 using Debug = UnityEngine.Debug;
 using VRHand = Valve.VR.InteractionSystem.Hand;
 
@@ -35,9 +38,21 @@ public class VolumeInputController : MonoBehaviour
     
     public enum InteractionState
     {
-        SelectionMode,
-        PaintMode
+        IdleSelecting,
+        IdlePainting,
+        Creating,
+        Editing,
+        Painting
     }
+
+    public enum InteractionEvents
+    {
+        InteractionStarted,
+        InteractionEnded,
+        PaintModeEnabled,
+        PaintModeDisabled,
+    }
+
 
     [Flags]
     private enum RotationAxes
@@ -48,12 +63,15 @@ public class VolumeInputController : MonoBehaviour
     }
     //reference to quick menu canvass
     public GameObject CanvassQuickMenu;
-    
+
     // Choice of left/right primary hand
     public SteamVR_Input_Sources PrimaryHand = SteamVR_Input_Sources.RightHand;
 
     public int PrimaryHandIndex => PrimaryHand == SteamVR_Input_Sources.LeftHand ? 0 : 1;
-
+    public bool HasHoverAnchor => (_hoveredAnchor && _hoveredFeature != null);
+    public bool HasEditingAnchor => (_editingAnchor && _editingFeature != null);
+    public VolumeDataSetRenderer ActiveDataSet => _volumeDataSets.FirstOrDefault(dataSet => dataSet.isActiveAndEnabled);
+    
     // Scaling/Rotation options
     public bool InPlaceScaling = true;
     public bool ScalingEnabled = true;
@@ -82,10 +100,11 @@ public class VolumeInputController : MonoBehaviour
     private LocomotionState _locomotionState;
     
     // Interactions
-    private InteractionState _interactionState;
-    private bool _isPainting;
-    private bool _isSelecting;
+    public StateMachine<InteractionState, InteractionEvents> InteractionStateMachine { get; private set; }
     private bool _isQuickMenu;
+    private Feature _hoveredFeature, _editingFeature;
+    private FeatureAnchor _hoveredAnchor, _editingAnchor;
+    private bool _showCursorInfo = true;
 
     private VectorLine _lineAxisSeparation;
     private VectorLine _lineRotationAxes;
@@ -103,12 +122,12 @@ public class VolumeInputController : MonoBehaviour
     private float _targetVignetteIntensity = 0;
 
     // Selecting
-    private Stopwatch selectionStopwatch = new Stopwatch();
+    private readonly Stopwatch _selectionStopwatch = new Stopwatch();
 
     // VR-family dependent values
     private VRFamily _vrFamily;
 
-    private bool paintMenuOn = false;
+    private bool _paintMenuOn = false;
 
     // Used for moving the pointer transform to an acceptable position for each controller type
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsLeft = new Dictionary<VRFamily, Vector3>
@@ -191,7 +210,38 @@ public class VolumeInputController : MonoBehaviour
         _startGripCenter = Vector3.zero;
 
         _locomotionState = LocomotionState.Idle;
-        _interactionState = InteractionState.SelectionMode;
+        
+        CreateInteractionStateMachine();
+    }
+
+    private void CreateInteractionStateMachine()
+    {
+        InteractionStateMachine = new StateMachine<InteractionState, InteractionEvents>(InteractionState.IdleSelecting);
+
+        InteractionStateMachine.Configure(InteractionState.IdleSelecting)
+            .OnEntryFrom(InteractionEvents.PaintModeDisabled, ExitPaintMode)
+            .Permit(InteractionEvents.PaintModeEnabled, InteractionState.IdlePainting)
+            .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Creating, () => !HasHoverAnchor)
+            .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Editing, () => HasHoverAnchor);
+
+        InteractionStateMachine.Configure(InteractionState.IdlePainting)
+            .OnEntryFrom(InteractionEvents.PaintModeEnabled, EnterPaintMode)
+            .Permit(InteractionEvents.PaintModeDisabled, InteractionState.IdleSelecting)
+            .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Painting, () => ActiveDataSet?.IsFullResolution ?? false);
+
+        InteractionStateMachine.Configure(InteractionState.Painting)
+            .OnExit(() => ActiveDataSet?.FinishBrushStroke())
+            .Permit(InteractionEvents.InteractionEnded, InteractionState.IdlePainting);
+
+        InteractionStateMachine.Configure(InteractionState.Creating)
+            .OnEntry(StartSelection)
+            .OnExit(EndSelection)
+            .Permit(InteractionEvents.InteractionEnded, InteractionState.IdleSelecting);
+
+        InteractionStateMachine.Configure(InteractionState.Editing)
+            .OnEntry(StartRegionEditing)
+            .OnExit(EndRegionEditing)
+            .Permit(InteractionEvents.InteractionEnded, InteractionState.IdleSelecting);
     }
 
     private void OnDisable()
@@ -223,48 +273,42 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnMenuUpPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
-        if (_interactionState == InteractionState.PaintMode)
+        if (InteractionStateMachine.State == InteractionState.IdlePainting)
         {
-            BrushSize += 2;
-            UpdatePaintCursors();
+            IncreaseBrushSize();
+        }
+    }
+
+    private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        if (InteractionStateMachine.State == InteractionState.IdlePainting)
+        {
+            DecreaseBrushSize();
         }
     }
 
     public void IncreaseBrushSize()
     {
         BrushSize += 2;
-        UpdatePaintCursors();
+        UpdatePaintCursor();
     }
 
 
     public void DecreaseBrushSize()
     {
         BrushSize = Math.Max(1, BrushSize - 2);
-        UpdatePaintCursors();
+        UpdatePaintCursor();
     }
 
     public void ResetBrushSize()
     {
         BrushSize = 1;
-        UpdatePaintCursors();
+        UpdatePaintCursor();
     }
 
-
-    private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    private void UpdatePaintCursor()
     {
-        if (_interactionState == InteractionState.PaintMode)
-        {
-            BrushSize = Math.Max(1, BrushSize - 2);
-            UpdatePaintCursors();
-        }
-    }
-
-    private void UpdatePaintCursors()
-    {
-        foreach (var dataSet in _volumeDataSets)
-        {
-            dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, BrushSize);
-        }
+        ActiveDataSet?.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, BrushSize);
     }
 
     private void OnQuickMenuChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
@@ -275,9 +319,9 @@ public class VolumeInputController : MonoBehaviour
             return;
         }
 
-        paintMenuOn = CanvassQuickMenu.GetComponent<QuickMenuController>().paintMenu.activeSelf;
+        _paintMenuOn = CanvassQuickMenu.GetComponent<QuickMenuController>().paintMenu.activeSelf;
 
-        if (newState && !paintMenuOn)
+        if (newState && !_paintMenuOn)
         {
             StartRequestQuickMenu(fromSource == SteamVR_Input_Sources.LeftHand ? 0 : 1);
         }
@@ -327,30 +371,8 @@ public class VolumeInputController : MonoBehaviour
         {
             return;
         }
-        
-        if (_interactionState == InteractionState.PaintMode)
-        {
-            // Handle painting brush stroke ending
-            if (_isPainting && !newState)
-            {
-                foreach (var dataSet in _volumeDataSets)
-                {
-                    dataSet.FinishBrushStroke();
-                }
-            }
-            _isPainting = newState;
-        }
-        else
-        {
-            if (newState)
-            {
-                StartSelection();
-            }
-            else
-            {
-                EndSelection();
-            }
-        }
+
+        InteractionStateMachine.Fire(newState ? InteractionEvents.InteractionStarted : InteractionEvents.InteractionEnded);
     }
 
     private void StateTransitionMovingToIdle()
@@ -403,15 +425,10 @@ public class VolumeInputController : MonoBehaviour
 
     private void StartSelection()
     {
-        _isSelecting = true;
         var startPosition = _handTransforms[PrimaryHandIndex].position;
-        foreach (var dataSet in _volumeDataSets)
-        {
-            dataSet.SetRegionPosition(startPosition, true);
-        }
-
-        selectionStopwatch.Reset();
-        selectionStopwatch.Start();
+        ActiveDataSet?.SetRegionPosition(startPosition, true);
+        _selectionStopwatch.Reset();
+        _selectionStopwatch.Start();
 
         Debug.Log($"Entering selecting state");
     }
@@ -420,27 +437,27 @@ public class VolumeInputController : MonoBehaviour
     {
         var endPosition = _handTransforms[PrimaryHandIndex].position;
 
-        _isSelecting = false;
+        _selectionStopwatch.Stop();
+        var activeDataSet = ActiveDataSet;
 
-        selectionStopwatch.Stop();
-        var activeDataSet = getFirstActiveDataSet();
-
-        if (activeDataSet)
+        if (!activeDataSet)
         {
-            activeDataSet.ClearRegion();
-            activeDataSet.ClearMeasure();
-            var featureSetManager = activeDataSet.GetComponentInChildren<FeatureSetManager>();
-            // Clear region selection by clicking selection. Attempt to select feature
-            if (selectionStopwatch.ElapsedMilliseconds < 200)
+            return;
+        }
+        
+        activeDataSet.ClearRegion();
+        activeDataSet.ClearMeasure();
+        var featureSetManager = activeDataSet.GetComponentInChildren<FeatureSetManager>();
+        // Clear region selection by clicking selection. Attempt to select feature
+        if (_selectionStopwatch.ElapsedMilliseconds < 200)
+        {
+            activeDataSet.SelectFeature(endPosition);
+        }
+        else
+        {
+            if (featureSetManager)
             {
-                activeDataSet.SelectFeature(endPosition);
-            }
-            else
-            {
-                if (featureSetManager)
-                {
-                    featureSetManager.CreateNewFeature(activeDataSet.RegionStartVoxel, activeDataSet.RegionEndVoxel, "selection", true);
-                }
+                featureSetManager.CreateNewFeature(activeDataSet.RegionStartVoxel, activeDataSet.RegionEndVoxel, "selection", true);
             }
         }
     }
@@ -512,7 +529,7 @@ public class VolumeInputController : MonoBehaviour
                 UpdateScaling();
                 break;
             case LocomotionState.Idle:
-                UpdateIdle();
+                UpdateInteractions();
                 break;
             case LocomotionState.EditingThresholdMax:
                 UpdateEditingThreshold(true);
@@ -523,11 +540,6 @@ public class VolumeInputController : MonoBehaviour
             case LocomotionState.EditingZAxis:
                 UpdateEditingZAxis();
                 break;
-        }
-
-        if (_isSelecting)
-        {
-            UpdateSelecting();
         }
     }
 
@@ -739,7 +751,7 @@ public class VolumeInputController : MonoBehaviour
         {
             _handInfoComponents[PrimaryHandIndex].enabled = true;
             _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
-            _handInfoComponents[PrimaryHandIndex].text = cursorString;
+            _handInfoComponents[PrimaryHandIndex].text = _showCursorInfo ? cursorString : "";
         }
     }
 
@@ -759,133 +771,160 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
-    private void UpdateIdle()
+    private void UpdateInteractions()
     {
-        if (_volumeDataSets == null)
+        var dataSet = ActiveDataSet;
+        if (!dataSet)
         {
             return;
         }
 
-        if (!_isSelecting)
-        {
-            string cursorString = "";
+        var currentState = InteractionStateMachine.State;
+        var cursorPosWorldSpace = _handTransforms[PrimaryHandIndex].position;
+        var activeBrushSize = (currentState == InteractionState.Painting || currentState == InteractionState.IdlePainting) ? BrushSize : 1;
+        dataSet.SetCursorPosition(cursorPosWorldSpace, activeBrushSize);
 
-            foreach (var dataSet in _volumeDataSets)
+        if (currentState == InteractionState.Painting)
+        {
+            dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0);
+        }
+        else if (currentState == InteractionState.Creating)
+        {
+            dataSet.SetRegionPosition(cursorPosWorldSpace, false);
+        }
+        else if (currentState == InteractionState.Editing && HasEditingAnchor)
+        {
+            var voxelPosition = dataSet.GetVoxelPosition(cursorPosWorldSpace);
+            var newCornerMin = _editingFeature.CornerMin;
+            var newCornerMax = _editingFeature.CornerMax;
+
+            if (_editingAnchor.name.Contains("front"))
             {
-                if (_interactionState == InteractionState.PaintMode)
-                {
-                    if (_isPainting)
-                    {
-                        dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0);
-                    }
-                    dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, BrushSize);
-                }
-                else
-                {
-                    dataSet.SetCursorPosition(_handTransforms[PrimaryHandIndex].position, 1);
-                }
-                if (dataSet.isActiveAndEnabled)
-                {
-                    string sourceIndex = "";
-                    if (dataSet.CursorSource != 0)
-                        sourceIndex = $"Source # {dataSet.CursorSource}";
-                    var voxelCoordinate = dataSet.CursorVoxel;
-                    if (voxelCoordinate.x >= 0 && _handInfoComponents != null)
-                    {
-                        double physX, physY, physZ, normX, normY, normZ;
-                        dataSet.GetFitsCoordsAst(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z, out physX, out physY, out physZ);
-                        dataSet.GetNormCoords(physX, physY, physZ, out normX, out normY, out normZ);
-                        string depthUnit = dataSet.GetAxisUnit(3);
-                        switch (depthUnit)
-                        {
-                            case "m/s":
-                                if (Mathf.Abs((float)normZ) >= 1000)
-                                    dataSet.SetAxisUnit(3, "km/s");
-                                break;
-                            case "km/s":
-                                 if (Mathf.Abs((float)normZ) < 1)
-                                    dataSet.SetAxisUnit(3, "m/s");
-                                break;
-                            case "Hz":
-                                if (Mathf.Abs((float)normZ) >= 1.0E9)
-                                    dataSet.SetAxisUnit(3, "GHz");
-                                break;
-                            case "GHz":
-                                if (Mathf.Abs((float)normZ) < 1)
-                                    dataSet.SetAxisUnit(3, "Hz");
-                                break;
-                            default:
-                                break;
-                        }
-                        cursorString = String.Format("WCS: ({0}, {1})", dataSet.GetFormattedCoord(normX, 1), dataSet.GetFormattedCoord(normY, 2)) + System.Environment.NewLine
-                                        + String.Format("{0}: {1,10} {2}", dataSet.GetAstAttribute("System(3)"), dataSet.GetFormattedCoord(normZ, 3), dataSet.GetAstAttribute("Unit(3)")) + System.Environment.NewLine
-                                        + String.Format("Image: ({0,5}, {1,5}, {2,5})", voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z) + System.Environment.NewLine
-                                        + String.Format("Value: {0,16} {1}", dataSet.CursorValue, dataSet.GetPixelUnit());
-                    }
-                }
+                newCornerMax.z = voxelPosition.z;
+            }
+            else if (_editingAnchor.name.Contains("back"))
+            {
+                newCornerMin.z = voxelPosition.z;
+            }
+
+            if (_editingAnchor.name.Contains("right"))
+            {
+                newCornerMax.x = voxelPosition.x;
+            }
+            else if (_editingAnchor.name.Contains("left"))
+            {
+                newCornerMin.x = voxelPosition.x;
+            }
+
+            if (_editingAnchor.name.Contains("top"))
+            {
+                newCornerMax.y = voxelPosition.y;
+            }
+            else if (_editingAnchor.name.Contains("bottom"))
+            {
+                newCornerMin.y = voxelPosition.y;
             }
             
-            if (_handInfoComponents != null)
-            {
-                _handInfoComponents[PrimaryHandIndex].enabled = true;
-                _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
-                _handInfoComponents[PrimaryHandIndex].text = cursorString;
-            }
+            _editingFeature.SetBounds(newCornerMin, newCornerMax);
+            dataSet.SetRegionBounds(Vector3Int.RoundToInt(newCornerMin), Vector3Int.RoundToInt(newCornerMax));
         }
-    }
-
-    private void UpdateSelecting()
-    {
+        
         string cursorString = "";
-        var endPosition = _handTransforms[PrimaryHandIndex].position;
 
-        foreach (var dataSet in _volumeDataSets)
+        if (currentState == InteractionState.Creating || currentState == InteractionState.Editing)
         {
-            dataSet.SetRegionPosition(endPosition, false);
-            if (dataSet.isActiveAndEnabled)
-            {
-                var regionMax = Vector3.Max(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel);
-                var regionMin = Vector3.Min(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel);
-                var regionSize = regionMax - regionMin + Vector3.one;
-                double xLength, yLength, zLength, angle;
-                dataSet.GetFitsLengthsAst(regionMin, regionMax + Vector3.one, out xLength, out yLength, out zLength, out angle);
-                 string depthUnit = dataSet.GetAxisUnit(3);
-                        switch (depthUnit)
-                        {
-                            case "m/s":
-                                if (Mathf.Abs((float)zLength) >= 1000)
-                                    dataSet.SetAxisUnit(3, "km/s");
-                                break;
-                            case "km/s":
-                                 if (Mathf.Abs((float)zLength) < 1)
-                                    dataSet.SetAxisUnit(3, "m/s");
-                                break;
-                            case "Hz":
-                                if (Mathf.Abs((float)zLength) >= 1.0E9)
-                                    dataSet.SetAxisUnit(3, "GHz");
-                                break;
-                            case "GHz":
-                                if (Mathf.Abs((float)zLength) < 1)
-                                    dataSet.SetAxisUnit(3, "Hz");
-                                break;
-                            default:
-                                break;
-                        }
-                cursorString = $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}" + System.Environment.NewLine
-                                + $"Angle: " + FormatAngle(angle) + System.Environment.NewLine
-                                + String.Format("Depth: {0, 15} {1}" ,dataSet.GetFormattedCoord(Math.Abs(zLength), 3), dataSet.GetAstAttribute("Unit(3)"));
-            }
+            cursorString = GetSelectionString(dataSet);
         }
-
+        else
+        {
+            cursorString = GetFormattedCursorString(dataSet);
+        }
+        
         if (_handInfoComponents != null)
         {
             _handInfoComponents[PrimaryHandIndex].enabled = true;
             _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
-            _handInfoComponents[PrimaryHandIndex].text = cursorString;
+            _handInfoComponents[PrimaryHandIndex].text = _showCursorInfo ? cursorString : "";
         }
     }
 
-    private string FormatAngle(double angleInRad)
+    private static string GetSelectionString(VolumeDataSetRenderer dataSet)
+    {
+        var regionMax = Vector3.Max(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel);
+        var regionMin = Vector3.Min(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel);
+        var regionSize = regionMax - regionMin + Vector3.one;
+        double xLength, yLength, zLength, angle;
+        dataSet.GetFitsLengthsAst(regionMin, regionMax + Vector3.one, out xLength, out yLength, out zLength, out angle);
+        string depthUnit = dataSet.GetAxisUnit(3);
+        switch (depthUnit)
+        {
+            case "m/s":
+                if (Mathf.Abs((float) zLength) >= 1000)
+                    dataSet.SetAxisUnit(3, "km/s");
+                break;
+            case "km/s":
+                if (Mathf.Abs((float) zLength) < 1)
+                    dataSet.SetAxisUnit(3, "m/s");
+                break;
+            case "Hz":
+                if (Mathf.Abs((float) zLength) >= 1.0E9)
+                    dataSet.SetAxisUnit(3, "GHz");
+                break;
+            case "GHz":
+                if (Mathf.Abs((float) zLength) < 1)
+                    dataSet.SetAxisUnit(3, "Hz");
+                break;
+        }
+
+        return $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}{Environment.NewLine}"
+               + $"Angle: {FormatAngle(angle)}{Environment.NewLine}"
+               + $"Depth: {dataSet.GetFormattedCoord(Math.Abs(zLength), 3),15} {dataSet.GetAstAttribute("Unit(3)")}";
+    }
+
+    private static string GetFormattedCursorString(VolumeDataSetRenderer dataSet)
+    {
+        var voxelCoordinate = dataSet.CursorVoxel;
+
+        if (voxelCoordinate.x < 0 || voxelCoordinate.y < 0 || voxelCoordinate.z < 0)
+        {
+            return "";
+        }
+        double physX, physY, physZ, normX, normY, normZ;
+        dataSet.GetFitsCoordsAst(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z, out physX, out physY, out physZ);
+        dataSet.GetNormCoords(physX, physY, physZ, out normX, out normY, out normZ);
+        string depthUnit = dataSet.GetAxisUnit(3);
+        switch (depthUnit)
+        {
+            case "m/s":
+                if (Mathf.Abs((float) normZ) >= 1000)
+                    dataSet.SetAxisUnit(3, "km/s");
+                break;
+            case "km/s":
+                if (Mathf.Abs((float) normZ) < 1)
+                    dataSet.SetAxisUnit(3, "m/s");
+                break;
+            case "Hz":
+                if (Mathf.Abs((float) normZ) >= 1.0E9)
+                    dataSet.SetAxisUnit(3, "GHz");
+                break;
+            case "GHz":
+                if (Mathf.Abs((float) normZ) < 1)
+                    dataSet.SetAxisUnit(3, "Hz");
+                break;
+        }
+
+        string stringToReturn = $"WCS: ({dataSet.GetFormattedCoord(normX, 1)}, {dataSet.GetFormattedCoord(normY, 2)}){Environment.NewLine}"
+               + $"{dataSet.GetAstAttribute("System(3)")}: {dataSet.GetFormattedCoord(normZ, 3),10} {dataSet.GetAstAttribute("Unit(3)")}{Environment.NewLine}"
+               + $"Image: ({voxelCoordinate.x,5}, {voxelCoordinate.y,5}, {voxelCoordinate.z,5}){Environment.NewLine}"
+               + $"Value: {dataSet.CursorValue,16} {dataSet.GetPixelUnit()}";
+
+        if (dataSet.CursorSource != 0)
+            stringToReturn += $"{Environment.NewLine}Source: {dataSet.CursorSource}";
+
+        return stringToReturn;
+    }
+
+    private static string FormatAngle(double angleInRad)
     {
         double deg = angleInRad / Math.PI * 180.0;
         if (deg >= 1)
@@ -903,7 +942,7 @@ public class VolumeInputController : MonoBehaviour
         // TODO: update scaling text
     }
 
-    private VRFamily DetermineVRFamily()
+    private static VRFamily DetermineVRFamily()
     {
         string vrModel = InputDevices.GetDeviceAtXRNode(XRNode.Head).name.ToLower();
         if (vrModel.Contains("oculus"))
@@ -925,25 +964,12 @@ public class VolumeInputController : MonoBehaviour
         return VRFamily.Unknown;
     }
 
-    private VolumeDataSetRenderer getFirstActiveDataSet()
-    {
-        foreach (var dataSet in _volumeDataSets)
-        {
-            if (dataSet.isActiveAndEnabled)
-            {
-                return dataSet;
-            }
-        }
-
-        return null;
-    }
-
     public void Teleport(Vector3 boundsMin, Vector3 boundsMax)
     {
         float targetSize = 0.3f;
         float targetDistance = 0.5f;
 
-        var activeDataSet = getFirstActiveDataSet();
+        var activeDataSet = ActiveDataSet;
         if (activeDataSet != null && Camera.main != null)
         {
             var dataSetTransform = activeDataSet.transform;
@@ -970,23 +996,35 @@ public class VolumeInputController : MonoBehaviour
         _player.leftHand.hapticAction.Execute(0, duration, frequency, amplitude, hand);
     }
 
-    public void SetInteractionState(InteractionState interactionState)
+    public void SetHoveredFeature(FeatureSetManager featureSetManager, FeatureAnchor featureAnchor)
     {
-        // Ignore transitions to same state
-        if (interactionState != _interactionState)
+        _hoveredFeature = featureSetManager?.SelectedFeature;
+        _hoveredAnchor = featureAnchor;
+    }
+
+    public void ClearHoveredFeature(FeatureSetManager featureSetManager, FeatureAnchor featureAnchor)
+    {
+        var hoveredFeature = featureSetManager?.SelectedFeature;
+        if (_hoveredFeature == hoveredFeature && _hoveredAnchor == featureAnchor)
         {
-            if (interactionState == InteractionState.PaintMode)
-            {
-                StateTransitionSelectionToPaint();
-            }
-            else
-            {
-                StateTransitionPaintToSelection();
-            }
+            _hoveredFeature = null;
+            _hoveredAnchor = null;
         }
     }
 
-    private void StateTransitionSelectionToPaint()
+    private void StartRegionEditing()
+    {
+        _editingFeature = _hoveredFeature;
+        _editingAnchor = _hoveredAnchor;
+    }
+
+    private void EndRegionEditing()
+    {
+        _editingFeature = null;
+        _editingAnchor = null;
+    }
+
+    private void EnterPaintMode()
     {
         // Prevent transition if volumes aren't full resolution
         foreach (var dataSet in _volumeDataSets)
@@ -1002,15 +1040,21 @@ public class VolumeInputController : MonoBehaviour
             dataSet.InitialiseMask();
             dataSet.DisplayMask = true;
         }
-        _interactionState = InteractionState.PaintMode;
     }
 
-    private void StateTransitionPaintToSelection()
+    private void ExitPaintMode()
     {
-        _interactionState = InteractionState.SelectionMode;
         foreach (var dataSet in _volumeDataSets)
         {
             dataSet.DisplayMask = false;
         }
+    }
+
+    public void ToggleCursorInfoVisibility()
+    {
+        if (_showCursorInfo)
+            _showCursorInfo = false;
+        else
+            _showCursorInfo = true;
     }
 }
