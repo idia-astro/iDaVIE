@@ -882,6 +882,11 @@ public class VolumeInputController : MonoBehaviour
     private static string GetFormattedCursorString(VolumeDataSetRenderer dataSet)
     {
         var voxelCoordinate = dataSet.CursorVoxel;
+
+        if (voxelCoordinate.x < 0 || voxelCoordinate.y < 0 || voxelCoordinate.z < 0)
+        {
+            return "";
+        }
         double physX, physY, physZ, normX, normY, normZ;
         dataSet.GetFitsCoordsAst(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z, out physX, out physY, out physZ);
         dataSet.GetNormCoords(physX, physY, physZ, out normX, out normY, out normZ);
