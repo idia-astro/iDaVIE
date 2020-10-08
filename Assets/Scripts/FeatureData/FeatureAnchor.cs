@@ -5,11 +5,15 @@ namespace DataFeatures
     public class FeatureAnchor : MonoBehaviour
     {
         private Material _material;
-        
+        private static readonly Color DefaultColor = Color.red;
+        private static readonly Color HoverColor = new Color(0, 0.8f, 0.4f);
+        private static readonly int EmissionProperty = Shader.PropertyToID("_EmissionColor");
+
         void Start()
         {
             _material = GetComponent<Renderer>().material;
-            _material.color = new Color(0.7f, 0.7f, 0.7f);
+            _material.EnableKeyword("_EMISSION");
+            _material.SetColor(EmissionProperty, DefaultColor);
         }
         
         private void OnTriggerEnter(Collider other)
@@ -18,7 +22,7 @@ namespace DataFeatures
             {
                 var featureSetManager = GetComponentInParent<FeatureSetManager>();
                 var inputController = FindObjectOfType<VolumeInputController>();
-                _material.color = Color.white;
+                _material.SetColor(EmissionProperty, HoverColor);
                 inputController?.SetHoveredFeature(featureSetManager, this);
             }
         }
@@ -29,7 +33,7 @@ namespace DataFeatures
             {
                 var featureSetManager = GetComponentInParent<FeatureSetManager>();
                 var inputController = FindObjectOfType<VolumeInputController>();
-                _material.color = Color.gray;
+                _material.SetColor(EmissionProperty, DefaultColor);
                 inputController?.ClearHoveredFeature(featureSetManager, this);
             } 
         }

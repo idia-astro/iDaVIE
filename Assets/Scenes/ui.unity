@@ -5211,7 +5211,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1798270351}
   m_HandleRect: {fileID: 1798270350}
   m_Direction: 0
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -45192,11 +45192,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3002869511723157508, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
         type: 3}
-      propertyPath: m_textAlignment
-      value: 272
-      objectReference: {fileID: 0}
-    - target: {fileID: 3002869511723157508, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
-        type: 3}
       propertyPath: m_enableKerning
       value: 1
       objectReference: {fileID: 0}
@@ -45209,12 +45204,17 @@ PrefabInstance:
     - target: {fileID: 3002869511723157508, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
         type: 3}
       propertyPath: m_fontSize
-      value: 10
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 3002869511723157508, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
         type: 3}
       propertyPath: m_fontSizeBase
-      value: 10
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3002869511723157508, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+        type: 3}
+      propertyPath: m_textAlignment
+      value: 257
       objectReference: {fileID: 0}
     - target: {fileID: 3552230526854978153, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
         type: 3}
@@ -45226,6 +45226,16 @@ PrefabInstance:
       propertyPath: CanvassQuickMenu
       value: 
       objectReference: {fileID: 379983798}
+    - target: {fileID: 6684067924874684789, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0.06
+      objectReference: {fileID: 0}
+    - target: {fileID: 6684067924874684789, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.1
+      objectReference: {fileID: 0}
     - target: {fileID: 7369207345997081193, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
         type: 3}
       propertyPath: m_Materials.Array.data[0]
@@ -46886,7 +46896,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 845581046}
   m_HandleRect: {fileID: 845581045}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
