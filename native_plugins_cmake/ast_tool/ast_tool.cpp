@@ -135,6 +135,11 @@ int SetString(AstFrameSet* frameSetPtr, const char* attribute, const char* strin
     return 0;
 }
 
+bool HasAttribute(AstFrameSet* frameSetPtr, const char* attribute)
+{
+    return astHasAttribute(frameSetPtr, attribute);
+}
+
 int Norm(AstFrameSet* frameSetPtr, double xIn, double yIn, double zIn, double* xOut, double* yOut, double* zOut)
 {
     if (!frameSetPtr)

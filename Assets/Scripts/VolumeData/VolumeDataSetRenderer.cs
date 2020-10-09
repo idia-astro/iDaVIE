@@ -141,6 +141,8 @@ namespace VolumeData
         private VolumeDataSet _dataSet = null;
         private VolumeDataSet _maskDataSet = null;
         private bool _dirtyMask = false;
+        public bool HasWCS { get; private set; }
+        public bool HasRestFrequency { get; private set; }
 
 
         private int _currentXFactor, _currentYFactor, _currentZFactor;
@@ -301,6 +303,15 @@ namespace VolumeData
             {
                 _featureManager.CreateNewFeatureSet();
             }
+
+            //No wcs info if AstFrameSet has only 1 frame
+            if (_dataSet.AstFrameSet != IntPtr.Zero)
+                if (HasAstAttribute("Nframe"))
+                    HasWCS = int.Parse(GetAstAttribute("Nframe")) > 1;
+                else
+                    HasWCS = false;
+            else
+                HasWCS = false;
 
             Shader.WarmupAllShaders();
 
@@ -803,6 +814,12 @@ namespace VolumeData
                 return "";
             }
             return attributeReceived.ToString();
+        }
+
+        public bool HasAstAttribute(string attributeToCheck)
+        {
+            StringBuilder attributeToCheckSB = new StringBuilder(attributeToCheck);
+            return AstTool.HasAttribute(_dataSet.AstFrameSet, attributeToCheckSB);
         }
 
         public Vector3Int GetDimDecimals()

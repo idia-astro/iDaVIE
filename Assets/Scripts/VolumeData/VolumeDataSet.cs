@@ -151,7 +151,6 @@ namespace VolumeData
                 FitsReader.FitsCloseFile(fptr, out status);
                 return null;
             }
-            IntPtr astFrameSet = IntPtr.Zero;
             if (AstTool.InitAstFrameSet(out volumeDataSet.AstFrameSet, volumeDataSet.FitsHeader) != 0)
             {
                 Debug.Log("Warning... AstFrameSet Error. See Unity Editor logs");

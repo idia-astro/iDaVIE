@@ -854,31 +854,39 @@ public class VolumeInputController : MonoBehaviour
         var regionMin = Vector3.Min(dataSet.RegionStartVoxel, dataSet.RegionEndVoxel);
         var regionSize = regionMax - regionMin + Vector3.one;
         double xLength, yLength, zLength, angle;
-        dataSet.GetFitsLengthsAst(regionMin, regionMax + Vector3.one, out xLength, out yLength, out zLength, out angle);
-        string depthUnit = dataSet.GetAxisUnit(3);
-        switch (depthUnit)
+        
+        string stringToReturn = "";
+
+        stringToReturn = $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}{Environment.NewLine}";     
+                
+        if (dataSet.HasWCS)
         {
-            case "m/s":
-                if (Mathf.Abs((float) zLength) >= 1000)
-                    dataSet.SetAxisUnit(3, "km/s");
-                break;
-            case "km/s":
-                if (Mathf.Abs((float) zLength) < 1)
-                    dataSet.SetAxisUnit(3, "m/s");
-                break;
-            case "Hz":
-                if (Mathf.Abs((float) zLength) >= 1.0E9)
-                    dataSet.SetAxisUnit(3, "GHz");
-                break;
-            case "GHz":
-                if (Mathf.Abs((float) zLength) < 1)
-                    dataSet.SetAxisUnit(3, "Hz");
-                break;
+            dataSet.GetFitsLengthsAst(regionMin, regionMax + Vector3.one, out xLength, out yLength, out zLength, out angle);
+            string depthUnit = dataSet.GetAxisUnit(3);
+            switch (depthUnit)
+            {
+                case "m/s":
+                    if (Mathf.Abs((float) zLength) >= 1000)
+                        dataSet.SetAxisUnit(3, "km/s");
+                    break;
+                case "km/s":
+                    if (Mathf.Abs((float) zLength) < 1)
+                        dataSet.SetAxisUnit(3, "m/s");
+                    break;
+                case "Hz":
+                    if (Mathf.Abs((float) zLength) >= 1.0E9)
+                        dataSet.SetAxisUnit(3, "GHz");
+                    break;
+                case "GHz":
+                    if (Mathf.Abs((float) zLength) < 1)
+                        dataSet.SetAxisUnit(3, "Hz");
+                    break;
+            }
+            stringToReturn += $"Angle: {FormatAngle(angle)}{Environment.NewLine}"
+                            + $"Depth: {dataSet.GetFormattedCoord(Math.Abs(zLength), 3),15} {dataSet.GetAstAttribute("Unit(3)")}";
         }
 
-        return $"Region: {regionSize.x} x {regionSize.y} x {regionSize.z}{Environment.NewLine}"
-               + $"Angle: {FormatAngle(angle)}{Environment.NewLine}"
-               + $"Depth: {dataSet.GetFormattedCoord(Math.Abs(zLength), 3),15} {dataSet.GetAstAttribute("Unit(3)")}";
+        return stringToReturn;
     }
 
     private static string GetFormattedCursorString(VolumeDataSetRenderer dataSet)
@@ -890,33 +898,39 @@ public class VolumeInputController : MonoBehaviour
             return "";
         }
         double physX, physY, physZ, normX, normY, normZ;
-        dataSet.GetFitsCoordsAst(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z, out physX, out physY, out physZ);
-        dataSet.GetNormCoords(physX, physY, physZ, out normX, out normY, out normZ);
-        string depthUnit = dataSet.GetAxisUnit(3);
-        switch (depthUnit)
-        {
-            case "m/s":
-                if (Mathf.Abs((float) normZ) >= 1000)
-                    dataSet.SetAxisUnit(3, "km/s");
-                break;
-            case "km/s":
-                if (Mathf.Abs((float) normZ) < 1)
-                    dataSet.SetAxisUnit(3, "m/s");
-                break;
-            case "Hz":
-                if (Mathf.Abs((float) normZ) >= 1.0E9)
-                    dataSet.SetAxisUnit(3, "GHz");
-                break;
-            case "GHz":
-                if (Mathf.Abs((float) normZ) < 1)
-                    dataSet.SetAxisUnit(3, "Hz");
-                break;
-        }
 
-        string stringToReturn = $"WCS: ({dataSet.GetFormattedCoord(normX, 1)}, {dataSet.GetFormattedCoord(normY, 2)}){Environment.NewLine}"
-               + $"{dataSet.GetAstAttribute("System(3)")}: {dataSet.GetFormattedCoord(normZ, 3),10} {dataSet.GetAstAttribute("Unit(3)")}{Environment.NewLine}"
-               + $"Image: ({voxelCoordinate.x,5}, {voxelCoordinate.y,5}, {voxelCoordinate.z,5}){Environment.NewLine}"
-               + $"Value: {dataSet.CursorValue,16} {dataSet.GetPixelUnit()}";
+        string stringToReturn = "";
+        
+        if (dataSet.HasWCS)
+        {
+            dataSet.GetFitsCoordsAst(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z, out physX, out physY, out physZ);
+            dataSet.GetNormCoords(physX, physY, physZ, out normX, out normY, out normZ);
+            string depthUnit = dataSet.GetAxisUnit(3);
+            switch (depthUnit)
+            {
+                case "m/s":
+                    if (Mathf.Abs((float) normZ) >= 1000)
+                        dataSet.SetAxisUnit(3, "km/s");
+                    break;
+                case "km/s":
+                    if (Mathf.Abs((float) normZ) < 1)
+                        dataSet.SetAxisUnit(3, "m/s");
+                    break;
+                case "Hz":
+                    if (Mathf.Abs((float) normZ) >= 1.0E9)
+                        dataSet.SetAxisUnit(3, "GHz");
+                    break;
+                case "GHz":
+                    if (Mathf.Abs((float) normZ) < 1)
+                        dataSet.SetAxisUnit(3, "Hz");
+                    break;
+            }
+            stringToReturn += $"WCS: ({dataSet.GetFormattedCoord(normX, 1)}, {dataSet.GetFormattedCoord(normY, 2)}){Environment.NewLine}"
+               + $"{dataSet.GetAstAttribute("System(3)")}: {dataSet.GetFormattedCoord(normZ, 3),10} {dataSet.GetAstAttribute("Unit(3)")}{Environment.NewLine}";
+        }
+        
+        stringToReturn += $"Image: ({voxelCoordinate.x,5}, {voxelCoordinate.y,5}, {voxelCoordinate.z,5}){Environment.NewLine}"
+                        + $"Value: {dataSet.CursorValue,16} {dataSet.GetPixelUnit()}";
 
         if (dataSet.CursorSource != 0)
             stringToReturn += $"{Environment.NewLine}Source: {dataSet.CursorSource}";
