@@ -58,7 +58,7 @@ namespace VolumeData
         public int XDimDecimal { get; private set; }
         public int YDimDecimal { get; private set; }
         public int ZDimDecimal { get; private set; }
-        private IDictionary<string, string> HeaderDictionary;
+        public IDictionary<string, string> HeaderDictionary { get; private set; }
 
         public int VelDecimal { get; private set; }
 
@@ -70,7 +70,7 @@ namespace VolumeData
 
         public bool IsMask { get; private set; }
 
-        private IDictionary<string, string> _headerDictionary;
+        //private IDictionary<string, string> _headerDictionary;
 
         private double _xRef, _yRef, _zRef, _xRefPix, _yRefPix, _zRefPix, _xDelt, _yDelt, _zDelt, _rot;
         private string _xCoord, _yCoord, _zCoord, _wcsProj;
@@ -157,7 +157,7 @@ namespace VolumeData
             }
             if (!isMask)
             {
-                volumeDataSet._headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
+                volumeDataSet.HeaderDictionary = FitsReader.ExtractHeaders(fptr, out status);
                 volumeDataSet.ParseHeaderDict();
             }
 
@@ -268,7 +268,6 @@ namespace VolumeData
             volumeDataSet.XDimDecimal = volumeDataSet.cubeSize[0].ToString().Length;
             volumeDataSet.YDimDecimal = volumeDataSet.cubeSize[1].ToString().Length;
             volumeDataSet.ZDimDecimal = volumeDataSet.cubeSize[index2].ToString().Length;
-            volumeDataSet.HeaderDictionary = volumeDataSet._headerDictionary;
 
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
@@ -508,12 +507,6 @@ namespace VolumeData
                 $"Cropped into {cubeSize.x} x {cubeSize.y} x {cubeSize.z} region ({cubeSize.x * cubeSize.y * cubeSize.z * 4e-6} MB) in {sw.ElapsedMilliseconds} ms");
         }
 
-        public IDictionary<string, string> GetHeaderDictionary()
-        {
-            Debug.Log(_headerDictionary);
-            return _headerDictionary;
-        }
-
         private static int VoxelActiveFaces(int i, Vector3Int cubeSize, short[] voxels)
         {
             short voxelValue = voxels[i];
@@ -673,7 +666,7 @@ namespace VolumeData
             string yProj = "";
             string zProj = "";
             _rot = 0;
-            foreach (KeyValuePair<string, string> entry in _headerDictionary)
+            foreach (KeyValuePair<string, string> entry in HeaderDictionary)
             {
                 switch (entry.Key)
                 {

@@ -313,6 +313,9 @@ namespace VolumeData
             else
                 HasWCS = false;
 
+            //Check if fits header contains rest frequency
+            HasRestFrequency = _dataSet.HeaderDictionary.ContainsKey("RESTFRQ");
+
             Shader.WarmupAllShaders();
 
             started = true;
@@ -820,6 +823,49 @@ namespace VolumeData
         {
             StringBuilder attributeToCheckSB = new StringBuilder(attributeToCheck);
             return AstTool.HasAttribute(_dataSet.AstFrameSet, attributeToCheckSB);
+        }
+
+        public string GetConvertedDepth(double zIn)
+        {
+            if (!HasRestFrequency)
+            {
+                Debug.Log("Cannot convert depth without rest frequency in header!");
+                return "";
+            }
+            string system = "";
+            string unit = "";
+            switch (GetAstAttribute("System(3)"))
+            {
+                case "FREQ":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
+                case "VRAD":
+                case "VRADIO":
+                case "VOPT":
+                case "VOPTICAL":
+                case "VELO":
+                case "VREL":
+                    system = "FREQ";
+                    unit = "Hz";
+                    break;
+                case "ENER":
+                case "ENERGY":
+                case "WAVN":
+                case "WAVENUM":
+                case "WAVE":
+                case "WAVELEN":
+                case "AWAV":
+                case "AIRWAVE":
+                case "ZOPT":
+                case "REDSHIFT":
+                case "BETA":
+                    return "???";
+            }
+            double zOut;
+            StringBuilder zFormattedOut = new StringBuilder(70);
+            AstTool.SpectralTransform(_dataSet.AstFrameSet, new StringBuilder(system), new StringBuilder(unit), new StringBuilder(GetStdOfRest()), zIn, 1, out zOut, zFormattedOut, zFormattedOut.Capacity);  
+            return $"{system}: {zFormattedOut.ToString()} {unit}";
         }
 
         public Vector3Int GetDimDecimals()

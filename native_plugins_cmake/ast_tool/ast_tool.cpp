@@ -269,10 +269,10 @@ int SpectralTransform(AstFrameSet* frameSetPtr, const char* specSysTo, const cha
     {
         return 1;
     }
-
-    AstFrameSet* frameSetTo = nullptr;
-    frameSetTo = static_cast<AstFrameSet*> astCopy(frameSetPtr);
-    if (!frameSetTo)
+    AstCmpFrame* cmpFrameFrom = static_cast<AstCmpFrame*>(astGetFrame(frameSetPtr, 2));
+    AstCmpFrame* cmpFrameTo = nullptr;
+    cmpFrameTo = static_cast<AstCmpFrame*> astCopy(frameSetPtr);
+    if (!cmpFrameTo)
     {
         return 1;
     }
@@ -280,19 +280,19 @@ int SpectralTransform(AstFrameSet* frameSetPtr, const char* specSysTo, const cha
     char buffer[128];
     if (specSysTo) {
         snprintf(buffer, sizeof(buffer), "System(3)=%s", specSysTo);
-        astSet(frameSetTo, buffer);
+        astSet(cmpFrameTo, buffer);
     }
     if (specUnitTo) {
         snprintf(buffer, sizeof(buffer), "Unit(3)=%s", specUnitTo);
-        astSet(frameSetTo, buffer);
+        astSet(cmpFrameTo, buffer);
     }
     if (specRestTo) {
         snprintf(buffer, sizeof(buffer), "StdOfRest(3)=%s", specRestTo);
-        astSet(frameSetTo, buffer);
+        astSet(cmpFrameTo, buffer);
     }
 
     AstFrameSet *cvt;
-    cvt = static_cast<AstFrameSet*>astConvert(frameSetPtr, frameSetTo, "");
+    cvt = static_cast<AstFrameSet*>astConvert(cmpFrameFrom, cmpFrameTo, "");
     int nDims = astGetI(frameSetPtr, "Naxes");
     double *input = new double[nDims];
     double* output = new double[nDims];

@@ -932,6 +932,9 @@ public class VolumeInputController : MonoBehaviour
         stringToReturn += $"Image: ({voxelCoordinate.x,5}, {voxelCoordinate.y,5}, {voxelCoordinate.z,5}){Environment.NewLine}"
                         + $"Value: {dataSet.CursorValue,16} {dataSet.GetPixelUnit()}";
 
+        if (dataSet.HasRestFrequency)
+            stringToReturn += $"{Environment.NewLine}{dataSet.GetConvertedDepth(voxelCoordinate.z)}";
+
         if (dataSet.CursorSource != 0)
             stringToReturn += $"{Environment.NewLine}Source: {dataSet.CursorSource}";
 
