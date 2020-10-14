@@ -14,6 +14,8 @@ DllExport int InitAstFrameSet(AstFrameSet**, const char*);
 
 DllExport int GetAstFrame(AstFrameSet*, AstFrame**, int index);
 
+DllExport int GetAltSpecSet(AstFrameSet*, AstFrameSet**, const char*, const char*, const char*);
+
 DllExport int Format(AstFrameSet*, int, double, char*, int);
 
 DllExport int Set(AstFrameSet*, const char*);

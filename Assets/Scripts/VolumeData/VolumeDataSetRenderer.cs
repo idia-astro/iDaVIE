@@ -142,7 +142,6 @@ namespace VolumeData
         private VolumeDataSet _maskDataSet = null;
         private bool _dirtyMask = false;
         public bool HasWCS { get; private set; }
-        public bool HasRestFrequency { get; private set; }
 
 
         private int _currentXFactor, _currentYFactor, _currentZFactor;
@@ -306,15 +305,12 @@ namespace VolumeData
 
             //No wcs info if AstFrameSet has only 1 frame
             if (_dataSet.AstFrameSet != IntPtr.Zero)
-                if (HasAstAttribute("Nframe"))
-                    HasWCS = int.Parse(GetAstAttribute("Nframe")) > 1;
+                if (_dataSet.HasAstAttribute("Nframe"))
+                    HasWCS = int.Parse(_dataSet.GetAstAttribute("Nframe")) > 1;
                 else
                     HasWCS = false;
             else
                 HasWCS = false;
-
-            //Check if fits header contains rest frequency
-            HasRestFrequency = _dataSet.HeaderDictionary.ContainsKey("RESTFRQ");
 
             Shader.WarmupAllShaders();
 
@@ -721,156 +717,6 @@ namespace VolumeData
         public void FinishBrushStroke()
         {
             _maskDataSet?.FlushBrushStroke();
-        }
-
-        public void GetFitsCoordsAst(double X, double Y, double Z, out double fitsX, out double fitsY, out double fitsZ)
-        {
-            if (AstTool.Transform3D(_dataSet.AstFrameSet, X, Y, Z, 1, out fitsX, out fitsY, out fitsZ) != 0)
-            {
-                Debug.Log("Error transforming sky pixel to physical coordinates!");
-            }
-        }
-
-            public void GetNormCoords(double X, double Y, double Z, out double normX, out double normY, out double normZ)
-        {
-            if (AstTool.Norm(_dataSet.AstFrameSet, X, Y, Z, out normX, out normY, out normZ) != 0)
-            {
-                Debug.Log("Error normalizing physical coordinates!");
-            }
-        }
-
-        public Vector3 GetFitsLengths(double X, double Y, double Z)
-        {
-            Vector3 wcsConversion = _dataSet.GetWCSDeltas();
-            float xLength = Math.Abs((float)X * wcsConversion.x);
-            float yLength = Math.Abs((float)Y * wcsConversion.y);
-            float zLength = Math.Abs((float)Z * wcsConversion.z);
-            return new Vector3(xLength, yLength, zLength);
-        }
-
-        public void GetFitsLengthsAst(Vector3 startPoint, Vector3 endPoint, out double xLength, out double yLength, out double zLength, out double angle)
-        {
-            IntPtr astCmpFrame = IntPtr.Zero;
-            AstTool.GetAstFrame(_dataSet.AstFrameSet, out astCmpFrame, 2);
-            double xStart, yStart, zStart, xEnd, yEnd, zEnd;
-            if (AstTool.Transform3D(_dataSet.AstFrameSet, (double)startPoint.x, (double)startPoint.y, (double)startPoint.z, 1, out xStart, out yStart, out zStart) != 0 ||
-                    AstTool.Transform3D(_dataSet.AstFrameSet, (double)endPoint.x, (double)endPoint.y, (double)endPoint.z, 1, out xEnd, out yEnd, out zEnd) != 0 ||
-                    AstTool.Distance1D(astCmpFrame, xStart, xEnd, 1, out xLength) != 0 ||
-                    AstTool.Distance1D(astCmpFrame, yStart, yEnd, 2, out yLength) != 0 ||
-                    AstTool.Distance1D(astCmpFrame, zStart, zEnd, 3, out zLength) != 0 ||
-                    AstTool.Distance2D(astCmpFrame, xStart, yStart, xEnd, yEnd, out angle) != 0)
-            {
-                Debug.Log("Error finding WCS distances!");
-                AstTool.DeleteObject(astCmpFrame);
-                xLength = yLength = zLength = angle = 0;
-            }
-        }
-
-        public string GetFormattedCoord(double val, int axis)
-        {
-            int stringLength = 70;
-            StringBuilder coord = new StringBuilder(stringLength);
-            if (AstTool.Format(_dataSet.AstFrameSet, axis, val, coord, stringLength) != 0)
-            {
-                Debug.Log("Error finding formatted sky coordinate!");
-            }
-            return coord.ToString();
-        }
-
-        public string GetStdOfRest()
-        {
-            return GetAstAttribute("StdOfRest");
-        }
-
-        public string GetPixelUnit()
-        {
-            return _dataSet.PixelUnit;
-        }
-        
-        public string GetAxisUnit(int axis)
-        {
-            return GetAstAttribute("Unit(" + axis + ")");
-        }
-
-        public void SetAxisUnit(int axis, string unit)
-        {
-            SetAstAttribute("Unit(" + axis + ")", unit);
-        }
-
-        public void SetAstAttribute(string attribute, string value)
-        {
-            StringBuilder attributeSB = new StringBuilder(attribute);
-            StringBuilder valueSB = new StringBuilder(value);
-            if (AstTool.SetString(_dataSet.AstFrameSet, attributeSB, valueSB) != 0)
-            {
-                Debug.Log("Cannot set attribute " + attribute  + " in Frame!");
-            }
-        }
-        
-        public string GetAstAttribute(string attributeToGet)
-        {
-            StringBuilder attributeReceived = new StringBuilder(70);
-            StringBuilder attributeToGetSB = new StringBuilder(attributeToGet);
-            if (AstTool.GetString(_dataSet.AstFrameSet, attributeToGetSB, attributeReceived, attributeReceived.Capacity) != 0)
-            {
-                Debug.Log("Cannot find attribute " + attributeToGet  + " in Frame!");
-                return "";
-            }
-            return attributeReceived.ToString();
-        }
-
-        public bool HasAstAttribute(string attributeToCheck)
-        {
-            StringBuilder attributeToCheckSB = new StringBuilder(attributeToCheck);
-            return AstTool.HasAttribute(_dataSet.AstFrameSet, attributeToCheckSB);
-        }
-
-        public string GetConvertedDepth(double zIn)
-        {
-            if (!HasRestFrequency)
-            {
-                Debug.Log("Cannot convert depth without rest frequency in header!");
-                return "";
-            }
-            string system = "";
-            string unit = "";
-            switch (GetAstAttribute("System(3)"))
-            {
-                case "FREQ":
-                    system = "VRAD";
-                    unit = "km/s";
-                    break;
-                case "VRAD":
-                case "VRADIO":
-                case "VOPT":
-                case "VOPTICAL":
-                case "VELO":
-                case "VREL":
-                    system = "FREQ";
-                    unit = "Hz";
-                    break;
-                case "ENER":
-                case "ENERGY":
-                case "WAVN":
-                case "WAVENUM":
-                case "WAVE":
-                case "WAVELEN":
-                case "AWAV":
-                case "AIRWAVE":
-                case "ZOPT":
-                case "REDSHIFT":
-                case "BETA":
-                    return "???";
-            }
-            double zOut;
-            StringBuilder zFormattedOut = new StringBuilder(70);
-            AstTool.SpectralTransform(_dataSet.AstFrameSet, new StringBuilder(system), new StringBuilder(unit), new StringBuilder(GetStdOfRest()), zIn, 1, out zOut, zFormattedOut, zFormattedOut.Capacity);  
-            return $"{system}: {zFormattedOut.ToString()} {unit}";
-        }
-
-        public Vector3Int GetDimDecimals()
-        {
-            return new Vector3Int(_dataSet.XDimDecimal, _dataSet.YDimDecimal, _dataSet.ZDimDecimal);
         }
 
         public Vector3Int GetCubeDimensions()
