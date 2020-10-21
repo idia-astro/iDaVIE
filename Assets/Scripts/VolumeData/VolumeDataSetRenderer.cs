@@ -107,7 +107,18 @@ namespace VolumeData
         public int CubeDepthAxis = 2;
         public int CubeSlice = 1;
         public bool ShowMeasuringLine = false;
-
+        public bool OverrideRestFrequency {get; set;} = false;
+        private double _restFrequency;
+        public double RestFrequency
+        {
+            get => _restFrequency;
+            set
+            {
+                _restFrequencyChanged = true;
+                _restFrequency = value;
+            }
+        }
+        private bool _restFrequencyChanged = false;
         public Vector3 InitialPosition { get; private set; }
         public Quaternion InitialRotation { get; private set; }
         public Vector3 InitialScale { get; private set; }
@@ -312,6 +323,10 @@ namespace VolumeData
             else
                 HasWCS = false;
 
+            if (_dataSet.HasFitsRestFrequency)
+            {
+                RestFrequency = _dataSet.FitsRestFrequency;
+            }
             Shader.WarmupAllShaders();
 
             started = true;
@@ -644,6 +659,29 @@ namespace VolumeData
             _materialInstance.SetFloat(MaterialID.VignetteFadeEnd, VignetteFadeEnd);
             _materialInstance.SetFloat(MaterialID.VignetteIntensity, VignetteIntensity);
             _materialInstance.SetColor(MaterialID.VignetteColor, VignetteColor);
+
+            if (_restFrequencyChanged && HasWCS)
+            {
+                if (_dataSet.GetAltSpecSystem() == "VRAD")
+                    _dataSet.SetAstAttribute("RestFreq", RestFrequency.ToString()); // set alt if swapped?
+                _dataSet.CreateAltSpecFrame();
+                if (_dataSet.GetAltSpecSystem() == "FREQ")
+                    _dataSet.SetAltAstAttribute("RestFreq", RestFrequency.ToString()); // set alt if swapped?
+                _dataSet.HasRestFrequency = true;
+                _restFrequencyChanged = false;
+                Debug.Log("Rest freq changed!");
+            }
+        }
+
+        public void ResetRestFrequency()
+        {
+            if (_dataSet.HasFitsRestFrequency)
+            {
+                RestFrequency = _dataSet.FitsRestFrequency;
+
+            }
+            else
+                _dataSet.HasRestFrequency = false;
         }
 
         void OnRenderObject()

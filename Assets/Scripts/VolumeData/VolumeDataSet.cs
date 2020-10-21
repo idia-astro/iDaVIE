@@ -85,7 +85,9 @@ namespace VolumeData
         public int NumberHeaderKeys;
         public IntPtr AstFrameSet { get; private set; }
         public IntPtr AstAltSpecSet { get; private set; }
-        public bool HasRestFrequency { get; private set; }
+        public bool HasFitsRestFrequency { get; private set; }
+        public bool HasRestFrequency { get; set; }
+        public double FitsRestFrequency { get; set;}
         
         public long[] cubeSize;
 
@@ -258,28 +260,34 @@ namespace VolumeData
                     DataAnalysis.FreeMemory(histogramPtr);
             }
 
-            volumeDataSet.HasRestFrequency = volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ");
-
+            volumeDataSet.HasFitsRestFrequency = volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ");
+            if (volumeDataSet.HasFitsRestFrequency)
+            {
+                volumeDataSet.HasRestFrequency = true;
+                StringBuilder restFreqSB = new StringBuilder(70);
+                volumeDataSet.FitsRestFrequency = AstTool.GetString(astFrameSet, new StringBuilder("RestFreq"), restFreqSB, restFreqSB.Capacity);
+                volumeDataSet.FitsRestFrequency = double.Parse(restFreqSB.ToString());
+            }
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = volumeDataSet.cubeSize[0];
             volumeDataSet.YDim = volumeDataSet.cubeSize[1];
             volumeDataSet.ZDim = volumeDataSet.cubeSize[index2];
             volumeDataSet.AstFrameSet = astFrameSet;
 
-            if (volumeDataSet.HasRestFrequency)
-            {
-                IntPtr astAltSpecFrame = IntPtr.Zero;
-                string system, unit;
-                volumeDataSet.GetAltSpecSystem(out system, out unit);
-                AstTool.GetAltSpecSet(astFrameSet, out astAltSpecFrame, new StringBuilder(system), new StringBuilder(unit), new StringBuilder(volumeDataSet.GetStdOfRest()));
-                volumeDataSet.AstAltSpecSet = astAltSpecFrame;
-            }
-
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
             volumeDataSet._cachedBrush = new byte[2];
 
             return volumeDataSet;
+        }
+
+        public void CreateAltSpecFrame()
+        {
+                IntPtr astAltSpecFrame = IntPtr.Zero;
+                string system, unit;
+                GetAltSpecSystemWithUnit(out system, out unit);
+                AstTool.GetAltSpecSet(AstFrameSet, out astAltSpecFrame, new StringBuilder(system), new StringBuilder(unit), new StringBuilder(GetStdOfRest()));
+                AstAltSpecSet = astAltSpecFrame;
         }
 
         public static void UpdateHistogram(VolumeDataSet volumeDataSet, float min, float max)
@@ -1062,7 +1070,7 @@ namespace VolumeData
         {
             if (!HasRestFrequency)
             {
-                Debug.Log("Cannot convert depth without rest frequency in header!");
+                Debug.Log("Cannot convert depth without rest frequencies!");
                 return "";
             }
             string system = GetAstAltAttribute("System(3)");
@@ -1091,7 +1099,13 @@ namespace VolumeData
             return $"{system}: {GetFormattedAltCoord(zOut)} {unit}";
         }
 
-        private void GetAltSpecSystem(out string system, out string unit)
+        public string GetAltSpecSystem()
+        {
+            string system,unit;
+            GetAltSpecSystemWithUnit(out system, out unit);
+            return system;
+        }
+        private void GetAltSpecSystemWithUnit(out string system, out string unit)
         {
             system = "";
             unit = "";
