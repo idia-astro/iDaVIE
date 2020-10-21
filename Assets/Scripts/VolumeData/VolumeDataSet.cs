@@ -85,7 +85,7 @@ namespace VolumeData
         public int NumberHeaderKeys;
         public IntPtr AstFrameSet { get; private set; }
         public IntPtr AstAltSpecSet { get; private set; }
-        public bool HasFitsRestFrequency { get; private set; }
+        public bool HasFitsRestFrequency { get; private set; } = false;
         public bool HasRestFrequency { get; set; }
         public double FitsRestFrequency { get; set;}
         
@@ -258,9 +258,10 @@ namespace VolumeData
                 Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
                 if (histogramPtr != IntPtr.Zero)
                     DataAnalysis.FreeMemory(histogramPtr);
+                volumeDataSet.HasFitsRestFrequency = volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ");
             }
 
-            volumeDataSet.HasFitsRestFrequency = volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ");
+            
             if (volumeDataSet.HasFitsRestFrequency)
             {
                 volumeDataSet.HasRestFrequency = true;
