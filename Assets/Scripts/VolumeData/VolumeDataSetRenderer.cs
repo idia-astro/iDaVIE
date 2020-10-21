@@ -839,6 +839,11 @@ namespace VolumeData
             FitsReader.FitsCloseFile(cubeFitsPtr, out status);
         }
 
+        public void SetScalingType(ScalingType scalingType)
+        {
+            ScalingType = scalingType;
+        }
+
         public void OnDestroy()
         {
             _dataSet.CleanUp(RandomVolume);
