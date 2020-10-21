@@ -1096,7 +1096,7 @@ namespace VolumeData
                         SetAltAxisUnit(3, "Hz");
                     break;
             }
-            return $"{system}: {GetFormattedAltCoord(zOut)} {unit}";
+            return $"{system}: {GetFormattedAltCoord(zOut), 12} {unit}";
         }
 
         public string GetAltSpecSystem()

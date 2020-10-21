@@ -669,7 +669,6 @@ namespace VolumeData
                     _dataSet.SetAltAstAttribute("RestFreq", RestFrequency.ToString()); // set alt if swapped?
                 _dataSet.HasRestFrequency = true;
                 _restFrequencyChanged = false;
-                Debug.Log("Rest freq changed!");
             }
         }
 
