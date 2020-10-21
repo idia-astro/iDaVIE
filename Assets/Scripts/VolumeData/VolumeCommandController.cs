@@ -10,7 +10,7 @@ using Valve.VR.InteractionSystem;
 
 namespace VolumeData
 {
-    public class VolumeSpeechController : MonoBehaviour
+    public class VolumeCommandController : MonoBehaviour
     {
         public GameObject mainCanvassDesktop;
 

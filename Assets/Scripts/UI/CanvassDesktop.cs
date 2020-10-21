@@ -35,7 +35,7 @@ public class CanvassDesktop : MonoBehaviour
     private bool showPopUp = false;
     private string textPopUp = "";
     private VolumeInputController _volumeInputController;
-    private VolumeSpeechController _volumeSpeechController;
+    private VolumeCommandController _volumeCommandController;
     string imagePath = "";
     string maskPath = "";
 
@@ -67,7 +67,7 @@ public class CanvassDesktop : MonoBehaviour
     void Start()
     {
         _volumeInputController = FindObjectOfType<VolumeInputController>();
-        _volumeSpeechController = FindObjectOfType<VolumeSpeechController>();
+        _volumeCommandController = FindObjectOfType<VolumeCommandController>();
         histogramHelper = FindObjectOfType<HistogramHelper>();
 
         checkCubesDataSet();
@@ -527,7 +527,7 @@ public class CanvassDesktop : MonoBehaviour
         _volumeInputController.gameObject.SetActive(false);
         _volumeInputController.gameObject.SetActive(true);
 
-        _volumeSpeechController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
+        _volumeCommandController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
 
         while (!newCube.GetComponent<VolumeDataSetRenderer>().started)
         {

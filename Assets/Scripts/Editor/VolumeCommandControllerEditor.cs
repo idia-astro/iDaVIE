@@ -4,8 +4,8 @@ using VolumeData;
 using UnityEditor;
 
 
-[CustomEditor(typeof(VolumeSpeechController))]
-public class VolumeSpeechControllerEditor : Editor
+[CustomEditor(typeof(VolumeCommandController))]
+public class VolumeCommandControllerEditor : Editor
 {
 
     public ColorMapEnum colormap;
@@ -14,32 +14,32 @@ public class VolumeSpeechControllerEditor : Editor
     {
 
         DrawDefaultInspector();
-        VolumeSpeechController volumeSpeechController = (VolumeSpeechController)target;
+        VolumeCommandController volumeCommandController = (VolumeCommandController)target;
 
         EditorGUILayout.LabelField("Transform");
         if (GUILayout.Button("Reset Transform"))
         {
-            volumeSpeechController.resetTransform();
+            volumeCommandController.resetTransform();
         }
         EditorGUILayout.LabelField("Threshold");
         if (GUILayout.Button("Reset Threshold"))
         {
-            volumeSpeechController.resetThreshold();
+            volumeCommandController.resetThreshold();
         }
 
         if (GUILayout.Button("Edit Min Threshold"))
         {
-            volumeSpeechController.startThresholdEditing(false);
+            volumeCommandController.startThresholdEditing(false);
         }
 
         if (GUILayout.Button("Edit Max Threshold"))
         {
-            volumeSpeechController.startThresholdEditing(true);
+            volumeCommandController.startThresholdEditing(true);
         }
 
         if (GUILayout.Button("Save Threshold"))
         {
-            volumeSpeechController.endThresholdEditing();
+            volumeCommandController.endThresholdEditing();
         }
 
         EditorGUILayout.LabelField("Color Map");
@@ -48,51 +48,51 @@ public class VolumeSpeechControllerEditor : Editor
 
         if (GUILayout.Button("Change ColorMap"))
         {
-            volumeSpeechController.setColorMap(colormap);
+            volumeCommandController.setColorMap(colormap);
         }
 
         EditorGUILayout.LabelField("Cropping");
 
         if (GUILayout.Button("Crop to Region"))
         {
-            volumeSpeechController.cropDataSet();
+            volumeCommandController.cropDataSet();
         }
 
         if (GUILayout.Button("Reset Crop"))
         {
-            volumeSpeechController.resetCropDataSet();
+            volumeCommandController.resetCropDataSet();
         }
 
         EditorGUILayout.LabelField("Masking");
 
         if (GUILayout.Button("Mask On"))
         {
-            volumeSpeechController.setMask(MaskMode.Enabled);
+            volumeCommandController.setMask(MaskMode.Enabled);
         }
 
         if (GUILayout.Button("Mask Off"))
         {
-            volumeSpeechController.setMask(MaskMode.Disabled);
+            volumeCommandController.setMask(MaskMode.Disabled);
         }
 
         if (GUILayout.Button("Mask Invert"))
         {
-            volumeSpeechController.setMask(MaskMode.Inverted);
+            volumeCommandController.setMask(MaskMode.Inverted);
         }
 
         if (GUILayout.Button("Mask Isolate"))
         {
-            volumeSpeechController.setMask(MaskMode.Isolated);
+            volumeCommandController.setMask(MaskMode.Isolated);
         }
         
         if (GUILayout.Button("Projection Maximum"))
         {
-            volumeSpeechController.setProjection(ProjectionMode.MaximumIntensityProjection);
+            volumeCommandController.setProjection(ProjectionMode.MaximumIntensityProjection);
         }
         
         if (GUILayout.Button("Projection Average"))
         {
-            volumeSpeechController.setProjection(ProjectionMode.AverageIntensityProjection);
+            volumeCommandController.setProjection(ProjectionMode.AverageIntensityProjection);
         }
     }
 }

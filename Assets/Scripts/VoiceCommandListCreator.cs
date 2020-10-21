@@ -20,7 +20,7 @@ public class VoiceCommandListCreator : MonoBehaviour
     [SerializeField]
     private RectTransform content = null;
 
-    private VolumeSpeechController _volumeSpeechController;
+    private VolumeCommandController _volumeCommandController;
 
     /*
     public GameObject volumeDatasetRendererObj = null;
@@ -96,10 +96,10 @@ public class VoiceCommandListCreator : MonoBehaviour
                 }
         */
 
-        _volumeSpeechController = FindObjectOfType<VolumeSpeechController>();
+        _volumeCommandController = FindObjectOfType<VolumeCommandController>();
 
         int i = 0;
-        foreach (string keyword in VolumeSpeechController.Keywords.All)
+        foreach (string keyword in VolumeCommandController.Keywords.All)
         {
             // 100 Height of item
             float spawnY = i * 60;
@@ -114,7 +114,7 @@ public class VoiceCommandListCreator : MonoBehaviour
             VoiceCommandListItem itemDetails = SpawnedItem.GetComponent<VoiceCommandListItem>();
           
             itemDetails.executeCommand.GetComponent<Button>().onClick.RemoveAllListeners();
-            itemDetails.executeCommand.GetComponent<Button>().onClick.AddListener(delegate { _volumeSpeechController.ExecuteVoiceCommandFromList(keyword); });
+            itemDetails.executeCommand.GetComponent<Button>().onClick.AddListener(delegate { _volumeCommandController.ExecuteVoiceCommandFromList(keyword); });
             
             //set name
             itemDetails.commandName.text = keyword;
