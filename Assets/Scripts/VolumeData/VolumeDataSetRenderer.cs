@@ -81,7 +81,9 @@ namespace VolumeData
 
         [Header("Thresholds")] [Range(0, 1)] public float ThresholdMin = 0;
         [Range(0, 1)] public float ThresholdMax = 1;
-
+        [Range(-0.1f, 0.1f)]
+        public float MomentMapThreshold = 0.0f;
+        
         [Header("Color Mapping")] public ColorMapEnum ColorMap = ColorMapEnum.Inferno;
         public ScalingType ScalingType = ScalingType.Linear;
         [Range(-1, 1)] public float ScalingBias = 0.0f;
@@ -152,6 +154,9 @@ namespace VolumeData
         private VolumeDataSet _dataSet = null;
         private VolumeDataSet _maskDataSet = null;
         private bool _dirtyMask = false;
+        private bool _dirtyMoment = false;
+        private float _cachedMomentThreshold = Single.NaN;
+
         public bool HasWCS { get; private set; }
 
 
@@ -329,6 +334,8 @@ namespace VolumeData
             }
             Shader.WarmupAllShaders();
 
+            MomentMapThreshold = 0.0f;
+            
             started = true;
 
         }
@@ -670,6 +677,12 @@ namespace VolumeData
                 _dataSet.HasRestFrequency = true;
                 _restFrequencyChanged = false;
             }
+
+            if (_cachedMomentThreshold != MomentMapThreshold)
+            {
+                _cachedMomentThreshold = MomentMapThreshold;
+                _dataSet?.CalculateMomentMaps(IsCropped ? _dataSet.RegionCube : _dataSet.DataCube, _cachedMomentThreshold);
+            }
         }
 
         public void ResetRestFrequency()
@@ -849,6 +862,16 @@ namespace VolumeData
             _dataSet.CleanUp(RandomVolume);
             _maskDataSet?.CleanUp(false);
 
+        }
+
+        public void OnGUI()
+        {
+            var texture = _dataSet?.Moment0Map;
+            if (texture != null)
+            {
+                texture.filterMode = FilterMode.Point;
+                GUI.DrawTexture(new Rect(0, 0, texture.width * 3, texture.height * 3), texture);
+            }
         }
 
         private void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes)

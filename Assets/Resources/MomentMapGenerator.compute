@@ -1,0 +1,47 @@
+﻿#pragma kernel MomentZeroGenerator
+#pragma kernel MomentOneGenerator
+
+RWTexture2D<float> MomentResult;
+Texture3D<float> DataTexture;
+
+float Threshold;
+int Depth;
+
+[numthreads(8,8,1)]
+void MomentZeroGenerator (uint3 id : SV_DispatchThreadID)
+{    
+    float sum = 0.0f;
+    uint3 index = id.xyz;
+
+    for (int i = 0; i < Depth; i++)
+    {
+        index.z = i;
+        float val = DataTexture[index];
+        if (val >= Threshold)
+        {
+            sum += val;           
+        }
+    }
+    MomentResult[id.xy] = sum;    
+}
+
+[numthreads(8,8,1)]
+void MomentOneGenerator (uint3 id : SV_DispatchThreadID)
+{    
+    float sum = 0.0f;
+    float sumWeighted = 0.0f;
+    
+    uint3 index = id.xyz;
+
+    for (int i = 0; i < Depth; i++)
+    {
+        index.z = i;
+        float val = DataTexture[index];
+        if (val >= Threshold)
+        {
+            sumWeighted += val * i;
+            sum += val;
+        }
+    }
+    MomentResult[id.xy] = (sum != 0.0f? sumWeighted / sum: 0.0f) / Depth;    
+}
