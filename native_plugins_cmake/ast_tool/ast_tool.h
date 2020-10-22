@@ -14,6 +14,8 @@ DllExport int InitAstFrameSet(AstFrameSet**, const char*);
 
 DllExport int GetAstFrame(AstFrameSet*, AstFrame**, int index);
 
+DllExport int GetAltSpecSet(AstFrameSet*, AstFrameSet**, const char*, const char*, const char*);
+
 DllExport int Format(AstFrameSet*, int, double, char*, int);
 
 DllExport int Set(AstFrameSet*, const char*);
@@ -25,6 +27,8 @@ DllExport void Dump(AstFrameSet*, char*);
 DllExport int GetString(AstFrameSet*, const char*, char*, int);
 
 DllExport int SetString(AstFrameSet*, const char*, const char*);
+
+DllExport bool HasAttribute(AstFrameSet*, const char*);
 
 DllExport int Norm(AstFrameSet*, double, double, double, double*, double*, double*);
 

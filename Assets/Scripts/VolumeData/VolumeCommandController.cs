@@ -10,7 +10,7 @@ using Valve.VR.InteractionSystem;
 
 namespace VolumeData
 {
-    public class VolumeSpeechController : MonoBehaviour
+    public class VolumeCommandController : MonoBehaviour
     {
         public GameObject mainCanvassDesktop;
 
@@ -63,13 +63,17 @@ namespace VolumeData
             public static readonly string HideMaskOutline = "hide mask outline";
             public static readonly string TakePicture = "take picture";
             public static readonly string CursorInfo = "cursor info";
+            public static readonly string LinearScale = "linear scale";            
+            public static readonly string LogScale = "log scale";
+            public static readonly string SqrtScale = "square root scale";
 
             public static readonly string[] All =
             {
                 EditThresholdMin, EditThresholdMax, EditZAxis, EditZAxisAlt, SaveThreshold, ResetThreshold, ResetTransform, ColormapPlasma, ColormapRainbow, 
                 ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
                 PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
-                ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline, TakePicture, CursorInfo
+                ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline, TakePicture, CursorInfo, LinearScale,
+                LogScale, SqrtScale
             };
         }
    
@@ -237,6 +241,18 @@ namespace VolumeData
             {
                 ToggleCursorInfo();
             }
+            else if (args == Keywords.LogScale)
+            {
+                ChangeScalingType(ScalingType.Log);
+            }
+            else if (args == Keywords.LinearScale)
+            {
+                ChangeScalingType(ScalingType.Linear);
+            }
+            else if (args == Keywords.SqrtScale)
+            {
+                ChangeScalingType(ScalingType.Sqrt);
+            }            
         }
 
         // Update is called once per frame
@@ -429,6 +445,11 @@ namespace VolumeData
         public void ToggleCursorInfo()
         {
             _volumeInputController.ToggleCursorInfoVisibility();
+        }
+
+        public void ChangeScalingType(ScalingType scalingType)
+        {
+            getFirstActiveDataSet().SetScalingType(scalingType);
         }
 
         public VolumeDataSetRenderer getFirstActiveDataSet()

@@ -7,6 +7,7 @@ using Valve.VR;
 using VolumeData;
 
 using Valve.VR.InteractionSystem;
+using System;
 
 public class RenderingController : MonoBehaviour
 {
@@ -18,18 +19,31 @@ public class RenderingController : MonoBehaviour
     public Button ButtonPrevColorMap;
     public Button ButtonNextColorMap;
     public Text LabelColormap;
+
+    //Scaling type
+    public Button ButtonPrevScalingType;
+    public Button ButtonNextScalingType;
+    public Text LabelScalingType;
+
     public GameObject volumeDatasetRendererObj = null;
 
     int defaultColorIndex = 33;
+    int defaultScalingIndex = 0;
     int colorIndex = -1;
+    int scalingIndex = -1;
+    private VolumeCommandController _volumeCommandController;
 
     void Start()
     {
         colorIndex = defaultColorIndex;
+        scalingIndex = defaultScalingIndex;
         if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
 
         LabelColormap.gameObject.GetComponent<Text>().text = ColorMapUtils.FromHashCode(colorIndex) + "";
+        LabelScalingType.gameObject.GetComponent<Text>().text = (ScalingType)scalingIndex + "";
+       
+        _volumeCommandController = FindObjectOfType<VolumeCommandController>();
     }
 
 // Update is called once per frame
@@ -125,6 +139,40 @@ public class RenderingController : MonoBehaviour
     {
         colorIndex = defaultColorIndex;
         SetColorMap(ColorMapUtils.FromHashCode(colorIndex));
+    }
+
+    public void SetNextScalingType()
+    {
+        
+        if (scalingIndex == Enum.GetNames(typeof(ScalingType)).Length - 1)
+        {
+            scalingIndex = -1;
+        }
+        scalingIndex++;
+
+        _volumeCommandController.ChangeScalingType((ScalingType)scalingIndex);
+        LabelScalingType.gameObject.GetComponent<Text>().text = (ScalingType)scalingIndex + "";
+        //SetColorMap(ColorMapUtils.FromHashCode(colorIndex));
+    }
+
+    public void SetPrevScalingType()
+    {
+        if (scalingIndex == 0)
+        {
+            scalingIndex = Enum.GetNames(typeof(ScalingType)).Length;
+        }
+        scalingIndex--;
+
+        _volumeCommandController.ChangeScalingType((ScalingType)scalingIndex);
+        LabelScalingType.gameObject.GetComponent<Text>().text = (ScalingType)scalingIndex + "";
+    }
+
+
+    public void ResetScalingType()
+    {
+        scalingIndex = defaultScalingIndex;
+        _volumeCommandController.ChangeScalingType((ScalingType)scalingIndex);
+        LabelScalingType.gameObject.GetComponent<Text>().text = (ScalingType)scalingIndex + "";
     }
 
     public void SetThreshold()

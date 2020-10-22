@@ -61,6 +61,48 @@ int GetAstFrame(AstFrameSet* frameSetPtr, AstFrame** astFramePtr, int index)
     return 0;
 }
 
+int GetAltSpecSet(AstFrameSet* frameSetPtr, AstFrameSet** specFrameSet, const char* specSysTo, const char* specUnitTo, const char* specRestTo)
+{
+    if (!frameSetPtr)
+    {
+        return 1;
+    }
+    AstFrameSet* newFrameSet = static_cast<AstFrameSet*> astCopy(frameSetPtr);
+    //AstCmpFrame* cmpFrameFrom = static_cast<AstCmpFrame*>(astGetFrame(frameSetPtr, 1));
+    //AstCmpFrame* cmpFrameTo = nullptr;
+    //cmpFrameTo = static_cast<AstCmpFrame*> astCopy(frameSetPtr);
+    //if (!cmpFrameTo)
+    //{
+    //    return 1;
+    //}
+
+    char buffer[128];
+    if (specSysTo) {
+        snprintf(buffer, sizeof(buffer), "System(3)=%s", specSysTo);
+        astSet(newFrameSet, buffer);
+    }
+    if (specUnitTo) {
+        snprintf(buffer, sizeof(buffer), "Unit(3)=%s", specUnitTo);
+        astSet(newFrameSet, buffer);
+    }
+    if (specRestTo) {
+        snprintf(buffer, sizeof(buffer), "StdOfRest(3)=%s", specRestTo);
+        astSet(newFrameSet, buffer);
+    }
+
+    //AstFrameSet *cvt;
+    //cvt = static_cast<AstFrameSet*>astConvert(cmpFrameFrom, cmpFrameTo, "");
+    astShow(newFrameSet);
+    *specFrameSet = newFrameSet;
+
+    if (!astOK)
+    {
+        astClearStatus;
+        return -1;
+    }
+    return 0;
+}
+
 int Format(AstFrameSet* frameSetPtr, int axis, double value, char* formattedVal, int formattedValLength)
 {
     if (!frameSetPtr)
@@ -133,6 +175,11 @@ int SetString(AstFrameSet* frameSetPtr, const char* attribute, const char* strin
     }
     astSetC(frameSetPtr, attribute, stringValue);
     return 0;
+}
+
+bool HasAttribute(AstFrameSet* frameSetPtr, const char* attribute)
+{
+    return astHasAttribute(frameSetPtr, attribute);
 }
 
 int Norm(AstFrameSet* frameSetPtr, double xIn, double yIn, double zIn, double* xOut, double* yOut, double* zOut)
@@ -264,10 +311,10 @@ int SpectralTransform(AstFrameSet* frameSetPtr, const char* specSysTo, const cha
     {
         return 1;
     }
-
-    AstFrameSet* frameSetTo = nullptr;
-    frameSetTo = static_cast<AstFrameSet*> astCopy(frameSetPtr);
-    if (!frameSetTo)
+    AstCmpFrame* cmpFrameFrom = static_cast<AstCmpFrame*>(astGetFrame(frameSetPtr, 2));
+    AstCmpFrame* cmpFrameTo = nullptr;
+    cmpFrameTo = static_cast<AstCmpFrame*> astCopy(frameSetPtr);
+    if (!cmpFrameTo)
     {
         return 1;
     }
@@ -275,19 +322,19 @@ int SpectralTransform(AstFrameSet* frameSetPtr, const char* specSysTo, const cha
     char buffer[128];
     if (specSysTo) {
         snprintf(buffer, sizeof(buffer), "System(3)=%s", specSysTo);
-        astSet(frameSetTo, buffer);
+        astSet(cmpFrameTo, buffer);
     }
     if (specUnitTo) {
         snprintf(buffer, sizeof(buffer), "Unit(3)=%s", specUnitTo);
-        astSet(frameSetTo, buffer);
+        astSet(cmpFrameTo, buffer);
     }
     if (specRestTo) {
         snprintf(buffer, sizeof(buffer), "StdOfRest(3)=%s", specRestTo);
-        astSet(frameSetTo, buffer);
+        astSet(cmpFrameTo, buffer);
     }
 
     AstFrameSet *cvt;
-    cvt = static_cast<AstFrameSet*>astConvert(frameSetPtr, frameSetTo, "");
+    cvt = static_cast<AstFrameSet*>astConvert(cmpFrameFrom, cmpFrameTo, "");
     int nDims = astGetI(frameSetPtr, "Naxes");
     double *input = new double[nDims];
     double* output = new double[nDims];

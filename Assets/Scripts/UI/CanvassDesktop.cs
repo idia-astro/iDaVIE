@@ -35,7 +35,7 @@ public class CanvassDesktop : MonoBehaviour
     private bool showPopUp = false;
     private string textPopUp = "";
     private VolumeInputController _volumeInputController;
-    private VolumeSpeechController _volumeSpeechController;
+    private VolumeCommandController _volumeCommandController;
     string imagePath = "";
     string maskPath = "";
 
@@ -57,6 +57,8 @@ public class CanvassDesktop : MonoBehaviour
     private Slider maxThreshold;
     private TextMeshProUGUI maxThresholdLabel;
 
+    private float restFrequency;
+
 
     protected Coroutine loadCubeCoroutine;
     protected Coroutine showLoadDialogCoroutine;
@@ -65,7 +67,7 @@ public class CanvassDesktop : MonoBehaviour
     void Start()
     {
         _volumeInputController = FindObjectOfType<VolumeInputController>();
-        _volumeSpeechController = FindObjectOfType<VolumeSpeechController>();
+        _volumeCommandController = FindObjectOfType<VolumeCommandController>();
         histogramHelper = FindObjectOfType<HistogramHelper>();
 
         checkCubesDataSet();
@@ -525,7 +527,7 @@ public class CanvassDesktop : MonoBehaviour
         _volumeInputController.gameObject.SetActive(false);
         _volumeInputController.gameObject.SetActive(true);
 
-        _volumeSpeechController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
+        _volumeCommandController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
 
         while (!newCube.GetComponent<VolumeDataSetRenderer>().started)
         {
@@ -550,6 +552,28 @@ public class CanvassDesktop : MonoBehaviour
                 getFirstActiveDataSet().ZScale = 1f * getFirstActiveDataSet().GetCubeDimensions().z / getFirstActiveDataSet().GetCubeDimensions().x;
             }
         }
+    }
+
+    public void OnRestFrequencyOverrideValueChanged(bool option)
+    {
+        var activeDataSet = getFirstActiveDataSet();
+        activeDataSet.OverrideRestFrequency = option;
+        if (option)
+        {
+            activeDataSet.RestFrequency = restFrequency;
+        }
+        else
+        {
+            activeDataSet.ResetRestFrequency();
+        }
+    }
+
+    public void OnRestFrequencyValueChanged(String val)
+    {
+        restFrequency = float.Parse(val);
+        var activeDataSet = getFirstActiveDataSet();
+        if (activeDataSet.OverrideRestFrequency)
+            activeDataSet.RestFrequency = restFrequency;
     }
 
     public void DismissFileLoad()
