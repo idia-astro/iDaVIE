@@ -124,8 +124,6 @@ public class VoiceCommandListCreator : MonoBehaviour
             i++;
         }
        
-
-
 }
 
 
