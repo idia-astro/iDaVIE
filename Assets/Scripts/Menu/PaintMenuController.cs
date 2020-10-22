@@ -220,4 +220,5 @@ public class PaintMenuController : MonoBehaviour
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
         SaveCancel();
     }
+
 }
