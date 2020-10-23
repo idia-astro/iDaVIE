@@ -1,8 +1,11 @@
 ﻿#pragma kernel MomentZeroGenerator
 #pragma kernel MomentOneGenerator
+#pragma kernel MaskedMomentZeroGenerator
+#pragma kernel MaskedMomentOneGenerator
 
 RWTexture2D<float> MomentResult;
-Texture3D<float> DataTexture;
+Texture3D<float> DataCube;
+Texture3D<int> MaskCube;
 
 float Threshold;
 int Depth;
@@ -16,7 +19,7 @@ void MomentZeroGenerator (uint3 id : SV_DispatchThreadID)
     for (int i = 0; i < Depth; i++)
     {
         index.z = i;
-        float val = DataTexture[index];
+        float val = DataCube[index];
         if (val >= Threshold)
         {
             sum += val;           
@@ -36,9 +39,49 @@ void MomentOneGenerator (uint3 id : SV_DispatchThreadID)
     for (int i = 0; i < Depth; i++)
     {
         index.z = i;
-        float val = DataTexture[index];
+        float val = DataCube[index];
         if (val >= Threshold)
         {
+            sumWeighted += val * i;
+            sum += val;
+        }
+    }
+    MomentResult[id.xy] = (sum != 0.0f? sumWeighted / sum: 0.0f) / Depth;    
+}
+
+[numthreads(8,8,1)]
+void MaskedMomentZeroGenerator (uint3 id : SV_DispatchThreadID)
+{    
+    float sum = 0.0f;
+    uint3 index = id.xyz;
+
+    for (int i = 0; i < Depth; i++)
+    {
+        index.z = i;
+        int maskVal = MaskCube[index];
+        if (maskVal)
+        {
+            sum += DataCube[index];
+        }
+    }
+    MomentResult[id.xy] = sum;    
+}
+
+[numthreads(8,8,1)]
+void MaskedMomentOneGenerator (uint3 id : SV_DispatchThreadID)
+{    
+    float sum = 0.0f;
+    float sumWeighted = 0.0f;
+    
+    uint3 index = id.xyz;
+
+    for (int i = 0; i < Depth; i++)
+    {
+        index.z = i;
+        int maskVal = MaskCube[index];
+        if (maskVal)
+        {
+            float val = DataCube[index];
             sumWeighted += val * i;
             sum += val;
         }

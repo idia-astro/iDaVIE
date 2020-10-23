@@ -45,7 +45,6 @@ namespace VolumeData
     {
         public Texture3D DataCube { get; private set; }
         public Texture3D RegionCube { get; private set; }
-        public RenderTexture Moment0Map { get; private set; }
         public ComputeBuffer ExistingMaskBuffer { get; private set; }
         public ComputeBuffer AddedMaskBuffer { get; private set; }
         public int AddedMaskEntryCount { get; private set; }
@@ -75,8 +74,6 @@ namespace VolumeData
         private List<VoxelEntry> _existingRegionMaskEntries;
         private List<VoxelEntry> _addedRegionMaskEntries;
         private Texture2D _updateTexture;
-        private ComputeShader _computeShader;
-        private float _momentMapThreshold = 0.0f;
         private byte[] _cachedBrush;
         private short[] _regionMaskVoxels;
         private static int BrushStrokeLimit = 25000;
@@ -397,7 +394,6 @@ namespace VolumeData
             }
 
             DataCube = dataCube;
-            CalculateMomentMaps(DataCube);
             //TODO output cached file
             if (downsampled && reducedData != IntPtr.Zero)
                 DataAnalysis.FreeMemory(reducedData);
@@ -467,8 +463,6 @@ namespace VolumeData
                 Graphics.CopyTexture(textureSlice, 0, 0, 0, 0, cubeSize.x, cubeSize.y, RegionCube, slice, 0, 0, 0);
             }
             
-            CalculateMomentMaps(RegionCube);
-
             if (IsMask)
             {
                 var numVoxels = cubeSize.x * cubeSize.y * cubeSize.z;
@@ -1159,40 +1153,6 @@ namespace VolumeData
             {
                 Debug.Log("Error normalizing physical coordinates!");
             }
-        }
-
-        public bool CalculateMomentMaps(Texture3D inputTexture)
-        {
-            return CalculateMomentMaps(inputTexture, _momentMapThreshold);
-        }
-        
-        public bool CalculateMomentMaps(Texture3D inputTexture, float threshold)
-        {
-            _momentMapThreshold = threshold;
-            if (!Moment0Map || (Moment0Map.width != inputTexture.width || Moment0Map.height != inputTexture.height))
-            {
-                Moment0Map?.Release();
-                Debug.Log($"Resizing moment map render texture to {inputTexture.width} x {inputTexture.height}");
-                Moment0Map = new RenderTexture(inputTexture.width, inputTexture.height, 0, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear);
-                Moment0Map.enableRandomWrite = true;
-                Moment0Map.useMipMap = false;
-                Moment0Map.filterMode = FilterMode.Point;
-                Moment0Map.Create();
-            }
-
-            if (!_computeShader)
-            {
-                _computeShader = (ComputeShader) Resources.Load("MomentMapGenerator"); 
-            }
-
-            var index = _computeShader.FindKernel("MomentOneGenerator");
-            _computeShader.SetTexture(index, "DataTexture", inputTexture);
-            _computeShader.SetTexture(index, "MomentResult", Moment0Map);
-            _computeShader.SetFloat("Threshold", _momentMapThreshold);
-            _computeShader.SetInt("Depth", inputTexture.depth);
-            // Run compute shader in 8x8 thread groups
-            _computeShader.Dispatch(index, Mathf.CeilToInt(inputTexture.width / 8.0f), Mathf.CeilToInt(inputTexture.height / 8.0f), 1);
-            return true;
         }
 
         public void CleanUp(bool randomCube)
