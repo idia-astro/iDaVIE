@@ -44,6 +44,7 @@ namespace VolumeData
             public static readonly string ColormapInferno = "color map inferno";
             public static readonly string ColormapViridis = "color map viridis";
             public static readonly string ColormapCubeHelix = "color map cube helix";
+            public static readonly string ColormapTurbo = "color map turbo";
             public static readonly string NextDataSet = "next data set";
             public static readonly string PreviousDataSet = "previous data set";
             public static readonly string CropSelection = "crop selection";
@@ -70,7 +71,7 @@ namespace VolumeData
             public static readonly string[] All =
             {
                 EditThresholdMin, EditThresholdMax, EditZAxis, EditZAxisAlt, SaveThreshold, ResetThreshold, ResetTransform, ColormapPlasma, ColormapRainbow, 
-                ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
+                ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ColormapTurbo, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
                 PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
                 ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline, TakePicture, CursorInfo, LinearScale,
                 LogScale, SqrtScale
@@ -172,6 +173,10 @@ namespace VolumeData
             else if (args == Keywords.ColormapCubeHelix)
             {
                 setColorMap(ColorMapEnum.Cubehelix);
+            }
+            else if (args == Keywords.ColormapTurbo)
+            {
+                setColorMap(ColorMapEnum.Turbo);
             }
             else if (args == Keywords.CropSelection)
             {
