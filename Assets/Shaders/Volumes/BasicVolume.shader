@@ -4,8 +4,8 @@ Shader "IDIA/BasicVolume"
 	{
 		_DataCube("Data Cube", 3D) = "white" {}
 		_ColorMap("Color Map", 2D) = "white" {}
-		_NumColorMaps("Number of Color Maps", Int) = 79
-		_ColorMapIndex("Color Map Index", Range(0, 79)) = 0
+		_NumColorMaps("Number of Color Maps", Int) = 80
+		_ColorMapIndex("Color Map Index", Range(0, 80)) = 0
 		_SliceMin("Slice Min", Vector) = (0,0,0,1)
 		_SliceMax("Slice Max", Vector) = (1,1,1,1)
 		_ThresholdMin("Threshold Min", Range(0,1)) = 0
