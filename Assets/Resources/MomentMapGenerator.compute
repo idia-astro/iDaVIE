@@ -46,7 +46,7 @@ void MomentOneGenerator (uint3 id : SV_DispatchThreadID)
             sum += val;
         }
     }
-    MomentResult[id.xy] = (sum != 0.0f? sumWeighted / sum: 0.0f) / Depth;    
+    MomentResult[id.xy] = (sum != 0.0f? sumWeighted / sum: 0.0f);    
 }
 
 [numthreads(8,8,1)]
@@ -86,5 +86,25 @@ void MaskedMomentOneGenerator (uint3 id : SV_DispatchThreadID)
             sum += val;
         }
     }
-    MomentResult[id.xy] = (sum != 0.0f? sumWeighted / sum: 0.0f) / Depth;    
+    MomentResult[id.xy] = (sum != 0.0f? sumWeighted / sum: 0.0f);    
 }
+
+#pragma kernel LinearColormap
+
+sampler2D ColormapTexture;
+RWTexture2D<float4> OutputTexture;
+
+float ClampMin;
+float ClampMax;
+float ColormapOffset;
+
+[numthreads(8,8,1)]
+void LinearColormap (uint3 id : SV_DispatchThreadID)
+{
+    float inputVal = MomentResult[id.xy];
+    float range = ClampMax - ClampMin;
+    float val = (inputVal - ClampMin) / range;
+
+    float4 color = tex2Dlod(ColormapTexture, float4(val, 1.0 - ColormapOffset, 0, 0));
+    OutputTexture[id.xy] = color;       
+} 
