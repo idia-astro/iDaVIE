@@ -1,6 +1,4 @@
 ﻿using DataFeatures;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
@@ -23,7 +21,7 @@ public class QuickMenuController : MonoBehaviour
     public GameObject ExitSavePopup;
 
 
-    int maskstatus=0;
+    int maskstatus = 0;
     int cropstatus = 0;
     int featureStatus = 0;
     string oldMaskLoaded = "";
@@ -39,8 +37,8 @@ public class QuickMenuController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-       
-        if ( volumeDatasetRendererObj!= null )
+
+        if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
 
     }
@@ -74,7 +72,7 @@ public class QuickMenuController : MonoBehaviour
 
         foreach (var dataSet in _dataSets)
         {
-        
+
             if (dataSet.isActiveAndEnabled)
             {
                 return dataSet;
@@ -149,7 +147,7 @@ public class QuickMenuController : MonoBehaviour
                     this.gameObject.transform.Find("Image_fet_off").gameObject.SetActive(true);
                     notificationText.GetComponent<Text>().text = "Features disabled";
                     _activeDataSet.GetComponentInChildren<FeatureSetManager>().GetComponentsInChildren<FeatureSetRenderer>()[1].ToggleVisibility();
-                  
+
                     break;
             }
         }
@@ -174,7 +172,7 @@ public class QuickMenuController : MonoBehaviour
                 notificationText.GetComponent<Text>().text = "Mask disabled";
                 this.gameObject.transform.Find("Image_nf").gameObject.SetActive(true);
                 break;
-            case 1: 
+            case 1:
                 setMask(MaskMode.Enabled);
                 notificationText.GetComponent<Text>().text = "Mask enabled";
                 this.gameObject.transform.Find("Image_f1").gameObject.SetActive(true);
@@ -190,13 +188,13 @@ public class QuickMenuController : MonoBehaviour
                 this.gameObject.transform.Find("Image_f3").gameObject.SetActive(true);
                 break;
         }
-        
+
     }
 
 
     private void setMask(MaskMode mode)
     {
-       
+
         if (_activeDataSet)
         {
             _activeDataSet.MaskMode = mode;
@@ -230,19 +228,26 @@ public class QuickMenuController : MonoBehaviour
 
     public void OpenPaintMenu()
     {
+        if (!gameObject.activeSelf)
+        {
+            gameObject.SetActive(true);
+            Update();
+        }
         // Prevent painting of downsampled data
         if (!_activeDataSet.IsFullResolution)
         {
             notificationText.GetComponent<Text>().text = "Cannot paint downsampled region";
             return;
         }
-        paintMenu.transform.SetParent(this.transform.parent,false);
-        paintMenu.transform.localPosition = this.transform.localPosition;
-        paintMenu.transform.localRotation = this.transform.localRotation;
-        paintMenu.transform.localScale = this.transform.localScale;
-      
-        gameObject.SetActive(false);
-        paintMenu.SetActive(true);
+        else {             
+            paintMenu.transform.SetParent(this.transform.parent, false);
+            paintMenu.transform.localPosition = this.transform.localPosition;
+            paintMenu.transform.localRotation = this.transform.localRotation;
+            paintMenu.transform.localScale = this.transform.localScale;
+
+            gameObject.SetActive(false);
+            paintMenu.SetActive(true);
+        }
     }
 
     public void OpenHistogramMenu()
@@ -266,7 +271,7 @@ public class QuickMenuController : MonoBehaviour
         savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(SaveCancel);
         savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
         savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
-        
+
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
         this.gameObject.SetActive(false);
         savePopup.SetActive(true);

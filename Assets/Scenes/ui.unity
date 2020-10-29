@@ -10790,8 +10790,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mainCanvassDesktop: {fileID: 538474599}
   VolumeInputController: {fileID: 0}
-  QuickMenuController: {fileID: 0}
-  PaintMenuController: {fileID: 0}
+  QuickMenuController: {fileID: 379983799}
+  PaintMenuController: {fileID: 1393187943}
   VibrationDuration: 0.25
   VibrationFrequency: 100
   VibrationAmplitude: 1
