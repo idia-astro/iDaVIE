@@ -1,6 +1,6 @@
 #include "ast_tool.h"
 
-int InitAstFrameSet(AstFrameSet** astFrameSetPtr, const char* header)
+int InitAstFrameSet(AstFrameSet** astFrameSetPtr, const char* header, double restFreqGHz = 0)
 {
     std::cout << "Initializing AstFrameSet..." << std::endl;
     AstFitsChan* fitschan = nullptr;
@@ -24,6 +24,21 @@ int InitAstFrameSet(AstFrameSet** astFrameSetPtr, const char* header)
         return -1;
     }
     astPutCards(fitschan, header);
+    if (restFreqGHz != 0)
+    {
+        if (astTestFits(fitschan, "RESTFREQ", nullptr) != 0)
+        {
+            astFindFits(fitschan, "RESTFREQ", nullptr, 0);
+            astSetFitsF(fitschan, "RESTFREQ", restFreqGHz * 1.0e9, NULL, 1);
+            astClear(fitschan, "Card");
+        }
+        else
+        {
+            astFindFits(fitschan, "RESTFRQ", nullptr, 0);
+            astSetFitsF(fitschan, "RESTFRQ", restFreqGHz * 1.0e9, NULL, 1);    
+            astClear(fitschan, "Card");
+        }
+    }
     wcsinfo = static_cast<AstFrameSet*>(astRead(fitschan));
     if (!astOK)
     {
@@ -68,17 +83,9 @@ int GetAltSpecSet(AstFrameSet* frameSetPtr, AstFrameSet** specFrameSet, const ch
         return 1;
     }
     AstFrameSet* newFrameSet = static_cast<AstFrameSet*> astCopy(frameSetPtr);
-    //AstCmpFrame* cmpFrameFrom = static_cast<AstCmpFrame*>(astGetFrame(frameSetPtr, 1));
-    //AstCmpFrame* cmpFrameTo = nullptr;
-    //cmpFrameTo = static_cast<AstCmpFrame*> astCopy(frameSetPtr);
-    //if (!cmpFrameTo)
-    //{
-    //    return 1;
-    //}
-
     char buffer[128];
     if (specSysTo) {
-        snprintf(buffer, sizeof(buffer), "System(3)=%s", specSysTo);
+        snprintf(buffer, sizeof(buffer), "System(3)=%s", specSysTo);        // TODO: Consider depth in 4th dimension
         astSet(newFrameSet, buffer);
     }
     if (specUnitTo) {
@@ -89,12 +96,8 @@ int GetAltSpecSet(AstFrameSet* frameSetPtr, AstFrameSet** specFrameSet, const ch
         snprintf(buffer, sizeof(buffer), "StdOfRest(3)=%s", specRestTo);
         astSet(newFrameSet, buffer);
     }
-
-    //AstFrameSet *cvt;
-    //cvt = static_cast<AstFrameSet*>astConvert(cmpFrameFrom, cmpFrameTo, "");
     astShow(newFrameSet);
     *specFrameSet = newFrameSet;
-
     if (!astOK)
     {
         astClearStatus;

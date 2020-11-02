@@ -258,7 +258,7 @@ namespace VolumeData
                 Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
                 if (histogramPtr != IntPtr.Zero)
                     DataAnalysis.FreeMemory(histogramPtr);
-                volumeDataSet.HasFitsRestFrequency = volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ");
+                volumeDataSet.HasFitsRestFrequency = volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ") || volumeDataSet.HeaderDictionary.ContainsKey("RESTFREQ");
             }
 
             
@@ -282,8 +282,19 @@ namespace VolumeData
             return volumeDataSet;
         }
 
+        public void RecreateFrameSet(double restFreq = 0)
+        {
+            if (AstFrameSet != IntPtr.Zero)
+                AstTool.DeleteObject(AstFrameSet);
+            IntPtr astFrameSet = IntPtr.Zero;
+            if (AstTool.InitAstFrameSet(out astFrameSet, FitsHeader, restFreq) != 0)
+                Debug.Log("Failed to recreate AstFrameSet!");
+            AstFrameSet = astFrameSet; //Need to delete old one?
+        }
         public void CreateAltSpecFrame()
         {
+                if (AstAltSpecSet != IntPtr.Zero)
+                    AstTool.DeleteObject(AstAltSpecSet);
                 IntPtr astAltSpecFrame = IntPtr.Zero;
                 string system, unit;
                 GetAltSpecSystemWithUnit(out system, out unit);
@@ -983,9 +994,14 @@ namespace VolumeData
 
         public string GetFormattedAltCoord(double val)
         {
+            double xDummy, yDummy, zNorm;
+            if (AstTool.Norm(AstAltSpecSet, 0, 0, val, out xDummy, out yDummy, out zNorm) != 0)
+            {
+                Debug.Log("Error finding normalized alt spec coordinate!");
+            }
             int stringLength = 70;
             StringBuilder coord = new StringBuilder(stringLength);
-            if (AstTool.Format(AstAltSpecSet, 3, val, coord, stringLength) != 0)
+            if (AstTool.Format(AstAltSpecSet, 3, zNorm, coord, stringLength) != 0)
             {
                 Debug.Log("Error finding formatted alt spec coordinate!");
             }
