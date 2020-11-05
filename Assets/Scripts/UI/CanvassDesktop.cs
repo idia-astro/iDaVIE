@@ -12,7 +12,7 @@ using VolumeData;
 
 using Valve;
 using Valve.VR;
-
+using DataFeatures;
 
 public class CanvassDesktop : MonoBehaviour
 {
@@ -151,7 +151,7 @@ public class CanvassDesktop : MonoBehaviour
         FileBrowser.SetDefaultFilter(".fits");
         showLoadDialogCoroutine = StartCoroutine(ShowLoadDialogCoroutine(0));
     }
-
+    
     private void _browseImageFile(string path)
     {
         if (path != null)
@@ -438,6 +438,9 @@ public class CanvassDesktop : MonoBehaviour
                 case 1:
                     _browseMaskFile(FileBrowser.Result[0]);
                     break;
+                case 2:
+                    _browseSourcesFile(FileBrowser.Result[0]);
+                    break;
             }
         }
 
@@ -577,6 +580,32 @@ public class CanvassDesktop : MonoBehaviour
         var activeDataSet = getFirstActiveDataSet();
         if (activeDataSet.OverrideRestFrequency)
             activeDataSet.RestFrequency = restFrequency;
+    }
+    
+    public void BrowseSourcesFile()
+    {
+        FileBrowser.SetFilters(true, new FileBrowser.Filter("VOTable", ".xml"));
+        FileBrowser.SetDefaultFilter(".xml");
+        showLoadDialogCoroutine = StartCoroutine(ShowLoadDialogCoroutine(2));
+    }
+
+    private void _browseSourcesFile(string path)
+    {
+        var volumeDataSet = getFirstActiveDataSet();
+        var featureDataSet = volumeDataSet.GetComponentInChildren<FeatureSetManager>();
+        featureDataSet.FeatureFileToLoad = path;
+        sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
+        //activate load features button
+        //add feature info to gui image
+        //set the path of selected file to the ui
+        sourcesPanelContent.gameObject.transform.Find("SourcesFile_container").gameObject.transform.Find("SourcesFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(imagePath);
+    }
+
+    public void LoadSourcesFile()
+    {
+        var featureSetManager = getFirstActiveDataSet().GetComponentInChildren<FeatureSetManager>();
+        if(featureSetManager.FeatureFileToLoad != "")
+            featureSetManager.ImportFeatureSet();
     }
 
     public void DismissFileLoad()

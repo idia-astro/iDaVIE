@@ -57,6 +57,7 @@ MeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
   m_RenderingLayerMask: 4294967295
   m_RendererPriority: 0
   m_Materials:
@@ -143,8 +144,13 @@ MonoBehaviour:
   ZFactor: 1
   ScaleMax: 0
   ScaleMin: 0
+  ZAxisMaxFactor: 10
+  ZAxisMinFactor: 0.001
   SliceMin: {x: -0.5, y: -0.5, z: -0.5}
   SliceMax: {x: 0.5, y: 0.5, z: 0.5}
+  CubeDepthAxis: 2
+  CubeSlice: 1
+  ShowMeasuringLine: 0
   SelectionSaturateFactor: 0.7
   FeatureSetManagerPrefab: {fileID: 8719282727236949451}
   _voxelOutline:
@@ -399,6 +405,95 @@ MonoBehaviour:
     m_trigger: 0
     m_physicsMaterial: {fileID: 0}
     m_alignOddWidthToPixels: 0
+  _regionMeasure:
+    m_lineVertices: []
+    m_lineUVs: []
+    m_lineColors: []
+    m_lineTriangles: 
+    m_vertexCount: 0
+    m_go: {fileID: 0}
+    m_rectTransform: {fileID: 0}
+    m_color:
+      serializedVersion: 2
+      rgba: 0
+    m_canvasState: 0
+    m_is2D: 0
+    m_points2: []
+    m_points3: []
+    m_pointsCount: 0
+    m_screenPoints: []
+    m_lineWidths: []
+    m_lineWidth: 0
+    m_maxWeldDistance: 0
+    m_distances: []
+    m_name: 
+    m_material: {fileID: 0}
+    m_originalTexture: {fileID: 0}
+    m_texture: {fileID: 0}
+    m_active: 0
+    m_lineType: 0
+    m_capLength: 0
+    m_smoothWidth: 0
+    m_smoothColor: 0
+    m_joins: 0
+    m_isAutoDrawing: 0
+    m_drawStart: 0
+    m_drawEnd: 0
+    m_endPointsUpdate: 0
+    m_useNormals: 0
+    m_useTangents: 0
+    m_normalsCalculated: 0
+    m_tangentsCalculated: 0
+    m_capType: 0
+    m_endCap: 
+    m_useCapColors: 0
+    m_frontColor:
+      serializedVersion: 2
+      rgba: 0
+    m_backColor:
+      serializedVersion: 2
+      rgba: 0
+    m_frontEndCapIndex: 0
+    m_backEndCapIndex: 0
+    m_lineUVBottom: 0
+    m_lineUVTop: 0
+    m_frontCapUVBottom: 0
+    m_frontCapUVTop: 0
+    m_backCapUVBottom: 0
+    m_backCapUVTop: 0
+    m_continuousTexture: 0
+    m_drawTransform: {fileID: 0}
+    m_viewportDraw: 0
+    m_textureScale: 0
+    m_useTextureScale: 0
+    m_textureOffset: 0
+    m_useMatrix: 0
+    m_matrix:
+      e00: 0
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 0
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 0
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 0
+    m_collider: 0
+    m_trigger: 0
+    m_physicsMaterial: {fileID: 0}
+    m_alignOddWidthToPixels: 0
+  _volumeInputController: {fileID: 0}
+  RandomVolume: 0
+  RandomCubeSize: 512
+  started: 0
+  FileChanged: 1
 --- !u!1001 &1227928689811635409
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -479,7 +574,7 @@ PrefabInstance:
     - target: {fileID: 7497200159023163674, guid: 2f9f3f22b1768b643a1d19a246519df6,
         type: 3}
       propertyPath: FeatureMappingFile
-      value: 
+      value: Data/DataFeatures/sofia_list.json
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2f9f3f22b1768b643a1d19a246519df6, type: 3}
