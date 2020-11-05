@@ -23,6 +23,7 @@ public class CanvassDesktop : MonoBehaviour
     public GameObject informationPanelContent;
     public GameObject renderingPanelContent;
     public GameObject statsPanelContent;
+    public GameObject sourcesPanelContent;
     public GameObject mainCanvassDesktop;
     public GameObject fileLoadCanvassDesktop;
     public GameObject VolumePlayer;
@@ -467,8 +468,10 @@ public class CanvassDesktop : MonoBehaviour
 
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().interactable = true;
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Stats_Button").GetComponent<Button>().interactable = true;
+        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Sources_Button").GetComponent<Button>().interactable = true;
 
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Stats_Button").GetComponent<Button>().onClick.Invoke();
+
     }
 
 
