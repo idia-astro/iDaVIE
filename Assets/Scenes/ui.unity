@@ -4589,7 +4589,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1677918002}
+      - m_Target: {fileID: 927079049}
         m_MethodName: UpdateButtonHandler
         m_Mode: 1
         m_Arguments:
@@ -5855,7 +5855,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1798270351}
   m_HandleRect: {fileID: 1798270350}
   m_Direction: 0
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -14984,7 +14984,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1677918002}
+      - m_Target: {fileID: 927079049}
         m_MethodName: ResetButtonHandler
         m_Mode: 1
         m_Arguments:
@@ -60333,7 +60333,6 @@ GameObject:
   - component: {fileID: 1781822824}
   - component: {fileID: 1781822823}
   - component: {fileID: 1781822822}
-  - component: {fileID: 1781822821}
   m_Layer: 5
   m_Name: PlotsWindow
   m_TagString: Untagged
@@ -60341,26 +60340,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 0
---- !u!114 &1781822821
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1781822820}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0fc83d4f789a612428079102824d4f67, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  volumeDatasetRendererObj: {fileID: 379208438}
-  notificationText: {fileID: 395744078}
-  mainMenuCanvas: {fileID: 822478519}
-  paintMenu: {fileID: 1393187942}
-  savePopup: {fileID: 426473890}
-  VibrationDuration: 0.25
-  VibrationFrequency: 100
-  VibrationAmplitude: 1
 --- !u!114 &1781822822
 MonoBehaviour:
   m_ObjectHideFlags: 0
