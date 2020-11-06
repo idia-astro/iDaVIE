@@ -17,6 +17,7 @@ namespace VolumeData
         public VolumeInputController VolumeInputController;
         public QuickMenuController QuickMenuController;
         public PaintMenuController PaintMenuController;
+        public MomentMapMenuController momentMapMenuController;
 
         public float VibrationDuration = 0.25f;
         public float VibrationFrequency = 100.0f;

@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace VolumeData
 {
@@ -8,6 +9,7 @@ namespace VolumeData
         public RenderTexture Moment0Map { get; private set; }
         public RenderTexture ImageOutput { get; private set; }
 
+        public MomentMapMenuController momentMapMenuController;
         public Texture3D DataCube
         {
             get => _dataCube;
@@ -157,7 +159,21 @@ namespace VolumeData
                 int threadGroupsX = Mathf.CeilToInt(_dataCube.width / ((float) (_kernelThreadGroupX)));
                 int threadGroupsY = Mathf.CeilToInt(_dataCube.height / ((float) (_kernelThreadGroupY)));
                 _computeShader.Dispatch(_colormapKernelIndex, threadGroupsX, threadGroupsY, 1);
-                GUI.DrawTexture(new Rect(0, 0, Moment0Map.width * 3, Moment0Map.height * 3), ImageOutput);
+              //  GUI.DrawTexture(new Rect(0, 0, Moment0Map.width * 3, Moment0Map.height * 3), ImageOutput);
+
+                /*
+                Texture2D tex = new Texture2D(Moment0Map.width * 3, Moment0Map.height * 3);
+                tex.LoadImage(ImageOutput.to);
+                Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(tex.width / 2, tex.height / 2));
+                */
+
+                Texture2D tex = new Texture2D(Moment0Map.width, Moment0Map.height);
+                RenderTexture.active = ImageOutput;
+                tex.ReadPixels(new Rect(0, 0, ImageOutput.width, ImageOutput.height), 0, 0);
+                tex.Apply();
+               // tex.LoadImage(ImageOutput.to);
+                Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(tex.width, tex.height));
+                momentMapMenuController.gameObject.transform.Find("Map_container").gameObject.transform.Find("MomentMap").GetComponent<Image>().sprite = sprite;
             }
         }
     }

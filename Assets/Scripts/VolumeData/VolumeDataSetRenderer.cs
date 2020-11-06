@@ -332,6 +332,8 @@ namespace VolumeData
             
             _momentMapRenderer = gameObject.AddComponent(typeof(MomentMapRenderer)) as MomentMapRenderer;
             _momentMapRenderer.DataCube = _dataSet.DataCube;
+            _momentMapRenderer.momentMapMenuController = FindObjectOfType<VolumeCommandController>().momentMapMenuController;
+
             if (_maskDataSet != null)
             {
                 _momentMapRenderer.MaskCube = _maskDataSet.DataCube;
