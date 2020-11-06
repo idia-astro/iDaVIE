@@ -161,8 +161,6 @@ namespace VolumeData
                 _computeShader.Dispatch(_colormapKernelIndex, threadGroupsX, threadGroupsY, 1);
                 //  GUI.DrawTexture(new Rect(0, 0, Moment0Map.width * 3, Moment0Map.height * 3), ImageOutput);
 
-                Debug.Log("call OnGui MomentMap");
-
                 Texture2D tex = new Texture2D(Moment0Map.width, Moment0Map.height);
                 RenderTexture.active = ImageOutput;
                 tex.ReadPixels(new Rect(0, 0, ImageOutput.width, ImageOutput.height), 0, 0);
