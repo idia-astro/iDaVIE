@@ -349,6 +349,12 @@ namespace VolumeData
             return _dataSet;
         }
 
+
+        public MomentMapRenderer GetMomentMapRenderer()
+        {
+            return _momentMapRenderer;
+        }
+
         public void ShiftColorMap(int delta)
         {
             int numColorMaps = ColorMapUtils.NumColorMaps;
@@ -883,4 +889,5 @@ namespace VolumeData
             }
         }
     }
+
 }
