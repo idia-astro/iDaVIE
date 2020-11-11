@@ -21048,6 +21048,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1307c42efc0dad84ea2f9e303b4c8596, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  SpawnPoint: {fileID: 0}
+  item: {fileID: 0}
+  content: {fileID: 0}
+  volumeDatasetRendererObj: {fileID: 0}
+  SofiaNewListController: {fileID: 0}
 --- !u!114 &659602731
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -65590,6 +65595,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1307c42efc0dad84ea2f9e303b4c8596, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  SpawnPoint: {fileID: 2144118750}
+  item: {fileID: 6689441930889237779, guid: 9a39e30b8605d414092f651b44805ef2, type: 3}
+  content: {fileID: 1314261018}
+  volumeDatasetRendererObj: {fileID: 379208438}
+  SofiaNewListController: {fileID: 1774593165}
 --- !u!114 &2104593477
 MonoBehaviour:
   m_ObjectHideFlags: 0
