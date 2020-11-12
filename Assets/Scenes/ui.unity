@@ -15929,7 +15929,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Content: {fileID: 596864672}
-  m_Horizontal: 0
+  m_Horizontal: 1
   m_Vertical: 1
   m_MovementType: 1
   m_Elasticity: 0.1
@@ -15939,7 +15939,7 @@ MonoBehaviour:
   m_Viewport: {fileID: 1743973628}
   m_HorizontalScrollbar: {fileID: 454888124}
   m_VerticalScrollbar: {fileID: 1233245742}
-  m_HorizontalScrollbarVisibility: 1
+  m_HorizontalScrollbarVisibility: 0
   m_VerticalScrollbarVisibility: 0
   m_HorizontalScrollbarSpacing: -3
   m_VerticalScrollbarSpacing: -3
@@ -18398,7 +18398,7 @@ GameObject:
   - component: {fileID: 596864674}
   - component: {fileID: 596864673}
   m_Layer: 5
-  m_Name: Header
+  m_Name: Sources
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -18538,7 +18538,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_enableWordWrapping: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_firstOverflowCharacterIndex: -1
