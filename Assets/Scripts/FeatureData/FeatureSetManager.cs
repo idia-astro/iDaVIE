@@ -165,7 +165,7 @@ namespace DataFeatures
             // Shift by half a voxel (because voxel center has integer coordinates, not corner)
             featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
 
-            featureSetRenderer.SpawnFeaturesFromFile(FeatureFileToLoad, FeatureMappingFile);
+            featureSetRenderer.SpawnFeaturesFromFile(FeatureFileToLoad, Path.Combine(Application.streamingAssetsPath, FeatureMappingFile));
             _featureSetList.Add(featureSetRenderer);
             if (_activeFeatureSetRenderer == null)
                 _activeFeatureSetRenderer = featureSetRenderer;

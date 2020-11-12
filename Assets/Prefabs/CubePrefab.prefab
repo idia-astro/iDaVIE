@@ -574,7 +574,7 @@ PrefabInstance:
     - target: {fileID: 7497200159023163674, guid: 2f9f3f22b1768b643a1d19a246519df6,
         type: 3}
       propertyPath: FeatureMappingFile
-      value: Data/DataFeatures/sofia_list.json
+      value: DataMaps/sofia_list.json
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2f9f3f22b1768b643a1d19a246519df6, type: 3}
