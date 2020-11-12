@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Valve.Newtonsoft.Json;
+using VoTableReader;
 using UnityEngine;
 using System.Globalization;
 using System.Text;
@@ -56,6 +57,17 @@ namespace DataFeatures
         public string[] FeatureNames { get; private set; }
         public int NumberFeatures { get; private set; }
 
+        public static VoTable GetFeatureDataFromVOTable(string fileName)
+        {
+            VoTable voTable = new VoTable(fileName);
+            return voTable;
+        }
+
+        public static Dictionary<string, string>[] GetFeatureDataFromASCII(string fileName)
+        {
+            return null;
+        }
+
 
         public static FeatureSetImporter CreateSetFromVOTable(string fileName, string mappingFileName)
         {
@@ -85,6 +97,11 @@ namespace DataFeatures
                 VOTableReader.FieldGetName(field_ptr, out name_ptr, out status);
                 colNames[i] = Marshal.PtrToStringAnsi(name_ptr);
             }
+            featureSet.FeatureData = new Dictionary<string, string>[nrows];
+
+
+
+
             int[] xyzIndices = { Array.IndexOf(colNames, featureSet.Mapping.X.Source),
                 Array.IndexOf(colNames, featureSet.Mapping.Y.Source),
                 Array.IndexOf(colNames, featureSet.Mapping.Z.Source) };

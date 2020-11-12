@@ -597,7 +597,7 @@ public class CanvassDesktop : MonoBehaviour
         featureDataSet.FeatureFileToLoad = path;
         sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
         //activate load features button
-        sourcesPanelContent.gameObject.transform.Find("SourcesFile_container").gameObject.transform.Find("SourcesFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(imagePath);
+        sourcesPanelContent.gameObject.transform.Find("SourcesFile_container").gameObject.transform.Find("SourcesFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(path);
         VoTable voTable = FeatureSetImporter.GetFeatureDataFromVOTable(path); //be more flexible with file input
         string tableContent = "";
         foreach (var col in voTable.Columns)
