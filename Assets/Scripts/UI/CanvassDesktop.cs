@@ -13,6 +13,7 @@ using VolumeData;
 using Valve;
 using Valve.VR;
 using DataFeatures;
+using VoTableReader;
 
 public class CanvassDesktop : MonoBehaviour
 {
@@ -597,9 +598,15 @@ public class CanvassDesktop : MonoBehaviour
         sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
         //activate load features button
         sourcesPanelContent.gameObject.transform.Find("SourcesFile_container").gameObject.transform.Find("SourcesFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(imagePath);
+        VoTable voTable = FeatureSetImporter.GetFeatureDataFromVOTable(path); //be more flexible with file input
+        string tableContent = "";
+        foreach (var col in voTable.Columns)
+        {
+            tableContent += col.Key + "\t";
+        }
+        sourcesPanelContent.gameObject.transform.Find("SourcesInfo_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Sources").GetComponent<TextMeshProUGUI>().text = tableContent;
         //add feature info to gui image
         //set the path of selected file to the ui
-        sourcesPanelContent.gameObject.transform.Find("SourcesFile_container").gameObject.transform.Find("SourcesFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(imagePath);
     }
 
     public void LoadSourcesFile()
