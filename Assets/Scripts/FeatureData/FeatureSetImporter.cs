@@ -122,7 +122,7 @@ namespace DataFeatures
 
                 for (int i = 0; i < xyzIndices.Length; i++)
                 {
-                    float value = float.Parse((string)voTable.Rows[row].ColumnData[xyzIndices[i]]);
+                    float value = float.Parse((string)voTable.Rows[row].ColumnData[xyzIndices[i]], CultureInfo.InvariantCulture);
                     switch (i)
                     {
                         case 0:
