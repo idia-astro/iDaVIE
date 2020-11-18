@@ -28,6 +28,7 @@ public class CanvassDesktop : MonoBehaviour
     public GameObject mainCanvassDesktop;
     public GameObject fileLoadCanvassDesktop;
     public GameObject VolumePlayer;
+    public GameObject SourceRowPrefab;
 
     public GameObject WelcomeMenu;
     public GameObject LoadingText;
@@ -598,7 +599,16 @@ public class CanvassDesktop : MonoBehaviour
         sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
         //activate load features button
         sourcesPanelContent.gameObject.transform.Find("SourcesFile_container").gameObject.transform.Find("SourcesFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(path);
-        VoTable voTable = FeatureSetImporter.GetFeatureDataFromVOTable(path); //be more flexible with file input
+        VoTable voTable = FeatureSetImporter.GetFeatureDataFromVOTable(path); //be more flexible with file input (ascii)
+        Transform sourceBody = sourcesPanelContent.gameObject.transform.Find("SourcesInfo_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform;
+       
+        for (var i = 0; i < voTable.Column.Count; i++)
+        {
+            var row = Instantiate(SourceRowPrefab, sourceBody);
+            row.transform.Find("Number").GetComponent<TextMeshProUGUI>().text = i.ToString();
+            row.transform.Find("Name").GetComponent<TextMeshProUGUI>().text = voTable.Column[i].Name;
+        }
+        /*
         string tableContent = "";
         foreach (var col in voTable.Columns)
         {
@@ -613,8 +623,14 @@ public class CanvassDesktop : MonoBehaviour
             }
         }
         sourcesPanelContent.gameObject.transform.Find("SourcesInfo_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Sources").GetComponent<TextMeshProUGUI>().text = tableContent;
+        */
         //add feature info to gui image
         //set the path of selected file to the ui
+    }
+
+    public void MapCoord(string columnName, string coord)
+    {
+        
     }
 
     public void LoadSourcesFile()
