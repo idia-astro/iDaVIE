@@ -83,6 +83,7 @@ public class VolumeInputController : MonoBehaviour
     public bool AdditiveBrush = true;
     public int BrushSize = 1;
     public short BrushValue = 1;
+    public short NewSourceValue = 1000;
     
     private Player _player;
     private VRHand[] _hands;
@@ -1064,5 +1065,11 @@ public class VolumeInputController : MonoBehaviour
             _showCursorInfo = false;
         else
             _showCursorInfo = true;
+    }
+
+    public void AddNewSource()
+    {
+        BrushValue = NewSourceValue;
+        NewSourceValue++;
     }
 }

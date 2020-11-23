@@ -67,6 +67,7 @@ namespace VolumeData
             public static readonly string LinearScale = "linear scale";            
             public static readonly string LogScale = "log scale";
             public static readonly string SqrtScale = "square root scale";
+            public static readonly string AddNewSource = "add new source";
 
             public static readonly string[] All =
             {
@@ -74,7 +75,7 @@ namespace VolumeData
                 ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ColormapTurbo, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
                 PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
                 ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline, TakePicture, CursorInfo, LinearScale,
-                LogScale, SqrtScale
+                LogScale, SqrtScale, AddNewSource
             };
         }
    
@@ -257,7 +258,11 @@ namespace VolumeData
             else if (args == Keywords.SqrtScale)
             {
                 ChangeScalingType(ScalingType.Sqrt);
-            }            
+            }
+            else if (args == Keywords.AddNewSource)
+            {
+                AddNewSource();
+            }
         }
 
         // Update is called once per frame
@@ -455,6 +460,11 @@ namespace VolumeData
         public void ChangeScalingType(ScalingType scalingType)
         {
             getFirstActiveDataSet().SetScalingType(scalingType);
+        }
+
+        public void AddNewSource()
+        {
+            _volumeInputController.AddNewSource();
         }
 
         public VolumeDataSetRenderer getFirstActiveDataSet()
