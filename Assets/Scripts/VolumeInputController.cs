@@ -783,6 +783,10 @@ public class VolumeInputController : MonoBehaviour
         var cursorPosWorldSpace = _handTransforms[PrimaryHandIndex].position;
         var activeBrushSize = (currentState == InteractionState.Painting || currentState == InteractionState.IdlePainting) ? BrushSize : 1;
         dataSet.SetCursorPosition(cursorPosWorldSpace, activeBrushSize);
+        if (dataSet.CursorSource != 0)
+        {
+            BrushValue = dataSet.CursorSource;
+        }
 
         if (currentState == InteractionState.Painting)
         {

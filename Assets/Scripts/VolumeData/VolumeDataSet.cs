@@ -640,21 +640,17 @@ namespace VolumeData
                 return 0;
             }
             
-            // TODO: check if region is full res. If it's not full res, we should defer to the 
-            if (x >= RegionOffset.x && x < RegionOffset.x + RegionCube.width &&
-                y >= RegionOffset.y && x < RegionOffset.y + RegionCube.height &&
-                z >= RegionOffset.z && x < RegionOffset.z + RegionCube.depth)
+            if (_regionMaskVoxels != null && RegionCube && x >= RegionOffset.x && x < RegionOffset.x + RegionCube.width &&
+                y >= RegionOffset.y && y < RegionOffset.y + RegionCube.height &&
+                z >= RegionOffset.z && z < RegionOffset.z + RegionCube.depth)
             {
                 var index = (x - RegionOffset.x) + (y - RegionOffset.y) * RegionCube.width + (z - RegionOffset.z) * (RegionCube.width * RegionCube.height);
                 return _regionMaskVoxels[index];
             }
-            else
-            {
-                Int16 val;
-                DataAnalysis.GetVoxelInt16Value(FitsData, out val, (int) XDim, (int) YDim, (int) ZDim, x, y, z);
-                return val;    
-            }
-            
+
+            Int16 val;
+            DataAnalysis.GetVoxelInt16Value(FitsData, out val, (int) XDim, (int) YDim, (int) ZDim, x, y, z);
+            return val;
         }
 
         public void FindDownsampleFactors(long maxCubeSizeInMb, out int xFactor, out int yFactor, out int zFactor)
