@@ -8,7 +8,7 @@
 struct VoxelEntry 
 {
     int index;
-    int value;
+    int encodedValue;
 };
 
 Buffer<VoxelEntry> MaskEntries;
@@ -18,12 +18,14 @@ struct VertexShaderOutput
 {
     float4 position : SV_POSITION;    
     int value: TEXCOORD0;
-    float4 offsets[4]: TEXCOORD1;
+    int activeEdges : TEXCOORD1;
+    float4 offsets[4]: TEXCOORD2;
 };
 
 struct FragmentShaderInput
 {
     float4 position : SV_POSITION;
+    int value: TEXCOORD0;
 };
 
 uniform float4 CubeDimensions;
@@ -33,6 +35,7 @@ uniform float4x4 ModelMatrix;
 uniform float MaskVoxelSize;
 uniform float4 MaskVoxelOffsets[4];
 uniform float4 MaskVoxelColor;
+uniform int CursorSource;
 
 // Vertex shader
 VertexShaderOutput vsMask(uint id : SV_VertexID)
@@ -40,15 +43,17 @@ VertexShaderOutput vsMask(uint id : SV_VertexID)
     VertexShaderOutput output = (VertexShaderOutput) 0;            
     VoxelEntry entry = MaskEntries[id];
     
-    int value = entry.value % 32768;
-    int activeEdges = (entry.value - value) / 32768;
+    int value = entry.encodedValue % 32768;
+    int activeEdges = (entry.encodedValue - value) / 32768;
         
     if (!activeEdges || !value)
     {
         return output;
     }
     
-    output.value = entry.value;
+    output.value = value;
+    output.activeEdges = activeEdges;
+    
     uint3 regDims = RegionDimensions;
     uint3 voxelIndices;
     uint i = entry.index; 
@@ -71,8 +76,8 @@ VertexShaderOutput vsMask(uint id : SV_VertexID)
 // Geometry shader is limited to a fixed output.
 [maxvertexcount(30)]
 void gsMask(point VertexShaderOutput input[1], inout LineStream<FragmentShaderInput> outputStream) {
-    int value = input[0].value % 32768;
-    int activeEdges = input[0].value / 32768;
+    int value = input[0].value;
+    int activeEdges = input[0].activeEdges;
     
     if (!value) 
     {
@@ -80,6 +85,8 @@ void gsMask(point VertexShaderOutput input[1], inout LineStream<FragmentShaderIn
     }
 
     FragmentShaderInput output;
+
+    output.value = value;
     
     float4 corners[] = {
         input[0].position + input[0].offsets[0],
@@ -190,5 +197,12 @@ void gsMask(point VertexShaderOutput input[1], inout LineStream<FragmentShaderIn
 
 float4 fsMask(FragmentShaderInput input) : COLOR
 {
-    return MaskVoxelColor;
+    if (input.value == CursorSource)
+    {
+        return MaskVoxelColor;
+    }
+    else
+    {
+        return float4(1, 0, 0, 0.5);
+    }    
 }

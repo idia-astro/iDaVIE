@@ -210,6 +210,7 @@ namespace VolumeData
             public static readonly int MaskVoxelOffsets = Shader.PropertyToID("MaskVoxelOffsets");
             public static readonly int MaskVoxelColor = Shader.PropertyToID("MaskVoxelColor");
             public static readonly int ModelMatrix = Shader.PropertyToID("ModelMatrix");
+            public static readonly int CursorSource = Shader.PropertyToID("CursorSource");
         }
 
         #endregion
@@ -629,6 +630,7 @@ namespace VolumeData
                 _materialInstance.SetInt(MaterialID.MaskMode, MaskMode.GetHashCode());
                 _maskMaterialInstance.SetFloat(MaterialID.MaskVoxelSize, MaskVoxelSize);
                 _maskMaterialInstance.SetColor(MaterialID.MaskVoxelColor, MaskVoxelColor);
+                _maskMaterialInstance.SetInt(MaterialID.CursorSource, CursorSource);
 
                 // Calculate and update voxel corner offsets
                 var offsets = new Vector4[4];
