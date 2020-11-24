@@ -35,7 +35,7 @@ uniform float4x4 ModelMatrix;
 uniform float MaskVoxelSize;
 uniform float4 MaskVoxelOffsets[4];
 uniform float4 MaskVoxelColor;
-uniform int CursorSource;
+uniform int HighlightedSource;
 
 // Vertex shader
 VertexShaderOutput vsMask(uint id : SV_VertexID)
@@ -197,12 +197,6 @@ void gsMask(point VertexShaderOutput input[1], inout LineStream<FragmentShaderIn
 
 float4 fsMask(FragmentShaderInput input) : COLOR
 {
-    if (input.value == CursorSource)
-    {
-        return MaskVoxelColor;
-    }
-    else
-    {
-        return float4(1, 0, 0, 0.5);
-    }    
+    float alphaWeighting =  (input.value == HighlightedSource ? 1.0f : 0.25f);
+    return float4(MaskVoxelColor.rgb, alphaWeighting * MaskVoxelColor.a);
 }

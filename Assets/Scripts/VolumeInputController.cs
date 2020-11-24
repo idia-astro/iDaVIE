@@ -1070,6 +1070,10 @@ public class VolumeInputController : MonoBehaviour
     public void AddNewSource()
     {
         BrushValue = NewSourceValue;
+        if (ActiveDataSet)
+        {
+            ActiveDataSet.HighlightedSource = NewSourceValue;
+        }
         NewSourceValue++;
     }
 }
