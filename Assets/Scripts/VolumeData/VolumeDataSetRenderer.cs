@@ -367,7 +367,6 @@ namespace VolumeData
                     if (_maskDataSet != null)
                     {
                         CursorSource = _maskDataSet.GetMaskValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
-                        // Highlight source when 
                         if (CursorSource != 0)
                         {
                             HighlightedSource = CursorSource;

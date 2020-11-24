@@ -640,6 +640,7 @@ namespace VolumeData
                 return 0;
             }
             
+            // Use the cached / current mask array if the cursor location is within the cropped region
             if (_regionMaskVoxels != null && RegionCube && x >= RegionOffset.x && x < RegionOffset.x + RegionCube.width &&
                 y >= RegionOffset.y && y < RegionOffset.y + RegionCube.height &&
                 z >= RegionOffset.z && z < RegionOffset.z + RegionCube.depth)
