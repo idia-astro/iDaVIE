@@ -11,7 +11,7 @@ struct VoxelEntry
     int encodedValue;
 };
 
-Buffer<VoxelEntry> MaskEntries;
+StructuredBuffer<VoxelEntry> MaskEntries;
 
 // Points -> <VS> -> VertexShaderOutput -> <GS> -> PixelShaderInput -> <PS> -> Pixels 
 struct VertexShaderOutput
