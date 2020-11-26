@@ -1076,4 +1076,14 @@ public class VolumeInputController : MonoBehaviour
         }
         NewSourceValue++;
     }
+
+    public void UpdateMaskValue()
+    {
+        if (ActiveDataSet)
+        {
+            BrushValue = ActiveDataSet.CursorSource;
+            ActiveDataSet.HighlightedSource = BrushValue;
+            AdditiveBrush = (BrushValue == 0);
+        }
+    }
 }
