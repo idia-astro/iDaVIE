@@ -8,7 +8,7 @@ using System.Text;
 public class AstTool
 {
       [DllImport("libast_tool")]
-      public static extern int InitAstFrameSet(out IntPtr astFramePtr, IntPtr fitsHeader);
+      public static extern int InitAstFrameSet(out IntPtr astFramePtr, IntPtr fitsHeader, double restFreq = 0);
 
       [DllImport("libast_tool")]
       public static extern int GetAstFrame(IntPtr astFramePtr, out IntPtr astFrame, int index);

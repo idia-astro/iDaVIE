@@ -685,11 +685,8 @@ namespace VolumeData
 
             if (_restFrequencyChanged && HasWCS)
             {
-                if (_dataSet.GetAltSpecSystem() == "VRAD")
-                    _dataSet.SetAstAttribute("RestFreq", RestFrequency.ToString()); // set alt if swapped?
+                _dataSet.RecreateFrameSet(RestFrequency);
                 _dataSet.CreateAltSpecFrame();
-                if (_dataSet.GetAltSpecSystem() == "FREQ")
-                    _dataSet.SetAltAstAttribute("RestFreq", RestFrequency.ToString()); // set alt if swapped?
                 _dataSet.HasRestFrequency = true;
                 _restFrequencyChanged = false;
             }

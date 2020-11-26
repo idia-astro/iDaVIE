@@ -7,6 +7,7 @@ namespace VolumeData
     public class MomentMapRenderer : MonoBehaviour
     {
         public RenderTexture Moment0Map { get; private set; }
+        public RenderTexture Moment1Map { get; private set; }
         public RenderTexture ImageOutput { get; private set; }
 
         public MomentMapMenuController momentMapMenuController;
@@ -54,12 +55,14 @@ namespace VolumeData
         {
             public static readonly int DataCube = Shader.PropertyToID("DataCube");
             public static readonly int MaskCube = Shader.PropertyToID("MaskCube");
-            public static readonly int MomentResult = Shader.PropertyToID("MomentResult");
+            public static readonly int Moment0Result = Shader.PropertyToID("Moment0Result");
+            public static readonly int Moment1Result = Shader.PropertyToID("Moment1Result");
             public static readonly int Threshold = Shader.PropertyToID("Threshold");
             public static readonly int Depth = Shader.PropertyToID("Depth");
 
             public static readonly int ClampMin = Shader.PropertyToID("ClampMin");
             public static readonly int ClampMax = Shader.PropertyToID("ClampMax");
+            public static readonly int InputTexture = Shader.PropertyToID("InputTexture");
             public static readonly int OutputTexture = Shader.PropertyToID("OutputTexture");
             public static readonly int ColormapTexture = Shader.PropertyToID("ColormapTexture");
             public static readonly int ColormapOffset = Shader.PropertyToID("ColormapOffset");
@@ -69,8 +72,8 @@ namespace VolumeData
         {
             _colormapTexture = (Texture2D) Resources.Load("allmaps");
             _computeShader = (ComputeShader) Resources.Load("MomentMapGenerator");
-            _kernelIndex = _computeShader.FindKernel("MomentOneGenerator");
-            _kernelIndexMasked = _computeShader.FindKernel("MaskedMomentOneGenerator");
+            _kernelIndex = _computeShader.FindKernel("MomentsGenerator");
+            _kernelIndexMasked = _computeShader.FindKernel("MaskedMomentsGenerator");
             _colormapKernelIndex = _computeShader.FindKernel("LinearColormap");
             uint temp;
             // This assumes the masked and unmasked kernels use the same group size. They really should, though
@@ -105,24 +108,19 @@ namespace VolumeData
             if (!Moment0Map || (Moment0Map.width != _dataCube.width || Moment0Map.height != _dataCube.height))
             {
                 Moment0Map?.Release();
-                Debug.Log($"Resizing moment map render texture to {_dataCube.width} x {_dataCube.height}");
-                Moment0Map = new RenderTexture(_dataCube.width, _dataCube.height, 0, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear);
-                Moment0Map.enableRandomWrite = true;
-                Moment0Map.useMipMap = false;
-                Moment0Map.filterMode = FilterMode.Point;
-                Moment0Map.Create();
-
+                Moment1Map?.Release();
                 ImageOutput?.Release();
-                ImageOutput = new RenderTexture(_dataCube.width, _dataCube.height, 0);
-                ImageOutput.enableRandomWrite = true;
-                ImageOutput.useMipMap = false;
-                ImageOutput.filterMode = FilterMode.Point;
-                ImageOutput.Create();
+                
+                Debug.Log($"Resizing moment map render texture to {_dataCube.width} x {_dataCube.height}");
+                Moment0Map = InitRenderTexture(RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear);
+                Moment1Map = InitRenderTexture(RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear);
+                ImageOutput = InitRenderTexture();
             }
 
             // Update shader variables
             _computeShader.SetTexture(activeKernelIndex, MaterialID.DataCube, _dataCube);
-            _computeShader.SetTexture(activeKernelIndex, MaterialID.MomentResult, Moment0Map);
+            _computeShader.SetTexture(activeKernelIndex, MaterialID.Moment0Result, Moment0Map);
+            _computeShader.SetTexture(activeKernelIndex, MaterialID.Moment1Result, Moment1Map);
             if (maskActive)
             {
                 _computeShader.SetTexture(activeKernelIndex, MaterialID.MaskCube, _maskCube);
@@ -142,12 +140,22 @@ namespace VolumeData
             return true;
         }
 
+        private RenderTexture InitRenderTexture(RenderTextureFormat format = RenderTextureFormat.Default, RenderTextureReadWrite readWrite = RenderTextureReadWrite.Default)
+        {
+            var texture  = new RenderTexture(_dataCube.width, _dataCube.height, 0, format, readWrite);
+            texture.enableRandomWrite = true;
+            texture.useMipMap = false;
+            texture.filterMode = FilterMode.Point;
+            texture.Create();
+            return texture;
+        }
+
         public void OnGUI()
         {
             if (Moment0Map != null)
             {
                 // Run colormapping compute shader
-                _computeShader.SetTexture(_colormapKernelIndex, MaterialID.MomentResult, Moment0Map);
+                _computeShader.SetTexture(_colormapKernelIndex, MaterialID.InputTexture, Moment1Map);
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.OutputTexture, ImageOutput);
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.ColormapTexture, _colormapTexture);
                 
@@ -159,6 +167,7 @@ namespace VolumeData
                 int threadGroupsX = Mathf.CeilToInt(_dataCube.width / ((float) (_kernelThreadGroupX)));
                 int threadGroupsY = Mathf.CeilToInt(_dataCube.height / ((float) (_kernelThreadGroupY)));
                 _computeShader.Dispatch(_colormapKernelIndex, threadGroupsX, threadGroupsY, 1);
+
                 //GUI.DrawTexture(new Rect(0, 0, Moment0Map.width * 3, Moment0Map.height * 3), ImageOutput);
                
                 Texture2D tex = new Texture2D(Moment0Map.width, Moment0Map.height);
@@ -168,8 +177,7 @@ namespace VolumeData
                 Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(tex.width, tex.height));
                 momentMapMenuController.gameObject.transform.Find("Map_container").gameObject.transform.Find("MomentMap").GetComponent<Image>().sprite = sprite;
                 momentMapMenuController.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_2").gameObject.transform.Find("ThresholdValue").GetComponent<Text>().text = MomentMapThreshold.ToString();
-               
-
+                GUI.DrawTexture(new Rect(0, 0, ImageOutput.width * 3, ImageOutput.height * 3), ImageOutput);
             }
         }
     }
