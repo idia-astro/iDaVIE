@@ -3,16 +3,28 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using VolumeData;
+using VoTableReader;
 using UnityEngine;
+using System.Linq;
+using System.Globalization;
 
 namespace DataFeatures
 {
     public class FeatureSetRenderer : MonoBehaviour
     {
         //public Feature FeaturePrefab;
-        private FeatureSetImporter _importer;
+        //private FeatureSetImporter _importer;
 
         public List<Feature> FeatureList { get; private set; }
+
+        public Dictionary<string, string>[] FeatureRawData { get; private set; }
+
+
+        public int NumberFeatures { get; private set; }
+        public string[] FeatureNames { get; private set; }
+        public Vector3[] FeaturePositions { get; private set; }
+        public Vector3[] BoxMinPositions { get; private set; }
+        public Vector3[] BoxMaxPositions { get; private set; }
 
         private void Awake()
         {
@@ -24,41 +36,6 @@ namespace DataFeatures
         {
             FeatureList.Add(featureToAdd);
         }
-
-        // Spawn Feature objects intro world from FileName
-        public void SpawnFeaturesFromFile(string fileName, string mappingFileName)
-        {
-            if (Path.GetExtension(fileName) == ".ascii")
-                _importer = FeatureSetImporter.CreateSetFromAscii(fileName, mappingFileName);
-            else if (Path.GetExtension(fileName) == ".xml")
-                _importer = FeatureSetImporter.CreateSetFromVOTable(fileName, mappingFileName);
-            else
-                Debug.Log($"File extension not recognized for " + fileName);
-            var volumeDataSetRenderer = GetComponentInParent<VolumeDataSetRenderer>();
-            if (volumeDataSetRenderer)
-            {
-                Vector3 cubeMin, cubeMax;
-
-                if (_importer.BoxMinPositions.Length > 0)
-                {
-                    for (int i = 0; i < _importer.NumberFeatures; i++)
-                    {
-                        cubeMin = _importer.BoxMinPositions[i];
-                        cubeMax = _importer.BoxMaxPositions[i];
-                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, _importer.FeatureNames[i]));
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < _importer.NumberFeatures; i++)
-                    {
-                        cubeMin = _importer.FeaturePositions[i];
-                        cubeMax = _importer.FeaturePositions[i];
-                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, _importer.FeatureNames[i]));
-                    }
-                }
-            }
-        } 
 
         public void ToggleVisibility()
         {
@@ -90,6 +67,137 @@ namespace DataFeatures
                 Debug.Log($"Selected feature '{feature.Name}'");
             }
         }
+
+        // Spawn Feature objects intro world from FileName
+        public void SpawnFeaturesFromVOTable(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable)
+        {
+            if (voTable.Rows.Count == 0 || voTable.Column.Count == 0)
+            {
+                Debug.Log($"Error reading VOTable! Note: Currently the VOTable may not contain xmlns declarations.");
+                return;
+            }
+            string[] colNames = new string[voTable.Column.Count];
+            for (int i = 0; i < voTable.Column.Count; i++)
+                colNames[i] = voTable.Column[i].Name;
+            FeatureRawData = new Dictionary<string, string>[voTable.Rows.Count];
+            int[] xyzIndices = { Array.IndexOf(colNames, mapping[SourceMappingOptions.X]),
+                Array.IndexOf(colNames, mapping[SourceMappingOptions.Y]),
+                Array.IndexOf(colNames, mapping[SourceMappingOptions.Z]) };
+            if ( xyzIndices[0] < 0 ||  xyzIndices[1] < 0 ||  xyzIndices[2] < 0)
+            {
+                Debug.Log($"Minimum column parameters not found!");
+                return;
+            }
+            int[] boxIndices =
+            {
+                Array.IndexOf(colNames, mapping[SourceMappingOptions.Xmin]),
+                Array.IndexOf(colNames, mapping[SourceMappingOptions.Xmax]),
+                Array.IndexOf(colNames, mapping[SourceMappingOptions.Ymin]),
+                Array.IndexOf(colNames, mapping[SourceMappingOptions.Ymax]),
+                Array.IndexOf(colNames, mapping[SourceMappingOptions.Zmin]),
+                Array.IndexOf(colNames, mapping[SourceMappingOptions.Zmax]),
+            };
+            int nameIndex = Array.IndexOf(colNames, mapping[SourceMappingOptions.Name]);
+            NumberFeatures = voTable.Rows.Count;
+            FeatureNames = new string[NumberFeatures];
+            FeaturePositions = new Vector3[NumberFeatures];
+
+            // if there are box dimensions, initialize array with number of features, otherwise initialize empty array
+            if (boxIndices.Min() > 0)
+            {
+                BoxMinPositions = new Vector3[NumberFeatures];
+                BoxMaxPositions = new Vector3[NumberFeatures];
+            }
+            else
+            {
+                BoxMinPositions = new Vector3[0];
+                BoxMaxPositions = new Vector3[0];
+            }
+            for (int row = 0; row < voTable.Rows.Count; row++)   // For each row (feature)...
+            {
+
+                for (int i = 0; i < xyzIndices.Length; i++)
+                {
+                    float value = float.Parse((string)voTable.Rows[row].ColumnData[xyzIndices[i]], CultureInfo.InvariantCulture);
+                    switch (i)
+                    {
+                        case 0:
+                            FeaturePositions[row].x = value;
+                            break;
+                        case 1:
+                            FeaturePositions[row].y = value;
+                            break;
+                        case 2:
+                            FeaturePositions[row].z = value;
+                            break;
+                    }
+                }
+                // ...get box bounds if they exist
+                if (boxIndices.Min() > 0)
+                {
+                    for (int i = 0; i < boxIndices.Length; i++)
+                    {
+                        float value = float.Parse((string)voTable.Rows[row].ColumnData[boxIndices[i]], CultureInfo.InvariantCulture);
+                        switch (i)
+                        {
+                            case 0:
+                                BoxMinPositions[row].x = value;
+                                break;
+                            case 1:
+                                BoxMaxPositions[row].x = value;
+                                break;
+                            case 2:
+                                BoxMinPositions[row].y = value;
+                                break;
+                            case 3:
+                                BoxMaxPositions[row].y = value;
+                                break;
+                            case 4:
+                                BoxMinPositions[row].z = value;
+                                break;
+                            case 5:
+                                BoxMaxPositions[row].z = value;
+                                break;
+                        }
+                    }
+                }
+                // ...get name if exists
+                if (nameIndex > 0)
+                {
+                    string value = (string)voTable.Rows[row].ColumnData[nameIndex];
+                    FeatureNames[row] = value;
+                }
+                else
+                {
+                    FeatureNames[row] = "Source #" + row;
+                }
+            }
+            var volumeDataSetRenderer = GetComponentInParent<VolumeDataSetRenderer>();
+            if (volumeDataSetRenderer)
+            {
+                Vector3 cubeMin, cubeMax;
+
+                if (BoxMinPositions.Length > 0)
+                {
+                    for (int i = 0; i < NumberFeatures; i++)
+                    {
+                        cubeMin = BoxMinPositions[i];
+                        cubeMax = BoxMaxPositions[i];
+                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, FeatureNames[i]));
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < NumberFeatures; i++)
+                    {
+                        cubeMin = FeaturePositions[i];
+                        cubeMax = FeaturePositions[i];
+                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, FeatureNames[i]));
+                    }
+                }
+            }
+        } 
+
 
         /*
         // Output the features to File

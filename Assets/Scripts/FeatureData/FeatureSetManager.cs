@@ -3,7 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using VolumeData;
 using UnityEngine;
-
+using VoTableReader;
 
 namespace DataFeatures
 {
@@ -137,27 +137,14 @@ namespace DataFeatures
         }
 
         // Creates FeatureSetRenderer filled with Features from file
-        public FeatureSetRenderer ImportFeatureSet()
+        public FeatureSetRenderer ImportFeatureSet(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable)
         {
             FeatureSetRenderer featureSetRenderer = null;
-            if (FeatureFileToLoad == "")
-            {
-                Debug.Log("Please enter path to feature file.");
-                return featureSetRenderer;
-            }
-
-            if (FeatureMappingFile == "")
-            {
-                Debug.Log("Please enter path to feature mapping file.");
-                return featureSetRenderer;
-            }
-
             VolumeDataSetRenderer volumeRenderer = GetComponentInParent<VolumeDataSetRenderer>();
             Vector3 CubeDimensions = volumeRenderer.GetCubeDimensions();
-
             featureSetRenderer = Instantiate(FeatureSetRendererPrefab, new Vector3(0, 0, 0), Quaternion.identity);
-            var indexSlash = FeatureFileToLoad.LastIndexOf("/", StringComparison.InvariantCulture) + 1;
-            featureSetRenderer.name = FeatureFileToLoad.Substring(indexSlash);
+            //var indexSlash = FeatureFileToLoad.LastIndexOf("/", StringComparison.InvariantCulture) + 1;
+            //featureSetRenderer.name = FeatureFileToLoad.Substring(indexSlash);
             featureSetRenderer.transform.SetParent(transform, false);
             // Move BLC to (0,0,0)
             featureSetRenderer.transform.localPosition -= 0.5f * Vector3.one;
@@ -165,7 +152,7 @@ namespace DataFeatures
             // Shift by half a voxel (because voxel center has integer coordinates, not corner)
             featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
 
-            featureSetRenderer.SpawnFeaturesFromFile(FeatureFileToLoad, Path.Combine(Application.streamingAssetsPath, FeatureMappingFile));
+            featureSetRenderer.SpawnFeaturesFromVOTable(mapping, voTable);
             _featureSetList.Add(featureSetRenderer);
             if (_activeFeatureSetRenderer == null)
                 _activeFeatureSetRenderer = featureSetRenderer;

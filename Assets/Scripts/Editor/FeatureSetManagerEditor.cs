@@ -20,7 +20,7 @@ public class FeatureSetManagerEditor : Editor
         {
             if (GUILayout.Button("Import Feature Set"))
             {
-                featureSetManager.ImportFeatureSet();
+                Debug.Log("Ability is currently disabled!");
             }
 
             EditorGUILayout.Space();
