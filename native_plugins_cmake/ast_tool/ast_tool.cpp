@@ -68,14 +68,6 @@ int GetAltSpecSet(AstFrameSet* frameSetPtr, AstFrameSet** specFrameSet, const ch
         return 1;
     }
     AstFrameSet* newFrameSet = static_cast<AstFrameSet*> astCopy(frameSetPtr);
-    //AstCmpFrame* cmpFrameFrom = static_cast<AstCmpFrame*>(astGetFrame(frameSetPtr, 1));
-    //AstCmpFrame* cmpFrameTo = nullptr;
-    //cmpFrameTo = static_cast<AstCmpFrame*> astCopy(frameSetPtr);
-    //if (!cmpFrameTo)
-    //{
-    //    return 1;
-    //}
-
     char buffer[128];
     if (specSysTo) {
         snprintf(buffer, sizeof(buffer), "System(3)=%s", specSysTo);
@@ -89,12 +81,8 @@ int GetAltSpecSet(AstFrameSet* frameSetPtr, AstFrameSet** specFrameSet, const ch
         snprintf(buffer, sizeof(buffer), "StdOfRest(3)=%s", specRestTo);
         astSet(newFrameSet, buffer);
     }
-
-    //AstFrameSet *cvt;
-    //cvt = static_cast<AstFrameSet*>astConvert(cmpFrameFrom, cmpFrameTo, "");
     astShow(newFrameSet);
     *specFrameSet = newFrameSet;
-
     if (!astOK)
     {
         astClearStatus;

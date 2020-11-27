@@ -672,6 +672,16 @@ namespace VolumeData
             }
         }
 
+        public IntPtr GetAstFrame()
+        {
+            return _dataSet.AstFrameSet;
+        }
+
+        public string GetStdOfRest()
+        {
+            return _dataSet.GetStdOfRest();
+        }
+
         public void ResetRestFrequency()
         {
             if (_dataSet.HasFitsRestFrequency)

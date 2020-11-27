@@ -143,8 +143,6 @@ namespace DataFeatures
             VolumeDataSetRenderer volumeRenderer = GetComponentInParent<VolumeDataSetRenderer>();
             Vector3 CubeDimensions = volumeRenderer.GetCubeDimensions();
             featureSetRenderer = Instantiate(FeatureSetRendererPrefab, new Vector3(0, 0, 0), Quaternion.identity);
-            //var indexSlash = FeatureFileToLoad.LastIndexOf("/", StringComparison.InvariantCulture) + 1;
-            //featureSetRenderer.name = FeatureFileToLoad.Substring(indexSlash);
             featureSetRenderer.transform.SetParent(transform, false);
             // Move BLC to (0,0,0)
             featureSetRenderer.transform.localPosition -= 0.5f * Vector3.one;

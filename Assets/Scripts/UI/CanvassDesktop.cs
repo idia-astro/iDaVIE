@@ -746,8 +746,6 @@ public class CanvassDesktop : MonoBehaviour
                 _sourceRowObjects[i].transform.Find("Coord_dropdown").gameObject.GetComponent<TMP_Dropdown>().value = 0;
             }
         }
-        Debug.Log("Row " + sourceIndex.ToString() + " changed mapping to " + option.ToString());
-
     }
 
     private bool AreMappingsIncompatible(SourceMappingOptions option1, SourceMappingOptions option2)
