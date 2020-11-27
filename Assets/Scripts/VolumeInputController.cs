@@ -784,10 +784,6 @@ public class VolumeInputController : MonoBehaviour
         var cursorPosWorldSpace = _handTransforms[PrimaryHandIndex].position;
         var activeBrushSize = (currentState == InteractionState.Painting || currentState == InteractionState.IdlePainting) ? BrushSize : 1;
         dataSet.SetCursorPosition(cursorPosWorldSpace, activeBrushSize);
-        if (dataSet.CursorSource != 0)
-        {
-            BrushValue = dataSet.CursorSource;
-        }
 
         if (currentState == InteractionState.Painting)
         {
@@ -1070,10 +1066,28 @@ public class VolumeInputController : MonoBehaviour
     public void AddNewSource()
     {
         BrushValue = NewSourceValue;
+        AdditiveBrush = true;
         if (ActiveDataSet)
         {
             ActiveDataSet.HighlightedSource = NewSourceValue;
         }
         NewSourceValue++;
+    }
+
+    public void UpdateMaskValue()
+    {
+        if (ActiveDataSet)
+        {
+            if (ActiveDataSet.CursorSource != 0)
+            {
+                BrushValue = ActiveDataSet.CursorSource;
+                ActiveDataSet.HighlightedSource = BrushValue;
+                AdditiveBrush = true;
+            }
+            else
+            {
+                AdditiveBrush = false;
+            }
+        }
     }
 }

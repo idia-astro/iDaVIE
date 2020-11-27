@@ -68,6 +68,8 @@ namespace VolumeData
             public static readonly string LogScale = "log scale";
             public static readonly string SqrtScale = "square root scale";
             public static readonly string AddNewSource = "add new source";
+            public static readonly string SetMaskValue = "set mask value";
+            public static readonly string Undo = "undo";
 
             public static readonly string[] All =
             {
@@ -75,7 +77,7 @@ namespace VolumeData
                 ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ColormapTurbo, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
                 PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
                 ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline, TakePicture, CursorInfo, LinearScale,
-                LogScale, SqrtScale, AddNewSource
+                LogScale, SqrtScale, AddNewSource, SetMaskValue, Undo
             };
         }
    
@@ -262,6 +264,14 @@ namespace VolumeData
             else if (args == Keywords.AddNewSource)
             {
                 AddNewSource();
+            }
+            else if (args == Keywords.SetMaskValue)
+            {
+                SetMaskValue();
+            }
+            else if (args == Keywords.Undo)
+            {
+                Undo();
             }
         }
 
@@ -465,6 +475,16 @@ namespace VolumeData
         public void AddNewSource()
         {
             _volumeInputController.AddNewSource();
+        }
+
+        public void SetMaskValue()
+        {
+            _volumeInputController.UpdateMaskValue();
+        }
+
+        public void Undo()
+        {
+            _activeDataSet?.Mask?.UndoBrushStroke();
         }
 
         public VolumeDataSetRenderer getFirstActiveDataSet()

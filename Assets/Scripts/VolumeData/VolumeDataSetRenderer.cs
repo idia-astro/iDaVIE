@@ -152,6 +152,9 @@ namespace VolumeData
 
         private VolumeDataSet _dataSet = null;
         private VolumeDataSet _maskDataSet = null;
+        public VolumeDataSet Mask => _maskDataSet;
+        public VolumeDataSet Data => _dataSet;
+        
         private bool _dirtyMask = false;
         public bool HasWCS { get; private set; }
 
@@ -367,10 +370,6 @@ namespace VolumeData
                     if (_maskDataSet != null)
                     {
                         CursorSource = _maskDataSet.GetMaskValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
-                        if (CursorSource != 0)
-                        {
-                            HighlightedSource = CursorSource;
-                        }
                     }
                     else
                     {
