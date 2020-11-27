@@ -18,7 +18,7 @@ public class MomentMapMenuController : MonoBehaviour
             if (getFirstActiveDataSet() != null)
             {
                 VolumeDataSet dataSet = getFirstActiveDataSet().GetDataSet();
-
+                getFirstActiveDataSet().GetMomentMapRenderer().UpdatePlotWindow();
             }
         }
     }
@@ -29,6 +29,14 @@ public class MomentMapMenuController : MonoBehaviour
     {
         
     }
+
+
+    void OnEnable()
+    {
+       
+    }
+
+
 
     public void IncreaseMomentMapThreshold()
     {

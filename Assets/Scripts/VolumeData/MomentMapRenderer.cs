@@ -85,6 +85,7 @@ namespace VolumeData
             if (_cachedMomentMapThreshold != MomentMapThreshold)
             {
                 CalculateMomentMaps(MomentMapThreshold);
+               
             }
         }
 
@@ -137,6 +138,7 @@ namespace VolumeData
             int threadGroupsY = Mathf.CeilToInt(_dataCube.height / ((float) (_kernelThreadGroupY)));
             _computeShader.Dispatch(activeKernelIndex, threadGroupsX, threadGroupsY, 1);
 
+            UpdatePlotWindow();
             return true;
         }
 
@@ -149,38 +151,35 @@ namespace VolumeData
             texture.Create();
             return texture;
         }
-        
 
-        public void OnGUI()
+        public void UpdatePlotWindow()
         {
-            if (Moment0Map != null)
+            if (Moment0Map != null && Moment1Map != null )
             {
 
-          
+
                 // Run colormapping compute shader
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.InputTexture, Moment0Map);
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.OutputTexture, ImageOutput);
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.ColormapTexture, _colormapTexture);
-                
+
                 // Default MomentOne bounds: 0 -> D - 1
                 _computeShader.SetFloat(MaterialID.ClampMin, 0.0f);
                 _computeShader.SetFloat(MaterialID.ClampMax, DataCube.depth - 1);
                 float offset = (ColorMapEnum.Turbo.GetHashCode() + 0.5f) / ColorMapUtils.NumColorMaps;
                 _computeShader.SetFloat(MaterialID.ColormapOffset, offset);
-                int threadGroupsX = Mathf.CeilToInt(_dataCube.width / ((float) (_kernelThreadGroupX)));
-                int threadGroupsY = Mathf.CeilToInt(_dataCube.height / ((float) (_kernelThreadGroupY)));
+                int threadGroupsX = Mathf.CeilToInt(_dataCube.width / ((float)(_kernelThreadGroupX)));
+                int threadGroupsY = Mathf.CeilToInt(_dataCube.height / ((float)(_kernelThreadGroupY)));
                 _computeShader.Dispatch(_colormapKernelIndex, threadGroupsX, threadGroupsY, 1);
 
-              //  GUI.DrawTexture(new Rect(0, 0, ImageOutput.width * 3, ImageOutput.height * 3), ImageOutput);
+                //  GUI.DrawTexture(new Rect(0, 0, ImageOutput.width * 3, ImageOutput.height * 3), ImageOutput);
 
-                
-                Texture2D tex = new Texture2D(ImageOutput.width , ImageOutput.height);
+                Texture2D tex = new Texture2D(ImageOutput.width, ImageOutput.height);
                 RenderTexture.active = ImageOutput;
                 tex.ReadPixels(new Rect(0, 0, ImageOutput.width, ImageOutput.height), 0, 0);
                 tex.Apply();
                 Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(tex.width, tex.height));
                 momentMapMenuController.gameObject.transform.Find("Map_container").gameObject.transform.Find("MomentMap0").GetComponent<Image>().sprite = sprite;
-
 
 
                 // Run colormapping compute shader
@@ -196,8 +195,8 @@ namespace VolumeData
                 threadGroupsX = Mathf.CeilToInt(_dataCube.width / ((float)(_kernelThreadGroupX)));
                 threadGroupsY = Mathf.CeilToInt(_dataCube.height / ((float)(_kernelThreadGroupY)));
                 _computeShader.Dispatch(_colormapKernelIndex, threadGroupsX, threadGroupsY, 1);
-        
-                
+
+
                 Texture2D tex1 = new Texture2D(ImageOutput.width, ImageOutput.height);
                 RenderTexture.active = ImageOutput;
                 tex1.ReadPixels(new Rect(0, 0, ImageOutput.width, ImageOutput.height), 0, 0);
@@ -208,10 +207,10 @@ namespace VolumeData
 
 
                 momentMapMenuController.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_2").gameObject.transform.Find("ThresholdValue").GetComponent<Text>().text = MomentMapThreshold.ToString();
-               
+
 
             }
         }
-      
+
     }
 }
