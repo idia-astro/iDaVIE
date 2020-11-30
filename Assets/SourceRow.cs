@@ -51,22 +51,5 @@ public class SourceRow : MonoBehaviour
         string[] optionNames = System.Enum.GetNames(typeof(SourceMappingOptions));
         CurrentMapping = (SourceMappingOptions) coord;
         CanvassDesktopParent.ChangeSourceMapping(SourceIndex, CurrentMapping);
-        
-        //var dd = transform.Find("Coord_dropdown").gameObject.GetComponent<Dropdown>();
-        /*
-        Transform t = transform;
-        GameObject canvasDesktop = null;
-        while (t.parent != null)
-        {
-        if (t.parent.name == "CanvassDesktop")
-        {
-            canvasDesktop = t.parent.gameObject;
-            break;
-        }
-        t = t.parent.transform;
-        }
-        */
-        //if (canvasDesktop != null)
-        //GetComponentInParent<CanvassDesktop>().MapCoord(transform.Find("Name").GetComponent<TextMeshProUGUI>().text, dd.options[coord].text);
     }
 }
