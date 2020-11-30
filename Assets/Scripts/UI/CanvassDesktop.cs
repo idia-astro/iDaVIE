@@ -626,25 +626,6 @@ public class CanvassDesktop : MonoBehaviour
             _sourceRowObjects[i] = row;
         }
         sourcesPanelContent.gameObject.transform.Find("MappingFile_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
-        
-        /*
-        string tableContent = "";
-        foreach (var col in voTable.Columns)
-        {
-            tableContent += col.Key + "\t";
-        }
-        foreach (var row in voTable.Rows)
-        {
-            tableContent += "\n";
-            foreach (var col in row.ColumnData)
-            {
-                tableContent += col.ToString() + "\t"; 
-            }
-        }
-        sourcesPanelContent.gameObject.transform.Find("SourcesInfo_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Sources").GetComponent<TextMeshProUGUI>().text = tableContent;
-        */
-        //add feature info to gui image
-        //set the path of selected file to the ui
     }
 
     public void BrowseMappingFile()
