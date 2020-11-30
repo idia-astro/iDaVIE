@@ -608,6 +608,12 @@ public class CanvassDesktop : MonoBehaviour
         sourcesPanelContent.gameObject.transform.Find("SourcesFile_container").gameObject.transform.Find("SourcesFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(path);
         VoTable voTable = FeatureMapper.GetVOTableFromFile(path); //be more flexible with file input (ascii)
         Transform sourceBody = sourcesPanelContent.gameObject.transform.Find("SourcesInfo_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform;
+        if (_sourceRowObjects != null)
+        {
+            foreach (var row in _sourceRowObjects)
+                Destroy(row);
+            _sourceRowObjects = null;
+        }
         _sourceRowObjects = new GameObject[voTable.Column.Count];
         for (var i = 0; i < voTable.Column.Count; i++)
         {
@@ -651,6 +657,11 @@ public class CanvassDesktop : MonoBehaviour
     private void _browseMappingFile(string path)
     {
         featureMapping = FeatureMapping.GetMappingFromFile(path);
+        foreach (var sourceRowObject in _sourceRowObjects)
+        {
+            var dropdown = sourceRowObject.transform.Find("Coord_dropdown").gameObject.GetComponent<TMP_Dropdown>();
+            dropdown.value = 0;
+        }
         foreach (var sourceRowObject in _sourceRowObjects)
         {
             var sourceRow = sourceRowObject.GetComponent<SourceRow>();
