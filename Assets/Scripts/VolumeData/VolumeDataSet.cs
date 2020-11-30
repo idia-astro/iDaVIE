@@ -258,7 +258,7 @@ namespace VolumeData
                 Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
                 if (histogramPtr != IntPtr.Zero)
                     DataAnalysis.FreeMemory(histogramPtr);
-                volumeDataSet.HasFitsRestFrequency = volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ");
+                volumeDataSet.HasFitsRestFrequency = volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ") || volumeDataSet.HeaderDictionary.ContainsKey("RESTFREQ");
             }
 
             
@@ -282,8 +282,19 @@ namespace VolumeData
             return volumeDataSet;
         }
 
+        public void RecreateFrameSet(double restFreq = 0)
+        {
+            if (AstFrameSet != IntPtr.Zero)
+                AstTool.DeleteObject(AstFrameSet);
+            IntPtr astFrameSet = IntPtr.Zero;
+            if (AstTool.InitAstFrameSet(out astFrameSet, FitsHeader, restFreq) != 0)
+                Debug.Log("Failed to recreate AstFrameSet!");
+            AstFrameSet = astFrameSet; //Need to delete old one?
+        }
         public void CreateAltSpecFrame()
         {
+                if (AstAltSpecSet != IntPtr.Zero)
+                    AstTool.DeleteObject(AstAltSpecSet);
                 IntPtr astAltSpecFrame = IntPtr.Zero;
                 string system, unit;
                 GetAltSpecSystemWithUnit(out system, out unit);
@@ -628,6 +639,15 @@ namespace VolumeData
             {
                 return 0;
             }
+            
+            // Use the cached / current mask array if the cursor location is within the cropped region
+            if (_regionMaskVoxels != null && RegionCube && x >= RegionOffset.x && x < RegionOffset.x + RegionCube.width &&
+                y >= RegionOffset.y && y < RegionOffset.y + RegionCube.height &&
+                z >= RegionOffset.z && z < RegionOffset.z + RegionCube.depth)
+            {
+                var index = (x - RegionOffset.x) + (y - RegionOffset.y) * RegionCube.width + (z - RegionOffset.z) * (RegionCube.width * RegionCube.height);
+                return _regionMaskVoxels[index];
+            }
 
             Int16 val;
             DataAnalysis.GetVoxelInt16Value(FitsData, out val, (int) XDim, (int) YDim, (int) ZDim, x, y, z);
@@ -734,7 +754,7 @@ namespace VolumeData
             _wcsProj = xProj;
         }
 
-        public bool PaintMaskVoxel(Vector3Int coordsRegionSpace, short value)
+        public bool PaintMaskVoxel(Vector3Int coordsRegionSpace, short value, bool addToHistory = true)
         {
             if (coordsRegionSpace.x < 0 || coordsRegionSpace.x >= RegionCube.width || coordsRegionSpace.y < 0 || coordsRegionSpace.y >= RegionCube.height ||
                 coordsRegionSpace.z < 0 ||
@@ -752,13 +772,7 @@ namespace VolumeData
             {
                 return true;
             }
-
-            // Create transaction if it doesn't exist
-            if (CurrentBrushStroke.Voxels == null)
-            {
-                CurrentBrushStroke = new BrushStrokeTransaction(value);
-            }
-
+            
             _regionMaskVoxels[index] = value;
             // convert from int to byte array
             _cachedBrush = BitConverter.GetBytes(value);
@@ -843,8 +857,16 @@ namespace VolumeData
                 }
             }
 
-            CurrentBrushStroke.Voxels.Add(new VoxelEntry(newEntry.Index, currentValue));
 
+            if (addToHistory)
+            {
+                // Create transaction if it doesn't exist
+                if (CurrentBrushStroke.Voxels == null)
+                {
+                    CurrentBrushStroke = new BrushStrokeTransaction(value);
+                }
+                CurrentBrushStroke.Voxels.Add(new VoxelEntry(newEntry.Index, currentValue));
+            }
             return true;
         }
 
@@ -886,6 +908,30 @@ namespace VolumeData
 
             _addedRegionMaskEntries = new List<VoxelEntry>();
             AddedMaskEntryCount = 0;
+        }
+
+        public bool UndoBrushStroke()
+        {
+            if (BrushStrokeHistory.Count > 0)
+            {
+                var lastStroke = BrushStrokeHistory.Last();
+                foreach (var voxel in lastStroke.Voxels)
+                {
+                    var index = voxel.Index;
+                    var x = index % RegionCube.width;
+                    index -= x;
+                    index /= RegionCube.width;
+                    var y = index % RegionCube.height;
+                    index -= y;
+                    var z = index / RegionCube.height;
+                    PaintMaskVoxel(new Vector3Int(x, y, z), (short)voxel.Value, false);
+                    //var index = (x - RegionOffset.x) + (y - RegionOffset.y) * RegionCube.width + (z - RegionOffset.z) * (RegionCube.width * RegionCube.height);
+                }
+                BrushStrokeHistory.RemoveAt(BrushStrokeHistory.Count - 1);
+                return true;
+            }
+
+            return false;
         }
 
         public int CommitMask()
@@ -983,9 +1029,14 @@ namespace VolumeData
 
         public string GetFormattedAltCoord(double val)
         {
+            double xDummy, yDummy, zNorm;
+            if (AstTool.Norm(AstAltSpecSet, 0, 0, val, out xDummy, out yDummy, out zNorm) != 0)
+            {
+                Debug.Log("Error finding normalized alt spec coordinate!");
+            }
             int stringLength = 70;
             StringBuilder coord = new StringBuilder(stringLength);
-            if (AstTool.Format(AstAltSpecSet, 3, val, coord, stringLength) != 0)
+            if (AstTool.Format(AstAltSpecSet, 3, zNorm, coord, stringLength) != 0)
             {
                 Debug.Log("Error finding formatted alt spec coordinate!");
             }

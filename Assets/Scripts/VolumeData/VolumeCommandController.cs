@@ -44,6 +44,7 @@ namespace VolumeData
             public static readonly string ColormapInferno = "color map inferno";
             public static readonly string ColormapViridis = "color map viridis";
             public static readonly string ColormapCubeHelix = "color map cube helix";
+            public static readonly string ColormapTurbo = "color map turbo";
             public static readonly string NextDataSet = "next data set";
             public static readonly string PreviousDataSet = "previous data set";
             public static readonly string CropSelection = "crop selection";
@@ -66,14 +67,17 @@ namespace VolumeData
             public static readonly string LinearScale = "linear scale";            
             public static readonly string LogScale = "log scale";
             public static readonly string SqrtScale = "square root scale";
+            public static readonly string AddNewSource = "add new source";
+            public static readonly string SetMaskValue = "set mask value";
+            public static readonly string Undo = "undo";
 
             public static readonly string[] All =
             {
                 EditThresholdMin, EditThresholdMax, EditZAxis, EditZAxisAlt, SaveThreshold, ResetThreshold, ResetTransform, ColormapPlasma, ColormapRainbow, 
-                ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
+                ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ColormapTurbo, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
                 PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
                 ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline, TakePicture, CursorInfo, LinearScale,
-                LogScale, SqrtScale
+                LogScale, SqrtScale, AddNewSource, SetMaskValue, Undo
             };
         }
    
@@ -173,6 +177,10 @@ namespace VolumeData
             {
                 setColorMap(ColorMapEnum.Cubehelix);
             }
+            else if (args == Keywords.ColormapTurbo)
+            {
+                setColorMap(ColorMapEnum.Turbo);
+            }
             else if (args == Keywords.CropSelection)
             {
                 cropDataSet();
@@ -252,7 +260,19 @@ namespace VolumeData
             else if (args == Keywords.SqrtScale)
             {
                 ChangeScalingType(ScalingType.Sqrt);
-            }            
+            }
+            else if (args == Keywords.AddNewSource)
+            {
+                AddNewSource();
+            }
+            else if (args == Keywords.SetMaskValue)
+            {
+                SetMaskValue();
+            }
+            else if (args == Keywords.Undo)
+            {
+                Undo();
+            }
         }
 
         // Update is called once per frame
@@ -450,6 +470,21 @@ namespace VolumeData
         public void ChangeScalingType(ScalingType scalingType)
         {
             getFirstActiveDataSet().SetScalingType(scalingType);
+        }
+
+        public void AddNewSource()
+        {
+            _volumeInputController.AddNewSource();
+        }
+
+        public void SetMaskValue()
+        {
+            _volumeInputController.UpdateMaskValue();
+        }
+
+        public void Undo()
+        {
+            _activeDataSet?.Mask?.UndoBrushStroke();
         }
 
         public VolumeDataSetRenderer getFirstActiveDataSet()

@@ -10,7 +10,7 @@ extern "C"
 {
 #include "star/ast.h"
 
-DllExport int InitAstFrameSet(AstFrameSet**, const char*);
+DllExport int InitAstFrameSet(AstFrameSet**, const char*, double);
 
 DllExport int GetAstFrame(AstFrameSet*, AstFrame**, int index);
 
