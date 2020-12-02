@@ -469,7 +469,7 @@ namespace VolumeData
 
         public void ChangeScalingType(ScalingType scalingType)
         {
-            getFirstActiveDataSet().SetScalingType(scalingType);
+            getFirstActiveDataSet().ScalingType = scalingType;
         }
 
         public void AddNewSource()

@@ -157,6 +157,8 @@ namespace VolumeData
         
         private bool _dirtyMask = false;
         public bool HasWCS { get; private set; }
+        public IntPtr AstFrame =>_dataSet.AstFrameSet; 
+        public string StdOfRest => _dataSet.GetStdOfRest();
 
 
         private int _currentXFactor, _currentYFactor, _currentZFactor;
@@ -336,11 +338,6 @@ namespace VolumeData
 
             started = true;
 
-        }
-
-        public VolumeDataSet GetDataSet()
-        {
-            return _dataSet;
         }
 
         public void ShiftColorMap(int delta)
@@ -840,11 +837,6 @@ namespace VolumeData
                 }
             }
             FitsReader.FitsCloseFile(cubeFitsPtr, out status);
-        }
-
-        public void SetScalingType(ScalingType scalingType)
-        {
-            ScalingType = scalingType;
         }
 
         public void OnDestroy()

@@ -851,7 +851,7 @@ public class VolumeInputController : MonoBehaviour
 
     private static string GetSelectionString(VolumeDataSetRenderer dataSetRenderer)
     {
-        VolumeDataSet dataSet = dataSetRenderer.GetDataSet();
+        VolumeDataSet dataSet = dataSetRenderer.Data;
 
         var regionMax = Vector3.Max(dataSetRenderer.RegionStartVoxel, dataSetRenderer.RegionEndVoxel);
         var regionMin = Vector3.Min(dataSetRenderer.RegionStartVoxel, dataSetRenderer.RegionEndVoxel);
@@ -894,7 +894,7 @@ public class VolumeInputController : MonoBehaviour
 
     private static string GetFormattedCursorString(VolumeDataSetRenderer dataSetRenderer)
     {
-        VolumeDataSet dataSet = dataSetRenderer.GetDataSet();
+        VolumeDataSet dataSet = dataSetRenderer.Data;
 
         var voxelCoordinate = dataSetRenderer.CursorVoxel;
 

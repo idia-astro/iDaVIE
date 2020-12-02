@@ -33,7 +33,7 @@ public class HistogramMenuController : MonoBehaviour
 
             if (getFirstActiveDataSet() != null)
             {
-                VolumeDataSet dataSet = getFirstActiveDataSet().GetDataSet();
+                VolumeDataSet dataSet = getFirstActiveDataSet().Data;
              
                 minText.text = histogramHelper.CurrentMin.ToString();  
                 maxText.text = histogramHelper.CurrentMax.ToString();
@@ -45,22 +45,22 @@ public class HistogramMenuController : MonoBehaviour
     {
         if (DecreaseMinScaleButton.gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
         {
-           minText.text = Mathf.Clamp(float.Parse(minText.text) - 0.01f, getFirstActiveDataSet().GetDataSet().MinValue* 2, float.Parse(maxText.text)).ToString(); 
+           minText.text = Mathf.Clamp(float.Parse(minText.text) - 0.01f, getFirstActiveDataSet().Data.MinValue* 2, float.Parse(maxText.text)).ToString(); 
         }
 
         if (DecreaseMaxScaleButton.gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
         {
-            maxText.text = Mathf.Clamp(float.Parse(maxText.text) - 0.01f, float.Parse(minText.text), getFirstActiveDataSet().GetDataSet().MaxValue* 2).ToString();
+            maxText.text = Mathf.Clamp(float.Parse(maxText.text) - 0.01f, float.Parse(minText.text), getFirstActiveDataSet().Data.MaxValue* 2).ToString();
         }
 
         if (IncreaseMinScaleButton.gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
         {
-            minText.text = Mathf.Clamp(float.Parse(minText.text) + 0.01f, getFirstActiveDataSet().GetDataSet().MinValue * 2, float.Parse(maxText.text)).ToString();
+            minText.text = Mathf.Clamp(float.Parse(minText.text) + 0.01f, getFirstActiveDataSet().Data.MinValue * 2, float.Parse(maxText.text)).ToString();
         }
 
         if (IncreaseMaxScaleButton.gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
         {
-            maxText.text = Mathf.Clamp(float.Parse(maxText.text) + 0.01f, float.Parse(minText.text), getFirstActiveDataSet().GetDataSet().MaxValue * 2).ToString();
+            maxText.text = Mathf.Clamp(float.Parse(maxText.text) + 0.01f, float.Parse(minText.text), getFirstActiveDataSet().Data.MaxValue * 2).ToString();
         }
 
     }
@@ -77,14 +77,14 @@ public class HistogramMenuController : MonoBehaviour
 
     public void UpdateButtonHandler()
     {
-      VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().GetDataSet(), float.Parse(minText.text), float.Parse(maxText.text));
-      histogramHelper.CreateHistogramImg(getFirstActiveDataSet().GetDataSet().Histogram, getFirstActiveDataSet().GetDataSet().HistogramBinWidth, float.Parse(minText.text), float.Parse(maxText.text), getFirstActiveDataSet().GetDataSet().MeanValue, getFirstActiveDataSet().GetDataSet().StanDev);
+      VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().Data, float.Parse(minText.text), float.Parse(maxText.text));
+      histogramHelper.CreateHistogramImg(getFirstActiveDataSet().Data.Histogram, getFirstActiveDataSet().Data.HistogramBinWidth, float.Parse(minText.text), float.Parse(maxText.text), getFirstActiveDataSet().Data.MeanValue, getFirstActiveDataSet().Data.StanDev);
     }
 
     public void ResetButtonHandler()
     {
-        VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().GetDataSet(), getFirstActiveDataSet().GetDataSet().MinValue, getFirstActiveDataSet().GetDataSet().MaxValue);
-        histogramHelper.CreateHistogramImg(getFirstActiveDataSet().GetDataSet().Histogram, getFirstActiveDataSet().GetDataSet().HistogramBinWidth, getFirstActiveDataSet().GetDataSet().MinValue, getFirstActiveDataSet().GetDataSet().MaxValue, getFirstActiveDataSet().GetDataSet().MeanValue, getFirstActiveDataSet().GetDataSet().StanDev);
+        VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().Data, getFirstActiveDataSet().Data.MinValue, getFirstActiveDataSet().Data.MaxValue);
+        histogramHelper.CreateHistogramImg(getFirstActiveDataSet().Data.Histogram, getFirstActiveDataSet().Data.HistogramBinWidth, getFirstActiveDataSet().Data.MinValue, getFirstActiveDataSet().Data.MaxValue, getFirstActiveDataSet().Data.MeanValue, getFirstActiveDataSet().Data.StanDev);
     }
 
     public void UpdateUI(float min, float max, Sprite img)
