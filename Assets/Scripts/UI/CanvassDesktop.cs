@@ -848,7 +848,7 @@ public class CanvassDesktop : MonoBehaviour
 
     private void populateStatsValue()
     {
-        VolumeDataSet volumeDataSet = getFirstActiveDataSet().GetDataSet();
+        VolumeDataSet volumeDataSet = getFirstActiveDataSet().Data;
 
         Transform stats = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats");
         stats.gameObject.transform.Find("Line_min").gameObject.transform.Find("InputField_min").GetComponent<TMP_InputField>().text = volumeDataSet.MinValue.ToString();
@@ -884,7 +884,7 @@ public class CanvassDesktop : MonoBehaviour
             .gameObject.transform.Find("InputField_min").GetComponent<TMP_InputField>().text);
         float histMax = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_max")
             .gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text);
-        VolumeDataSet volumeDataSet = getFirstActiveDataSet().GetDataSet();
+        VolumeDataSet volumeDataSet = getFirstActiveDataSet().Data;
         histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, histMin, histMax, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
     }
 
@@ -893,14 +893,14 @@ public class CanvassDesktop : MonoBehaviour
         statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats")
             .gameObject.transform.Find("Line_sigma").gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value = 0;
 
-        VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().GetDataSet(), getFirstActiveDataSet().GetDataSet().MinValue, getFirstActiveDataSet().GetDataSet().MaxValue);
+        VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().Data, getFirstActiveDataSet().Data.MinValue, getFirstActiveDataSet().Data.MaxValue);
         populateStatsValue();
     }
 
     public void UpdateScaleMin(String min)
     {
         VolumeDataSetRenderer volumeDataSetRenderer = getFirstActiveDataSet();
-        VolumeDataSet volumeDataSet = volumeDataSetRenderer.GetDataSet();
+        VolumeDataSet volumeDataSet = volumeDataSetRenderer.Data;
         float newMin = float.Parse(min);
         float histMin = newMin;
         float histMax = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_max")
@@ -915,7 +915,7 @@ public class CanvassDesktop : MonoBehaviour
     public void UpdateScaleMax(String max)
     {
         VolumeDataSetRenderer volumeDataSetRenderer = getFirstActiveDataSet();
-        VolumeDataSet volumeDataSet = volumeDataSetRenderer.GetDataSet();
+        VolumeDataSet volumeDataSet = volumeDataSetRenderer.Data;
         float newMax = float.Parse(max);
         float histMin = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_min")
             .gameObject.transform.Find("InputField_min").GetComponent<TMP_InputField>().text);

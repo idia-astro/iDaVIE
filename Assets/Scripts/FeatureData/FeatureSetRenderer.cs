@@ -76,7 +76,7 @@ namespace DataFeatures
             coordTypes sourceType = coordTypes.cartesian;
             var volumeDataSetRenderer = GetComponentInParent<VolumeDataSetRenderer>();
             int[] posIndices = new int[3];
-            IntPtr volumeAstFrame = volumeDataSetRenderer.GetAstFrame();
+            IntPtr volumeAstFrame = volumeDataSetRenderer.AstFrame;
             string[] colNames = new string[voTable.Column.Count];
             for (int i = 0; i < voTable.Column.Count; i++)
                 colNames[i] = voTable.Column[i].Name;
@@ -93,19 +93,19 @@ namespace DataFeatures
                 if (setCoordinates.Contains(SourceMappingOptions.Velo))
                 {
                     sourceType = coordTypes.velz;
-                    AstTool.GetAltSpecSet(volumeAstFrame, out _astFrameSet, new StringBuilder("VOPT"), new StringBuilder("m/s"), new StringBuilder(volumeDataSetRenderer.GetStdOfRest()));
+                    AstTool.GetAltSpecSet(volumeAstFrame, out _astFrameSet, new StringBuilder("VOPT"), new StringBuilder("m/s"), new StringBuilder(volumeDataSetRenderer.StdOfRest));
                     posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Velo]); 
                 }
                 else if (setCoordinates.Contains(SourceMappingOptions.Freq))
                 {
                     sourceType = coordTypes.freqz;
-                    AstTool.GetAltSpecSet(volumeAstFrame, out _astFrameSet, new StringBuilder("FREQ"), new StringBuilder("Hz"), new StringBuilder(volumeDataSetRenderer.GetStdOfRest()));
+                    AstTool.GetAltSpecSet(volumeAstFrame, out _astFrameSet, new StringBuilder("FREQ"), new StringBuilder("Hz"), new StringBuilder(volumeDataSetRenderer.StdOfRest));
                     posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Freq]); 
                 }
                 else if (setCoordinates.Contains(SourceMappingOptions.Redshift))
                 {
                     sourceType = coordTypes.redz;
-                    AstTool.GetAltSpecSet(volumeAstFrame, out _astFrameSet, new StringBuilder("REDSHIFT"), new StringBuilder(""), new StringBuilder(volumeDataSetRenderer.GetStdOfRest()));
+                    AstTool.GetAltSpecSet(volumeAstFrame, out _astFrameSet, new StringBuilder("REDSHIFT"), new StringBuilder(""), new StringBuilder(volumeDataSetRenderer.StdOfRest));
                     posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Redshift]); 
                 }
             }

@@ -9,7 +9,6 @@ public enum SourceMappingOptions
     none, Name, X, Y, Z, Ra, Dec, Freq, Velo, Redshift, Xmin, Xmax, Ymin, Ymax, Zmin, Zmax
 }
 
-
 public class SourceRow : MonoBehaviour
 {
 
@@ -18,32 +17,20 @@ public class SourceRow : MonoBehaviour
     public SourceMappingOptions CurrentMapping = SourceMappingOptions.none;
     public CanvassDesktop CanvassDesktopParent;
 
-
-    // Start is called before the first frame update
     void Start()
     {
         CanvassDesktopParent = GetComponentInParent<CanvassDesktop>();
-        //var name = transform.Find("Source_name").gameObject.GetComponent<TextMeshProUGUI>();
-        //var name = transform.Find("Source_name").gameObject.GetComponent<TextMeshProUGUI>();
-        //SourceName = name.text;
         PopulateDropDown();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     void PopulateDropDown()
     {
         string[] optionNames = System.Enum.GetNames(typeof(SourceMappingOptions));
         optionNames[0] = "";
-        //List<string> names =
-        var dd = transform.Find("Coord_dropdown").gameObject.GetComponent<TMP_Dropdown>();
-        dd.ClearOptions();
-        dd.AddOptions(new List<string>(optionNames));
-        dd.RefreshShownValue();
+        var dropdown = transform.Find("Coord_dropdown").gameObject.GetComponent<TMP_Dropdown>();
+        dropdown.ClearOptions();
+        dropdown.AddOptions(new List<string>(optionNames));
+        dropdown.RefreshShownValue();
     }
 
     public void MapCoordInParent(int coord)
