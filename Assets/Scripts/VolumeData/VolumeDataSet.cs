@@ -646,7 +646,7 @@ namespace VolumeData
                 y >= RegionOffset.y && y < RegionOffset.y + RegionCube.height &&
                 z >= RegionOffset.z && z < RegionOffset.z + RegionCube.depth)
             {
-                var index = (x - RegionOffset.x) + (y - RegionOffset.y) * RegionCube.width + (z - RegionOffset.z) * (RegionCube.width * RegionCube.height);
+                var index = IndexFromCoords(x, y, z);
                 return _regionMaskVoxels[index];
             }
 
@@ -920,14 +920,7 @@ namespace VolumeData
                 var lastStroke = BrushStrokeHistory.Last();
                 foreach (var voxel in lastStroke.Voxels)
                 {
-                    var index = voxel.Index;
-                    var x = index % RegionCube.width;
-                    index -= x;
-                    index /= RegionCube.width;
-                    var y = index % RegionCube.height;
-                    index -= y;
-                    var z = index / RegionCube.height;
-                    PaintMaskVoxel(new Vector3Int(x, y, z), (short)voxel.Value, false);
+                    PaintMaskVoxel(CoordsFromIndex(voxel.Index), (short)voxel.Value, false);
                 }
                 if (BrushStrokeRedoQueue == null)
                 {
@@ -948,14 +941,7 @@ namespace VolumeData
                 var nextStroke = BrushStrokeRedoQueue.Last();
                 foreach (var voxel in nextStroke.Voxels)
                 {
-                    var index = voxel.Index;
-                    var x = index % RegionCube.width;
-                    index -= x;
-                    index /= RegionCube.width;
-                    var y = index % RegionCube.height;
-                    index -= y;
-                    var z = index / RegionCube.height;
-                    PaintMaskVoxel(new Vector3Int(x, y, z), (short)nextStroke.NewValue, false);
+                    PaintMaskVoxel(CoordsFromIndex(voxel.Index), (short)nextStroke.NewValue, false);
                 }
                 if (BrushStrokeHistory == null)
                 {
@@ -968,6 +954,22 @@ namespace VolumeData
             }
 
             return false;
+        }
+
+        public int IndexFromCoords(int x, int y, int z)
+        {
+            return (x - RegionOffset.x) + (y - RegionOffset.y) * RegionCube.width + (z - RegionOffset.z) * (RegionCube.width * RegionCube.height);
+        }
+
+        public Vector3Int CoordsFromIndex(int index)
+        {
+            var x = index % RegionCube.width;
+            index -= x;
+            index /= RegionCube.width;
+            var y = index % RegionCube.height;
+            index -= y;
+            var z = index / RegionCube.height;
+            return new Vector3Int(x, y, z);
         }
 
         public int CommitMask()
