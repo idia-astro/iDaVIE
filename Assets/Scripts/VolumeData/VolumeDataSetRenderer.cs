@@ -129,6 +129,7 @@ namespace VolumeData
         public Vector3Int CursorVoxel { get; private set; }
         public float CursorValue { get; private set; }
         public Int16 CursorSource { get; private set; }
+        public Int16 HighlightedSource;
         public Vector3Int RegionStartVoxel { get; private set; }
         public Vector3Int RegionEndVoxel { get; private set; }
 
@@ -152,9 +153,14 @@ namespace VolumeData
 
         private VolumeDataSet _dataSet = null;
         private VolumeDataSet _maskDataSet = null;
+        public VolumeDataSet Mask => _maskDataSet;
+        public VolumeDataSet Data => _dataSet;
+        
         private bool _dirtyMask = false;
 
         public bool HasWCS { get; private set; }
+        public IntPtr AstFrame =>_dataSet.AstFrameSet; 
+        public string StdOfRest => _dataSet.GetStdOfRest();
 
 
         private int _currentXFactor, _currentYFactor, _currentZFactor;
@@ -212,6 +218,7 @@ namespace VolumeData
             public static readonly int MaskVoxelOffsets = Shader.PropertyToID("MaskVoxelOffsets");
             public static readonly int MaskVoxelColor = Shader.PropertyToID("MaskVoxelColor");
             public static readonly int ModelMatrix = Shader.PropertyToID("ModelMatrix");
+            public static readonly int HighlightedSource = Shader.PropertyToID("HighlightedSource");
         }
 
         #endregion
@@ -340,11 +347,6 @@ namespace VolumeData
 
             started = true;
 
-        }
-
-        public VolumeDataSet GetDataSet()
-        {
-            return _dataSet;
         }
 
         public void ShiftColorMap(int delta)
@@ -644,6 +646,7 @@ namespace VolumeData
                 _materialInstance.SetInt(MaterialID.MaskMode, MaskMode.GetHashCode());
                 _maskMaterialInstance.SetFloat(MaterialID.MaskVoxelSize, MaskVoxelSize);
                 _maskMaterialInstance.SetColor(MaterialID.MaskVoxelColor, MaskVoxelColor);
+                _maskMaterialInstance.SetInt(MaterialID.HighlightedSource, HighlightedSource);
 
                 // Calculate and update voxel corner offsets
                 var offsets = new Vector4[4];
@@ -849,11 +852,6 @@ namespace VolumeData
                 }
             }
             FitsReader.FitsCloseFile(cubeFitsPtr, out status);
-        }
-
-        public void SetScalingType(ScalingType scalingType)
-        {
-            ScalingType = scalingType;
         }
 
         public void OnDestroy()

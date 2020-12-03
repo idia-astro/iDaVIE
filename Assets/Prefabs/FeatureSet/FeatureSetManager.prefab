@@ -47,6 +47,6 @@ MonoBehaviour:
     type: 3}
   FeatureAnchorPrefab: {fileID: 5638164140047356293, guid: 97bb79f35f5f771448220a8190150ec5,
     type: 3}
-  FeatureFileToLoad: Data/DataFeatures/newcat.ascii
-  FeatureMappingFile: Data/DataFeatures/sofia_list.json
+  FeatureFileToLoad: 
+  FeatureMappingFile: DataMaps/sofia_list.json
   OutputFile: 

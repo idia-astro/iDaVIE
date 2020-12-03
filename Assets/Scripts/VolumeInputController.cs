@@ -83,6 +83,7 @@ public class VolumeInputController : MonoBehaviour
     public bool AdditiveBrush = true;
     public int BrushSize = 1;
     public short BrushValue = 1;
+    public short NewSourceValue = 1000;
     
     private Player _player;
     private VRHand[] _hands;
@@ -850,7 +851,7 @@ public class VolumeInputController : MonoBehaviour
 
     private static string GetSelectionString(VolumeDataSetRenderer dataSetRenderer)
     {
-        VolumeDataSet dataSet = dataSetRenderer.GetDataSet();
+        VolumeDataSet dataSet = dataSetRenderer.Data;
 
         var regionMax = Vector3.Max(dataSetRenderer.RegionStartVoxel, dataSetRenderer.RegionEndVoxel);
         var regionMin = Vector3.Min(dataSetRenderer.RegionStartVoxel, dataSetRenderer.RegionEndVoxel);
@@ -893,7 +894,7 @@ public class VolumeInputController : MonoBehaviour
 
     private static string GetFormattedCursorString(VolumeDataSetRenderer dataSetRenderer)
     {
-        VolumeDataSet dataSet = dataSetRenderer.GetDataSet();
+        VolumeDataSet dataSet = dataSetRenderer.Data;
 
         var voxelCoordinate = dataSetRenderer.CursorVoxel;
 
@@ -1060,5 +1061,33 @@ public class VolumeInputController : MonoBehaviour
             _showCursorInfo = false;
         else
             _showCursorInfo = true;
+    }
+
+    public void AddNewSource()
+    {
+        BrushValue = NewSourceValue;
+        AdditiveBrush = true;
+        if (ActiveDataSet)
+        {
+            ActiveDataSet.HighlightedSource = NewSourceValue;
+        }
+        NewSourceValue++;
+    }
+
+    public void UpdateMaskValue()
+    {
+        if (ActiveDataSet)
+        {
+            if (ActiveDataSet.CursorSource != 0)
+            {
+                BrushValue = ActiveDataSet.CursorSource;
+                ActiveDataSet.HighlightedSource = BrushValue;
+                AdditiveBrush = true;
+            }
+            else
+            {
+                AdditiveBrush = false;
+            }
+        }
     }
 }
