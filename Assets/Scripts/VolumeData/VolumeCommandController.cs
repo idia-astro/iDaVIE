@@ -70,6 +70,7 @@ namespace VolumeData
             public static readonly string AddNewSource = "add new source";
             public static readonly string SetMaskValue = "set mask value";
             public static readonly string Undo = "undo";
+            public static readonly string Redo = "redo";
 
             public static readonly string[] All =
             {
@@ -77,7 +78,7 @@ namespace VolumeData
                 ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ColormapTurbo, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
                 PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
                 ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline, TakePicture, CursorInfo, LinearScale,
-                LogScale, SqrtScale, AddNewSource, SetMaskValue, Undo
+                LogScale, SqrtScale, AddNewSource, SetMaskValue, Undo, Redo
             };
         }
    
@@ -272,6 +273,10 @@ namespace VolumeData
             else if (args == Keywords.Undo)
             {
                 Undo();
+            }
+            else if (args == Keywords.Redo)
+            {
+                Redo();
             }
         }
 
@@ -485,6 +490,11 @@ namespace VolumeData
         public void Undo()
         {
             _activeDataSet?.Mask?.UndoBrushStroke();
+        }
+        
+        public void Redo()
+        {
+            _activeDataSet?.Mask?.RedoBrushStroke();
         }
 
         public VolumeDataSetRenderer getFirstActiveDataSet()
