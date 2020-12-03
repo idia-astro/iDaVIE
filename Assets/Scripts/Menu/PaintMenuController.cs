@@ -22,11 +22,6 @@ public class PaintMenuController : MonoBehaviour
 
     private VolumeInputController _volumeInputController = null;
 
-    public float VibrationDuration = 0.25f;
-    public float VibrationFrequency = 100.0f;
-    public float VibrationAmplitude = 1.0f;
-
-
     private string oldSaveText = "";
     // Start is called before the first frame update
     void Start()
@@ -210,14 +205,14 @@ public class PaintMenuController : MonoBehaviour
     {
         _activeDataSet?.SaveMask(true);
 
-        _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
+        _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
         SaveCancel();
     }
 
     public void SaveNewMask()
     { 
         _activeDataSet?.SaveMask(false);
-        _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
+        _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
         SaveCancel();
     }
 
