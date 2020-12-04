@@ -18,10 +18,6 @@ namespace VolumeData
         public QuickMenuController QuickMenuController;
         public PaintMenuController PaintMenuController;
 
-        public float VibrationDuration = 0.25f;
-        public float VibrationFrequency = 100.0f;
-        public float VibrationAmplitude = 1.0f;
-
         private List<VolumeDataSetRenderer> _dataSets;
 
         // Keywords
@@ -70,6 +66,7 @@ namespace VolumeData
             public static readonly string AddNewSource = "add new source";
             public static readonly string SetMaskValue = "set mask value";
             public static readonly string Undo = "undo";
+            public static readonly string Redo = "redo";
 
             public static readonly string[] All =
             {
@@ -77,7 +74,7 @@ namespace VolumeData
                 ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ColormapTurbo, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
                 PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
                 ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline, TakePicture, CursorInfo, LinearScale,
-                LogScale, SqrtScale, AddNewSource, SetMaskValue, Undo
+                LogScale, SqrtScale, AddNewSource, SetMaskValue, Undo, Redo
             };
         }
    
@@ -101,17 +98,17 @@ namespace VolumeData
         // private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
         private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
         {
-            _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
+            _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
 
             StringBuilder builder = new StringBuilder();
             builder.AppendFormat("{0} ({1}){2}", args.text, args.confidence, Environment.NewLine);
             builder.AppendFormat("\tTimestamp: {0}{1}", args.phraseStartTime, Environment.NewLine);
             builder.AppendFormat("\tDuration: {0} seconds{1}", args.phraseDuration.TotalSeconds, Environment.NewLine);
             Debug.Log(builder.ToString());
-            executeVoiceCommand(args.text);
+            ExecuteVoiceCommand(args.text);
         }
 
-        private void executeVoiceCommand(string args)
+        private void ExecuteVoiceCommand(string args)
         { 
             if (args == Keywords.EditThresholdMin)
             {
@@ -272,6 +269,10 @@ namespace VolumeData
             else if (args == Keywords.Undo)
             {
                 Undo();
+            }
+            else if (args == Keywords.Redo)
+            {
+                Redo();
             }
         }
 
@@ -486,6 +487,11 @@ namespace VolumeData
         {
             _activeDataSet?.Mask?.UndoBrushStroke();
         }
+        
+        public void Redo()
+        {
+            _activeDataSet?.Mask?.RedoBrushStroke();
+        }
 
         public VolumeDataSetRenderer getFirstActiveDataSet()
         {
@@ -503,7 +509,7 @@ namespace VolumeData
         public void ExecuteVoiceCommandFromList(string cmd)
         {
             Debug.Log(cmd);
-            executeVoiceCommand(cmd);
+            ExecuteVoiceCommand(cmd);
         }
     }
 }

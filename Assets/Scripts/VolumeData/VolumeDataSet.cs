@@ -50,6 +50,7 @@ namespace VolumeData
         public int AddedMaskEntryCount { get; private set; }
         public BrushStrokeTransaction CurrentBrushStroke { get; private set; }
         public List<BrushStrokeTransaction> BrushStrokeHistory { get; private set; }
+        public List<BrushStrokeTransaction> BrushStrokeRedoQueue { get; private set; }
 
         public string FileName { get; private set; }
         public long XDim { get; private set; }
@@ -87,8 +88,8 @@ namespace VolumeData
         public IntPtr AstAltSpecSet { get; private set; }
         public bool HasFitsRestFrequency { get; private set; } = false;
         public bool HasRestFrequency { get; set; }
-        public double FitsRestFrequency { get; set; }
-
+        public double FitsRestFrequency { get; set;}
+        
         public long[] cubeSize;
 
         public int[] Histogram;
@@ -144,19 +145,16 @@ namespace VolumeData
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
-
             if (FitsReader.FitsCreateHdrPtr(fptr, out volumeDataSet.FitsHeader, out volumeDataSet.NumberHeaderKeys, out status) != 0)
             {
                 Debug.Log("Fits create header pointer failure... code #" + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
                 return null;
             }
-
             if (AstTool.InitAstFrameSet(out astFrameSet, volumeDataSet.FitsHeader) != 0)
             {
                 Debug.Log("Warning... AstFrameSet Error. See Unity Editor logs");
             }
-
             if (!isMask)
             {
                 volumeDataSet.HeaderDictionary = FitsReader.ExtractHeaders(fptr, out status);
@@ -272,7 +270,7 @@ namespace VolumeData
                 Debug.Log($"Found {maskCount} sources");
             }
 
-
+            
             if (volumeDataSet.HasFitsRestFrequency)
             {
                 volumeDataSet.HasRestFrequency = true;
@@ -280,7 +278,6 @@ namespace VolumeData
                 volumeDataSet.FitsRestFrequency = AstTool.GetString(astFrameSet, new StringBuilder("RestFreq"), restFreqSB, restFreqSB.Capacity);
                 volumeDataSet.FitsRestFrequency = double.Parse(restFreqSB.ToString(), CultureInfo.InvariantCulture);
             }
-
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = volumeDataSet.cubeSize[0];
             volumeDataSet.YDim = volumeDataSet.cubeSize[1];
@@ -658,7 +655,7 @@ namespace VolumeData
                 y >= RegionOffset.y && y < RegionOffset.y + RegionCube.height &&
                 z >= RegionOffset.z && z < RegionOffset.z + RegionCube.depth)
             {
-                var index = (x - RegionOffset.x) + (y - RegionOffset.y) * RegionCube.width + (z - RegionOffset.z) * (RegionCube.width * RegionCube.height);
+                var index = IndexFromCoords(x, y, z);
                 return _regionMaskVoxels[index];
             }
 
@@ -880,6 +877,8 @@ namespace VolumeData
                 }
 
                 CurrentBrushStroke.Voxels.Add(new VoxelEntry(newEntry.Index, currentValue));
+                // New brush strokes clear the redo queue
+                BrushStrokeRedoQueue?.Clear();
             }
 
             return true;
@@ -932,22 +931,56 @@ namespace VolumeData
                 var lastStroke = BrushStrokeHistory.Last();
                 foreach (var voxel in lastStroke.Voxels)
                 {
-                    var index = voxel.Index;
-                    var x = index % RegionCube.width;
-                    index -= x;
-                    index /= RegionCube.width;
-                    var y = index % RegionCube.height;
-                    index -= y;
-                    var z = index / RegionCube.height;
-                    PaintMaskVoxel(new Vector3Int(x, y, z), (short) voxel.Value, false);
-                    //var index = (x - RegionOffset.x) + (y - RegionOffset.y) * RegionCube.width + (z - RegionOffset.z) * (RegionCube.width * RegionCube.height);
+                    PaintMaskVoxel(CoordsFromIndex(voxel.Index), (short)voxel.Value, false);
                 }
-
+                if (BrushStrokeRedoQueue == null)
+                {
+                    BrushStrokeRedoQueue = new List<BrushStrokeTransaction>();
+                }
+                BrushStrokeRedoQueue.Add(lastStroke);
                 BrushStrokeHistory.RemoveAt(BrushStrokeHistory.Count - 1);
                 return true;
             }
 
             return false;
+        }
+        
+        public bool RedoBrushStroke()
+        {
+            if (BrushStrokeRedoQueue.Count > 0)
+            {
+                var nextStroke = BrushStrokeRedoQueue.Last();
+                foreach (var voxel in nextStroke.Voxels)
+                {
+                    PaintMaskVoxel(CoordsFromIndex(voxel.Index), (short)nextStroke.NewValue, false);
+                }
+                if (BrushStrokeHistory == null)
+                {
+                    BrushStrokeHistory = new List<BrushStrokeTransaction>();
+                }
+                BrushStrokeHistory.Add(nextStroke);
+                BrushStrokeRedoQueue.RemoveAt(BrushStrokeRedoQueue.Count - 1);
+                
+                return true;
+            }
+
+            return false;
+        }
+
+        public int IndexFromCoords(int x, int y, int z)
+        {
+            return (x - RegionOffset.x) + (y - RegionOffset.y) * RegionCube.width + (z - RegionOffset.z) * (RegionCube.width * RegionCube.height);
+        }
+
+        public Vector3Int CoordsFromIndex(int index)
+        {
+            var x = index % RegionCube.width;
+            index -= x;
+            index /= RegionCube.width;
+            var y = index % RegionCube.height;
+            index -= y;
+            var z = index / RegionCube.height;
+            return new Vector3Int(x, y, z);
         }
 
         public int CommitMask()
