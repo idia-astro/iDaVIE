@@ -152,10 +152,22 @@ public class PaintMenuController : MonoBehaviour
         this.gameObject.transform.Find("BottomPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Decrease brush size (actual: " + _volumeInputController.BrushSize + ")";
     }
 
+    public void UndoBrushStroke()
+    {
+        _volumeInputController.UnoBrushStroke(_volumeInputController.PrimaryHand);
+    }
+
+    public void RedoBrushStroke()
+    {
+        _volumeInputController.RedoBrushStroke(_volumeInputController.PrimaryHand);
+    }
+
+
     public void BrushSizeReset()
     {
         _volumeInputController.ResetBrushSize();
     }
+
 
     public void PaintingAdditive()
     {

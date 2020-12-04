@@ -304,22 +304,34 @@ public class VolumeInputController : MonoBehaviour
     {
         if (fromSource != PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
-            if (ActiveDataSet?.Mask?.UndoBrushStroke() ?? false)
-            {
-                VibrateController(fromSource, 0.1f);
-            }            
+            UnoBrushStroke(fromSource);
         }
+       
     }
     
     private void OnMenuRightPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
+		
         if (fromSource != PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
-            if (ActiveDataSet?.Mask?.RedoBrushStroke() ?? false)
+            RedoBrushStroke(fromSource);  
+        }
+    }
+
+    public void RedoBrushStroke(SteamVR_Input_Sources fromSource)
+    {
+           if (ActiveDataSet?.Mask?.RedoBrushStroke() ?? false)
             {
                 VibrateController(fromSource, 0.1f);
             }
-        }
+    }
+
+    public void UnoBrushStroke(SteamVR_Input_Sources fromSource)
+    {
+      if (ActiveDataSet?.Mask?.UndoBrushStroke() ?? false)
+      {
+                VibrateController(fromSource, 0.1f);
+      }            
     }
 
     public void IncreaseBrushSize()
