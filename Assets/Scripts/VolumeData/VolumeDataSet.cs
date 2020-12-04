@@ -87,8 +87,8 @@ namespace VolumeData
         public IntPtr AstAltSpecSet { get; private set; }
         public bool HasFitsRestFrequency { get; private set; } = false;
         public bool HasRestFrequency { get; set; }
-        public double FitsRestFrequency { get; set;}
-        
+        public double FitsRestFrequency { get; set; }
+
         public long[] cubeSize;
 
         public int[] Histogram;
@@ -144,16 +144,19 @@ namespace VolumeData
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
+
             if (FitsReader.FitsCreateHdrPtr(fptr, out volumeDataSet.FitsHeader, out volumeDataSet.NumberHeaderKeys, out status) != 0)
             {
                 Debug.Log("Fits create header pointer failure... code #" + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
                 return null;
             }
+
             if (AstTool.InitAstFrameSet(out astFrameSet, volumeDataSet.FitsHeader) != 0)
             {
                 Debug.Log("Warning... AstFrameSet Error. See Unity Editor logs");
             }
+
             if (!isMask)
             {
                 volumeDataSet.HeaderDictionary = FitsReader.ExtractHeaders(fptr, out status);
@@ -258,10 +261,18 @@ namespace VolumeData
                 Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
                 if (histogramPtr != IntPtr.Zero)
                     DataAnalysis.FreeMemory(histogramPtr);
-                volumeDataSet.HasFitsRestFrequency = volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ") || volumeDataSet.HeaderDictionary.ContainsKey("RESTFREQ");
+                volumeDataSet.HasFitsRestFrequency =
+                    volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ") || volumeDataSet.HeaderDictionary.ContainsKey("RESTFREQ");
+            }
+            else
+            {
+                int maskCount = 0;
+                //DataAnalysis.GetMaskSources(fitsDataPtr, volumeDataSet.cubeSize[0], volumeDataSet.cubeSize[1], volumeDataSet.cubeSize[2], out maskCount);
+                DataAnalysis.GetMaskSources(fitsDataPtr, volumeDataSet.cubeSize[0], volumeDataSet.cubeSize[1], volumeDataSet.cubeSize[2], out maskCount);
+                Debug.Log($"Found {maskCount} sources");
             }
 
-            
+
             if (volumeDataSet.HasFitsRestFrequency)
             {
                 volumeDataSet.HasRestFrequency = true;
@@ -269,6 +280,7 @@ namespace VolumeData
                 volumeDataSet.FitsRestFrequency = AstTool.GetString(astFrameSet, new StringBuilder("RestFreq"), restFreqSB, restFreqSB.Capacity);
                 volumeDataSet.FitsRestFrequency = double.Parse(restFreqSB.ToString(), CultureInfo.InvariantCulture);
             }
+
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = volumeDataSet.cubeSize[0];
             volumeDataSet.YDim = volumeDataSet.cubeSize[1];
@@ -291,15 +303,16 @@ namespace VolumeData
                 Debug.Log("Failed to recreate AstFrameSet!");
             AstFrameSet = astFrameSet; //Need to delete old one?
         }
+
         public void CreateAltSpecFrame()
         {
-                if (AstAltSpecSet != IntPtr.Zero)
-                    AstTool.DeleteObject(AstAltSpecSet);
-                IntPtr astAltSpecFrame = IntPtr.Zero;
-                string system, unit;
-                GetAltSpecSystemWithUnit(out system, out unit);
-                AstTool.GetAltSpecSet(AstFrameSet, out astAltSpecFrame, new StringBuilder(system), new StringBuilder(unit), new StringBuilder(GetStdOfRest()));
-                AstAltSpecSet = astAltSpecFrame;
+            if (AstAltSpecSet != IntPtr.Zero)
+                AstTool.DeleteObject(AstAltSpecSet);
+            IntPtr astAltSpecFrame = IntPtr.Zero;
+            string system, unit;
+            GetAltSpecSystemWithUnit(out system, out unit);
+            AstTool.GetAltSpecSet(AstFrameSet, out astAltSpecFrame, new StringBuilder(system), new StringBuilder(unit), new StringBuilder(GetStdOfRest()));
+            AstAltSpecSet = astAltSpecFrame;
         }
 
         public static void UpdateHistogram(VolumeDataSet volumeDataSet, float min, float max)
@@ -565,7 +578,7 @@ namespace VolumeData
             {
                 activeFaces += 2;
             }
-            
+
             // -y face
             if (voxelIndices.y <= 0)
             {
@@ -578,7 +591,7 @@ namespace VolumeData
             {
                 activeFaces += 4;
             }
-            
+
             // +y face
             if (voxelIndices.y >= cubeSize.y - 1)
             {
@@ -617,7 +630,7 @@ namespace VolumeData
             {
                 activeFaces += 32;
             }
-            
+
             return activeFaces;
         }
 
@@ -639,7 +652,7 @@ namespace VolumeData
             {
                 return 0;
             }
-            
+
             // Use the cached / current mask array if the cursor location is within the cropped region
             if (_regionMaskVoxels != null && RegionCube && x >= RegionOffset.x && x < RegionOffset.x + RegionCube.width &&
                 y >= RegionOffset.y && y < RegionOffset.y + RegionCube.height &&
@@ -772,7 +785,7 @@ namespace VolumeData
             {
                 return true;
             }
-            
+
             _regionMaskVoxels[index] = value;
             // convert from int to byte array
             _cachedBrush = BitConverter.GetBytes(value);
@@ -865,8 +878,10 @@ namespace VolumeData
                 {
                     CurrentBrushStroke = new BrushStrokeTransaction(value);
                 }
+
                 CurrentBrushStroke.Voxels.Add(new VoxelEntry(newEntry.Index, currentValue));
             }
+
             return true;
         }
 
@@ -924,9 +939,10 @@ namespace VolumeData
                     var y = index % RegionCube.height;
                     index -= y;
                     var z = index / RegionCube.height;
-                    PaintMaskVoxel(new Vector3Int(x, y, z), (short)voxel.Value, false);
+                    PaintMaskVoxel(new Vector3Int(x, y, z), (short) voxel.Value, false);
                     //var index = (x - RegionOffset.x) + (y - RegionOffset.y) * RegionCube.width + (z - RegionOffset.z) * (RegionCube.width * RegionCube.height);
                 }
+
                 BrushStrokeHistory.RemoveAt(BrushStrokeHistory.Count - 1);
                 return true;
             }
@@ -951,7 +967,7 @@ namespace VolumeData
             if (!FitsReader.UpdateMask(FitsData, Dims, unmanagedCopy, regionDims, regionOffset))
             {
                 Debug.Log("Error updating mask");
-                return - 1;
+                return -1;
             }
 
             if (unmanagedCopy != IntPtr.Zero)
@@ -970,19 +986,21 @@ namespace VolumeData
                 // Update filename after stripping out exclamation mark indicating overwrite flag
                 FileName = filename.Replace("!", "");
             }
+
             return status;
         }
 
-        
+
         public string GetAstAttribute(string attributeToGet)
         {
             StringBuilder attributeReceived = new StringBuilder(70);
             StringBuilder attributeToGetSB = new StringBuilder(attributeToGet);
             if (AstTool.GetString(AstFrameSet, attributeToGetSB, attributeReceived, attributeReceived.Capacity) != 0)
             {
-                Debug.Log("Cannot find attribute " + attributeToGet  + " in Frame!");
+                Debug.Log("Cannot find attribute " + attributeToGet + " in Frame!");
                 return "";
             }
+
             return attributeReceived.ToString();
         }
 
@@ -992,9 +1010,10 @@ namespace VolumeData
             StringBuilder attributeToGetSB = new StringBuilder(attributeToGet);
             if (AstTool.GetString(AstAltSpecSet, attributeToGetSB, attributeReceived, attributeReceived.Capacity) != 0)
             {
-                Debug.Log("Cannot find attribute " + attributeToGet  + " in Frame!");
+                Debug.Log("Cannot find attribute " + attributeToGet + " in Frame!");
                 return "";
             }
+
             return attributeReceived.ToString();
         }
 
@@ -1003,12 +1022,13 @@ namespace VolumeData
             IntPtr astCmpFrame = IntPtr.Zero;
             AstTool.GetAstFrame(AstFrameSet, out astCmpFrame, 2);
             double xStart, yStart, zStart, xEnd, yEnd, zEnd;
-            if (AstTool.Transform3D(AstFrameSet, (double)startPoint.x, (double)startPoint.y, (double)startPoint.z, 1, out xStart, out yStart, out zStart) != 0 ||
-                    AstTool.Transform3D(AstFrameSet, (double)endPoint.x, (double)endPoint.y, (double)endPoint.z, 1, out xEnd, out yEnd, out zEnd) != 0 ||
-                    AstTool.Distance1D(astCmpFrame, xStart, xEnd, 1, out xLength) != 0 ||
-                    AstTool.Distance1D(astCmpFrame, yStart, yEnd, 2, out yLength) != 0 ||
-                    AstTool.Distance1D(astCmpFrame, zStart, zEnd, 3, out zLength) != 0 ||
-                    AstTool.Distance2D(astCmpFrame, xStart, yStart, xEnd, yEnd, out angle) != 0)
+            if (AstTool.Transform3D(AstFrameSet, (double) startPoint.x, (double) startPoint.y, (double) startPoint.z, 1, out xStart, out yStart, out zStart) !=
+                0 ||
+                AstTool.Transform3D(AstFrameSet, (double) endPoint.x, (double) endPoint.y, (double) endPoint.z, 1, out xEnd, out yEnd, out zEnd) != 0 ||
+                AstTool.Distance1D(astCmpFrame, xStart, xEnd, 1, out xLength) != 0 ||
+                AstTool.Distance1D(astCmpFrame, yStart, yEnd, 2, out yLength) != 0 ||
+                AstTool.Distance1D(astCmpFrame, zStart, zEnd, 3, out zLength) != 0 ||
+                AstTool.Distance2D(astCmpFrame, xStart, yStart, xEnd, yEnd, out angle) != 0)
             {
                 Debug.Log("Error finding WCS distances!");
                 AstTool.DeleteObject(astCmpFrame);
@@ -1024,6 +1044,7 @@ namespace VolumeData
             {
                 Debug.Log("Error finding formatted ast coordinate!");
             }
+
             return coord.ToString();
         }
 
@@ -1034,12 +1055,14 @@ namespace VolumeData
             {
                 Debug.Log("Error finding normalized alt spec coordinate!");
             }
+
             int stringLength = 70;
             StringBuilder coord = new StringBuilder(stringLength);
             if (AstTool.Format(AstAltSpecSet, 3, zNorm, coord, stringLength) != 0)
             {
                 Debug.Log("Error finding formatted alt spec coordinate!");
             }
+
             return coord.ToString();
         }
 
@@ -1052,7 +1075,7 @@ namespace VolumeData
         {
             return PixelUnit;
         }
-        
+
         public string GetAxisUnit(int axis)
         {
             return GetAstAttribute("Unit(" + axis + ")");
@@ -1074,7 +1097,7 @@ namespace VolumeData
             StringBuilder valueSB = new StringBuilder(value);
             if (AstTool.SetString(AstFrameSet, attributeSB, valueSB) != 0)
             {
-                Debug.Log("Cannot set attribute " + attribute  + " in Frame!");
+                Debug.Log("Cannot set attribute " + attribute + " in Frame!");
             }
         }
 
@@ -1084,10 +1107,10 @@ namespace VolumeData
             StringBuilder valueSB = new StringBuilder(value);
             if (AstTool.SetString(AstAltSpecSet, attributeSB, valueSB) != 0)
             {
-                Debug.Log("Cannot set attribute " + attribute  + " in Frame!");
+                Debug.Log("Cannot set attribute " + attribute + " in Frame!");
             }
         }
-        
+
         public bool HasAstAttribute(string attributeToCheck)
         {
             StringBuilder attributeToCheckSB = new StringBuilder(attributeToCheck);
@@ -1125,6 +1148,7 @@ namespace VolumeData
                 Debug.Log("Cannot convert depth without rest frequencies!");
                 return "";
             }
+
             string system = GetAstAltAttribute("System(3)");
             string unit = GetAstAltAttribute("Unit(3)");
             double zOut, dummyX, dummyY;
@@ -1142,21 +1166,23 @@ namespace VolumeData
                 case "Hz":
                     if (Mathf.Abs((float) zOut) >= 1.0E9)
                         SetAltAxisUnit(3, "GHz");
-                    break;  
+                    break;
                 case "GHz":
                     if (Mathf.Abs((float) zOut) < 1)
                         SetAltAxisUnit(3, "Hz");
                     break;
             }
-            return $"{system}: {GetFormattedAltCoord(zOut), 12} {unit}";
+
+            return $"{system}: {GetFormattedAltCoord(zOut),12} {unit}";
         }
 
         public string GetAltSpecSystem()
         {
-            string system,unit;
+            string system, unit;
             GetAltSpecSystemWithUnit(out system, out unit);
             return system;
         }
+
         private void GetAltSpecSystemWithUnit(out string system, out string unit)
         {
             system = "";
@@ -1218,15 +1244,18 @@ namespace VolumeData
                 else
                     FitsReader.FreeMemory(FitsData);
             }
+
             if (FitsHeader != IntPtr.Zero)
             {
                 FitsReader.FreeFitsMemory(FitsHeader, out status);
             }
+
             if (AstFrameSet != IntPtr.Zero)
             {
                 AstTool.DeleteObject(AstFrameSet);
                 AstTool.AstEnd();
             }
+
             ExistingMaskBuffer?.Release();
             AddedMaskBuffer?.Release();
         }

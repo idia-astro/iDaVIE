@@ -29,6 +29,7 @@ DllExport int GetZProfile(const float *, float **, int64_t , int64_t , int64_t ,
 DllExport int DataCropAndDownsample(const float *, float **, int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int , int , int );
 DllExport int MaskCropAndDownsample(const int16_t *, int16_t **, int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int , int , int );
 DllExport int GetHistogram(const float* , int64_t , int , float , float , int** );
+DllExport int GetMaskSources(const int16_t*, int64_t, int64_t, int64_t, int*);
 DllExport int FreeMemory(void* );
 }
 
