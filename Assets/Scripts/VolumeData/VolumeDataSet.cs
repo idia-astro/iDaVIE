@@ -50,6 +50,7 @@ namespace VolumeData
         public int AddedMaskEntryCount { get; private set; }
         public BrushStrokeTransaction CurrentBrushStroke { get; private set; }
         public List<BrushStrokeTransaction> BrushStrokeHistory { get; private set; }
+        public List<BrushStrokeTransaction> BrushStrokeRedoQueue { get; private set; }
 
         public string FileName { get; private set; }
         public long XDim { get; private set; }
@@ -645,7 +646,7 @@ namespace VolumeData
                 y >= RegionOffset.y && y < RegionOffset.y + RegionCube.height &&
                 z >= RegionOffset.z && z < RegionOffset.z + RegionCube.depth)
             {
-                var index = (x - RegionOffset.x) + (y - RegionOffset.y) * RegionCube.width + (z - RegionOffset.z) * (RegionCube.width * RegionCube.height);
+                var index = IndexFromCoords(x, y, z);
                 return _regionMaskVoxels[index];
             }
 
@@ -866,6 +867,8 @@ namespace VolumeData
                     CurrentBrushStroke = new BrushStrokeTransaction(value);
                 }
                 CurrentBrushStroke.Voxels.Add(new VoxelEntry(newEntry.Index, currentValue));
+                // New brush strokes clear the redo queue
+                BrushStrokeRedoQueue?.Clear();
             }
             return true;
         }
@@ -917,21 +920,56 @@ namespace VolumeData
                 var lastStroke = BrushStrokeHistory.Last();
                 foreach (var voxel in lastStroke.Voxels)
                 {
-                    var index = voxel.Index;
-                    var x = index % RegionCube.width;
-                    index -= x;
-                    index /= RegionCube.width;
-                    var y = index % RegionCube.height;
-                    index -= y;
-                    var z = index / RegionCube.height;
-                    PaintMaskVoxel(new Vector3Int(x, y, z), (short)voxel.Value, false);
-                    //var index = (x - RegionOffset.x) + (y - RegionOffset.y) * RegionCube.width + (z - RegionOffset.z) * (RegionCube.width * RegionCube.height);
+                    PaintMaskVoxel(CoordsFromIndex(voxel.Index), (short)voxel.Value, false);
                 }
+                if (BrushStrokeRedoQueue == null)
+                {
+                    BrushStrokeRedoQueue = new List<BrushStrokeTransaction>();
+                }
+                BrushStrokeRedoQueue.Add(lastStroke);
                 BrushStrokeHistory.RemoveAt(BrushStrokeHistory.Count - 1);
                 return true;
             }
 
             return false;
+        }
+        
+        public bool RedoBrushStroke()
+        {
+            if (BrushStrokeRedoQueue.Count > 0)
+            {
+                var nextStroke = BrushStrokeRedoQueue.Last();
+                foreach (var voxel in nextStroke.Voxels)
+                {
+                    PaintMaskVoxel(CoordsFromIndex(voxel.Index), (short)nextStroke.NewValue, false);
+                }
+                if (BrushStrokeHistory == null)
+                {
+                    BrushStrokeHistory = new List<BrushStrokeTransaction>();
+                }
+                BrushStrokeHistory.Add(nextStroke);
+                BrushStrokeRedoQueue.RemoveAt(BrushStrokeRedoQueue.Count - 1);
+                
+                return true;
+            }
+
+            return false;
+        }
+
+        public int IndexFromCoords(int x, int y, int z)
+        {
+            return (x - RegionOffset.x) + (y - RegionOffset.y) * RegionCube.width + (z - RegionOffset.z) * (RegionCube.width * RegionCube.height);
+        }
+
+        public Vector3Int CoordsFromIndex(int index)
+        {
+            var x = index % RegionCube.width;
+            index -= x;
+            index /= RegionCube.width;
+            var y = index % RegionCube.height;
+            index -= y;
+            var z = index / RegionCube.height;
+            return new Vector3Int(x, y, z);
         }
 
         public int CommitMask()

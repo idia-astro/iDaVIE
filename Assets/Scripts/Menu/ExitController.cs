@@ -11,24 +11,7 @@ public class ExitController : MonoBehaviour
 
     public VolumeDataSetRenderer _activeDataSet;
     public VolumeInputController _volumeInputController = null;
-
-    public float VibrationDuration;
-    public float VibrationFrequency;
-    public float VibrationAmplitude;
-
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
+    
     public void Exit()
     {
         #if UNITY_EDITOR
@@ -75,14 +58,14 @@ public class ExitController : MonoBehaviour
     {
         _activeDataSet?.SaveMask(true);
 
-        _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
+        _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
         Exit();
     }
 
     public void SaveNewMask()
     {
         _activeDataSet?.SaveMask(false);
-        _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
+        _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
         Exit();
     }
 }
