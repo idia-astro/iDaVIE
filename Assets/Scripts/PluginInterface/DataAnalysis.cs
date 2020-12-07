@@ -8,10 +8,6 @@ using UnityEngine;
 [PluginAttr("libdata_analysis_tool")]
 public static class DataAnalysis
 {
-    [PluginFunctionAttr("GetMaskSources")] 
-    public static readonly GetMaskSourcesDelegate GetMaskSources = null;
-    public delegate int GetMaskSourcesDelegate(IntPtr dataPtr, long dimX, long dimY, long dimZ, out int maskCount);
-    
     [PluginFunctionAttr("FindMaxMin")] 
     public static readonly FindMaxMinDelegate FindMaxMin = null;
     public delegate int FindMaxMinDelegate(IntPtr dataPtr, long numberElements, out float maxResult, out float minResult);
@@ -53,6 +49,42 @@ public static class DataAnalysis
     [PluginFunctionAttr("GetHistogram")] 
     public static readonly GetHistogramDelegate GetHistogram = null;
     public delegate int GetHistogramDelegate(IntPtr dataPtr, long numElements, int numBins, float minVal, float maxVal, out IntPtr histogram);
+    
+    [StructLayout(LayoutKind.Sequential, Pack=8)]
+    public struct SourceInfo
+    {
+        public long minX, maxX;
+        public long minY, maxY;
+        public long minZ, maxZ;
+        public short maskVal;
+        //char _padding[14];
+    };
+    
+    [StructLayout(LayoutKind.Sequential, Pack=8)]
+    public struct SourceStats
+    {
+        // Bounding box
+        public long minX, maxX;
+        public long minY, maxY;
+        public long minZ, maxZ;
+        // Number of finite voxels
+        public long numVoxels;
+        // Centroid
+        public double cX, cY, cZ;
+        // Flux
+        public double integratedFlux;
+        public double peakFlux;
+    };
+
+    [PluginFunctionAttr("GetMaskedSources")]
+    public static readonly GetMaskedSourcesDelegate GetMaskedSources = null;
+    public delegate int GetMaskedSourcesDelegate(IntPtr maskDataPtr, long dimX, long dimY, long dimZ, out int maskCount, out IntPtr sources);
+    
+    [PluginFunctionAttr("GetSourceStats")] 
+    public static readonly GetSourceStatsDelegate GetSourceStats = null;
+    public delegate int GetSourceStatsDelegate(IntPtr dataPtr, IntPtr maskDataPtr, long dimX, long dimY, long dimZ, SourceInfo source, ref SourceStats stats);
+
+    
     
     [PluginFunctionAttr("FreeMemory")] 
     public static readonly FreeMemoryDelegate FreeMemory = null;
@@ -101,5 +133,33 @@ public static class DataAnalysis
         if (profilePtr != IntPtr.Zero)
             FreeMemory(profilePtr);
         return profile;
+    }
+
+    public static unsafe List<SourceInfo> GetMaskedSourceArray(IntPtr maskDataPtr, long dimX, long dimY, long dimZ)
+    {
+        int maskCount;
+        IntPtr sourcesPtr;
+        List<SourceInfo> sources = new List<SourceInfo>();
+        
+        if (GetMaskedSources(maskDataPtr, dimX, dimY, dimZ, out maskCount, out sourcesPtr) != 0)
+        {
+            Debug.Log("Error extracting sources");
+            return sources;
+        }
+        try
+        {
+            for (var i = 0; i < maskCount; i++)
+            {
+                SourceInfo s = Marshal.PtrToStructure<SourceInfo>(IntPtr.Add(sourcesPtr, sizeof(SourceInfo)* i));
+                sources.Add(s);
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+        FreeMemory(sourcesPtr);
+        sources.Sort((s1, s2) => s1.maskVal - s2.maskVal);
+        return sources;
     }
 }

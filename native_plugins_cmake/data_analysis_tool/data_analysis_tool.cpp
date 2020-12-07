@@ -1,13 +1,18 @@
 #include "data_analysis_tool.h"
 
+#include <unordered_map>
+#include <iostream>
+
+using namespace std;
+
 int FindMaxMin(const float *dataPtr, int64_t numberElements, float *maxResult, float *minResult)
 {
-    float maxVal = -std::numeric_limits<float>::max();
-    float minVal = std::numeric_limits<float>::max();
+    float maxVal = -numeric_limits<float>::max();
+    float minVal = numeric_limits<float>::max();
     #pragma omp parallel
     {
-        float currentMax = -std::numeric_limits<float>::max();
-        float currentMin = std::numeric_limits<float>::max();
+        float currentMax = -numeric_limits<float>::max();
+        float currentMin = numeric_limits<float>::max();
         #pragma omp for
         for (int64_t i = 0; i < numberElements; i++)
         {
@@ -28,14 +33,14 @@ int FindMaxMin(const float *dataPtr, int64_t numberElements, float *maxResult, f
 
 int FindStats(const float* dataPtr, int64_t numberElements, float* maxResult, float* minResult, float* meanResult, float* stdDevResult)
 {
-    float maxVal = -std::numeric_limits<float>::max();
-    float minVal = std::numeric_limits<float>::max();
+    float maxVal = -numeric_limits<float>::max();
+    float minVal = numeric_limits<float>::max();
     double sum = 0;
     double squareSum = 0;
     #pragma omp parallel
     {
-        float currentMax = -std::numeric_limits<float>::max();
-        float currentMin = std::numeric_limits<float>::max();
+        float currentMax = -numeric_limits<float>::max();
+        float currentMin = numeric_limits<float>::max();
         #pragma omp for reduction(+:sum) reduction(+:squareSum)
         for (int64_t i = 0; i < numberElements; i++)
         {
@@ -134,9 +139,9 @@ int DataCropAndDownsample(const float *dataPtr, float **newDataPtr, int64_t dimX
         newDimZ++;
     int64_t newSize = newDimX * newDimY * newDimZ;
     float* reducedCube = new float[newSize] {};
-    int64_t smallX = std::min(cropX1, cropX2);
-    int64_t smallY = std::min(cropY1, cropY2);
-    int64_t smallZ = std::min(cropZ1, cropZ2);
+    int64_t smallX = min(cropX1, cropX2);
+    int64_t smallY = min(cropY1, cropY2);
+    int64_t smallZ = min(cropZ1, cropZ2);
     #pragma omp parallel
     #pragma omp for
     for (auto newZ = 0; newZ < newDimZ; newZ++)
@@ -203,9 +208,9 @@ int MaskCropAndDownsample(const int16_t *dataPtr, int16_t **newDataPtr, int64_t 
         newDimZ++;
     int64_t newSize = newDimX * newDimY * newDimZ;
     int16_t* reducedCube = new int16_t[newSize] {};
-    int64_t smallX = std::min(cropX1, cropX2);
-    int64_t smallY = std::min(cropY1, cropY2);
-    int64_t smallZ = std::min(cropZ1, cropZ2);
+    int64_t smallX = min(cropX1, cropX2);
+    int64_t smallY = min(cropY1, cropY2);
+    int64_t smallZ = min(cropZ1, cropZ2);
 #pragma omp parallel 
 #pragma omp for
     for (auto newZ = 0; newZ < newDimZ; newZ++)
@@ -296,19 +301,117 @@ int GetHistogram(const float* dataPtr, int64_t numElements, int numBins, float m
     return EXIT_SUCCESS;
 }
 
-int GetMaskSources(const int16_t* dataPtr, int64_t dimX, int64_t dimY, int64_t dimZ, int* maskCount)
+int GetMaskedSources(const int16_t* maskDataPtr, int64_t dimX, int64_t dimY, int64_t dimZ, int* maskCount, SourceInfo** results)
 {
-    int64_t numElements = dimX * dimY * dimZ;
-    int16_t maskMax = 0;
-    for (int64_t i = 0; i < numElements; ++i)
-    {
-        auto val = dataPtr[i];
-        if (val > maskMax) {
-            maskMax = val;
+    unordered_map<int16_t, SourceInfo> sourceMap;
+    for (int64_t k = 0; k < dimZ; k++) {
+        for (int64_t j = 0; j < dimY; j++) {
+            int64_t index = dimX * j + dimX * dimY * k;
+            for (int64_t i = 0; i < dimX; i++) {
+                auto maskVal = maskDataPtr[index];
+                if (maskVal) {
+                    if (!sourceMap.count(maskVal)) {
+                        sourceMap[maskVal] = {i, i, j, j, k, k, maskVal};
+                    } else {
+                        auto& source = sourceMap.at(maskVal);
+                        source.minX = min(source.minX, i);
+                        source.maxX = max(source.maxX, i);
+                        source.minY = min(source.minY, j);
+                        source.maxY = max(source.maxY, j);
+                        source.minZ = min(source.minZ, k);
+                        source.maxZ = max(source.maxZ, k);
+                    }
+                }
+                index++;
+            }
         }
     }
-    *maskCount = maskMax;
+
+    *maskCount = sourceMap.size();
+    SourceInfo* sources = new SourceInfo[sourceMap.size()];
+    int n = 0;
+    for (auto const& [sourceValue, source] : sourceMap) {
+        sources[n] = source;
+        n++;
+    }
+
+    *results = sources;
     return EXIT_SUCCESS;
+}
+
+int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dimX, int64_t dimY, int64_t dimZ, SourceInfo source, SourceStats* stats)
+{
+    if (stats && source.minX >= 0 && source.maxX < dimX && source.minY >= 0 && source.maxY < dimY && source.minZ >= 0 && source.maxZ < dimZ)
+    {
+        double integratedFlux = 0.0;
+        double sumX = 0.0;
+        double sumY = 0.0;
+        double sumZ = 0.0;
+
+        double peakFlux = std::numeric_limits<double>::lowest();
+        int64_t numVoxels = 0;
+        for (int64_t k = source.minZ; k <= source.maxZ; k++)
+        {
+            for (int64_t j = source.minY; j <= source.maxY; j++)
+            {
+                for (int64_t i = source.minX; i <= source.maxX; i++)
+                {
+                    int64_t index = i + dimX * j + dimX * dimY * k;
+                    auto maskVal = maskDataPtr[index];
+                    if (maskVal == source.maskVal)
+                    {
+                        double flux = dataPtr[index];
+                        if (isfinite(flux))
+                        {
+                            numVoxels++;
+                            peakFlux = std::max(peakFlux, flux);
+                            integratedFlux += flux;
+                            source.minX = min(source.minX, i);
+                            source.maxX = max(source.maxX, i);
+                            source.minY = min(source.minY, j);
+                            source.maxY = max(source.maxY, j);
+                            source.minZ = min(source.minZ, k);
+                            source.maxZ = max(source.maxZ, k);
+
+                            sumX += i * flux;
+                            sumY += j * flux;
+                            sumZ += k * flux;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Bounding box
+        stats->minX = source.minX;
+        stats->maxX = source.maxX;
+        stats->minY = source.minY;
+        stats->maxY = source.maxY;
+        stats->minZ = source.minZ;
+        stats->maxZ = source.maxZ;
+
+        if (numVoxels)
+        {
+            stats->numVoxels = numVoxels;
+            stats->peakFlux = peakFlux;
+            stats->integratedFlux = integratedFlux;
+            stats->cX = sumX / integratedFlux;
+            stats->cY = sumY / integratedFlux;
+            stats->cZ = sumZ / integratedFlux;
+            return EXIT_SUCCESS;
+        }
+        else
+        {
+            stats->numVoxels = 0;
+            stats->peakFlux = NAN;
+            stats->integratedFlux = NAN;
+            stats->cX = NAN;
+            stats->cY = NAN;
+            stats->cZ = NAN;
+            return EXIT_FAILURE;
+        }
+    }
+    return EXIT_FAILURE;
 }
 
 int FreeMemory(void* ptrToDelete)

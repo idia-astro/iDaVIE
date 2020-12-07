@@ -262,15 +262,7 @@ namespace VolumeData
                 volumeDataSet.HasFitsRestFrequency =
                     volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ") || volumeDataSet.HeaderDictionary.ContainsKey("RESTFREQ");
             }
-            else
-            {
-                int maskCount = 0;
-                //DataAnalysis.GetMaskSources(fitsDataPtr, volumeDataSet.cubeSize[0], volumeDataSet.cubeSize[1], volumeDataSet.cubeSize[2], out maskCount);
-                DataAnalysis.GetMaskSources(fitsDataPtr, volumeDataSet.cubeSize[0], volumeDataSet.cubeSize[1], volumeDataSet.cubeSize[2], out maskCount);
-                Debug.Log($"Found {maskCount} sources");
-            }
-
-            
+           
             if (volumeDataSet.HasFitsRestFrequency)
             {
                 volumeDataSet.HasRestFrequency = true;

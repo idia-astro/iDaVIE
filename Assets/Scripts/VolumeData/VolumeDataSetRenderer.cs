@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using DataFeatures;
 using JetBrains.Annotations;
@@ -8,6 +11,8 @@ using UnityEngine.XR;
 using Vectrosity;
 using Random = System.Random;
 using System.Text;
+using CatalogData;
+using Debug = UnityEngine.Debug;
 
 namespace VolumeData
 {
@@ -264,6 +269,27 @@ namespace VolumeData
             {
                 _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, true);
                 _maskDataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
+                List<DataAnalysis.SourceInfo> sources;
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+                sources = DataAnalysis.GetMaskedSourceArray(_maskDataSet.FitsData, _dataSet.XDim, _dataSet.YDim, _dataSet.ZDim);
+                List<DataAnalysis.SourceStats> sourceStatsList = new List<DataAnalysis.SourceStats>();
+                foreach (var source in sources)
+                {
+                    DataAnalysis.SourceStats sourceStats = new DataAnalysis.SourceStats();
+                    DataAnalysis.GetSourceStats(_dataSet.FitsData, _maskDataSet.FitsData, _dataSet.XDim, _dataSet.YDim, _dataSet.ZDim, source, ref sourceStats);
+                    sourceStatsList.Add(sourceStats);
+                }
+                sw.Stop();
+                Debug.Log($"Found {sourceStatsList.Count} sources in {sw.Elapsed.TotalMilliseconds} ms");
+
+                var numSources = sources.Count;
+                for (var i = 0; i < numSources; i++)
+                {
+                    var source = sources[i];
+                    var stats = sourceStatsList[i];
+                    Debug.Log($"Source {source.maskVal}: {stats.numVoxels} voxels; Flux: {stats.integratedFlux} Jy km/s; {stats.peakFlux} Jy/vox (peak); centroid [{stats.cX}, {stats.cY}, {stats.cZ}]");
+                }
             }
             _renderer = GetComponent<MeshRenderer>();
             _materialInstance = Instantiate(RayMarchingMaterial);
