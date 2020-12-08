@@ -210,30 +210,14 @@ public class FitsReader
         if (keyValue != IntPtr.Zero)
         {
             Marshal.FreeHGlobal(keyValue);
-            keyValue = IntPtr.Zero;
         }
         return status;
     }
-
-    public static bool UpdateMask(IntPtr oldMaskData, long[] oldMaskDims, IntPtr regionData, long[] regionDims, long[] regionStartPix)
+    
+    public static bool UpdateMaskVoxel(IntPtr maskDataPtr, long[] maskDims, Vector3Int location, short value)
     {
-        int srcJump = (int)(regionDims[0] * sizeof(short));
-        IntPtr srcPtr = regionData;
-        for (var z = 0; z < regionDims[2]; z++)
-        {
-            for (var y = 0; y < regionDims[1]; y++)
-            {
-                long startIndex = (z + regionStartPix[2] - 1) * oldMaskDims[0] * oldMaskDims[1] + (y + regionStartPix[1] - 1) * oldMaskDims[0] + (regionStartPix[0] - 1);
-                if (InsertSubArrayInt16(oldMaskData, oldMaskDims[0] * oldMaskDims[1] * oldMaskDims[2],
-                    srcPtr, regionDims[0], startIndex) != 0)
-                {
-                    Debug.Log("Error inserting submask into mask data!");
-                    return false;
-                }
-                srcPtr = IntPtr.Add(srcPtr, srcJump);
-            }
-        }
-
+        long index = location.x + location.y * maskDims[0] + location.z * (maskDims[0] * maskDims[1]);
+        Marshal.WriteInt16(new IntPtr(maskDataPtr.ToInt64() + index * sizeof(short)), value);
         return true;
     }
 

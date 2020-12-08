@@ -281,7 +281,7 @@ namespace VolumeData
                     sourceStatsList.Add(sourceStats);
                 }
                 sw.Stop();
-                Debug.Log($"Found {sourceStatsList.Count} sources in {sw.Elapsed.TotalMilliseconds} ms");
+                Debug.Log($"Calculated stats for {sourceStatsList.Count} sources in {sw.Elapsed.TotalMilliseconds} ms");
 
                 var numSources = sources.Count;
                 for (var i = 0; i < numSources; i++)
@@ -802,17 +802,6 @@ namespace VolumeData
             Vector3 volumePosition = new Vector3((localPosition.x + 0.5f) * cubeDimensions.x, (localPosition.y + 0.5f) * cubeDimensions.y, (localPosition.z + 0.5f) * cubeDimensions.z);
             return volumePosition;
         }
-
-        public void CommitMask()
-        {
-            // Update cropped region and recalculate downsampled cube if it has been updated
-            if (_dirtyMask)
-            {
-                _maskDataSet?.CommitMask();
-                _maskDataSet?.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
-                _dirtyMask = false;
-            }
-        }
         
         public void SaveMask(bool overwrite)
         {
@@ -821,8 +810,6 @@ namespace VolumeData
                 Debug.LogError("Could not find mask data!");
                 return;
             }
-
-            _maskDataSet.CommitMask();
 
             IntPtr cubeFitsPtr;
             int status = 0;

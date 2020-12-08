@@ -776,6 +776,12 @@ namespace VolumeData
             }
 
             _regionMaskVoxels[index] = value;
+            Vector3Int location = RegionOffset + coordsRegionSpace;
+            if (!FitsReader.UpdateMaskVoxel(FitsData, Dims, location, value))
+            {
+                Debug.Log("Error updating mask");
+                return false;
+            }
             // convert from int to byte array
             _cachedBrush = BitConverter.GetBytes(value);
             _updateTexture.LoadRawTextureData(_cachedBrush);
@@ -974,35 +980,7 @@ namespace VolumeData
             var z = index / RegionCube.height;
             return new Vector3Int(x, y, z);
         }
-
-        public int CommitMask()
-        {
-            int status = 0;
-            if (_regionMaskVoxels == null || _regionMaskVoxels.Length == 0)
-            {
-                Debug.Log("Can't save empty region to mask");
-                return -1;
-            }
-
-            int unmangedMemorySize = Marshal.SizeOf(_regionMaskVoxels[0]) * _regionMaskVoxels.Length;
-            IntPtr unmanagedCopy = Marshal.AllocHGlobal(unmangedMemorySize);
-            long[] regionDims = {RegionCube.width, RegionCube.height, RegionCube.depth};
-            long[] regionOffset = {RegionOffset.x, RegionOffset.y, RegionOffset.z};
-            Marshal.Copy(_regionMaskVoxels, 0, unmanagedCopy, _regionMaskVoxels.Length);
-            if (!FitsReader.UpdateMask(FitsData, Dims, unmanagedCopy, regionDims, regionOffset))
-            {
-                Debug.Log("Error updating mask");
-                return -1;
-            }
-
-            if (unmanagedCopy != IntPtr.Zero)
-            {
-                Marshal.FreeHGlobal(unmanagedCopy);
-            }
-
-            return status;
-        }
-
+        
         public int SaveMask(IntPtr cubeFitsPtr, string filename)
         {
             int status = FitsReader.SaveMask(cubeFitsPtr, FitsData, Dims, filename);
