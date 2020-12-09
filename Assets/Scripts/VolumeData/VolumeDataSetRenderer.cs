@@ -165,7 +165,6 @@ namespace VolumeData
         public IntPtr AstFrame =>_dataSet.AstFrameSet; 
         public string StdOfRest => _dataSet.GetStdOfRest();
 
-
         private int _currentXFactor, _currentYFactor, _currentZFactor;
         public bool IsFullResolution => _currentXFactor * _currentYFactor * _currentZFactor == 1;
 
@@ -250,7 +249,7 @@ namespace VolumeData
             if (RandomVolume)
                 _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);
             else
-                _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false, CubeDepthAxis, CubeSlice);
+                _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, IntPtr.Zero, CubeDepthAxis, CubeSlice);
             _volumeInputController = FindObjectOfType<VolumeInputController>();
             _featureManager = GetComponentInChildren<FeatureSetManager>();
             if (_featureManager == null)
@@ -267,29 +266,8 @@ namespace VolumeData
             ScaleMin = _dataSet.MinValue;
             if (!String.IsNullOrEmpty(MaskFileName))
             {
-                _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, true);
+                _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, _dataSet.FitsData);
                 _maskDataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
-                List<DataAnalysis.SourceInfo> sources;
-                Stopwatch sw = new Stopwatch();
-                sw.Start();
-                sources = DataAnalysis.GetMaskedSourceArray(_maskDataSet.FitsData, _dataSet.XDim, _dataSet.YDim, _dataSet.ZDim);
-                List<DataAnalysis.SourceStats> sourceStatsList = new List<DataAnalysis.SourceStats>();
-                foreach (var source in sources)
-                {
-                    DataAnalysis.SourceStats sourceStats = new DataAnalysis.SourceStats();
-                    DataAnalysis.GetSourceStats(_dataSet.FitsData, _maskDataSet.FitsData, _dataSet.XDim, _dataSet.YDim, _dataSet.ZDim, source, ref sourceStats);
-                    sourceStatsList.Add(sourceStats);
-                }
-                sw.Stop();
-                Debug.Log($"Calculated stats for {sourceStatsList.Count} sources in {sw.Elapsed.TotalMilliseconds} ms");
-
-                var numSources = sources.Count;
-                for (var i = 0; i < numSources; i++)
-                {
-                    var source = sources[i];
-                    var stats = sourceStatsList[i];
-                    Debug.Log($"Source {source.maskVal}: {stats.numVoxels} voxels; Flux: {stats.integratedFlux} Jy km/s; {stats.peakFlux} Jy/vox (peak); centroid [{stats.cX}, {stats.cY}, {stats.cZ}]");
-                }
             }
             _renderer = GetComponent<MeshRenderer>();
             _materialInstance = Instantiate(RayMarchingMaterial);
@@ -779,7 +757,13 @@ namespace VolumeData
 
         public void FinishBrushStroke()
         {
-            _maskDataSet?.FlushBrushStroke();
+            if (_maskDataSet != null)
+            {
+                _maskDataSet?.FlushBrushStroke();
+            }
+            
+            // Recalculate source stats
+            
         }
 
         public Vector3Int GetCubeDimensions()

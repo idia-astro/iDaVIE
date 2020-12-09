@@ -20,8 +20,8 @@ namespace VolumeData
 
         public VoxelEntry(int index, int value)
         {
-            this.Index = index;
-            this.Value = value;
+            Index = index;
+            Value = value;
         }
 
         public static readonly Comparer<VoxelEntry> IndexComparer = Comparer<VoxelEntry>.Create(
@@ -33,11 +33,26 @@ namespace VolumeData
     {
         public int NewValue;
         public List<VoxelEntry> Voxels;
+        public Dictionary<int, bool> ChangedSources;
 
         public BrushStrokeTransaction(int newValue)
         {
             NewValue = newValue;
             Voxels = new List<VoxelEntry>();
+            ChangedSources = new Dictionary<int, bool>();
+            if (NewValue != 0)
+            {
+                ChangedSources[NewValue] = true;
+            }
+        }
+
+        public void Add(VoxelEntry entry)
+        {
+            Voxels.Add(entry);
+            if (entry.Value != 0)
+            {
+                ChangedSources[entry.Value] = true;
+            }
         }
     }
 
@@ -49,9 +64,11 @@ namespace VolumeData
         public ComputeBuffer AddedMaskBuffer { get; private set; }
         public int AddedMaskEntryCount { get; private set; }
         public BrushStrokeTransaction CurrentBrushStroke { get; private set; }
+        public List<short> DirtySources { get; private set; }
         public List<BrushStrokeTransaction> BrushStrokeHistory { get; private set; }
         public List<BrushStrokeTransaction> BrushStrokeRedoQueue { get; private set; }
-
+        public Dictionary<short, DataAnalysis.SourceStats> SourceStatsDict { get; private set; }
+        
         public string FileName { get; private set; }
         public long XDim { get; private set; }
         public long YDim { get; private set; }
@@ -67,6 +84,7 @@ namespace VolumeData
 
 
         public bool IsMask { get; private set; }
+        private IntPtr ImageDataPtr;
 
         //private IDictionary<string, string> _headerDictionary;
 
@@ -131,10 +149,11 @@ namespace VolumeData
             return volumeDataSet;
         }
 
-        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, int index2 = 2, int sliceDim = 1)
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, IntPtr imageDataPtr = default(IntPtr), int index2 = 2, int sliceDim = 1)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
-            volumeDataSet.IsMask = isMask;
+            volumeDataSet.IsMask =  imageDataPtr != IntPtr.Zero;
+            volumeDataSet.ImageDataPtr = imageDataPtr;
             volumeDataSet.FileName = fileName;
             IntPtr fptr = IntPtr.Zero;
             int status = 0;
@@ -155,7 +174,7 @@ namespace VolumeData
             {
                 Debug.Log("Warning... AstFrameSet Error. See Unity Editor logs");
             }
-            if (!isMask)
+            if (!volumeDataSet.IsMask)
             {
                 volumeDataSet.HeaderDictionary = FitsReader.ExtractHeaders(fptr, out status);
                 volumeDataSet.ParseHeaderDict();
@@ -196,7 +215,7 @@ namespace VolumeData
                 FitsReader.FreeMemory(dataPtr);
             long numberDataPoints = volumeDataSet.cubeSize[0] * volumeDataSet.cubeSize[1] * volumeDataSet.cubeSize[index2];
             IntPtr fitsDataPtr = IntPtr.Zero;
-            if (isMask)
+            if (volumeDataSet.IsMask)
             {
                 if (FitsReader.FitsReadImageInt16(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
                 {
@@ -247,7 +266,7 @@ namespace VolumeData
             }
 
             FitsReader.FitsCloseFile(fptr, out status);
-            if (!isMask)
+            if (!volumeDataSet.IsMask)
             {
                 DataAnalysis.FindStats(fitsDataPtr, numberDataPoints, out volumeDataSet.MaxValue, out volumeDataSet.MinValue, out volumeDataSet.MeanValue,
                     out volumeDataSet.StanDev);
@@ -280,7 +299,54 @@ namespace VolumeData
             // single pixel brush: 16-bits = 2 bytes
             volumeDataSet._cachedBrush = new byte[2];
 
+            if (volumeDataSet.IsMask)
+            {
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+                var sourceArray = DataAnalysis.GetMaskedSourceArray(volumeDataSet.FitsData, volumeDataSet.XDim, volumeDataSet.YDim, volumeDataSet.ZDim);
+                volumeDataSet.SourceStatsDict = new Dictionary<short, DataAnalysis.SourceStats>();
+                foreach (var source in sourceArray)
+                {
+                    volumeDataSet.SourceStatsDict[source.maskVal] = DataAnalysis.SourceStats.FromSourceInfo(source);
+                    volumeDataSet.UpdateStats(source.maskVal);
+                }
+                sw.Stop();
+                Debug.Log($"Calculated stats for {volumeDataSet.SourceStatsDict?.Count} sources in {sw.Elapsed.TotalMilliseconds} ms");
+            }
+
             return volumeDataSet;
+        }
+
+        private void UpdateStats(short maskVal)
+        {
+            if (!SourceStatsDict.ContainsKey(maskVal))
+            {
+                Debug.Log($"Can't update stats for missing source {maskVal}");
+                return;
+            }
+            var sourceStats = SourceStatsDict[maskVal];
+
+            DataAnalysis.GetSourceStats(ImageDataPtr, FitsData, XDim, YDim, ZDim, DataAnalysis.SourceInfo.FromSourceStats(sourceStats, maskVal), ref sourceStats);
+            if (sourceStats.numVoxels > 0)
+            {
+                SourceStatsDict[maskVal] = sourceStats;
+                PrintStats(maskVal);
+            }
+            else if (SourceStatsDict.ContainsKey(maskVal))
+            {
+                SourceStatsDict.Remove(maskVal);
+            }
+        }
+
+        private void PrintStats(short maskVal)
+        {
+            if (!SourceStatsDict.ContainsKey(maskVal))
+            {
+                Debug.Log($"Can't print stats for missing source {maskVal}");
+                return;
+            }
+            var sourceStats = SourceStatsDict[maskVal];
+            Debug.Log($"Source {maskVal}: {sourceStats.numVoxels} voxels; Flux: {sourceStats.sum} Jy km/s; {sourceStats.peak} Jy/vox (peak); centroid [{sourceStats.cX}, {sourceStats.cY}, {sourceStats.cZ}]");
         }
 
         public void RecreateFrameSet(double restFreq = 0)
@@ -782,6 +848,17 @@ namespace VolumeData
                 Debug.Log("Error updating mask");
                 return false;
             }
+
+            if (SourceStatsDict.ContainsKey(value))
+            {
+                var s = SourceStatsDict[value];
+                s.AddPointToBoundingBox(location.x, location.y, location.z);
+                SourceStatsDict[value] = s;
+            }
+            else
+            {
+                SourceStatsDict[value] = DataAnalysis.SourceStats.FromPoint(location.x, location.y, location.z);
+            }
             // convert from int to byte array
             _cachedBrush = BitConverter.GetBytes(value);
             _updateTexture.LoadRawTextureData(_cachedBrush);
@@ -865,7 +942,6 @@ namespace VolumeData
                 }
             }
 
-
             if (addToHistory)
             {
                 // Create transaction if it doesn't exist
@@ -874,7 +950,7 @@ namespace VolumeData
                     CurrentBrushStroke = new BrushStrokeTransaction(value);
                 }
 
-                CurrentBrushStroke.Voxels.Add(new VoxelEntry(newEntry.Index, currentValue));
+                CurrentBrushStroke.Add(new VoxelEntry(newEntry.Index, currentValue));
                 // New brush strokes clear the redo queue
                 BrushStrokeRedoQueue?.Clear();
             }
@@ -885,6 +961,10 @@ namespace VolumeData
         public void FlushBrushStroke()
         {
             ConsolidateMaskEntries();
+            foreach (var maskVal in CurrentBrushStroke.ChangedSources.Keys)
+            {
+                UpdateStats((short)maskVal);
+            }
             BrushStrokeHistory.Add(CurrentBrushStroke);
             CurrentBrushStroke = new BrushStrokeTransaction(CurrentBrushStroke.NewValue);
         }
@@ -924,13 +1004,28 @@ namespace VolumeData
 
         public bool UndoBrushStroke()
         {
-            if (BrushStrokeHistory.Count > 0)
+            if (BrushStrokeHistory?.Count > 0)
             {
                 var lastStroke = BrushStrokeHistory.Last();
+                Dictionary<short, bool> changedSources = new Dictionary<short, bool>();
+                if (lastStroke.NewValue != 0)
+                {
+                    changedSources[(short)lastStroke.NewValue] = true;
+                }
                 foreach (var voxel in lastStroke.Voxels)
                 {
+                    if (voxel.Value != 0)
+                    {
+                        changedSources[(short)voxel.Value] = true;
+                    }
                     PaintMaskVoxel(CoordsFromIndex(voxel.Index), (short)voxel.Value, false);
                 }
+
+                foreach (var maskVal in changedSources.Keys)
+                {
+                    UpdateStats(maskVal);
+                }
+                
                 if (BrushStrokeRedoQueue == null)
                 {
                     BrushStrokeRedoQueue = new List<BrushStrokeTransaction>();
@@ -945,13 +1040,28 @@ namespace VolumeData
         
         public bool RedoBrushStroke()
         {
-            if (BrushStrokeRedoQueue.Count > 0)
+            if (BrushStrokeRedoQueue?.Count > 0)
             {
                 var nextStroke = BrushStrokeRedoQueue.Last();
+                Dictionary<short, bool> changedSources = new Dictionary<short, bool>();
+                if (nextStroke.NewValue != 0)
+                {
+                    changedSources[(short)nextStroke.NewValue] = true;
+                }
                 foreach (var voxel in nextStroke.Voxels)
                 {
+                    if (voxel.Value != 0)
+                    {
+                        changedSources[(short)voxel.Value] = true;
+                    }
                     PaintMaskVoxel(CoordsFromIndex(voxel.Index), (short)nextStroke.NewValue, false);
                 }
+                
+                foreach (var maskVal in changedSources.Keys)
+                {
+                    UpdateStats(maskVal);
+                }
+                
                 if (BrushStrokeHistory == null)
                 {
                     BrushStrokeHistory = new List<BrushStrokeTransaction>();

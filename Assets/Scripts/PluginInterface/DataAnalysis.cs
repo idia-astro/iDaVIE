@@ -58,6 +58,19 @@ public static class DataAnalysis
         public long minZ, maxZ;
         public short maskVal;
         //char _padding[14];
+        
+        public static SourceInfo FromSourceStats(SourceStats sourceStats, short maskVal)
+        {
+            var sourceInfo = new SourceInfo()
+            {
+                minX = sourceStats.minX, maxX = sourceStats.maxX, 
+                minY = sourceStats.minY, maxY = sourceStats.maxY,
+                minZ = sourceStats.minZ, maxZ = sourceStats.maxZ,
+                maskVal = maskVal
+            };
+            
+            return sourceInfo;
+        }
     };
     
     [StructLayout(LayoutKind.Sequential, Pack=8)]
@@ -72,8 +85,43 @@ public static class DataAnalysis
         // Centroid
         public double cX, cY, cZ;
         // Flux
-        public double integratedFlux;
-        public double peakFlux;
+        public double sum;
+        public double peak;
+
+        public bool IsEmpty => numVoxels == 0;
+        public void AddPointToBoundingBox(long x, long y, long z)
+        {
+            minX = Math.Min(minX, x);
+            maxX = Math.Max(maxX, x);
+            minY = Math.Min(minY, y);
+            maxY = Math.Max(maxY, y);
+            minZ = Math.Min(minZ, z);
+            maxZ = Math.Max(maxZ, z);
+        }
+
+        public static SourceStats FromPoint(long x, long y, long z)
+        {
+            var sourceStats = new SourceStats()
+            {
+                minX = x, maxX = x,
+                minY = y, maxY = y,
+                minZ = z, maxZ = z 
+            };
+            
+            return sourceStats;
+        }
+
+        public static SourceStats FromSourceInfo(SourceInfo sourceInfo)
+        {
+            var sourceStats = new SourceStats()
+            {
+                minX = sourceInfo.minX, maxX = sourceInfo.maxX, 
+                minY = sourceInfo.minY, maxY = sourceInfo.maxY,
+                minZ = sourceInfo.minZ, maxZ = sourceInfo.maxZ 
+            };
+            
+            return sourceStats;
+        }
     };
 
     [PluginFunctionAttr("GetMaskedSources")]

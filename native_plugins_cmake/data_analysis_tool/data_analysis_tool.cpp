@@ -393,8 +393,8 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
         if (numVoxels)
         {
             stats->numVoxels = numVoxels;
-            stats->peakFlux = peakFlux;
-            stats->integratedFlux = integratedFlux;
+            stats->peak = peakFlux;
+            stats->sum = integratedFlux;
             stats->cX = sumX / integratedFlux;
             stats->cY = sumY / integratedFlux;
             stats->cZ = sumZ / integratedFlux;
@@ -403,8 +403,8 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
         else
         {
             stats->numVoxels = 0;
-            stats->peakFlux = NAN;
-            stats->integratedFlux = NAN;
+            stats->peak = NAN;
+            stats->sum = NAN;
             stats->cX = NAN;
             stats->cY = NAN;
             stats->cZ = NAN;

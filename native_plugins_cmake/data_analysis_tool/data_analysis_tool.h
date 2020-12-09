@@ -37,8 +37,8 @@ struct SourceStats
     // Centroid
     double cX, cY, cZ;
     // Flux
-    double integratedFlux;
-    double peakFlux;
+    double sum;
+    double peak;
 };
 
 extern "C"
