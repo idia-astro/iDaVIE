@@ -343,15 +343,21 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
 {
     if (stats && source.minX >= 0 && source.maxX < dimX && source.minY >= 0 && source.maxY < dimY && source.minZ >= 0 && source.maxZ < dimZ)
     {
-        double integratedFlux = 0.0;
+        double totalFlux = 0.0;
         double sumX = 0.0;
         double sumY = 0.0;
         double sumZ = 0.0;
 
         double peakFlux = std::numeric_limits<double>::lowest();
         int64_t numVoxels = 0;
+
+        int64_t numChannels = source.maxZ - source.minZ + 1;
+        std::vector<double> spectralProfile(numChannels);
+
         for (int64_t k = source.minZ; k <= source.maxZ; k++)
         {
+            double spectralSum = 0.0;
+            int64_t spectralCount = 0;
             for (int64_t j = source.minY; j <= source.maxY; j++)
             {
                 for (int64_t i = source.minX; i <= source.maxX; i++)
@@ -365,7 +371,7 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
                         {
                             numVoxels++;
                             peakFlux = std::max(peakFlux, flux);
-                            integratedFlux += flux;
+                            totalFlux += flux;
                             source.minX = min(source.minX, i);
                             source.maxX = max(source.maxX, i);
                             source.minY = min(source.minY, j);
@@ -376,9 +382,20 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
                             sumX += i * flux;
                             sumY += j * flux;
                             sumZ += k * flux;
+
+                            spectralSum += flux;
+                            spectralCount++;
                         }
                     }
                 }
+            }
+            if (spectralCount)
+            {
+                spectralProfile[k - source.minZ] = spectralSum / spectralCount;
+            }
+            else
+            {
+                spectralProfile[k - source.minZ] = NAN;
             }
         }
 
@@ -394,10 +411,60 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
         {
             stats->numVoxels = numVoxels;
             stats->peak = peakFlux;
-            stats->sum = integratedFlux;
-            stats->cX = sumX / integratedFlux;
-            stats->cY = sumY / integratedFlux;
-            stats->cZ = sumZ / integratedFlux;
+            stats->sum = totalFlux;
+            stats->cX = sumX / totalFlux;
+            stats->cY = sumY / totalFlux;
+            stats->cZ = sumZ / totalFlux;
+
+            // Find peak value
+            double spectralPeak = std::numeric_limits<double>::lowest();
+
+            for (auto i = 0; i < numChannels; i++)
+            {
+                auto val = spectralProfile[i];
+                if (isfinite(val) && val > spectralPeak)
+                {
+                    spectralPeak = val;
+                }
+            }
+
+            double leftChannel = 0;
+            double rightChannel = 0;
+            double w20Threshold = spectralPeak * 0.2;
+            bool leftChannelFound = false;
+            bool rightChannelFound = false;
+
+            for (auto i = 0; i < numChannels - 1; i++)
+            {
+                // bogus interpolation for now
+                if (spectralProfile[i] < w20Threshold && spectralProfile[i+1] >= w20Threshold) {
+                    leftChannel = source.minZ + i + 0.5;
+                    leftChannelFound = true;
+                    break;
+                }
+            }
+
+            for (auto i = numChannels - 1; i > 0; i--)
+            {
+                // bogus interpolation for nwo
+                if (spectralProfile[i] < w20Threshold && spectralProfile[i-1] >= w20Threshold) {
+                    rightChannel = source.minZ + i - 0.5;
+                    rightChannelFound = true;
+                    break;
+                }
+            }
+
+            if (leftChannelFound && rightChannelFound)
+            {
+                stats->channelVsys = (leftChannel + rightChannel) / 2.0;
+                stats->channelW20 = rightChannel - leftChannel;
+            }
+            else
+            {
+                stats->channelVsys = NAN;
+                stats->channelW20 = NAN;
+            }
+
             return EXIT_SUCCESS;
         }
         else
@@ -408,6 +475,8 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
             stats->cX = NAN;
             stats->cY = NAN;
             stats->cZ = NAN;
+            stats->channelVsys = NAN;
+            stats->channelW20 = NAN;
             return EXIT_FAILURE;
         }
     }

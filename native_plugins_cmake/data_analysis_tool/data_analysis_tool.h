@@ -39,6 +39,9 @@ struct SourceStats
     // Flux
     double sum;
     double peak;
+    // Vsys (in channel units)
+    double channelVsys;
+    double channelW20;
 };
 
 extern "C"

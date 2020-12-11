@@ -346,7 +346,7 @@ namespace VolumeData
                 return;
             }
             var sourceStats = SourceStatsDict[maskVal];
-            Debug.Log($"Source {maskVal}: {sourceStats.numVoxels} voxels; Flux: {sourceStats.sum} Jy km/s; {sourceStats.peak} Jy/vox (peak); centroid [{sourceStats.cX}, {sourceStats.cY}, {sourceStats.cZ}]");
+            Debug.Log($"Source {maskVal}: {sourceStats.numVoxels} voxels; {sourceStats.sum} (sum); {sourceStats.peak} (peak); centroid [{sourceStats.cX}, {sourceStats.cY}, {sourceStats.cZ}]; vsys: {sourceStats.channelVsys}; w20: {sourceStats.channelW20}");
         }
 
         public void RecreateFrameSet(double restFreq = 0)

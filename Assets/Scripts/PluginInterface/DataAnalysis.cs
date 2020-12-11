@@ -87,6 +87,9 @@ public static class DataAnalysis
         // Flux
         public double sum;
         public double peak;
+        // Vsys (in channel units)
+        public double channelVsys;
+        public double channelW20;
 
         public bool IsEmpty => numVoxels == 0;
         public void AddPointToBoundingBox(long x, long y, long z)
