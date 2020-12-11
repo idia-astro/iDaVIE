@@ -134,7 +134,6 @@ public class PaintMenuController : MonoBehaviour
 
     public void ExitPaintMode()
     {
-        _activeDataSet?.CommitMask();
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
         this.gameObject.SetActive(false);
     }

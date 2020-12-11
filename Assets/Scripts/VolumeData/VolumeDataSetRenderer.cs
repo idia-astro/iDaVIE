@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using DataFeatures;
 using JetBrains.Annotations;
@@ -8,6 +11,8 @@ using UnityEngine.XR;
 using Vectrosity;
 using Random = System.Random;
 using System.Text;
+using CatalogData;
+using Debug = UnityEngine.Debug;
 
 namespace VolumeData
 {
@@ -160,7 +165,6 @@ namespace VolumeData
         public IntPtr AstFrame =>_dataSet.AstFrameSet; 
         public string StdOfRest => _dataSet.GetStdOfRest();
 
-
         private int _currentXFactor, _currentYFactor, _currentZFactor;
         public bool IsFullResolution => _currentXFactor * _currentYFactor * _currentZFactor == 1;
 
@@ -245,7 +249,7 @@ namespace VolumeData
             if (RandomVolume)
                 _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);
             else
-                _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, false, CubeDepthAxis, CubeSlice);
+                _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, IntPtr.Zero, CubeDepthAxis, CubeSlice);
             _volumeInputController = FindObjectOfType<VolumeInputController>();
             _featureManager = GetComponentInChildren<FeatureSetManager>();
             if (_featureManager == null)
@@ -262,7 +266,7 @@ namespace VolumeData
             ScaleMin = _dataSet.MinValue;
             if (!String.IsNullOrEmpty(MaskFileName))
             {
-                _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, true);
+                _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, _dataSet.FitsData);
                 _maskDataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
             }
             _renderer = GetComponent<MeshRenderer>();
@@ -753,7 +757,13 @@ namespace VolumeData
 
         public void FinishBrushStroke()
         {
-            _maskDataSet?.FlushBrushStroke();
+            if (_maskDataSet != null)
+            {
+                _maskDataSet?.FlushBrushStroke();
+            }
+            
+            // Recalculate source stats
+            
         }
 
         public Vector3Int GetCubeDimensions()
@@ -776,17 +786,6 @@ namespace VolumeData
             Vector3 volumePosition = new Vector3((localPosition.x + 0.5f) * cubeDimensions.x, (localPosition.y + 0.5f) * cubeDimensions.y, (localPosition.z + 0.5f) * cubeDimensions.z);
             return volumePosition;
         }
-
-        public void CommitMask()
-        {
-            // Update cropped region and recalculate downsampled cube if it has been updated
-            if (_dirtyMask)
-            {
-                _maskDataSet?.CommitMask();
-                _maskDataSet?.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
-                _dirtyMask = false;
-            }
-        }
         
         public void SaveMask(bool overwrite)
         {
@@ -795,8 +794,6 @@ namespace VolumeData
                 Debug.LogError("Could not find mask data!");
                 return;
             }
-
-            _maskDataSet.CommitMask();
 
             IntPtr cubeFitsPtr;
             int status = 0;
