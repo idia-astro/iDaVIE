@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public enum SourceMappingOptions
 {
-    none, Name, X, Y, Z, Ra, Dec, Freq, Velo, Redshift, Xmin, Xmax, Ymin, Ymax, Zmin, Zmax
+    none, ID, X, Y, Z, Ra, Dec, Freq, Velo, Redshift, Xmin, Xmax, Ymin, Ymax, Zmin, Zmax
 }
 
 public class SourceRow : MonoBehaviour

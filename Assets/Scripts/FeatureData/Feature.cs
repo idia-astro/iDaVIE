@@ -9,7 +9,7 @@ public class Feature
     public bool Temporary;
     public string Comment;
     public float Metric;
-    
+    public int Index {get; private set;}
     private bool _selected;
     private Bounds _unityBounds;
     private Vector3 _position;
@@ -18,8 +18,9 @@ public class Feature
 
     public bool StatusChanged;
 
-    public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, Transform transform, string name)
+    public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, Transform transform, string name, int index)
     {
+        Index = index;
         _boundingBox = new VectorLine(name, new List<Vector3>(24), 1.0f) {drawTransform = transform, color = cubeColor};
         _boundingBox.Draw3DAuto();
         SetBounds(cubeMin, cubeMax);

@@ -719,8 +719,8 @@ public class CanvassDesktop : MonoBehaviour
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.Name.Source)
             {
-                sourceRow.CurrentMapping = SourceMappingOptions.Name;
-                dropdown.value = (int) SourceMappingOptions.Name;
+                sourceRow.CurrentMapping = SourceMappingOptions.ID;
+                dropdown.value = (int) SourceMappingOptions.ID;
             } 
         }
     }

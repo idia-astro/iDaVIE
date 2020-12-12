@@ -20,6 +20,7 @@ public class SofiaListCreator : MonoBehaviour
     [SerializeField]
     private RectTransform content = null;
 
+    public List<GameObject> SofiaObjectsList {get; private set;}
 
     public GameObject volumeDatasetRendererObj = null;
     public GameObject SofiaNewListController = null;
@@ -29,11 +30,12 @@ public class SofiaListCreator : MonoBehaviour
     private int numberFeatureSetRenderers;
 
     private int numberOfItems;
-
+    private bool _initialized = false;
 
     // Start is called before the first frame update
     void Start()
     {
+        SofiaObjectsList = new List<GameObject>();
        
         if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
@@ -68,6 +70,8 @@ public class SofiaListCreator : MonoBehaviour
             Vector3 pos = new Vector3(SpawnPoint.position.x+300, -spawnY, SpawnPoint.position.z);
             //instantiate item
             GameObject SpawnedItem = Instantiate(item, pos, SpawnPoint.rotation);
+            //add to list of spawned Sofia items
+            SofiaObjectsList.Add(SpawnedItem);
             //setParent
             SpawnedItem.transform.SetParent(SpawnPoint, false);
             //get ItemDetails Component
@@ -92,15 +96,24 @@ public class SofiaListCreator : MonoBehaviour
            
         }
 
-    
+        var selectedFeature = _activeDataSet.gameObject.GetComponentInChildren<VolumeDataSetRenderer>().FeatureSetManagerPrefab.SelectedFeature;
+        if (selectedFeature != null)
+            GetComponent<CustomDragHandler>().FocusOnFeature(selectedFeature.Index);
+        Debug.Log("focussing on feature: " + selectedFeature != null);
+        _initialized = true;
     
     }
 
 
     // Update is called once per frame
-    void Update()
+    void OnEnable()
     {
-      
+        if (_initialized)
+        {
+            var selectedFeature = _activeDataSet.gameObject.GetComponentInChildren<VolumeDataSetRenderer>().FeatureSetManagerPrefab.SelectedFeature;
+            if (selectedFeature != null)
+                GetComponent<CustomDragHandler>().FocusOnFeature(selectedFeature.Index);
+        }
     }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()

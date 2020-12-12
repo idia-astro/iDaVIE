@@ -135,8 +135,8 @@ namespace DataFeatures
                 boxIndices[5] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Zmax]);
             }
             int nameIndex = -1;
-            if (setCoordinates.Contains(SourceMappingOptions.Name))
-                nameIndex = Array.IndexOf(colNames, mapping[SourceMappingOptions.Name]);
+            if (setCoordinates.Contains(SourceMappingOptions.ID))
+                nameIndex = Array.IndexOf(colNames, mapping[SourceMappingOptions.ID]);
             NumberFeatures = voTable.Rows.Count;
             FeatureNames = new string[NumberFeatures];
             FeaturePositions = new Vector3[NumberFeatures];
@@ -229,7 +229,7 @@ namespace DataFeatures
                     {
                         cubeMin = BoxMinPositions[i];
                         cubeMax = BoxMaxPositions[i];
-                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, FeatureNames[i]));
+                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, FeatureNames[i], i));
                     }
                 }
                 else
@@ -238,7 +238,7 @@ namespace DataFeatures
                     {
                         cubeMin = FeaturePositions[i];
                         cubeMax = FeaturePositions[i];
-                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, FeatureNames[i]));
+                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, FeatureNames[i], i));
                     }
                 }
             }

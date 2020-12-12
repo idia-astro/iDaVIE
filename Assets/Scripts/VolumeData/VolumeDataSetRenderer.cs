@@ -140,6 +140,7 @@ namespace VolumeData
         public VectorLine _voxelOutline, _cubeOutline, _regionOutline, _regionMeasure;
 
         private FeatureSetManager _featureManager = null;
+
         private MeshRenderer _renderer;
         private Material _materialInstance;
         private Material _maskMaterialInstance;
@@ -505,6 +506,12 @@ namespace VolumeData
             if (_featureManager && _featureManager.SelectFeature(cursor))
             {
                 Debug.Log($"Selected feature '{_featureManager.SelectedFeature.Name}'");
+                var _sofiaList = GameObject.Find("RenderMenu");
+                if (_sofiaList != null)
+                {
+                    int sourceIndex = _featureManager.SelectedFeature.Index;
+                    _sofiaList.gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("Scroll View").gameObject.GetComponent<CustomDragHandler>().FocusOnFeature(sourceIndex);
+                }
             }
         }
 
