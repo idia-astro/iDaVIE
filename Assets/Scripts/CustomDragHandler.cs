@@ -25,14 +25,16 @@ public class CustomDragHandler : MonoBehaviour
 
     public void FocusOnFeature(int featureIndex)
     {
-        var _spawnPoint = transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject;
-        var featureListItem = GetComponent<SofiaListCreator>().SofiaObjectsList[featureIndex];
-        float verticalPosition = Spawn_initial_y - featureListItem.transform.localPosition.y;
-        _spawnPoint.GetComponent<RectTransform>().localPosition = new Vector3 (1, verticalPosition);
+        if (featureIndex < 0)
+            return;
         if (_previousSelectedListItem != null)
         {
             _previousSelectedListItem.GetComponent<Image>().color = _previousListItemColor;
         }
+        var _spawnPoint = transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject;
+        var featureListItem = GetComponent<SofiaListCreator>().SofiaObjectsList[featureIndex];
+        float verticalPosition = Spawn_initial_y - featureListItem.transform.localPosition.y;
+        _spawnPoint.GetComponent<RectTransform>().localPosition = new Vector3 (1, verticalPosition);
         _previousSelectedListItem = featureListItem;
         _previousListItemColor = featureListItem.GetComponent<Image>().color;
         featureListItem.GetComponent<Image>().color = Color.red;

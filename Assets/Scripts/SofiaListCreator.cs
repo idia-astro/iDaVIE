@@ -99,7 +99,6 @@ public class SofiaListCreator : MonoBehaviour
         var selectedFeature = _activeDataSet.gameObject.GetComponentInChildren<VolumeDataSetRenderer>().FeatureSetManagerPrefab.SelectedFeature;
         if (selectedFeature != null)
             GetComponent<CustomDragHandler>().FocusOnFeature(selectedFeature.Index);
-        Debug.Log("focussing on feature: " + selectedFeature != null);
         _initialized = true;
     
     }
