@@ -12613,6 +12613,7 @@ GameObject:
   m_Component:
   - component: {fileID: 379208439}
   - component: {fileID: 379208440}
+  - component: {fileID: 379208441}
   m_Layer: 0
   m_Name: VolumeDataSetManager
   m_TagString: Untagged
@@ -12654,6 +12655,18 @@ MonoBehaviour:
   VibrationDuration: 0.25
   VibrationFrequency: 100
   VibrationAmplitude: 1
+--- !u!114 &379208441
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 379208438}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f242863c69cecf34a91e91dcb914be82, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &379983798
 GameObject:
   m_ObjectHideFlags: 0
@@ -12697,9 +12710,6 @@ MonoBehaviour:
   savePopup: {fileID: 426473890}
   ExitPopup: {fileID: 2094693825}
   ExitSavePopup: {fileID: 2012834369}
-  VibrationDuration: 0.25
-  VibrationFrequency: 100
-  VibrationAmplitude: 1
 --- !u!225 &379983800
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -17532,9 +17542,6 @@ MonoBehaviour:
   savePopup: {fileID: 0}
   ExitPopup: {fileID: 0}
   ExitSavePopup: {fileID: 0}
-  VibrationDuration: 0.25
-  VibrationFrequency: 100
-  VibrationAmplitude: 1
 --- !u!1 &491008905
 GameObject:
   m_ObjectHideFlags: 0
@@ -20000,9 +20007,6 @@ MonoBehaviour:
   savePopup: {fileID: 0}
   ExitPopup: {fileID: 0}
   ExitSavePopup: {fileID: 0}
-  VibrationDuration: 0.25
-  VibrationFrequency: 100
-  VibrationAmplitude: 1
 --- !u!114 &557535366
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22220,9 +22224,6 @@ MonoBehaviour:
   savePopup: {fileID: 0}
   ExitPopup: {fileID: 0}
   ExitSavePopup: {fileID: 0}
-  VibrationDuration: 0.25
-  VibrationFrequency: 100
-  VibrationAmplitude: 1
 --- !u!114 &613341593
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23712,9 +23713,6 @@ MonoBehaviour:
   savePopup: {fileID: 0}
   ExitPopup: {fileID: 0}
   ExitSavePopup: {fileID: 0}
-  VibrationDuration: 0.25
-  VibrationFrequency: 100
-  VibrationAmplitude: 1
 --- !u!114 &645239846
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -41805,11 +41803,22 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 0
+  m_Interactable: 1
   m_TargetGraphic: {fileID: 1151967606}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1393187943}
+        m_MethodName: RedoBrushStroke
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1151967606
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -48903,9 +48912,6 @@ MonoBehaviour:
   mainMenuCanvas: {fileID: 822478519}
   paintMenu: {fileID: 1393187942}
   savePopup: {fileID: 426473890}
-  VibrationDuration: 0.25
-  VibrationFrequency: 100
-  VibrationAmplitude: 1
 --- !u!225 &1393187944
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -50517,11 +50523,22 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 0
+  m_Interactable: 1
   m_TargetGraphic: {fileID: 1427618038}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1393187943}
+        m_MethodName: UndoBrushStroke
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1427618038
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -52508,9 +52525,6 @@ MonoBehaviour:
   savePopup: {fileID: 0}
   ExitPopup: {fileID: 0}
   ExitSavePopup: {fileID: 0}
-  VibrationDuration: 0.25
-  VibrationFrequency: 100
-  VibrationAmplitude: 1
 --- !u!114 &1492820964
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -70523,6 +70537,50 @@ MonoBehaviour:
   VibrationDuration: 0.25
   VibrationFrequency: 100
   VibrationAmplitude: 1
+--- !u!1 &1964121790
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1964121791}
+  - component: {fileID: 1964121792}
+  m_Layer: 5
+  m_Name: TMP SubMeshUI [LiberationSans SDF Material + LiberationSans SDF Atlas]
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1964121791
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1964121790}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 663724907}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &1964121792
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1964121790}
+  m_CullTransparentMesh: 0
 --- !u!1 &1968556221
 GameObject:
   m_ObjectHideFlags: 0
@@ -72092,9 +72150,6 @@ MonoBehaviour:
   savePopup: {fileID: 426473890}
   _activeDataSet: {fileID: 0}
   _volumeInputController: {fileID: 0}
-  VibrationDuration: 0
-  VibrationFrequency: 0
-  VibrationAmplitude: 0
 --- !u!1 &2016363741
 GameObject:
   m_ObjectHideFlags: 0
@@ -74968,9 +75023,6 @@ MonoBehaviour:
   savePopup: {fileID: 0}
   ExitPopup: {fileID: 0}
   ExitSavePopup: {fileID: 0}
-  VibrationDuration: 0.25
-  VibrationFrequency: 100
-  VibrationAmplitude: 1
 --- !u!114 &2084439670
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -75798,9 +75850,6 @@ MonoBehaviour:
   savePopup: {fileID: 0}
   _activeDataSet: {fileID: 0}
   _volumeInputController: {fileID: 0}
-  VibrationDuration: 0
-  VibrationFrequency: 0
-  VibrationAmplitude: 0
 --- !u!1 &2100015305
 GameObject:
   m_ObjectHideFlags: 0
@@ -76154,9 +76203,6 @@ MonoBehaviour:
   savePopup: {fileID: 0}
   ExitPopup: {fileID: 0}
   ExitSavePopup: {fileID: 0}
-  VibrationDuration: 0.25
-  VibrationFrequency: 100
-  VibrationAmplitude: 1
 --- !u!114 &2106689976
 MonoBehaviour:
   m_ObjectHideFlags: 0
