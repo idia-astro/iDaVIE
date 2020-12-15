@@ -235,6 +235,7 @@ public class RenderingController : MonoBehaviour
         this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Max_thresholdObject").gameObject.transform.Find("maxThresholdValue").gameObject.GetComponent<Text>().text = _activeDataSet.ThresholdMax.ToString();
     }
 
+    /*
     public void LoadFeature()
     {
         if (_activeDataSet)
@@ -242,4 +243,5 @@ public class RenderingController : MonoBehaviour
             _activeDataSet.GetComponentInChildren<FeatureSetManager>().ImportFeatureSet();
         }
     }
+    */
 }

@@ -34,13 +34,19 @@
             "Source": "z_max"
         },
         "RA": {
-            "Source": "ra"
+            "Source": ""
         },
         "Dec": {
-            "Source": "dec"
+            "Source": ""
         },
         "Vel": {
-            "Source": "vopt"
-        }
+            "Source": ""
+        },
+        "Freq": {
+            "Source": ""
+		},
+        "Redshift": {
+            "Source": ""
+		}
     }
 }
