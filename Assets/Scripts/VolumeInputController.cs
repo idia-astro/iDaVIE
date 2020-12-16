@@ -117,8 +117,11 @@ public class VolumeInputController : MonoBehaviour
     private float _rotationRollCumulative = 0;
     private RotationAxes _rotationAxes = RotationAxes.Yaw | RotationAxes.Roll;
 
+    //scrolling
     public bool scrollSelected = false;
     public GameObject ScrollObject;
+    public bool scrollUp = false;
+    public bool scrollDown = false;
 
     // Vignetting
     private float _currentVignetteIntensity = 0;
@@ -192,6 +195,12 @@ public class VolumeInputController : MonoBehaviour
         SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuLeft")?.AddOnStateDownListener(OnMenuLeftPressed, SteamVR_Input_Sources.RightHand);
         SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.AddOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.LeftHand);
         SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.AddOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.RightHand);
+
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.AddOnStateUpListener(OnMenuUpReleased, SteamVR_Input_Sources.LeftHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.AddOnStateUpListener(OnMenuUpReleased, SteamVR_Input_Sources.RightHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateUpListener(OnMenuDownReleased, SteamVR_Input_Sources.LeftHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateUpListener(OnMenuDownReleased, SteamVR_Input_Sources.RightHand);
+
 
         var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
         if (volumeDataSetManager)
@@ -295,8 +304,16 @@ public class VolumeInputController : MonoBehaviour
 
         else if (fromSource == PrimaryHand && scrollSelected)
         {
-            ScrollObject.GetComponent<CustomDragHandler>().MoveUp();
-            Debug.Log("Menu up");
+            scrollDown = false;
+            scrollUp = true;
+        }
+    }
+
+    private void OnMenuUpReleased(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+         if (fromSource == PrimaryHand && scrollSelected)
+         {
+            scrollUp = false;
         }
     }
 
@@ -308,8 +325,16 @@ public class VolumeInputController : MonoBehaviour
         }
         else if (fromSource == PrimaryHand && scrollSelected)
         {
-            ScrollObject.GetComponent<CustomDragHandler>().MoveDown();
-            Debug.Log("Menu down");
+            scrollUp = false;
+            scrollDown = true;
+        }
+    }
+
+    private void OnMenuDownReleased(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        if (fromSource == PrimaryHand && scrollSelected)
+        {
+            scrollDown = false;
         }
     }
 
@@ -319,7 +344,6 @@ public class VolumeInputController : MonoBehaviour
         {
             UnoBrushStroke(fromSource);
         }
-       
     }
     
     private void OnMenuRightPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
@@ -601,6 +625,16 @@ public class VolumeInputController : MonoBehaviour
                 UpdateEditingZAxis();
                 break;
         }
+
+        if (scrollDown)
+        {
+            ScrollObject.GetComponent<CustomDragHandler>().MoveDown();
+        }
+        if (scrollUp)
+        { 
+            ScrollObject.GetComponent<CustomDragHandler>().MoveUp();
+        }
+
     }
 
     private void UpdateVignette()

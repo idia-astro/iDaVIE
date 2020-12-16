@@ -33,6 +33,9 @@ public class UserScrollableItem : EventTrigger
         public override void OnDeselect(BaseEventData data)
         {
             _volumeInputController.scrollSelected = false;
+            _volumeInputController.scrollSelected = false;
+            _volumeInputController.scrollUp = false;
+            _volumeInputController.scrollDown = false;
             _volumeInputController.ScrollObject = null;
             Debug.Log("OnDeselect called.");
         }
