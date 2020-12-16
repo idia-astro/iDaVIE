@@ -53,7 +53,6 @@ public class VolumeInputController : MonoBehaviour
         PaintModeDisabled,
     }
 
-
     [Flags]
     private enum RotationAxes
     {
@@ -117,6 +116,9 @@ public class VolumeInputController : MonoBehaviour
     private float _rotationYawCumulative = 0;
     private float _rotationRollCumulative = 0;
     private RotationAxes _rotationAxes = RotationAxes.Yaw | RotationAxes.Roll;
+
+    public bool scrollSelected = false;
+    public GameObject ScrollObject;
 
     // Vignetting
     private float _currentVignetteIntensity = 0;
@@ -290,6 +292,12 @@ public class VolumeInputController : MonoBehaviour
         {
             IncreaseBrushSize();
         }
+
+        else if (fromSource == PrimaryHand && scrollSelected)
+        {
+            ScrollObject.GetComponent<CustomDragHandler>().MoveUp();
+            Debug.Log("Menu up");
+        }
     }
 
     private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
@@ -297,6 +305,11 @@ public class VolumeInputController : MonoBehaviour
         if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
             DecreaseBrushSize();
+        }
+        else if (fromSource == PrimaryHand && scrollSelected)
+        {
+            ScrollObject.GetComponent<CustomDragHandler>().MoveDown();
+            Debug.Log("Menu down");
         }
     }
 
