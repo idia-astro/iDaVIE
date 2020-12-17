@@ -20,8 +20,8 @@ namespace VolumeData
 
         public VoxelEntry(int index, int value)
         {
-            this.Index = index;
-            this.Value = value;
+            Index = index;
+            Value = value;
         }
 
         public static readonly Comparer<VoxelEntry> IndexComparer = Comparer<VoxelEntry>.Create(
@@ -33,11 +33,26 @@ namespace VolumeData
     {
         public int NewValue;
         public List<VoxelEntry> Voxels;
+        public Dictionary<int, bool> ChangedSources;
 
         public BrushStrokeTransaction(int newValue)
         {
             NewValue = newValue;
             Voxels = new List<VoxelEntry>();
+            ChangedSources = new Dictionary<int, bool>();
+            if (NewValue != 0)
+            {
+                ChangedSources[NewValue] = true;
+            }
+        }
+
+        public void Add(VoxelEntry entry)
+        {
+            Voxels.Add(entry);
+            if (entry.Value != 0)
+            {
+                ChangedSources[entry.Value] = true;
+            }
         }
     }
 
@@ -49,9 +64,11 @@ namespace VolumeData
         public ComputeBuffer AddedMaskBuffer { get; private set; }
         public int AddedMaskEntryCount { get; private set; }
         public BrushStrokeTransaction CurrentBrushStroke { get; private set; }
+        public List<short> DirtySources { get; private set; }
         public List<BrushStrokeTransaction> BrushStrokeHistory { get; private set; }
         public List<BrushStrokeTransaction> BrushStrokeRedoQueue { get; private set; }
-
+        public Dictionary<short, DataAnalysis.SourceStats> SourceStatsDict { get; private set; }
+        
         public string FileName { get; private set; }
         public long XDim { get; private set; }
         public long YDim { get; private set; }
@@ -67,6 +84,7 @@ namespace VolumeData
 
 
         public bool IsMask { get; private set; }
+        private IntPtr ImageDataPtr;
 
         //private IDictionary<string, string> _headerDictionary;
 
@@ -131,10 +149,11 @@ namespace VolumeData
             return volumeDataSet;
         }
 
-        public static VolumeDataSet LoadDataFromFitsFile(string fileName, bool isMask, int index2 = 2, int sliceDim = 1)
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, IntPtr imageDataPtr = default(IntPtr), int index2 = 2, int sliceDim = 1)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
-            volumeDataSet.IsMask = isMask;
+            volumeDataSet.IsMask =  imageDataPtr != IntPtr.Zero;
+            volumeDataSet.ImageDataPtr = imageDataPtr;
             volumeDataSet.FileName = fileName;
             IntPtr fptr = IntPtr.Zero;
             int status = 0;
@@ -155,7 +174,7 @@ namespace VolumeData
             {
                 Debug.Log("Warning... AstFrameSet Error. See Unity Editor logs");
             }
-            if (!isMask)
+            if (!volumeDataSet.IsMask)
             {
                 volumeDataSet.HeaderDictionary = FitsReader.ExtractHeaders(fptr, out status);
                 volumeDataSet.ParseHeaderDict();
@@ -196,7 +215,7 @@ namespace VolumeData
                 FitsReader.FreeMemory(dataPtr);
             long numberDataPoints = volumeDataSet.cubeSize[0] * volumeDataSet.cubeSize[1] * volumeDataSet.cubeSize[index2];
             IntPtr fitsDataPtr = IntPtr.Zero;
-            if (isMask)
+            if (volumeDataSet.IsMask)
             {
                 if (FitsReader.FitsReadImageInt16(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
                 {
@@ -247,7 +266,7 @@ namespace VolumeData
             }
 
             FitsReader.FitsCloseFile(fptr, out status);
-            if (!isMask)
+            if (!volumeDataSet.IsMask)
             {
                 DataAnalysis.FindStats(fitsDataPtr, numberDataPoints, out volumeDataSet.MaxValue, out volumeDataSet.MinValue, out volumeDataSet.MeanValue,
                     out volumeDataSet.StanDev);
@@ -259,10 +278,10 @@ namespace VolumeData
                 Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
                 if (histogramPtr != IntPtr.Zero)
                     DataAnalysis.FreeMemory(histogramPtr);
-                volumeDataSet.HasFitsRestFrequency = volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ") || volumeDataSet.HeaderDictionary.ContainsKey("RESTFREQ");
+                volumeDataSet.HasFitsRestFrequency =
+                    volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ") || volumeDataSet.HeaderDictionary.ContainsKey("RESTFREQ");
             }
-
-            
+           
             if (volumeDataSet.HasFitsRestFrequency)
             {
                 volumeDataSet.HasRestFrequency = true;
@@ -280,7 +299,54 @@ namespace VolumeData
             // single pixel brush: 16-bits = 2 bytes
             volumeDataSet._cachedBrush = new byte[2];
 
+            if (volumeDataSet.IsMask)
+            {
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+                var sourceArray = DataAnalysis.GetMaskedSourceArray(volumeDataSet.FitsData, volumeDataSet.XDim, volumeDataSet.YDim, volumeDataSet.ZDim);
+                volumeDataSet.SourceStatsDict = new Dictionary<short, DataAnalysis.SourceStats>();
+                foreach (var source in sourceArray)
+                {
+                    volumeDataSet.SourceStatsDict[source.maskVal] = DataAnalysis.SourceStats.FromSourceInfo(source);
+                    volumeDataSet.UpdateStats(source.maskVal);
+                }
+                sw.Stop();
+                Debug.Log($"Calculated stats for {volumeDataSet.SourceStatsDict?.Count} sources in {sw.Elapsed.TotalMilliseconds} ms");
+            }
+
             return volumeDataSet;
+        }
+
+        private void UpdateStats(short maskVal)
+        {
+            if (!SourceStatsDict.ContainsKey(maskVal))
+            {
+                Debug.Log($"Can't update stats for missing source {maskVal}");
+                return;
+            }
+            var sourceStats = SourceStatsDict[maskVal];
+
+            DataAnalysis.GetSourceStats(ImageDataPtr, FitsData, XDim, YDim, ZDim, DataAnalysis.SourceInfo.FromSourceStats(sourceStats, maskVal), ref sourceStats);
+            if (sourceStats.numVoxels > 0)
+            {
+                SourceStatsDict[maskVal] = sourceStats;
+                PrintStats(maskVal);
+            }
+            else if (SourceStatsDict.ContainsKey(maskVal))
+            {
+                SourceStatsDict.Remove(maskVal);
+            }
+        }
+
+        private void PrintStats(short maskVal)
+        {
+            if (!SourceStatsDict.ContainsKey(maskVal))
+            {
+                Debug.Log($"Can't print stats for missing source {maskVal}");
+                return;
+            }
+            var sourceStats = SourceStatsDict[maskVal];
+            Debug.Log($"Source {maskVal}: {sourceStats.numVoxels} voxels; {sourceStats.sum} (sum); {sourceStats.peak} (peak); centroid [{sourceStats.cX}, {sourceStats.cY}, {sourceStats.cZ}]; vsys: {sourceStats.channelVsys}; w20: {sourceStats.channelW20}");
         }
 
         public void RecreateFrameSet(double restFreq = 0)
@@ -295,15 +361,16 @@ namespace VolumeData
                 Debug.Log("Failed to recreate AstFrameSet!");
             AstFrameSet = astFrameSet; //Need to delete old one?
         }
+
         public void CreateAltSpecFrame()
         {
-                if (AstAltSpecSet != IntPtr.Zero)
-                    AstTool.DeleteObject(AstAltSpecSet);
-                IntPtr astAltSpecFrame = IntPtr.Zero;
-                string system, unit;
-                GetAltSpecSystemWithUnit(out system, out unit);
-                AstTool.GetAltSpecSet(AstFrameSet, out astAltSpecFrame, new StringBuilder(system), new StringBuilder(unit), new StringBuilder(GetStdOfRest()));
-                AstAltSpecSet = astAltSpecFrame;
+            if (AstAltSpecSet != IntPtr.Zero)
+                AstTool.DeleteObject(AstAltSpecSet);
+            IntPtr astAltSpecFrame = IntPtr.Zero;
+            string system, unit;
+            GetAltSpecSystemWithUnit(out system, out unit);
+            AstTool.GetAltSpecSet(AstFrameSet, out astAltSpecFrame, new StringBuilder(system), new StringBuilder(unit), new StringBuilder(GetStdOfRest()));
+            AstAltSpecSet = astAltSpecFrame;
         }
 
         public static void UpdateHistogram(VolumeDataSet volumeDataSet, float min, float max)
@@ -569,7 +636,7 @@ namespace VolumeData
             {
                 activeFaces += 2;
             }
-            
+
             // -y face
             if (voxelIndices.y <= 0)
             {
@@ -582,7 +649,7 @@ namespace VolumeData
             {
                 activeFaces += 4;
             }
-            
+
             // +y face
             if (voxelIndices.y >= cubeSize.y - 1)
             {
@@ -621,7 +688,7 @@ namespace VolumeData
             {
                 activeFaces += 32;
             }
-            
+
             return activeFaces;
         }
 
@@ -643,7 +710,7 @@ namespace VolumeData
             {
                 return 0;
             }
-            
+
             // Use the cached / current mask array if the cursor location is within the cropped region
             if (_regionMaskVoxels != null && RegionCube && x >= RegionOffset.x && x < RegionOffset.x + RegionCube.width &&
                 y >= RegionOffset.y && y < RegionOffset.y + RegionCube.height &&
@@ -776,8 +843,25 @@ namespace VolumeData
             {
                 return true;
             }
-            
+
             _regionMaskVoxels[index] = value;
+            Vector3Int location = RegionOffset + coordsRegionSpace;
+            if (!FitsReader.UpdateMaskVoxel(FitsData, Dims, location, value))
+            {
+                Debug.Log("Error updating mask");
+                return false;
+            }
+
+            if (SourceStatsDict.ContainsKey(value))
+            {
+                var s = SourceStatsDict[value];
+                s.AddPointToBoundingBox(location.x, location.y, location.z);
+                SourceStatsDict[value] = s;
+            }
+            else
+            {
+                SourceStatsDict[value] = DataAnalysis.SourceStats.FromPoint(location.x, location.y, location.z);
+            }
             // convert from int to byte array
             _cachedBrush = BitConverter.GetBytes(value);
             _updateTexture.LoadRawTextureData(_cachedBrush);
@@ -861,7 +945,6 @@ namespace VolumeData
                 }
             }
 
-
             if (addToHistory)
             {
                 // Create transaction if it doesn't exist
@@ -869,16 +952,22 @@ namespace VolumeData
                 {
                     CurrentBrushStroke = new BrushStrokeTransaction(value);
                 }
-                CurrentBrushStroke.Voxels.Add(new VoxelEntry(newEntry.Index, currentValue));
+
+                CurrentBrushStroke.Add(new VoxelEntry(newEntry.Index, currentValue));
                 // New brush strokes clear the redo queue
                 BrushStrokeRedoQueue?.Clear();
             }
+
             return true;
         }
 
         public void FlushBrushStroke()
         {
             ConsolidateMaskEntries();
+            foreach (var maskVal in CurrentBrushStroke.ChangedSources.Keys)
+            {
+                UpdateStats((short)maskVal);
+            }
             BrushStrokeHistory.Add(CurrentBrushStroke);
             CurrentBrushStroke = new BrushStrokeTransaction(CurrentBrushStroke.NewValue);
         }
@@ -918,13 +1007,28 @@ namespace VolumeData
 
         public bool UndoBrushStroke()
         {
-            if (BrushStrokeHistory.Count > 0)
+            if (BrushStrokeHistory?.Count > 0)
             {
                 var lastStroke = BrushStrokeHistory.Last();
+                Dictionary<short, bool> changedSources = new Dictionary<short, bool>();
+                if (lastStroke.NewValue != 0)
+                {
+                    changedSources[(short)lastStroke.NewValue] = true;
+                }
                 foreach (var voxel in lastStroke.Voxels)
                 {
+                    if (voxel.Value != 0)
+                    {
+                        changedSources[(short)voxel.Value] = true;
+                    }
                     PaintMaskVoxel(CoordsFromIndex(voxel.Index), (short)voxel.Value, false);
                 }
+
+                foreach (var maskVal in changedSources.Keys)
+                {
+                    UpdateStats(maskVal);
+                }
+                
                 if (BrushStrokeRedoQueue == null)
                 {
                     BrushStrokeRedoQueue = new List<BrushStrokeTransaction>();
@@ -939,13 +1043,28 @@ namespace VolumeData
         
         public bool RedoBrushStroke()
         {
-            if (BrushStrokeRedoQueue.Count > 0)
+            if (BrushStrokeRedoQueue?.Count > 0)
             {
                 var nextStroke = BrushStrokeRedoQueue.Last();
+                Dictionary<short, bool> changedSources = new Dictionary<short, bool>();
+                if (nextStroke.NewValue != 0)
+                {
+                    changedSources[(short)nextStroke.NewValue] = true;
+                }
                 foreach (var voxel in nextStroke.Voxels)
                 {
+                    if (voxel.Value != 0)
+                    {
+                        changedSources[(short)voxel.Value] = true;
+                    }
                     PaintMaskVoxel(CoordsFromIndex(voxel.Index), (short)nextStroke.NewValue, false);
                 }
+                
+                foreach (var maskVal in changedSources.Keys)
+                {
+                    UpdateStats(maskVal);
+                }
+                
                 if (BrushStrokeHistory == null)
                 {
                     BrushStrokeHistory = new List<BrushStrokeTransaction>();
@@ -974,35 +1093,7 @@ namespace VolumeData
             var z = index / RegionCube.height;
             return new Vector3Int(x, y, z);
         }
-
-        public int CommitMask()
-        {
-            int status = 0;
-            if (_regionMaskVoxels == null || _regionMaskVoxels.Length == 0)
-            {
-                Debug.Log("Can't save empty region to mask");
-                return -1;
-            }
-
-            int unmangedMemorySize = Marshal.SizeOf(_regionMaskVoxels[0]) * _regionMaskVoxels.Length;
-            IntPtr unmanagedCopy = Marshal.AllocHGlobal(unmangedMemorySize);
-            long[] regionDims = {RegionCube.width, RegionCube.height, RegionCube.depth};
-            long[] regionOffset = {RegionOffset.x, RegionOffset.y, RegionOffset.z};
-            Marshal.Copy(_regionMaskVoxels, 0, unmanagedCopy, _regionMaskVoxels.Length);
-            if (!FitsReader.UpdateMask(FitsData, Dims, unmanagedCopy, regionDims, regionOffset))
-            {
-                Debug.Log("Error updating mask");
-                return - 1;
-            }
-
-            if (unmanagedCopy != IntPtr.Zero)
-            {
-                Marshal.FreeHGlobal(unmanagedCopy);
-            }
-
-            return status;
-        }
-
+        
         public int SaveMask(IntPtr cubeFitsPtr, string filename)
         {
             int status = FitsReader.SaveMask(cubeFitsPtr, FitsData, Dims, filename);
@@ -1011,19 +1102,21 @@ namespace VolumeData
                 // Update filename after stripping out exclamation mark indicating overwrite flag
                 FileName = filename.Replace("!", "");
             }
+
             return status;
         }
 
-        
+
         public string GetAstAttribute(string attributeToGet)
         {
             StringBuilder attributeReceived = new StringBuilder(70);
             StringBuilder attributeToGetSB = new StringBuilder(attributeToGet);
             if (AstTool.GetString(AstFrameSet, attributeToGetSB, attributeReceived, attributeReceived.Capacity) != 0)
             {
-                Debug.Log("Cannot find attribute " + attributeToGet  + " in Frame!");
+                Debug.Log("Cannot find attribute " + attributeToGet + " in Frame!");
                 return "";
             }
+
             return attributeReceived.ToString();
         }
 
@@ -1033,9 +1126,10 @@ namespace VolumeData
             StringBuilder attributeToGetSB = new StringBuilder(attributeToGet);
             if (AstTool.GetString(AstAltSpecSet, attributeToGetSB, attributeReceived, attributeReceived.Capacity) != 0)
             {
-                Debug.Log("Cannot find attribute " + attributeToGet  + " in Frame!");
+                Debug.Log("Cannot find attribute " + attributeToGet + " in Frame!");
                 return "";
             }
+
             return attributeReceived.ToString();
         }
 
@@ -1044,12 +1138,13 @@ namespace VolumeData
             IntPtr astCmpFrame = IntPtr.Zero;
             AstTool.GetAstFrame(AstFrameSet, out astCmpFrame, 2);
             double xStart, yStart, zStart, xEnd, yEnd, zEnd;
-            if (AstTool.Transform3D(AstFrameSet, (double)startPoint.x, (double)startPoint.y, (double)startPoint.z, 1, out xStart, out yStart, out zStart) != 0 ||
-                    AstTool.Transform3D(AstFrameSet, (double)endPoint.x, (double)endPoint.y, (double)endPoint.z, 1, out xEnd, out yEnd, out zEnd) != 0 ||
-                    AstTool.Distance1D(astCmpFrame, xStart, xEnd, 1, out xLength) != 0 ||
-                    AstTool.Distance1D(astCmpFrame, yStart, yEnd, 2, out yLength) != 0 ||
-                    AstTool.Distance1D(astCmpFrame, zStart, zEnd, 3, out zLength) != 0 ||
-                    AstTool.Distance2D(astCmpFrame, xStart, yStart, xEnd, yEnd, out angle) != 0)
+            if (AstTool.Transform3D(AstFrameSet, (double) startPoint.x, (double) startPoint.y, (double) startPoint.z, 1, out xStart, out yStart, out zStart) !=
+                0 ||
+                AstTool.Transform3D(AstFrameSet, (double) endPoint.x, (double) endPoint.y, (double) endPoint.z, 1, out xEnd, out yEnd, out zEnd) != 0 ||
+                AstTool.Distance1D(astCmpFrame, xStart, xEnd, 1, out xLength) != 0 ||
+                AstTool.Distance1D(astCmpFrame, yStart, yEnd, 2, out yLength) != 0 ||
+                AstTool.Distance1D(astCmpFrame, zStart, zEnd, 3, out zLength) != 0 ||
+                AstTool.Distance2D(astCmpFrame, xStart, yStart, xEnd, yEnd, out angle) != 0)
             {
                 Debug.Log("Error finding WCS distances!");
                 AstTool.DeleteObject(astCmpFrame);
@@ -1065,6 +1160,7 @@ namespace VolumeData
             {
                 Debug.Log("Error finding formatted ast coordinate!");
             }
+
             return coord.ToString();
         }
 
@@ -1075,12 +1171,14 @@ namespace VolumeData
             {
                 Debug.Log("Error finding normalized alt spec coordinate!");
             }
+
             int stringLength = 70;
             StringBuilder coord = new StringBuilder(stringLength);
             if (AstTool.Format(AstAltSpecSet, 3, zNorm, coord, stringLength) != 0)
             {
                 Debug.Log("Error finding formatted alt spec coordinate!");
             }
+
             return coord.ToString();
         }
 
@@ -1099,7 +1197,7 @@ namespace VolumeData
         {
             return PixelUnit;
         }
-        
+
         public string GetAxisUnit(int axis)
         {
             return GetAstAttribute("Unit(" + axis + ")");
@@ -1121,7 +1219,7 @@ namespace VolumeData
             StringBuilder valueSB = new StringBuilder(value);
             if (AstTool.SetString(AstFrameSet, attributeSB, valueSB) != 0)
             {
-                Debug.Log("Cannot set attribute " + attribute  + " in Frame!");
+                Debug.Log("Cannot set attribute " + attribute + " in Frame!");
             }
         }
 
@@ -1131,10 +1229,10 @@ namespace VolumeData
             StringBuilder valueSB = new StringBuilder(value);
             if (AstTool.SetString(AstAltSpecSet, attributeSB, valueSB) != 0)
             {
-                Debug.Log("Cannot set attribute " + attribute  + " in Frame!");
+                Debug.Log("Cannot set attribute " + attribute + " in Frame!");
             }
         }
-        
+
         public bool HasAstAttribute(string attributeToCheck)
         {
             StringBuilder attributeToCheckSB = new StringBuilder(attributeToCheck);
@@ -1172,6 +1270,7 @@ namespace VolumeData
                 Debug.Log("Cannot convert depth without rest frequencies!");
                 return "";
             }
+
             string system = GetAstAltAttribute("System(3)");
             string unit = GetAstAltAttribute("Unit(3)");
             double zOut, dummyX, dummyY;
@@ -1189,21 +1288,23 @@ namespace VolumeData
                 case "Hz":
                     if (Mathf.Abs((float) zOut) >= 1.0E9)
                         SetAltAxisUnit(3, "GHz");
-                    break;  
+                    break;
                 case "GHz":
                     if (Mathf.Abs((float) zOut) < 1)
                         SetAltAxisUnit(3, "Hz");
                     break;
             }
-            return $"{system}: {GetFormattedAltCoord(zOut), 12} {unit}";
+
+            return $"{system}: {GetFormattedAltCoord(zOut),12} {unit}";
         }
 
         public string GetAltSpecSystem()
         {
-            string system,unit;
+            string system, unit;
             GetAltSpecSystemWithUnit(out system, out unit);
             return system;
         }
+
         private void GetAltSpecSystemWithUnit(out string system, out string unit)
         {
             system = "";
@@ -1265,15 +1366,18 @@ namespace VolumeData
                 else
                     FitsReader.FreeMemory(FitsData);
             }
+
             if (FitsHeader != IntPtr.Zero)
             {
                 FitsReader.FreeFitsMemory(FitsHeader, out status);
             }
+
             if (AstFrameSet != IntPtr.Zero)
             {
                 AstTool.DeleteObject(AstFrameSet);
                 AstTool.AstEnd();
             }
+
             ExistingMaskBuffer?.Release();
             AddedMaskBuffer?.Release();
         }

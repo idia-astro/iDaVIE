@@ -75,8 +75,6 @@ DllExport int FreeMemory(void* );
 
 DllExport void FreeFitsMemory(char* header, int* status);
 
-DllExport int InsertSubArrayInt16(int16_t* , int64_t , int16_t* , int64_t , int64_t );
-
 }
 
 

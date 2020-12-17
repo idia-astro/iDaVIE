@@ -202,11 +202,3 @@ void FreeFitsMemory(char* header, int* status)
 {
     fits_free_memory(header, status);
 }
-
-int InsertSubArrayInt16(int16_t* mainArray, int64_t mainArraySize, int16_t* subArray, int64_t subArraySize, int64_t startIndex)
-{
-    if (subArraySize > mainArraySize|| startIndex > mainArraySize || startIndex + subArraySize > mainArraySize)
-        return EXIT_FAILURE;
-    memcpy(mainArray + startIndex, subArray, subArraySize*sizeof(int16_t));
-    return EXIT_SUCCESS;
-}
