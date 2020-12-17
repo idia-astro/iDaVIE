@@ -637,6 +637,7 @@ public class CanvassDesktop : MonoBehaviour
 
     private void _browseMappingFile(string path)
     {
+        sourcesPanelContent.gameObject.transform.Find("MappingFile_container").gameObject.transform.Find("MappingFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(path);
         bool rowChanged = false;
         featureMapping = FeatureMapping.GetMappingFromFile(path);
         foreach (var sourceRowObject in _sourceRowObjects)
@@ -753,11 +754,6 @@ public class CanvassDesktop : MonoBehaviour
                 rowChanged = true;
 
             } 
-            if (rowChanged)
-            {
-                sourceRowObject.transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().isOn = true;
-                sourceRowObject.transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().interactable = false;
-            }
         }
     }
 
@@ -811,6 +807,8 @@ public class CanvassDesktop : MonoBehaviour
 
     public void LoadSourcesFile()
     {
+        var loadingText = sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Text").gameObject;
+        loadingText.SetActive(true);
         bool[] columnsMask = new bool[_sourceRowObjects.Length];
         if (!AreMinimalMappingsSet())
         {
@@ -828,6 +826,7 @@ public class CanvassDesktop : MonoBehaviour
         }
         if(featureSetManager.FeatureFileToLoad != "")
             featureSetManager.ImportFeatureSet(finalMapping, FeatureMapper.GetVOTableFromFile(sourcesPath), Path.GetFileName(sourcesPath), columnsMask);
+        loadingText.GetComponent<TextMeshProUGUI>().text = $"Successfully loaded sources from:{Environment.NewLine}{Path.GetFileName(sourcesPath)}";
     }
 
     public void DismissFileLoad()

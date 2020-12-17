@@ -37,14 +37,6 @@ public class SourceRow : MonoBehaviour
     {
         string[] optionNames = System.Enum.GetNames(typeof(SourceMappingOptions));
         CurrentMapping = (SourceMappingOptions) coord;
-        CanvassDesktopParent.ChangeSourceMapping(SourceIndex, CurrentMapping);
-        if (coord == 0)
-            transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().interactable = true;
-        else
-        {
-            transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().isOn = true;
-            transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().interactable = false;
-        }
-        
+        CanvassDesktopParent.ChangeSourceMapping(SourceIndex, CurrentMapping);        
     }
 }
