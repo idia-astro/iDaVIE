@@ -206,7 +206,7 @@ namespace VolumeData
 
 
 
-                momentMapMenuController.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_2").gameObject.transform.Find("ThresholdValue").GetComponent<Text>().text = MomentMapThreshold.ToString();
+                momentMapMenuController.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_Threshold").gameObject.transform.Find("ThresholdValue").GetComponent<Text>().text = MomentMapThreshold.ToString();
 
 
             }

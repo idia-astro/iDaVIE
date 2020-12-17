@@ -1,12 +1,20 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using VolumeData;
 
 public class MomentMapMenuController : MonoBehaviour
 {
+
+    public Text ThresholdTypeText;
     public GameObject volumeDataSetManager;
     private VolumeDataSetRenderer[] dataSets;
+    int thresholdType = 0;
+    public enum ThresholdType
+    {
+        Mask, Threshold
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -19,8 +27,23 @@ public class MomentMapMenuController : MonoBehaviour
             {
                 VolumeDataSet dataSet = getFirstActiveDataSet().GetDataSet();
                 getFirstActiveDataSet().GetMomentMapRenderer().UpdatePlotWindow();
+
+                if (getFirstActiveDataSet().Mask != null)
+                {
+                    ThresholdTypeText.gameObject.GetComponent<Text>().text = (ThresholdType)0 + "";
+                    this.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_Threshold").gameObject.SetActive(false);
+                }
+                else
+                {
+                    ThresholdTypeText.gameObject.GetComponent<Text>().text = (ThresholdType)1 + "";
+                    this.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_Threshold").gameObject.SetActive(true);
+                }
             }
         }
+
+       
+
+
     }
 
 
@@ -62,6 +85,26 @@ public class MomentMapMenuController : MonoBehaviour
             }
         }
         return null;
+    }
+
+    public void SetThresholdType()
+    {
+        if (thresholdType == 0)
+        {
+            thresholdType = 1;
+            this.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_Threshold").gameObject.SetActive(true);
+            getFirstActiveDataSet().GetMomentMapRenderer().UseMask = false;
+
+        }
+        else
+        {
+            thresholdType = 0;
+            this.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_Threshold").gameObject.SetActive(false);
+            getFirstActiveDataSet().GetMomentMapRenderer().UseMask = true;
+
+        }
+        getFirstActiveDataSet().GetMomentMapRenderer().CalculateMomentMaps();
+        ThresholdTypeText.gameObject.GetComponent<Text>().text = (ThresholdType)thresholdType + "";
     }
 
 }
