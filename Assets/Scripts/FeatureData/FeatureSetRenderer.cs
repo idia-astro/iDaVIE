@@ -112,14 +112,6 @@ namespace DataFeatures
                     rawDataKeysList.Add(colNames[i]);
             }
             RawDataKeys = rawDataKeysList.ToArray();
-/*  
-            RawDataKeys = new string[voTable.Column.Count];
-            for (int i = 0; i < voTable.Column.Count; i++)
-            {
-                if(columnsMask[i])
-                    RawDataKeys[i] = colNames[i];
-            }
-            */
             if (setCoordinates.Contains(SourceMappingOptions.X))
             {
                 posIndices[0] = Array.IndexOf(colNames, mapping[SourceMappingOptions.X]);
