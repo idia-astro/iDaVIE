@@ -80,6 +80,7 @@ int GetAltSpecSet(AstFrameSet* frameSetPtr, AstFrameSet** specFrameSet, const ch
 {
     if (!frameSetPtr)
     {
+        std::cout << "No primary frame set provided!" << std::endl;
         return 1;
     }
     AstFrameSet* newFrameSet = static_cast<AstFrameSet*> astCopy(frameSetPtr);
@@ -103,6 +104,12 @@ int GetAltSpecSet(AstFrameSet* frameSetPtr, AstFrameSet** specFrameSet, const ch
         astClearStatus;
         return -1;
     }
+    return 0;
+}
+
+int Show(AstObject* astObject)
+{
+    astShow(astObject);
     return 0;
 }
 
@@ -384,9 +391,15 @@ int Copy(AstFrameSet* src, AstFrameSet** copy)
     return 0;
 }
 
-void Invert(AstFrameSet* src)
+int Invert(AstFrameSet* src)
 {
     astInvert(src);
+    if (!astOK)
+    {
+        astClearStatus;
+        return -1;
+    }
+    return 0;
 }
 
 void AstEnd()

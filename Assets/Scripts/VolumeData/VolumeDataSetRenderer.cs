@@ -158,7 +158,7 @@ namespace VolumeData
         
         private bool _dirtyMask = false;
         public bool HasWCS { get; private set; }
-        public IntPtr AstFrame =>_dataSet.AstFrameSet; 
+        public IntPtr AstFrame { get =>_dataSet.AstFrameSet; } 
         public string StdOfRest => _dataSet.GetStdOfRest();
 
 
@@ -510,7 +510,12 @@ namespace VolumeData
                 if (_sofiaList != null)
                 {
                     int sourceIndex = _featureManager.SelectedFeature.Index;
-                    _sofiaList.gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("Scroll View").gameObject.GetComponent<CustomDragHandler>().FocusOnFeature(sourceIndex);
+                    var scrollView = _sofiaList.gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("Scroll View").gameObject;
+                    int sourceListIndex = _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().ParentListIndex;
+                    if (scrollView.GetComponent<SofiaListCreator>().CurrentFeatureSetIndex != sourceListIndex)
+                        scrollView.GetComponent<SofiaListCreator>().DisplaySet(sourceListIndex);
+                    scrollView.GetComponent<CustomDragHandler>().FocusOnFeature(_featureManager.SelectedFeature);
+                    _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().UpdateInfo();
                 }
             }
         }

@@ -1,6 +1,8 @@
 ﻿using DataFeatures;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
@@ -14,6 +16,8 @@ public class SofiaListItem : MonoBehaviour
     public GameObject SofiaNewListPrefab = null;
     public GameObject SofiaNewListController = null;
     private bool isVisible = true;
+
+    public int ParentListIndex {get; set;}
 
     public Feature feature;
 
@@ -29,6 +33,8 @@ public class SofiaListItem : MonoBehaviour
 
     private FeatureSetManager featureSetManager;
     private FeatureSetRenderer featureSetRenderer;
+
+    public GameObject InfoWindow;
 
 
     private int visibilityStatus=0;
@@ -113,6 +119,42 @@ public class SofiaListItem : MonoBehaviour
         Teleport(feature.CornerMin, feature.CornerMax);
         // Teleport(Vector3 boundsMin, Vector3 boundsMax);
 
+    }
+
+    public void UpdateInfo()
+    {
+        var textObject = InfoWindow.transform.Find("PanelContents").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport")
+            .gameObject.transform.Find("Content").gameObject.transform.Find("SourceInfoText").gameObject;
+        textObject.GetComponent<TMP_Text>().text = "";
+        for (int i = 0; i < feature.FeatureSetParent.RawDataKeys.Length; i++)
+        {
+            textObject.GetComponent<TMP_Text>().text += $"{feature.FeatureSetParent.RawDataKeys[i]} : {feature.RawData[i]}{Environment.NewLine}";
+        }
+    }
+
+    public void ShowInfo()
+    {
+        InfoWindow.SetActive(true);
+        UpdateInfo();
+    }
+
+    public void Select()
+    {
+        featureSetManager.SelectedFeature = feature;
+        var _sofiaList = GameObject.Find("RenderMenu");
+        if (_sofiaList != null)
+        {
+            int sourceIndex = featureSetManager.SelectedFeature.Index;
+            var scrollView = _sofiaList.gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("Scroll View").gameObject;
+            int sourceListIndex = featureSetManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().ParentListIndex;
+            if (scrollView.GetComponent<SofiaListCreator>().CurrentFeatureSetIndex != sourceListIndex)
+                scrollView.GetComponent<SofiaListCreator>().DisplaySet(sourceListIndex);
+            scrollView.GetComponent<CustomDragHandler>().FocusOnFeature(feature);
+            var infoWindow = transform.root.Find("SourceInfoWindow").gameObject;
+            if(infoWindow.activeSelf)
+                ShowInfo();
+
+        }
     }
     
     public void Teleport(Vector3 boundsMin, Vector3 boundsMax)

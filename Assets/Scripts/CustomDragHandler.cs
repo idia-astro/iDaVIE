@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using DataFeatures;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -19,31 +20,25 @@ public class CustomDragHandler : MonoBehaviour
     {
         spawnPointPosition = spawnPoint.gameObject.GetComponent<RectTransform>();
         Spawn_initial_y = spawnPointPosition.localPosition.y;
-        Debug.Log("init localPosition: " + spawnPointPosition.localPosition);
-
     }
 
-    public void FocusOnFeature(int featureIndex)
+    public void FocusOnFeature(Feature feature)
     {
-        if (featureIndex < 0)
-            return;
         if (_previousSelectedListItem != null)
         {
             _previousSelectedListItem.GetComponent<Image>().color = _previousListItemColor;
         }
         var _spawnPoint = transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject;
-        var featureListItem = GetComponent<SofiaListCreator>().SofiaObjectsList[featureIndex];
+        var featureListItem = feature.LinkedListItem;
         float verticalPosition = Spawn_initial_y - featureListItem.transform.localPosition.y;
         _spawnPoint.GetComponent<RectTransform>().localPosition = new Vector3 (1, verticalPosition);
         _previousSelectedListItem = featureListItem;
         _previousListItemColor = featureListItem.GetComponent<Image>().color;
-        featureListItem.GetComponent<Image>().color = Color.red;
+        featureListItem.GetComponent<Image>().color = feature.FeatureSetParent.FeatureColor;
     }
 
     public void MoveUp()
     {
-        Debug.Log("Go up! "+ spawnPointPosition.localPosition.y+" was: "+ Spawn_initial_y);
-
         spawnPointPosition.localPosition += Vector3.down * scrollSpeed;
         if (spawnPointPosition.localPosition.y < Spawn_initial_y)
         {
@@ -53,17 +48,11 @@ public class CustomDragHandler : MonoBehaviour
 
     public void MoveDown()
     {
-
-
-        Debug.Log("Go down! " + spawnPointPosition.localPosition.y + " target: " + (Spawn_initial_y * 1.5f * -1 + Spawn_initial_y));
-
-
         spawnPointPosition.localPosition += Vector3.up * scrollSpeed;
-        if (spawnPointPosition.localPosition.y > 2000 )
+        float yLimit = GetComponent<SofiaListCreator>().NumberOfFeatures * 100f;
+        if (spawnPointPosition.localPosition.y > yLimit )
         {
-            spawnPointPosition.localPosition = new Vector3(1, 2000);
+            spawnPointPosition.localPosition = new Vector3(1, yLimit);
         }
-
-
     }
 }

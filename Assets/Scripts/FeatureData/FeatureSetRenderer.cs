@@ -8,6 +8,7 @@ using UnityEngine;
 using System.Linq;
 using System.Globalization;
 using System.Text;
+using System.Runtime.InteropServices;
 
 namespace DataFeatures
 {
@@ -17,18 +18,32 @@ namespace DataFeatures
 
         public List<Feature> FeatureList { get; private set; }
 
-        public Dictionary<string, string>[] FeatureRawData { get; private set; }
-
-        private IntPtr _astFrameSet;
+        public VolumeDataSetRenderer VolumeRenderer { get; private set; }
+        public FeatureSetManager FeatureManager { get; private set; }
         public int NumberFeatures { get; private set; }
         public string[] FeatureNames { get; private set; }
         public Vector3[] FeaturePositions { get; private set; }
         public Vector3[] BoxMinPositions { get; private set; }
         public Vector3[] BoxMaxPositions { get; private set; }
+        public string[] RawDataKeys { get; private set; }
+        public string FileName { get; private set; }
+
+        public bool IsImported {get; private set;}
+
+        public GameObject MenuList = null;
+
+        public Color FeatureColor;
 
         private void Awake()
         {
             FeatureList = new List<Feature>();
+        }
+
+        public void Initialize(bool isImported)
+        {
+            IsImported = isImported;
+            FeatureManager = GetComponentInParent<FeatureSetManager>();
+            VolumeRenderer = FeatureManager.VolumeRenderer;
         }
 
         // Add feature to Renderer as container
@@ -60,26 +75,51 @@ namespace DataFeatures
 
         public void SelectFeature(Feature feature)
         {
-            var featureManager = GetComponentInParent<FeatureSetManager>();
-            if (featureManager)
+            if (FeatureManager)
             {
-                featureManager.SelectedFeature = feature;
+                FeatureManager.SelectedFeature = feature;
                 Debug.Log($"Selected feature '{feature.Name}'");
             }
         }
 
-        // Spawn Feature objects intro world from FileName
-        public void SpawnFeaturesFromVOTable(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable)
+        public void UpdateColor()
         {
+            foreach (var feature in FeatureList)
+                feature.ChangeColor(FeatureColor);
+        }
+
+        // Spawn Feature objects intro world from FileName
+        public void SpawnFeaturesFromVOTable(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable, bool[] columnsMask)
+        {
+            if (VolumeRenderer == null)
+            {
+                Debug.Log("No VolumeDataSetRenderer detected for Feature import... was FeatureSetRenderer initialized properly?");
+                return;
+            }
+            List<string> rawDataKeysList = new List<string>();
+            IntPtr volumeAstFrame = VolumeRenderer.AstFrame;
             var setCoordinates = mapping.Keys;
             bool containsBoxes = false;
+            List<string>[] featureRawData = new List<string>[voTable.Rows.Count];
             coordTypes sourceType = coordTypes.cartesian;
-            var volumeDataSetRenderer = GetComponentInParent<VolumeDataSetRenderer>();
             int[] posIndices = new int[3];
-            IntPtr volumeAstFrame = volumeDataSetRenderer.AstFrame;
+            IntPtr astFrameSet = IntPtr.Zero;
             string[] colNames = new string[voTable.Column.Count];
             for (int i = 0; i < voTable.Column.Count; i++)
+            {
                 colNames[i] = voTable.Column[i].Name;
+                if (columnsMask[i])
+                    rawDataKeysList.Add(colNames[i]);
+            }
+            RawDataKeys = rawDataKeysList.ToArray();
+/*  
+            RawDataKeys = new string[voTable.Column.Count];
+            for (int i = 0; i < voTable.Column.Count; i++)
+            {
+                if(columnsMask[i])
+                    RawDataKeys[i] = colNames[i];
+            }
+            */
             if (setCoordinates.Contains(SourceMappingOptions.X))
             {
                 posIndices[0] = Array.IndexOf(colNames, mapping[SourceMappingOptions.X]);
@@ -93,32 +133,45 @@ namespace DataFeatures
                 if (setCoordinates.Contains(SourceMappingOptions.Velo))
                 {
                     sourceType = coordTypes.velz;
-                    AstTool.GetAltSpecSet(volumeAstFrame, out _astFrameSet, new StringBuilder("VOPT"), new StringBuilder("m/s"), new StringBuilder(volumeDataSetRenderer.StdOfRest));
+                    if (AstTool.GetAltSpecSet(volumeAstFrame, out astFrameSet, new StringBuilder("VOPT"), new StringBuilder("m/s"), new StringBuilder(VolumeRenderer.StdOfRest)) != 0)
+                    {
+                        Debug.Log($"Error creating feature astframe!");
+                        return;
+                    }
                     posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Velo]); 
                 }
                 else if (setCoordinates.Contains(SourceMappingOptions.Freq))
                 {
                     sourceType = coordTypes.freqz;
-                    AstTool.GetAltSpecSet(volumeAstFrame, out _astFrameSet, new StringBuilder("FREQ"), new StringBuilder("Hz"), new StringBuilder(volumeDataSetRenderer.StdOfRest));
+                    if (AstTool.GetAltSpecSet(volumeAstFrame, out astFrameSet, new StringBuilder("FREQ"), new StringBuilder("Hz"), new StringBuilder(VolumeRenderer.StdOfRest)) != 0)
+                    {
+                        Debug.Log($"Error creating feature astframe!");
+                        return;
+                    }
                     posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Freq]); 
                 }
                 else if (setCoordinates.Contains(SourceMappingOptions.Redshift))
                 {
                     sourceType = coordTypes.redz;
-                    AstTool.GetAltSpecSet(volumeAstFrame, out _astFrameSet, new StringBuilder("REDSHIFT"), new StringBuilder(""), new StringBuilder(volumeDataSetRenderer.StdOfRest));
+                    if (AstTool.GetAltSpecSet(volumeAstFrame, out astFrameSet, new StringBuilder("REDSHIFT"), new StringBuilder(""), new StringBuilder(VolumeRenderer.StdOfRest)) != 0)
+                    {
+                        Debug.Log($"Error creating feature astframe!");
+                        return;
+                    }
                     posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Redshift]); 
                 }
+                if (AstTool.Invert(astFrameSet) != 0)
+                {
+                    Debug.Log("Error finding inverted frame set!");
+                }
             }
-            AstTool.Invert(_astFrameSet);
             if (setCoordinates.Contains(SourceMappingOptions.Xmin))
                 containsBoxes = true;
             if (voTable.Rows.Count == 0 || voTable.Column.Count == 0)
             {
                 Debug.Log($"Error reading VOTable! Note: Currently the VOTable may not contain xmlns declarations.");
                 return;
-            }
-            FeatureRawData = new Dictionary<string, string>[voTable.Rows.Count];
-            
+            }          
             if (posIndices[0] < 0 ||  posIndices[1] < 0 ||  posIndices[2] < 0)
             {
                 Debug.Log($"Minimum column parameters not found!");
@@ -146,6 +199,12 @@ namespace DataFeatures
             xPhys = yPhys = zPhys = double.NaN;
             for (int row = 0; row < voTable.Rows.Count; row++)   // For each row (feature)...
             {
+                featureRawData[row] = new List<string>();
+                for (int i = 0; i < voTable.Columns.Count; i++)
+                {
+                    if (columnsMask[i])
+                        featureRawData[row].Add(voTable.Rows[row].ColumnData[i].ToString());
+                }
                 for (int i = 0; i < posIndices.Length; i++)
                 {
                     string stringToParse = (string)voTable.Rows[row].ColumnData[posIndices[i]];
@@ -169,7 +228,7 @@ namespace DataFeatures
                 if (sourceType != coordTypes.cartesian)
                 {
                     double x,y,z;
-                    AstTool.Transform3D(_astFrameSet, xPhys, yPhys, zPhys, 1, out x, out y, out z);
+                    AstTool.Transform3D(astFrameSet, xPhys, yPhys, zPhys, 1, out x, out y, out z);
                     FeaturePositions[row].Set((float)x, (float)y, (float)z);
                 }
                 else
@@ -220,7 +279,7 @@ namespace DataFeatures
                     FeatureNames[row] = $"Source #{row + 1}";
                 }
             }
-            if (volumeDataSetRenderer)
+            if (VolumeRenderer)
             {
                 Vector3 cubeMin, cubeMax;
                 if (BoxMinPositions.Length > 0)
@@ -229,7 +288,7 @@ namespace DataFeatures
                     {
                         cubeMin = BoxMinPositions[i];
                         cubeMax = BoxMaxPositions[i];
-                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, FeatureNames[i], i));
+                        FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, transform, FeatureNames[i], i, featureRawData[i].ToArray(), this));
                     }
                 }
                 else
@@ -238,7 +297,7 @@ namespace DataFeatures
                     {
                         cubeMin = FeaturePositions[i];
                         cubeMax = FeaturePositions[i];
-                        FeatureList.Add(new Feature(cubeMin, cubeMax, Color.cyan, transform, FeatureNames[i], i));
+                        FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, transform, FeatureNames[i], i, featureRawData[i].ToArray(), this));
                     }
                 }
             }
