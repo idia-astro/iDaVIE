@@ -518,7 +518,7 @@ namespace VolumeData
                     int sourceListIndex = _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().ParentListIndex;
                     if (scrollView.GetComponent<SofiaListCreator>().CurrentFeatureSetIndex != sourceListIndex)
                         scrollView.GetComponent<SofiaListCreator>().DisplaySet(sourceListIndex);
-                    scrollView.GetComponent<CustomDragHandler>().FocusOnFeature(_featureManager.SelectedFeature);
+                    scrollView.GetComponent<CustomDragHandler>().FocusOnFeature(_featureManager.SelectedFeature, true);
                     _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().UpdateInfo();
                 }
             }

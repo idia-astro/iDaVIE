@@ -22,7 +22,7 @@ public class CustomDragHandler : MonoBehaviour
         Spawn_initial_y = spawnPointPosition.localPosition.y;
     }
 
-    public void FocusOnFeature(Feature feature)
+    public void FocusOnFeature(Feature feature, bool scrollTo)
     {
         if (_previousSelectedListItem != null)
         {
@@ -30,8 +30,11 @@ public class CustomDragHandler : MonoBehaviour
         }
         var _spawnPoint = transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject;
         var featureListItem = feature.LinkedListItem;
-        float verticalPosition = Spawn_initial_y - featureListItem.transform.localPosition.y;
-        _spawnPoint.GetComponent<RectTransform>().localPosition = new Vector3 (1, verticalPosition);
+        if (scrollTo)
+        {
+            float verticalPosition = Spawn_initial_y - featureListItem.transform.localPosition.y;
+            _spawnPoint.GetComponent<RectTransform>().localPosition = new Vector3 (1, verticalPosition);
+        }
         _previousSelectedListItem = featureListItem;
         _previousListItemColor = featureListItem.GetComponent<Image>().color;
         featureListItem.GetComponent<Image>().color = feature.FeatureSetParent.FeatureColor;

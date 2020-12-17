@@ -69,7 +69,7 @@ public class SofiaListCreator : MonoBehaviour
 
         var selectedFeature = _activeDataSet.gameObject.GetComponentInChildren<VolumeDataSetRenderer>().FeatureSetManagerPrefab.SelectedFeature;
         if (selectedFeature != null)
-            GetComponent<CustomDragHandler>().FocusOnFeature(selectedFeature);
+            GetComponent<CustomDragHandler>().FocusOnFeature(selectedFeature, true);
         _initialized = true;
     
     }
@@ -82,7 +82,7 @@ public class SofiaListCreator : MonoBehaviour
         {
             var selectedFeature = _activeDataSet.gameObject.GetComponentInChildren<VolumeDataSetRenderer>().FeatureSetManagerPrefab.SelectedFeature;
             if (selectedFeature != null)
-                GetComponent<CustomDragHandler>().FocusOnFeature(selectedFeature);
+                GetComponent<CustomDragHandler>().FocusOnFeature(selectedFeature, true);
         }
     }
 

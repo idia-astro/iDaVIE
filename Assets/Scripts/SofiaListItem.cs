@@ -149,7 +149,7 @@ public class SofiaListItem : MonoBehaviour
             int sourceListIndex = featureSetManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().ParentListIndex;
             if (scrollView.GetComponent<SofiaListCreator>().CurrentFeatureSetIndex != sourceListIndex)
                 scrollView.GetComponent<SofiaListCreator>().DisplaySet(sourceListIndex);
-            scrollView.GetComponent<CustomDragHandler>().FocusOnFeature(feature);
+            scrollView.GetComponent<CustomDragHandler>().FocusOnFeature(feature, false);
             var infoWindow = transform.root.Find("SourceInfoWindow").gameObject;
             if(infoWindow.activeSelf)
                 ShowInfo();
