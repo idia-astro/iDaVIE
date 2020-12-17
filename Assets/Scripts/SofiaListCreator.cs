@@ -62,7 +62,9 @@ public class SofiaListCreator : MonoBehaviour
         }
         _featureSetRendererList = (ShowsImportedList ? featureSetManager.ImportedFeatureSetList: featureSetManager.GeneratedFeatureSetList);
         //var featureSetRendererList = featureSetManager.GetComponentsInChildren<FeatureSetRenderer>();
-        SpawnList(0);
+        for (int i = 0; i < _featureSetRendererList.Count; i++)
+            SpawnList(i);
+        DisplaySet(0);
         //transform.Find("ListName").gameObject.transform.Find("Text").GetComponent<TMP_Text>().text = _featureSetRendererList[0].name;
 
         var selectedFeature = _activeDataSet.gameObject.GetComponentInChildren<VolumeDataSetRenderer>().FeatureSetManagerPrefab.SelectedFeature;
