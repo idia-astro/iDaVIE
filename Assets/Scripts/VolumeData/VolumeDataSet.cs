@@ -86,8 +86,6 @@ namespace VolumeData
         public bool IsMask { get; private set; }
         private IntPtr ImageDataPtr;
 
-        //private IDictionary<string, string> _headerDictionary;
-
         private double _xRef, _yRef, _zRef, _xRefPix, _yRefPix, _zRefPix, _xDelt, _yDelt, _zDelt, _rot;
         private string _xCoord, _yCoord, _zCoord, _wcsProj;
 
@@ -546,7 +544,7 @@ namespace VolumeData
                 textureSlice.Apply();
                 Graphics.CopyTexture(textureSlice, 0, 0, 0, 0, cubeSize.x, cubeSize.y, RegionCube, slice, 0, 0, 0);
             }
-
+            
             if (IsMask)
             {
                 var numVoxels = cubeSize.x * cubeSize.y * cubeSize.z;

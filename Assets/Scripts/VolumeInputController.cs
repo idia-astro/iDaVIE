@@ -357,18 +357,20 @@ public class VolumeInputController : MonoBehaviour
 
     public void RedoBrushStroke(SteamVR_Input_Sources fromSource)
     {
-           if (ActiveDataSet?.Mask?.RedoBrushStroke() ?? false)
-            {
-                VibrateController(fromSource, 0.1f);
-            }
+        if (ActiveDataSet?.Mask?.RedoBrushStroke() ?? false)
+        {
+            ActiveDataSet?.GetMomentMapRenderer()?.CalculateMomentMaps();
+            VibrateController(fromSource, 0.1f);
+        }
     }
 
     public void UnoBrushStroke(SteamVR_Input_Sources fromSource)
     {
-      if (ActiveDataSet?.Mask?.UndoBrushStroke() ?? false)
-      {
-                VibrateController(fromSource, 0.1f);
-      }            
+        if (ActiveDataSet?.Mask?.UndoBrushStroke() ?? false)
+        {
+            ActiveDataSet?.GetMomentMapRenderer()?.CalculateMomentMaps();
+            VibrateController(fromSource, 0.1f);
+        }
     }
 
     public void IncreaseBrushSize()

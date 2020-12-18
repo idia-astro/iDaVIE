@@ -17,6 +17,7 @@ namespace VolumeData
         public VolumeInputController VolumeInputController;
         public QuickMenuController QuickMenuController;
         public PaintMenuController PaintMenuController;
+        public MomentMapMenuController momentMapMenuController;
 
         private List<VolumeDataSetRenderer> _dataSets;
 

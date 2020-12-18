@@ -86,7 +86,7 @@ namespace VolumeData
 
         [Header("Thresholds")] [Range(0, 1)] public float ThresholdMin = 0;
         [Range(0, 1)] public float ThresholdMax = 1;
-
+        
         [Header("Color Mapping")] public ColorMapEnum ColorMap = ColorMapEnum.Inferno;
         public ScalingType ScalingType = ScalingType.Linear;
         [Range(-1, 1)] public float ScalingBias = 0.0f;
@@ -149,6 +149,7 @@ namespace VolumeData
         private MeshRenderer _renderer;
         private Material _materialInstance;
         private Material _maskMaterialInstance;
+        private MomentMapRenderer _momentMapRenderer;
 
         public VolumeInputController _volumeInputController;
 
@@ -162,6 +163,7 @@ namespace VolumeData
         public VolumeDataSet Data => _dataSet;
         
         private bool _dirtyMask = false;
+
         public bool HasWCS { get; private set; }
         public IntPtr AstFrame { get =>_dataSet.AstFrameSet; } 
         public string StdOfRest => _dataSet.GetStdOfRest();
@@ -339,11 +341,33 @@ namespace VolumeData
             {
                 RestFrequency = _dataSet.FitsRestFrequency;
             }
+            
+            _momentMapRenderer = gameObject.AddComponent(typeof(MomentMapRenderer)) as MomentMapRenderer;
+            _momentMapRenderer.DataCube = _dataSet.DataCube;
+            _momentMapRenderer.momentMapMenuController = FindObjectOfType<VolumeCommandController>().momentMapMenuController;
+
+            if (_maskDataSet != null)
+            {
+                _momentMapRenderer.MaskCube = _maskDataSet.DataCube;
+            }
             Shader.WarmupAllShaders();
 
             started = true;
 
         }
+
+
+        public VolumeDataSet GetDataSet()
+        {
+            return _dataSet;
+        }
+
+
+        public MomentMapRenderer GetMomentMapRenderer()
+        {
+            return _momentMapRenderer;
+        }
+
 
         public void ShiftColorMap(int delta)
         {
@@ -540,6 +564,7 @@ namespace VolumeData
                 SliceMax = Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
                 LoadRegionData(startVoxel, endVoxel);
                 _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.RegionCube);
+
                 if (_maskDataSet != null)
                 {
                     _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
@@ -549,7 +574,10 @@ namespace VolumeData
                     _maskMaterialInstance.SetVector(MaterialID.RegionDimensions, regionDimensions);
                     var cubeDimensions = new Vector4(_maskDataSet.XDim, _maskDataSet.YDim, _maskDataSet.ZDim, 1);
                     _maskMaterialInstance.SetVector(MaterialID.CubeDimensions, cubeDimensions);
+                    _momentMapRenderer.MaskCube = _maskDataSet.RegionCube;
                 }
+                _momentMapRenderer.DataCube = _dataSet.RegionCube;
+
                 IsCropped = true;
             }
         }
@@ -563,7 +591,9 @@ namespace VolumeData
             {
                 _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.DataCube);
                 _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, null);
+                _momentMapRenderer.MaskCube = _maskDataSet.DataCube;
             }
+            _momentMapRenderer.DataCube = _dataSet.DataCube;
 
             IsCropped = false;
         }
@@ -774,8 +804,7 @@ namespace VolumeData
                 _maskDataSet?.FlushBrushStroke();
             }
             
-            // Recalculate source stats
-            
+            _momentMapRenderer.CalculateMomentMaps();
         }
 
         public Vector3Int GetCubeDimensions()
@@ -854,7 +883,7 @@ namespace VolumeData
             _maskDataSet?.CleanUp(false);
 
         }
-
+        
         private void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes)
         {
             cube.SetColor(baseColor);
@@ -870,4 +899,5 @@ namespace VolumeData
             }
         }
     }
+
 }

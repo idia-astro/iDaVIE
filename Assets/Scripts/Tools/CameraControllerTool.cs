@@ -9,6 +9,13 @@ public class CameraControllerTool : MonoBehaviour
     public GameObject QuickMenuCanvas;
     public Camera targetCamera;
 
+
+    public float VibrationDuration = 0.25f;
+    public float VibrationFrequency = 100.0f;
+    public float VibrationAmplitude = 1.0f;
+
+
+    private VolumeInputController _volumeInputController = null;
     // Start is called before the first frame update
 
     void Start()
@@ -22,10 +29,18 @@ public class CameraControllerTool : MonoBehaviour
         
     }
 
+    public void OnEnable()
+    {
+        if (_volumeInputController == null)
+            _volumeInputController = FindObjectOfType<VolumeInputController>();
+    }
+
     // public interface 
     public void OnUse()
     {
         StartCoroutine(ToolCoroutine());
+
+        _volumeInputController.VibrateController(_volumeInputController.PrimaryHand, VibrationDuration, VibrationFrequency, VibrationAmplitude);
     }
 
     public IEnumerator ToolCoroutine()
@@ -41,14 +56,14 @@ public class CameraControllerTool : MonoBehaviour
 
 
     IEnumerator makeScreenshot()
-        {
+    {
 
             yield return new WaitForSeconds(0.1f);
             yield return new WaitForEndOfFrame();
      
             int width = Screen.width;
             int height = Screen.height;
-            var rt = new RenderTexture(width, height, 24);
+            var rt = new RenderTexture(width*3, height*3, 24);
             targetCamera.targetTexture=rt;
 
             RenderTexture.active = targetCamera.targetTexture;
@@ -112,7 +127,7 @@ public class CameraControllerTool : MonoBehaviour
         yield return null;
 
 
-        }
+    }
 
 
 
