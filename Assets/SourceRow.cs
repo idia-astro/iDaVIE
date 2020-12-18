@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public enum SourceMappingOptions
 {
-    none, Name, X, Y, Z, Ra, Dec, Freq, Velo, Redshift, Xmin, Xmax, Ymin, Ymax, Zmin, Zmax
+    none, ID, X, Y, Z, Ra, Dec, Freq, Velo, Redshift, Xmin, Xmax, Ymin, Ymax, Zmin, Zmax
 }
 
 public class SourceRow : MonoBehaviour
@@ -37,6 +37,6 @@ public class SourceRow : MonoBehaviour
     {
         string[] optionNames = System.Enum.GetNames(typeof(SourceMappingOptions));
         CurrentMapping = (SourceMappingOptions) coord;
-        CanvassDesktopParent.ChangeSourceMapping(SourceIndex, CurrentMapping);
+        CanvassDesktopParent.ChangeSourceMapping(SourceIndex, CurrentMapping);        
     }
 }

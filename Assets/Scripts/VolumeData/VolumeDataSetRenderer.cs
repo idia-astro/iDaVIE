@@ -145,6 +145,7 @@ namespace VolumeData
         public VectorLine _voxelOutline, _cubeOutline, _regionOutline, _regionMeasure;
 
         private FeatureSetManager _featureManager = null;
+
         private MeshRenderer _renderer;
         private Material _materialInstance;
         private Material _maskMaterialInstance;
@@ -164,7 +165,7 @@ namespace VolumeData
         private bool _dirtyMask = false;
 
         public bool HasWCS { get; private set; }
-        public IntPtr AstFrame =>_dataSet.AstFrameSet; 
+        public IntPtr AstFrame { get =>_dataSet.AstFrameSet; } 
         public string StdOfRest => _dataSet.GetStdOfRest();
 
         private int _currentXFactor, _currentYFactor, _currentZFactor;
@@ -533,6 +534,17 @@ namespace VolumeData
             if (_featureManager && _featureManager.SelectFeature(cursor))
             {
                 Debug.Log($"Selected feature '{_featureManager.SelectedFeature.Name}'");
+                var _sofiaList = GameObject.Find("RenderMenu");
+                if (_sofiaList != null)
+                {
+                    int sourceIndex = _featureManager.SelectedFeature.Index;
+                    var scrollView = _sofiaList.gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("Scroll View").gameObject;
+                    int sourceListIndex = _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().ParentListIndex;
+                    if (scrollView.GetComponent<SofiaListCreator>().CurrentFeatureSetIndex != sourceListIndex)
+                        scrollView.GetComponent<SofiaListCreator>().DisplaySet(sourceListIndex);
+                    scrollView.GetComponent<CustomDragHandler>().FocusOnFeature(_featureManager.SelectedFeature, true);
+                    _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().UpdateInfo();
+                }
             }
         }
 

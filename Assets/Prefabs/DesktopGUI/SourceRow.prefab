@@ -1005,7 +1005,7 @@ MonoBehaviour:
   onValueChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_IsOn: 1
+  m_IsOn: 0
 --- !u!223 &4894789289345750594
 Canvas:
   m_ObjectHideFlags: 0
@@ -1122,6 +1122,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03d20edd6b819c7429d52f3657a892ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  SourceName: 
+  SourceIndex: 0
+  CurrentMapping: 0
+  CanvassDesktopParent: {fileID: 0}
 --- !u!1 &6994270282433634730
 GameObject:
   m_ObjectHideFlags: 0

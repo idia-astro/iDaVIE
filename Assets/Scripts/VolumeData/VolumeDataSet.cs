@@ -349,9 +349,12 @@ namespace VolumeData
 
         public void RecreateFrameSet(double restFreq = 0)
         {
-            if (AstFrameSet != IntPtr.Zero)
-                AstTool.DeleteObject(AstFrameSet);
             IntPtr astFrameSet = IntPtr.Zero;
+            if (AstFrameSet != IntPtr.Zero)
+            {
+                AstTool.DeleteObject(AstFrameSet);
+                AstFrameSet = IntPtr.Zero;
+            }
             if (AstTool.InitAstFrameSet(out astFrameSet, FitsHeader, restFreq) != 0)
                 Debug.Log("Failed to recreate AstFrameSet!");
             AstFrameSet = astFrameSet; //Need to delete old one?
@@ -1179,7 +1182,13 @@ namespace VolumeData
 
         public string GetStdOfRest()
         {
-            return GetAstAttribute("StdOfRest");
+            if (HasAstAttribute("StdOfRest"))
+                return GetAstAttribute("StdOfRest");
+            else
+            {
+                Debug.Log("No standard of rest found... defaulting to Heliocentric");
+                return "Heliocentric";
+            }
         }
 
         public string GetPixelUnit()

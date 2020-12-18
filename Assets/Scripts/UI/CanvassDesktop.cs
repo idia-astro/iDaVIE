@@ -637,6 +637,7 @@ public class CanvassDesktop : MonoBehaviour
 
     private void _browseMappingFile(string path)
     {
+        sourcesPanelContent.gameObject.transform.Find("MappingFile_container").gameObject.transform.Find("MappingFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(path);
         featureMapping = FeatureMapping.GetMappingFromFile(path);
         foreach (var sourceRowObject in _sourceRowObjects)
         {
@@ -656,6 +657,7 @@ public class CanvassDesktop : MonoBehaviour
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.Y;
                 dropdown.value = (int) SourceMappingOptions.Y;
+
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.Z.Source)
             {
@@ -719,8 +721,8 @@ public class CanvassDesktop : MonoBehaviour
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.Name.Source)
             {
-                sourceRow.CurrentMapping = SourceMappingOptions.Name;
-                dropdown.value = (int) SourceMappingOptions.Name;
+                sourceRow.CurrentMapping = SourceMappingOptions.ID;
+                dropdown.value = (int) SourceMappingOptions.ID;
             } 
         }
     }
@@ -775,6 +777,9 @@ public class CanvassDesktop : MonoBehaviour
 
     public void LoadSourcesFile()
     {
+        var loadingText = sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Text").gameObject;
+        loadingText.SetActive(true);
+        bool[] columnsMask = new bool[_sourceRowObjects.Length];
         if (!AreMinimalMappingsSet())
         {
             Debug.Log("Minimal source mappings not set!");
@@ -782,14 +787,17 @@ public class CanvassDesktop : MonoBehaviour
         }
         var featureSetManager = getFirstActiveDataSet().GetComponentInChildren<FeatureSetManager>();
         Dictionary<SourceMappingOptions,string> finalMapping = new Dictionary<SourceMappingOptions, string>();
-        foreach (var rowObject in _sourceRowObjects)
+        for (int i = 0; i < _sourceRowObjects.Length; i++)
         {
-            var row = rowObject.GetComponent<SourceRow>();
+            var row = _sourceRowObjects[i].GetComponent<SourceRow>();
             if (row.CurrentMapping != SourceMappingOptions.none)
                 finalMapping.Add(row.CurrentMapping, row.SourceName);
+            columnsMask[i] = _sourceRowObjects[i].transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().isOn;
         }
         if(featureSetManager.FeatureFileToLoad != "")
-            featureSetManager.ImportFeatureSet(finalMapping, FeatureMapper.GetVOTableFromFile(sourcesPath));
+            featureSetManager.ImportFeatureSet(finalMapping, FeatureMapper.GetVOTableFromFile(sourcesPath), Path.GetFileName(sourcesPath), columnsMask);
+        loadingText.GetComponent<TextMeshProUGUI>().text = $"Successfully loaded sources from:{Environment.NewLine}{Path.GetFileName(sourcesPath)}";
+        sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;
     }
 
     public void DismissFileLoad()

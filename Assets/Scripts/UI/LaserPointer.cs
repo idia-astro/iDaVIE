@@ -39,8 +39,13 @@ public class LaserPointer : MonoBehaviour
     private Hand _hand;
     private MeshRenderer _meshRenderer;
 
+    private VolumeInputController _volumeInputController;
+
     private void Start()
     {
+
+        _volumeInputController = FindObjectOfType<VolumeInputController>();
+
         _holder = new GameObject();
         _holder.transform.parent = transform;
         _holder.transform.localPosition = Vector3.zero;
@@ -79,14 +84,31 @@ public class LaserPointer : MonoBehaviour
 
     public virtual void OnPointerIn(PointerEventArgs e)
     {
+       
         if (PointerIn != null)
+        {
+            if (e.Target.tag == "ScrollView" && e.HandType == _volumeInputController.PrimaryHand)
+            {
+                _volumeInputController.scrollSelected = true;
+                _volumeInputController.ScrollObject = e.Target.gameObject;
+            }
             PointerIn(this, e);
+        }
     }
 
     public virtual void OnPointerOut(PointerEventArgs e)
     {
         if (PointerOut != null)
+        {
+            if (e.Target.tag == "ScrollView" && e.HandType == _volumeInputController.PrimaryHand)
+            {
+                _volumeInputController.scrollSelected = false;
+                _volumeInputController.scrollUp = false;
+                _volumeInputController.scrollDown = false;
+                _volumeInputController.ScrollObject = null;
+            }
             PointerOut(this, e);
+        }
     }
 
 
