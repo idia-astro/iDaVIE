@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using DataFeatures;
 using Unity.Collections;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -64,7 +65,6 @@ namespace VolumeData
         public ComputeBuffer AddedMaskBuffer { get; private set; }
         public int AddedMaskEntryCount { get; private set; }
         public BrushStrokeTransaction CurrentBrushStroke { get; private set; }
-        public List<short> DirtySources { get; private set; }
         public List<BrushStrokeTransaction> BrushStrokeHistory { get; private set; }
         public List<BrushStrokeTransaction> BrushStrokeRedoQueue { get; private set; }
         public Dictionary<short, DataAnalysis.SourceStats> SourceStatsDict { get; private set; }
@@ -85,6 +85,7 @@ namespace VolumeData
 
         public bool IsMask { get; private set; }
         private IntPtr ImageDataPtr;
+        private FeatureSetRenderer _featureSet;
 
         private double _xRef, _yRef, _zRef, _xRefPix, _yRefPix, _zRefPix, _xDelt, _yDelt, _zDelt, _rot;
         private string _xCoord, _yCoord, _zCoord, _wcsProj;
@@ -334,6 +335,38 @@ namespace VolumeData
             {
                 SourceStatsDict.Remove(maskVal);
             }
+            
+            if (_featureSet)
+            {
+                var index = _featureSet.FeatureList.FindIndex(f => f.Index == maskVal);
+                if (index >= 0)
+                {
+                    if (sourceStats.numVoxels > 0)
+                    {
+                        // Update existing feature's bounds
+                        var feature = _featureSet.FeatureList[index];
+                        var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
+                        var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
+                        feature.SetBounds(boxMin, boxMax);
+                        feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
+                        feature.LinkedListItem.GetComponent<SofiaListItem>().UpdateInfo();
+                    }
+                    else
+                    {
+                        // Remove empty feature
+                        _featureSet.FeatureList.RemoveAt(index);
+                    }
+                }
+                else if (sourceStats.numVoxels > 0)
+                {
+                    // Add new feature for the newly created stats
+                    var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
+                    var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
+                    var name = $"Masked Source #{maskVal}";
+                    var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
+                    _featureSet.AddFeature(new Feature(boxMin, boxMax, Color.white, name, maskVal, rawStrings, _featureSet));
+                }
+            }
         }
 
         private void PrintStats(short maskVal)
@@ -344,7 +377,13 @@ namespace VolumeData
                 return;
             }
             var sourceStats = SourceStatsDict[maskVal];
-            Debug.Log($"Source {maskVal}: {sourceStats.numVoxels} voxels; {sourceStats.sum} (sum); {sourceStats.peak} (peak); centroid [{sourceStats.cX}, {sourceStats.cY}, {sourceStats.cZ}]; vsys: {sourceStats.channelVsys}; w20: {sourceStats.channelW20}");
+            //Debug.Log($"Source {maskVal}: Bounding box [{sourceStats.minX}, {sourceStats.minY}, {sourceStats.minZ}] -> [{sourceStats.maxX}, {sourceStats.maxY}, {sourceStats.maxZ}]; {sourceStats.numVoxels} voxels; {sourceStats.sum} (sum); {sourceStats.peak} (peak); centroid [{sourceStats.cX}, {sourceStats.cY}, {sourceStats.cZ}]; vsys: {sourceStats.channelVsys}; w20: {sourceStats.channelW20}");
+        }
+
+        public void FillFeatureSet( FeatureSetRenderer featureSet)
+        {
+            _featureSet = featureSet;
+            _featureSet.SpawnFeaturesFromSourceStats(SourceStatsDict);
         }
 
         public void RecreateFrameSet(double restFreq = 0)

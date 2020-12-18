@@ -323,9 +323,11 @@ namespace VolumeData
             _regionMeasure.active = false;
             _regionMeasure.Draw3DAuto();
 
-            if (_featureManager)
+            if (_featureManager != null && _maskDataSet != null)
             {
-                _featureManager.CreateNewFeatureSet();
+                var featureSet = _featureManager.CreateNewFeatureSet();
+                _maskDataSet?.FillFeatureSet(featureSet);
+
             }
 
             //No wcs info if AstFrameSet has only 1 frame

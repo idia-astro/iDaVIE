@@ -354,10 +354,18 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
         int64_t numChannels = source.maxZ - source.minZ + 1;
         std::vector<double> spectralProfile(numChannels);
 
+        stats->minX = source.maxX;
+        stats->minY = source.maxY;
+        stats->minZ = source.maxZ;
+
+        stats->maxX = source.minX;
+        stats->maxY = source.minY;
+        stats->maxZ = source.minZ;
+
+
         for (int64_t k = source.minZ; k <= source.maxZ; k++)
         {
             double spectralSum = 0.0;
-            int64_t spectralCount = 0;
             for (int64_t j = source.minY; j <= source.maxY; j++)
             {
                 for (int64_t i = source.minX; i <= source.maxX; i++)
@@ -372,40 +380,24 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
                             numVoxels++;
                             peakFlux = std::max(peakFlux, flux);
                             totalFlux += flux;
-                            source.minX = min(source.minX, i);
-                            source.maxX = max(source.maxX, i);
-                            source.minY = min(source.minY, j);
-                            source.maxY = max(source.maxY, j);
-                            source.minZ = min(source.minZ, k);
-                            source.maxZ = max(source.maxZ, k);
+                            stats->minX = min(stats->minX, i);
+                            stats->maxX = max(stats->maxX, i);
+                            stats->minY = min(stats->minY, j);
+                            stats->maxY = max(stats->maxY, j);
+                            stats->minZ = min(stats->minZ, k);
+                            stats->maxZ = max(stats->maxZ, k);
 
                             sumX += i * flux;
                             sumY += j * flux;
                             sumZ += k * flux;
 
                             spectralSum += flux;
-                            spectralCount++;
                         }
                     }
                 }
             }
-            if (spectralCount)
-            {
-                spectralProfile[k - source.minZ] = spectralSum / spectralCount;
-            }
-            else
-            {
-                spectralProfile[k - source.minZ] = NAN;
-            }
+            spectralProfile[k - source.minZ] = spectralSum;
         }
-
-        // Bounding box
-        stats->minX = source.minX;
-        stats->maxX = source.maxX;
-        stats->minY = source.minY;
-        stats->maxY = source.maxY;
-        stats->minZ = source.minZ;
-        stats->maxZ = source.maxZ;
 
         if (numVoxels)
         {
@@ -436,19 +428,22 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
 
             for (auto i = 0; i < numChannels - 1; i++)
             {
-                // bogus interpolation for now
-                if (spectralProfile[i] < w20Threshold && spectralProfile[i+1] >= w20Threshold) {
-                    leftChannel = source.minZ + i + 0.5;
+                auto y0 = spectralProfile[i];
+                auto y1 = spectralProfile[i+1];
+                if (y0 < w20Threshold && y1 >= w20Threshold) {
+                    //leftChannel = source.minZ + i + 0.5;
+                    leftChannel = source.minZ + i + (w20Threshold - y0) / (y1 - y0);
                     leftChannelFound = true;
                     break;
                 }
             }
 
-            for (auto i = numChannels - 1; i > 0; i--)
+            for (auto i = numChannels - 2; i >= 0; i--)
             {
-                // bogus interpolation for nwo
-                if (spectralProfile[i] < w20Threshold && spectralProfile[i-1] >= w20Threshold) {
-                    rightChannel = source.minZ + i - 0.5;
+                auto y0 = spectralProfile[i];
+                auto y1 = spectralProfile[i+1];
+                if (y0 >= w20Threshold && y1 < w20Threshold) {
+                    rightChannel = source.minZ + i + (w20Threshold - y0) / (y1 - y0);
                     rightChannelFound = true;
                     break;
                 }

@@ -116,7 +116,7 @@ public class SofiaListCreator : MonoBehaviour
                 featureSetRenderer =  _featureSetRendererList[CurrentFeatureSetIndex];
                 featureSetRenderer.MenuList.SetActive(true);
                 ListTitle.text = featureSetRenderer.name;
-                NumberOfFeatures = featureSetRenderer.NumberFeatures;
+                NumberOfFeatures = featureSetRenderer.FeatureList.Count;
             }
         }
     }
@@ -136,7 +136,7 @@ public class SofiaListCreator : MonoBehaviour
                 featureSetRenderer =  _featureSetRendererList[CurrentFeatureSetIndex];
                 featureSetRenderer.MenuList.SetActive(true);
                 ListTitle.text = featureSetRenderer.name;
-                NumberOfFeatures = featureSetRenderer.NumberFeatures;
+                NumberOfFeatures = featureSetRenderer.FeatureList.Count;
             }
         }
     }
@@ -170,7 +170,7 @@ public class SofiaListCreator : MonoBehaviour
                 featureSetRenderer =  _featureSetRendererList[CurrentFeatureSetIndex];
                 featureSetRenderer.MenuList.SetActive(true);
                 ListTitle.text = featureSetRenderer.name;
-                NumberOfFeatures = featureSetRenderer.NumberFeatures;
+                NumberOfFeatures = featureSetRenderer.FeatureList.Count;
             }
         }
     }
@@ -179,8 +179,7 @@ public class SofiaListCreator : MonoBehaviour
     {
         featureSetRenderer = _featureSetRendererList[index];
         ListTitle.text = featureSetRenderer.name;
-        //Debug.Log($"Number of items: {numberOfItems}");
-        NumberOfFeatures = featureSetRenderer.NumberFeatures;
+        NumberOfFeatures = featureSetRenderer.FeatureList.Count;
         //setContent Holder Height;
         content.sizeDelta = new Vector2(0, NumberOfFeatures * 100);
 
