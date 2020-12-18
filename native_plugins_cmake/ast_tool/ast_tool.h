@@ -16,6 +16,8 @@ DllExport int GetAstFrame(AstFrameSet*, AstFrame**, int index);
 
 DllExport int GetAltSpecSet(AstFrameSet*, AstFrameSet**, const char*, const char*, const char*);
 
+DllExport int Show(AstObject*);
+
 DllExport int Format(AstFrameSet*, int, double, char*, int);
 
 DllExport int Set(AstFrameSet*, const char*);
@@ -46,7 +48,7 @@ DllExport void DeleteObject(AstFrameSet*);
 
 DllExport int Copy(AstFrameSet*, AstFrameSet**);
 
-DllExport void Invert(AstFrameSet*);
+DllExport int Invert(AstFrameSet*);
 
 DllExport void AstEnd();
 

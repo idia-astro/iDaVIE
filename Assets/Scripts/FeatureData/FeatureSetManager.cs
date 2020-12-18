@@ -9,11 +9,12 @@ namespace DataFeatures
 {
     public class FeatureSetManager : MonoBehaviour
     {
+        public static Color[] FeatureColors = {Color.cyan, Color.yellow, Color.magenta, Color.green, Color.red, Color.grey};
         public FeatureSetRenderer FeatureSetRendererPrefab;
         public GameObject FeatureAnchorPrefab;
         public string FeatureFileToLoad;
         public string FeatureMappingFile;
-
+        public VolumeDataSetRenderer VolumeRenderer;
         private string _timeStamp;
         private StreamWriter _streamWriter;
         private Feature _selectedFeature;
@@ -28,7 +29,7 @@ namespace DataFeatures
                     DeselectFeature();
                     _selectedFeature = value;
                     _selectedFeature.Selected = true;
-                    if (_activeFeatureSetRenderer)
+                    if (ActiveFeatureSetRenderer)
                     {
                         UpdateAnchors();
                     }
@@ -46,14 +47,16 @@ namespace DataFeatures
 
         // List containing the different FeatureSets (example: SofiaSet, CustomSet, VRSet, etc.)
         // UI will have tab for each Renderer containing the lists of Features
-        private List<FeatureSetRenderer> _featureSetList;
+        public List<FeatureSetRenderer> ImportedFeatureSetList {get; private set;}
+        public List<FeatureSetRenderer> GeneratedFeatureSetList {get; private set;}
 
         // Active Renderer will be "container" to add Features to if saving is desired.
-        private FeatureSetRenderer _activeFeatureSetRenderer;
+        public FeatureSetRenderer ActiveFeatureSetRenderer {get; set;}
 
         void Awake()
         {
-            _featureSetList = new List<FeatureSetRenderer>();
+            ImportedFeatureSetList = new List<FeatureSetRenderer>();
+            GeneratedFeatureSetList = new List<FeatureSetRenderer>();
             _timeStamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             OutputFile = _timeStamp + ".ascii";
 
@@ -77,7 +80,7 @@ namespace DataFeatures
         
         public void Update()
         {
-            if (_activeFeatureSetRenderer && _selectedFeature != null && _selectedFeature.Selected)
+            if (ActiveFeatureSetRenderer && _selectedFeature != null && _selectedFeature.Selected)
             {
                 UpdateAnchors();
             }
@@ -97,7 +100,7 @@ namespace DataFeatures
                     for (int k = 0; k < 2; k++)
                     {
                         var anchor = _anchorColliders[anchorIndex];
-                        anchor.transform.SetParent(_activeFeatureSetRenderer.transform, false);
+                        anchor.transform.SetParent(ActiveFeatureSetRenderer.transform, false);
                         Vector3 weighting = new Vector3(i, j, k);
                         anchor.transform.localPosition = Vector3.Scale(_selectedFeature.CornerMax + Vector3.one * 0.5f, weighting)
                                                          + Vector3.Scale(_selectedFeature.CornerMin - Vector3.one * 0.5f, Vector3.one - weighting);
@@ -119,11 +122,11 @@ namespace DataFeatures
         // Creates new empty FeatureSetRenderer for adding Features
         public void CreateNewFeatureSet()
         {
-            VolumeDataSetRenderer volumeRenderer = GetComponentInParent<VolumeDataSetRenderer>();
-            Vector3 CubeDimensions = volumeRenderer.GetCubeDimensions();
+            Vector3 CubeDimensions = VolumeRenderer.GetCubeDimensions();
             FeatureSetRenderer featureSetRenderer;
             featureSetRenderer = Instantiate(FeatureSetRendererPrefab, new Vector3(0, 0, 0), Quaternion.identity);
             featureSetRenderer.transform.SetParent(transform, false);
+            featureSetRenderer.Initialize(false);
             featureSetRenderer.name = "Custom Feature Set";
             featureSetRenderer.tag = "customSet";
             // Move BLC to (0,0,0)
@@ -131,36 +134,50 @@ namespace DataFeatures
             featureSetRenderer.transform.localScale = new Vector3(1 / CubeDimensions.x, 1 / CubeDimensions.y, 1 / CubeDimensions.z);
             // Shift by half a voxel (because voxel center has integer coordinates, not corner)
             featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
-            _featureSetList.Add(featureSetRenderer);
-            if (_activeFeatureSetRenderer == null)
-                _activeFeatureSetRenderer = featureSetRenderer;
+            GeneratedFeatureSetList.Add(featureSetRenderer);
+            if (ActiveFeatureSetRenderer == null)
+                ActiveFeatureSetRenderer = featureSetRenderer;
         }
 
         // Creates FeatureSetRenderer filled with Features from file
-        public FeatureSetRenderer ImportFeatureSet(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable)
+        public FeatureSetRenderer ImportFeatureSet(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable, string name, bool[] columnsMask)
         {
             FeatureSetRenderer featureSetRenderer = null;
-            VolumeDataSetRenderer volumeRenderer = GetComponentInParent<VolumeDataSetRenderer>();
-            Vector3 CubeDimensions = volumeRenderer.GetCubeDimensions();
+            Vector3 CubeDimensions = VolumeRenderer.GetCubeDimensions();
             featureSetRenderer = Instantiate(FeatureSetRendererPrefab, new Vector3(0, 0, 0), Quaternion.identity);
             featureSetRenderer.transform.SetParent(transform, false);
+            featureSetRenderer.Initialize(true);
+            featureSetRenderer.name = name;
             // Move BLC to (0,0,0)
             featureSetRenderer.transform.localPosition -= 0.5f * Vector3.one;
             featureSetRenderer.transform.localScale = new Vector3(1 / CubeDimensions.x, 1 / CubeDimensions.y, 1 / CubeDimensions.z);
             // Shift by half a voxel (because voxel center has integer coordinates, not corner)
             featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
-
-            featureSetRenderer.SpawnFeaturesFromVOTable(mapping, voTable);
-            _featureSetList.Add(featureSetRenderer);
-            if (_activeFeatureSetRenderer == null)
-                _activeFeatureSetRenderer = featureSetRenderer;
+            featureSetRenderer.FeatureColor = FeatureColors[ImportedFeatureSetList.Count];
+            featureSetRenderer.SpawnFeaturesFromVOTable(mapping, voTable, columnsMask);
+            ImportedFeatureSetList.Add(featureSetRenderer);
+            if (ActiveFeatureSetRenderer == null)
+                ActiveFeatureSetRenderer = featureSetRenderer;
             return featureSetRenderer;
         }
 
         public bool SelectFeature(Vector3 cursorWorldSpace)
         {
             DeselectFeature();
-            foreach (var featureSetRenderer in _featureSetList)
+            foreach (var featureSetRenderer in ImportedFeatureSetList)
+            {
+                Vector3 volumeSpacePosition = featureSetRenderer.transform.InverseTransformPoint(cursorWorldSpace);
+                foreach (var feature in featureSetRenderer.FeatureList)
+                {
+                    if (feature.UnityBounds.Contains(volumeSpacePosition))
+                    {
+                        SelectedFeature = feature;
+                        SelectedFeature.Selected = true;
+                        return true;
+                    }
+                }
+            }
+            foreach (var featureSetRenderer in GeneratedFeatureSetList)
             {
                 Vector3 volumeSpacePosition = featureSetRenderer.transform.InverseTransformPoint(cursorWorldSpace);
                 foreach (var feature in featureSetRenderer.FeatureList)
@@ -192,10 +209,10 @@ namespace DataFeatures
         
         public bool CreateNewFeature(Vector3 boundsMin, Vector3 boundsMax, string featureName, bool temporary = true)
         {
-            if (_activeFeatureSetRenderer)
+            if (ActiveFeatureSetRenderer)
             {
                 DeselectFeature();
-                SelectedFeature = new Feature(boundsMin, boundsMax, Color.green, _activeFeatureSetRenderer.transform, featureName) {Temporary = temporary, Selected = true};
+                SelectedFeature = new Feature(boundsMin, boundsMax, Color.green, ActiveFeatureSetRenderer.transform, featureName, -1, null, null) {Temporary = temporary, Selected = true};
                 return true;
             }
 
@@ -204,14 +221,14 @@ namespace DataFeatures
 
         public bool AddToList(Feature feature, float metric, string comment)
         {
-            if (_activeFeatureSetRenderer)
+            if (ActiveFeatureSetRenderer)
             {
                 feature.Temporary = false;
                 feature.Comment = comment;
                 feature.Metric = metric;
-                if (!_activeFeatureSetRenderer.FeatureList.Contains(feature))
+                if (!ActiveFeatureSetRenderer.FeatureList.Contains(feature))
                 {
-                    _activeFeatureSetRenderer.FeatureList.Add(feature);
+                    ActiveFeatureSetRenderer.FeatureList.Add(feature);
                     return true;
                 }
             }

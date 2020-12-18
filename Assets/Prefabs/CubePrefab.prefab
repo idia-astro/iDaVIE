@@ -151,6 +151,7 @@ MonoBehaviour:
   CubeDepthAxis: 2
   CubeSlice: 1
   ShowMeasuringLine: 0
+  HighlightedSource: 0
   SelectionSaturateFactor: 0.7
   FeatureSetManagerPrefab: {fileID: 8719282727236949451}
   _voxelOutline:
@@ -508,6 +509,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7497200159023163673, guid: 2f9f3f22b1768b643a1d19a246519df6,
         type: 3}
+      propertyPath: m_RootOrder
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7497200159023163673, guid: 2f9f3f22b1768b643a1d19a246519df6,
+        type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -523,6 +529,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7497200159023163673, guid: 2f9f3f22b1768b643a1d19a246519df6,
         type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7497200159023163673, guid: 2f9f3f22b1768b643a1d19a246519df6,
+        type: 3}
       propertyPath: m_LocalRotation.x
       value: 0
       objectReference: {fileID: 0}
@@ -534,16 +545,6 @@ PrefabInstance:
     - target: {fileID: 7497200159023163673, guid: 2f9f3f22b1768b643a1d19a246519df6,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7497200159023163673, guid: 2f9f3f22b1768b643a1d19a246519df6,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7497200159023163673, guid: 2f9f3f22b1768b643a1d19a246519df6,
-        type: 3}
-      propertyPath: m_RootOrder
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7497200159023163673, guid: 2f9f3f22b1768b643a1d19a246519df6,
@@ -568,6 +569,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7497200159023163674, guid: 2f9f3f22b1768b643a1d19a246519df6,
         type: 3}
+      propertyPath: VolumeRenderer
+      value: 
+      objectReference: {fileID: 1227928690878946423}
+    - target: {fileID: 7497200159023163674, guid: 2f9f3f22b1768b643a1d19a246519df6,
+        type: 3}
       propertyPath: FeatureFileToLoad
       value: 
       objectReference: {fileID: 0}
@@ -576,6 +582,11 @@ PrefabInstance:
       propertyPath: FeatureMappingFile
       value: DataMaps/sofia_list.json
       objectReference: {fileID: 0}
+    - target: {fileID: 7497200159023163674, guid: 2f9f3f22b1768b643a1d19a246519df6,
+        type: 3}
+      propertyPath: VolumeRendererObject
+      value: 
+      objectReference: {fileID: 1227928690878946421}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2f9f3f22b1768b643a1d19a246519df6, type: 3}
 --- !u!4 &8719282727236949448 stripped

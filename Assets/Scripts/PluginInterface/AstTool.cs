@@ -17,6 +17,9 @@ public class AstTool
       public static extern int GetAltSpecSet(IntPtr frameSetPtr, out IntPtr specFrameSet, StringBuilder specSysTo, StringBuilder specUnitTo, StringBuilder specRestTo);
       
       [DllImport("libast_tool")]
+      public static extern int Show(IntPtr astObject);
+
+      [DllImport("libast_tool")]
       public static extern int Format(IntPtr wcsinfo, int axis, double value, StringBuilder formattedVal, int formattedValLength);
 
       [DllImport("libast_tool")]
@@ -62,7 +65,7 @@ public class AstTool
       public static extern int Copy(IntPtr src, out IntPtr copy);
 
       [DllImport("libast_tool")]
-      public static extern void Invert(IntPtr src);
+      public static extern int Invert(IntPtr src);
 
       [DllImport("libast_tool")]
       public static extern void AstEnd();
