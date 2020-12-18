@@ -14,7 +14,7 @@ public class QuickMenuController : MonoBehaviour
 
     public GameObject mainMenuCanvas;
     public GameObject paintMenu;
-    public GameObject histogramMenu;
+    public GameObject plotsMenu;
     public GameObject voiceCommandsListCanvas;
     public GameObject savePopup;
     public GameObject ExitPopup;
@@ -241,9 +241,9 @@ public class QuickMenuController : MonoBehaviour
         }
     }
 
-    public void OpenHistogramMenu()
+    public void OpenPlotsMenu()
     {
-        histogramMenu.SetActive(!histogramMenu.activeSelf);
+        plotsMenu.SetActive(!plotsMenu.activeSelf);
     }
 
 
