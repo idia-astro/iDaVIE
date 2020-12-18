@@ -52,10 +52,12 @@ public class CustomDragHandler : MonoBehaviour
     public void MoveDown()
     {
         spawnPointPosition.localPosition += Vector3.up * scrollSpeed;
-        float yLimit = GetComponent<SofiaListCreator>().NumberOfFeatures * 100f;
+        /*
+        float yLimit = sofiaListCreator.NumberOfFeatures * 100f;
         if (spawnPointPosition.localPosition.y > yLimit )
         {
             spawnPointPosition.localPosition = new Vector3(1, yLimit);
         }
+        */
     }
 }

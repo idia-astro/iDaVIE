@@ -349,7 +349,9 @@ namespace VolumeData
                         var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
                         feature.SetBounds(boxMin, boxMax);
                         feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
-                        feature.LinkedListItem.GetComponent<SofiaListItem>().UpdateInfo();
+                        var listItem = feature.LinkedListItem;
+                        if (listItem != null)
+                            listItem.GetComponent<SofiaListItem>().UpdateInfo();
                     }
                     else
                     {
