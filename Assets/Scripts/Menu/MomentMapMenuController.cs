@@ -96,7 +96,7 @@ public class MomentMapMenuController : MonoBehaviour
             getFirstActiveDataSet().GetMomentMapRenderer().UseMask = false;
 
         }
-        else
+        else if (getFirstActiveDataSet().Mask != null)
         {
             thresholdType = 0;
             this.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_Threshold").gameObject.SetActive(false);
