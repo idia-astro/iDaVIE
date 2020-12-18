@@ -25,7 +25,7 @@ namespace DataFeatures
         public Vector3[] FeaturePositions { get; private set; }
         public Vector3[] BoxMinPositions { get; private set; }
         public Vector3[] BoxMaxPositions { get; private set; }
-        public string[] RawDataKeys { get; private set; }
+        public string[] RawDataKeys { get; set; }
         public string FileName { get; private set; }
 
         public bool IsImported {get; private set;}
@@ -86,6 +86,22 @@ namespace DataFeatures
         {
             foreach (var feature in FeatureList)
                 feature.ChangeColor(FeatureColor);
+        }
+
+        public void SpawnFeaturesFromSourceStats(Dictionary<short, DataAnalysis.SourceStats> sourceStatsDict)
+        {
+            RawDataKeys = new[] {"Sum", "Peak", "VSys (Channel)", "W20 (Channel)"};
+            foreach (var item in sourceStatsDict)
+            {
+                var sourceStats = item.Value;
+                var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
+                var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
+                var featureName = $"Source #{item.Key}";
+                var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
+                AddFeature(new Feature(boxMin, boxMax, Color.white, transform, featureName, item.Key, rawStrings, this));
+            }
+
+            NumberFeatures = FeatureList.Count;
         }
 
         // Spawn Feature objects intro world from FileName

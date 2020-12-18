@@ -323,7 +323,9 @@ namespace VolumeData
 
             if (_featureManager)
             {
-                _featureManager.CreateNewFeatureSet();
+                var featureSet = _featureManager.CreateNewFeatureSet();
+                _maskDataSet?.FillFeatureSet(featureSet);
+
             }
 
             //No wcs info if AstFrameSet has only 1 frame

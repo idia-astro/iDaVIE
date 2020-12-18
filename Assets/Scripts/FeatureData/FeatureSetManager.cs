@@ -120,7 +120,7 @@ namespace DataFeatures
         }
 
         // Creates new empty FeatureSetRenderer for adding Features
-        public void CreateNewFeatureSet()
+        public FeatureSetRenderer CreateNewFeatureSet()
         {
             Vector3 CubeDimensions = VolumeRenderer.GetCubeDimensions();
             FeatureSetRenderer featureSetRenderer;
@@ -136,7 +136,11 @@ namespace DataFeatures
             featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
             GeneratedFeatureSetList.Add(featureSetRenderer);
             if (ActiveFeatureSetRenderer == null)
+            {
                 ActiveFeatureSetRenderer = featureSetRenderer;
+            }
+
+            return featureSetRenderer;
         }
 
         // Creates FeatureSetRenderer filled with Features from file
