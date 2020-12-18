@@ -43,6 +43,15 @@ namespace VolumeData
         [Range(-0.1f, 0.1f)] public float MomentMapThreshold = 0.0f;
         public bool UseMask = true;
 
+        [Header("Color Mapping")] 
+        public ColorMapEnum ColorMapM0 = ColorMapEnum.Plasma;
+        public ColorMapEnum ColorMapM1 = ColorMapEnum.Turbo;
+        public ScalingType ScalingTypeM0 = ScalingType.Sqrt;
+        [Range(-1, 1)] public float ScalingBias = 0.0f;
+        [Range(0, 5)] public float ScalingContrast = 1.0f;
+        public float ScalingAlpha = 1000.0f;
+        [Range(0, 5)] public float ScalingGamma = 1.0f;
+        
         private ComputeShader _computeShader;
         private float _cachedMomentMapThreshold = Single.NaN;
         private int _kernelIndex, _kernelIndexMasked, _colormapKernelIndex;
@@ -67,6 +76,12 @@ namespace VolumeData
             public static readonly int OutputTexture = Shader.PropertyToID("OutputTexture");
             public static readonly int ColormapTexture = Shader.PropertyToID("ColormapTexture");
             public static readonly int ColormapOffset = Shader.PropertyToID("ColormapOffset");
+            
+            public static readonly int ScaleType = Shader.PropertyToID("ScaleType");
+            public static readonly int ScaleAlpha = Shader.PropertyToID("ScaleAlpha");
+            public static readonly int ScaleGamma = Shader.PropertyToID("ScaleGamma");
+            public static readonly int ScaleBias = Shader.PropertyToID("ScaleBias");
+            public static readonly int ScaleContrast = Shader.PropertyToID("ScaleContrast");
         }
 
         private void Start()
@@ -86,7 +101,6 @@ namespace VolumeData
             if (_cachedMomentMapThreshold != MomentMapThreshold)
             {
                 CalculateMomentMaps(MomentMapThreshold);
-               
             }
         }
 
@@ -185,11 +199,17 @@ namespace VolumeData
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.InputTexture, Moment0Map);
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.OutputTexture, ImageOutput);
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.ColormapTexture, _colormapTexture);
+                
+                _computeShader.SetInt(MaterialID.ScaleType, ScalingTypeM0.GetHashCode());
+                _computeShader.SetFloat(MaterialID.ScaleBias, ScalingBias);
+                _computeShader.SetFloat(MaterialID.ScaleContrast, ScalingContrast);
+                _computeShader.SetFloat(MaterialID.ScaleAlpha, ScalingAlpha);
+                _computeShader.SetFloat(MaterialID.ScaleGamma, ScalingGamma);
 
                 // Default MomentZero bounds: min to max
                 _computeShader.SetFloat(MaterialID.ClampMin, _moment0Min);
                 _computeShader.SetFloat(MaterialID.ClampMax, _moment0Max);
-                float offset = (ColorMapEnum.Gray.GetHashCode() + 0.5f) / ColorMapUtils.NumColorMaps;
+                float offset = (ColorMapM0.GetHashCode() + 0.5f) / ColorMapUtils.NumColorMaps;
                 _computeShader.SetFloat(MaterialID.ColormapOffset, offset);
                 int threadGroupsX = Mathf.CeilToInt(_dataCube.width / ((float)(_kernelThreadGroupX)));
                 int threadGroupsY = Mathf.CeilToInt(_dataCube.height / ((float)(_kernelThreadGroupY)));
@@ -201,9 +221,11 @@ namespace VolumeData
                 RenderTexture.active = ImageOutput;
                 tex.ReadPixels(new Rect(0, 0, ImageOutput.width, ImageOutput.height), 0, 0);
                 tex.Apply();
-                Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(tex.width, tex.height));
-                momentMapMenuController.gameObject.transform.Find("Map_container").gameObject.transform.Find("MomentMap0").GetComponent<Image>().sprite = sprite;
-
+                Sprite spriteM0 = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(tex.width, tex.height));
+                spriteM0.texture.filterMode = FilterMode.Point;
+                var imageM0 = momentMapMenuController.gameObject.transform.Find("Map_container").gameObject.transform.Find("MomentMap0").GetComponent<Image>();
+                imageM0.sprite = spriteM0;
+                imageM0.preserveAspect = true;
 
                 // Run colormapping compute shader
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.InputTexture, Moment1Map);
@@ -213,7 +235,7 @@ namespace VolumeData
                 // Default MomentOne bounds: 0 -> D - 1
                 _computeShader.SetFloat(MaterialID.ClampMin, 0.0f);
                 _computeShader.SetFloat(MaterialID.ClampMax, DataCube.depth - 1);
-                offset = (ColorMapEnum.Turbo.GetHashCode() + 0.5f) / ColorMapUtils.NumColorMaps;
+                offset = (ColorMapM1.GetHashCode() + 0.5f) / ColorMapUtils.NumColorMaps;
                 _computeShader.SetFloat(MaterialID.ColormapOffset, offset);
                 threadGroupsX = Mathf.CeilToInt(_dataCube.width / ((float)(_kernelThreadGroupX)));
                 threadGroupsY = Mathf.CeilToInt(_dataCube.height / ((float)(_kernelThreadGroupY)));
@@ -224,11 +246,12 @@ namespace VolumeData
                 RenderTexture.active = ImageOutput;
                 tex1.ReadPixels(new Rect(0, 0, ImageOutput.width, ImageOutput.height), 0, 0);
                 tex1.Apply();
-                Sprite sprite1 = Sprite.Create(tex1, new Rect(0, 0, tex1.width, tex1.height), new Vector2(tex1.width, tex1.height));
-                momentMapMenuController.gameObject.transform.Find("Map_container").gameObject.transform.Find("MomentMap1").GetComponent<Image>().sprite = sprite1;
+                Sprite spriteM1 = Sprite.Create(tex1, new Rect(0, 0, tex1.width, tex1.height), new Vector2(tex1.width, tex1.height));
+                spriteM1.texture.filterMode = FilterMode.Point;
 
-
-
+                var imageM1 = momentMapMenuController.gameObject.transform.Find("Map_container").gameObject.transform.Find("MomentMap1").GetComponent<Image>();
+                imageM1.sprite = spriteM1;
+                imageM1.preserveAspect = true;
                 momentMapMenuController.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_Threshold").gameObject.transform.Find("ThresholdValue").GetComponent<Text>().text = MomentMapThreshold.ToString();
 
 

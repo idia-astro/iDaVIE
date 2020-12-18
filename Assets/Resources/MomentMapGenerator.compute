@@ -1,6 +1,13 @@
 ﻿#pragma kernel MomentsGenerator
 #pragma kernel MaskedMomentsGenerator
 
+#define LINEAR 0
+#define LOG 1
+#define SQRT 2
+#define SQUARE 3
+#define POWER 4
+#define GAMMA 5
+
 RWTexture2D<float> Moment0Result;
 RWTexture2D<float> Moment1Result;
 Texture3D<float> DataCube;
@@ -63,13 +70,45 @@ float ClampMin;
 float ClampMax;
 float ColormapOffset;
 
+int ScaleType;
+float ScaleAlpha;
+float ScaleGamma;
+float ScaleBias;
+float ScaleContrast;
+
 [numthreads(8,8,1)]
 void LinearColormap (uint3 id : SV_DispatchThreadID)
 {
     float inputVal = InputTexture[id.xy];
     float range = ClampMax - ClampMin;
-    float val = (inputVal - ClampMin) / range;
+    float x = (inputVal - ClampMin) / range;
+    // Non-linear scaling
+    if (ScaleType == SQUARE)
+    {
+        x = x * x;
+    }
+    else if (ScaleType == SQRT)
+    {
+        x = sqrt(x);
+    }
+    else if (ScaleType == LOG)
+    {
+        x = clamp(log(ScaleAlpha * x + 1.0) / log(ScaleAlpha), 0.0, 1.0);
+    }
+    else if (ScaleType == POWER)
+    {
+        x = (pow(ScaleAlpha, x) - 1.0) / ScaleAlpha;
+    }
+    else if (ScaleType == GAMMA)
+    {
+        x = pow(x, ScaleGamma);
+    }
 
-    float4 color = tex2Dlod(ColormapTexture, float4(val, 1.0 - ColormapOffset, 0, 0));
+    // bias mod
+    x = clamp(x - ScaleBias, 0.0, 1.0);
+    // contrast mod
+    x = clamp((x - 0.5) * ScaleContrast + 0.5, 0.0, 1.0);
+
+    float4 color = tex2Dlod(ColormapTexture, float4(x, 1.0 - ColormapOffset, 0, 0));
     OutputTexture[id.xy] = color;       
 } 
