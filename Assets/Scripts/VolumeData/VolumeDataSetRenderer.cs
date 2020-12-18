@@ -792,8 +792,7 @@ namespace VolumeData
                 _maskDataSet?.FlushBrushStroke();
             }
             
-            // Recalculate source stats
-            
+            _momentMapRenderer.CalculateMomentMaps();
         }
 
         public Vector3Int GetCubeDimensions()
