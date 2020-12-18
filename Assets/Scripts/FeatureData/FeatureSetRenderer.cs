@@ -20,7 +20,6 @@ namespace DataFeatures
 
         public VolumeDataSetRenderer VolumeRenderer { get; private set; }
         public FeatureSetManager FeatureManager { get; private set; }
-        public int NumberFeatures { get; private set; }
         public string[] FeatureNames { get; private set; }
         public Vector3[] FeaturePositions { get; private set; }
         public Vector3[] BoxMinPositions { get; private set; }
@@ -96,12 +95,10 @@ namespace DataFeatures
                 var sourceStats = item.Value;
                 var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
                 var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
-                var featureName = $"Source #{item.Key}";
+                var featureName = $"Masked Source #{item.Key}";
                 var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
-                AddFeature(new Feature(boxMin, boxMax, Color.white, transform, featureName, item.Key, rawStrings, this));
+                AddFeature(new Feature(boxMin, boxMax, Color.white, featureName, item.Key, rawStrings, this));
             }
-
-            NumberFeatures = FeatureList.Count;
         }
 
         // Spawn Feature objects intro world from FileName
@@ -198,11 +195,10 @@ namespace DataFeatures
             int nameIndex = -1;
             if (setCoordinates.Contains(SourceMappingOptions.ID))
                 nameIndex = Array.IndexOf(colNames, mapping[SourceMappingOptions.ID]);
-            NumberFeatures = voTable.Rows.Count;
-            FeatureNames = new string[NumberFeatures];
-            FeaturePositions = new Vector3[NumberFeatures];
-            BoxMinPositions = new Vector3[NumberFeatures];
-            BoxMaxPositions = new Vector3[NumberFeatures];
+            FeatureNames = new string[voTable.Rows.Count];
+            FeaturePositions = new Vector3[voTable.Rows.Count];
+            BoxMinPositions = new Vector3[voTable.Rows.Count];
+            BoxMaxPositions = new Vector3[voTable.Rows.Count];
             double xPhys, yPhys, zPhys;
             xPhys = yPhys = zPhys = double.NaN;
             for (int row = 0; row < voTable.Rows.Count; row++)   // For each row (feature)...
@@ -292,20 +288,20 @@ namespace DataFeatures
                 Vector3 cubeMin, cubeMax;
                 if (BoxMinPositions.Length > 0)
                 {
-                    for (int i = 0; i < NumberFeatures; i++)
+                    for (int i = 0; i < voTable.Rows.Count; i++)
                     {
                         cubeMin = BoxMinPositions[i];
                         cubeMax = BoxMaxPositions[i];
-                        FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, transform, FeatureNames[i], i, featureRawData[i].ToArray(), this));
+                        FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, FeatureNames[i], i, featureRawData[i].ToArray(), this));
                     }
                 }
                 else
                 {
-                    for (int i = 0; i < NumberFeatures; i++)
+                    for (int i = 0; i < voTable.Rows.Count; i++)
                     {
                         cubeMin = FeaturePositions[i];
                         cubeMax = FeaturePositions[i];
-                        FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, transform, FeatureNames[i], i, featureRawData[i].ToArray(), this));
+                        FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, FeatureNames[i], i, featureRawData[i].ToArray(), this));
                     }
                 }
             }

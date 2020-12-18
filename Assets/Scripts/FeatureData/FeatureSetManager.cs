@@ -127,14 +127,14 @@ namespace DataFeatures
             featureSetRenderer = Instantiate(FeatureSetRendererPrefab, new Vector3(0, 0, 0), Quaternion.identity);
             featureSetRenderer.transform.SetParent(transform, false);
             featureSetRenderer.Initialize(false);
-            featureSetRenderer.name = "Custom Feature Set";
+            featureSetRenderer.name = "Mask Source Set";
             featureSetRenderer.tag = "customSet";
             // Move BLC to (0,0,0)
             featureSetRenderer.transform.localPosition -= 0.5f * Vector3.one;
             featureSetRenderer.transform.localScale = new Vector3(1 / CubeDimensions.x, 1 / CubeDimensions.y, 1 / CubeDimensions.z);
             // Shift by half a voxel (because voxel center has integer coordinates, not corner)
             featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
-            GeneratedFeatureSetList.Add(featureSetRenderer);
+            ImportedFeatureSetList.Add(featureSetRenderer); //TODO: change to GeneratedFeatureSetList later
             if (ActiveFeatureSetRenderer == null)
             {
                 ActiveFeatureSetRenderer = featureSetRenderer;
@@ -216,7 +216,7 @@ namespace DataFeatures
             if (ActiveFeatureSetRenderer)
             {
                 DeselectFeature();
-                SelectedFeature = new Feature(boundsMin, boundsMax, Color.green, ActiveFeatureSetRenderer.transform, featureName, -1, null, null) {Temporary = temporary, Selected = true};
+                SelectedFeature = new Feature(boundsMin, boundsMax, Color.green, featureName, -1, null, null) {Temporary = temporary, Selected = true};
                 return true;
             }
 

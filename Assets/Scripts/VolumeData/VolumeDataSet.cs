@@ -350,6 +350,8 @@ namespace VolumeData
                         var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
                         var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
                         feature.SetBounds(boxMin, boxMax);
+                        feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
+                        feature.LinkedListItem.GetComponent<SofiaListItem>().UpdateInfo();
                     }
                     else
                     {
@@ -362,8 +364,9 @@ namespace VolumeData
                     // Add new feature for the newly created stats
                     var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
                     var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
-                    var name = $"Source #{maskVal}";
-                    _featureSet.AddFeature(new Feature(boxMin, boxMax, Color.white, _featureSet.transform, name, maskVal, null, _featureSet ));
+                    var name = $"Masked Source #{maskVal}";
+                    var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
+                    _featureSet.AddFeature(new Feature(boxMin, boxMax, Color.white, name, maskVal, rawStrings, _featureSet));
                 }
             }
         }
@@ -376,7 +379,7 @@ namespace VolumeData
                 return;
             }
             var sourceStats = SourceStatsDict[maskVal];
-            Debug.Log($"Source {maskVal}: Bounding box [{sourceStats.minX}, {sourceStats.minY}, {sourceStats.minZ}] -> [{sourceStats.maxX}, {sourceStats.maxY}, {sourceStats.maxZ}]; {sourceStats.numVoxels} voxels; {sourceStats.sum} (sum); {sourceStats.peak} (peak); centroid [{sourceStats.cX}, {sourceStats.cY}, {sourceStats.cZ}]; vsys: {sourceStats.channelVsys}; w20: {sourceStats.channelW20}");
+            //Debug.Log($"Source {maskVal}: Bounding box [{sourceStats.minX}, {sourceStats.minY}, {sourceStats.minZ}] -> [{sourceStats.maxX}, {sourceStats.maxY}, {sourceStats.maxZ}]; {sourceStats.numVoxels} voxels; {sourceStats.sum} (sum); {sourceStats.peak} (peak); centroid [{sourceStats.cX}, {sourceStats.cY}, {sourceStats.cZ}]; vsys: {sourceStats.channelVsys}; w20: {sourceStats.channelW20}");
         }
 
         public void FillFeatureSet( FeatureSetRenderer featureSet)

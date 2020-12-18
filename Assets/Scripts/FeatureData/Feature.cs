@@ -16,17 +16,17 @@ namespace DataFeatures
         private Vector3 _position;
         private Vector3[] _corners = new Vector3[2];
         private VectorLine _boundingBox;
-        public string[] RawData {get; private set;}
+        public string[] RawData {get; set;}
         public FeatureSetRenderer FeatureSetParent {get; private set;}
 
         public GameObject LinkedListItem {get; set;}
 
         public bool StatusChanged;
 
-        public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, Transform transform, string name, int index, string[] rawData, FeatureSetRenderer parent)
+        public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, string name, int index, string[] rawData, FeatureSetRenderer parent)
         {
             Index = index;
-            _boundingBox = new VectorLine(name, new List<Vector3>(24), 1.0f) {drawTransform = transform, color = cubeColor};
+            _boundingBox = new VectorLine(name, new List<Vector3>(24), 1.0f) {drawTransform = parent.transform, color = cubeColor};
             _boundingBox.Draw3DAuto();
             SetBounds(cubeMin, cubeMax);
             RawData = rawData;

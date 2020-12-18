@@ -321,7 +321,7 @@ namespace VolumeData
             _regionMeasure.active = false;
             _regionMeasure.Draw3DAuto();
 
-            if (_featureManager)
+            if (_featureManager != null && _maskDataSet != null)
             {
                 var featureSet = _featureManager.CreateNewFeatureSet();
                 _maskDataSet?.FillFeatureSet(featureSet);
