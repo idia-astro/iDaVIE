@@ -59,8 +59,8 @@ namespace VolumeData
         private Texture3D _dataCube;
         private Texture3D _maskCube;
         private Texture2D _colormapTexture;
-        private float _moment0Min, _moment0Max;
-
+        private Vector2 _moment0Bounds, _moment1Bounds;
+        
         private struct MaterialID
         {
             public static readonly int DataCube = Shader.PropertyToID("DataCube");
@@ -87,6 +87,9 @@ namespace VolumeData
         private void Start()
         {
             _colormapTexture = (Texture2D) Resources.Load("allmaps");
+            _colormapTexture.filterMode = FilterMode.Point;
+            _colormapTexture.wrapMode = TextureWrapMode.Clamp;
+            
             _computeShader = (ComputeShader) Resources.Load("MomentMapGenerator");
             _kernelIndex = _computeShader.FindKernel("MomentsGenerator");
             _kernelIndexMasked = _computeShader.FindKernel("MaskedMomentsGenerator");
@@ -152,7 +155,10 @@ namespace VolumeData
             int threadGroupsX = Mathf.CeilToInt(_dataCube.width / ((float) (_kernelThreadGroupX)));
             int threadGroupsY = Mathf.CeilToInt(_dataCube.height / ((float) (_kernelThreadGroupY)));
             _computeShader.Dispatch(activeKernelIndex, threadGroupsX, threadGroupsY, 1);
-            UpdateBounds();
+            _moment0Bounds = GetBounds(Moment0Map);
+            _moment1Bounds = GetBounds(Moment1Map);
+            var m1Dist = _moment1Bounds.y - _moment1Bounds.x;
+            _moment1Bounds += new Vector2(m1Dist / 10.0f, -m1Dist / 10.0f);
             UpdatePlotWindow();
             return true;
         }
@@ -167,10 +173,10 @@ namespace VolumeData
             return texture;
         }
 
-        private void UpdateBounds()
+        private Vector2 GetBounds(RenderTexture momentMap)
         {
             Texture2D tex = new Texture2D(_dataCube.width, _dataCube.height, TextureFormat.RFloat, false);
-            RenderTexture.active = Moment0Map;
+            RenderTexture.active = momentMap;
             tex.ReadPixels(new Rect(0, 0, ImageOutput.width, ImageOutput.height), 0, 0);
             tex.Apply();
             var data = tex.GetRawTextureData<float>();
@@ -185,15 +191,13 @@ namespace VolumeData
                 }
             }
 
-            _moment0Min = minValue;
-            _moment0Max = maxValue;
+            return new Vector2(minValue, maxValue);
         }
 
         public void UpdatePlotWindow()
         {
             if (Moment0Map != null && Moment1Map != null )
             {
-
 
                 // Run colormapping compute shader
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.InputTexture, Moment0Map);
@@ -207,8 +211,8 @@ namespace VolumeData
                 _computeShader.SetFloat(MaterialID.ScaleGamma, ScalingGamma);
 
                 // Default MomentZero bounds: min to max
-                _computeShader.SetFloat(MaterialID.ClampMin, _moment0Min);
-                _computeShader.SetFloat(MaterialID.ClampMax, _moment0Max);
+                _computeShader.SetFloat(MaterialID.ClampMin, _moment0Bounds.x);
+                _computeShader.SetFloat(MaterialID.ClampMax, _moment0Bounds.y);
                 float offset = (ColorMapM0.GetHashCode() + 0.5f) / ColorMapUtils.NumColorMaps;
                 _computeShader.SetFloat(MaterialID.ColormapOffset, offset);
                 int threadGroupsX = Mathf.CeilToInt(_dataCube.width / ((float)(_kernelThreadGroupX)));
@@ -232,9 +236,13 @@ namespace VolumeData
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.OutputTexture, ImageOutput);
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.ColormapTexture, _colormapTexture);
 
-                // Default MomentOne bounds: 0 -> D - 1
-                _computeShader.SetFloat(MaterialID.ClampMin, 0.0f);
-                _computeShader.SetFloat(MaterialID.ClampMax, DataCube.depth - 1);
+                // Default MomentOne bounds: 0 -> D - 1 (linear scaling)
+                _computeShader.SetInt(MaterialID.ScaleType, 0);
+                _computeShader.SetFloat(MaterialID.ClampMin, _moment1Bounds.x);
+                _computeShader.SetFloat(MaterialID.ClampMax, _moment1Bounds.y);
+
+                // _computeShader.SetFloat(MaterialID.ClampMin, 0.0f);
+                // _computeShader.SetFloat(MaterialID.ClampMax, DataCube.depth - 1);
                 offset = (ColorMapM1.GetHashCode() + 0.5f) / ColorMapUtils.NumColorMaps;
                 _computeShader.SetFloat(MaterialID.ColormapOffset, offset);
                 threadGroupsX = Mathf.CeilToInt(_dataCube.width / ((float)(_kernelThreadGroupX)));
