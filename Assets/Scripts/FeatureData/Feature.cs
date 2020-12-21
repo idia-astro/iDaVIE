@@ -31,6 +31,7 @@ namespace DataFeatures
             SetBounds(cubeMin, cubeMax);
             RawData = rawData;
             FeatureSetParent = parent;
+            _boundingBox.active = false;
         }
 
         public void ChangeColor(Color color)
