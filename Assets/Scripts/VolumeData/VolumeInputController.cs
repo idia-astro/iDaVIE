@@ -1100,6 +1100,7 @@ public class VolumeInputController : MonoBehaviour
     {
         _hoveredFeature = featureSetManager?.SelectedFeature;
         _hoveredAnchor = featureAnchor;
+        //ActiveDataSet?.SetRegionPosition(_hoveredFeature.GetMinBounds(), true);
     }
 
     public void ClearHoveredFeature(FeatureSetManager featureSetManager, FeatureAnchor featureAnchor)

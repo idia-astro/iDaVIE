@@ -122,6 +122,16 @@ namespace DataFeatures
             UpdateCube();
         }
 
+        public Vector3 GetMinBounds()
+        {
+            return _corners[0];
+        }
+
+        public Vector3 GetMaxBounds()
+        {
+            return _corners[1];
+        }
+
         public void SetVoxel(Vector3Int voxel)
         {
             _corners[0] = voxel;
