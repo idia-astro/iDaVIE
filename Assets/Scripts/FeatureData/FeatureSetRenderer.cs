@@ -51,6 +51,10 @@ namespace DataFeatures
             FeatureList.Add(featureToAdd);
         }
 
+        public void ClearFeatures()
+        {
+            FeatureList.Clear();
+        }
         public void ToggleVisibility()
         {
             foreach (var feature in FeatureList)
