@@ -51,6 +51,10 @@ namespace DataFeatures
             FeatureList.Add(featureToAdd);
         }
 
+        public void ClearFeatures()
+        {
+            FeatureList.Clear();
+        }
         public void ToggleVisibility()
         {
             foreach (var feature in FeatureList)
@@ -97,7 +101,7 @@ namespace DataFeatures
                 var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
                 var featureName = $"Masked Source #{item.Key}";
                 var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
-                AddFeature(new Feature(boxMin, boxMax, Color.white, featureName, item.Key, rawStrings, this));
+                AddFeature(new Feature(boxMin, boxMax, Color.white, featureName, item.Key - 1, rawStrings, this));
             }
         }
 

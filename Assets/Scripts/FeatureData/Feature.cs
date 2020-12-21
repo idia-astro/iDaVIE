@@ -31,6 +31,7 @@ namespace DataFeatures
             SetBounds(cubeMin, cubeMax);
             RawData = rawData;
             FeatureSetParent = parent;
+            _boundingBox.active = false;
         }
 
         public void ChangeColor(Color color)
@@ -120,6 +121,16 @@ namespace DataFeatures
             _corners[0] = cornerMin;
             _corners[1] = cornerMax;
             UpdateCube();
+        }
+
+        public Vector3 GetMinBounds()
+        {
+            return _corners[0];
+        }
+
+        public Vector3 GetMaxBounds()
+        {
+            return _corners[1];
         }
 
         public void SetVoxel(Vector3Int voxel)

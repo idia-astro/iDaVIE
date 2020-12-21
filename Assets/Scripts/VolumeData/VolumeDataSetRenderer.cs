@@ -323,11 +323,14 @@ namespace VolumeData
             _regionMeasure.active = false;
             _regionMeasure.Draw3DAuto();
 
-            if (_featureManager != null && _maskDataSet != null)
+            if (_featureManager != null)
             {
-                var featureSet = _featureManager.CreateNewFeatureSet();
-                _maskDataSet?.FillFeatureSet(featureSet);
-
+                _featureManager.CreateSelectionFeatureSet();
+                if (_maskDataSet != null)
+                {
+                    var featureSet = _featureManager.CreateNewFeatureSet();
+                    _maskDataSet?.FillFeatureSet(featureSet);
+                }
             }
 
             //No wcs info if AstFrameSet has only 1 frame
@@ -536,6 +539,8 @@ namespace VolumeData
             if (_featureManager && _featureManager.SelectFeature(cursor))
             {
                 Debug.Log($"Selected feature '{_featureManager.SelectedFeature.Name}'");
+                RegionStartVoxel = Vector3Int.FloorToInt(_featureManager.SelectedFeature.GetMinBounds());
+                RegionEndVoxel = Vector3Int.FloorToInt(_featureManager.SelectedFeature.GetMaxBounds());
                 var _sofiaList = GameObject.Find("RenderMenu");
                 if (_sofiaList != null)
                 {
