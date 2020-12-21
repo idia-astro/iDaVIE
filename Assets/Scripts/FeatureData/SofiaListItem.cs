@@ -126,8 +126,7 @@ public class SofiaListItem : MonoBehaviour
         var textObject = InfoWindow.transform.Find("PanelContents").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport")
             .gameObject.transform.Find("Content").gameObject.transform.Find("SourceInfoText").gameObject;
         textObject.GetComponent<TMP_Text>().text = "";
-        if (feature.FeatureSetParent.RawDataKeys.Length == 0)
-            textObject.GetComponent<TMP_Text>().text = "No source info imported.";
+        textObject.GetComponent<TMP_Text>().text += $"Source # : {feature.Index + 1}{Environment.NewLine}";      
         for (int i = 0; i < feature.FeatureSetParent.RawDataKeys.Length; i++)
         {
             textObject.GetComponent<TMP_Text>().text += $"{feature.FeatureSetParent.RawDataKeys[i]} : {feature.RawData[i]}{Environment.NewLine}";

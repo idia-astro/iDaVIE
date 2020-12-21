@@ -366,7 +366,7 @@ namespace VolumeData
                     var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
                     var name = $"Masked Source #{maskVal}";
                     var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
-                    _featureSet.AddFeature(new Feature(boxMin, boxMax, Color.white, name, maskVal, rawStrings, _featureSet));
+                    _featureSet.AddFeature(new Feature(boxMin, boxMax, Color.white, name, maskVal - 1, rawStrings, _featureSet));
                 }
             }
         }
