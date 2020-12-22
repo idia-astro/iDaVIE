@@ -231,7 +231,7 @@ namespace DataFeatures
             if (ActiveFeatureSetRenderer)
             {
                 DeselectFeature();
-                SelectedFeature = new Feature(boundsMin, boundsMax, Color.green, featureName, -1, null, ActiveFeatureSetRenderer) {Temporary = temporary, Selected = true};
+                SelectedFeature = new Feature(boundsMin, boundsMax, Color.green, featureName, -1, null, ActiveFeatureSetRenderer, true) {Temporary = temporary, Selected = true};
                 return true;
             }
 

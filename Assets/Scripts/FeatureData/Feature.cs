@@ -23,7 +23,7 @@ namespace DataFeatures
 
         public bool StatusChanged;
 
-        public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, string name, int index, string[] rawData, FeatureSetRenderer parent)
+        public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, string name, int index, string[] rawData, FeatureSetRenderer parent, bool startVisible)
         {
             Index = index;
             _boundingBox = new VectorLine(name, new List<Vector3>(24), 1.0f) {drawTransform = parent.transform, color = cubeColor};
@@ -31,7 +31,7 @@ namespace DataFeatures
             SetBounds(cubeMin, cubeMax);
             RawData = rawData;
             FeatureSetParent = parent;
-            _boundingBox.active = false;
+            _boundingBox.active = startVisible;
         }
 
         public void ChangeColor(Color color)
