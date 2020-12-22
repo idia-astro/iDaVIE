@@ -461,7 +461,7 @@ namespace VolumeData
 
         public void TakePicture()
         {
-            Debug.Log("Cannot take screenshot with voice yet...");
+            _volumeInputController.TakePicture();
         }
 
         public void ToggleCursorInfo()
