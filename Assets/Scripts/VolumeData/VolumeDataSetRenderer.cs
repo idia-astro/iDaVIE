@@ -478,11 +478,12 @@ namespace VolumeData
             }
         }
 
-        public void SetRegionBounds(Vector3Int min, Vector3Int max)
+        public void SetRegionBounds(Vector3Int min, Vector3Int max, bool drawRegion)
         {
             RegionStartVoxel = min;
             RegionEndVoxel = max;
-            UpdateRegionBounds();
+            if (drawRegion)
+                UpdateRegionBounds();
         }
 
         private void UpdateRegionBounds()
@@ -539,8 +540,7 @@ namespace VolumeData
             if (_featureManager && _featureManager.SelectFeature(cursor))
             {
                 Debug.Log($"Selected feature '{_featureManager.SelectedFeature.Name}'");
-                RegionStartVoxel = Vector3Int.FloorToInt(_featureManager.SelectedFeature.GetMinBounds());
-                RegionEndVoxel = Vector3Int.FloorToInt(_featureManager.SelectedFeature.GetMaxBounds());
+                SetRegionBounds(Vector3Int.FloorToInt(_featureManager.SelectedFeature.GetMinBounds()), Vector3Int.FloorToInt(_featureManager.SelectedFeature.GetMaxBounds()), false);
                 var _sofiaList = GameObject.Find("RenderMenu");
                 if (_sofiaList != null)
                 {

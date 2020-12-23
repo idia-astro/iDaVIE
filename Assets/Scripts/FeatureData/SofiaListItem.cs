@@ -152,6 +152,7 @@ public class SofiaListItem : MonoBehaviour
                 scrollView.GetComponent<SofiaListCreator>().DisplaySet(sourceListIndex);
             scrollView.GetComponent<CustomDragHandler>().FocusOnFeature(feature, false);
             var infoWindow = transform.root.Find("SourceInfoWindow").gameObject;
+            _activeDataSet.SetRegionBounds(Vector3Int.FloorToInt(featureSetManager.SelectedFeature.GetMinBounds()), Vector3Int.FloorToInt(featureSetManager.SelectedFeature.GetMaxBounds()), false);
             if(infoWindow.activeSelf)
                 ShowInfo();
 
