@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using TMPro;
+using Valve.Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
@@ -413,6 +414,25 @@ public class CanvassDesktop : MonoBehaviour
         }
     }
 
+    IEnumerator ShowSaveDialogCoroutine(int type)
+    {
+        string lastPath = PlayerPrefs.GetString("LastPath");
+        if (!FileBrowserHelpers.DirectoryExists(lastPath))
+            lastPath = null;
+        yield return FileBrowser.WaitForSaveDialog(false, false, lastPath);
+        if (FileBrowser.Success)
+        {
+            PlayerPrefs.SetString("LastPath", Path.GetDirectoryName(FileBrowser.Result[0]));
+            PlayerPrefs.Save();
+            switch (type)
+            {
+                case 0:
+                    _saveMappingFile(FileBrowser.Result[0]);
+                    break;
+            }
+        }
+        yield return null;
+    }
 
     IEnumerator ShowLoadDialogCoroutine(int type)
     {
@@ -719,12 +739,76 @@ public class CanvassDesktop : MonoBehaviour
                 sourceRow.CurrentMapping = SourceMappingOptions.Redshift;
                 dropdown.value = (int) SourceMappingOptions.Redshift;
             }
-            else if (sourceRow.SourceName == featureMapping.Mapping.Name.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.ID;
-                dropdown.value = (int) SourceMappingOptions.ID;
-            } 
         }
+    }
+
+    public void SaveMappingFile()
+    {
+        FileBrowser.SetFilters(true, new FileBrowser.Filter("JSON", ".json"));
+        FileBrowser.SetDefaultFilter(".json");
+        showLoadDialogCoroutine = StartCoroutine(ShowSaveDialogCoroutine(0));
+    }
+
+    private void _saveMappingFile(string path)
+    {
+        Dictionary<SourceMappingOptions,string> mapping = new Dictionary<SourceMappingOptions, string>();
+        for (int i = 0; i < _sourceRowObjects.Length; i++)
+        {
+            var row = _sourceRowObjects[i].GetComponent<SourceRow>();
+            if (row.CurrentMapping != SourceMappingOptions.none)
+            mapping.Add(row.CurrentMapping, row.SourceName);
+        }
+        JObject mappingJson =
+            new JObject(
+                new JProperty("Mapping",
+                    new JObject(
+                        new JProperty("Index",
+                            new JObject(
+                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.ID) ? mapping[SourceMappingOptions.ID] : ""))),
+                        new JProperty("X",
+                            new JObject(
+                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.X) ? mapping[SourceMappingOptions.X] : ""))),
+                        new JProperty("Y",
+                            new JObject(
+                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Y) ? mapping[SourceMappingOptions.Y] : ""))),
+                        new JProperty("Z",
+                            new JObject(
+                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Z) ? mapping[SourceMappingOptions.Z] : ""))),
+                        new JProperty("XMin",
+                            new JObject(
+                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Xmin) ? mapping[SourceMappingOptions.Xmin] : ""))),
+                        new JProperty("XMax",
+                            new JObject(
+                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Xmax) ? mapping[SourceMappingOptions.Xmax] : ""))),
+                        new JProperty("YMin",
+                            new JObject(
+                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Ymin) ? mapping[SourceMappingOptions.Ymin] : ""))),
+                        new JProperty("YMax",
+                            new JObject(
+                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Ymax) ? mapping[SourceMappingOptions.Ymax] : ""))),
+                        new JProperty("ZMin",
+                            new JObject(
+                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Zmin) ? mapping[SourceMappingOptions.Zmin] : ""))),
+                        new JProperty("ZMax",
+                            new JObject(
+                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Zmax) ? mapping[SourceMappingOptions.Zmax] : ""))),
+                        new JProperty("RA",
+                            new JObject(
+                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Ra) ? mapping[SourceMappingOptions.Ra] : ""))),
+                        new JProperty("Dec",
+                            new JObject(
+                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Dec) ? mapping[SourceMappingOptions.Dec] : ""))),
+                        new JProperty("Vel",
+                            new JObject(
+                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Velo) ? mapping[SourceMappingOptions.Velo] : ""))),
+                        new JProperty("Freq",
+                            new JObject(
+                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Freq) ? mapping[SourceMappingOptions.Freq] : ""))),
+                        new JProperty("Redshift",
+                            new JObject(
+                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Redshift) ? mapping[SourceMappingOptions.Redshift] : "")))    
+                        )));
+        File.WriteAllText(path, mappingJson.ToString());
     }
 
     public void ChangeSourceMapping(int sourceIndex, SourceMappingOptions option)
