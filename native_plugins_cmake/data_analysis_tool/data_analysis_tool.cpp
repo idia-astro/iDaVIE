@@ -1,4 +1,5 @@
 #include "data_analysis_tool.h"
+#include "cdl_zscale.h"
 
 #include <unordered_map>
 #include <iostream>
@@ -476,6 +477,12 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
         }
     }
     return EXIT_FAILURE;
+}
+
+int GetZScale(const float* data, int64_t width, int64_t height, float* z1, float* z2)
+{
+    cdl_zscale((unsigned char*)data, width, height, -32, z1, z2, 0.25, 600, 120);
+    return EXIT_SUCCESS;
 }
 
 int FreeMemory(void* ptrToDelete)

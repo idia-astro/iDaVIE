@@ -46,21 +46,6 @@ public class MomentMapMenuController : MonoBehaviour
 
     }
 
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
-
-    void OnEnable()
-    {
-       
-    }
-
-
-
     public void IncreaseMomentMapThreshold()
     {
         if (getFirstActiveDataSet().GetMomentMapRenderer().MomentMapThreshold <= 0.1)
