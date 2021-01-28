@@ -106,7 +106,34 @@ namespace VolumeData
         public bool HasFitsRestFrequency { get; private set; } = false;
         public bool HasRestFrequency { get; set; }
         public double FitsRestFrequency { get; set;}
-        
+
+        public int VelocityDirection
+        {
+            get
+            {
+                if (_zCoord != null && _zCoord.Length >= 4 && _zDelt != 0.0)
+                {
+                    var zCoordPrefix = _zCoord.Substring(0, 4);
+                    switch (zCoordPrefix)
+                    {
+                        case "FREQ":
+                        case "ENER":
+                        case "WAVN":
+                            return -1 * Math.Sign(_zDelt);
+                        case "VRAD":
+                        case "WAVE":
+                        case "VOPT":
+                        case "ZOPT":
+                        case "AWAV":
+                        case "VELO":
+                        case "BETA":
+                            return Math.Sign(_zDelt);
+                    }
+                }
+                return 0;
+            }
+        }
+
         public long[] cubeSize;
 
         public int[] Histogram;
@@ -836,7 +863,7 @@ namespace VolumeData
                         _yRef = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                         break;
                     case "CTYPE3":
-                        _zCoord = entry.Value.Substring(0, 4); //Crashing with some data sets. Need to fix
+                        _zCoord = entry.Value.Substring(1, 4); //Crashing with some data sets. Need to fix
                         zProj = entry.Value.Substring(5, 4);
                         break;
                     case "CRPIX3":

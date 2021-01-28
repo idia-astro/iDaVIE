@@ -11,6 +11,8 @@ namespace VolumeData
         public RenderTexture Moment1Map { get; private set; }
         public RenderTexture ImageOutput { get; private set; }
 
+        public bool Inverted = false;
+
         public MomentMapMenuController momentMapMenuController;
         public Texture3D DataCube
         {
@@ -176,6 +178,7 @@ namespace VolumeData
 
         private Vector2 GetBounds(RenderTexture momentMap, bool useMinMax)
         {
+            RenderTexture currentActiveRT = RenderTexture.active;
             Texture2D tex = new Texture2D(_dataCube.width, _dataCube.height, TextureFormat.RFloat, false);
             RenderTexture.active = momentMap;
             tex.ReadPixels(new Rect(0, 0, ImageOutput.width, ImageOutput.height), 0, 0);
@@ -205,7 +208,8 @@ namespace VolumeData
                     DataAnalysis.GetZScale(data.GetUnsafeReadOnlyPtr(), ImageOutput.width, ImageOutput.height, out minValue, out maxValue);
                 }
             }
-           
+
+            RenderTexture.active = currentActiveRT;
             return new Vector2(minValue, maxValue);
         }
 
@@ -234,6 +238,7 @@ namespace VolumeData
                 _computeShader.Dispatch(_colormapKernelIndex, threadGroupsX, threadGroupsY, 1);
 
                 Texture2D tex = new Texture2D(ImageOutput.width, ImageOutput.height);
+                RenderTexture currentActiveRT = RenderTexture.active;
                 RenderTexture.active = ImageOutput;
                 tex.ReadPixels(new Rect(0, 0, ImageOutput.width, ImageOutput.height), 0, 0);
                 tex.Apply();
@@ -248,11 +253,11 @@ namespace VolumeData
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.OutputTexture, ImageOutput);
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.ColormapTexture, _colormapTexture);
 
-                // Default MomentOne bounds: 0 -> D - 1 (linear scaling)
+                // Default MomentOne bounds: ZScale min to max (linear scaling)
                 _computeShader.SetInt(MaterialID.ScaleType, 0);
-                _computeShader.SetFloat(MaterialID.ClampMin, _moment1Bounds.x);
-                _computeShader.SetFloat(MaterialID.ClampMax, _moment1Bounds.y);
-                Debug.Log($"M1 bounds: {_moment1Bounds.x} -> {_moment1Bounds.y}");
+                // Switch bounds if the map needs to be inverted
+                _computeShader.SetFloat(MaterialID.ClampMin, Inverted ? _moment1Bounds.y: _moment1Bounds.x);
+                _computeShader.SetFloat(MaterialID.ClampMax, Inverted ? _moment1Bounds.x: _moment1Bounds.y);
 
                 offset = (ColorMapM1.GetHashCode() + 0.5f) / ColorMapUtils.NumColorMaps;
                 _computeShader.SetFloat(MaterialID.ColormapOffset, offset);
@@ -272,7 +277,7 @@ namespace VolumeData
                 imageM1.sprite = spriteM1;
                 imageM1.preserveAspect = true;
                 momentMapMenuController.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_Threshold").gameObject.transform.Find("ThresholdValue").GetComponent<Text>().text = MomentMapThreshold.ToString();
-
+                RenderTexture.active = currentActiveRT;
 
             }
         }

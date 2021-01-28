@@ -348,13 +348,18 @@ namespace VolumeData
             }
             
             _momentMapRenderer = gameObject.AddComponent(typeof(MomentMapRenderer)) as MomentMapRenderer;
-            _momentMapRenderer.DataCube = _dataSet.DataCube;
-            _momentMapRenderer.momentMapMenuController = FindObjectOfType<VolumeCommandController>().momentMapMenuController;
-
-            if (_maskDataSet != null)
+            if (_momentMapRenderer)
             {
-                _momentMapRenderer.MaskCube = _maskDataSet.DataCube;
+                _momentMapRenderer.DataCube = _dataSet.DataCube;
+                _momentMapRenderer.Inverted = _dataSet.VelocityDirection == -1;
+                _momentMapRenderer.momentMapMenuController = FindObjectOfType<VolumeCommandController>().momentMapMenuController;
+
+                if (_maskDataSet != null)
+                {
+                    _momentMapRenderer.MaskCube = _maskDataSet.DataCube;
+                }    
             }
+            
             Shader.WarmupAllShaders();
 
             started = true;
