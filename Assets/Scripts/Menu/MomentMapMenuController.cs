@@ -8,6 +8,7 @@ public class MomentMapMenuController : MonoBehaviour
 {
 
     public Text ThresholdTypeText;
+    public Text LimitTypeText;
     public GameObject volumeDataSetManager;
     private VolumeDataSetRenderer[] dataSets;
     int thresholdType = 0;
@@ -16,7 +17,13 @@ public class MomentMapMenuController : MonoBehaviour
         Mask, Threshold
     }
 
-    // Start is called before the first frame update
+    public enum LimitType
+    {
+        ZScale, MinMax
+    }
+
+    private LimitType _limitType = LimitType.ZScale;
+
     void Start()
     {
         if (volumeDataSetManager != null)
@@ -27,6 +34,8 @@ public class MomentMapMenuController : MonoBehaviour
             {
                 VolumeDataSet dataSet = getFirstActiveDataSet().GetDataSet();
                 getFirstActiveDataSet().GetMomentMapRenderer().UpdatePlotWindow();
+
+                LimitTypeText.gameObject.GetComponent<Text>().text = $"{_limitType}";
 
                 if (getFirstActiveDataSet().Mask != null)
                 {
@@ -90,6 +99,13 @@ public class MomentMapMenuController : MonoBehaviour
         }
         getFirstActiveDataSet().GetMomentMapRenderer().CalculateMomentMaps();
         ThresholdTypeText.gameObject.GetComponent<Text>().text = (ThresholdType)thresholdType + "";
+    }
+    
+    public void ChangeLimitType()
+    {
+        _limitType = _limitType == LimitType.MinMax ? LimitType.ZScale : LimitType.MinMax;
+        getFirstActiveDataSet().GetMomentMapRenderer().UseZScale = _limitType == LimitType.ZScale;
+        LimitTypeText.gameObject.GetComponent<Text>().text = $"{_limitType}";
     }
 
 }
