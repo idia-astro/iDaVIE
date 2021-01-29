@@ -35,7 +35,7 @@ void MomentsGenerator (uint3 id : SV_DispatchThreadID)
         }
     }
     Moment0Result[id.xy] = sum;
-    Moment1Result[id.xy] = (sum != 0.0f? sumWeighted / sum: 0.0f);    
+    Moment1Result[id.xy] = sumWeighted / sum;    
 }
 
 [numthreads(8,8,1)]
@@ -57,7 +57,7 @@ void MaskedMomentsGenerator (uint3 id : SV_DispatchThreadID)
         }
     }
     Moment0Result[id.xy] = sum;
-    Moment1Result[id.xy] = (sum != 0.0f? sumWeighted / sum: 0.0f);
+    Moment1Result[id.xy] = sumWeighted / sum;
 }
 
 #pragma kernel LinearColormap
@@ -80,9 +80,16 @@ float ScaleContrast;
 void LinearColormap (uint3 id : SV_DispatchThreadID)
 {
     float inputVal = InputTexture[id.xy];
+
+    if (isnan(inputVal))
+    {
+        OutputTexture[id.xy] = 0;
+        return;
+    }
+    
     float range = ClampMax - ClampMin;
     float x = (inputVal - ClampMin) / range;
-    // Non-linear scaling
+    // // Non-linear scaling
     if (ScaleType == SQUARE)
     {
         x = x * x;
@@ -103,7 +110,7 @@ void LinearColormap (uint3 id : SV_DispatchThreadID)
     {
         x = pow(x, ScaleGamma);
     }
-
+    
     // bias mod
     x = clamp(x - ScaleBias, 0.0, 1.0);
     // contrast mod

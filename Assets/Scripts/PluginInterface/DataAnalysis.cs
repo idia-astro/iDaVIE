@@ -135,6 +135,9 @@ public static class DataAnalysis
     public static readonly GetSourceStatsDelegate GetSourceStats = null;
     public delegate int GetSourceStatsDelegate(IntPtr dataPtr, IntPtr maskDataPtr, long dimX, long dimY, long dimZ, SourceInfo source, ref SourceStats stats);
 
+    [PluginFunctionAttr("GetZScale")] 
+    public static readonly GetZScaleDelegate GetZScale = null;
+    public unsafe delegate int GetZScaleDelegate(void* dataPtr, long width, long height, out float z1, out float z2);
     
     
     [PluginFunctionAttr("FreeMemory")] 
