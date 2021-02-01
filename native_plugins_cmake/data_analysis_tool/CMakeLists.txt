@@ -1,4 +1,4 @@
-add_library(data_analysis_tool SHARED data_analysis_tool.cpp data_analysis_tool.h)
+add_library(data_analysis_tool SHARED data_analysis_tool.cpp data_analysis_tool.h cdl_zscale.cc)
 target_link_options(data_analysis_tool PUBLIC "-static-libgcc" "-static-libstdc++")
 set_target_properties(data_analysis_tool PROPERTIES CXX_STANDARD 17)
 

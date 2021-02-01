@@ -1,4 +1,5 @@
 using System;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,6 +10,8 @@ namespace VolumeData
         public RenderTexture Moment0Map { get; private set; }
         public RenderTexture Moment1Map { get; private set; }
         public RenderTexture ImageOutput { get; private set; }
+
+        public bool Inverted = false;
 
         public MomentMapMenuController momentMapMenuController;
         public Texture3D DataCube
@@ -155,8 +158,8 @@ namespace VolumeData
             int threadGroupsX = Mathf.CeilToInt(_dataCube.width / ((float) (_kernelThreadGroupX)));
             int threadGroupsY = Mathf.CeilToInt(_dataCube.height / ((float) (_kernelThreadGroupY)));
             _computeShader.Dispatch(activeKernelIndex, threadGroupsX, threadGroupsY, 1);
-            _moment0Bounds = GetBounds(Moment0Map);
-            _moment1Bounds = GetBounds(Moment1Map);
+            _moment0Bounds = GetBounds(Moment0Map, true);
+            _moment1Bounds = GetBounds(Moment1Map, false);
             var m1Dist = _moment1Bounds.y - _moment1Bounds.x;
             _moment1Bounds += new Vector2(m1Dist / 10.0f, -m1Dist / 10.0f);
             UpdatePlotWindow();
@@ -173,24 +176,40 @@ namespace VolumeData
             return texture;
         }
 
-        private Vector2 GetBounds(RenderTexture momentMap)
+        private Vector2 GetBounds(RenderTexture momentMap, bool useMinMax)
         {
+            RenderTexture currentActiveRT = RenderTexture.active;
             Texture2D tex = new Texture2D(_dataCube.width, _dataCube.height, TextureFormat.RFloat, false);
             RenderTexture.active = momentMap;
             tex.ReadPixels(new Rect(0, 0, ImageOutput.width, ImageOutput.height), 0, 0);
             tex.Apply();
             var data = tex.GetRawTextureData<float>();
+
             float minValue = Single.MaxValue;
             float maxValue = -Single.MaxValue;
-            foreach (var val in data)
+            if (useMinMax)
             {
-                if (val != Single.NaN)
+               
+                foreach (var val in data)
                 {
-                    minValue = Math.Min(minValue, val);
-                    maxValue = Math.Max(maxValue, val);
+                    if (val != Single.NaN)
+                    {
+                        minValue = Math.Min(minValue, val);
+                        maxValue = Math.Max(maxValue, val);
+                    }
+            
+                }
+            }
+           
+            else
+            {
+                unsafe
+                {
+                    DataAnalysis.GetZScale(data.GetUnsafeReadOnlyPtr(), ImageOutput.width, ImageOutput.height, out minValue, out maxValue);
                 }
             }
 
+            RenderTexture.active = currentActiveRT;
             return new Vector2(minValue, maxValue);
         }
 
@@ -198,7 +217,6 @@ namespace VolumeData
         {
             if (Moment0Map != null && Moment1Map != null )
             {
-
                 // Run colormapping compute shader
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.InputTexture, Moment0Map);
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.OutputTexture, ImageOutput);
@@ -219,9 +237,8 @@ namespace VolumeData
                 int threadGroupsY = Mathf.CeilToInt(_dataCube.height / ((float)(_kernelThreadGroupY)));
                 _computeShader.Dispatch(_colormapKernelIndex, threadGroupsX, threadGroupsY, 1);
 
-                //  GUI.DrawTexture(new Rect(0, 0, ImageOutput.width * 3, ImageOutput.height * 3), ImageOutput);
-
                 Texture2D tex = new Texture2D(ImageOutput.width, ImageOutput.height);
+                RenderTexture currentActiveRT = RenderTexture.active;
                 RenderTexture.active = ImageOutput;
                 tex.ReadPixels(new Rect(0, 0, ImageOutput.width, ImageOutput.height), 0, 0);
                 tex.Apply();
@@ -236,13 +253,12 @@ namespace VolumeData
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.OutputTexture, ImageOutput);
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.ColormapTexture, _colormapTexture);
 
-                // Default MomentOne bounds: 0 -> D - 1 (linear scaling)
+                // Default MomentOne bounds: ZScale min to max (linear scaling)
                 _computeShader.SetInt(MaterialID.ScaleType, 0);
-                _computeShader.SetFloat(MaterialID.ClampMin, _moment1Bounds.x);
-                _computeShader.SetFloat(MaterialID.ClampMax, _moment1Bounds.y);
+                // Switch bounds if the map needs to be inverted
+                _computeShader.SetFloat(MaterialID.ClampMin, Inverted ? _moment1Bounds.y: _moment1Bounds.x);
+                _computeShader.SetFloat(MaterialID.ClampMax, Inverted ? _moment1Bounds.x: _moment1Bounds.y);
 
-                // _computeShader.SetFloat(MaterialID.ClampMin, 0.0f);
-                // _computeShader.SetFloat(MaterialID.ClampMax, DataCube.depth - 1);
                 offset = (ColorMapM1.GetHashCode() + 0.5f) / ColorMapUtils.NumColorMaps;
                 _computeShader.SetFloat(MaterialID.ColormapOffset, offset);
                 threadGroupsX = Mathf.CeilToInt(_dataCube.width / ((float)(_kernelThreadGroupX)));
@@ -261,7 +277,7 @@ namespace VolumeData
                 imageM1.sprite = spriteM1;
                 imageM1.preserveAspect = true;
                 momentMapMenuController.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_Threshold").gameObject.transform.Find("ThresholdValue").GetComponent<Text>().text = MomentMapThreshold.ToString();
-
+                RenderTexture.active = currentActiveRT;
 
             }
         }
