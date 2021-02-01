@@ -30,6 +30,7 @@ public class SofiaListCreator : MonoBehaviour
     public GameObject InfoWindow = null;
 
     public TMP_Text ListTitle; 
+    public TMP_Text SaveConfirmation;
 
     private FeatureSetManager featureSetManager;
     private FeatureSetRenderer featureSetRenderer;
@@ -266,7 +267,9 @@ public class SofiaListCreator : MonoBehaviour
         {
             Console.WriteLine(ex.Message);
         }
-        var path = Path.Combine(directoryPath, string.Format("iDaVIE_cat_{0}.xml", DateTime.Now.ToString("yyyyMMdd_Hmmssffff")));
+        var filename = string.Format("iDaVIE_cat_{0}.xml", DateTime.Now.ToString("yyyyMMdd_Hmmssffff"));
+        var path = Path.Combine(directoryPath, filename);
         featureSetRenderer.SaveAsVoTable(path);
+        SaveConfirmation.text = $"Table saved as {filename}";
     }
 }
