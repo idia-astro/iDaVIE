@@ -762,7 +762,7 @@ public class CanvassDesktop : MonoBehaviour
             new JObject(
                 new JProperty("Mapping",
                     new JObject(
-                        new JProperty("Index",
+                        new JProperty("ID",
                             new JObject(
                                 new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.ID) ? mapping[SourceMappingOptions.ID] : ""))),
                         new JProperty("X",

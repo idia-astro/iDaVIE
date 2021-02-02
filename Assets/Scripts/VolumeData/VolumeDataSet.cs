@@ -365,7 +365,7 @@ namespace VolumeData
             
             if (_featureSet)
             {
-                var index = _featureSet.FeatureList.FindIndex(f => f.Index == maskVal);
+                var index = _featureSet.FeatureList.FindIndex(f => f.Index == maskVal - 1);
                 if (index >= 0)
                 {
                     if (sourceStats.numVoxels > 0)
