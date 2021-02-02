@@ -1,5 +1,8 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+
+using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
@@ -40,10 +43,6 @@ public class MomentMapMenuController : MonoBehaviour
                 }
             }
         }
-
-       
-
-
     }
 
     public void IncreaseMomentMapThreshold()
@@ -90,6 +89,71 @@ public class MomentMapMenuController : MonoBehaviour
         }
         getFirstActiveDataSet().GetMomentMapRenderer().CalculateMomentMaps();
         ThresholdTypeText.gameObject.GetComponent<Text>().text = (ThresholdType)thresholdType + "";
+    }  
+
+    public void SaveToImage()
+    {
+        var directory = new DirectoryInfo(Application.dataPath);
+        var directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/Camera");
+        try
+        {
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        var path = Path.Combine(directoryPath, string.Format("Moment_maps_{0}.png", DateTime.Now.ToString("yyyyMMdd_Hmmssffff")));
+      
+        
+        Image im0 = this.gameObject.transform.Find("Map_container").gameObject.transform.Find("MomentMap0").GetComponent<Image>();
+        Image im1 = this.gameObject.transform.Find("Map_container").gameObject.transform.Find("MomentMap1").GetComponent<Image>();
+
+        Texture2D mom0 = im0.sprite.texture;
+        Texture2D mom1 = im1.sprite.texture;
+
+        int width = im0.sprite.texture.width;
+        int height = im0.sprite.texture.height + im1.sprite.texture.height;
+     
+
+        //Create new textures
+        Texture2D textureResult = new Texture2D(width, height);
+        //create clone form texture
+       // textureResult.SetPixels(mom0.GetPixels()+mom1.GetPixels());
+        for (int x = 0; x < mom0.width; x++)
+        {
+            for (int y = 0; y < mom0.height; y++)
+            {
+                Color c = mom0.GetPixel(x, y);
+                if (c.a > 0.0f) //Is not transparent
+                {
+                    textureResult.SetPixel(x, +mom0.height+y, c);
+                }
+            }
+        }
+        
+        for (int x = 0; x < mom1.width; x++)
+        {
+            for (int y =0; y < mom1.height; y++)
+            {
+                Color c = mom1.GetPixel(x, y);
+                if (c.a > 0.0f) //Is not transparent
+                {
+                    textureResult.SetPixel(x, y, c);
+                }
+            }
+        }
+        
+        //Apply colors
+        textureResult.Apply();
+      
+        byte[] bytes_mom = textureResult.EncodeToPNG();
+
+        File.WriteAllBytes(path, bytes_mom);
+
     }
 
 }
