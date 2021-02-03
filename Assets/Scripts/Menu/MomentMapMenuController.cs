@@ -132,6 +132,10 @@ public class MomentMapMenuController : MonoBehaviour
                 {
                     textureResult.SetPixel(x, +mom0.height+y, c);
                 }
+                else
+                {
+                    textureResult.SetPixel(x, y, Color.white);
+                }
             }
         }
         
@@ -143,6 +147,10 @@ public class MomentMapMenuController : MonoBehaviour
                 if (c.a > 0.0f) //Is not transparent
                 {
                     textureResult.SetPixel(x, y, c);
+                }
+                else
+                {
+                    textureResult.SetPixel(x, y, Color.white);
                 }
             }
         }
