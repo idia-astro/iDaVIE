@@ -1,4 +1,3 @@
-﻿
 using SimpleFileBrowser;
 using System;
 using System.Collections;
@@ -15,6 +14,7 @@ using Valve;
 using Valve.VR;
 using DataFeatures;
 using VoTableReader;
+using System.Linq;
 
 public class CanvassDesktop : MonoBehaviour
 {
@@ -663,12 +663,20 @@ public class CanvassDesktop : MonoBehaviour
         {
             var dropdown = sourceRowObject.transform.Find("Coord_dropdown").gameObject.GetComponent<TMP_Dropdown>();
             dropdown.value = 0;
+            sourceRowObject.transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().isOn = false;
         }
         foreach (var sourceRowObject in _sourceRowObjects)
         {
             var sourceRow = sourceRowObject.GetComponent<SourceRow>();
             var dropdown = sourceRowObject.transform.Find("Coord_dropdown").gameObject.GetComponent<TMP_Dropdown>();
-            if (sourceRow.SourceName == featureMapping.Mapping.X.Source)
+            if (featureMapping.Mapping.ImportedColumns.Contains(sourceRow.SourceName))
+                sourceRowObject.transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().isOn = true;
+            if (sourceRow.SourceName == featureMapping.Mapping.ID.Source)
+            {
+                sourceRow.CurrentMapping = SourceMappingOptions.ID;
+                dropdown.value = (int) SourceMappingOptions.ID;
+            }
+            else if (sourceRow.SourceName == featureMapping.Mapping.X.Source)
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.X;
                 dropdown.value = (int) SourceMappingOptions.X;
@@ -677,7 +685,6 @@ public class CanvassDesktop : MonoBehaviour
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.Y;
                 dropdown.value = (int) SourceMappingOptions.Y;
-
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.Z.Source)
             {
@@ -751,64 +758,36 @@ public class CanvassDesktop : MonoBehaviour
 
     private void _saveMappingFile(string path)
     {
-        Dictionary<SourceMappingOptions,string> mapping = new Dictionary<SourceMappingOptions, string>();
+        Dictionary<SourceMappingOptions,MapEntry> mapping = new Dictionary<SourceMappingOptions, MapEntry>();
+        List<string> importedColumns = new List<string>();
         for (int i = 0; i < _sourceRowObjects.Length; i++)
         {
             var row = _sourceRowObjects[i].GetComponent<SourceRow>();
+            if (_sourceRowObjects[i].transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().isOn)
+                importedColumns.Add(row.SourceName);
             if (row.CurrentMapping != SourceMappingOptions.none)
-            mapping.Add(row.CurrentMapping, row.SourceName);
+                mapping.Add(row.CurrentMapping, new MapEntry{ Source =  row.SourceName });
         }
-        JObject mappingJson =
-            new JObject(
-                new JProperty("Mapping",
-                    new JObject(
-                        new JProperty("ID",
-                            new JObject(
-                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.ID) ? mapping[SourceMappingOptions.ID] : ""))),
-                        new JProperty("X",
-                            new JObject(
-                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.X) ? mapping[SourceMappingOptions.X] : ""))),
-                        new JProperty("Y",
-                            new JObject(
-                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Y) ? mapping[SourceMappingOptions.Y] : ""))),
-                        new JProperty("Z",
-                            new JObject(
-                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Z) ? mapping[SourceMappingOptions.Z] : ""))),
-                        new JProperty("XMin",
-                            new JObject(
-                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Xmin) ? mapping[SourceMappingOptions.Xmin] : ""))),
-                        new JProperty("XMax",
-                            new JObject(
-                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Xmax) ? mapping[SourceMappingOptions.Xmax] : ""))),
-                        new JProperty("YMin",
-                            new JObject(
-                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Ymin) ? mapping[SourceMappingOptions.Ymin] : ""))),
-                        new JProperty("YMax",
-                            new JObject(
-                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Ymax) ? mapping[SourceMappingOptions.Ymax] : ""))),
-                        new JProperty("ZMin",
-                            new JObject(
-                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Zmin) ? mapping[SourceMappingOptions.Zmin] : ""))),
-                        new JProperty("ZMax",
-                            new JObject(
-                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Zmax) ? mapping[SourceMappingOptions.Zmax] : ""))),
-                        new JProperty("RA",
-                            new JObject(
-                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Ra) ? mapping[SourceMappingOptions.Ra] : ""))),
-                        new JProperty("Dec",
-                            new JObject(
-                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Dec) ? mapping[SourceMappingOptions.Dec] : ""))),
-                        new JProperty("Vel",
-                            new JObject(
-                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Velo) ? mapping[SourceMappingOptions.Velo] : ""))),
-                        new JProperty("Freq",
-                            new JObject(
-                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Freq) ? mapping[SourceMappingOptions.Freq] : ""))),
-                        new JProperty("Redshift",
-                            new JObject(
-                                new JProperty("Source", mapping.ContainsKey(SourceMappingOptions.Redshift) ? mapping[SourceMappingOptions.Redshift] : "")))    
-                        )));
-        File.WriteAllText(path, mappingJson.ToString());
+        var mappingObject = new Mapping{
+                                ID = mapping.ContainsKey(SourceMappingOptions.ID) ? mapping[SourceMappingOptions.ID] : new MapEntry {Source = ""},
+                                X = mapping.ContainsKey(SourceMappingOptions.X) ? mapping[SourceMappingOptions.X] : new MapEntry {Source = ""},
+                                Y = mapping.ContainsKey(SourceMappingOptions.Y) ? mapping[SourceMappingOptions.Y] : new MapEntry {Source = ""},
+                                Z = mapping.ContainsKey(SourceMappingOptions.Z) ? mapping[SourceMappingOptions.Z] : new MapEntry {Source = ""},
+                                XMin = mapping.ContainsKey(SourceMappingOptions.Xmin) ? mapping[SourceMappingOptions.Xmin] : new MapEntry {Source = ""},
+                                XMax = mapping.ContainsKey(SourceMappingOptions.Xmax) ? mapping[SourceMappingOptions.Xmax] : new MapEntry {Source = ""},
+                                YMin = mapping.ContainsKey(SourceMappingOptions.Ymin) ? mapping[SourceMappingOptions.Ymin] : new MapEntry {Source = ""},
+                                YMax = mapping.ContainsKey(SourceMappingOptions.Ymax) ? mapping[SourceMappingOptions.Ymax] : new MapEntry {Source = ""},
+                                ZMin = mapping.ContainsKey(SourceMappingOptions.Zmin) ? mapping[SourceMappingOptions.Zmin] : new MapEntry {Source = ""},
+                                ZMax = mapping.ContainsKey(SourceMappingOptions.Zmax) ? mapping[SourceMappingOptions.Zmax] : new MapEntry {Source = ""},
+                                RA = mapping.ContainsKey(SourceMappingOptions.Ra) ? mapping[SourceMappingOptions.Ra] : new MapEntry {Source = ""},
+                                Dec =mapping.ContainsKey(SourceMappingOptions.Dec) ?  mapping[SourceMappingOptions.Dec] : new MapEntry {Source = ""},
+                                Vel = mapping.ContainsKey(SourceMappingOptions.Velo) ? mapping[SourceMappingOptions.Velo] : new MapEntry {Source = ""},
+                                Freq = mapping.ContainsKey(SourceMappingOptions.Freq) ? mapping[SourceMappingOptions.Freq] : new MapEntry {Source = ""},
+                                Redshift = mapping.ContainsKey(SourceMappingOptions.Redshift) ? mapping[SourceMappingOptions.Redshift] : new MapEntry {Source = ""},
+                                ImportedColumns = importedColumns.ToArray()
+                            };
+        var featureMappingObject = new FeatureMapping{ Mapping = mappingObject }; 
+        featureMappingObject.SaveMappingToFile(path);
     }
 
     public void ChangeSourceMapping(int sourceIndex, SourceMappingOptions option)
