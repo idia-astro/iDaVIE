@@ -43,8 +43,27 @@ namespace VolumeData
             }
         }
 
+        public bool UseZScale
+        {
+            get => _useZScale;
+            set
+            {
+                if (_useZScale != value)
+                {
+                    _useZScale = value;
+                    _moment0Bounds = GetBounds(Moment0Map);
+                    _moment1Bounds = GetBounds(Moment1Map);
+                    UpdatePlotWindow();
+                }
+            }
+        }
+        private bool _useZScale = true;
+
+
         [Range(-0.1f, 0.1f)] public float MomentMapThreshold = 0.0f;
         public bool UseMask = true;
+
+
 
         [Header("Color Mapping")] 
         public ColorMapEnum ColorMapM0 = ColorMapEnum.Plasma;
@@ -158,10 +177,8 @@ namespace VolumeData
             int threadGroupsX = Mathf.CeilToInt(_dataCube.width / ((float) (_kernelThreadGroupX)));
             int threadGroupsY = Mathf.CeilToInt(_dataCube.height / ((float) (_kernelThreadGroupY)));
             _computeShader.Dispatch(activeKernelIndex, threadGroupsX, threadGroupsY, 1);
-            _moment0Bounds = GetBounds(Moment0Map, true);
-            _moment1Bounds = GetBounds(Moment1Map, false);
-            var m1Dist = _moment1Bounds.y - _moment1Bounds.x;
-            _moment1Bounds += new Vector2(m1Dist / 10.0f, -m1Dist / 10.0f);
+            _moment0Bounds = GetBounds(Moment0Map);
+            _moment1Bounds = GetBounds(Moment1Map);
             UpdatePlotWindow();
             return true;
         }
@@ -176,7 +193,7 @@ namespace VolumeData
             return texture;
         }
 
-        private Vector2 GetBounds(RenderTexture momentMap, bool useMinMax)
+        private Vector2 GetBounds(RenderTexture momentMap)
         {
             RenderTexture currentActiveRT = RenderTexture.active;
             Texture2D tex = new Texture2D(_dataCube.width, _dataCube.height, TextureFormat.RFloat, false);
@@ -187,26 +204,24 @@ namespace VolumeData
 
             float minValue = Single.MaxValue;
             float maxValue = -Single.MaxValue;
-            if (useMinMax)
-            {
-               
-                foreach (var val in data)
-                {
-                    if (val != Single.NaN)
-                    {
-                        minValue = Math.Min(minValue, val);
-                        maxValue = Math.Max(maxValue, val);
-                    }
-            
-                }
-            }
-           
-            else
+            if (_useZScale)
             {
                 unsafe
                 {
                     DataAnalysis.GetZScale(data.GetUnsafeReadOnlyPtr(), ImageOutput.width, ImageOutput.height, out minValue, out maxValue);
                 }
+            }
+            else
+            {
+                foreach (var val in data)
+                {
+                    if (!float.IsNaN(val))
+                    {
+                        minValue = Math.Min(minValue, val);
+                        maxValue = Math.Max(maxValue, val);
+                    }
+            
+                }                
             }
 
             RenderTexture.active = currentActiveRT;
