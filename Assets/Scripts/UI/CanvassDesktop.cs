@@ -623,6 +623,7 @@ public class CanvassDesktop : MonoBehaviour
         var featureDataSet = volumeDataSet.GetComponentInChildren<FeatureSetManager>();
         sourcesPath = path;
         featureDataSet.FeatureFileToLoad = path;
+        sourcesPanelContent.gameObject.transform.Find("MappingSave_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
         sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
         //activate load features button
         sourcesPanelContent.gameObject.transform.Find("SourcesFile_container").gameObject.transform.Find("SourcesFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(path);
@@ -842,11 +843,14 @@ public class CanvassDesktop : MonoBehaviour
     public void LoadSourcesFile()
     {
         var loadingText = sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Text").gameObject;
+        loadingText.GetComponent<TextMeshProUGUI>().color = new Color(0, 0.6f, 0.1f);
         loadingText.SetActive(true);
         bool[] columnsMask = new bool[_sourceRowObjects.Length];
         if (!AreMinimalMappingsSet())
         {
             Debug.Log("Minimal source mappings not set!");
+            loadingText.GetComponent<TextMeshProUGUI>().color = Color.red;
+            loadingText.GetComponent<TextMeshProUGUI>().text = "Spatial coordinates not set!";
             return;
         }
         var featureSetManager = getFirstActiveDataSet().GetComponentInChildren<FeatureSetManager>();
