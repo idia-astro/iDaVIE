@@ -103,7 +103,7 @@ public class MomentMapMenuController : MonoBehaviour
     public void SaveToImage()
     {
         var directory = new DirectoryInfo(Application.dataPath);
-        var directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/Camera");
+        var directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/MomentMaps");
         try
         {
             if (!Directory.Exists(directoryPath))
