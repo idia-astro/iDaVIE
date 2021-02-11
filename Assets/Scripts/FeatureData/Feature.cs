@@ -39,6 +39,11 @@ namespace DataFeatures
             _boundingBox.color=color;
         }
 
+        public void ShowAxes(bool show)
+        {
+            SetCubeColors(_boundingBox, _boundingBox.color, show);
+        }
+
         public void Deactivate()
         {
             if (_boundingBox != null)
@@ -146,6 +151,21 @@ namespace DataFeatures
             var center = Center;
             _boundingBox?.MakeCube(center, boundingBoxSize.x, boundingBoxSize.y, boundingBoxSize.z);
             _unityBounds = new Bounds(center, boundingBoxSize);
+        }
+        
+        public static void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes)
+        {
+            cube.SetColor(baseColor);
+
+            if (colorAxes)
+            {
+                var colorAxisX = new Color(1.0f, 0.3f, 0.3f);
+                var colorAxisY = new Color(0.3f, 1.0f, 0.3f);
+                var colorAxisZ = new Color(0.3f, 0.3f, 1.0f);
+                cube.SetColor(colorAxisX, 8);
+                cube.SetColor(colorAxisY, 4);
+                cube.SetColor(colorAxisZ, 11);
+            }
         }
     }
 }

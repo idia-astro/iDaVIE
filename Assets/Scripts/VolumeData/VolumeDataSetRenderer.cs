@@ -1,17 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
 using UnityEngine;
 using DataFeatures;
-using JetBrains.Annotations;
-using UnityEngine.XR;
 using Vectrosity;
-using Random = System.Random;
-using System.Text;
-using CatalogData;
 using Debug = UnityEngine.Debug;
 
 namespace VolumeData
@@ -295,7 +287,7 @@ namespace VolumeData
 
             _cubeOutline = new VectorLine("CubeAxes", new List<Vector3>(24), 2.0f);
             _cubeOutline.MakeCube(Vector3.zero, 1, 1, 1);
-            SetCubeColors(_cubeOutline, Color.white, true);
+            Feature.SetCubeColors(_cubeOutline, Color.white, true);
             _cubeOutline.drawTransform = transform;
             _cubeOutline.Draw3DAuto();
 
@@ -521,7 +513,7 @@ namespace VolumeData
 
             var regionSizeBytes = regionSize.x * regionSize.y * regionSize.z * sizeof(float);
             bool regionIsFullResolution = (regionSizeBytes <= MaximumCubeSizeInMB * 1e6);
-            SetCubeColors(_regionOutline, regionIsFullResolution ? Color.white : Color.yellow, regionIsFullResolution);
+            Feature.SetCubeColors(_regionOutline, regionIsFullResolution ? Color.white : Color.yellow, regionIsFullResolution);
         }
 
         public void ClearRegion()
@@ -894,21 +886,6 @@ namespace VolumeData
             _dataSet.CleanUp(RandomVolume);
             _maskDataSet?.CleanUp(false);
 
-        }
-        
-        private void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes)
-        {
-            cube.SetColor(baseColor);
-
-            if (colorAxes)
-            {
-                var colorAxisX = new Color(1.0f, 0.3f, 0.3f);
-                var colorAxisY = new Color(0.3f, 1.0f, 0.3f);
-                var colorAxisZ = new Color(0.3f, 0.3f, 1.0f);
-                cube.SetColor(colorAxisX, 8);
-                cube.SetColor(colorAxisY, 4);
-                cube.SetColor(colorAxisZ, 11);
-            }
         }
     }
 
