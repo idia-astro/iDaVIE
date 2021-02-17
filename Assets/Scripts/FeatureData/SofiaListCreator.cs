@@ -5,6 +5,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using VolumeData;
+using System.IO;
+using System;
 
 public class SofiaListCreator : MonoBehaviour
 {
@@ -28,6 +30,7 @@ public class SofiaListCreator : MonoBehaviour
     public GameObject InfoWindow = null;
 
     public TMP_Text ListTitle; 
+    public TMP_Text SaveConfirmation;
 
     private FeatureSetManager featureSetManager;
     private FeatureSetRenderer featureSetRenderer;
@@ -247,5 +250,26 @@ public class SofiaListCreator : MonoBehaviour
             InfoWindow.SetActive(false);
         else if (featureSetManager.SelectedFeature != null)
             featureSetManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().ShowInfo();
+    }
+
+    public void SaveListAsVoTable()
+    {
+        var directory = new DirectoryInfo(Application.dataPath);
+        var directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/Catalogs");
+        try
+        {
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        var filename = string.Format("iDaVIE_cat_{0}.xml", DateTime.Now.ToString("yyyyMMdd_Hmmssffff"));
+        var path = Path.Combine(directoryPath, filename);
+        featureSetRenderer.SaveAsVoTable(path);
+        SaveConfirmation.text = $"Table saved as {filename}";
     }
 }

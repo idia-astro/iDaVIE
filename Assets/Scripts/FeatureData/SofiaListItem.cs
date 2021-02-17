@@ -126,7 +126,16 @@ public class SofiaListItem : MonoBehaviour
         var textObject = InfoWindow.transform.Find("PanelContents").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport")
             .gameObject.transform.Find("Content").gameObject.transform.Find("SourceInfoText").gameObject;
         textObject.GetComponent<TMP_Text>().text = "";
-        textObject.GetComponent<TMP_Text>().text += $"Source # : {feature.Index + 1}{Environment.NewLine}";      
+        textObject.GetComponent<TMP_Text>().text += $"Source # : {feature.Index + 1}{Environment.NewLine}";  
+        if (_activeDataSet.HasWCS)
+        {
+            double ra, dec, physz, normR, normD, normZ;
+            AstTool.Transform3D(_activeDataSet.AstFrame, feature.Center.x, feature.Center.y, feature.Center.z, 1, out ra, out dec, out physz);
+            AstTool.Norm(_activeDataSet.AstFrame, ra, dec, physz, out normR, out normD, out normZ);
+            textObject.GetComponent<TMP_Text>().text += $"RA: {(180f * normR / Math.PI).ToString()}{Environment.NewLine}";
+            textObject.GetComponent<TMP_Text>().text += $"Dec: {(180f * normD / Math.PI).ToString()}{Environment.NewLine}";
+            textObject.GetComponent<TMP_Text>().text += $"{_activeDataSet.Data.GetAstAttribute("System(3)")}: {normZ.ToString()}{Environment.NewLine}";
+        }
         for (int i = 0; i < feature.FeatureSetParent.RawDataKeys.Length; i++)
         {
             textObject.GetComponent<TMP_Text>().text += $"{feature.FeatureSetParent.RawDataKeys[i]} : {feature.RawData[i]}{Environment.NewLine}";

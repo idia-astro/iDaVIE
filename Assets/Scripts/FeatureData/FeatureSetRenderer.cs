@@ -14,7 +14,9 @@ namespace DataFeatures
 {
     public class FeatureSetRenderer : MonoBehaviour
     {
-        private enum coordTypes {  cartesian,  freqz,  velz, redz   }
+        public enum CoordTypes {  cartesian,  freqz,  velz, redz   }
+
+        public CoordTypes ZType { get; private set;}
 
         public List<Feature> FeatureList { get; private set; }
 
@@ -25,6 +27,7 @@ namespace DataFeatures
         public Vector3[] BoxMinPositions { get; private set; }
         public Vector3[] BoxMaxPositions { get; private set; }
         public string[] RawDataKeys { get; set; }
+        public string[] RawDataTypes { get; set; }
         public string FileName { get; private set; }
 
         public bool IsImported {get; private set;}
@@ -94,6 +97,7 @@ namespace DataFeatures
         public void SpawnFeaturesFromSourceStats(Dictionary<short, DataAnalysis.SourceStats> sourceStatsDict)
         {
             RawDataKeys = new[] {"Sum", "Peak", "VSys (Channel)", "W20 (Channel)"};
+            RawDataTypes = new[] {"float", "float", "float", "float"};
             foreach (var item in sourceStatsDict)
             {
                 var sourceStats = item.Value;
@@ -118,7 +122,7 @@ namespace DataFeatures
             var setCoordinates = mapping.Keys;
             bool containsBoxes = false;
             List<string>[] featureRawData = new List<string>[voTable.Rows.Count];
-            coordTypes sourceType = coordTypes.cartesian;
+            ZType = CoordTypes.cartesian;
             int[] posIndices = new int[3];
             IntPtr astFrameSet = IntPtr.Zero;
             string[] colNames = new string[voTable.Column.Count];
@@ -129,20 +133,21 @@ namespace DataFeatures
                     rawDataKeysList.Add(colNames[i]);
             }
             RawDataKeys = rawDataKeysList.ToArray();
+            RawDataTypes = Enumerable.Repeat("string", RawDataKeys.Length).ToArray();
             if (setCoordinates.Contains(SourceMappingOptions.X))
             {
                 posIndices[0] = Array.IndexOf(colNames, mapping[SourceMappingOptions.X]);
                 posIndices[1] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Y]);
                 posIndices[2] =Array.IndexOf(colNames, mapping[SourceMappingOptions.Z]);
             }
-            else
+            else if (setCoordinates.Contains(SourceMappingOptions.Ra))
             {
                 posIndices[0] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Ra]);
                 posIndices[1] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Dec]); 
                 if (setCoordinates.Contains(SourceMappingOptions.Velo))
                 {
-                    sourceType = coordTypes.velz;
-                    if (AstTool.GetAltSpecSet(volumeAstFrame, out astFrameSet, new StringBuilder("VOPT"), new StringBuilder("m/s"), new StringBuilder(VolumeRenderer.StdOfRest)) != 0)
+                    ZType = CoordTypes.velz;
+                    if (AstTool.GetAltSpecSet(volumeAstFrame, out astFrameSet, new StringBuilder("VRAD"), new StringBuilder("m/s"), new StringBuilder(VolumeRenderer.StdOfRest)) != 0)
                     {
                         Debug.Log($"Error creating feature astframe!");
                         return;
@@ -151,7 +156,7 @@ namespace DataFeatures
                 }
                 else if (setCoordinates.Contains(SourceMappingOptions.Freq))
                 {
-                    sourceType = coordTypes.freqz;
+                    ZType = CoordTypes.freqz;
                     if (AstTool.GetAltSpecSet(volumeAstFrame, out astFrameSet, new StringBuilder("FREQ"), new StringBuilder("Hz"), new StringBuilder(VolumeRenderer.StdOfRest)) != 0)
                     {
                         Debug.Log($"Error creating feature astframe!");
@@ -161,7 +166,7 @@ namespace DataFeatures
                 }
                 else if (setCoordinates.Contains(SourceMappingOptions.Redshift))
                 {
-                    sourceType = coordTypes.redz;
+                    ZType = CoordTypes.redz;
                     if (AstTool.GetAltSpecSet(volumeAstFrame, out astFrameSet, new StringBuilder("REDSHIFT"), new StringBuilder(""), new StringBuilder(VolumeRenderer.StdOfRest)) != 0)
                     {
                         Debug.Log($"Error creating feature astframe!");
@@ -180,12 +185,8 @@ namespace DataFeatures
             {
                 Debug.Log($"Error reading VOTable! Note: Currently the VOTable may not contain xmlns declarations.");
                 return;
-            }          
-            if (posIndices[0] < 0 ||  posIndices[1] < 0 ||  posIndices[2] < 0)
-            {
-                Debug.Log($"Minimum column parameters not found!");
-                return;
             }
+            bool containsPositions = !(posIndices[0] < 0 ||  posIndices[1] < 0 ||  posIndices[2] < 0);
             int[] boxIndices = {-1,-1,-1,-1,-1,-1};
             if (containsBoxes)
             {
@@ -213,37 +214,47 @@ namespace DataFeatures
                     if (columnsMask[i])
                         featureRawData[row].Add(voTable.Rows[row].ColumnData[i].ToString());
                 }
-                for (int i = 0; i < posIndices.Length; i++)
+                if (containsPositions && !containsBoxes)
                 {
-                    string stringToParse = (string)voTable.Rows[row].ColumnData[posIndices[i]];
-                    double value;
-                    if (double.TryParse(stringToParse, NumberStyles.Any, CultureInfo.InvariantCulture, out value))
+                    for (int i = 0; i < posIndices.Length; i++)
                     {
-                        switch (i)
+                        string stringToParse = (string)voTable.Rows[row].ColumnData[posIndices[i]];
+                        double value;
+                        if (double.TryParse(stringToParse, NumberStyles.Any, CultureInfo.InvariantCulture, out value))
                         {
-                            case 0:
-                                xPhys = Math.PI * value / 180.0;
-                                break;
-                            case 1:
-                                yPhys = Math.PI * value / 180.0;
-                                break;
-                            case 2:
-                                zPhys = value;
-                                break;
+                            switch (i)
+                            {
+                                case 0:
+                                    if (ZType != CoordTypes.cartesian)
+                                        xPhys = Math.PI * value / 180.0;
+                                    else
+                                        xPhys = value;
+                                    break;
+                                case 1:
+                                    if (ZType != CoordTypes.cartesian)
+                                        yPhys = Math.PI * value / 180.0;
+                                    else
+                                        yPhys = value;
+                                    break;
+                                case 2:
+                                    zPhys = value;
+                                    break;
+                            }
                         }
                     }
+                    if (ZType != CoordTypes.cartesian)
+                    {
+                        double x,y,z;
+                        AstTool.Transform3D(astFrameSet, xPhys, yPhys, zPhys, 1, out x, out y, out z);
+                        FeaturePositions[row].Set((float)x, (float)y, (float)z);
+                    }
+                    else
+                        FeaturePositions[row].Set((float)xPhys, (float)yPhys, (float)zPhys);
+                    BoxMinPositions[row].Set(FeaturePositions[row].x - 1, FeaturePositions[row].y - 1, FeaturePositions[row].z - 1);
+                    BoxMaxPositions[row].Set(FeaturePositions[row].x + 1, FeaturePositions[row].y + 1, FeaturePositions[row].z + 1);
                 }
-                if (sourceType != coordTypes.cartesian)
-                {
-                    double x,y,z;
-                    AstTool.Transform3D(astFrameSet, xPhys, yPhys, zPhys, 1, out x, out y, out z);
-                    FeaturePositions[row].Set((float)x, (float)y, (float)z);
-                }
-                else
-                    FeaturePositions[row].Set((float)xPhys, (float)yPhys, (float)zPhys);
-
                 // ...get box bounds if they exist
-                if (boxIndices.Min() >= 0)
+                else if (containsBoxes)
                 {
                     for (int i = 0; i < boxIndices.Length; i++)
                     {
@@ -273,8 +284,8 @@ namespace DataFeatures
                 }
                 else
                 {
-                    BoxMinPositions[row].Set(FeaturePositions[row].x - 1, FeaturePositions[row].y - 1, FeaturePositions[row].z - 1);
-                    BoxMaxPositions[row].Set(FeaturePositions[row].x + 1, FeaturePositions[row].y + 1, FeaturePositions[row].z + 1);
+                    Debug.Log("Error: dimensionless features loaded!");
+                    return;
                 }
                 // ...get name if exists
                 if (nameIndex >= 0)
@@ -290,27 +301,19 @@ namespace DataFeatures
             if (VolumeRenderer)
             {
                 Vector3 cubeMin, cubeMax;
-                if (BoxMinPositions.Length > 0)
+                for (int i = 0; i < voTable.Rows.Count; i++)
                 {
-                    for (int i = 0; i < voTable.Rows.Count; i++)
-                    {
-                        cubeMin = BoxMinPositions[i];
-                        cubeMax = BoxMaxPositions[i];
-                        FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, FeatureNames[i], i, featureRawData[i].ToArray(), this, false));
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < voTable.Rows.Count; i++)
-                    {
-                        cubeMin = FeaturePositions[i];
-                        cubeMax = FeaturePositions[i];
-                        FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, FeatureNames[i], i, featureRawData[i].ToArray(), this, false));
-                    }
+                    cubeMin = BoxMinPositions[i];
+                    cubeMax = BoxMaxPositions[i];
+                    FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, FeatureNames[i], i, featureRawData[i].ToArray(), this, false));
                 }
             }
         } 
-
+    
+        public void SaveAsVoTable(string filePath)
+        {
+            VoTableSaver.SaveFeatureSetAsVoTable(this, filePath);
+        }
 
         /*
         // Output the features to File

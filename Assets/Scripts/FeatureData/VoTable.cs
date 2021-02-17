@@ -7,7 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Xml;
+using System.Xml.Linq;
 using System.IO;
+using DataFeatures;
 
 namespace VoTableReader
 {
@@ -385,4 +387,51 @@ namespace VoTableReader
             return Name;
         }
     }
+
+    public static class VoTableSaver
+    {
+        public static void SaveFeatureSetAsVoTable(FeatureSetRenderer featureSet, string filePath)
+        {
+            string zType = featureSet.VolumeRenderer.Data.GetAstAttribute("System(3)");
+            List<string> sourceDataHeaders = new List<string> {"id", "x", "y", "z", "x_min", "x_max", "y_min", "y_max", "z_min", "z_max", "ra", "dec", zType};
+            int initialHeaderCount = sourceDataHeaders.Count;
+            sourceDataHeaders.AddRange(featureSet.RawDataKeys);
+            XDocument doc = new XDocument(new XElement( "VOTABLE", 
+                                            new XElement( "RESOURCE", new XAttribute("name", "iDaVIE catalogue"),
+                                                new XElement("DESCRIPTION", "Source data exported from iDaVIE"),
+                                                new XElement("COOSYS", new XAttribute("ID", "J2000")),
+                                                new XElement("TABLE", new XAttribute("ID", "idavie_cat"), new XAttribute("name", "idavie_cat"),
+                                                    new XElement("DATA",
+                                                        new XElement("TABLEDATA") ))
+                                            ) ) );
+            XElement[] xmlFields = new XElement[sourceDataHeaders.Count];
+            for (var i = 0; i < sourceDataHeaders.Count; i++)
+            {
+                if (i < initialHeaderCount)
+                   xmlFields[i] = new XElement("FIELD", new XAttribute("datatype", "float"), new XAttribute("name", sourceDataHeaders[i]));
+                else
+                    xmlFields[i] = new XElement("FIELD", new XAttribute("arraysize", "30"), new XAttribute("datatype", "char"), new XAttribute("name", sourceDataHeaders[i]));
+            }
+            doc.Root.Element("RESOURCE").Element("TABLE").AddFirst(xmlFields);
+            for (var i = 0; i < featureSet.FeatureList.Count; i++)
+            {
+                double ra, dec, zPhys, normR, normD, normZ;
+                Feature currentFeature = featureSet.FeatureList[i];
+                AstTool.Transform3D(featureSet.VolumeRenderer.AstFrame, currentFeature.Center.x, currentFeature.Center.y, currentFeature.Center.z, 1, out ra, out dec, out zPhys);
+                AstTool.Norm(featureSet.VolumeRenderer.AstFrame, ra, dec, zPhys, out normR, out normD, out normZ);
+                XElement voRow = new XElement("TR",
+                                    new XElement("TD", (i + 1).ToString()), new XElement("TD", currentFeature.Center.x.ToString()), new XElement("TD", currentFeature.Center.y.ToString()),
+                                    new XElement("TD", currentFeature.Center.z.ToString()), new XElement("TD", currentFeature.CornerMin.x.ToString()), new XElement("TD", currentFeature.CornerMax.x.ToString()),
+                                    new XElement("TD", currentFeature.CornerMin.y.ToString()), new XElement("TD", currentFeature.CornerMax.y.ToString()),
+                                    new XElement("TD", currentFeature.CornerMin.z.ToString() ), new XElement("TD", currentFeature.CornerMax.z.ToString()),
+                                    new XElement("TD", (180f * normR / Math.PI).ToString() ), new XElement("TD", (180f * normD / Math.PI).ToString() ),
+                                    new XElement("TD", normZ.ToString() ) );
+                for (var j = 0; j < currentFeature.RawData.Length; j++)
+                    voRow.Add(new XElement("TD", currentFeature.RawData[j]));            
+                doc.Root.Element("RESOURCE").Element("TABLE").Element("DATA").Element("TABLEDATA").Add(voRow); 
+            }
+        doc.Save( filePath );
+        }
+    }
+
 }
