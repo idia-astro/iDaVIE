@@ -185,6 +185,13 @@ namespace DataFeatures
                 {
                     if (feature.UnityBounds.Contains(volumeSpacePosition))
                     {
+                        if (SelectedFeature != null)
+                        {
+                            float prevVolume = (SelectedFeature.CornerMax - SelectedFeature.CornerMin).magnitude;
+                            float currentVolume = (feature.CornerMax - feature.CornerMin).magnitude;
+                            if (currentVolume > prevVolume || currentVolume == prevVolume && ActiveFeatureSetRenderer != feature.FeatureSetParent)
+                                continue;
+                        }
                         SelectedFeature = feature;
                         SelectedFeature.Selected = true;
                         ActiveFeatureSetRenderer = feature.FeatureSetParent;
@@ -192,21 +199,6 @@ namespace DataFeatures
                     }
                 }
             }
-            /*
-            foreach (var featureSetRenderer in GeneratedFeatureSetList)
-            {
-                Vector3 volumeSpacePosition = featureSetRenderer.transform.InverseTransformPoint(cursorWorldSpace);
-                foreach (var feature in featureSetRenderer.FeatureList)
-                {
-                    if (feature.UnityBounds.Contains(volumeSpacePosition))
-                    {
-                        SelectedFeature = feature;
-                        SelectedFeature.Selected = true;
-                        return true;
-                    }
-                }
-            }
-            */
             return false;
         }
 
@@ -220,7 +212,7 @@ namespace DataFeatures
                 {
                     SelectedFeature.Deactivate();
                 }
-                
+                SelectedFeature = null;
             }
         }
         
