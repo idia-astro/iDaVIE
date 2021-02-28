@@ -135,6 +135,7 @@ public class VolumeInputController : MonoBehaviour
 
     private bool _paintMenuOn = false;
 
+
     // Used for moving the pointer transform to an acceptable position for each controller type
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsLeft = new Dictionary<VRFamily, Vector3>
     {
