@@ -58,14 +58,14 @@ public class MomentMapMenuController : MonoBehaviour
     {
         if (getFirstActiveDataSet().GetMomentMapRenderer().MomentMapThreshold <= 0.1)
         {
-            getFirstActiveDataSet().GetMomentMapRenderer().MomentMapThreshold += 0.001f;
+            getFirstActiveDataSet().GetMomentMapRenderer().MomentMapThreshold += getFirstActiveDataSet().GetMomentMapRenderer().momstep;
         }
     }
 
     public void DecreaseMomentMapThreshold()
     {
         if (getFirstActiveDataSet().GetMomentMapRenderer().MomentMapThreshold >= -0.1)
-            getFirstActiveDataSet().GetMomentMapRenderer().MomentMapThreshold -= 0.001f;
+            getFirstActiveDataSet().GetMomentMapRenderer().MomentMapThreshold -= getFirstActiveDataSet().GetMomentMapRenderer().momstep;
     }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
