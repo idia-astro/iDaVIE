@@ -12,6 +12,10 @@ namespace VolumeData
         public RenderTexture ImageOutput { get; private set; }
 
         public bool Inverted = false;
+        
+        //mom map threshold step
+        public float momstep = 0.00025f;
+
 
         public MomentMapMenuController momentMapMenuController;
         public Texture3D DataCube

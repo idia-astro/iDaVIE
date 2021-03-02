@@ -234,6 +234,31 @@ public class SofiaListCreator : MonoBehaviour
         featureSetRenderer.MenuList = SourceListObject;
     } 
 
+    public void ToggleListVisibility()
+    {
+        if (!featureSetRenderer.featureSetVisible)
+        {
+            MakeListVisible();
+            
+            GameObject.Find("RenderMenu").gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("ListButtons").gameObject.transform.Find("ListVisibilityButton").gameObject.transform.Find("VisibleImage").gameObject.SetActive(false);
+            GameObject.Find("RenderMenu").gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("ListButtons").gameObject.transform.Find("ListVisibilityButton").gameObject.transform.Find("InvisibleImage").gameObject.SetActive(true);
+
+            
+            
+        }
+        else
+        {
+            MakeListInvisible();
+
+            GameObject.Find("RenderMenu").gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("ListButtons").gameObject.transform.Find("ListVisibilityButton").gameObject.transform.Find("VisibleImage").gameObject.SetActive(true);
+            GameObject.Find("RenderMenu").gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("ListButtons").gameObject.transform.Find("ListVisibilityButton").gameObject.transform.Find("InvisibleImage").gameObject.SetActive(false);
+            
+        }
+
+        
+         
+      
+    }
     public void MakeListVisible()
     {
         featureSetRenderer.SetVisibilityOn();

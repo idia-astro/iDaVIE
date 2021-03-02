@@ -36,6 +36,8 @@ namespace DataFeatures
 
         public Color FeatureColor;
 
+        public bool featureSetVisible = false;
+
         private void Awake()
         {
             FeatureList = new List<Feature>();
@@ -69,12 +71,25 @@ namespace DataFeatures
 
         public void SetVisibilityOn()
         {
+
+            foreach (Transform child in MenuList.transform)
+            {
+                child.GetComponent<SofiaListItem>().SetVisibilityIconsOn();
+            }
+
+            featureSetVisible = true;
             foreach (var feature in FeatureList)
                 feature.Visible = true;
         }
 
         public void SetVisibilityOff()
         {
+            foreach (Transform child in MenuList.transform)
+            {
+                child.GetComponent<SofiaListItem>().SetVisibilityIconsOff();
+            }
+
+            featureSetVisible = false;
             foreach (var feature in FeatureList)
                 feature.Visible = false;
         }
