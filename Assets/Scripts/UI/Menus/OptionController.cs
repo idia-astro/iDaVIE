@@ -18,8 +18,10 @@ public class OptionController : MonoBehaviour
     int defaultColorIndex = 33;
     int colorIndex = -1;
     int hand = 0;
+    
     [SerializeField]
     public GameObject keypadPrefab = null;
+    private float t_step = 0.00025f;
 
 
     public enum Hand
@@ -47,7 +49,6 @@ public class OptionController : MonoBehaviour
 
         if (LabelStep.gameObject.GetComponent<Text>().text != getFirstActiveDataSet().GetMomentMapRenderer().momstep.ToString())
         {
-            Debug.Log("DIVERSIO");
             getFirstActiveDataSet().GetMomentMapRenderer().momstep = float.Parse(LabelStep.gameObject.GetComponent<Text>().text, System.Globalization.CultureInfo.InvariantCulture.NumberFormat); 
         }
     }
@@ -82,19 +83,18 @@ public class OptionController : MonoBehaviour
 
     public void decreaseMomThresholdStep()
     {
-        getFirstActiveDataSet().GetMomentMapRenderer().momstep -= 0.00025f;
+        getFirstActiveDataSet().GetMomentMapRenderer().momstep -= t_step;
         LabelStep.gameObject.GetComponent<Text>().text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
-
     }
+
     public void increaseMomThresholdStep()
     {
-        getFirstActiveDataSet().GetMomentMapRenderer().momstep += 0.00025f;
+        getFirstActiveDataSet().GetMomentMapRenderer().momstep += t_step;
         LabelStep.gameObject.GetComponent<Text>().text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
     }
 
     public void OpenKeypad()
     {
-
         Vector3 pos = new Vector3(this.transform.position.x, this.transform.position.y, this.transform.position.z);
         //instantiate item
         GameObject SpawnedItem = Instantiate(keypadPrefab, pos, this.transform.localRotation);
