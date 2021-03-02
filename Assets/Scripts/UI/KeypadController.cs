@@ -25,6 +25,7 @@ public class KeypadController : MonoBehaviour
     */
 
     public Text previewText;
+    public Text targetText = null;
 
     // Start is called before the first frame update
     void Start()
@@ -42,6 +43,7 @@ public class KeypadController : MonoBehaviour
     {
         float value = float.Parse(previewText.text, System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         Debug.Log(value);
+        targetText.text = previewText.text;
     }
 
     public void KeyPressed(int key_id)
