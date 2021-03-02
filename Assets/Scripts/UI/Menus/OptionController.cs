@@ -99,7 +99,6 @@ public class OptionController : MonoBehaviour
 
         GameObject SpawnedItem = Instantiate(keypadPrefab, pos, this.transform.localRotation);
         SpawnedItem.GetComponent<KeypadController>().targetText = LabelStep;
-        SpawnedItem.GetComponent<KeypadController>().targetObj = this.gameObject;
     }
 
 }
