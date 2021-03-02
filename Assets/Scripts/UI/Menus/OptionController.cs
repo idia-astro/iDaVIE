@@ -21,9 +21,7 @@ public class OptionController : MonoBehaviour
     
     [SerializeField]
     public GameObject keypadPrefab = null;
-    private float t_step = 0.00025f;
-
-
+    private float default_threadshold_step = 0.00025f;
     public enum Hand
     {
         Right, Left
@@ -34,6 +32,7 @@ public class OptionController : MonoBehaviour
        
         if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
+
         LabelHand.gameObject.GetComponent<Text>().text = (Hand)0 + "";
         LabelStep.gameObject.GetComponent<Text>().text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
     }
@@ -83,21 +82,24 @@ public class OptionController : MonoBehaviour
 
     public void decreaseMomThresholdStep()
     {
-        getFirstActiveDataSet().GetMomentMapRenderer().momstep -= t_step;
+        getFirstActiveDataSet().GetMomentMapRenderer().momstep -= default_threadshold_step;
         LabelStep.gameObject.GetComponent<Text>().text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
     }
 
     public void increaseMomThresholdStep()
     {
-        getFirstActiveDataSet().GetMomentMapRenderer().momstep += t_step;
+        getFirstActiveDataSet().GetMomentMapRenderer().momstep += default_threadshold_step;
         LabelStep.gameObject.GetComponent<Text>().text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
     }
 
     public void OpenKeypad()
     {
-        Vector3 pos = new Vector3(this.transform.position.x, this.transform.position.y, this.transform.position.z);
+        Vector3 pos = new Vector3(this.transform.position.x+1, this.transform.position.y, this.transform.position.z);
         //instantiate item
+
         GameObject SpawnedItem = Instantiate(keypadPrefab, pos, this.transform.localRotation);
         SpawnedItem.GetComponent<KeypadController>().targetText = LabelStep;
+        SpawnedItem.GetComponent<KeypadController>().targetObj = this.gameObject;
     }
+
 }

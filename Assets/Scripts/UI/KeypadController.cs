@@ -9,6 +9,7 @@ public class KeypadController : MonoBehaviour
 
     public Text previewText;
     public Text targetText = null;
+    public GameObject targetObj = null;
 
     // Start is called before the first frame update
     void Start()
@@ -25,7 +26,6 @@ public class KeypadController : MonoBehaviour
     public void Confirm()
     {
         float value = float.Parse(previewText.text, System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
-        Debug.Log(value);
         targetText.text = previewText.text;
     }
 
