@@ -94,11 +94,14 @@ public class OptionController : MonoBehaviour
 
     public void OpenKeypad()
     {
-        Vector3 pos = new Vector3(this.transform.position.x+1, this.transform.position.y, this.transform.position.z);
-        //instantiate item
+        if (GameObject.FindGameObjectWithTag("keypad") == null)
+        {
+            Vector3 pos = new Vector3(this.transform.position.x + 1, this.transform.position.y, this.transform.position.z);
+            //instantiate item
 
-        GameObject SpawnedItem = Instantiate(keypadPrefab, pos, this.transform.localRotation);
-        SpawnedItem.GetComponent<KeypadController>().targetText = LabelStep;
+            GameObject SpawnedItem = Instantiate(keypadPrefab, pos, this.transform.localRotation);
+            SpawnedItem.GetComponent<KeypadController>().targetText = LabelStep;
+        }
     }
 
 }
