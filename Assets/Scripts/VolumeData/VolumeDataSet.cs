@@ -406,7 +406,8 @@ namespace VolumeData
                 return;
             }
             var sourceStats = SourceStatsDict[maskVal];
-            Debug.Log($"Source {maskVal}: Bounding box [{sourceStats.minX}, {sourceStats.minY}, {sourceStats.minZ}] -> [{sourceStats.maxX}, {sourceStats.maxY}, {sourceStats.maxZ}]; {sourceStats.numVoxels} voxels; {sourceStats.sum} (sum); {sourceStats.peak} (peak); centroid [{sourceStats.cX}, {sourceStats.cY}, {sourceStats.cZ}]; vsys: {sourceStats.channelVsys}; w20: {sourceStats.channelW20}");
+            //Uncomment below to debug stats calculation:
+            //Debug.Log($"Source {maskVal}: Bounding box [{sourceStats.minX}, {sourceStats.minY}, {sourceStats.minZ}] -> [{sourceStats.maxX}, {sourceStats.maxY}, {sourceStats.maxZ}]; {sourceStats.numVoxels} voxels; {sourceStats.sum} (sum); {sourceStats.peak} (peak); centroid [{sourceStats.cX}, {sourceStats.cY}, {sourceStats.cZ}]; vsys: {sourceStats.channelVsys}; w20: {sourceStats.channelW20}");
         }
 
         public void FillFeatureSet( FeatureSetRenderer featureSet)
