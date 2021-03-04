@@ -13,10 +13,12 @@ public class OptionController : MonoBehaviour
 
     // Color Map
     public Text LabelHand;
+    public Text LabelStep;
     public GameObject volumeDatasetRendererObj = null;
     int defaultColorIndex = 33;
     int colorIndex = -1;
     int hand = 0;
+
 
     public enum Hand
     {
@@ -29,6 +31,7 @@ public class OptionController : MonoBehaviour
         if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
         LabelHand.gameObject.GetComponent<Text>().text = (Hand)0 + "";
+        LabelStep.gameObject.GetComponent<Text>().text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
     }
 
     // Update is called once per frame
@@ -67,5 +70,17 @@ public class OptionController : MonoBehaviour
             _activeDataSet._volumeInputController.PrimaryHand = SteamVR_Input_Sources.RightHand;
         }
         LabelHand.gameObject.GetComponent<Text>().text = (Hand)hand + "";
+    }
+
+    public void decreaseMomThresholdStep()
+    {
+        getFirstActiveDataSet().GetMomentMapRenderer().momstep -= 0.00025f;
+        LabelStep.gameObject.GetComponent<Text>().text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
+
+    }
+    public void increaseMomThresholdStep()
+    {
+        getFirstActiveDataSet().GetMomentMapRenderer().momstep += 0.00025f;
+        LabelStep.gameObject.GetComponent<Text>().text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
     }
 }
