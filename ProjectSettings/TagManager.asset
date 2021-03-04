@@ -12,6 +12,7 @@ TagManager:
   - anchor
   - cursor
   - ScrollView
+  - keypad
   layers:
   - Default
   - TransparentFX
