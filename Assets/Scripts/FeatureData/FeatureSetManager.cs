@@ -181,13 +181,13 @@ namespace DataFeatures
             foreach (var featureSetRenderer in ImportedFeatureSetList)
             {
                 Vector3 volumeSpacePosition = featureSetRenderer.transform.InverseTransformPoint(cursorWorldSpace);
+                float prevVolume = float.NaN;
                 foreach (var feature in featureSetRenderer.FeatureList)
                 {
                     if (feature.UnityBounds.Contains(volumeSpacePosition))
                     {
-                        if (SelectedFeature != null)
+                        if (prevVolume != float.NaN)
                         {
-                            float prevVolume = (SelectedFeature.CornerMax - SelectedFeature.CornerMin).magnitude;
                             float currentVolume = (feature.CornerMax - feature.CornerMin).magnitude;
                             if (currentVolume > prevVolume || currentVolume == prevVolume && ActiveFeatureSetRenderer != feature.FeatureSetParent)
                                 continue;
@@ -195,11 +195,11 @@ namespace DataFeatures
                         SelectedFeature = feature;
                         SelectedFeature.Selected = true;
                         ActiveFeatureSetRenderer = feature.FeatureSetParent;
-                        return true;
+                        prevVolume = (SelectedFeature.CornerMax - SelectedFeature.CornerMin).magnitude;
                     }
                 }
             }
-            return false;
+            return SelectedFeature != null;
         }
 
         public void DeselectFeature()
@@ -212,7 +212,6 @@ namespace DataFeatures
                 {
                     SelectedFeature.Deactivate();
                 }
-                SelectedFeature = null;
             }
         }
         
