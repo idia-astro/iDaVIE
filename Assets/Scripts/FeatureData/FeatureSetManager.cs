@@ -184,7 +184,7 @@ namespace DataFeatures
                 float prevVolume = float.NaN;
                 foreach (var feature in featureSetRenderer.FeatureList)
                 {
-                    if (feature.UnityBounds.Contains(volumeSpacePosition))
+                    if (feature.Visible && feature.UnityBounds.Contains(volumeSpacePosition))
                     {
                         if (prevVolume != float.NaN)
                         {
