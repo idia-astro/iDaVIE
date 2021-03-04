@@ -188,14 +188,14 @@ namespace DataFeatures
                     {
                         if (prevVolume != float.NaN)
                         {
-                            float currentVolume = (feature.CornerMax - feature.CornerMin).magnitude;
+                            float currentVolume = feature.Size.x * feature.Size.y * feature.Size.z;
                             if (currentVolume > prevVolume || currentVolume == prevVolume && ActiveFeatureSetRenderer != feature.FeatureSetParent)
                                 continue;
                         }
                         SelectedFeature = feature;
                         SelectedFeature.Selected = true;
                         ActiveFeatureSetRenderer = feature.FeatureSetParent;
-                        prevVolume = (SelectedFeature.CornerMax - SelectedFeature.CornerMin).magnitude;
+                        prevVolume = SelectedFeature.Size.x * SelectedFeature.Size.y * SelectedFeature.Size.z;
                     }
                 }
             }
