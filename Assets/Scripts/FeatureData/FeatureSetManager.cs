@@ -181,33 +181,25 @@ namespace DataFeatures
             foreach (var featureSetRenderer in ImportedFeatureSetList)
             {
                 Vector3 volumeSpacePosition = featureSetRenderer.transform.InverseTransformPoint(cursorWorldSpace);
+                float prevVolume = float.NaN;
                 foreach (var feature in featureSetRenderer.FeatureList)
                 {
-                    if (feature.UnityBounds.Contains(volumeSpacePosition))
+                    if (feature.Visible && feature.UnityBounds.Contains(volumeSpacePosition))
                     {
+                        if (prevVolume != float.NaN)
+                        {
+                            float currentVolume = feature.UnityBounds.size.x * feature.UnityBounds.size.y * feature.UnityBounds.size.z;
+                            if (currentVolume > prevVolume || currentVolume == prevVolume && ActiveFeatureSetRenderer != feature.FeatureSetParent)
+                                continue;
+                        }
                         SelectedFeature = feature;
                         SelectedFeature.Selected = true;
                         ActiveFeatureSetRenderer = feature.FeatureSetParent;
-                        return true;
+                        prevVolume = SelectedFeature.UnityBounds.size.x * SelectedFeature.UnityBounds.size.y * SelectedFeature.UnityBounds.size.z;
                     }
                 }
             }
-            /*
-            foreach (var featureSetRenderer in GeneratedFeatureSetList)
-            {
-                Vector3 volumeSpacePosition = featureSetRenderer.transform.InverseTransformPoint(cursorWorldSpace);
-                foreach (var feature in featureSetRenderer.FeatureList)
-                {
-                    if (feature.UnityBounds.Contains(volumeSpacePosition))
-                    {
-                        SelectedFeature = feature;
-                        SelectedFeature.Selected = true;
-                        return true;
-                    }
-                }
-            }
-            */
-            return false;
+            return SelectedFeature != null;
         }
 
         public void DeselectFeature()
@@ -220,7 +212,6 @@ namespace DataFeatures
                 {
                     SelectedFeature.Deactivate();
                 }
-                
             }
         }
         
