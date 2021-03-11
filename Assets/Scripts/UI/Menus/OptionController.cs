@@ -96,10 +96,12 @@ public class OptionController : MonoBehaviour
     {
         if (GameObject.FindGameObjectWithTag("keypad") == null)
         {
-            Vector3 pos = new Vector3(this.transform.position.x + 1, this.transform.position.y, this.transform.position.z);
+            Vector3 pos = new Vector3(this.transform.parent.position.x, this.transform.parent.position.y-0.5f, this.transform.parent.position.z);
             //instantiate item
-
-            GameObject SpawnedItem = Instantiate(keypadPrefab, pos, this.transform.localRotation);
+            Debug.Log(""+this.transform.parent.rotation.x+" "+this.transform.parent.rotation.y+" "+this.transform.parent.rotation.z);
+            Debug.Log(""+this.transform.parent.position.x+" "+this.transform.parent.position.y+" "+this.transform.parent.position.z);
+            GameObject SpawnedItem = Instantiate(keypadPrefab, pos, this.transform.parent.rotation);
+            SpawnedItem.transform.localRotation = this.transform.parent.rotation;
             SpawnedItem.GetComponent<KeypadController>().targetText = LabelStep;
         }
     }
