@@ -232,4 +232,13 @@ public class PaintMenuController : MonoBehaviour
         SaveCancel();
     }
 
+    public void AddNewSource()
+    {
+
+    }
+    public void EditSourceId()
+    {
+    
+    }
+
 }
