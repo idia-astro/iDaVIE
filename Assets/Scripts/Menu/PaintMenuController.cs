@@ -23,6 +23,10 @@ public class PaintMenuController : MonoBehaviour
     private VolumeInputController _volumeInputController = null;
 
     private string oldSaveText = "";
+
+    //To Be Changed with real souceID value
+    int sourceId = 0;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -170,13 +174,14 @@ public class PaintMenuController : MonoBehaviour
 
     public void PaintingAdditive()
     {
-        this.gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Additive Paint Mode";
+        
+        this.gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Paint Mode (source ID = "+ sourceId + " )";
         _volumeInputController.AdditiveBrush = true; ;
     }
 
     public void PaintingSubtractive()
     {
-        this.gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Subtractive Paint Mode";
+        this.gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Erase Mode (source ID = " + sourceId + " )";
         _volumeInputController.AdditiveBrush = false;
     }
 
