@@ -21,7 +21,7 @@ public class PaintMenuController : MonoBehaviour
     int featureStatus = 0;
 
     private VolumeInputController _volumeInputController = null;
-
+    
     private string oldSaveText = "";
 
     //To Be Changed with real souceID value
@@ -234,11 +234,11 @@ public class PaintMenuController : MonoBehaviour
 
     public void AddNewSource()
     {
-
+        _volumeInputController.AddNewSource();
     }
     public void EditSourceId()
     {
-    
+        _volumeInputController.UpdateMaskValue();
     }
 
 }
