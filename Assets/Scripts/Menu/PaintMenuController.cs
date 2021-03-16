@@ -156,7 +156,7 @@ public class PaintMenuController : MonoBehaviour
 
     public void UndoBrushStroke()
     {
-        _volumeInputController.UnoBrushStroke(_volumeInputController.PrimaryHand);
+        _volumeInputController.UndoBrushStroke(_volumeInputController.PrimaryHand);
     }
 
     public void RedoBrushStroke()

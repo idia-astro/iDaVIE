@@ -343,7 +343,7 @@ public class VolumeInputController : MonoBehaviour
     {
         if (fromSource != PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
-            UnoBrushStroke(fromSource);
+            UndoBrushStroke(fromSource);
         }
     }
     
@@ -365,7 +365,7 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
-    public void UnoBrushStroke(SteamVR_Input_Sources fromSource)
+    public void UndoBrushStroke(SteamVR_Input_Sources fromSource)
     {
         if (ActiveDataSet?.Mask?.UndoBrushStroke() ?? false)
         {
