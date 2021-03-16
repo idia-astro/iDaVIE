@@ -37,7 +37,7 @@ public class CustomDragHandler : MonoBehaviour
         }
         _previousSelectedListItem = featureListItem;
         _previousListItemColor = featureListItem.GetComponent<Image>().color;
-        featureListItem.GetComponent<Image>().color = feature.FeatureSetParent.FeatureColor;
+        featureListItem.GetComponent<Image>().color = Color.red;
     }
 
     public void MoveUp()
