@@ -372,8 +372,8 @@ namespace VolumeData
                     {
                         // Update existing feature's bounds
                         var feature = _featureSet.FeatureList[index];
-                        var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
-                        var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
+                        var boxMin = new Vector3(sourceStats.minX, sourceStats.minY, sourceStats.minZ);
+                        var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
                         feature.SetBounds(boxMin, boxMax);
                         feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
                         var listItem = feature.LinkedListItem;
@@ -389,8 +389,8 @@ namespace VolumeData
                 else if (sourceStats.numVoxels > 0)
                 {
                     // Add new feature for the newly created stats
-                    var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
-                    var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
+                    var boxMin = new Vector3(sourceStats.minX, sourceStats.minY, sourceStats.minZ);
+                    var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
                     var name = $"Masked Source #{maskVal}";
                     var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
                     _featureSet.AddFeature(new Feature(boxMin, boxMax, Color.white, name, maskVal - 1, rawStrings, _featureSet, false));
