@@ -247,7 +247,8 @@ public class VolumeInputController : MonoBehaviour
         InteractionStateMachine.Configure(InteractionState.IdlePainting)
             .OnEntryFrom(InteractionEvents.PaintModeEnabled, EnterPaintMode)
             .Permit(InteractionEvents.PaintModeDisabled, InteractionState.IdleSelecting)
-            .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Painting, () => ActiveDataSet?.IsFullResolution ?? false);
+            .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Painting,
+                () => _locomotionState == LocomotionState.Idle && (ActiveDataSet?.IsFullResolution ?? false));
 
         InteractionStateMachine.Configure(InteractionState.Painting)
             .OnExit(() => ActiveDataSet?.FinishBrushStroke())
@@ -483,10 +484,9 @@ public class VolumeInputController : MonoBehaviour
         _previousControllerHeight =  _hands[PrimaryHandIndex].transform.position.y;
     }
 
-    public void EndEditing()
+    public void EndEditing(bool updateSourceId = true)
     {
-        // Update source ID
-        if (_locomotionState == LocomotionState.EditingSourceId)
+        if (_locomotionState == LocomotionState.EditingSourceId && updateSourceId)
         {
             UpdateSourceId();
         }
@@ -628,8 +628,10 @@ public class VolumeInputController : MonoBehaviour
                 UpdateScaling();
                 break;
             case LocomotionState.Idle:
-            case LocomotionState.EditingSourceId:
                 UpdateInteractions();
+                break;
+            case LocomotionState.EditingSourceId:
+                UpdateEditingSourceId();
                 break;
             case LocomotionState.EditingThresholdMax:
                 UpdateEditingThreshold(true);
@@ -861,7 +863,8 @@ public class VolumeInputController : MonoBehaviour
         {
             _handInfoComponents[PrimaryHandIndex].enabled = true;
             _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
-            _handInfoComponents[PrimaryHandIndex].text = _showCursorInfo ? cursorString : "";
+            // Threshold info should always be displayed
+            _handInfoComponents[PrimaryHandIndex].text = cursorString;
         }
     }
 
@@ -878,6 +881,37 @@ public class VolumeInputController : MonoBehaviour
                                                         Mathf.Clamp(newValue,
                                                                     dataSet.transform.localScale.x * zxRatio * dataSet.ZAxisMinFactor,
                                                                     dataSet.transform.localScale.x * zxRatio * dataSet.ZAxisMaxFactor));
+        }
+    }
+
+    private void UpdateEditingSourceId()
+    {
+        var dataSet = ActiveDataSet;
+        if (!dataSet)
+        {
+            return;
+        }
+
+        var currentState = InteractionStateMachine.State;
+        var cursorPosWorldSpace = _handTransforms[PrimaryHandIndex].position;
+        var activeBrushSize = (currentState == InteractionState.Painting || currentState == InteractionState.IdlePainting) ? BrushSize : 1;
+        dataSet.SetCursorPosition(cursorPosWorldSpace, activeBrushSize);
+        string cursorString;
+        if (dataSet.CursorSource != 0)
+        {
+            cursorString = $"Press trigger to update source ID to {dataSet.CursorSource}";
+        }
+        else
+        {
+            cursorString = $"Place hand in desired source{Environment.NewLine}Press trigger to cancel";
+        }
+        
+        if (_handInfoComponents != null)
+        {
+            _handInfoComponents[PrimaryHandIndex].enabled = true;
+            _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
+            // Source info should always be displayed
+            _handInfoComponents[PrimaryHandIndex].text = cursorString;
         }
     }
     private void UpdateInteractions()
@@ -1166,10 +1200,7 @@ public class VolumeInputController : MonoBehaviour
 
     public void ToggleCursorInfoVisibility()
     {
-        if (_showCursorInfo)
-            _showCursorInfo = false;
-        else
-            _showCursorInfo = true;
+        _showCursorInfo = !_showCursorInfo;
     }
 
     public void AddNewSource()
@@ -1181,6 +1212,8 @@ public class VolumeInputController : MonoBehaviour
             ActiveDataSet.HighlightedSource = NewSourceId;
         }
         NewSourceId++;
+        // End editing mode without updating the source ID to the cursor voxel
+        EndEditing(false);
     }
 
     public void UpdateSourceId()
