@@ -481,7 +481,7 @@ namespace VolumeData
 
         public void SetMaskValue()
         {
-            _volumeInputController.UpdateSourceId();
+            _volumeInputController.StartSourceIdEditing();
         }
 
         public void Undo()

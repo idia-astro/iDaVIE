@@ -234,7 +234,7 @@ public class PaintMenuController : MonoBehaviour
     }
     public void EditSourceId()
     {
-        _volumeInputController.UpdateSourceId();
+        _volumeInputController.StartSourceIdEditing();
     }
 
 }

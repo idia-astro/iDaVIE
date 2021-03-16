@@ -33,7 +33,8 @@ public class VolumeInputController : MonoBehaviour
         Scaling,
         EditingThresholdMin,
         EditingThresholdMax,
-        EditingZAxis
+        EditingZAxis,
+        EditingSourceId
     }
     
     public enum InteractionState
@@ -290,7 +291,8 @@ public class VolumeInputController : MonoBehaviour
     {
         if (_locomotionState == LocomotionState.EditingThresholdMax || 
             _locomotionState == LocomotionState.EditingThresholdMin ||
-             _locomotionState == LocomotionState.EditingZAxis)
+             _locomotionState == LocomotionState.EditingZAxis ||
+            _locomotionState == LocomotionState.EditingSourceId)
         {
             EndEditing();
         }
@@ -315,7 +317,7 @@ public class VolumeInputController : MonoBehaviour
          if (fromSource == PrimaryHand && scrollSelected)
          {
             scrollUp = false;
-        }
+         }
     }
 
     private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
@@ -483,15 +485,25 @@ public class VolumeInputController : MonoBehaviour
 
     public void EndEditing()
     {
+        // Update source ID
+        if (_locomotionState == LocomotionState.EditingSourceId)
+        {
+            UpdateSourceId();
+        }
         _locomotionState = LocomotionState.Idle;
         _targetVignetteIntensity = 0;
     }
 
-        public void StartZAxisEditing()
+    public void StartZAxisEditing()
     {
         _locomotionState = LocomotionState.EditingZAxis;
         _targetVignetteIntensity = 0;
         _previousControllerHeight =  _hands[PrimaryHandIndex].transform.position.y;
+    }
+
+    public void StartSourceIdEditing()
+    {
+        _locomotionState = LocomotionState.EditingSourceId;
     }
 
     private void StartRequestQuickMenu(int handIndex)
@@ -616,6 +628,7 @@ public class VolumeInputController : MonoBehaviour
                 UpdateScaling();
                 break;
             case LocomotionState.Idle:
+            case LocomotionState.EditingSourceId:
                 UpdateInteractions();
                 break;
             case LocomotionState.EditingThresholdMax:
@@ -867,7 +880,6 @@ public class VolumeInputController : MonoBehaviour
                                                                     dataSet.transform.localScale.x * zxRatio * dataSet.ZAxisMaxFactor));
         }
     }
-
     private void UpdateInteractions()
     {
         var dataSet = ActiveDataSet;
@@ -1173,18 +1185,11 @@ public class VolumeInputController : MonoBehaviour
 
     public void UpdateSourceId()
     {
-        if (ActiveDataSet)
+        if (ActiveDataSet?.CursorSource != 0)
         {
-            if (ActiveDataSet.CursorSource != 0)
-            {
-                SourceId = ActiveDataSet.CursorSource;
-                ActiveDataSet.HighlightedSource = SourceId;
-                AdditiveBrush = true;
-            }
-            else
-            {
-                AdditiveBrush = false;
-            }
+            SourceId = ActiveDataSet.CursorSource;
+            ActiveDataSet.HighlightedSource = SourceId;
+            AdditiveBrush = true;
         }
     }
 
