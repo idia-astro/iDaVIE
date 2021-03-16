@@ -21,17 +21,10 @@ public class PaintMenuController : MonoBehaviour
     int featureStatus = 0;
 
     private VolumeInputController _volumeInputController = null;
-    
+    public VolumeInputController VolumeInputController => _volumeInputController;
+
+    private Text _topPanelText;
     private string oldSaveText = "";
-
-    //To Be Changed with real souceID value
-    int sourceId = 0;
-
-    // Start is called before the first frame update
-    void Start()
-    {
-
-    }
 
     void OnEnable()
     {
@@ -42,6 +35,8 @@ public class PaintMenuController : MonoBehaviour
             _volumeInputController = FindObjectOfType<VolumeInputController>();
         
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeEnabled);
+
+        _topPanelText = gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>();
     }
 
     // Update is called once per frame
@@ -52,13 +47,17 @@ public class PaintMenuController : MonoBehaviour
         {
             _activeDataSet = firstActive;
         }
-    }
 
-    public VolumeInputController getVolumeInputController()
-    {
-        return _volumeInputController;
+        if (_volumeInputController.AdditiveBrush)
+        {
+            _topPanelText.text = $"Paint Mode (Source ID {_volumeInputController.SourceId})";
+        }
+        else
+        {
+            _topPanelText.text = "Erase Mode";
+        }
     }
-
+    
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
         foreach (var dataSet in _dataSets)
@@ -174,14 +173,11 @@ public class PaintMenuController : MonoBehaviour
 
     public void PaintingAdditive()
     {
-        
-        this.gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Paint Mode (source ID = "+ sourceId + " )";
-        _volumeInputController.AdditiveBrush = true; ;
+        _volumeInputController.AdditiveBrush = true;
     }
 
     public void PaintingSubtractive()
     {
-        this.gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Erase Mode (source ID = " + sourceId + " )";
         _volumeInputController.AdditiveBrush = false;
     }
 
@@ -238,7 +234,7 @@ public class PaintMenuController : MonoBehaviour
     }
     public void EditSourceId()
     {
-        _volumeInputController.UpdateMaskValue();
+        _volumeInputController.UpdateSourceId();
     }
 
 }

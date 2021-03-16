@@ -81,8 +81,8 @@ public class VolumeInputController : MonoBehaviour
     // Painting
     public bool AdditiveBrush = true;
     public int BrushSize = 1;
-    public short BrushValue = 1;
-    public short NewSourceValue = 1000;
+    public short SourceId = 1;
+    public short NewSourceId = 1000;
     
     private Player _player;
     private VRHand[] _hands;
@@ -883,7 +883,7 @@ public class VolumeInputController : MonoBehaviour
 
         if (currentState == InteractionState.Painting)
         {
-            dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0);
+            dataSet.PaintCursor(AdditiveBrush ? SourceId : (short) 0);
         }
         else if (currentState == InteractionState.Creating)
         {
@@ -1162,23 +1162,23 @@ public class VolumeInputController : MonoBehaviour
 
     public void AddNewSource()
     {
-        BrushValue = NewSourceValue;
+        SourceId = NewSourceId;
         AdditiveBrush = true;
         if (ActiveDataSet)
         {
-            ActiveDataSet.HighlightedSource = NewSourceValue;
+            ActiveDataSet.HighlightedSource = NewSourceId;
         }
-        NewSourceValue++;
+        NewSourceId++;
     }
 
-    public void UpdateMaskValue()
+    public void UpdateSourceId()
     {
         if (ActiveDataSet)
         {
             if (ActiveDataSet.CursorSource != 0)
             {
-                BrushValue = ActiveDataSet.CursorSource;
-                ActiveDataSet.HighlightedSource = BrushValue;
+                SourceId = ActiveDataSet.CursorSource;
+                ActiveDataSet.HighlightedSource = SourceId;
                 AdditiveBrush = true;
             }
             else

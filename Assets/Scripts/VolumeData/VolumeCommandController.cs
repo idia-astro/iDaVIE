@@ -65,7 +65,7 @@ namespace VolumeData
             public static readonly string LogScale = "log scale";
             public static readonly string SqrtScale = "square root scale";
             public static readonly string AddNewSource = "add new source";
-            public static readonly string SetMaskValue = "set mask value";
+            public static readonly string SetSourceId = "set source ID";
             public static readonly string Undo = "undo";
             public static readonly string Redo = "redo";
 
@@ -75,7 +75,7 @@ namespace VolumeData
                 ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ColormapTurbo, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
                 PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
                 ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline, TakePicture, CursorInfo, LinearScale,
-                LogScale, SqrtScale, AddNewSource, SetMaskValue, Undo, Redo
+                LogScale, SqrtScale, AddNewSource, SetSourceId, Undo, Redo
             };
         }
    
@@ -263,7 +263,7 @@ namespace VolumeData
             {
                 AddNewSource();
             }
-            else if (args == Keywords.SetMaskValue)
+            else if (args == Keywords.SetSourceId)
             {
                 SetMaskValue();
             }
@@ -481,7 +481,7 @@ namespace VolumeData
 
         public void SetMaskValue()
         {
-            _volumeInputController.UpdateMaskValue();
+            _volumeInputController.UpdateSourceId();
         }
 
         public void Undo()
