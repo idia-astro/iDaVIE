@@ -150,8 +150,8 @@ namespace DataFeatures
             featureSetRenderer.transform.localPosition -= 0.5f * Vector3.one;
             featureSetRenderer.transform.localScale = new Vector3(1 / CubeDimensions.x, 1 / CubeDimensions.y, 1 / CubeDimensions.z);
             // Shift by half a voxel (because voxel center has integer coordinates, not corner)
-            featureSetRenderer.FeatureColor = FeatureColors[ImportedFeatureSetList.Count];
             featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
+            featureSetRenderer.FeatureColor = FeatureColors[ImportedFeatureSetList.Count];
             ImportedFeatureSetList.Add(featureSetRenderer); //TODO: change to GeneratedFeatureSetList later
             return featureSetRenderer;
         }
