@@ -899,7 +899,7 @@ public class VolumeInputController : MonoBehaviour
         string cursorString;
         if (dataSet.CursorSource != 0)
         {
-            cursorString = $"Press trigger to update source ID to {dataSet.CursorSource}";
+            cursorString = $"Press trigger to update{Environment.NewLine}source ID to {dataSet.CursorSource}";
         }
         else
         {
