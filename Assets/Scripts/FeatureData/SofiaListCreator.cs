@@ -30,6 +30,7 @@ public class SofiaListCreator : MonoBehaviour
     public GameObject InfoWindow = null;
 
     public TMP_Text ListTitle; 
+    public Image ListColorDisplay;
     public TMP_Text SaveConfirmation;
 
     private FeatureSetManager featureSetManager;
@@ -119,6 +120,7 @@ public class SofiaListCreator : MonoBehaviour
                 featureSetRenderer =  _featureSetRendererList[CurrentFeatureSetIndex];
                 featureSetRenderer.MenuList.SetActive(true);
                 ListTitle.text = featureSetRenderer.name;
+                ListColorDisplay.color = featureSetRenderer.FeatureColor;
                 NumberOfFeatures = featureSetRenderer.FeatureList.Count;
             }
         }
@@ -139,6 +141,7 @@ public class SofiaListCreator : MonoBehaviour
                 featureSetRenderer =  _featureSetRendererList[CurrentFeatureSetIndex];
                 featureSetRenderer.MenuList.SetActive(true);
                 ListTitle.text = featureSetRenderer.name;
+                ListColorDisplay.color = featureSetRenderer.FeatureColor;
                 NumberOfFeatures = featureSetRenderer.FeatureList.Count;
             }
         }
@@ -151,8 +154,10 @@ public class SofiaListCreator : MonoBehaviour
                 nextIndex = 0;
             _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor = FeatureSetManager.FeatureColors[nextIndex];
             _featureSetRendererList[CurrentFeatureSetIndex].UpdateColor();
-            if( featureSetManager.SelectedFeature != null)
-                featureSetManager.SelectedFeature.LinkedListItem.GetComponent<Image>().color = featureSetRenderer.FeatureColor;
+            ListColorDisplay.color = featureSetRenderer.FeatureColor;
+            //Uncomment to change source's color in list
+            //if( featureSetManager.SelectedFeature != null)
+            //    featureSetManager.SelectedFeature.LinkedListItem.GetComponent<Image>().color = featureSetRenderer.FeatureColor;
         }
 
         public void DisplaySet(int i)
@@ -173,6 +178,7 @@ public class SofiaListCreator : MonoBehaviour
                 featureSetRenderer =  _featureSetRendererList[CurrentFeatureSetIndex];
                 featureSetRenderer.MenuList.SetActive(true);
                 ListTitle.text = featureSetRenderer.name;
+                ListColorDisplay.color = featureSetRenderer.FeatureColor;
                 NumberOfFeatures = featureSetRenderer.FeatureList.Count;
             }
         }
@@ -182,6 +188,7 @@ public class SofiaListCreator : MonoBehaviour
     {
         featureSetRenderer = _featureSetRendererList[index];
         ListTitle.text = featureSetRenderer.name;
+        ListColorDisplay.color = featureSetRenderer.FeatureColor;
         NumberOfFeatures = featureSetRenderer.FeatureList.Count;
         //setContent Holder Height;
         content.sizeDelta = new Vector2(0, NumberOfFeatures * 100);
