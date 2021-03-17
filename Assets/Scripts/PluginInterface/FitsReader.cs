@@ -216,6 +216,8 @@ public class FitsReader
     
     public static bool UpdateMaskVoxel(IntPtr maskDataPtr, long[] maskDims, Vector3Int location, short value)
     {
+        // This function doesn't use the FITS library to update the data, so we are using a 0-based index
+        location -= Vector3Int.one;
         long index = location.x + location.y * maskDims[0] + location.z * (maskDims[0] * maskDims[1]);
         Marshal.WriteInt16(new IntPtr(maskDataPtr.ToInt64() + index * sizeof(short)), value);
         return true;

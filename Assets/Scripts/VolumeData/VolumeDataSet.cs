@@ -461,7 +461,7 @@ namespace VolumeData
             volumeDataSet.XDim = cubeSizeX;
             volumeDataSet.YDim = cubeSizeY;
             volumeDataSet.ZDim = cubeSizeZ;
-
+            volumeDataSet.SourceStatsDict = new Dictionary<short, DataAnalysis.SourceStats>();
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
             volumeDataSet._cachedBrush = new byte[2];
