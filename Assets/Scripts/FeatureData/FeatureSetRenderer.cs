@@ -37,6 +37,7 @@ namespace DataFeatures
         public Color FeatureColor;
 
         public bool featureSetVisible = false;
+        public bool NeedToRespawnList = true;
 
         private void Awake()
         {
