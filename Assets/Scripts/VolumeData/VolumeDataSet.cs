@@ -454,24 +454,6 @@ namespace VolumeData
                 DataAnalysis.FreeMemory(histogramPtr);
         }
 
-        public static VolumeDataSet GenerateEmptyMask(long cubeSizeX, long cubeSizeY, long cubeSizeZ)
-        {
-            VolumeDataSet volumeDataSet = new VolumeDataSet();
-            volumeDataSet.IsMask = true;
-            IntPtr dataPtr;
-            FitsReader.CreateEmptyImageInt16(cubeSizeX, cubeSizeY, cubeSizeZ, out dataPtr);
-            volumeDataSet.FitsData = dataPtr;
-            volumeDataSet.XDim = cubeSizeX;
-            volumeDataSet.YDim = cubeSizeY;
-            volumeDataSet.ZDim = cubeSizeZ;
-            volumeDataSet.SourceStatsDict = new Dictionary<short, DataAnalysis.SourceStats>();
-            volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
-            // single pixel brush: 16-bits = 2 bytes
-            volumeDataSet._cachedBrush = new byte[2];
-
-            return volumeDataSet;
-        }
-
         public void GenerateVolumeTexture(TextureFilterEnum textureFilter, int xDownsample, int yDownsample, int zDownsample)
         {
             TextureFormat textureFormat;
@@ -1424,6 +1406,24 @@ namespace VolumeData
             {
                 Debug.Log("Error normalizing physical coordinates!");
             }
+        }
+
+        public VolumeDataSet GenerateEmptyMask()
+        {
+            VolumeDataSet volumeDataSet = new VolumeDataSet();
+            volumeDataSet.IsMask = true;
+            FitsReader.CreateEmptyImageInt16(XDim, YDim, ZDim, out var dataPtr);
+            volumeDataSet.FitsData = dataPtr;
+            volumeDataSet.ImageDataPtr = FitsData;
+            volumeDataSet.XDim = XDim;
+            volumeDataSet.YDim = YDim;
+            volumeDataSet.ZDim = ZDim;
+            volumeDataSet.SourceStatsDict = new Dictionary<short, DataAnalysis.SourceStats>();
+            volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
+            // single pixel brush: 16-bits = 2 bytes
+            volumeDataSet._cachedBrush = new byte[2];
+
+            return volumeDataSet;
         }
 
         public void CleanUp(bool randomCube)
