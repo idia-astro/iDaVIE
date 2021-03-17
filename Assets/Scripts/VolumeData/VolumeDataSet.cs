@@ -393,10 +393,10 @@ namespace VolumeData
                     var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
                     var name = $"Masked Source #{maskVal}";
                     var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
-                    var feature = new Feature(boxMin, boxMax, Color.white, name, maskVal - 1, rawStrings, _featureSet, false);
+                    var feature = new Feature(boxMin, boxMax, Color.white, name, maskVal - 1, rawStrings, _featureSet, _featureSet.FeatureList[0].Visible);
                     _featureSet.AddFeature(feature);
                     _featureSet.NeedToRespawnList = true;
-                    _featureSet.VolumeRenderer.SelectFeature(feature); //list now respawning in time to allow autoscroll... need to figure this out
+                    //_featureSet.VolumeRenderer.SelectFeature(feature); //list now respawning in time to allow autoscroll... need to figure this out
                 }
             }
         }
