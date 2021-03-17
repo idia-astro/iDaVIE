@@ -85,7 +85,7 @@ namespace VolumeData
 
         public bool IsMask { get; private set; }
         private IntPtr ImageDataPtr;
-        private FeatureSetRenderer _featureSet;
+        private FeatureSetRenderer _maskFeatureSet;
 
         private double _xRef, _yRef, _zRef, _xRefPix, _yRefPix, _zRefPix, _xDelt, _yDelt, _zDelt, _rot;
         private string _xCoord, _yCoord, _zCoord, _wcsProj;
@@ -363,15 +363,15 @@ namespace VolumeData
                 SourceStatsDict.Remove(maskVal);
             }
             
-            if (_featureSet)
+            if (_maskFeatureSet)
             {
-                var index = _featureSet.FeatureList.FindIndex(f => f.Index == maskVal - 1);
+                var index = _maskFeatureSet.FeatureList.FindIndex(f => f.Index == maskVal - 1);
                 if (index >= 0)
                 {
                     if (sourceStats.numVoxels > 0)
                     {
                         // Update existing feature's bounds
-                        var feature = _featureSet.FeatureList[index];
+                        var feature = _maskFeatureSet.FeatureList[index];
                         var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
                         var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
                         feature.SetBounds(boxMin, boxMax);
@@ -383,7 +383,7 @@ namespace VolumeData
                     else
                     {
                         // Remove empty feature
-                        _featureSet.FeatureList.RemoveAt(index);
+                        _maskFeatureSet.FeatureList.RemoveAt(index);
                     }
                 }
                 else if (sourceStats.numVoxels > 0)
@@ -393,9 +393,9 @@ namespace VolumeData
                     var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
                     var name = $"Masked Source #{maskVal}";
                     var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
-                    var feature = new Feature(boxMin, boxMax, Color.white, name, maskVal - 1, rawStrings, _featureSet, _featureSet.FeatureList[0].Visible);
-                    _featureSet.AddFeature(feature);
-                    _featureSet.NeedToRespawnList = true;
+                    var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, maskVal - 1, rawStrings, _maskFeatureSet, _maskFeatureSet.FeatureList[0].Visible);
+                    _maskFeatureSet.AddFeature(feature);
+                    _maskFeatureSet.NeedToRespawnList = true;
                     //_featureSet.VolumeRenderer.SelectFeature(feature); //list now respawning in time to allow autoscroll... need to figure this out
                 }
             }
@@ -415,8 +415,8 @@ namespace VolumeData
 
         public void FillFeatureSet( FeatureSetRenderer featureSet)
         {
-            _featureSet = featureSet;
-            _featureSet.SpawnFeaturesFromSourceStats(SourceStatsDict);
+            _maskFeatureSet = featureSet;
+            _maskFeatureSet.SpawnFeaturesFromSourceStats(SourceStatsDict);
         }
 
         public void RecreateFrameSet(double restFreq = 0)
