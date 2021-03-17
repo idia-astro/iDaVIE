@@ -30,6 +30,11 @@ public class CustomDragHandler : MonoBehaviour
         }
         var _spawnPoint = transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject;
         var featureListItem = feature.LinkedListItem;
+        if (featureListItem == null)
+        {
+            Debug.Log("No menu list item for feature!");
+            return;
+        }
         if (scrollTo)
         {
             float verticalPosition = Spawn_initial_y - featureListItem.transform.localPosition.y;

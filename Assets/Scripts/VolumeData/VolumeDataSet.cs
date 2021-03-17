@@ -372,7 +372,7 @@ namespace VolumeData
                     {
                         // Update existing feature's bounds
                         var feature = _featureSet.FeatureList[index];
-                        var boxMin = new Vector3(sourceStats.minX, sourceStats.minY, sourceStats.minZ);
+                        var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
                         var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
                         feature.SetBounds(boxMin, boxMax);
                         feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
