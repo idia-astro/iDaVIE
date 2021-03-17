@@ -435,12 +435,12 @@ namespace VolumeData
 
         public void SetBrushAdditive()
         {
-            VolumeInputController.AdditiveBrush = true;
+            VolumeInputController.SetBrushAdditive();
         }
 
         public void SetBrushSubtractive()
         {
-            VolumeInputController.AdditiveBrush = false;
+            VolumeInputController.SetBrushSubtractive();
         }
 
         public void ShowMaskOutline()
@@ -481,7 +481,7 @@ namespace VolumeData
 
         public void SetMaskValue()
         {
-            _volumeInputController.StartSourceIdEditing();
+            _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.StartEditSource);
         }
 
         public void Undo()
