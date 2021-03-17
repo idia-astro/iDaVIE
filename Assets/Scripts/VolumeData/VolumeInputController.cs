@@ -1188,6 +1188,9 @@ public class VolumeInputController : MonoBehaviour
             dataSet.InitialiseMask();
             dataSet.DisplayMask = true;
         }
+        
+        // Automatically start source ID editing when entering paint mode
+        StartSourceIdEditing();
     }
 
     private void ExitPaintMode()
@@ -1196,6 +1199,8 @@ public class VolumeInputController : MonoBehaviour
         {
             dataSet.DisplayMask = false;
         }
+        
+        EndEditing(false);
     }
 
     public void ToggleCursorInfoVisibility()
