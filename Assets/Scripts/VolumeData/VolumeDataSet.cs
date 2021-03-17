@@ -394,6 +394,10 @@ namespace VolumeData
                     var name = $"Masked Source #{maskVal}";
                     var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
                     _featureSet.AddFeature(new Feature(boxMin, boxMax, Color.white, name, maskVal - 1, rawStrings, _featureSet, false));
+                    var feature = new Feature(boxMin, boxMax, Color.white, name, maskVal - 1, rawStrings, _featureSet, false);
+                    _featureSet.AddFeature(feature);
+                    _featureSet.NeedToRespawnList = true;
+                    _featureSet.VolumeRenderer.SelectFeature(feature); //list now respawning in time to allow autoscroll... need to figure this out
                 }
             }
         }

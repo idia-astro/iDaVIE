@@ -80,6 +80,12 @@ public class SofiaListCreator : MonoBehaviour
 
 
     // Update is called once per frame
+     void Update()
+    {
+        if (featureSetRenderer.NeedToRespawnList)
+            SpawnList(0);
+    }
+
     void OnEnable()
     {
         if (_initialized)
@@ -187,12 +193,15 @@ public class SofiaListCreator : MonoBehaviour
     private void SpawnList(int index)
     {
         featureSetRenderer = _featureSetRendererList[index];
+        if (featureSetRenderer.MenuList != null)
+        {
+            Destroy(featureSetRenderer.MenuList);
+        }
         ListTitle.text = featureSetRenderer.name;
         ListColorDisplay.color = featureSetRenderer.FeatureColor;
         NumberOfFeatures = featureSetRenderer.FeatureList.Count;
         //setContent Holder Height;
         content.sizeDelta = new Vector2(0, NumberOfFeatures * 100);
-
         GameObject SourceListObject = new GameObject();
         SourceListObject.name = "Source List #" + index;
         Instantiate(SourceListObject, new Vector3(SpawnPoint.position.x+300, 0, SpawnPoint.position.z), SpawnPoint.localRotation);
@@ -239,6 +248,7 @@ public class SofiaListCreator : MonoBehaviour
            
         }
         featureSetRenderer.MenuList = SourceListObject;
+        featureSetRenderer.NeedToRespawnList = false;
     } 
 
     public void ToggleListVisibility()
