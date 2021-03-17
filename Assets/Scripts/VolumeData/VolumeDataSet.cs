@@ -1018,7 +1018,7 @@ namespace VolumeData
             if (addToHistory)
             {
                 // Create transaction if it doesn't exist
-                if (CurrentBrushStroke.Voxels == null)
+                if (CurrentBrushStroke.Voxels == null || CurrentBrushStroke.NewValue != value)
                 {
                     CurrentBrushStroke = new BrushStrokeTransaction(value);
                 }
