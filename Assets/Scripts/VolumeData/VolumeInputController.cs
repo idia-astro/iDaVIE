@@ -40,6 +40,7 @@ public class VolumeInputController : MonoBehaviour
     {
         IdleSelecting,
         IdlePainting,
+        EditingSourceId,
         Creating,
         Editing,
         Painting
@@ -51,6 +52,9 @@ public class VolumeInputController : MonoBehaviour
         InteractionEnded,
         PaintModeEnabled,
         PaintModeDisabled,
+        StartEditSource,
+        EndEditSource,
+        CancelEditSource
     }
 
     [Flags]
@@ -79,10 +83,10 @@ public class VolumeInputController : MonoBehaviour
     [Range(0.1f, 5.0f)] public float VignetteFadeSpeed = 2.0f;
 
     // Painting
-    public bool AdditiveBrush = true;
+    public bool AdditiveBrush { get; private set; } = true;
     public int BrushSize = 1;
-    public short BrushValue = 1;
-    public short NewSourceValue = 1000;
+    public short SourceId = -1;
+    public short NewSourceId = 1000;
     
     private Player _player;
     private VRHand[] _hands;
@@ -245,8 +249,16 @@ public class VolumeInputController : MonoBehaviour
 
         InteractionStateMachine.Configure(InteractionState.IdlePainting)
             .OnEntryFrom(InteractionEvents.PaintModeEnabled, EnterPaintMode)
+            .OnEntryFrom(InteractionEvents.EndEditSource, UpdateSourceId)
+            .Permit(InteractionEvents.StartEditSource, InteractionState.EditingSourceId)
             .Permit(InteractionEvents.PaintModeDisabled, InteractionState.IdleSelecting)
-            .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Painting, () => ActiveDataSet?.IsFullResolution ?? false);
+            .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Painting,
+                () => _locomotionState == LocomotionState.Idle && (ActiveDataSet?.IsFullResolution ?? false));
+
+        InteractionStateMachine.Configure(InteractionState.EditingSourceId)
+            .IgnoreIf(InteractionEvents.EndEditSource, () => SourceId <= 0 && ActiveDataSet?.CursorSource == 0)
+            .PermitIf(InteractionEvents.EndEditSource, InteractionState.IdlePainting, () => ActiveDataSet?.CursorSource != 0 || SourceId > 0)
+            .Permit(InteractionEvents.CancelEditSource, InteractionState.IdlePainting);
 
         InteractionStateMachine.Configure(InteractionState.Painting)
             .OnExit(() => ActiveDataSet?.FinishBrushStroke())
@@ -294,6 +306,11 @@ public class VolumeInputController : MonoBehaviour
         {
             EndEditing();
         }
+
+        if (InteractionStateMachine.State == InteractionState.EditingSourceId)
+        {
+            InteractionStateMachine.Fire(InteractionEvents.EndEditSource);
+        }
     }
 
     private void OnMenuUpPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
@@ -315,7 +332,7 @@ public class VolumeInputController : MonoBehaviour
          if (fromSource == PrimaryHand && scrollSelected)
          {
             scrollUp = false;
-        }
+         }
     }
 
     private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
@@ -343,7 +360,7 @@ public class VolumeInputController : MonoBehaviour
     {
         if (fromSource != PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
-            UnoBrushStroke(fromSource);
+            UndoBrushStroke(fromSource);
         }
     }
     
@@ -365,7 +382,7 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
-    public void UnoBrushStroke(SteamVR_Input_Sources fromSource)
+    public void UndoBrushStroke(SteamVR_Input_Sources fromSource)
     {
         if (ActiveDataSet?.Mask?.UndoBrushStroke() ?? false)
         {
@@ -459,6 +476,11 @@ public class VolumeInputController : MonoBehaviour
             return;
         }
 
+        if (newState && InteractionStateMachine.State == InteractionState.EditingSourceId)
+        {
+            Debug.Log("Pinch Started");
+        }
+
         InteractionStateMachine.Fire(newState ? InteractionEvents.InteractionStarted : InteractionEvents.InteractionEnded);
     }
 
@@ -487,11 +509,21 @@ public class VolumeInputController : MonoBehaviour
         _targetVignetteIntensity = 0;
     }
 
-        public void StartZAxisEditing()
+    public void UpdateSourceId()
+    {
+        if (ActiveDataSet?.CursorSource != 0)
+        {
+            SourceId = ActiveDataSet.CursorSource;
+            ActiveDataSet.HighlightedSource = SourceId;
+            AdditiveBrush = true;
+        }
+    }
+
+    public void StartZAxisEditing()
     {
         _locomotionState = LocomotionState.EditingZAxis;
         _targetVignetteIntensity = 0;
-        _previousControllerHeight =  _hands[PrimaryHandIndex].transform.position.y;
+        _previousControllerHeight = _hands[PrimaryHandIndex].transform.position.y;
     }
 
     private void StartRequestQuickMenu(int handIndex)
@@ -848,7 +880,8 @@ public class VolumeInputController : MonoBehaviour
         {
             _handInfoComponents[PrimaryHandIndex].enabled = true;
             _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
-            _handInfoComponents[PrimaryHandIndex].text = _showCursorInfo ? cursorString : "";
+            // Threshold info should always be displayed
+            _handInfoComponents[PrimaryHandIndex].text = cursorString;
         }
     }
 
@@ -867,7 +900,7 @@ public class VolumeInputController : MonoBehaviour
                                                                     dataSet.transform.localScale.x * zxRatio * dataSet.ZAxisMaxFactor));
         }
     }
-
+    
     private void UpdateInteractions()
     {
         var dataSet = ActiveDataSet;
@@ -883,7 +916,7 @@ public class VolumeInputController : MonoBehaviour
 
         if (currentState == InteractionState.Painting)
         {
-            dataSet.PaintCursor(AdditiveBrush ? BrushValue : (short) 0);
+            dataSet.PaintCursor(AdditiveBrush ? SourceId : (short) 0);
         }
         else if (currentState == InteractionState.Creating)
         {
@@ -932,6 +965,21 @@ public class VolumeInputController : MonoBehaviour
         {
             cursorString = GetSelectionString(dataSet);
         }
+        else if (currentState == InteractionState.EditingSourceId)
+        {
+            if (dataSet.CursorSource != 0)
+            {
+                cursorString = $"Press trigger to update{Environment.NewLine}source ID to {dataSet.CursorSource}";
+            }
+            else
+            {
+                cursorString = "Place hand in desired source";
+                if (SourceId >= 0)
+                {
+                    cursorString += $"{Environment.NewLine}Press trigger to cancel";
+                }
+            }
+        }
         else
         {
             cursorString = GetFormattedCursorString(dataSet);
@@ -941,7 +989,7 @@ public class VolumeInputController : MonoBehaviour
         {
             _handInfoComponents[PrimaryHandIndex].enabled = true;
             _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
-            _handInfoComponents[PrimaryHandIndex].text = _showCursorInfo ? cursorString : "";
+            _handInfoComponents[PrimaryHandIndex].text = (_showCursorInfo || currentState == InteractionState.EditingSourceId) ? cursorString : "";
         }
     }
 
@@ -1142,6 +1190,10 @@ public class VolumeInputController : MonoBehaviour
             dataSet.InitialiseMask();
             dataSet.DisplayMask = true;
         }
+        
+        // Automatically start source ID editing when entering paint mode
+        SourceId = -1;
+        InteractionStateMachine.Fire(InteractionEvents.StartEditSource);
     }
 
     private void ExitPaintMode()
@@ -1154,37 +1206,37 @@ public class VolumeInputController : MonoBehaviour
 
     public void ToggleCursorInfoVisibility()
     {
-        if (_showCursorInfo)
-            _showCursorInfo = false;
-        else
-            _showCursorInfo = true;
+        _showCursorInfo = !_showCursorInfo;
     }
 
     public void AddNewSource()
     {
-        BrushValue = NewSourceValue;
+        SourceId = NewSourceId;
         AdditiveBrush = true;
         if (ActiveDataSet)
         {
-            ActiveDataSet.HighlightedSource = NewSourceValue;
+            ActiveDataSet.HighlightedSource = NewSourceId;
         }
-        NewSourceValue++;
+        NewSourceId++;
+        // End editing mode without updating the source ID to the cursor voxel
+        InteractionStateMachine.Fire(InteractionEvents.CancelEditSource);
+    }
+    
+    public void SetBrushAdditive()
+    {
+        AdditiveBrush = true;
+        if (SourceId <= 0)
+        {
+            InteractionStateMachine.Fire(InteractionEvents.StartEditSource);    
+        }
     }
 
-    public void UpdateMaskValue()
+    public void SetBrushSubtractive()
     {
-        if (ActiveDataSet)
+        AdditiveBrush = false;
+        if (InteractionStateMachine.State == InteractionState.EditingSourceId)
         {
-            if (ActiveDataSet.CursorSource != 0)
-            {
-                BrushValue = ActiveDataSet.CursorSource;
-                ActiveDataSet.HighlightedSource = BrushValue;
-                AdditiveBrush = true;
-            }
-            else
-            {
-                AdditiveBrush = false;
-            }
+            InteractionStateMachine.Fire(InteractionEvents.CancelEditSource);
         }
     }
 

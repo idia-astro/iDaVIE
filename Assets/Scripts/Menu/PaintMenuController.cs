@@ -21,13 +21,11 @@ public class PaintMenuController : MonoBehaviour
     int featureStatus = 0;
 
     private VolumeInputController _volumeInputController = null;
+    public VolumeInputController VolumeInputController => _volumeInputController;
 
+    private Text _topPanelText;
+    private Button _exitButton;
     private string oldSaveText = "";
-    // Start is called before the first frame update
-    void Start()
-    {
-
-    }
 
     void OnEnable()
     {
@@ -38,6 +36,9 @@ public class PaintMenuController : MonoBehaviour
             _volumeInputController = FindObjectOfType<VolumeInputController>();
         
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeEnabled);
+
+        _topPanelText = gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>();
+        _exitButton = gameObject.transform.Find("Content/SecondRow/ExitButton")?.GetComponent<Button>();
     }
 
     // Update is called once per frame
@@ -48,13 +49,26 @@ public class PaintMenuController : MonoBehaviour
         {
             _activeDataSet = firstActive;
         }
-    }
 
-    public VolumeInputController getVolumeInputController()
-    {
-        return _volumeInputController;
-    }
+        if (!_volumeInputController.AdditiveBrush)
+        {
+            _topPanelText.text = "Erase Mode";
+        }
+        else if (_volumeInputController.SourceId <= 0)
+        {
+            _topPanelText.text = "Please select a Source ID to paint";
+        }
+        else
+        {
+            _topPanelText.text = $"Paint Mode (Source ID {_volumeInputController.SourceId})";
+        }
 
+        if (_exitButton)
+        {
+            _exitButton.enabled = _volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.IdlePainting;
+        }
+    }
+    
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
         foreach (var dataSet in _dataSets)
@@ -153,7 +167,7 @@ public class PaintMenuController : MonoBehaviour
 
     public void UndoBrushStroke()
     {
-        _volumeInputController.UnoBrushStroke(_volumeInputController.PrimaryHand);
+        _volumeInputController.UndoBrushStroke(_volumeInputController.PrimaryHand);
     }
 
     public void RedoBrushStroke()
@@ -170,14 +184,12 @@ public class PaintMenuController : MonoBehaviour
 
     public void PaintingAdditive()
     {
-        this.gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Additive Paint Mode";
-        _volumeInputController.AdditiveBrush = true; ;
+        _volumeInputController.SetBrushAdditive();
     }
 
     public void PaintingSubtractive()
     {
-        this.gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Subtractive Paint Mode";
-        _volumeInputController.AdditiveBrush = false;
+        _volumeInputController.SetBrushSubtractive();
     }
 
     public void OpenMainMenu()
@@ -225,6 +237,15 @@ public class PaintMenuController : MonoBehaviour
         _activeDataSet?.SaveMask(false);
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
         SaveCancel();
+    }
+
+    public void AddNewSource()
+    {
+        _volumeInputController.AddNewSource();
+    }
+    public void EditSourceId()
+    {
+        _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.StartEditSource);
     }
 
 }
