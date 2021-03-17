@@ -24,6 +24,7 @@ public class PaintMenuController : MonoBehaviour
     public VolumeInputController VolumeInputController => _volumeInputController;
 
     private Text _topPanelText;
+    private Button _exitButton;
     private string oldSaveText = "";
 
     void OnEnable()
@@ -37,6 +38,7 @@ public class PaintMenuController : MonoBehaviour
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeEnabled);
 
         _topPanelText = gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>();
+        _exitButton = gameObject.transform.Find("Content/SecondRow/ExitButton")?.GetComponent<Button>();
     }
 
     // Update is called once per frame
@@ -48,13 +50,22 @@ public class PaintMenuController : MonoBehaviour
             _activeDataSet = firstActive;
         }
 
-        if (_volumeInputController.AdditiveBrush)
+        if (!_volumeInputController.AdditiveBrush)
         {
-            _topPanelText.text = $"Paint Mode (Source ID {_volumeInputController.SourceId})";
+            _topPanelText.text = "Erase Mode";
+        }
+        else if (_volumeInputController.SourceId <= 0)
+        {
+            _topPanelText.text = "Please select a Source ID to paint";
         }
         else
         {
-            _topPanelText.text = "Erase Mode";
+            _topPanelText.text = $"Paint Mode (Source ID {_volumeInputController.SourceId})";
+        }
+
+        if (_exitButton)
+        {
+            _exitButton.enabled = _volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.IdlePainting;
         }
     }
     
@@ -173,12 +184,12 @@ public class PaintMenuController : MonoBehaviour
 
     public void PaintingAdditive()
     {
-        _volumeInputController.AdditiveBrush = true;
+        _volumeInputController.SetBrushAdditive();
     }
 
     public void PaintingSubtractive()
     {
-        _volumeInputController.AdditiveBrush = false;
+        _volumeInputController.SetBrushSubtractive();
     }
 
     public void OpenMainMenu()
@@ -234,7 +245,7 @@ public class PaintMenuController : MonoBehaviour
     }
     public void EditSourceId()
     {
-        _volumeInputController.StartSourceIdEditing();
+        _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.StartEditSource);
     }
 
 }
