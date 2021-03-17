@@ -784,7 +784,7 @@ namespace VolumeData
         {
             if (_dataSet != null && _maskDataSet == null)
             {
-                _maskDataSet = VolumeDataSet.GenerateEmptyMask(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim);
+                _maskDataSet = _dataSet.GenerateEmptyMask();
                 // Re-crop both datasets to ensure that they match correctly
                 CropToRegion();
             }

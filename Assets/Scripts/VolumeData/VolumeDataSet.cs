@@ -453,18 +453,18 @@ namespace VolumeData
             if (histogramPtr != IntPtr.Zero)
                 DataAnalysis.FreeMemory(histogramPtr);
         }
-
-        public static VolumeDataSet GenerateEmptyMask(long cubeSizeX, long cubeSizeY, long cubeSizeZ)
+        
+        public VolumeDataSet GenerateEmptyMask()
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
             volumeDataSet.IsMask = true;
-            IntPtr dataPtr;
-            FitsReader.CreateEmptyImageInt16(cubeSizeX, cubeSizeY, cubeSizeZ, out dataPtr);
+            FitsReader.CreateEmptyImageInt16(XDim, YDim, ZDim, out var dataPtr);
             volumeDataSet.FitsData = dataPtr;
-            volumeDataSet.XDim = cubeSizeX;
-            volumeDataSet.YDim = cubeSizeY;
-            volumeDataSet.ZDim = cubeSizeZ;
-
+            volumeDataSet.ImageDataPtr = FitsData;
+            volumeDataSet.XDim = XDim;
+            volumeDataSet.YDim = YDim;
+            volumeDataSet.ZDim = ZDim;
+            volumeDataSet.SourceStatsDict = new Dictionary<short, DataAnalysis.SourceStats>();
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
             volumeDataSet._cachedBrush = new byte[2];
