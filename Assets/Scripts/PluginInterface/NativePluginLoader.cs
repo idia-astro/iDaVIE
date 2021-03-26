@@ -32,6 +32,9 @@ namespace fts
 
         [DllImport("kernel32.dll")]
         static public extern uint GetLastError();
+
+        [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Unicode)]
+        static public extern bool SetDllDirectory(string dirName);
     }
 
 
@@ -79,7 +82,7 @@ namespace fts
             DontDestroyOnLoad(this.gameObject);
             _path = Application.dataPath + "/Plugins/";
             if (!Application.isEditor)
-                _path += "/x86_64/";
+                _path += "x86_64/";
             LoadAll();
         }
 
@@ -119,6 +122,8 @@ namespace fts
                         IntPtr pluginHandle = IntPtr.Zero;
                         if (!_loadedPlugins.TryGetValue(pluginName, out pluginHandle)) {
                             var pluginPath = _path + pluginName + EXT;
+                            if (!SystemLibrary.SetDllDirectory(_path))
+                                throw new System.Exception("Failed to set dll directory [" + pluginPath + "]");
                             pluginHandle = SystemLibrary.LoadLibrary(pluginPath);
                             if (pluginHandle == IntPtr.Zero)
                                 throw new System.Exception("Failed to load plugin [" + pluginPath + "]");
