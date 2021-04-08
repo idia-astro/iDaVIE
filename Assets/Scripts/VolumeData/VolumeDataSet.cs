@@ -113,8 +113,7 @@ namespace VolumeData
             {
                 if (_zCoord != null && _zCoord.Length >= 4 && _zDelt != 0.0)
                 {
-                    var zCoordPrefix = _zCoord.Substring(0, 4);
-                    switch (zCoordPrefix)
+                    switch (_zCoord)
                     {
                         case "FREQ":
                         case "ENER":
@@ -841,8 +840,7 @@ namespace VolumeData
                         NAxis = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                         break;
                     case "CTYPE1":
-                        _xCoord = entry.Value.Substring(0, 4);
-                        xProj =  entry.Value.Length >= 9 ? entry.Value.Substring(5, 4): "";
+                        _xCoord = entry.Value.Substring(1, 4);
                         break;
                     case "CRPIX1":
                         _xRefPix = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
@@ -854,8 +852,7 @@ namespace VolumeData
                         _xRef = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                         break;
                     case "CTYPE2":
-                        _yCoord = entry.Value.Substring(0, 4);
-                        yProj =  entry.Value.Length >= 9 ? entry.Value.Substring(5, 4): "";
+                        _yCoord = entry.Value.Substring(1, 4);
                         break;
                     case "CRPIX2":
                         _yRefPix = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
@@ -868,7 +865,6 @@ namespace VolumeData
                         break;
                     case "CTYPE3":
                         _zCoord = entry.Value.Substring(1, 4);
-                        zProj = entry.Value.Length >= 9 ? entry.Value.Substring(5, 4): "";
                         break;
                     case "CRPIX3":
                         _zRefPix = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
