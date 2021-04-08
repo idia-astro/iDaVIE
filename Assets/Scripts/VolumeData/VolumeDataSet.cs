@@ -842,7 +842,7 @@ namespace VolumeData
                         break;
                     case "CTYPE1":
                         _xCoord = entry.Value.Substring(0, 4);
-                        xProj = entry.Value.Substring(5, 4);
+                        xProj =  entry.Value.Length >= 9 ? entry.Value.Substring(5, 4): "";
                         break;
                     case "CRPIX1":
                         _xRefPix = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
@@ -855,7 +855,7 @@ namespace VolumeData
                         break;
                     case "CTYPE2":
                         _yCoord = entry.Value.Substring(0, 4);
-                        yProj = entry.Value.Substring(5, 4);
+                        yProj =  entry.Value.Length >= 9 ? entry.Value.Substring(5, 4): "";
                         break;
                     case "CRPIX2":
                         _yRefPix = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
@@ -867,8 +867,8 @@ namespace VolumeData
                         _yRef = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
                         break;
                     case "CTYPE3":
-                        _zCoord = entry.Value.Substring(1, 4); //Crashing with some data sets. Need to fix
-                        zProj = entry.Value.Substring(5, 4);
+                        _zCoord = entry.Value.Substring(1, 4);
+                        zProj = entry.Value.Length >= 9 ? entry.Value.Substring(5, 4): "";
                         break;
                     case "CRPIX3":
                         _zRefPix = Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture);
