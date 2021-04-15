@@ -9,6 +9,7 @@ using System.Linq;
 using System.Globalization;
 using System.Text;
 using System.Runtime.InteropServices;
+using Vectrosity;
 
 namespace DataFeatures
 {
@@ -38,10 +39,17 @@ namespace DataFeatures
 
         public bool featureSetVisible = false;
         public bool NeedToRespawnList = true;
+        public bool IsDirty = true;
 
+        private List<VectorLine> _featureLinesList;
+        private static readonly int FeaturesPerLineList = 1000;
+        private static readonly int VerticesPerFeature = 24;
         private void Awake()
         {
             FeatureList = new List<Feature>();
+            _featureLinesList = new List<VectorLine>();
+            _featureLinesList.Add(new VectorLine("FeatureSetLines", new List<Vector3>(VerticesPerFeature * FeaturesPerLineList), 1.0f) {drawTransform = transform, color = FeatureColor});
+            _featureLinesList[0].Draw3DAuto();
         }
 
         public void Initialize(bool isImported)
@@ -51,15 +59,57 @@ namespace DataFeatures
             VolumeRenderer = FeatureManager.VolumeRenderer;
         }
 
+        public void Update()
+        {
+            if (IsDirty)
+            {
+                foreach (var lineList in _featureLinesList)
+                {
+                    lineList.drawEnd = 0;
+                }
+                
+                int counter = 0;
+                foreach (var feature in FeatureList)
+                {
+                    if (feature.Visible)
+                    {
+                        int offset = counter % FeaturesPerLineList;
+                        int listIndex = counter / FeaturesPerLineList; 
+                        if (listIndex >= _featureLinesList.Count)
+                        {
+                            _featureLinesList.Add(new VectorLine("FeatureSetLines", new List<Vector3>(VerticesPerFeature * FeaturesPerLineList), 1.0f) {drawTransform = transform, color = FeatureColor});
+                        }
+                        var currentLineList = _featureLinesList[listIndex];
+
+                        if (offset == 0)
+                        {
+                            currentLineList.active = true;
+                            currentLineList.drawStart = 0;
+                        }
+                        var size = feature.Size;
+                        int index = offset * VerticesPerFeature;
+                        currentLineList.MakeCube(feature.Center, size.x, size.y, size.z, index);
+                        currentLineList.SetColor(feature.CubeColor, index, index + 23);
+                        currentLineList.drawEnd = index + 23;
+                        counter++;
+                    }
+                }
+                Debug.Log($"Updated feature list for {counter} visible features");
+                IsDirty = false;
+            }
+        }
+
         // Add feature to Renderer as container
         public void AddFeature(Feature featureToAdd)
         {
             FeatureList.Add(featureToAdd);
+            IsDirty = true;
         }
 
         public void ClearFeatures()
         {
             FeatureList.Clear();
+            IsDirty = true;
         }
         public void ToggleVisibility()
         {
@@ -72,7 +122,6 @@ namespace DataFeatures
 
         public void SetVisibilityOn()
         {
-
             foreach (Transform child in MenuList.transform)
             {
                 child.GetComponent<SofiaListItem>().SetVisibilityIconsOn();
@@ -80,7 +129,9 @@ namespace DataFeatures
 
             featureSetVisible = true;
             foreach (var feature in FeatureList)
+            {
                 feature.Visible = true;
+            }
         }
 
         public void SetVisibilityOff()
@@ -92,7 +143,9 @@ namespace DataFeatures
 
             featureSetVisible = false;
             foreach (var feature in FeatureList)
+            {
                 feature.Visible = false;
+            }
         }
 
         public void SelectFeature(Feature feature)
@@ -107,7 +160,9 @@ namespace DataFeatures
         public void UpdateColor()
         {
             foreach (var feature in FeatureList)
-                feature.ChangeColor(FeatureColor);
+            {
+                feature.CubeColor = FeatureColor;
+            }
         }
 
         public void SpawnFeaturesFromSourceStats(Dictionary<short, DataAnalysis.SourceStats> sourceStatsDict)
@@ -324,6 +379,8 @@ namespace DataFeatures
                     FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, FeatureNames[i], i, featureRawData[i].ToArray(), this, false));
                 }
             }
+
+            IsDirty = true;
         } 
     
         public void SaveAsVoTable(string filePath)
