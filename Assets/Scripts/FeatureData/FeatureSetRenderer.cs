@@ -13,6 +13,13 @@ using Vectrosity;
 
 namespace DataFeatures
 {
+    struct FeatureVertex
+    {
+        public Vector3 Position;
+        public Vector4 Color;
+        public int Visibility;
+    }
+    
     public class FeatureSetRenderer : MonoBehaviour
     {
         public enum CoordTypes {  cartesian,  freqz,  velz, redz   }
@@ -40,16 +47,23 @@ namespace DataFeatures
         public bool featureSetVisible = false;
         public bool NeedToRespawnList = true;
         public bool IsDirty = true;
+        public Material LineRenderingMaterial;
 
-        private List<VectorLine> _featureLinesList;
-        private static readonly int FeaturesPerLineList = 1000;
         private static readonly int VerticesPerFeature = 24;
+        // Vector3 for position, Vector4 for color, int for visibility info
+        private static readonly int BytesPerVertex = 32;
+        private static readonly int DefaultFeatureCapacity = 16384;
+        private ComputeBuffer _computeBufferVertices;
+        private FeatureVertex[] _vertices;
+        private Material _materialInstance;
+        //private Renderer _renderer;
         private void Awake()
         {
             FeatureList = new List<Feature>();
-            _featureLinesList = new List<VectorLine>();
-            _featureLinesList.Add(new VectorLine("FeatureSetLines", new List<Vector3>(VerticesPerFeature * FeaturesPerLineList), 1.0f) {drawTransform = transform, color = FeatureColor});
-            _featureLinesList[0].Draw3DAuto();
+            _computeBufferVertices = new ComputeBuffer(DefaultFeatureCapacity * VerticesPerFeature, BytesPerVertex, ComputeBufferType.Structured);
+            _vertices = new FeatureVertex[DefaultFeatureCapacity * VerticesPerFeature];
+            _materialInstance = Material.Instantiate(LineRenderingMaterial);
+            //_renderer = GetComponent<Renderer>();
         }
 
         public void Initialize(bool isImported)
@@ -63,38 +77,21 @@ namespace DataFeatures
         {
             if (IsDirty)
             {
-                foreach (var lineList in _featureLinesList)
+                int currentCapacity = _computeBufferVertices.count / VerticesPerFeature;
+                int requiredCapacity = FeatureList.Count;
+                if (requiredCapacity > currentCapacity)
                 {
-                    lineList.drawEnd = 0;
+                    _vertices = new FeatureVertex[requiredCapacity * VerticesPerFeature];
+                    _computeBufferVertices.Release();
+                    _computeBufferVertices = new ComputeBuffer(requiredCapacity * VerticesPerFeature, BytesPerVertex, ComputeBufferType.Structured);
                 }
-                
-                int counter = 0;
-                foreach (var feature in FeatureList)
-                {
-                    if (feature.Visible)
-                    {
-                        int offset = counter % FeaturesPerLineList;
-                        int listIndex = counter / FeaturesPerLineList; 
-                        if (listIndex >= _featureLinesList.Count)
-                        {
-                            _featureLinesList.Add(new VectorLine("FeatureSetLines", new List<Vector3>(VerticesPerFeature * FeaturesPerLineList), 1.0f) {drawTransform = transform, color = FeatureColor});
-                        }
-                        var currentLineList = _featureLinesList[listIndex];
 
-                        if (offset == 0)
-                        {
-                            currentLineList.active = true;
-                            currentLineList.drawStart = 0;
-                        }
-                        var size = feature.Size;
-                        int index = offset * VerticesPerFeature;
-                        currentLineList.MakeCube(feature.Center, size.x, size.y, size.z, index);
-                        currentLineList.SetColor(feature.CubeColor, index, index + 23);
-                        currentLineList.drawEnd = index + 23;
-                        counter++;
-                    }
+                for (var i = 0; i < requiredCapacity; i++)
+                {
+                    var feature = FeatureList[i];
+                    MakeAxisAlignedCube(feature.Center, feature.Size, feature.CubeColor, feature.Visible ? 1 : 0, i * VerticesPerFeature, _vertices);
                 }
-                Debug.Log($"Updated feature list for {counter} visible features");
+                _computeBufferVertices.SetData(_vertices);
                 IsDirty = false;
             }
         }
@@ -381,7 +378,64 @@ namespace DataFeatures
             }
 
             IsDirty = true;
-        } 
+        }
+        
+        void OnRenderObject()
+        {
+            // TODO: how does this work with VR?
+            _materialInstance.SetMatrix("datasetMatrix", transform.localToWorldMatrix);
+            _materialInstance.SetBuffer("inputData", _computeBufferVertices);
+            
+            _materialInstance.SetPass(0);
+            // Render lines on the GPU using vertex pulling
+            Graphics.DrawProceduralNow(MeshTopology.Lines, FeatureList.Count * VerticesPerFeature);
+        }
+
+        void OnDestroy()
+        {
+            _computeBufferVertices.Release();
+        }
+
+        static void MakeAxisAlignedCube(Vector3 position, Vector3 size, Color color, int visibility, int offset, FeatureVertex[] list)
+        {
+            if (offset + 24 > list.Length)
+            {
+                return;
+            }
+
+            size *= 0.5f;
+
+            list[offset + 0] = new FeatureVertex {Position = position + new Vector3(-size.x, size.y, -size.z)};
+            list[offset + 1] = new FeatureVertex {Position = position + new Vector3(size.x, size.y, -size.z)};
+            list[offset + 2] = new FeatureVertex {Position = position + new Vector3(size.x, size.y, -size.z)};
+            list[offset + 3] = new FeatureVertex {Position = position + new Vector3(size.x, size.y, size.z)};
+            list[offset + 4] = new FeatureVertex {Position = position + new Vector3(size.x, size.y, size.z)};
+            list[offset + 5] = new FeatureVertex {Position = position + new Vector3(-size.x, size.y, size.z)};
+            list[offset + 6] = new FeatureVertex {Position = position + new Vector3(-size.x, size.y, size.z)};
+            list[offset + 7] = new FeatureVertex {Position = position + new Vector3(-size.x, size.y, -size.z)};
+            list[offset + 8] = new FeatureVertex {Position = position + new Vector3(-size.x, -size.y, -size.z)};
+            list[offset + 9] = new FeatureVertex {Position = position + new Vector3(-size.x, size.y, -size.z)};
+            list[offset + 10] = new FeatureVertex {Position = position + new Vector3(size.x, -size.y, -size.z)};
+            list[offset + 11] = new FeatureVertex {Position = position + new Vector3(size.x, size.y, -size.z)};
+            list[offset + 12] = new FeatureVertex {Position = position + new Vector3(-size.x, -size.y, size.z)};
+            list[offset + 13] = new FeatureVertex {Position = position + new Vector3(-size.x, size.y, size.z)};
+            list[offset + 14] = new FeatureVertex {Position = position + new Vector3(size.x, -size.y, size.z)};
+            list[offset + 15] = new FeatureVertex {Position = position + new Vector3(size.x, size.y, size.z)};
+            list[offset + 16] = new FeatureVertex {Position = position + new Vector3(-size.x, -size.y, -size.z)};
+            list[offset + 17] = new FeatureVertex {Position = position + new Vector3(size.x, -size.y, -size.z)};
+            list[offset + 18] = new FeatureVertex {Position = position + new Vector3(size.x, -size.y, -size.z)};
+            list[offset + 19] = new FeatureVertex {Position = position + new Vector3(size.x, -size.y, size.z)};
+            list[offset + 20] = new FeatureVertex {Position = position + new Vector3(size.x, -size.y, size.z)};
+            list[offset + 21] = new FeatureVertex {Position = position + new Vector3(-size.x, -size.y, size.z)};
+            list[offset + 22] = new FeatureVertex {Position = position + new Vector3(-size.x, -size.y, size.z)};
+            list[offset + 23] = new FeatureVertex {Position = position + new Vector3(-size.x, -size.y, -size.z)};
+
+            for (var i = 0; i < VerticesPerFeature; i++)
+            {
+                list[offset + i].Color = color;
+                list[offset + i].Visibility = visibility;
+            }
+        }
     
         public void SaveAsVoTable(string filePath)
         {

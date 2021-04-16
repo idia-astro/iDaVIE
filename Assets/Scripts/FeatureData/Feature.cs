@@ -29,8 +29,6 @@ namespace DataFeatures
         {
             FeatureSetParent = parent;
             Index = index;
-            // _boundingBox = new VectorLine(name, new List<Vector3>(24), 1.0f) {drawTransform = parent.transform, color = cubeColor};
-            // _boundingBox.Draw3DAuto();
             _color = cubeColor;
             Name = name;
             SetBounds(cubeMin, cubeMax);
@@ -149,7 +147,6 @@ namespace DataFeatures
         {
             var boundingBoxSize = Size;
             var center = Center;
-            //_boundingBox?.MakeCube(center, boundingBoxSize.x, boundingBoxSize.y, boundingBoxSize.z);
             _unityBounds = new Bounds(center, boundingBoxSize);
             FeatureSetParent.IsDirty = true;
         }
