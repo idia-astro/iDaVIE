@@ -6,16 +6,8 @@ Shader "IDIA/BasicLine"
 
     SubShader
     {
-        Tags
-        {
-            "Queue" = "Transparent" "RenderType" = "Transparent" "IgnoreProjector" = "True"
-        }
         Pass
         {
-            // Basic additive blending
-            ZWrite Off
-            Blend One One
-
             CGPROGRAM
             #pragma target 5.0
 

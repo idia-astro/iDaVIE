@@ -111,11 +111,6 @@ namespace DataFeatures
                     FeatureSetParent.IsDirty = true;
                 }
                 _selected = value;
-                // TODO: 
-                // if (_boundingBox != null)
-                // {
-                //     _boundingBox.lineWidth = _selected ? 5.0f : 1.0f;
-                // }
             }
         }
 

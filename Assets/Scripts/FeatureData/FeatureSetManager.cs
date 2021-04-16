@@ -211,7 +211,6 @@ namespace DataFeatures
                 SelectedFeature.Selected = false;
                 if (SelectedFeature.Temporary)
                 {
-                    //SelectedFeature.Deactivate();
                     SelectedFeature.Visible = false;
                 }
             }

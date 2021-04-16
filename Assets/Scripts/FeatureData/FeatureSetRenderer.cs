@@ -1,23 +1,26 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using VolumeData;
 using VoTableReader;
 using UnityEngine;
 using System.Linq;
 using System.Globalization;
 using System.Text;
-using System.Runtime.InteropServices;
-using Vectrosity;
 
 namespace DataFeatures
 {
+    enum FeatureVisibility : int
+    {
+        Hidden = 0,
+        Visible = 1,
+        Selected = 2
+    }
+
     struct FeatureVertex
     {
         public Vector3 Position;
         public Vector4 Color;
-        public int Visibility;
+        public FeatureVisibility Visibility;
     }
     
     public class FeatureSetRenderer : MonoBehaviour
@@ -56,14 +59,12 @@ namespace DataFeatures
         private ComputeBuffer _computeBufferVertices;
         private FeatureVertex[] _vertices;
         private Material _materialInstance;
-        //private Renderer _renderer;
         private void Awake()
         {
             FeatureList = new List<Feature>();
             _computeBufferVertices = new ComputeBuffer(DefaultFeatureCapacity * VerticesPerFeature, BytesPerVertex, ComputeBufferType.Structured);
             _vertices = new FeatureVertex[DefaultFeatureCapacity * VerticesPerFeature];
             _materialInstance = Material.Instantiate(LineRenderingMaterial);
-            //_renderer = GetComponent<Renderer>();
         }
 
         public void Initialize(bool isImported)
@@ -89,7 +90,8 @@ namespace DataFeatures
                 for (var i = 0; i < requiredCapacity; i++)
                 {
                     var feature = FeatureList[i];
-                    MakeAxisAlignedCube(feature.Center, feature.Size, feature.CubeColor, feature.Visible ? 1 : 0, i * VerticesPerFeature, _vertices);
+                    FeatureVisibility visibility = feature.Visible ? (feature.Selected ? FeatureVisibility.Selected: FeatureVisibility.Visible) : FeatureVisibility.Hidden;
+                    MakeAxisAlignedCube(feature.Center, feature.Size, feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
                 }
                 _computeBufferVertices.SetData(_vertices);
                 IsDirty = false;
@@ -396,7 +398,7 @@ namespace DataFeatures
             _computeBufferVertices.Release();
         }
 
-        static void MakeAxisAlignedCube(Vector3 position, Vector3 size, Color color, int visibility, int offset, FeatureVertex[] list)
+        static void MakeAxisAlignedCube(Vector3 position, Vector3 size, Color color, FeatureVisibility visibility, int offset, FeatureVertex[] list)
         {
             if (offset + 24 > list.Length)
             {
