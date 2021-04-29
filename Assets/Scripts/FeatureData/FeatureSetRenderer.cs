@@ -49,7 +49,6 @@ namespace DataFeatures
 
         public bool featureSetVisible = false;
         public bool NeedToRespawnList = true;
-        public bool IsDirty = true;
         public Material LineRenderingMaterial;
 
         private static readonly int VerticesPerFeature = 24;
@@ -59,9 +58,13 @@ namespace DataFeatures
         private ComputeBuffer _computeBufferVertices;
         private FeatureVertex[] _vertices;
         private Material _materialInstance;
+        private List<int> _dirtyFeatures;
         private void Awake()
         {
             FeatureList = new List<Feature>();
+            _dirtyFeatures = new List<int>();
+            _dirtyFeatures.Capacity = DefaultFeatureCapacity;
+            
             _computeBufferVertices = new ComputeBuffer(DefaultFeatureCapacity * VerticesPerFeature, BytesPerVertex, ComputeBufferType.Structured);
             _vertices = new FeatureVertex[DefaultFeatureCapacity * VerticesPerFeature];
             _materialInstance = Material.Instantiate(LineRenderingMaterial);
@@ -76,8 +79,10 @@ namespace DataFeatures
 
         public void Update()
         {
-            if (IsDirty)
+            if (_dirtyFeatures.Count > 0)
             {
+                bool allDirty = _dirtyFeatures[0] == -1;
+                
                 int currentCapacity = _computeBufferVertices.count / VerticesPerFeature;
                 int requiredCapacity = FeatureList.Count;
                 if (requiredCapacity > currentCapacity)
@@ -87,14 +92,27 @@ namespace DataFeatures
                     _computeBufferVertices = new ComputeBuffer(requiredCapacity * VerticesPerFeature, BytesPerVertex, ComputeBufferType.Structured);
                 }
 
-                for (var i = 0; i < requiredCapacity; i++)
+                if (allDirty)
                 {
-                    var feature = FeatureList[i];
-                    FeatureVisibility visibility = feature.Visible ? (feature.Selected ? FeatureVisibility.Selected: FeatureVisibility.Visible) : FeatureVisibility.Hidden;
-                    MakeAxisAlignedCube(feature.Center, feature.Size, feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
+                    for (var i = 0; i < requiredCapacity; i++)
+                    {
+                        var feature = FeatureList[i];
+                        FeatureVisibility visibility = feature.Visible ? (feature.Selected ? FeatureVisibility.Selected: FeatureVisibility.Visible) : FeatureVisibility.Hidden;
+                        MakeAxisAlignedCube(feature.Center, feature.Size, feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
+                    }
                 }
+                else
+                {
+                    foreach (var i in _dirtyFeatures)
+                    {
+                        var feature = FeatureList[i];
+                        FeatureVisibility visibility = feature.Visible ? (feature.Selected ? FeatureVisibility.Selected: FeatureVisibility.Visible) : FeatureVisibility.Hidden;
+                        MakeAxisAlignedCube(feature.Center, feature.Size, feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
+                    }
+                }
+                
                 _computeBufferVertices.SetData(_vertices);
-                IsDirty = false;
+                _dirtyFeatures.Clear();
             }
         }
 
@@ -102,13 +120,13 @@ namespace DataFeatures
         public void AddFeature(Feature featureToAdd)
         {
             FeatureList.Add(featureToAdd);
-            IsDirty = true;
+            SetFeatureAsDirty(featureToAdd.Index);
         }
 
         public void ClearFeatures()
         {
             FeatureList.Clear();
-            IsDirty = true;
+            SetFeatureAsDirty();
         }
         public void ToggleVisibility()
         {
@@ -119,6 +137,26 @@ namespace DataFeatures
             }
         }
 
+        public void SetFeatureAsDirty(int index = -1)
+        {
+            // All Sources are dirty if the first element is -1
+            if (_dirtyFeatures.Count > 0 && _dirtyFeatures[0] == -1)
+            {
+                return;
+            }
+            if (index >= FeatureList.Count)
+            {
+                Debug.Log($"Feature index {index} out of bounds! Marking all features as dirty");
+                index = -1;
+            }
+            
+            if (index == -1)
+            {
+                _dirtyFeatures.Clear();
+            }
+            _dirtyFeatures.Add(index);
+        }
+
         public void SetVisibilityOn()
         {
             foreach (Transform child in MenuList.transform)
@@ -127,6 +165,7 @@ namespace DataFeatures
             }
 
             featureSetVisible = true;
+            SetFeatureAsDirty();
             foreach (var feature in FeatureList)
             {
                 feature.Visible = true;
@@ -141,6 +180,7 @@ namespace DataFeatures
             }
 
             featureSetVisible = false;
+            SetFeatureAsDirty();
             foreach (var feature in FeatureList)
             {
                 feature.Visible = false;
@@ -368,6 +408,9 @@ namespace DataFeatures
                     FeatureNames[row] = $"Source #{row + 1}";
                 }
             }
+            
+            SetFeatureAsDirty();
+            
             if (VolumeRenderer)
             {
                 Vector3 cubeMin, cubeMax;
@@ -378,8 +421,6 @@ namespace DataFeatures
                     FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, FeatureNames[i], i, featureRawData[i].ToArray(), this, false));
                 }
             }
-
-            IsDirty = true;
         }
         
         void OnRenderObject()

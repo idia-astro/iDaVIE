@@ -34,7 +34,7 @@ namespace DataFeatures
             SetBounds(cubeMin, cubeMax);
             RawData = rawData;
             Visible = startVisible;
-            parent.IsDirty = true;
+            FeatureSetParent.SetFeatureAsDirty(Index);
         }
 
         public void ShowAxes(bool show)
@@ -82,7 +82,7 @@ namespace DataFeatures
             {
                 if (_color != value)
                 {
-                    FeatureSetParent.IsDirty = true;
+                    FeatureSetParent.SetFeatureAsDirty(Index);
                 }
                 _color = value;
             }
@@ -95,7 +95,7 @@ namespace DataFeatures
             {
                 if (_active != value)
                 {
-                    FeatureSetParent.IsDirty = true;
+                    FeatureSetParent.SetFeatureAsDirty(Index);
                 }
                 _active = value;
             }
@@ -109,7 +109,7 @@ namespace DataFeatures
             {
                 if (_selected != value)
                 {
-                    FeatureSetParent.IsDirty = true;
+                    FeatureSetParent.SetFeatureAsDirty(Index);
                 }
                 _selected = value;
             }
@@ -144,7 +144,7 @@ namespace DataFeatures
             var boundingBoxSize = Size;
             var center = Center;
             _unityBounds = new Bounds(center, boundingBoxSize);
-            FeatureSetParent.IsDirty = true;
+            FeatureSetParent.SetFeatureAsDirty(Index);
         }
         
         public static void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes, int index = 0)
