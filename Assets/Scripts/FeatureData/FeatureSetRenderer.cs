@@ -1,17 +1,28 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using VolumeData;
 using VoTableReader;
 using UnityEngine;
 using System.Linq;
 using System.Globalization;
 using System.Text;
-using System.Runtime.InteropServices;
 
 namespace DataFeatures
 {
+    enum FeatureVisibility : int
+    {
+        Hidden = 0,
+        Visible = 1,
+        Selected = 2
+    }
+
+    struct FeatureVertex
+    {
+        public Vector3 Position;
+        public Vector4 Color;
+        public FeatureVisibility Visibility;
+    }
+    
     public class FeatureSetRenderer : MonoBehaviour
     {
         public enum CoordTypes {  cartesian,  freqz,  velz, redz   }
@@ -38,10 +49,25 @@ namespace DataFeatures
 
         public bool featureSetVisible = false;
         public bool NeedToRespawnList = true;
+        public Material LineRenderingMaterial;
 
+        private static readonly int VerticesPerFeature = 24;
+        // Vector3 for position, Vector4 for color, int for visibility info
+        private static readonly int BytesPerVertex = 32;
+        private static readonly int DefaultFeatureCapacity = 16384;
+        private ComputeBuffer _computeBufferVertices;
+        private FeatureVertex[] _vertices;
+        private Material _materialInstance;
+        private List<int> _dirtyFeatures;
         private void Awake()
         {
             FeatureList = new List<Feature>();
+            _dirtyFeatures = new List<int>();
+            _dirtyFeatures.Capacity = DefaultFeatureCapacity;
+            
+            _computeBufferVertices = new ComputeBuffer(DefaultFeatureCapacity * VerticesPerFeature, BytesPerVertex, ComputeBufferType.Structured);
+            _vertices = new FeatureVertex[DefaultFeatureCapacity * VerticesPerFeature];
+            _materialInstance = Material.Instantiate(LineRenderingMaterial);
         }
 
         public void Initialize(bool isImported)
@@ -51,15 +77,56 @@ namespace DataFeatures
             VolumeRenderer = FeatureManager.VolumeRenderer;
         }
 
+        public void Update()
+        {
+            if (_dirtyFeatures.Count > 0)
+            {
+                bool allDirty = _dirtyFeatures[0] == -1;
+                
+                int currentCapacity = _computeBufferVertices.count / VerticesPerFeature;
+                int requiredCapacity = FeatureList.Count;
+                if (requiredCapacity > currentCapacity)
+                {
+                    _vertices = new FeatureVertex[requiredCapacity * VerticesPerFeature];
+                    _computeBufferVertices.Release();
+                    _computeBufferVertices = new ComputeBuffer(requiredCapacity * VerticesPerFeature, BytesPerVertex, ComputeBufferType.Structured);
+                }
+
+                if (allDirty)
+                {
+                    for (var i = 0; i < requiredCapacity; i++)
+                    {
+                        var feature = FeatureList[i];
+                        FeatureVisibility visibility = feature.Visible ? (feature.Selected ? FeatureVisibility.Selected: FeatureVisibility.Visible) : FeatureVisibility.Hidden;
+                        MakeAxisAlignedCube(feature.Center, feature.Size, feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
+                    }
+                }
+                else
+                {
+                    foreach (var i in _dirtyFeatures)
+                    {
+                        var feature = FeatureList[i];
+                        FeatureVisibility visibility = feature.Visible ? (feature.Selected ? FeatureVisibility.Selected: FeatureVisibility.Visible) : FeatureVisibility.Hidden;
+                        MakeAxisAlignedCube(feature.Center, feature.Size, feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
+                    }
+                }
+                
+                _computeBufferVertices.SetData(_vertices);
+                _dirtyFeatures.Clear();
+            }
+        }
+
         // Add feature to Renderer as container
         public void AddFeature(Feature featureToAdd)
         {
             FeatureList.Add(featureToAdd);
+            SetFeatureAsDirty(featureToAdd.Index);
         }
 
         public void ClearFeatures()
         {
             FeatureList.Clear();
+            SetFeatureAsDirty();
         }
         public void ToggleVisibility()
         {
@@ -70,17 +137,39 @@ namespace DataFeatures
             }
         }
 
+        public void SetFeatureAsDirty(int index = -1)
+        {
+            // All Sources are dirty if the first element is -1
+            if (_dirtyFeatures.Count > 0 && _dirtyFeatures[0] == -1)
+            {
+                return;
+            }
+            if (index >= FeatureList.Count)
+            {
+                Debug.Log($"Feature index {index} out of bounds! Marking all features as dirty");
+                index = -1;
+            }
+            
+            if (index == -1)
+            {
+                _dirtyFeatures.Clear();
+            }
+            _dirtyFeatures.Add(index);
+        }
+
         public void SetVisibilityOn()
         {
-
             foreach (Transform child in MenuList.transform)
             {
                 child.GetComponent<SofiaListItem>().SetVisibilityIconsOn();
             }
 
             featureSetVisible = true;
+            SetFeatureAsDirty();
             foreach (var feature in FeatureList)
+            {
                 feature.Visible = true;
+            }
         }
 
         public void SetVisibilityOff()
@@ -91,8 +180,11 @@ namespace DataFeatures
             }
 
             featureSetVisible = false;
+            SetFeatureAsDirty();
             foreach (var feature in FeatureList)
+            {
                 feature.Visible = false;
+            }
         }
 
         public void SelectFeature(Feature feature)
@@ -107,7 +199,9 @@ namespace DataFeatures
         public void UpdateColor()
         {
             foreach (var feature in FeatureList)
-                feature.ChangeColor(FeatureColor);
+            {
+                feature.CubeColor = FeatureColor;
+            }
         }
 
         public void SpawnFeaturesFromSourceStats(Dictionary<short, DataAnalysis.SourceStats> sourceStatsDict)
@@ -314,6 +408,9 @@ namespace DataFeatures
                     FeatureNames[row] = $"Source #{row + 1}";
                 }
             }
+            
+            SetFeatureAsDirty();
+            
             if (VolumeRenderer)
             {
                 Vector3 cubeMin, cubeMax;
@@ -324,7 +421,64 @@ namespace DataFeatures
                     FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, FeatureNames[i], i, featureRawData[i].ToArray(), this, false));
                 }
             }
-        } 
+        }
+        
+        void OnRenderObject()
+        {
+            // TODO: how does this work with VR?
+            _materialInstance.SetMatrix("datasetMatrix", transform.localToWorldMatrix);
+            _materialInstance.SetBuffer("inputData", _computeBufferVertices);
+            
+            _materialInstance.SetPass(0);
+            // Render lines on the GPU using vertex pulling
+            Graphics.DrawProceduralNow(MeshTopology.Lines, FeatureList.Count * VerticesPerFeature);
+        }
+
+        void OnDestroy()
+        {
+            _computeBufferVertices.Release();
+        }
+
+        static void MakeAxisAlignedCube(Vector3 position, Vector3 size, Color color, FeatureVisibility visibility, int offset, FeatureVertex[] list)
+        {
+            if (offset + 24 > list.Length)
+            {
+                return;
+            }
+
+            size *= 0.5f;
+
+            list[offset + 0] = new FeatureVertex {Position = position + new Vector3(-size.x, size.y, -size.z)};
+            list[offset + 1] = new FeatureVertex {Position = position + new Vector3(size.x, size.y, -size.z)};
+            list[offset + 2] = new FeatureVertex {Position = position + new Vector3(size.x, size.y, -size.z)};
+            list[offset + 3] = new FeatureVertex {Position = position + new Vector3(size.x, size.y, size.z)};
+            list[offset + 4] = new FeatureVertex {Position = position + new Vector3(size.x, size.y, size.z)};
+            list[offset + 5] = new FeatureVertex {Position = position + new Vector3(-size.x, size.y, size.z)};
+            list[offset + 6] = new FeatureVertex {Position = position + new Vector3(-size.x, size.y, size.z)};
+            list[offset + 7] = new FeatureVertex {Position = position + new Vector3(-size.x, size.y, -size.z)};
+            list[offset + 8] = new FeatureVertex {Position = position + new Vector3(-size.x, -size.y, -size.z)};
+            list[offset + 9] = new FeatureVertex {Position = position + new Vector3(-size.x, size.y, -size.z)};
+            list[offset + 10] = new FeatureVertex {Position = position + new Vector3(size.x, -size.y, -size.z)};
+            list[offset + 11] = new FeatureVertex {Position = position + new Vector3(size.x, size.y, -size.z)};
+            list[offset + 12] = new FeatureVertex {Position = position + new Vector3(-size.x, -size.y, size.z)};
+            list[offset + 13] = new FeatureVertex {Position = position + new Vector3(-size.x, size.y, size.z)};
+            list[offset + 14] = new FeatureVertex {Position = position + new Vector3(size.x, -size.y, size.z)};
+            list[offset + 15] = new FeatureVertex {Position = position + new Vector3(size.x, size.y, size.z)};
+            list[offset + 16] = new FeatureVertex {Position = position + new Vector3(-size.x, -size.y, -size.z)};
+            list[offset + 17] = new FeatureVertex {Position = position + new Vector3(size.x, -size.y, -size.z)};
+            list[offset + 18] = new FeatureVertex {Position = position + new Vector3(size.x, -size.y, -size.z)};
+            list[offset + 19] = new FeatureVertex {Position = position + new Vector3(size.x, -size.y, size.z)};
+            list[offset + 20] = new FeatureVertex {Position = position + new Vector3(size.x, -size.y, size.z)};
+            list[offset + 21] = new FeatureVertex {Position = position + new Vector3(-size.x, -size.y, size.z)};
+            list[offset + 22] = new FeatureVertex {Position = position + new Vector3(-size.x, -size.y, size.z)};
+            list[offset + 23] = new FeatureVertex {Position = position + new Vector3(-size.x, -size.y, -size.z)};
+
+            for (var i = 0; i < VerticesPerFeature; i++)
+            {
+                list[offset + i].Color = color;
+                list[offset + i].Visibility = visibility;
+            }
+        }
     
         public void SaveAsVoTable(string filePath)
         {

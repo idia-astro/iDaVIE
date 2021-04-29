@@ -211,7 +211,7 @@ namespace DataFeatures
                 SelectedFeature.Selected = false;
                 if (SelectedFeature.Temporary)
                 {
-                    SelectedFeature.Deactivate();
+                    SelectedFeature.Visible = false;
                 }
             }
         }
@@ -228,6 +228,8 @@ namespace DataFeatures
                 {
                     SelectedFeature.ShowAxes(true);
                 }
+
+                ActiveFeatureSetRenderer.AddFeature(SelectedFeature);
                 return true;
             }
 

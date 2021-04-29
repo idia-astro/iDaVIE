@@ -43,8 +43,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 710479ab8a1c76641860da628d42b364, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  FileName: Data/Volumes/Vela/Vela_mosaic1_cat.ascii
-  MappingFileName: Data/DataFeatures/sofia_list.json
-  FeaturePrefab: {fileID: 529636877033039931, guid: 717968d89101e5c46bbfee084abc6b97,
-    type: 3}
-  _featureList: []
+  MenuList: {fileID: 0}
+  FeatureColor: {r: 0, g: 0, b: 0, a: 0}
+  featureSetVisible: 0
+  NeedToRespawnList: 1
+  IsDirty: 1
+  LineRenderingMaterial: {fileID: 2100000, guid: ec78e8fae675e384d8ad86f15b008f11,
+    type: 2}

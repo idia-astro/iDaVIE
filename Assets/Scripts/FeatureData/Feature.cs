@@ -10,12 +10,14 @@ namespace DataFeatures
         public bool Temporary;
         public string Comment;
         public float Metric;
-        public int Index {get; private set;}
+        public int Index {get;}
+        public string Name { get;}
         private bool _selected;
+        private Color _color;
+        private bool _active;
         private Bounds _unityBounds;
         private Vector3 _position;
         private Vector3[] _corners = new Vector3[2];
-        private VectorLine _boundingBox;
         public string[] RawData {get; set;}
         public FeatureSetRenderer FeatureSetParent {get; private set;}
 
@@ -25,38 +27,20 @@ namespace DataFeatures
 
         public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, string name, int index, string[] rawData, FeatureSetRenderer parent, bool startVisible)
         {
+            FeatureSetParent = parent;
             Index = index;
-            _boundingBox = new VectorLine(name, new List<Vector3>(24), 1.0f) {drawTransform = parent.transform, color = cubeColor};
-            _boundingBox.Draw3DAuto();
+            _color = cubeColor;
+            Name = name;
             SetBounds(cubeMin, cubeMax);
             RawData = rawData;
-            FeatureSetParent = parent;
-            _boundingBox.active = startVisible;
-        }
-
-        public void ChangeColor(Color color)
-        {
-            _boundingBox.color=color;
+            Visible = startVisible;
+            FeatureSetParent.SetFeatureAsDirty(Index);
         }
 
         public void ShowAxes(bool show)
         {
-            SetCubeColors(_boundingBox, _boundingBox.color, show);
-        }
-
-        public void Deactivate()
-        {
-            if (_boundingBox != null)
-            {
-                _boundingBox.StopDrawing3DAuto();
-                _boundingBox.active = false;
-                VectorLine.Destroy(ref _boundingBox);
-            }
-        }
-
-        ~Feature()
-        {
-            Deactivate();
+            // TODO: Handle this
+            // SetCubeColors(_boundingBox, _boundingBox.color, show);
         }
 
         public Bounds UnityBounds => _unityBounds;
@@ -93,31 +77,41 @@ namespace DataFeatures
 
         public Color CubeColor
         {
-            get => _boundingBox.color;
-            set => _boundingBox.color = value;
+            get => _color;
+            set
+            {
+                if (_color != value)
+                {
+                    FeatureSetParent.SetFeatureAsDirty(Index);
+                }
+                _color = value;
+            }
         }
 
         public bool Visible
         {
-            get => _boundingBox.active;
-            set => _boundingBox.active = value;
+            get => _active;
+            set
+            {
+                if (_active != value)
+                {
+                    FeatureSetParent.SetFeatureAsDirty(Index);
+                }
+                _active = value;
+            }
         }
 
-        public string Name
-        {
-            get => _boundingBox?.name;
-        }
 
         public bool Selected
         {
             get => _selected;
             set
             {
-                _selected = value;
-                if (_boundingBox != null)
+                if (_selected != value)
                 {
-                    _boundingBox.lineWidth = _selected ? 5.0f : 1.0f;
+                    FeatureSetParent.SetFeatureAsDirty(Index);
                 }
+                _selected = value;
             }
         }
 
@@ -149,11 +143,11 @@ namespace DataFeatures
         {
             var boundingBoxSize = Size;
             var center = Center;
-            _boundingBox?.MakeCube(center, boundingBoxSize.x, boundingBoxSize.y, boundingBoxSize.z);
             _unityBounds = new Bounds(center, boundingBoxSize);
+            FeatureSetParent.SetFeatureAsDirty(Index);
         }
         
-        public static void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes)
+        public static void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes, int index = 0)
         {
             cube.SetColor(baseColor);
 
@@ -162,9 +156,9 @@ namespace DataFeatures
                 var colorAxisX = new Color(1.0f, 0.3f, 0.3f);
                 var colorAxisY = new Color(0.3f, 1.0f, 0.3f);
                 var colorAxisZ = new Color(0.3f, 0.3f, 1.0f);
-                cube.SetColor(colorAxisX, 8);
-                cube.SetColor(colorAxisY, 4);
-                cube.SetColor(colorAxisZ, 11);
+                cube.SetColor(colorAxisX, 8 + index);
+                cube.SetColor(colorAxisY, 4 + index);
+                cube.SetColor(colorAxisZ, 11 + index);
             }
         }
     }
