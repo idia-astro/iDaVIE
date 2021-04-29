@@ -33,6 +33,7 @@ namespace DataFeatures
             Name = name;
             SetBounds(cubeMin, cubeMax);
             RawData = rawData;
+            Visible = startVisible;
             parent.IsDirty = true;
         }
 

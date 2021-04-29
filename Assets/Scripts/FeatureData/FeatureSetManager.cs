@@ -228,6 +228,8 @@ namespace DataFeatures
                 {
                     SelectedFeature.ShowAxes(true);
                 }
+
+                ActiveFeatureSetRenderer.AddFeature(SelectedFeature);
                 return true;
             }
 
