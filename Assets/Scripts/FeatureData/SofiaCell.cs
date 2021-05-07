@@ -1,32 +1,35 @@
-﻿using DataFeatures;
+﻿using UnityEngine;
+using UnityEngine.UI;
+using PolyAndCode.UI;
+using DataFeatures;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using UnityEngine;
-using UnityEngine.UI;
 using VolumeData;
 
-public class SofiaListItem : MonoBehaviour
+//Cell class for demo. A cell in Recyclable Scroll Rect must have a cell class inheriting from ICell.
+//The class is required to configure the cell(updating UI elements etc) according to the data during recycling of cells.
+//The configuration of a cell is done through the DataSource SetCellData method.
+//Check RecyclableScrollerDemo class
+public class SofiaCell : MonoBehaviour, ICell
 {
-
+    //UI
+    
     public Text idTextField = null;
     public Text sourceName = null;
     public GameObject checkboxImg = null;
-    public GameObject SofiaNewListPrefab = null;
-    public GameObject SofiaNewListController = null;
-    private bool isVisible = true;
+    //public GameObject SofiaNewListPrefab = null;
+    //public GameObject SofiaNewListController = null;
+    //private bool isVisible = true;
 
     public int ParentListIndex {get; set;}
 
     public Feature feature;
 
-
+    
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
-
-  
-
 
     public GameObject volumeDatasetRendererObj = null;
 
@@ -39,10 +42,34 @@ public class SofiaListItem : MonoBehaviour
 
     private int visibilityStatus=0;
 
-    public void SetVisible()
+
+    //Model
+    private SofiaListItemInfo _sofiaListItemInfo;
+    private int _cellIndex;
+
+
+    //This is called from the SetCell method in DataSource
+    public void ConfigureCell(SofiaListItemInfo sofiaListItemInfo ,int cellIndex)
     {
-        
-        if (!isVisible)
+        _cellIndex = cellIndex;
+        _sofiaListItemInfo = sofiaListItemInfo;
+
+        idTextField.text = sofiaListItemInfo.IdTextField;
+        sourceName.text = sofiaListItemInfo.SourceName;
+        //isVisible = sofiaListItemInfo.IsVisible;
+        feature = sofiaListItemInfo.Feature;
+        if (feature.Visible)
+            SetVisibilityIconsOn();
+        else
+            SetVisibilityIconsOff();
+        if (cellIndex%2!=0)
+            GetComponent<Image>().color = new Color(0.4039216f, 0.5333334f, 0.5882353f, 1f);
+
+    }
+
+public void SetVisible()
+    {
+        if (!feature.Visible)
         {
             checkboxImg.SetActive(true);
         }
@@ -50,14 +77,13 @@ public class SofiaListItem : MonoBehaviour
         {
             checkboxImg.SetActive(false);
         }
-        isVisible = !isVisible;
+        feature.Visible = !feature.Visible;
     }
-
-    public void AddToNewList()
+/*    public void AddToNewList()
     {
         SofiaNewListController.GetComponent<SofiaNewListController>().CreateAndAddNewElement();
     }
-
+*/
 
     public void SetVisibilityIconsOff()
     {
@@ -119,7 +145,7 @@ public class SofiaListItem : MonoBehaviour
         }
     }
 
-    public void GoTo()
+   public void GoTo()
     {
         Teleport(feature.CornerMin, feature.CornerMax);
     }
@@ -155,11 +181,13 @@ public class SofiaListItem : MonoBehaviour
     {
         featureSetManager.SelectedFeature = feature;
         var _sofiaList = GameObject.Find("RenderMenu");
+        /*
         if (_sofiaList != null)
         {
             int sourceIndex = featureSetManager.SelectedFeature.Index;
             var scrollView = _sofiaList.gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("Scroll View").gameObject;
-            int sourceListIndex = featureSetManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().ParentListIndex;
+            int sourceListIndex = featureSetManager.SelectedFeature.LinkedListItem.GetComponent<SofiaCell>().ParentListIndex;
+
             if (scrollView.GetComponent<SofiaListCreator>().CurrentFeatureSetIndex != sourceListIndex)
                 scrollView.GetComponent<SofiaListCreator>().DisplaySet(sourceListIndex);
             scrollView.GetComponent<CustomDragHandler>().FocusOnFeature(feature, false);
@@ -169,6 +197,7 @@ public class SofiaListItem : MonoBehaviour
                 ShowInfo();
 
         }
+        */
     }
     
     public void Teleport(Vector3 boundsMin, Vector3 boundsMax)
@@ -246,3 +275,4 @@ public class SofiaListItem : MonoBehaviour
     }
 
 }
+

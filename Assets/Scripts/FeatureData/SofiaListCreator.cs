@@ -220,9 +220,9 @@ public class SofiaListCreator : MonoBehaviour
             //setParent
             SpawnedItem.transform.SetParent(SourceListObject.transform, false);
             //get ItemDetails Component
-            SofiaListItem itemDetails = SpawnedItem.GetComponent<SofiaListItem>();
+            SofiaCell itemDetails = SpawnedItem.GetComponent<SofiaCell>();
 
-            itemDetails.SofiaNewListController = SofiaNewListController;
+            //itemDetails.SofiaNewListController = SofiaNewListController;
             //set name
             itemDetails.idTextField.text = (i+1).ToString();
 
@@ -291,7 +291,7 @@ public class SofiaListCreator : MonoBehaviour
         if (InfoWindow.activeSelf)
             InfoWindow.SetActive(false);
         else if (featureSetManager.SelectedFeature != null)
-            featureSetManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().ShowInfo();
+            featureSetManager.SelectedFeature.LinkedListItem.GetComponent<SofiaCell>().ShowInfo();
     }
 
     public void SaveListAsVoTable()

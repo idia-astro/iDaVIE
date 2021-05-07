@@ -545,11 +545,11 @@ namespace VolumeData
                     var scrollView = _sofiaList.gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("Scroll View").gameObject;
                     if (_featureManager.SelectedFeature.LinkedListItem != null)
                     {
-                        int sourceListIndex = _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().ParentListIndex;
+                        int sourceListIndex = _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaCell>().ParentListIndex;
                         if (scrollView.GetComponent<SofiaListCreator>().CurrentFeatureSetIndex != sourceListIndex)
                             scrollView.GetComponent<SofiaListCreator>().DisplaySet(sourceListIndex);
                         scrollView.GetComponent<CustomDragHandler>().FocusOnFeature(_featureManager.SelectedFeature, true);
-                        _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().UpdateInfo();
+                        _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaCell>().UpdateInfo();
                     }
                     else
                         Debug.Log("No menu list item for feature!");
@@ -571,11 +571,11 @@ namespace VolumeData
                     var scrollView = _sofiaList.gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("Scroll View").gameObject;
                     if (_featureManager.SelectedFeature.LinkedListItem != null)
                     {
-                        int sourceListIndex = _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().ParentListIndex;
+                        int sourceListIndex = _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaCell>().ParentListIndex;
                         if (scrollView.GetComponent<SofiaListCreator>().CurrentFeatureSetIndex != sourceListIndex)
                             scrollView.GetComponent<SofiaListCreator>().DisplaySet(sourceListIndex);
                         scrollView.GetComponent<CustomDragHandler>().FocusOnFeature(_featureManager.SelectedFeature, true);
-                        _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().UpdateInfo();
+                        _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaCell>().UpdateInfo();
                     }
                     else
                         Debug.Log("No menu list item for feature!");

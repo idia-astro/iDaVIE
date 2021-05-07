@@ -377,7 +377,7 @@ namespace VolumeData
                         feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
                         var listItem = feature.LinkedListItem;
                         if (listItem != null)
-                            listItem.GetComponent<SofiaListItem>().UpdateInfo();
+                            listItem.GetComponent<SofiaCell>().UpdateInfo();
                     }
                     else
                     {
@@ -416,6 +416,7 @@ namespace VolumeData
         {
             _maskFeatureSet = featureSet;
             _maskFeatureSet.SpawnFeaturesFromSourceStats(SourceStatsDict);
+            _maskFeatureSet.CreateMenuList();
         }
 
         public void RecreateFrameSet(double restFreq = 0)

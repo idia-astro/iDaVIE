@@ -48,21 +48,10 @@ public class CustomDragHandler : MonoBehaviour
     public void MoveUp()
     {
         spawnPointPosition.localPosition += Vector3.down * scrollSpeed;
-        if (spawnPointPosition.localPosition.y < Spawn_initial_y)
-        {
-            spawnPointPosition.localPosition = new Vector3 (1,Spawn_initial_y);
-        }
     }
 
     public void MoveDown()
     {
         spawnPointPosition.localPosition += Vector3.up * scrollSpeed;
-        /*
-        float yLimit = sofiaListCreator.NumberOfFeatures * 100f;
-        if (spawnPointPosition.localPosition.y > yLimit )
-        {
-            spawnPointPosition.localPosition = new Vector3(1, yLimit);
-        }
-        */
     }
 }
