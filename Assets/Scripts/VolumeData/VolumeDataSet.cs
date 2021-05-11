@@ -11,7 +11,6 @@ using Unity.Collections;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-
 namespace VolumeData
 {
     public struct VoxelEntry
@@ -96,7 +95,10 @@ namespace VolumeData
         private Texture2D _updateTexture;
         private byte[] _cachedBrush;
         private short[] _regionMaskVoxels;
-        private static int BrushStrokeLimit = 25000;
+        private int[] _regionAddedMaskEntriesLUT;
+        private int _lutMinIndex = -1;
+        private int _lutMaxIndex = -1;
+        private static int BrushStrokeLimit = 16777216;
 
         public IntPtr FitsData = IntPtr.Zero;
         public IntPtr FitsHeader = IntPtr.Zero;
@@ -620,6 +622,8 @@ namespace VolumeData
             {
                 var numVoxels = cubeSize.x * cubeSize.y * cubeSize.z;
                 _regionMaskVoxels = new short[numVoxels];
+                _regionAddedMaskEntriesLUT = new int[numVoxels];
+                Memset(_regionAddedMaskEntriesLUT, -1);
                 Marshal.Copy(regionData, _regionMaskVoxels, 0, numVoxels);
 
                 _existingRegionMaskEntries = new List<VoxelEntry>();
@@ -658,6 +662,7 @@ namespace VolumeData
                 }
 
                 _addedRegionMaskEntries.Clear();
+                Memset(_regionAddedMaskEntriesLUT, -1);
                 AddedMaskEntryCount = 0;
                 BrushStrokeHistory = new List<BrushStrokeTransaction>();
             }
@@ -952,6 +957,10 @@ namespace VolumeData
                 {
                     _addedRegionMaskEntries.Add(newEntry);
                     var lastIndex = _addedRegionMaskEntries.Count - 1;
+                    _regionAddedMaskEntriesLUT[newEntry.Index] = lastIndex;
+                    _lutMinIndex = _lutMinIndex >= 0 ? Math.Min(_lutMinIndex, newEntry.Index) : newEntry.Index;
+                    _lutMaxIndex = _lutMaxIndex >= 0 ? Math.Max(_lutMaxIndex, newEntry.Index) : newEntry.Index;
+                    
                     if (lastIndex <= AddedMaskBuffer.count)
                     {
                         AddedMaskBuffer.SetData(_addedRegionMaskEntries, lastIndex, lastIndex, 1);
@@ -999,7 +1008,7 @@ namespace VolumeData
                     }
                     else
                     {
-                        int addedNeighbourMaskEntryIndex = _addedRegionMaskEntries.FindIndex(entry => entry.Index == neighbourIndex);
+                        int addedNeighbourMaskEntryIndex = _regionAddedMaskEntriesLUT[neighbourIndex];
                         if (addedNeighbourMaskEntryIndex >= 0)
                         {
                             // Update entry in list
@@ -1068,6 +1077,9 @@ namespace VolumeData
             }
 
             _addedRegionMaskEntries = new List<VoxelEntry>();
+            Memset(_regionAddedMaskEntriesLUT, -1, _lutMinIndex, _lutMaxIndex - _lutMinIndex + 1);
+            _lutMinIndex = -1;
+            _lutMaxIndex = -1;
             AddedMaskEntryCount = 0;
         }
 
@@ -1420,6 +1432,32 @@ namespace VolumeData
             {
                 Debug.Log("Error normalizing physical coordinates!");
             }
+        }
+
+        public static void Memset<T>(T[] array, T elem, int offset = 0, int length = -1) 
+        {
+            if (offset < 0)
+            {
+                offset = 0;
+            }
+            
+            if (length < 0)
+            {
+                length = array.Length - offset;    
+            }
+
+            if (length <= 0)
+            {
+                return;
+            }
+            array[offset] = elem;
+            int count;
+            for (count = 1; count <= length / 2; count *= 2)
+            {
+                Array.Copy(array, offset, array, offset + count, count);
+            }
+
+            Array.Copy(array, offset, array, offset + count, length - count);
         }
 
         public void CleanUp(bool randomCube)
