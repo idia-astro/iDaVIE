@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -416,7 +416,6 @@ namespace VolumeData
         {
             _maskFeatureSet = featureSet;
             _maskFeatureSet.SpawnFeaturesFromSourceStats(SourceStatsDict);
-            _maskFeatureSet.CreateMenuList();
         }
 
         public void RecreateFrameSet(double restFreq = 0)

@@ -81,6 +81,9 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+  FeatureSetManager: {fileID: 0}
+  InfoWindow: {fileID: 0}
+  ListTitle: {fileID: 0}
   IsGrid: 0
   PrototypeCell: {fileID: 6689441930889237778, guid: 19a73c530f9c7ee43b9d4853f213af50,
     type: 3}
@@ -177,9 +180,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e429cb7f959c5f64cbd9df8587d97d5e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _recyclableScrollRect: {fileID: 6715031936858509590}
-  VolumeDataSetManager: {fileID: 0}
-  InfoWindow: {fileID: 0}
+  FeatureSetRenderer: {fileID: 0}
 --- !u!1 &6715031938145912114
 GameObject:
   m_ObjectHideFlags: 0

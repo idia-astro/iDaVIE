@@ -7,15 +7,13 @@ using TMPro;
 using VolumeData;
 using System.IO;
 using System;
+using PolyAndCode.UI;
 
 public class SofiaListCreator : MonoBehaviour
 {
     
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
-
-    [SerializeField]
-    private Transform SpawnPoint = null;
 
     [SerializeField]
     private GameObject item = null;
@@ -26,7 +24,7 @@ public class SofiaListCreator : MonoBehaviour
     public List<GameObject> SofiaObjectsList {get; private set;}
 
     public GameObject volumeDatasetRendererObj = null;
-    public GameObject SofiaNewListController = null;
+    public RecyclableScrollRect RecyclableScrollView;
     public GameObject InfoWindow = null;
 
     public TMP_Text ListTitle; 
@@ -64,26 +62,28 @@ public class SofiaListCreator : MonoBehaviour
             featureSetManager = _activeDataSet.GetComponentInChildren<FeatureSetManager>();
           //  featureSetManager.ImportFeatureSet();
         }
-        _featureSetRendererList = (ShowsImportedList ? featureSetManager.ImportedFeatureSetList: featureSetManager.GeneratedFeatureSetList);
+        //_featureSetRendererList = (ShowsImportedList ? featureSetManager.ImportedFeatureSetList: featureSetManager.GeneratedFeatureSetList);
         //var featureSetRendererList = featureSetManager.GetComponentsInChildren<FeatureSetRenderer>();
-        for (int i = 0; i < _featureSetRendererList.Count; i++)
-            SpawnList(i);
-        DisplaySet(0);
+        RecyclableScrollView.Initialize(featureSetManager.ImportedFeatureSetList[0].SofiaMenuDataSource);
+       
+
+        //DisplaySet(0);
         //transform.Find("ListName").gameObject.transform.Find("Text").GetComponent<TMP_Text>().text = _featureSetRendererList[0].name;
 
-        var selectedFeature = _activeDataSet.gameObject.GetComponentInChildren<VolumeDataSetRenderer>().FeatureSetManagerPrefab.SelectedFeature;
-        if (selectedFeature != null)
-            GetComponent<CustomDragHandler>().FocusOnFeature(selectedFeature, true);
-        _initialized = true;
+        //var selectedFeature = _activeDataSet.gameObject.GetComponentInChildren<VolumeDataSetRenderer>().FeatureSetManagerPrefab.SelectedFeature;
+        //if (selectedFeature != null)
+         //   GetComponent<CustomDragHandler>().FocusOnFeature(selectedFeature, true);
+        //_initialized = true;
     
     }
 
 
     // Update is called once per frame
-     void Update()
+    void Update()
     {
-        if (featureSetRenderer.NeedToRespawnList)
-            SpawnList(0);
+        if (featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].NeedToRespawnList)
+            RecyclableScrollView.ReloadData();
+            featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].NeedToRespawnList = false;
     }
 
     void OnEnable()
@@ -120,7 +120,7 @@ public class SofiaListCreator : MonoBehaviour
             if (CurrentFeatureSetIndex >= _featureSetRendererList.Count)
                 CurrentFeatureSetIndex = 0;
             if (_featureSetRendererList[CurrentFeatureSetIndex].MenuList == null)
-                SpawnList(CurrentFeatureSetIndex);
+                RecyclableScrollView.ReloadData(featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].SofiaMenuDataSource);
             else
             {
                 featureSetRenderer =  _featureSetRendererList[CurrentFeatureSetIndex];
@@ -141,7 +141,7 @@ public class SofiaListCreator : MonoBehaviour
             if (CurrentFeatureSetIndex < 0)
                 CurrentFeatureSetIndex = _featureSetRendererList.Count - 1;
             if (_featureSetRendererList[CurrentFeatureSetIndex].MenuList == null)
-                SpawnList(CurrentFeatureSetIndex);
+                RecyclableScrollView.ReloadData(featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].SofiaMenuDataSource);
             else
             {
                 featureSetRenderer =  _featureSetRendererList[CurrentFeatureSetIndex];
@@ -178,7 +178,7 @@ public class SofiaListCreator : MonoBehaviour
             featureSetRenderer.MenuList.SetActive(false);
             CurrentFeatureSetIndex = i;
             if (_featureSetRendererList[CurrentFeatureSetIndex].MenuList == null)
-                SpawnList(CurrentFeatureSetIndex);
+                RecyclableScrollView.ReloadData(featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].SofiaMenuDataSource);
             else
             {
                 featureSetRenderer =  _featureSetRendererList[CurrentFeatureSetIndex];
@@ -190,6 +190,7 @@ public class SofiaListCreator : MonoBehaviour
         }
     }
 
+/*
     private void SpawnList(int index)
     {
         featureSetRenderer = _featureSetRendererList[index];
@@ -250,6 +251,7 @@ public class SofiaListCreator : MonoBehaviour
         featureSetRenderer.MenuList = SourceListObject;
         featureSetRenderer.NeedToRespawnList = false;
     } 
+    */
 
     public void ToggleListVisibility()
     {
