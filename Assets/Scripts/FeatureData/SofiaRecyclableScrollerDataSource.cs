@@ -23,76 +23,22 @@ public struct SofiaListItemInfo
 
 public class SofiaRecyclableScrollerDataSource : MonoBehaviour, IRecyclableScrollRectDataSource
 {
-    /*
-    [SerializeField]
-    RecyclableScrollRect _recyclableScrollRect;
-*/
-     //private int _dataLength;
-
-    //private List<FeatureSetRenderer> _featureSetRendererList;
-
-    //public List<SofiaListItemInfo> SofiaList { get; private set; } = new List<SofiaListItemInfo>();
     private List<SofiaListItemInfo> _sofiaList;
-/*
-    [SerializeField]
-    private GameObject VolumeDataSetManager;
-*/
-    //private FeatureSetManager _featureSetManager;
-
-
-
-    //private List<FeatureSetRenderer> _featureSetRendererList;
-    //public int CurrentFeatureSetIndex {get; private set;} = -1;
-
-    //public TMP_Text ListTitle; 
 
     [SerializeField]
     private FeatureSetRenderer FeatureSetRenderer;
 
 
 
-
-    //Recyclable scroll rect's data source must be assigned in Awake.
-    private void Awake()
-    {
-        //_featureSetManager =  VolumeDataSetManager.gameObject.transform.Find("CubePrefab(Clone)").gameObject.transform.Find("FeatureSetManager").GetComponent<FeatureSetManager>();
-        //_featureSetRendererList = _featureSetManager.ImportedFeatureSetList;
-        //_recyclableScrollRect.DataSource = this;
-
-    }
-
-
-    private void OnEnable()         //onenable, disable other data list
-    {
-
-    }
-    
-
-    void Start()
-    {
-        //if (_sofiaList == null)
-        //{
-        //    InitData();
-        //}
-    }
-
-    //Initialising _contactList with dummy data 
     public void InitData()
     {
         _sofiaList = new List<SofiaListItemInfo>();
-        //if (SofiaList != null) SofiaList.Clear();
-        //SofiaMenuData
         for (int i = 0; i < FeatureSetRenderer.FeatureList.Count; i++)
         {
             SofiaListItemInfo obj = new SofiaListItemInfo();
             obj.IdTextField = (i+1).ToString();
             obj.SourceName = FeatureSetRenderer.FeatureList[i].Name;
             obj.Feature = FeatureSetRenderer.FeatureList[i];
-            //obj.IsVisible = FeatureList[i].Visible;
-            //obj.Name = i + "_Name";
-            //obj.Gender = genders[Random.Range(0, 2)];
-            //obj.id = "item : " + i;
-            //_contactList.Add(obj);
             _sofiaList.Add(obj);
         }
     }
@@ -116,7 +62,7 @@ public class SofiaRecyclableScrollerDataSource : MonoBehaviour, IRecyclableScrol
     {
         //Casting to the implemented Cell
         var item = cell as SofiaCell;
-        item.ConfigureCell(_sofiaList[index], index);        //need to set status of visibility on button here...
+        item.ConfigureCell(_sofiaList[index], index); 
     }
 
     #endregion

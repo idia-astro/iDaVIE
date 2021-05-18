@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿ using UnityEngine;
 using UnityEngine.UI;
 using PolyAndCode.UI;
 using DataFeatures;
@@ -27,6 +27,7 @@ public class SofiaCell : MonoBehaviour, ICell
 
     public Feature feature;
 
+    public bool IsSelected;
     
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
@@ -40,20 +41,24 @@ public class SofiaCell : MonoBehaviour, ICell
     public GameObject InfoWindow;
 
 
-    private int visibilityStatus=0;
+    //private int visibilityStatus=0;
 
 
     //Model
     private SofiaListItemInfo _sofiaListItemInfo;
-    private int _cellIndex;
+    //private int _cellIndex;
+    private bool _isSelected;
+
+    public int CellIndex {get; private set;} 
+
+    public float CellHeight {get; private set;}
 
 
     //This is called from the SetCell method in DataSource
     public void ConfigureCell(SofiaListItemInfo sofiaListItemInfo ,int cellIndex)
     {
-        _cellIndex = cellIndex;
+        CellIndex = cellIndex;
         _sofiaListItemInfo = sofiaListItemInfo;
-
         idTextField.text = sofiaListItemInfo.IdTextField;
         sourceName.text = sofiaListItemInfo.SourceName;
         //isVisible = sofiaListItemInfo.IsVisible;
@@ -62,8 +67,13 @@ public class SofiaCell : MonoBehaviour, ICell
             SetVisibilityIconsOn();
         else
             SetVisibilityIconsOff();
-        if (cellIndex%2!=0)
+        if (sofiaListItemInfo.Feature.Selected)
+            GetComponent<Image>().color = Color.red;
+        else if (cellIndex%2!=0)
             GetComponent<Image>().color = new Color(0.4039216f, 0.5333334f, 0.5882353f, 1f);
+        else if (cellIndex%2!=1)
+            GetComponent<Image>().color = new Color(0.2384301f, 0.3231786f, 0.3584906f, 1f);
+
 
     }
 
@@ -110,10 +120,6 @@ public void SetVisible()
     public void ToggleVisibilityIcon()
     {
 
-        if (visibilityStatus == 1)
-            visibilityStatus = -1;
-        visibilityStatus++;
-
         this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_VIS").gameObject.SetActive(false);
         this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_HIDE").gameObject.SetActive(false);
 
@@ -127,21 +133,17 @@ public void SetVisible()
 
     public void ToggleVisibility()
     {
-        if (visibilityStatus == 1)
-            visibilityStatus = -1;
-        visibilityStatus++;
         this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_VIS").gameObject.SetActive(false);
         this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_HIDE").gameObject.SetActive(false);
-        switch (visibilityStatus)
+        if (!feature.Visible)
         {
-            case 0:
                 this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_VIS").gameObject.SetActive(true);
                 feature.Visible = true;
-                break;
-            case 1:
+        }
+        else
+        {
                 this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_HIDE").gameObject.SetActive(true);
                 feature.Visible = false;
-                break;
         }
     }
 
@@ -150,37 +152,14 @@ public void SetVisible()
         Teleport(feature.CornerMin, feature.CornerMax);
     }
 
-    public void UpdateInfo()
-    {
-        var textObject = InfoWindow.transform.Find("PanelContents").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport")
-            .gameObject.transform.Find("Content").gameObject.transform.Find("SourceInfoText").gameObject;
-        textObject.GetComponent<TMP_Text>().text = "";
-        textObject.GetComponent<TMP_Text>().text += $"Source # : {feature.Index + 1}{Environment.NewLine}";  
-        if (_activeDataSet.HasWCS)
-        {
-            double ra, dec, physz, normR, normD, normZ;
-            AstTool.Transform3D(_activeDataSet.AstFrame, feature.Center.x, feature.Center.y, feature.Center.z, 1, out ra, out dec, out physz);
-            AstTool.Norm(_activeDataSet.AstFrame, ra, dec, physz, out normR, out normD, out normZ);
-            textObject.GetComponent<TMP_Text>().text += $"RA: {(180f * normR / Math.PI).ToString()}{Environment.NewLine}";
-            textObject.GetComponent<TMP_Text>().text += $"Dec: {(180f * normD / Math.PI).ToString()}{Environment.NewLine}";
-            textObject.GetComponent<TMP_Text>().text += $"{_activeDataSet.Data.GetAstAttribute("System(3)")}: {normZ.ToString()}{Environment.NewLine}";
-        }
-        for (int i = 0; i < feature.FeatureSetParent.RawDataKeys.Length; i++)
-        {
-            textObject.GetComponent<TMP_Text>().text += $"{feature.FeatureSetParent.RawDataKeys[i]} : {feature.RawData[i]}{Environment.NewLine}";
-        }
-    }
 
-    public void ShowInfo()
-    {
-        InfoWindow.SetActive(true);
-        UpdateInfo();
-    }
 
     public void Select()
     {
         featureSetManager.SelectedFeature = feature;
-        var _sofiaList = GameObject.Find("RenderMenu");
+        //var _sofiaList = GameObject.Find("RenderMenu");
+        //GetComponent<Image>().color = Color.red;
+        
         /*
         if (_sofiaList != null)
         {
@@ -247,6 +226,7 @@ public void SetVisible()
         {
             featureSetManager = _activeDataSet.GetComponentInChildren<FeatureSetManager>();
         }
+        CellHeight = GetComponent<RectTransform>().rect.height;
 
     }
 

@@ -43,13 +43,12 @@ namespace DataFeatures
 
         public bool IsImported {get; private set;}
 
-        public GameObject MenuList = null;
+        //public GameObject MenuList = null;
         //public List<SofiaListItemInfo> SofiaList;
 
         public Color FeatureColor;
 
         public bool featureSetVisible = false;
-        public bool NeedToRespawnList = true;
         public Material LineRenderingMaterial;
 
         private static readonly int VerticesPerFeature = 24;
@@ -121,7 +120,6 @@ namespace DataFeatures
                         MakeAxisAlignedCube(feature.Center, feature.Size, feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
                     }
                 }
-                
                 _computeBufferVertices.SetData(_vertices);
                 _dirtyFeatures.Clear();
             }
@@ -191,12 +189,7 @@ namespace DataFeatures
 
         public void SetVisibilityOff()
         {
-            /*
-            foreach (Transform child in MenuList.transform)
-            {
-                child.GetComponent<SofiaCell>().SetVisibilityIconsOff();
-            }
-*/
+
             featureSetVisible = false;
             SetFeatureAsDirty();
             foreach (var feature in FeatureList)
@@ -211,6 +204,7 @@ namespace DataFeatures
             {
                 FeatureManager.SelectedFeature = feature;
                 Debug.Log($"Selected feature '{feature.Name}'");
+                FeatureManager.NeedToRespawnMenuList = true;
             }
         }
 
@@ -440,7 +434,7 @@ namespace DataFeatures
                     FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, FeatureNames[i], i, featureRawData[i].ToArray(), this, false));
                 }
             }
-            //CreateMenuList();
+            SofiaMenuDataSource.InitData();
         }
         
         void OnRenderObject()

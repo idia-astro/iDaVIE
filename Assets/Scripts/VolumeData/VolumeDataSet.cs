@@ -375,9 +375,8 @@ namespace VolumeData
                         var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
                         feature.SetBounds(boxMin, boxMax);
                         feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
-                        var listItem = feature.LinkedListItem;
-                        if (listItem != null)
-                            listItem.GetComponent<SofiaCell>().UpdateInfo();
+                        _maskFeatureSet.FeatureManager.NeedToRespawnMenuList = true;
+                        
                     }
                     else
                     {
@@ -394,8 +393,6 @@ namespace VolumeData
                     var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
                     var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, maskVal - 1, rawStrings, _maskFeatureSet, _maskFeatureSet.FeatureList[0].Visible);
                     _maskFeatureSet.AddFeature(feature);
-                    _maskFeatureSet.NeedToRespawnList = true;
-                    //_featureSet.VolumeRenderer.SelectFeature(feature); //list now respawning in time to allow autoscroll... need to figure this out
                 }
             }
         }

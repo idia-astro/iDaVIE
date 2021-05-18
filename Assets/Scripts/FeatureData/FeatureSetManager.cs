@@ -18,6 +18,10 @@ namespace DataFeatures
         private string _timeStamp;
         private StreamWriter _streamWriter;
         private Feature _selectedFeature;
+
+        public bool NeedToRespawnMenuList = true;
+
+        public SourceListController SourceListController = null;
         private readonly GameObject[] _anchorColliders = new GameObject[8];
         public Feature SelectedFeature
         {
