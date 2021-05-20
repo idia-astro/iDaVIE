@@ -9,14 +9,11 @@ using System.IO;
 using System;
 using PolyAndCode.UI;
 
-public class SourceListController : MonoBehaviour
+public class FeatureMenuController : MonoBehaviour
 {
     
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
-
-    [SerializeField]
-    private GameObject item = null;
 
     [SerializeField]
     private RectTransform content = null;
@@ -33,13 +30,9 @@ public class SourceListController : MonoBehaviour
 
     private FeatureSetManager featureSetManager;
 
-    private bool _initialized = false;
-
     public int CurrentFeatureSetIndex {get; private set;}
 
-    // Start is called before the first frame update
-    void Start()
-    {
+    void OnEnable() {
         SofiaObjectsList = new List<GameObject>();
        
         if (volumeDatasetRendererObj != null)
@@ -53,28 +46,37 @@ public class SourceListController : MonoBehaviour
         if (_activeDataSet != null)
         {
             featureSetManager = _activeDataSet.GetComponentInChildren<FeatureSetManager>();
-            ListTitle.text = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].name;
         }
         if (featureSetManager.ImportedFeatureSetList.Count > 0)
         {
-            RecyclableScrollView.Initialize(featureSetManager.ImportedFeatureSetList[0].SofiaMenuDataSource);
-            
-        }
-        _initialized = true;
+            RecyclableScrollView.Initialize(featureSetManager.ImportedFeatureSetList[0].FeatureMenuScrollerDataSource);
+            ListTitle.text = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].name;
+        }   
+    }
 
-    
+    // Start is called before the first frame update
+    void Start()
+    {
+ 
     }
 
     void Update()
     {
         if (featureSetManager != null && featureSetManager.NeedToRespawnMenuList)
         {
-            Debug.Log("resetting data");
             RecyclableScrollView.ReloadData();
             if (featureSetManager.SelectedFeature != null)
+            {
                 UpdateInfo();
+                ScrollToCell(featureSetManager.SelectedFeature.Index);
+            }
             featureSetManager.NeedToRespawnMenuList = false;
         }
+    }
+
+    public void ScrollToCell(int index)
+    {
+        ;
     }
 
     public void SnapTo(RectTransform target)
@@ -144,7 +146,8 @@ public class SourceListController : MonoBehaviour
         {
             CurrentFeatureSetIndex = i;
             ListTitle.text = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].name;
-            RecyclableScrollView.ReloadData(featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].SofiaMenuDataSource);
+            RecyclableScrollView.DataSource = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].FeatureMenuScrollerDataSource;
+            RecyclableScrollView.ReloadData();
         }
     }
 

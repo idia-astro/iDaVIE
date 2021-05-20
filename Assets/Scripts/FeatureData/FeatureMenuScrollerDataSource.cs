@@ -12,7 +12,7 @@ using TMPro;
 /// </summary>
 
 //Dummy Data model for demostraion
-public struct SofiaListItemInfo
+public struct FeatureMenuListItemInfo
 {
     public string IdTextField;
     public string SourceName;
@@ -21,9 +21,9 @@ public struct SofiaListItemInfo
     public Feature Feature;
 }
 
-public class SofiaRecyclableScrollerDataSource : MonoBehaviour, IRecyclableScrollRectDataSource
+public class FeatureMenuScrollerDataSource : MonoBehaviour, IRecyclableScrollRectDataSource
 {
-    private List<SofiaListItemInfo> _sofiaList;
+    private List<FeatureMenuListItemInfo> _sofiaList;
 
     [SerializeField]
     private FeatureSetRenderer FeatureSetRenderer;
@@ -32,10 +32,10 @@ public class SofiaRecyclableScrollerDataSource : MonoBehaviour, IRecyclableScrol
 
     public void InitData()
     {
-        _sofiaList = new List<SofiaListItemInfo>();
+        _sofiaList = new List<FeatureMenuListItemInfo>();
         for (int i = 0; i < FeatureSetRenderer.FeatureList.Count; i++)
         {
-            SofiaListItemInfo obj = new SofiaListItemInfo();
+            FeatureMenuListItemInfo obj = new FeatureMenuListItemInfo();
             obj.IdTextField = (i+1).ToString();
             obj.SourceName = FeatureSetRenderer.FeatureList[i].Name;
             obj.Feature = FeatureSetRenderer.FeatureList[i];
@@ -61,7 +61,7 @@ public class SofiaRecyclableScrollerDataSource : MonoBehaviour, IRecyclableScrol
     public void SetCell(ICell cell, int index)
     {
         //Casting to the implemented Cell
-        var item = cell as SofiaCell;
+        var item = cell as FeatureMenuCell;
         item.ConfigureCell(_sofiaList[index], index); 
     }
 

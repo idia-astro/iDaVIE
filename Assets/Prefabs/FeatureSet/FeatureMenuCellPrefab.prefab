@@ -896,7 +896,7 @@ GameObject:
   - component: {fileID: 931393163589677726}
   - component: {fileID: 7380079166087174694}
   m_Layer: 5
-  m_Name: SofiaListCellPrefab
+  m_Name: FeatureMenuCellPrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

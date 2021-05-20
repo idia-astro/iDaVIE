@@ -12,16 +12,13 @@ using VolumeData;
 //The class is required to configure the cell(updating UI elements etc) according to the data during recycling of cells.
 //The configuration of a cell is done through the DataSource SetCellData method.
 //Check RecyclableScrollerDemo class
-public class SofiaCell : MonoBehaviour, ICell
+public class FeatureMenuCell : MonoBehaviour, ICell
 {
     //UI
     
     public Text idTextField = null;
     public Text sourceName = null;
     public GameObject checkboxImg = null;
-    //public GameObject SofiaNewListPrefab = null;
-    //public GameObject SofiaNewListController = null;
-    //private bool isVisible = true;
 
     public int ParentListIndex {get; set;}
 
@@ -41,11 +38,8 @@ public class SofiaCell : MonoBehaviour, ICell
     public GameObject InfoWindow;
 
 
-    //private int visibilityStatus=0;
-
-
     //Model
-    private SofiaListItemInfo _sofiaListItemInfo;
+    private FeatureMenuListItemInfo _sofiaListItemInfo;
     //private int _cellIndex;
     private bool _isSelected;
 
@@ -55,13 +49,12 @@ public class SofiaCell : MonoBehaviour, ICell
 
 
     //This is called from the SetCell method in DataSource
-    public void ConfigureCell(SofiaListItemInfo sofiaListItemInfo ,int cellIndex)
+    public void ConfigureCell(FeatureMenuListItemInfo sofiaListItemInfo ,int cellIndex)
     {
         CellIndex = cellIndex;
         _sofiaListItemInfo = sofiaListItemInfo;
         idTextField.text = sofiaListItemInfo.IdTextField;
         sourceName.text = sofiaListItemInfo.SourceName;
-        //isVisible = sofiaListItemInfo.IsVisible;
         feature = sofiaListItemInfo.Feature;
         if (feature.Visible)
             SetVisibilityIconsOn();
@@ -89,11 +82,6 @@ public void SetVisible()
         }
         feature.Visible = !feature.Visible;
     }
-/*    public void AddToNewList()
-    {
-        SofiaNewListController.GetComponent<SofiaNewListController>().CreateAndAddNewElement();
-    }
-*/
 
     public void SetVisibilityIconsOff()
     {

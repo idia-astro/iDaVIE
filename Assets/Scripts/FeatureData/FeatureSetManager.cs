@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using VolumeData;
@@ -21,7 +21,7 @@ namespace DataFeatures
 
         public bool NeedToRespawnMenuList = true;
 
-        public SourceListController SourceListController = null;
+        public FeatureMenuController SourceListController = null;
         private readonly GameObject[] _anchorColliders = new GameObject[8];
         public Feature SelectedFeature
         {
@@ -37,6 +37,7 @@ namespace DataFeatures
                     {
                         UpdateAnchors();
                     }
+                    NeedToRespawnMenuList = true;
                 }
             }
         }

@@ -43,9 +43,6 @@ namespace DataFeatures
 
         public bool IsImported {get; private set;}
 
-        //public GameObject MenuList = null;
-        //public List<SofiaListItemInfo> SofiaList;
-
         public Color FeatureColor;
 
         public bool featureSetVisible = false;
@@ -60,8 +57,7 @@ namespace DataFeatures
         private Material _materialInstance;
         private List<int> _dirtyFeatures;
 
-        //public List<SofiaListItemInfo> SofiaList {get; private set;} = new List<SofiaListItemInfo>(); //Try recycleable list instead public 
-        public SofiaRecyclableScrollerDataSource SofiaMenuDataSource;
+        public FeatureMenuScrollerDataSource FeatureMenuScrollerDataSource;
 
 
 
@@ -74,7 +70,6 @@ namespace DataFeatures
             _computeBufferVertices = new ComputeBuffer(DefaultFeatureCapacity * VerticesPerFeature, BytesPerVertex, ComputeBufferType.Structured);
             _vertices = new FeatureVertex[DefaultFeatureCapacity * VerticesPerFeature];
             _materialInstance = Material.Instantiate(LineRenderingMaterial);
-            //SofiaMenuData = GetComponent<SofiaRecyclableScrollerDataSource>();
         }
 
         public void Initialize(bool isImported)
@@ -129,11 +124,10 @@ namespace DataFeatures
         public void AddFeature(Feature featureToAdd)
         {
             FeatureList.Add(featureToAdd);
-            SofiaListItemInfo obj = new SofiaListItemInfo();
+            FeatureMenuListItemInfo obj = new FeatureMenuListItemInfo();
             obj.IdTextField = (FeatureList.Count).ToString();
             obj.SourceName = featureToAdd.Name;
             obj.Feature = featureToAdd;
-            //SofiaList.Add(obj);
             SetFeatureAsDirty(featureToAdd.Index);
         }
 
@@ -173,12 +167,6 @@ namespace DataFeatures
 
         public void SetVisibilityOn()
         {
-            /*
-            foreach (Transform child in MenuList.transform)
-            {
-                child.GetComponent<SofiaCell>().SetVisibilityIconsOn();
-            }
-*/
             featureSetVisible = true;
             SetFeatureAsDirty();
             foreach (var feature in FeatureList)
@@ -189,7 +177,6 @@ namespace DataFeatures
 
         public void SetVisibilityOff()
         {
-
             featureSetVisible = false;
             SetFeatureAsDirty();
             foreach (var feature in FeatureList)
@@ -204,7 +191,6 @@ namespace DataFeatures
             {
                 FeatureManager.SelectedFeature = feature;
                 Debug.Log($"Selected feature '{feature.Name}'");
-                FeatureManager.NeedToRespawnMenuList = true;
             }
         }
 
@@ -229,7 +215,7 @@ namespace DataFeatures
                 var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
                 AddFeature(new Feature(boxMin, boxMax, FeatureColor, featureName, item.Key - 1, rawStrings, this, false));
             }
-            SofiaMenuDataSource.InitData();
+            FeatureMenuScrollerDataSource.InitData();
         }
 
         // Spawn Feature objects intro world from FileName
@@ -434,7 +420,7 @@ namespace DataFeatures
                     FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, FeatureNames[i], i, featureRawData[i].ToArray(), this, false));
                 }
             }
-            SofiaMenuDataSource.InitData();
+            FeatureMenuScrollerDataSource.InitData();
         }
         
         void OnRenderObject()
