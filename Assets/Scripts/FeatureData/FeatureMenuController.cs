@@ -30,7 +30,10 @@ public class FeatureMenuController : MonoBehaviour
 
     private FeatureSetManager featureSetManager;
 
+    float _cellHeight = float.NaN;
     public int CurrentFeatureSetIndex {get; private set;}
+    private int _scrollCellPosition;
+    private int _scrollCellTarget;
 
     void OnEnable() {
         SofiaObjectsList = new List<GameObject>();
@@ -54,38 +57,33 @@ public class FeatureMenuController : MonoBehaviour
         }   
     }
 
-    // Start is called before the first frame update
-    void Start()
-    {
- 
-    }
-
     void Update()
     {
         if (featureSetManager != null && featureSetManager.NeedToRespawnMenuList)
         {
             RecyclableScrollView.ReloadData();
+
             if (featureSetManager.SelectedFeature != null)
             {
+                _scrollCellPosition = 0;
+                _scrollCellTarget = featureSetManager.SelectedFeature.Index;
                 UpdateInfo();
-                ScrollToCell(featureSetManager.SelectedFeature.Index);
             }
             featureSetManager.NeedToRespawnMenuList = false;
         }
+        if (_scrollCellPosition < _scrollCellTarget)        //maybe hide the list during this update...
+        {
+            int cellsToIncrement = Math.Min(_scrollCellTarget - _scrollCellPosition, 2);
+            ScrollTowardsCell(cellsToIncrement);
+            _scrollCellPosition += cellsToIncrement;
+        }
     }
 
-    public void ScrollToCell(int index)
+    public void ScrollTowardsCell(int cellsToSkip)
     {
-        ;
-    }
-
-    public void SnapTo(RectTransform target)
-    {
-        Canvas.ForceUpdateCanvases();
-
-        content.anchoredPosition =
-            (Vector2)RecyclableScrollView.transform.InverseTransformPoint(content.position)
-            - (Vector2)RecyclableScrollView.transform.InverseTransformPoint(target.position);
+        if (float.IsNaN(_cellHeight))
+            _cellHeight = gameObject.transform.Find("Viewport").transform.Find("Content").transform.Find("Cell").gameObject.GetComponent<RectTransform>().rect.height;
+        content.anchoredPosition += new Vector2(0, cellsToSkip * _cellHeight);
     }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
