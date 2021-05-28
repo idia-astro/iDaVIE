@@ -437,7 +437,8 @@ Assets/SteamVR_Input
 unityProject.vrmanifest
 Assets/TextMesh\ Pro
 Assets/Vectrosity
-Assets/Recyclable\ Scroll\ Rect
+Assets/Recyclable\ Scroll\ Rect/*
+!Assets/Recyclable\ Scroll\ Rect/Main/
 Data/Volumes
 Data/DataTables
 Assets/Plugins/Fits/

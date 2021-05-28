@@ -54,6 +54,7 @@ public class FeatureMenuController : MonoBehaviour
         {
             RecyclableScrollView.Initialize(featureSetManager.ImportedFeatureSetList[0].FeatureMenuScrollerDataSource);
             ListTitle.text = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].name;
+            featureSetManager.NeedToRespawnMenuList = true;
         }   
     }
 
@@ -61,29 +62,15 @@ public class FeatureMenuController : MonoBehaviour
     {
         if (featureSetManager != null && featureSetManager.NeedToRespawnMenuList)
         {
-            RecyclableScrollView.ReloadData();
-
             if (featureSetManager.SelectedFeature != null)
             {
-                _scrollCellPosition = 0;
-                _scrollCellTarget = featureSetManager.SelectedFeature.Index;
                 UpdateInfo();
+                RecyclableScrollView.JumpToCell(featureSetManager.SelectedFeature.Index);
             }
+            else
+                RecyclableScrollView.ReloadData();
             featureSetManager.NeedToRespawnMenuList = false;
         }
-        if (_scrollCellPosition < _scrollCellTarget)        //maybe hide the list during this update...
-        {
-            int cellsToIncrement = Math.Min(_scrollCellTarget - _scrollCellPosition, 2);
-            ScrollTowardsCell(cellsToIncrement);
-            _scrollCellPosition += cellsToIncrement;
-        }
-    }
-
-    public void ScrollTowardsCell(int cellsToSkip)
-    {
-        if (float.IsNaN(_cellHeight))
-            _cellHeight = gameObject.transform.Find("Viewport").transform.Find("Content").transform.Find("Cell").gameObject.GetComponent<RectTransform>().rect.height;
-        content.anchoredPosition += new Vector2(0, cellsToSkip * _cellHeight);
     }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()

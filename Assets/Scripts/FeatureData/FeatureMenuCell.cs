@@ -33,14 +33,11 @@ public class FeatureMenuCell : MonoBehaviour, ICell
 
 
     private FeatureSetManager featureSetManager;
-    private FeatureSetRenderer featureSetRenderer;
-
-    public GameObject InfoWindow;
 
 
     //Model
     private FeatureMenuListItemInfo _sofiaListItemInfo;
-    //private int _cellIndex;
+
     private bool _isSelected;
 
     public int CellIndex {get; private set;} 
@@ -145,26 +142,6 @@ public void SetVisible()
     public void Select()
     {
         featureSetManager.SelectedFeature = feature;
-        //var _sofiaList = GameObject.Find("RenderMenu");
-        //GetComponent<Image>().color = Color.red;
-        
-        /*
-        if (_sofiaList != null)
-        {
-            int sourceIndex = featureSetManager.SelectedFeature.Index;
-            var scrollView = _sofiaList.gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("Scroll View").gameObject;
-            int sourceListIndex = featureSetManager.SelectedFeature.LinkedListItem.GetComponent<SofiaCell>().ParentListIndex;
-
-            if (scrollView.GetComponent<SofiaListCreator>().CurrentFeatureSetIndex != sourceListIndex)
-                scrollView.GetComponent<SofiaListCreator>().DisplaySet(sourceListIndex);
-            scrollView.GetComponent<CustomDragHandler>().FocusOnFeature(feature, false);
-            var infoWindow = transform.root.Find("SourceInfoWindow").gameObject;
-            _activeDataSet.SetRegionBounds(Vector3Int.FloorToInt(featureSetManager.SelectedFeature.GetMinBounds()), Vector3Int.FloorToInt(featureSetManager.SelectedFeature.GetMaxBounds()), false);
-            if(infoWindow.activeSelf)
-                ShowInfo();
-
-        }
-        */
     }
     
     public void Teleport(Vector3 boundsMin, Vector3 boundsMax)
