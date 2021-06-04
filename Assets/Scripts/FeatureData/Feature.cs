@@ -21,8 +21,6 @@ namespace DataFeatures
         public string[] RawData {get; set;}
         public FeatureSetRenderer FeatureSetParent {get; private set;}
 
-        public GameObject LinkedListItem {get; set;}
-
         public bool StatusChanged;
 
         public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, string name, int index, string[] rawData, FeatureSetRenderer parent, bool startVisible)

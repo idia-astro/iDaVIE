@@ -41,6 +41,8 @@ namespace DataFeatures
         public string[] RawDataTypes { get; set; }
         public string FileName { get; private set; }
 
+        public int Index;
+
         public bool IsImported {get; private set;}
 
         public Color FeatureColor;

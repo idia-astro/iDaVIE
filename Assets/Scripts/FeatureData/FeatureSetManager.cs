@@ -157,6 +157,7 @@ namespace DataFeatures
             // Shift by half a voxel (because voxel center has integer coordinates, not corner)
             featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
             featureSetRenderer.FeatureColor = FeatureColors[ImportedFeatureSetList.Count];
+            featureSetRenderer.Index = ImportedFeatureSetList.Count;
             ImportedFeatureSetList.Add(featureSetRenderer); //TODO: change to GeneratedFeatureSetList later
             return featureSetRenderer;
         }
@@ -177,6 +178,7 @@ namespace DataFeatures
             featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
             featureSetRenderer.FeatureColor = FeatureColors[ImportedFeatureSetList.Count];
             featureSetRenderer.SpawnFeaturesFromVOTable(mapping, voTable, columnsMask);
+            featureSetRenderer.Index = ImportedFeatureSetList.Count;
             ImportedFeatureSetList.Add(featureSetRenderer);
             return featureSetRenderer;
         }

@@ -89,7 +89,7 @@ namespace PolyAndCode.UI
             _recyclableViewBounds.max = new Vector3(_corners[2].x + threshHold, _corners[2].y);
         }
 
-        public override void JumpToCell(int index)
+        public override void RecycleToCell(int index)
         {
             throw new NotImplementedException();
         }

@@ -26,7 +26,7 @@ namespace PolyAndCode.UI
 
         public abstract Vector2 OnValueChangedListener(Vector2 direction);
 
-        public abstract void JumpToCell(int index);
+        public abstract void RecycleToCell(int index);
     
 
     }

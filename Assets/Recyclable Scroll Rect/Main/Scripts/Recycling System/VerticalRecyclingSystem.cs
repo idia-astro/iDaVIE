@@ -90,27 +90,6 @@ namespace PolyAndCode.UI
             _recyclableViewBounds.max = new Vector3(_corners[2].x, _corners[2].y + threshHold);
         }
 
-        public override void JumpToCell(int index)
-        {
-            if (_cachedCells == null)
-                return;
-            int currentCellIndex = topMostCellIndex;
-            _recycling = true;
-            Content.anchoredPosition = zeroVector;
-            int scrollIndex = Math.Min(index, DataSource.GetItemCount() - _cellPool.Count);
-            for (int i = 0; i < _cachedCells.Count; i++)
-            {
-                DataSource.SetCell(_cachedCells[currentCellIndex], scrollIndex + i);
-                if (currentCellIndex == _cachedCells.Count - 1)
-                    currentCellIndex = 0;
-                else
-                    currentCellIndex++;
-            }
-            currentItemCount = scrollIndex + _cellPool.Count;
-            if (index != scrollIndex)
-                Content.anchoredPosition =  (index - scrollIndex) * Vector2.up * _cellPool[0].sizeDelta.y;
-            _recycling = false;
-        }
 
         /// <summary>
         /// Creates cell Pool for recycling, Caches ICells
@@ -231,6 +210,31 @@ namespace PolyAndCode.UI
             }
 
             return zeroVector;
+        }
+
+        /// <summary>
+        /// Recycles all cells so they start at index
+        /// </summary>
+        public override void RecycleToCell(int index)
+        {
+            if (_cachedCells == null)
+                return;
+            int currentCellIndex = topMostCellIndex;
+            _recycling = true;
+            Content.anchoredPosition = zeroVector;
+            int scrollIndex = Math.Min(index, DataSource.GetItemCount() - _cellPool.Count);
+            for (int i = 0; i < _cachedCells.Count; i++)
+            {
+                DataSource.SetCell(_cachedCells[currentCellIndex], scrollIndex + i);
+                if (currentCellIndex == _cachedCells.Count - 1)
+                    currentCellIndex = 0;
+                else
+                    currentCellIndex++;
+            }
+            currentItemCount = scrollIndex + _cellPool.Count;
+            if (index != scrollIndex)
+                Content.anchoredPosition =  (index - scrollIndex) * Vector2.up * _cellPool[0].sizeDelta.y;
+            _recycling = false;
         }
 
         /// <summary>

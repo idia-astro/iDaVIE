@@ -63,7 +63,7 @@ namespace PolyAndCode.UI
 
         public void JumpToCell(int index)
         {
-            _recyclingSystem.JumpToCell(index);
+            _recyclingSystem.RecycleToCell(index);
         }
 
         /// <summary>
