@@ -30,6 +30,8 @@ namespace PolyAndCode.UI
         private readonly Vector3[] _corners = new Vector3[4];
         private bool _recycling;
 
+        private bool _initializing;
+
         //Trackers
         private int currentItemCount; //item count corresponding to the datasource.
         private int topMostCellIndex, bottomMostCellIndex; //Topmost and bottommost cell in the heirarchy
@@ -58,6 +60,7 @@ namespace PolyAndCode.UI
         /// <returns></returns>>
         public override IEnumerator InitCoroutine(System.Action onInitialized)
         {
+            _initializing = true;
             SetTopAnchor(Content);
             Content.anchoredPosition = Vector3.zero;
             yield return null;
@@ -76,6 +79,7 @@ namespace PolyAndCode.UI
             SetTopAnchor(Content);
 
             if (onInitialized != null) onInitialized();
+            _initializing = false;
 
         }
 
@@ -215,10 +219,10 @@ namespace PolyAndCode.UI
         /// <summary>
         /// Recycles all cells so they start at index
         /// </summary>
-        public override void RecycleToCell(int index)
+        public override IEnumerator RecycleToCell(int index)
         {
-            if (_cachedCells == null)
-                return;
+            while (_initializing)
+                yield return null;
             int currentCellIndex = topMostCellIndex;
             _recycling = true;
             Content.anchoredPosition = zeroVector;

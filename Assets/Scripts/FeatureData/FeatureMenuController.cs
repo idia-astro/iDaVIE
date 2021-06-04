@@ -30,10 +30,8 @@ public class FeatureMenuController : MonoBehaviour
 
     private FeatureSetManager featureSetManager;
 
-    float _cellHeight = float.NaN;
     public int CurrentFeatureSetIndex {get; private set;}
-    private int _scrollCellPosition;
-    private int _scrollCellTarget;
+
 
     void OnEnable() {
         SofiaObjectsList = new List<GameObject>();

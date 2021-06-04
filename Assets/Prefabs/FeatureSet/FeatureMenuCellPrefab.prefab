@@ -1002,7 +1002,6 @@ MonoBehaviour:
   checkboxImg: {fileID: 0}
   IsSelected: 0
   volumeDatasetRendererObj: {fileID: 0}
-  InfoWindow: {fileID: 0}
 --- !u!1 &7572334705102038633
 GameObject:
   m_ObjectHideFlags: 0
