@@ -63,8 +63,7 @@ public class FeatureMenuController : MonoBehaviour
             if (featureSetManager.SelectedFeature != null)
             {
                 UpdateInfo();
-                if (CurrentFeatureSetIndex != featureSetManager.ActiveFeatureSetRenderer.Index)
-                    DisplaySet(featureSetManager.ActiveFeatureSetRenderer.Index);
+                DisplaySet(featureSetManager.SelectedFeature.FeatureSetParent.Index);
                 RecyclableScrollView.JumpToCell(featureSetManager.SelectedFeature.Index);
             }
             else
@@ -131,8 +130,7 @@ public class FeatureMenuController : MonoBehaviour
         {
             CurrentFeatureSetIndex = i;
             ListTitle.text = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].name;
-            featureSetManager.ActiveFeatureSetRenderer = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex];
-            RecyclableScrollView.DataSource = featureSetManager.ActiveFeatureSetRenderer.FeatureMenuScrollerDataSource;
+            RecyclableScrollView.DataSource = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].FeatureMenuScrollerDataSource;
             RecyclableScrollView.ReloadData();
         }
     }

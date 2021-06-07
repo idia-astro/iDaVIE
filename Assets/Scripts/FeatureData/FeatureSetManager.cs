@@ -37,9 +37,6 @@ namespace DataFeatures
                     {
                         UpdateAnchors();
                     }
-                    else
-                        ActiveFeatureSetRenderer = value.FeatureSetParent;
-
                     NeedToRespawnMenuList = true;
                 }
             }
