@@ -11,7 +11,6 @@ using Unity.Collections;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-
 namespace VolumeData
 {
     public struct VoxelEntry
@@ -96,7 +95,8 @@ namespace VolumeData
         private Texture2D _updateTexture;
         private byte[] _cachedBrush;
         private short[] _regionMaskVoxels;
-        private static int BrushStrokeLimit = 25000;
+        private readonly Dictionary<int, int> _addedMaskEntriesDict = new Dictionary<int, int>();
+        private static int BrushStrokeLimit = 16777216;
 
         public IntPtr FitsData = IntPtr.Zero;
         public IntPtr FitsHeader = IntPtr.Zero;
@@ -654,8 +654,9 @@ namespace VolumeData
                     _addedRegionMaskEntries = new List<VoxelEntry>();
                 }
 
-                _addedRegionMaskEntries.Clear();
                 AddedMaskEntryCount = 0;
+                _addedMaskEntriesDict.Clear();
+
                 BrushStrokeHistory = new List<BrushStrokeTransaction>();
             }
 
@@ -949,6 +950,8 @@ namespace VolumeData
                 {
                     _addedRegionMaskEntries.Add(newEntry);
                     var lastIndex = _addedRegionMaskEntries.Count - 1;
+                    _addedMaskEntriesDict[newEntry.Index] = lastIndex;
+                    
                     if (lastIndex <= AddedMaskBuffer.count)
                     {
                         AddedMaskBuffer.SetData(_addedRegionMaskEntries, lastIndex, lastIndex, 1);
@@ -996,8 +999,7 @@ namespace VolumeData
                     }
                     else
                     {
-                        int addedNeighbourMaskEntryIndex = _addedRegionMaskEntries.FindIndex(entry => entry.Index == neighbourIndex);
-                        if (addedNeighbourMaskEntryIndex >= 0)
+                        if (_addedMaskEntriesDict.TryGetValue(neighbourIndex, out int addedNeighbourMaskEntryIndex) && addedNeighbourMaskEntryIndex >= 0)
                         {
                             // Update entry in list
                             _addedRegionMaskEntries[addedNeighbourMaskEntryIndex] = neighbourEntry;
@@ -1065,6 +1067,7 @@ namespace VolumeData
             }
 
             _addedRegionMaskEntries = new List<VoxelEntry>();
+            _addedMaskEntriesDict.Clear();
             AddedMaskEntryCount = 0;
         }
 
@@ -1418,7 +1421,7 @@ namespace VolumeData
                 Debug.Log("Error normalizing physical coordinates!");
             }
         }
-
+        
         public void CleanUp(bool randomCube)
         {
             int status;
