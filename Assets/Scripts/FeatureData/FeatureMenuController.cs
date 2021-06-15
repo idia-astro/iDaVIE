@@ -74,20 +74,17 @@ public class FeatureMenuController : MonoBehaviour
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
-
         foreach (var dataSet in _dataSets)
         {
-
             if (dataSet.isActiveAndEnabled)
             {
                 return dataSet;
             }
         }
         return null;
-
     }
 
- public void DisplayNextSet()
+    public void DisplayNextSet()
     {
         if ( featureSetManager.ImportedFeatureSetList.Count > 1)
         {
@@ -109,17 +106,7 @@ public class FeatureMenuController : MonoBehaviour
         }
     }
 
-        public void ChangeColor()
-        {
-            int nextIndex = System.Array.IndexOf(FeatureSetManager.FeatureColors, featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].FeatureColor) + 1;
-            if (nextIndex >= FeatureSetManager.FeatureColors.Length)
-                nextIndex = 0;
-            featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].FeatureColor = FeatureSetManager.FeatureColors[nextIndex];
-            featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].UpdateColor();
-            ListColorDisplay.color = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].FeatureColor;
-        }
-
- public void DisplaySet(int i)
+    public void DisplaySet(int i)
     {
         if (i > featureSetManager.ImportedFeatureSetList.Count - 1 || i < 0)
         {
@@ -135,29 +122,31 @@ public class FeatureMenuController : MonoBehaviour
         }
     }
 
+    public void ChangeColor()
+        {
+            int nextIndex = System.Array.IndexOf(FeatureSetManager.FeatureColors, featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].FeatureColor) + 1;
+            if (nextIndex >= FeatureSetManager.FeatureColors.Length)
+                nextIndex = 0;
+            featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].FeatureColor = FeatureSetManager.FeatureColors[nextIndex];
+            featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].UpdateColor();
+            ListColorDisplay.color = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].FeatureColor;
+        }
+
 
     public void ToggleListVisibility()
     {
         if (!featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].featureSetVisible)
         {
             MakeListVisible();
-            
-            GameObject.Find("RenderMenu").gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("ListButtons").gameObject.transform.Find("ListVisibilityButton").gameObject.transform.Find("VisibleImage").gameObject.SetActive(false);
-            GameObject.Find("RenderMenu").gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("ListButtons").gameObject.transform.Find("ListVisibilityButton").gameObject.transform.Find("InvisibleImage").gameObject.SetActive(true);
-
-            
-            
+            GameObject.Find("RenderMenu")?.gameObject.transform.Find("PanelContents")?.gameObject.transform.Find("SofiaListPanel")?.gameObject.transform.Find("ListButtons")?.gameObject.transform.Find("ListVisibilityButton")?.gameObject.transform.Find("VisibleImage")?.gameObject.SetActive(false);
+            GameObject.Find("RenderMenu")?.gameObject.transform.Find("PanelContents")?.gameObject.transform.Find("SofiaListPanel")?.gameObject.transform.Find("ListButtons")?.gameObject.transform.Find("ListVisibilityButton")?.gameObject.transform.Find("InvisibleImage")?.gameObject.SetActive(true);
         }
         else
         {
             MakeListInvisible();
-
-            GameObject.Find("RenderMenu").gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("ListButtons").gameObject.transform.Find("ListVisibilityButton").gameObject.transform.Find("VisibleImage").gameObject.SetActive(true);
-            GameObject.Find("RenderMenu").gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("ListButtons").gameObject.transform.Find("ListVisibilityButton").gameObject.transform.Find("InvisibleImage").gameObject.SetActive(false);
-            
+            GameObject.Find("RenderMenu")?.gameObject.transform.Find("PanelContents")?.gameObject.transform.Find("SofiaListPanel")?.gameObject.transform.Find("ListButtons")?.gameObject.transform.Find("ListVisibilityButton")?.gameObject.transform.Find("VisibleImage")?.gameObject.SetActive(true);
+            GameObject.Find("RenderMenu")?.gameObject.transform.Find("PanelContents")?.gameObject.transform.Find("SofiaListPanel")?.gameObject.transform.Find("ListButtons")?.gameObject.transform.Find("ListVisibilityButton")?.gameObject.transform.Find("InvisibleImage")?.gameObject.SetActive(false);  
         }
-
-      
     }
     public void MakeListVisible()
     {

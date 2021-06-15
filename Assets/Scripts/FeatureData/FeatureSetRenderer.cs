@@ -59,7 +59,7 @@ namespace DataFeatures
         private Material _materialInstance;
         private List<int> _dirtyFeatures;
 
-        public FeatureMenuScrollerDataSource FeatureMenuScrollerDataSource;
+        public FeatureMenuDataSource FeatureMenuScrollerDataSource;
 
 
 

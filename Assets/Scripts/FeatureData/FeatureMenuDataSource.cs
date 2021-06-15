@@ -6,29 +6,24 @@ using PolyAndCode.UI;
 using TMPro;
 
 /// <summary>
-/// Demo controller class for Recyclable Scroll Rect. 
-/// A controller class is responsible for providing the scroll rect with datasource. Any class can be a controller class. 
-/// The only requirement is to inherit from IRecyclableScrollRectDataSource and implement the interface methods
+/// Data Source class for Recyclable Scroll Rect.
 /// </summary>
 
-//Dummy Data model for demostraion
+
 public struct FeatureMenuListItemInfo
 {
     public string IdTextField;
     public string SourceName;
-    //public bool IsVisible;
     public int ParentListIndex;
     public Feature Feature;
 }
 
-public class FeatureMenuScrollerDataSource : MonoBehaviour, IRecyclableScrollRectDataSource
+public class FeatureMenuDataSource : MonoBehaviour, IRecyclableScrollRectDataSource
 {
     private List<FeatureMenuListItemInfo> _sofiaList;
 
     [SerializeField]
     private FeatureSetRenderer FeatureSetRenderer;
-
-
 
     public void InitData()
     {
@@ -50,7 +45,6 @@ public class FeatureMenuScrollerDataSource : MonoBehaviour, IRecyclableScrollRec
     /// </summary>
     public int GetItemCount()
     {
-        //return _featureSetRendererList[CurrentFeatureSetIndex].FeatureList.Count;
         return _sofiaList.Count;
     }
 

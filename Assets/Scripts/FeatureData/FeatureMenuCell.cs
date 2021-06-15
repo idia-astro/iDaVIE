@@ -8,10 +8,7 @@ using System.Collections.Generic;
 using TMPro;
 using VolumeData;
 
-//Cell class for demo. A cell in Recyclable Scroll Rect must have a cell class inheriting from ICell.
-//The class is required to configure the cell(updating UI elements etc) according to the data during recycling of cells.
-//The configuration of a cell is done through the DataSource SetCellData method.
-//Check RecyclableScrollerDemo class
+//Cell class corresponding to data features for Recyclable Scroll Rect
 public class FeatureMenuCell : MonoBehaviour, ICell
 {
     //UI
@@ -19,26 +16,19 @@ public class FeatureMenuCell : MonoBehaviour, ICell
     public Text idTextField = null;
     public Text sourceName = null;
     public GameObject checkboxImg = null;
-
     public int ParentListIndex {get; set;}
-
     public Feature feature;
-
-    public bool IsSelected;
-    
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
-
     public GameObject volumeDatasetRendererObj = null;
-
-
     private FeatureSetManager featureSetManager;
+
+    private static Color _lightGrey = new Color(0.4039216f, 0.5333334f, 0.5882353f, 1f);
+    private static Color _darkGrey = new Color(0.2384301f, 0.3231786f, 0.3584906f, 1f);
 
 
     //Model
     private FeatureMenuListItemInfo _sofiaListItemInfo;
-
-    private bool _isSelected;
 
     public int CellIndex {get; private set;} 
 
@@ -60,11 +50,9 @@ public class FeatureMenuCell : MonoBehaviour, ICell
         if (sofiaListItemInfo.Feature.Selected)
             GetComponent<Image>().color = Color.red;
         else if (cellIndex%2!=0)
-            GetComponent<Image>().color = new Color(0.4039216f, 0.5333334f, 0.5882353f, 1f);
+            GetComponent<Image>().color = _lightGrey;
         else if (cellIndex%2!=1)
-            GetComponent<Image>().color = new Color(0.2384301f, 0.3231786f, 0.3584906f, 1f);
-
-
+            GetComponent<Image>().color = _darkGrey;
     }
 
 public void SetVisible()
@@ -82,52 +70,42 @@ public void SetVisible()
 
     public void SetVisibilityIconsOff()
     {
-        this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_VIS").gameObject.SetActive(false);
-        this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_HIDE").gameObject.SetActive(false);
-
-        this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_HIDE").gameObject.SetActive(true);
-
-
+        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_VIS")?.gameObject.SetActive(false);
+        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_HIDE")?.gameObject.SetActive(false);
+        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_HIDE")?.gameObject.SetActive(true);
     }
 
     public void SetVisibilityIconsOn()
     {
-
-        this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_VIS").gameObject.SetActive(false);
-        this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_HIDE").gameObject.SetActive(false);
-
-        this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_VIS").gameObject.SetActive(true);
-      
+        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_VIS")?.gameObject.SetActive(false);
+        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_HIDE")?.gameObject.SetActive(false);
+        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_VIS")?.gameObject.SetActive(true);
     }
 
 
 
     public void ToggleVisibilityIcon()
     {
-
-        this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_VIS").gameObject.SetActive(false);
-        this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_HIDE").gameObject.SetActive(false);
-
+        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_VIS")?.gameObject.SetActive(false);
+        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_HIDE")?.gameObject.SetActive(false);
         if(feature.Visible)
-            this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_VIS").gameObject.SetActive(true);
+            this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_VIS")?.gameObject.SetActive(true);
         else
-            this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_HIDE").gameObject.SetActive(true);
-
-
+            this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_HIDE")?.gameObject.SetActive(true);
     }
 
     public void ToggleVisibility()
     {
-        this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_VIS").gameObject.SetActive(false);
-        this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_HIDE").gameObject.SetActive(false);
+        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_VIS")?.gameObject.SetActive(false);
+        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_HIDE")?.gameObject.SetActive(false);
         if (!feature.Visible)
         {
-                this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_VIS").gameObject.SetActive(true);
+                this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_VIS")?.gameObject.SetActive(true);
                 feature.Visible = true;
         }
         else
         {
-                this.gameObject.transform.Find("GameObject").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_HIDE").gameObject.SetActive(true);
+                this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_HIDE")?.gameObject.SetActive(true);
                 feature.Visible = false;
         }
     }
@@ -136,8 +114,6 @@ public void SetVisible()
     {
         Teleport(feature.CornerMin, feature.CornerMax);
     }
-
-
 
     public void Select()
     {
@@ -148,7 +124,6 @@ public void SetVisible()
     {
         float targetSize = 0.3f;
         float targetDistance = 0.5f;
-
         var activeDataSet = getFirstActiveDataSet();
         if (activeDataSet != null && Camera.main != null)
         {
@@ -161,7 +136,6 @@ public void SetVisible()
             float lengthWorldSpace = deltaWorldSpace.magnitude;
             float scalingRequired = targetSize / lengthWorldSpace;
             dataSetTransform.localScale *= scalingRequired;
-
             Vector3 cameraPosWorldSpace = cameraTransform.position;
             Vector3 cameraDirWorldSpace = cameraTransform.forward.normalized;
             Vector3 targetPosition = cameraPosWorldSpace + cameraDirWorldSpace * targetDistance;
@@ -171,28 +145,21 @@ public void SetVisible()
         }
     }
     
-
       void Start()
       {
-
         volumeDatasetRendererObj = GameObject.Find("VolumeDataSetManager");
-
         if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
-
-
         var firstActive = getFirstActiveDataSet();
         if (firstActive && _activeDataSet != firstActive)
         {
             _activeDataSet = firstActive;
         }
-
         if (_activeDataSet != null)
         {
             featureSetManager = _activeDataSet.GetComponentInChildren<FeatureSetManager>();
         }
         CellHeight = GetComponent<RectTransform>().rect.height;
-
     }
 
       void Update()
@@ -206,18 +173,14 @@ public void SetVisible()
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
-
         foreach (var dataSet in _dataSets)
         {
-
             if (dataSet.isActiveAndEnabled)
             {
                 return dataSet;
             }
         }
         return null;
-
     }
-
 }
 
