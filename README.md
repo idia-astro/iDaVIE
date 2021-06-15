@@ -49,6 +49,8 @@ You will need to install the following Unity plugins as well before running:
 
 4) [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity/releases/download/v2.0.0/NuGetForUnity.2.0.0.unitypackage)
 
+5) [Recyclable Scroll Rect with scroll-to functionality](https://github.com/CosmicElysium/Recyclable-Scroll-Rect/releases/download/v1.0/recyclable-scroll-rect.unitypackage) 
+
 
 
 Remember to exit and relaunch the project in the Unity Editor after installing the plugins the first time.
