@@ -118,6 +118,17 @@ public void SetVisible()
     public void Select()
     {
         featureSetManager.SelectedFeature = feature;
+        int siblingCount = this.gameObject.transform.parent.childCount;
+        for (int i = 0; i < siblingCount; i++)
+        {
+            var cell = this.gameObject.transform.parent.GetChild(i).GetComponent<FeatureMenuCell>();
+            if (cell.feature.Selected)
+                cell.GetComponent<Image>().color = Color.red;
+            else if (cell.CellIndex%2!=0)
+                cell.GetComponent<Image>().color = _lightGrey;
+            else if (cell.CellIndex%2!=1)
+                cell.GetComponent<Image>().color = _darkGrey;
+        }
     }
     
     public void Teleport(Vector3 boundsMin, Vector3 boundsMax)

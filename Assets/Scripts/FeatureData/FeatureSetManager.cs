@@ -37,7 +37,6 @@ namespace DataFeatures
                     {
                         UpdateAnchors();
                     }
-                    NeedToRespawnMenuList = true;
                 }
             }
         }
@@ -202,6 +201,7 @@ namespace DataFeatures
                         }
                         SelectedFeature = feature;
                         SelectedFeature.Selected = true;
+                        NeedToRespawnMenuList = true;
                         ActiveFeatureSetRenderer = feature.FeatureSetParent;
                         prevVolume = SelectedFeature.UnityBounds.size.x * SelectedFeature.UnityBounds.size.y * SelectedFeature.UnityBounds.size.z;
                     }
