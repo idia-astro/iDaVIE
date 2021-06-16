@@ -204,7 +204,7 @@ namespace DataFeatures
             }
         }
 
-        public void SpawnFeaturesFromSourceStats(Dictionary<short, DataAnalysis.SourceStats> sourceStatsDict)
+        public void SpawnFeaturesFromSourceStats(Dictionary<int, DataAnalysis.SourceStats> sourceStatsDict)
         {
             RawDataKeys = new[] {"Sum", "Peak", "VSys (Channel)", "W20 (Channel)"};
             RawDataTypes = new[] {"float", "float", "float", "float"};

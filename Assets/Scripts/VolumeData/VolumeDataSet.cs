@@ -66,7 +66,7 @@ namespace VolumeData
         public BrushStrokeTransaction CurrentBrushStroke { get; private set; }
         public List<BrushStrokeTransaction> BrushStrokeHistory { get; private set; }
         public List<BrushStrokeTransaction> BrushStrokeRedoQueue { get; private set; }
-        public Dictionary<short, DataAnalysis.SourceStats> SourceStatsDict { get; private set; }
+        public Dictionary<int, DataAnalysis.SourceStats> SourceStatsDict { get; private set; }
         
         public string FileName { get; private set; }
         public long XDim { get; private set; }
@@ -329,7 +329,7 @@ namespace VolumeData
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
                 var sourceArray = DataAnalysis.GetMaskedSourceArray(volumeDataSet.FitsData, volumeDataSet.XDim, volumeDataSet.YDim, volumeDataSet.ZDim);
-                volumeDataSet.SourceStatsDict = new Dictionary<short, DataAnalysis.SourceStats>();
+                volumeDataSet.SourceStatsDict = new Dictionary<int, DataAnalysis.SourceStats>();
                 foreach (var source in sourceArray)
                 {
                     volumeDataSet.SourceStatsDict[source.maskVal] = DataAnalysis.SourceStats.FromSourceInfo(source);
@@ -460,7 +460,7 @@ namespace VolumeData
             volumeDataSet.XDim = XDim;
             volumeDataSet.YDim = YDim;
             volumeDataSet.ZDim = ZDim;
-            volumeDataSet.SourceStatsDict = new Dictionary<short, DataAnalysis.SourceStats>();
+            volumeDataSet.SourceStatsDict = new Dictionary<int, DataAnalysis.SourceStats>();
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
             volumeDataSet._cachedBrush = new byte[2];

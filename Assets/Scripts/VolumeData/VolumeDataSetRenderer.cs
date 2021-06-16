@@ -165,6 +165,14 @@ namespace VolumeData
 
         public bool IsCropped { get; private set; }
 
+        public Dictionary<int, DataAnalysis.SourceStats> SourceStatsDict
+        { 
+            get 
+            {
+                return _dataSet.SourceStatsDict;
+            }
+        }
+
         [Header("Benchmarking")]
         public bool RandomVolume = false;
         public int RandomCubeSize = 512;

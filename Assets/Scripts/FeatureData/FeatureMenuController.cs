@@ -175,8 +175,20 @@ public class FeatureMenuController : MonoBehaviour
         textObject.GetComponent<TMP_Text>().text += $"Source # : {featureSetManager.SelectedFeature.Index + 1}{Environment.NewLine}";  
         if (_activeDataSet.HasWCS)
         {
-            double ra, dec, physz, normR, normD, normZ;
-            AstTool.Transform3D(_activeDataSet.AstFrame, featureSetManager.SelectedFeature.Center.x, featureSetManager.SelectedFeature.Center.y, featureSetManager.SelectedFeature.Center.z, 1, out ra, out dec, out physz);
+            double centerX, centerY, centerZ, ra, dec, physz, normR, normD, normZ;
+            if (featureSetManager.VolumeRenderer.SourceStatsDict == null)
+            {
+                centerX = featureSetManager.SelectedFeature.Center.x;
+                centerY = featureSetManager.SelectedFeature.Center.y;
+                centerZ = featureSetManager.SelectedFeature.Center.z;
+            }
+            else
+            {
+                centerX = featureSetManager.VolumeRenderer.SourceStatsDict[featureSetManager.SelectedFeature.Index].cX;
+                centerY = featureSetManager.VolumeRenderer.SourceStatsDict[featureSetManager.SelectedFeature.Index].cY;
+                centerZ = featureSetManager.VolumeRenderer.SourceStatsDict[featureSetManager.SelectedFeature.Index].cZ;
+            }
+            AstTool.Transform3D(_activeDataSet.AstFrame, centerX, centerY, centerZ, 1, out ra, out dec, out physz);
             AstTool.Norm(_activeDataSet.AstFrame, ra, dec, physz, out normR, out normD, out normZ);
             textObject.GetComponent<TMP_Text>().text += $"RA: {(180f * normR / Math.PI).ToString()}{Environment.NewLine}";
             textObject.GetComponent<TMP_Text>().text += $"Dec: {(180f * normD / Math.PI).ToString()}{Environment.NewLine}";
