@@ -28,7 +28,7 @@ public class FeatureMenuCell : MonoBehaviour, ICell
 
 
     //Model
-    private FeatureMenuListItemInfo _sofiaListItemInfo;
+    private FeatureMenuListItemInfo _featureMenuListItemInfo;
 
     public int CellIndex {get; private set;} 
 
@@ -36,18 +36,18 @@ public class FeatureMenuCell : MonoBehaviour, ICell
 
 
     //This is called from the SetCell method in DataSource
-    public void ConfigureCell(FeatureMenuListItemInfo sofiaListItemInfo ,int cellIndex)
+    public void ConfigureCell(FeatureMenuListItemInfo featureMenuListItemInfo ,int cellIndex)
     {
         CellIndex = cellIndex;
-        _sofiaListItemInfo = sofiaListItemInfo;
-        idTextField.text = sofiaListItemInfo.IdTextField;
-        sourceName.text = sofiaListItemInfo.SourceName;
-        feature = sofiaListItemInfo.Feature;
+        _featureMenuListItemInfo = featureMenuListItemInfo;
+        idTextField.text = featureMenuListItemInfo.IdTextField;
+        sourceName.text = featureMenuListItemInfo.SourceName;
+        feature = featureMenuListItemInfo.Feature;
         if (feature.Visible)
             SetVisibilityIconsOn();
         else
             SetVisibilityIconsOff();
-        if (sofiaListItemInfo.Feature.Selected)
+        if (featureMenuListItemInfo.Feature.Selected)
             GetComponent<Image>().color = Color.red;
         else if (cellIndex%2!=0)
             GetComponent<Image>().color = _lightGrey;
