@@ -625,7 +625,7 @@ namespace VolumeData
             if (_maskDataSet != null)
             {
                 _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.DataCube);
-                _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, null);
+                _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, (ComputeBuffer)null);
                 _momentMapRenderer.MaskCube = _maskDataSet.DataCube;
             }
             _momentMapRenderer.DataCube = _dataSet.DataCube;

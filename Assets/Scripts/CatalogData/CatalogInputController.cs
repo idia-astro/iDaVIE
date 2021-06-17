@@ -453,7 +453,9 @@ public class CatalogInputController : MonoBehaviour
 
     private VRFamily DetermineVRFamily()
     {
+        Debug.Log("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
         string vrModel = InputDevices.GetDeviceAtXRNode(XRNode.Head).name.ToLower();
+        Debug.Log(vrModel);
         if (vrModel.Contains("oculus"))
         {
             return VRFamily.Oculus;
