@@ -259,7 +259,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 4316318992453116296}
+      - m_Target: {fileID: 7380079166087174694}
         m_MethodName: Select
         m_Mode: 1
         m_Arguments:
@@ -480,7 +480,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 4316318992453116296}
+      - m_Target: {fileID: 7380079166087174694}
         m_MethodName: ToggleVisibility
         m_Mode: 1
         m_Arguments:
@@ -704,7 +704,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 4316318992453116296}
+      - m_Target: {fileID: 7380079166087174694}
         m_MethodName: GoTo
         m_Mode: 1
         m_Arguments:
@@ -891,12 +891,12 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6689441930889237778}
-  - component: {fileID: 4316318992453116296}
   - component: {fileID: 2441323564614499671}
   - component: {fileID: 6848916899423507155}
   - component: {fileID: 931393163589677726}
+  - component: {fileID: 7380079166087174694}
   m_Layer: 5
-  m_Name: SofiaListElementPrefab 1 1
+  m_Name: FeatureMenuCellPrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -918,31 +918,11 @@ RectTransform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMin: {x: 0.5, y: 1}
+  m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 300, y: 0}
   m_SizeDelta: {x: 580, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &4316318992453116296
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6689441930889237779}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32ee486fe61cd0b40a97b723199d8a63, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  idTextField: {fileID: 6689441930053888339}
-  sourceName: {fileID: 7517677895158706669}
-  checkboxImg: {fileID: 0}
-  SofiaNewListPrefab: {fileID: 4647960131916739394, guid: c8cb21734c843084787bd62ef5128a61,
-    type: 3}
-  SofiaNewListController: {fileID: 0}
-  volumeDatasetRendererObj: {fileID: 0}
-  InfoWindow: {fileID: 0}
+  m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &2441323564614499671
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1005,6 +985,23 @@ MonoBehaviour:
   m_ChildControlHeight: 0
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
+--- !u!114 &7380079166087174694
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6689441930889237779}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44a0fe2577cc6724c8d58c52ffbc2458, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  idTextField: {fileID: 6689441930053888339}
+  sourceName: {fileID: 7517677895158706669}
+  checkboxImg: {fileID: 0}
+  IsSelected: 0
+  volumeDatasetRendererObj: {fileID: 0}
 --- !u!1 &7572334705102038633
 GameObject:
   m_ObjectHideFlags: 0

@@ -41,14 +41,13 @@ namespace DataFeatures
         public string[] RawDataTypes { get; set; }
         public string FileName { get; private set; }
 
-        public bool IsImported {get; private set;}
+        public int Index;
 
-        public GameObject MenuList = null;
+        public bool IsImported {get; private set;}
 
         public Color FeatureColor;
 
         public bool featureSetVisible = false;
-        public bool NeedToRespawnList = true;
         public Material LineRenderingMaterial;
 
         private static readonly int VerticesPerFeature = 24;
@@ -59,6 +58,11 @@ namespace DataFeatures
         private FeatureVertex[] _vertices;
         private Material _materialInstance;
         private List<int> _dirtyFeatures;
+
+        public FeatureMenuDataSource FeatureMenuScrollerDataSource;
+
+
+
         private void Awake()
         {
             FeatureList = new List<Feature>();
@@ -76,6 +80,9 @@ namespace DataFeatures
             FeatureManager = GetComponentInParent<FeatureSetManager>();
             VolumeRenderer = FeatureManager.VolumeRenderer;
         }
+
+
+        
 
         public void Update()
         {
@@ -110,7 +117,6 @@ namespace DataFeatures
                         MakeAxisAlignedCube(feature.Center, feature.Size, feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
                     }
                 }
-                
                 _computeBufferVertices.SetData(_vertices);
                 _dirtyFeatures.Clear();
             }
@@ -120,6 +126,10 @@ namespace DataFeatures
         public void AddFeature(Feature featureToAdd)
         {
             FeatureList.Add(featureToAdd);
+            FeatureMenuListItemInfo obj = new FeatureMenuListItemInfo();
+            obj.IdTextField = (FeatureList.Count).ToString();
+            obj.SourceName = featureToAdd.Name;
+            obj.Feature = featureToAdd;
             SetFeatureAsDirty(featureToAdd.Index);
         }
 
@@ -159,11 +169,6 @@ namespace DataFeatures
 
         public void SetVisibilityOn()
         {
-            foreach (Transform child in MenuList.transform)
-            {
-                child.GetComponent<SofiaListItem>().SetVisibilityIconsOn();
-            }
-
             featureSetVisible = true;
             SetFeatureAsDirty();
             foreach (var feature in FeatureList)
@@ -174,11 +179,6 @@ namespace DataFeatures
 
         public void SetVisibilityOff()
         {
-            foreach (Transform child in MenuList.transform)
-            {
-                child.GetComponent<SofiaListItem>().SetVisibilityIconsOff();
-            }
-
             featureSetVisible = false;
             SetFeatureAsDirty();
             foreach (var feature in FeatureList)
@@ -204,7 +204,7 @@ namespace DataFeatures
             }
         }
 
-        public void SpawnFeaturesFromSourceStats(Dictionary<short, DataAnalysis.SourceStats> sourceStatsDict)
+        public void SpawnFeaturesFromSourceStats(Dictionary<int, DataAnalysis.SourceStats> sourceStatsDict)
         {
             RawDataKeys = new[] {"Sum", "Peak", "VSys (Channel)", "W20 (Channel)"};
             RawDataTypes = new[] {"float", "float", "float", "float"};
@@ -217,6 +217,7 @@ namespace DataFeatures
                 var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
                 AddFeature(new Feature(boxMin, boxMax, FeatureColor, featureName, item.Key - 1, rawStrings, this, false));
             }
+            FeatureMenuScrollerDataSource.InitData();
         }
 
         // Spawn Feature objects intro world from FileName
@@ -421,6 +422,7 @@ namespace DataFeatures
                     FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, FeatureNames[i], i, featureRawData[i].ToArray(), this, false));
                 }
             }
+            FeatureMenuScrollerDataSource.InitData();
         }
         
         void OnRenderObject()

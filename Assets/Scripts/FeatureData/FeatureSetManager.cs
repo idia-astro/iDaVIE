@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using VolumeData;
@@ -18,6 +18,10 @@ namespace DataFeatures
         private string _timeStamp;
         private StreamWriter _streamWriter;
         private Feature _selectedFeature;
+
+        public bool NeedToRespawnMenuList = true;
+
+        public FeatureMenuController SourceListController = null;
         private readonly GameObject[] _anchorColliders = new GameObject[8];
         public Feature SelectedFeature
         {
@@ -152,6 +156,7 @@ namespace DataFeatures
             // Shift by half a voxel (because voxel center has integer coordinates, not corner)
             featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
             featureSetRenderer.FeatureColor = FeatureColors[ImportedFeatureSetList.Count];
+            featureSetRenderer.Index = ImportedFeatureSetList.Count;
             ImportedFeatureSetList.Add(featureSetRenderer); //TODO: change to GeneratedFeatureSetList later
             return featureSetRenderer;
         }
@@ -172,6 +177,7 @@ namespace DataFeatures
             featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
             featureSetRenderer.FeatureColor = FeatureColors[ImportedFeatureSetList.Count];
             featureSetRenderer.SpawnFeaturesFromVOTable(mapping, voTable, columnsMask);
+            featureSetRenderer.Index = ImportedFeatureSetList.Count;
             ImportedFeatureSetList.Add(featureSetRenderer);
             return featureSetRenderer;
         }
@@ -195,6 +201,7 @@ namespace DataFeatures
                         }
                         SelectedFeature = feature;
                         SelectedFeature.Selected = true;
+                        NeedToRespawnMenuList = true;
                         ActiveFeatureSetRenderer = feature.FeatureSetParent;
                         prevVolume = SelectedFeature.UnityBounds.size.x * SelectedFeature.UnityBounds.size.y * SelectedFeature.UnityBounds.size.z;
                     }

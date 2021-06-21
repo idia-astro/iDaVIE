@@ -165,6 +165,14 @@ namespace VolumeData
 
         public bool IsCropped { get; private set; }
 
+        public Dictionary<int, DataAnalysis.SourceStats> SourceStatsDict
+        { 
+            get 
+            {
+                return _dataSet.SourceStatsDict;
+            }
+        }
+
         [Header("Benchmarking")]
         public bool RandomVolume = false;
         public int RandomCubeSize = 512;
@@ -538,22 +546,6 @@ namespace VolumeData
             {
                 Debug.Log($"Selected feature '{_featureManager.SelectedFeature.Name}'");
                 SetRegionBounds(Vector3Int.FloorToInt(_featureManager.SelectedFeature.GetMinBounds()), Vector3Int.FloorToInt(_featureManager.SelectedFeature.GetMaxBounds()), false);
-                var _sofiaList = GameObject.Find("RenderMenu");
-                if (_sofiaList != null)
-                {
-                    int sourceIndex = _featureManager.SelectedFeature.Index;
-                    var scrollView = _sofiaList.gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("Scroll View").gameObject;
-                    if (_featureManager.SelectedFeature.LinkedListItem != null)
-                    {
-                        int sourceListIndex = _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().ParentListIndex;
-                        if (scrollView.GetComponent<SofiaListCreator>().CurrentFeatureSetIndex != sourceListIndex)
-                            scrollView.GetComponent<SofiaListCreator>().DisplaySet(sourceListIndex);
-                        scrollView.GetComponent<CustomDragHandler>().FocusOnFeature(_featureManager.SelectedFeature, true);
-                        _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().UpdateInfo();
-                    }
-                    else
-                        Debug.Log("No menu list item for feature!");
-                }
             }
         }
 
@@ -564,22 +556,6 @@ namespace VolumeData
                 _featureManager.SelectedFeature = feature;
                 Debug.Log($"Selected feature '{_featureManager.SelectedFeature.Name}'");
                 SetRegionBounds(Vector3Int.FloorToInt(_featureManager.SelectedFeature.GetMinBounds()), Vector3Int.FloorToInt(_featureManager.SelectedFeature.GetMaxBounds()), false);
-                var _sofiaList = GameObject.Find("RenderMenu");
-                if (_sofiaList != null)
-                {
-                    int sourceIndex = _featureManager.SelectedFeature.Index;
-                    var scrollView = _sofiaList.gameObject.transform.Find("PanelContents").gameObject.transform.Find("SofiaListPanel").gameObject.transform.Find("Scroll View").gameObject;
-                    if (_featureManager.SelectedFeature.LinkedListItem != null)
-                    {
-                        int sourceListIndex = _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().ParentListIndex;
-                        if (scrollView.GetComponent<SofiaListCreator>().CurrentFeatureSetIndex != sourceListIndex)
-                            scrollView.GetComponent<SofiaListCreator>().DisplaySet(sourceListIndex);
-                        scrollView.GetComponent<CustomDragHandler>().FocusOnFeature(_featureManager.SelectedFeature, true);
-                        _featureManager.SelectedFeature.LinkedListItem.GetComponent<SofiaListItem>().UpdateInfo();
-                    }
-                    else
-                        Debug.Log("No menu list item for feature!");
-                }
             }
         }
 

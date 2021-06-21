@@ -415,9 +415,21 @@ namespace VoTableReader
             doc.Root.Element("RESOURCE").Element("TABLE").AddFirst(xmlFields);
             for (var i = 0; i < featureSet.FeatureList.Count; i++)
             {
-                double ra, dec, zPhys, normR, normD, normZ;
+                double centerX, centerY, centerZ, ra, dec, zPhys, normR, normD, normZ;
                 Feature currentFeature = featureSet.FeatureList[i];
-                AstTool.Transform3D(featureSet.VolumeRenderer.AstFrame, currentFeature.Center.x, currentFeature.Center.y, currentFeature.Center.z, 1, out ra, out dec, out zPhys);
+                if (featureSet.VolumeRenderer.SourceStatsDict == null)
+                {
+                    centerX = currentFeature.Center.x;
+                    centerY = currentFeature.Center.y;
+                    centerZ = currentFeature.Center.z;
+                }
+                else
+                {
+                    centerX = featureSet.VolumeRenderer.SourceStatsDict[currentFeature.Index].cX;
+                    centerY = featureSet.VolumeRenderer.SourceStatsDict[currentFeature.Index].cY;
+                    centerZ = featureSet.VolumeRenderer.SourceStatsDict[currentFeature.Index].cZ;
+                }
+                AstTool.Transform3D(featureSet.VolumeRenderer.AstFrame, centerX, centerY, centerZ, 1, out ra, out dec, out zPhys);
                 AstTool.Norm(featureSet.VolumeRenderer.AstFrame, ra, dec, zPhys, out normR, out normD, out normZ);
                 XElement voRow = new XElement("TR",
                                     new XElement("TD", (currentFeature.Index + 1).ToString()), new XElement("TD", currentFeature.Center.x.ToString()), new XElement("TD", currentFeature.Center.y.ToString()),
@@ -425,7 +437,7 @@ namespace VoTableReader
                                     new XElement("TD", currentFeature.CornerMin.y.ToString()), new XElement("TD", currentFeature.CornerMax.y.ToString()),
                                     new XElement("TD", currentFeature.CornerMin.z.ToString() ), new XElement("TD", currentFeature.CornerMax.z.ToString()),
                                     new XElement("TD", (180f * normR / Math.PI).ToString() ), new XElement("TD", (180f * normD / Math.PI).ToString() ),
-                                    new XElement("TD", normZ.ToString() ) );
+                                    new XElement("TD", (1000 * normZ).ToString() ) );
                 for (var j = 0; j < currentFeature.RawData.Length; j++)
                     voRow.Add(new XElement("TD", currentFeature.RawData[j]));            
                 doc.Root.Element("RESOURCE").Element("TABLE").Element("DATA").Element("TABLEDATA").Add(voRow); 
