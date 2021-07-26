@@ -104,6 +104,17 @@ public class QuickMenuController : MonoBehaviour
     }
 
     public void OpenMainMenu()
+    {   
+        spawnMenu(mainMenuCanvas);
+    }
+
+    public void OpenListOfVoiceCommands()
+    {
+        spawnMenu(voiceCommandsListCanvas);
+    }
+
+
+    public void spawnMenu(GameObject menu)
     {
 
         Vector3 playerPos = Camera.main.transform.position;
@@ -113,19 +124,16 @@ public class QuickMenuController : MonoBehaviour
 
         Vector3 spawnPos = playerPos + playerDirection * spawnDistance;
 
-        mainMenuCanvas.transform.position=spawnPos;
-        mainMenuCanvas.transform.rotation = playerRotation;
+        menu.transform.position = spawnPos;
+        menu.transform.rotation = playerRotation;
 
-        if (!mainMenuCanvas.activeSelf)
-            mainMenuCanvas.SetActive(true);    
-    
+        if (!menu.activeSelf)
+            menu.SetActive(true);
+
+
+
     }
 
-    public void OpenListOfVoiceCommands()
-    {
-
-        voiceCommandsListCanvas.SetActive(!voiceCommandsListCanvas.activeSelf);
-    }
 
     public void ToggleFeatures()
     {
@@ -254,7 +262,7 @@ public class QuickMenuController : MonoBehaviour
 
     public void OpenPlotsMenu()
     {
-        plotsMenu.SetActive(!plotsMenu.activeSelf);
+        spawnMenu(plotsMenu);
     }
 
 
