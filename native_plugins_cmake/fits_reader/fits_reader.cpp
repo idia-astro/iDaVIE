@@ -79,6 +79,18 @@ int FitsCopyHeader(fitsfile *infptr, fitsfile *outfptr, int *status)
     return success;
 }
 
+int FitsCopyFile(fitsfile *infptr, fitsfile *outfptr, int *status)
+{
+    int success = fits_copy_file(infptr, outfptr, 1, 1, 1, status);
+    return success;
+}
+
+int FitsCopyCubeSection(fitsfile *infptr, fitsfile *outfptr, char *section, int *status)
+{
+    int success = fits_copy_image_section(infptr, outfptr, section, status);
+    return success; 
+}
+
 int FitsWriteImageInt16(fitsfile* fptr, int dims, int64_t nelements, int16_t* array, int* status)
 {
     long* startPix = new long[dims];

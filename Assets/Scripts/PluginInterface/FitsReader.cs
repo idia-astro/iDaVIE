@@ -56,7 +56,16 @@ public class FitsReader
     public static extern int FitsCopyHeader(IntPtr infptr, IntPtr outfptr, out int status);
 
     [DllImport("libfits_reader")]
+    public static extern int FitsCopyFile(IntPtr infptr, IntPtr outfptr, out int status);
+
+    [DllImport("libfits_reader")]
+    public static extern int FitsCopyCubeSection(IntPtr infptr, IntPtr outfptr, string section, out int status);
+
+    [DllImport("libfits_reader")]
     public static extern int FitsWriteImageInt16(IntPtr fptr, int dims, long nelements, IntPtr array, out int status);
+
+    [DllImport("libfits_reader")]
+    public static extern int FitsWriteSubImageInt16(IntPtr fptr, IntPtr array, IntPtr cornerMin, IntPtr cornerMax, out int status);
 
     [DllImport("libfits_reader")]
     public static extern int FitsWriteKey(IntPtr fptr, int datatype, string keyname, IntPtr value, string comment, out int status);

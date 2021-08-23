@@ -839,6 +839,13 @@ namespace VolumeData
             return volumePosition;
         }
         
+        public void SaveSubCube()
+        {
+            IntPtr subCubeHeader = IntPtr.Zero;
+            var cornerMin = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMin);
+            var cornerMax = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMax);
+             _dataSet.SaveSubCubeFromOriginal(cornerMin, cornerMax, _maskDataSet);
+        }
         public void SaveMask(bool overwrite)
         {
             if (_maskDataSet == null)

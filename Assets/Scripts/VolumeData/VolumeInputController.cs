@@ -1244,6 +1244,10 @@ public class VolumeInputController : MonoBehaviour
     {
         CameraControllerTool cameraController = GameObject.Find("CameraController").GetComponentInChildren<CameraControllerTool>(true); ;
         cameraController.OnUse();
+    }
 
+    public void SaveSubCube()
+    {
+        ActiveDataSet.SaveSubCube();
     }
 }
