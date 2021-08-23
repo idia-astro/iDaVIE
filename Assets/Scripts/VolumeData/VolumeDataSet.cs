@@ -1214,13 +1214,25 @@ namespace VolumeData
                     {
                         Vector3Int regionVector = cornerMax - cornerMin;
                         int regionVolume = regionVector.x * regionVector.y * regionVector.z;
-                        FitsReader.FitsWriteImageInt16(subMaskFilePtr, 3, regionVolume, subCubeData, out status);
+                        IntPtr keyValue = Marshal.AllocHGlobal(sizeof(int));
+                        Marshal.WriteInt32(keyValue, 16);
+                        if (FitsReader.FitsUpdateKey(subMaskFilePtr, 21, "BITPIX", keyValue, null, out status) == 0)
+                        {
+                            FitsReader.FitsWriteImageInt16(subMaskFilePtr, 3, regionVolume, subCubeData, out status);
+                        }
+                        if (keyValue != IntPtr.Zero)
+                        {
+                            Marshal.FreeHGlobal(keyValue);
+                            keyValue = IntPtr.Zero;
+                        }
                     }
                 }
                 FitsReader.FitsCloseFile(subMaskFilePtr, out status);
             }
             if (status != 0)
                 Debug.LogError($"Fits Read mask cube data error #{status.ToString()}");
+            if (subCubeData != IntPtr.Zero)
+                FitsReader.FreeMemory(subCubeData);
             return status;
         }
         public int SaveMask(IntPtr cubeFitsPtr, string filename)
