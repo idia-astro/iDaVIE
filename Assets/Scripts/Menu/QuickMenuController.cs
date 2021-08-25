@@ -78,7 +78,6 @@ public class QuickMenuController : MonoBehaviour
 
     public void Exit()
     {
-
         if (_activeDataSet.FileChanged)
         {
             ExitSavePopup.GetComponent<ExitController>()._volumeInputController = _volumeInputController;
@@ -105,16 +104,36 @@ public class QuickMenuController : MonoBehaviour
     }
 
     public void OpenMainMenu()
-    {
-
-        mainMenuCanvas.SetActive(!mainMenuCanvas.activeSelf);
+    {   
+        spawnMenu(mainMenuCanvas);
     }
 
     public void OpenListOfVoiceCommands()
     {
-
-        voiceCommandsListCanvas.SetActive(!voiceCommandsListCanvas.activeSelf);
+        spawnMenu(voiceCommandsListCanvas);
     }
+
+
+    public void spawnMenu(GameObject menu)
+    {
+
+        Vector3 playerPos = Camera.main.transform.position;
+        Vector3 playerDirection = Camera.main.transform.forward;
+        Quaternion playerRotation = Camera.main.transform.rotation;
+        float spawnDistance = 1.5f;
+
+        Vector3 spawnPos = playerPos + playerDirection * spawnDistance;
+
+        menu.transform.position = spawnPos;
+        menu.transform.rotation = playerRotation;
+
+        if (!menu.activeSelf)
+            menu.SetActive(true);
+
+
+
+    }
+
 
     public void ToggleFeatures()
     {
@@ -243,7 +262,7 @@ public class QuickMenuController : MonoBehaviour
 
     public void OpenPlotsMenu()
     {
-        plotsMenu.SetActive(!plotsMenu.activeSelf);
+        spawnMenu(plotsMenu);
     }
 
 
