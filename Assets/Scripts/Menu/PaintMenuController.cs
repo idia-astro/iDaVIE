@@ -63,10 +63,6 @@ public class PaintMenuController : MonoBehaviour
             _topPanelText.text = $"Paint Mode (Source ID {_volumeInputController.SourceId})";
         }
 
-        if (_exitButton)
-        {
-            _exitButton.enabled = _volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.IdlePainting;
-        }
     }
     
     private VolumeDataSetRenderer getFirstActiveDataSet()
@@ -148,6 +144,9 @@ public class PaintMenuController : MonoBehaviour
 
     public void ExitPaintMode()
     {
+        if(_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.EditingSourceId)
+            _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.CancelEditSource);
+        
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
         this.gameObject.SetActive(false);
     }
