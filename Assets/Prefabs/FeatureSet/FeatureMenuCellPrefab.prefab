@@ -1000,7 +1000,6 @@ MonoBehaviour:
   idTextField: {fileID: 6689441930053888339}
   sourceName: {fileID: 7517677895158706669}
   checkboxImg: {fileID: 0}
-  IsSelected: 0
   volumeDatasetRendererObj: {fileID: 0}
 --- !u!1 &7572334705102038633
 GameObject:
