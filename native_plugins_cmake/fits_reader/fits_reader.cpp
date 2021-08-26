@@ -62,6 +62,11 @@ int FitsReadKeyN(fitsfile *fptr, int keynum, char *keyname, char *value,
     return fits_read_keyn(fptr, keynum, keyname, value, comment, status);
 }
 
+int FitsDeleteKey(fitsfile *fptr, char *keyname, int *status)
+{
+    return fits_delete_key(fptr, keyname, status);
+}
+
 int FitsGetImageDims(fitsfile *fptr, int  *dims, int *status)
 {
     return fits_get_img_dim(fptr, dims, status);
@@ -77,6 +82,18 @@ int FitsCopyHeader(fitsfile *infptr, fitsfile *outfptr, int *status)
 {
     int success = fits_copy_header(infptr, outfptr, status);
     return success;
+}
+
+int FitsCopyFile(fitsfile *infptr, fitsfile *outfptr, int *status)
+{
+    int success = fits_copy_file(infptr, outfptr, 1, 1, 1, status);
+    return success;
+}
+
+int FitsCopyCubeSection(fitsfile *infptr, fitsfile *outfptr, char *section, int *status)
+{
+    int success = fits_copy_image_section(infptr, outfptr, section, status);
+    return success; 
 }
 
 int FitsWriteImageInt16(fitsfile* fptr, int dims, int64_t nelements, int16_t* array, int* status)

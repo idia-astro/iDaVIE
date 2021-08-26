@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -828,7 +829,6 @@ namespace VolumeData
         {
             string xProj = "";
             string yProj = "";
-            string zProj = "";
             _rot = 0;
             foreach (KeyValuePair<string, string> entry in HeaderDictionary)
             {
@@ -1160,6 +1160,86 @@ namespace VolumeData
             return new Vector3Int(x, y, z);
         }
         
+        public int SaveSubCubeFromOriginal(Vector3Int cornerMin, Vector3Int cornerMax, VolumeDataSet maskDataSet)
+        {
+            IntPtr oldFitsPtr = IntPtr.Zero;
+            IntPtr newFitsPtr = IntPtr.Zero;
+            int status = 0;
+
+            var directory = new DirectoryInfo(Application.dataPath);
+            var directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/SubCubes");
+            try
+            {
+                if (!Directory.Exists(directoryPath))
+                {
+                    Directory.CreateDirectory(directoryPath);
+                }
+            }
+            catch (IOException ex)
+            {
+                Debug.LogError(ex.Message);
+            }
+            var timeStamp = DateTime.Now.ToString("yyyyMMdd_Hmmssffff");
+            var filePath = Path.Combine(directoryPath, $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}.fits");
+            var maskFilePath = Path.Combine(directoryPath, $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}_mask.fits");
+            // Works only with 3D cubes for now... need 4D askap capability
+            if (FitsReader.FitsOpenFile(out oldFitsPtr, FileName + $"[{cornerMin.x}:{cornerMax.x},{cornerMin.y}:{cornerMax.y},{cornerMin.z}:{cornerMax.z}]", out status, true) == 0)
+            {
+                if (FitsReader.FitsCreateFile(out newFitsPtr, filePath, out status) == 0)
+                {
+                    FitsReader.FitsCopyFile(oldFitsPtr, newFitsPtr, out status);
+                    if (maskDataSet != null)
+                    {
+                        SaveSubMask(maskFilePath, cornerMin, cornerMax, newFitsPtr, maskDataSet);
+                    }
+                    FitsReader.FitsCloseFile(newFitsPtr, out status);
+                }
+                FitsReader.FitsCloseFile(oldFitsPtr, out status);
+            }
+            if (status != 0)
+                Debug.LogError($"Fits Read mask cube data error #{status.ToString()}");
+            return status;
+        }
+
+        public int SaveSubMask(string filePath, Vector3Int cornerMin, Vector3Int cornerMax, IntPtr subCubeFitsPtr, VolumeDataSet maskDataSet)
+        {
+            IntPtr subMaskFilePtr = IntPtr.Zero;
+            IntPtr subCubeData = IntPtr.Zero;
+            int status = 0;
+            if (FitsReader.FitsCreateFile(out subMaskFilePtr, filePath, out status) == 0)
+            {
+                if (FitsReader.FitsCopyHeader(subCubeFitsPtr, subMaskFilePtr, out status) == 0)
+                {
+                    if (DataAnalysis.MaskCropAndDownsample(maskDataSet.FitsData, out subCubeData, maskDataSet.XDim, maskDataSet.YDim, maskDataSet.ZDim, cornerMin.x, cornerMin.y, cornerMin.z, cornerMax.x, cornerMax.y, cornerMax.z, 1, 1, 1) == 0)
+                    {
+                        Vector3Int regionVector = cornerMax - cornerMin;
+                        int regionVolume = regionVector.x * regionVector.y * regionVector.z;
+                        IntPtr keyValue = Marshal.AllocHGlobal(sizeof(int));
+                        Marshal.WriteInt32(keyValue, 16);
+                        if (FitsReader.FitsUpdateKey(subMaskFilePtr, 21, "BITPIX", keyValue, null, out status) == 0)
+                        {
+                            if (FitsReader.FitsDeleteKey(subMaskFilePtr, "BUNIT", out status) != 0)
+                            {
+                                Debug.Log("Could not delete unit key. It probably does not exist!");
+                                status = 0;
+                            }
+                            FitsReader.FitsWriteImageInt16(subMaskFilePtr, 3, regionVolume, subCubeData, out status);
+                        }
+                        if (keyValue != IntPtr.Zero)
+                        {
+                            Marshal.FreeHGlobal(keyValue);
+                            keyValue = IntPtr.Zero;
+                        }
+                    }
+                }
+                FitsReader.FitsCloseFile(subMaskFilePtr, out status);
+            }
+            if (status != 0)
+                Debug.LogError($"Fits Read mask cube data error #{status.ToString()}");
+            if (subCubeData != IntPtr.Zero)
+                FitsReader.FreeMemory(subCubeData);
+            return status;
+        }
         public int SaveMask(IntPtr cubeFitsPtr, string filename)
         {
             int status = FitsReader.SaveMask(cubeFitsPtr, FitsData, Dims, filename);
@@ -1168,10 +1248,8 @@ namespace VolumeData
                 // Update filename after stripping out exclamation mark indicating overwrite flag
                 FileName = filename.Replace("!", "");
             }
-
             return status;
         }
-
 
         public string GetAstAttribute(string attributeToGet)
         {
@@ -1424,7 +1502,7 @@ namespace VolumeData
         
         public void CleanUp(bool randomCube)
         {
-            int status;
+            int status = 0;
             if (FitsData != IntPtr.Zero)
             {
                 if (randomCube)
@@ -1432,7 +1510,6 @@ namespace VolumeData
                 else
                     FitsReader.FreeMemory(FitsData);
             }
-
             if (FitsHeader != IntPtr.Zero)
             {
                 FitsReader.FreeFitsMemory(FitsHeader, out status);
