@@ -125,7 +125,7 @@ public class QuickMenuController : MonoBehaviour
         Vector3 spawnPos = playerPos + playerDirection * spawnDistance;
 
         menu.transform.position = spawnPos;
-        menu.transform.rotation = playerRotation;
+        menu.transform.rotation = Quaternion.LookRotation(new Vector3(spawnPos.x - playerPos.x, 0, spawnPos.z - playerPos.z));
 
         if (!menu.activeSelf)
             menu.SetActive(true);
