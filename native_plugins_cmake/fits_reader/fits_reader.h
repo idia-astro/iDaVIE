@@ -57,6 +57,8 @@ DllExport int FitsWriteKey(fitsfile * , int , char *, void *, char *, int *);
 
 DllExport int FitsUpdateKey(fitsfile * , int , char* , void* , char* , int* );
 
+DllExport int FitsDeleteKey(fitsfile *, char*, int*);
+
 DllExport int FitsGetImageSize(fitsfile *, int , int64_t **, int *);
 
 DllExport int FitsReadColFloat(fitsfile *, int , long ,

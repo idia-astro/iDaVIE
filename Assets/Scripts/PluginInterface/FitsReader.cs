@@ -74,6 +74,9 @@ public class FitsReader
     public static extern int FitsUpdateKey(IntPtr fptr, int datatype, string keyname, IntPtr value, string comment, out int status);
 
     [DllImport("libfits_reader")]
+    public static extern int FitsDeleteKey(IntPtr fptr, string keyname, out int status);
+    
+    [DllImport("libfits_reader")]
     public static extern int FitsMakeKeyN(string keyroot, int value, StringBuilder keyname, out int status);
 
     [DllImport("libfits_reader")]
@@ -167,6 +170,11 @@ public class FitsReader
             Debug.Log("Fits update key error #" + status.ToString());
             return status;
         }
+        if (FitsDeleteKey(maskPtr, "BUNIT", out status) != 0)
+        {
+            Debug.Log("Could not delete unit key. It probably does not exist!");
+            status = 0;
+        }        
         if (FitsWriteImageInt16(maskPtr, 3, nelements, maskData, out status) != 0)
         {
             Debug.Log("Fits write image error #" + status.ToString());

@@ -62,6 +62,11 @@ int FitsReadKeyN(fitsfile *fptr, int keynum, char *keyname, char *value,
     return fits_read_keyn(fptr, keynum, keyname, value, comment, status);
 }
 
+int FitsDeleteKey(fitsfile *fptr, char *keyname, int *status)
+{
+    return fits_delete_key(fptr, keyname, status);
+}
+
 int FitsGetImageDims(fitsfile *fptr, int  *dims, int *status)
 {
     return fits_get_img_dim(fptr, dims, status);

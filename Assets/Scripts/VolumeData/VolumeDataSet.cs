@@ -1177,7 +1177,7 @@ namespace VolumeData
             }
             catch (IOException ex)
             {
-                Console.WriteLine(ex.Message);
+                Debug.LogError(ex.Message);
             }
             var timeStamp = DateTime.Now.ToString("yyyyMMdd_Hmmssffff");
             var filePath = Path.Combine(directoryPath, $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}.fits");
@@ -1218,6 +1218,11 @@ namespace VolumeData
                         Marshal.WriteInt32(keyValue, 16);
                         if (FitsReader.FitsUpdateKey(subMaskFilePtr, 21, "BITPIX", keyValue, null, out status) == 0)
                         {
+                            if (FitsReader.FitsDeleteKey(subMaskFilePtr, "BUNIT", out status) != 0)
+                            {
+                                Debug.Log("Could not delete unit key. It probably does not exist!");
+                                status = 0;
+                            }
                             FitsReader.FitsWriteImageInt16(subMaskFilePtr, 3, regionVolume, subCubeData, out status);
                         }
                         if (keyValue != IntPtr.Zero)
