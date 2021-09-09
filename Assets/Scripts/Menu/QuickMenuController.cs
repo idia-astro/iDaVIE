@@ -19,6 +19,7 @@ public class QuickMenuController : MonoBehaviour
     public GameObject savePopup;
     public GameObject ExitPopup;
     public GameObject ExitSavePopup;
+    public GameObject exportPopup;
 
 
     int maskstatus = 0;
@@ -286,6 +287,43 @@ public class QuickMenuController : MonoBehaviour
         this.gameObject.SetActive(false);
         savePopup.SetActive(true);
 
+    }
+
+    public void ExportData()
+    {
+        exportPopup.transform.SetParent(this.transform.parent, false);
+        exportPopup.transform.localPosition = this.transform.localPosition;
+        exportPopup.transform.localRotation = this.transform.localRotation;
+        exportPopup.transform.localScale = this.transform.localScale;
+
+
+        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
+        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("SubCube").GetComponent<Button>().onClick.RemoveAllListeners();
+        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").GetComponent<Button>().onClick.RemoveAllListeners();
+
+        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(ExportCancel);
+        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("SubCube").GetComponent<Button>().onClick.AddListener(SaveSubCube);
+        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").GetComponent<Button>().onClick.AddListener(SaveMask);
+
+        this.gameObject.SetActive(false);
+        exportPopup.SetActive(true);
+
+    }
+
+    public void ExportCancel()
+    {
+
+        exportPopup.SetActive(false);
+    }
+
+
+    public void SaveSubCube()
+    {
+
+        _activeDataSet.SaveSubCube();
+
+        _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
+        ExportCancel();
     }
 
     public void SaveCancel()
