@@ -432,7 +432,7 @@ namespace VoTableReader
                 AstTool.Transform3D(featureSet.VolumeRenderer.AstFrame, centerX, centerY, centerZ, 1, out ra, out dec, out zPhys);
                 AstTool.Norm(featureSet.VolumeRenderer.AstFrame, ra, dec, zPhys, out normR, out normD, out normZ);
                 XElement voRow = new XElement("TR",
-                                    new XElement("TD", (currentFeature.Index + 1).ToString()), new XElement("TD", currentFeature.Center.x.ToString()), new XElement("TD", currentFeature.Center.y.ToString()),
+                                    new XElement("TD", (currentFeature.Id + 1).ToString()), new XElement("TD", currentFeature.Center.x.ToString()), new XElement("TD", currentFeature.Center.y.ToString()),
                                     new XElement("TD", currentFeature.Center.z.ToString()), new XElement("TD", currentFeature.CornerMin.x.ToString()), new XElement("TD", currentFeature.CornerMax.x.ToString()),
                                     new XElement("TD", currentFeature.CornerMin.y.ToString()), new XElement("TD", currentFeature.CornerMax.y.ToString()),
                                     new XElement("TD", currentFeature.CornerMin.z.ToString() ), new XElement("TD", currentFeature.CornerMax.z.ToString()),

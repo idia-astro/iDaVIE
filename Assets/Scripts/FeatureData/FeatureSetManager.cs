@@ -20,6 +20,7 @@ namespace DataFeatures
         private Feature _selectedFeature;
 
         public bool NeedToRespawnMenuList = true;
+        public bool NeedToUpdateInfo = false;
 
         public FeatureMenuController SourceListController = null;
         private readonly GameObject[] _anchorColliders = new GameObject[8];
@@ -230,7 +231,7 @@ namespace DataFeatures
             if (ActiveFeatureSetRenderer)
             {
                 DeselectFeature();
-                SelectedFeature = new Feature(boundsMin, boundsMax, Color.white, featureName, -1, null, ActiveFeatureSetRenderer, true) {Temporary = temporary, Selected = true};
+                SelectedFeature = new Feature(boundsMin, boundsMax, Color.white, featureName, -1, -1, null, ActiveFeatureSetRenderer, true) {Temporary = temporary, Selected = true};
                 if (temporary)
                 {
                     SelectedFeature.ShowAxes(true);

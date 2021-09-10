@@ -70,6 +70,11 @@ public class FeatureMenuController : MonoBehaviour
                 RecyclableScrollView.ReloadData();
             featureSetManager.NeedToRespawnMenuList = false;
         }
+        if (featureSetManager.NeedToUpdateInfo)
+        {
+            UpdateInfo();
+            featureSetManager.NeedToUpdateInfo = false;
+        }
     }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
@@ -172,7 +177,7 @@ public class FeatureMenuController : MonoBehaviour
         var textObject = InfoWindow.transform.Find("PanelContents").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport")
             .gameObject.transform.Find("Content").gameObject.transform.Find("SourceInfoText").gameObject;
         textObject.GetComponent<TMP_Text>().text = "";
-        textObject.GetComponent<TMP_Text>().text += $"Source # : {featureSetManager.SelectedFeature.Index + 1}{Environment.NewLine}";  
+        textObject.GetComponent<TMP_Text>().text += $"Source # : {featureSetManager.SelectedFeature.Id + 1}{Environment.NewLine}";  
         if (_activeDataSet.HasWCS)
         {
             double centerX, centerY, centerZ, ra, dec, physz, normR, normD, normZ;

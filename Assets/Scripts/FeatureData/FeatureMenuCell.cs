@@ -129,6 +129,7 @@ public void SetVisible()
             else if (cell.CellIndex%2!=1)
                 cell.GetComponent<Image>().color = _darkGrey;
         }
+        featureSetManager.NeedToUpdateInfo = true;
     }
     
     public void Teleport(Vector3 boundsMin, Vector3 boundsMax)

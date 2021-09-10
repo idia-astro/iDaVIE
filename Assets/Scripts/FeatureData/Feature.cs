@@ -11,6 +11,7 @@ namespace DataFeatures
         public string Comment;
         public float Metric;
         public int Index {get;}
+        public int Id {get;}
         public string Name { get;}
         private bool _selected;
         private Color _color;
@@ -23,10 +24,11 @@ namespace DataFeatures
 
         public bool StatusChanged;
 
-        public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, string name, int index, string[] rawData, FeatureSetRenderer parent, bool startVisible)
+        public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, string name, int index, int id, string[] rawData, FeatureSetRenderer parent, bool startVisible)
         {
             FeatureSetParent = parent;
             Index = index;
+            Id = id;
             _color = cubeColor;
             Name = name;
             SetBounds(cubeMin, cubeMax);
