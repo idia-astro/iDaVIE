@@ -499,7 +499,7 @@ namespace VolumeData
                 else
                 {
                     if (DataAnalysis.DataCropAndDownsample(FitsData, out reducedData, XDim, YDim, ZDim, 1, 1, 1, XDim, YDim, ZDim, xDownsample, yDownsample,
-                        zDownsample) != 0)
+                        zDownsample, Config.Instance.maxModeDownsampling) != 0)
                     {
                         Debug.Log("Data cube downsample error!");
                     }
@@ -572,7 +572,7 @@ namespace VolumeData
                 textureFormat = TextureFormat.RFloat;
                 elementSize = sizeof(float);
                 if (DataAnalysis.DataCropAndDownsample(FitsData, out regionData, XDim, YDim, ZDim, cropStart.x, cropStart.y, cropStart.z,
-                    cropEnd.x, cropEnd.y, cropEnd.z, downsample.x, downsample.y, downsample.z) != 0)
+                    cropEnd.x, cropEnd.y, cropEnd.z, downsample.x, downsample.y, downsample.z, Config.Instance.maxModeDownsampling) != 0)
                 {
                     Debug.Log("Data cube downsample error!");
                 }

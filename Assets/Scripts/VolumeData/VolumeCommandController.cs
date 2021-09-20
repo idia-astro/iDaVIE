@@ -88,16 +88,16 @@ namespace VolumeData
 
         void OnEnable()
         {
+            var config = Config.Instance;
             _dataSets = new List<VolumeDataSetRenderer>();
             _dataSets.AddRange(GetComponentsInChildren<VolumeDataSetRenderer>(true));            
-            _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, ConfidenceLevel.Low);
+            _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, config.voiceCommandConfidenceLevel);
             _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
 
             _speechKeywordRecognizer.Start();
             _volumeInputController = FindObjectOfType<VolumeInputController>();
         }
 
-        // private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
         private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
         {
             _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);

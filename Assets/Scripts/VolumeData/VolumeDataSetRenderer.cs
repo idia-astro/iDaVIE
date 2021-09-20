@@ -249,6 +249,15 @@ namespace VolumeData
         
         public void Start()
         {
+            // Apply settings from config
+            var config = Config.Instance;
+            TextureFilter = config.bilinearFiltering ? TextureFilterEnum.Bilinear : TextureFilterEnum.Point;
+            FoveatedRendering = config.foveatedRendering;
+            MaxSteps = config.maxRaymarchingSteps;
+            FoveatedStepsHigh = config.maxRaymarchingSteps;
+            MaximumCubeSizeInMB = config.gpuMemoryLimitMb;
+            ColorMap = config.defaultColorMap;
+            
             if (RandomVolume)
                 _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);
             else

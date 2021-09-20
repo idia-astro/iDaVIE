@@ -462,3 +462,6 @@ Assets/NuGet.meta
 
 #Screenshots
 Outputs/
+
+# Config
+config.json

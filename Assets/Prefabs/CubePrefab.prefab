@@ -128,7 +128,7 @@ MonoBehaviour:
   VignetteColor: {r: 0, g: 0, b: 0, a: 1}
   ThresholdMin: 0
   ThresholdMax: 1
-  ColorMap: 45
+  ColorMap: 30
   ScalingType: 0
   ScalingBias: 0
   ScalingContrast: 1

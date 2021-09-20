@@ -53,7 +53,7 @@ DllExport int GetVoxelInt16Value(const int16_t *, int16_t *, int64_t , int64_t ,
 DllExport int GetXProfile(const float *, float **, int64_t , int64_t , int64_t , int64_t , int64_t );
 DllExport int GetYProfile(const float *, float **, int64_t , int64_t , int64_t , int64_t , int64_t );
 DllExport int GetZProfile(const float *, float **, int64_t , int64_t , int64_t , int64_t , int64_t );
-DllExport int DataCropAndDownsample(const float *, float **, int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int , int , int );
+DllExport int DataCropAndDownsample(const float *, float **, int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int , int , int, bool);
 DllExport int MaskCropAndDownsample(const int16_t *, int16_t **, int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int , int , int );
 DllExport int GetHistogram(const float* , int64_t , int , float , float , int** );
 DllExport int GetMaskedSources(const int16_t*, int64_t, int64_t, int64_t, int*, SourceInfo**);
