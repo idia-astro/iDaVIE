@@ -126,9 +126,8 @@ int GetZProfile(const float *dataPtr, float **profile, int64_t xDim, int64_t yDi
 }
 
 
-int DataCropAndDownsample(const float* dataPtr, float** newDataPtr, int64_t dimX, int64_t dimY, int64_t dimZ,
-                          int64_t cropX1, int64_t cropY1, int64_t cropZ1, int64_t cropX2, int64_t cropY2, int64_t cropZ2, int factorX, int factorY, int factorZ,
-                          bool maxDownsampling) {
+int DataCropAndDownsample(const float* dataPtr, float** newDataPtr, int64_t dimX, int64_t dimY, int64_t dimZ, int64_t cropX1, int64_t cropY1, int64_t cropZ1, int64_t cropX2,
+                          int64_t cropY2, int64_t cropZ2, int factorX, int factorY, int factorZ, bool maxDownsampling) {
     // Make use of templated function to allow constexpr branching in inner loops without reducing performance
     if (maxDownsampling) {
         return DataCropAndDownsample<true>(dataPtr, newDataPtr, dimX, dimY, dimZ, cropX1, cropY1, cropZ1, cropX2, cropY2, cropZ2, factorX, factorY, factorZ);
@@ -138,9 +137,8 @@ int DataCropAndDownsample(const float* dataPtr, float** newDataPtr, int64_t dimX
 }
 
 template<bool maxMode>
-int DataCropAndDownsample(const float* dataPtr, float** newDataPtr, const int64_t dimX, const int64_t dimY, const int64_t dimZ,
-                          const int64_t cropX1, const int64_t cropY1, const int64_t cropZ1, const int64_t cropX2, const int64_t cropY2, const int64_t cropZ2, const int factorX,
-                          const int factorY, const int factorZ)
+int DataCropAndDownsample(const float* dataPtr, float** newDataPtr, const int64_t dimX, const int64_t dimY, const int64_t dimZ, const int64_t cropX1, const int64_t cropY1,
+                          const int64_t cropZ1, const int64_t cropX2, const int64_t cropY2, const int64_t cropZ2, const int factorX, const int factorY, const int factorZ)
 {
     if (cropX1 > dimX || cropX2 > dimX || cropY1 > dimY || cropY2 > dimY || cropZ1 > dimZ || cropZ2 > dimZ || cropX1 < 1 || cropX2 < 1 || cropY1 < 1 || cropY2 < 1 || cropZ1 < 1 ||
         cropZ2 < 1)
