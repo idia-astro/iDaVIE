@@ -44,6 +44,8 @@ struct SourceStats
     double channelW20;
 };
 
+template<bool maxMode> int DataCropAndDownsample(const float *, float **, int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int , int , int);
+
 extern "C"
 {
 DllExport int FindMaxMin(const float *, int64_t , float *, float *);

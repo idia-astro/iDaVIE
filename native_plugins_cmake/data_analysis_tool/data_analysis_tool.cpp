@@ -125,125 +125,105 @@ int GetZProfile(const float *dataPtr, float **profile, int64_t xDim, int64_t yDi
     return EXIT_SUCCESS;
 }
 
-int DataCropAndDownsample(const float *dataPtr, float **newDataPtr, int64_t dimX, int64_t dimY, int64_t dimZ,
-    int64_t cropX1, int64_t cropY1, int64_t cropZ1, int64_t cropX2, int64_t cropY2, int64_t cropZ2, int factorX, int factorY, int factorZ, bool maxDownsampling)
-{
-    if (cropX1 > dimX || cropX2 > dimX || cropY1 > dimY || cropY2 > dimY || cropZ1 > dimZ || cropZ2 > dimZ || cropX1 < 1 || cropX2 < 1 || cropY1 < 1 || cropY2 < 1 || cropZ1 < 1 || cropZ2 < 1)
+
+int DataCropAndDownsample(const float* dataPtr, float** newDataPtr, int64_t dimX, int64_t dimY, int64_t dimZ,
+                          int64_t cropX1, int64_t cropY1, int64_t cropZ1, int64_t cropX2, int64_t cropY2, int64_t cropZ2, int factorX, int factorY, int factorZ,
+                          bool maxDownsampling) {
+    // Make use of templated function to allow constexpr branching in inner loops without reducing performance
+    if (maxDownsampling) {
+        return DataCropAndDownsample<true>(dataPtr, newDataPtr, dimX, dimY, dimZ, cropX1, cropY1, cropZ1, cropX2, cropY2, cropZ2, factorX, factorY, factorZ);
+    } else {
+        return DataCropAndDownsample<false>(dataPtr, newDataPtr, dimX, dimY, dimZ, cropX1, cropY1, cropZ1, cropX2, cropY2, cropZ2, factorX, factorY, factorZ);
+    }
+}
+
+template<bool maxMode>
+int DataCropAndDownsample(const float* dataPtr, float** newDataPtr, const int64_t dimX, const int64_t dimY, const int64_t dimZ,
+                          const int64_t cropX1, const int64_t cropY1, const int64_t cropZ1, const int64_t cropX2, const int64_t cropY2, const int64_t cropZ2, const int factorX,
+                          const int factorY, const int factorZ) {
+    if (cropX1 > dimX || cropX2 > dimX || cropY1 > dimY || cropY2 > dimY || cropZ1 > dimZ || cropZ2 > dimZ || cropX1 < 1 || cropX2 < 1 || cropY1 < 1 || cropY2 < 1 || cropZ1 < 1 ||
+        cropZ2 < 1) {
         return EXIT_FAILURE;
+    }
+
     int64_t newDimX = (abs(cropX1 - cropX2) + 1) / factorX;
     int64_t newDimY = (abs(cropY1 - cropY2) + 1) / factorY;
     int64_t newDimZ = (abs(cropZ1 - cropZ2) + 1) / factorZ;
-    if ((abs(cropX1 - cropX2) + 1) % factorX != 0)
+    if ((abs(cropX1 - cropX2) + 1) % factorX != 0) {
         newDimX++;
-    if ((abs(cropY1 - cropY2) + 1) % factorY != 0)
+    }
+    if ((abs(cropY1 - cropY2) + 1) % factorY != 0) {
         newDimY++;
-    if ((abs(cropZ1 - cropZ2) + 1) % factorZ != 0)
+    }
+    if ((abs(cropZ1 - cropZ2) + 1) % factorZ != 0) {
         newDimZ++;
-    int64_t newSize = newDimX * newDimY * newDimZ;
-    float* reducedCube = new float[newSize] {};
-    int64_t smallX = min(cropX1, cropX2);
-    int64_t smallY = min(cropY1, cropY2);
-    int64_t smallZ = min(cropZ1, cropZ2);
+    }
 
-    if (maxDownsampling)
-    {
-#pragma omp parallel
-#pragma omp for
-        for (auto newZ = 0; newZ < newDimZ; newZ++)
-        {
-            int64_t  pixelCount, oldZ, oldY, oldX;
-            float pixelMax, pixVal;
-            size_t blockSizeX, blockSizeY, blockSizeZ;
-            for (auto newY = 0; newY < newDimY; newY++)
-            {
-                for (auto newX = 0; newX < newDimX; newX++)
-                {
-                    pixelMax = -std::numeric_limits<float>::max();
-                    pixelCount = 0;
-                    blockSizeX = factorX;
-                    blockSizeY = factorY;
-                    blockSizeZ = factorZ;
-                    if ((newX + 1) * factorX >= dimX) {
-                        blockSizeX = dimX - (newX*factorX);
-                    }
-                    if ((newY + 1) * factorY >= dimY) {
-                        blockSizeY = dimY - (newY*factorY);
-                    }
-                    if ((newZ + 1) * factorZ >= dimZ) {
-                        blockSizeZ = dimZ - (newZ*factorZ);
-                    }
-                    for (auto pixelZ = 0; pixelZ < blockSizeZ; pixelZ++)
-                    {
-                        oldZ = newZ * factorZ + pixelZ + smallZ - 1;
-                        for (auto pixelY = 0; pixelY < blockSizeY; pixelY++)
-                        {
-                            oldY = newY * factorY + pixelY + smallY - 1;
-                            for (auto pixelX = 0; pixelX < blockSizeX; pixelX++)
-                            {
-                                oldX = newX * factorX + pixelX + smallX - 1;
-                                pixVal = dataPtr[oldZ * dimX * dimY + oldY * dimX + oldX];
-                                if (!isnan(pixVal) && pixVal > pixelMax) {
-                                    pixelCount++;
-                                    pixelMax = pixVal;
+    const int64_t newSize = newDimX * newDimY * newDimZ;
+    float* reducedCube = new float[newSize]{};
+    const int64_t smallX = min(cropX1, cropX2);
+    const int64_t smallY = min(cropY1, cropY2);
+    const int64_t smallZ = min(cropZ1, cropZ2);
+
+#pragma omp parallel for
+    for (auto newZ = 0; newZ < newDimZ; newZ++) {
+        int64_t oldZ, oldY, oldX;
+        int pixelCount;
+        float pixelAccumulation;
+        size_t blockSizeX, blockSizeY, blockSizeZ;
+        for (auto newY = 0; newY < newDimY; newY++) {
+            for (auto newX = 0; newX < newDimX; newX++) {
+                if constexpr(maxMode) {
+                    pixelAccumulation = -std::numeric_limits<float>::max();
+                } else {
+                    pixelAccumulation = 0;
+                }
+                pixelCount = 0;
+                blockSizeX = factorX;
+                blockSizeY = factorY;
+                blockSizeZ = factorZ;
+                if ((newX + 1) * factorX >= dimX) {
+                    blockSizeX = dimX - (newX * factorX);
+                }
+                if ((newY + 1) * factorY >= dimY) {
+                    blockSizeY = dimY - (newY * factorY);
+                }
+                if ((newZ + 1) * factorZ >= dimZ) {
+                    blockSizeZ = dimZ - (newZ * factorZ);
+                }
+                for (auto pixelZ = 0; pixelZ < blockSizeZ; pixelZ++) {
+                    oldZ = newZ * factorZ + pixelZ + smallZ - 1;
+                    for (auto pixelY = 0; pixelY < blockSizeY; pixelY++) {
+                        oldY = newY * factorY + pixelY + smallY - 1;
+                        for (auto pixelX = 0; pixelX < blockSizeX; pixelX++) {
+                            oldX = newX * factorX + pixelX + smallX - 1;
+                            auto pixVal = dataPtr[oldZ * dimX * dimY + oldY * dimX + oldX];
+                            if (!isnan(pixVal)) {
+                                pixelCount++;
+                                if constexpr(maxMode) {
+                                    if (pixVal > pixelAccumulation) {
+                                        pixelAccumulation = pixVal;
+                                    }
+                                } else {
+                                    pixelAccumulation += pixVal;
                                 }
                             }
                         }
                     }
-                    reducedCube[newZ * newDimX * newDimY + newY * newDimX + newX] = pixelCount ? pixelMax : NAN;
+                }
+                auto index = newZ * newDimX * newDimY + newY * newDimX + newX;
+                if (pixelCount) {
+                    if constexpr(maxMode) {
+                        reducedCube[index] = pixelAccumulation;
+                    } else {
+                        reducedCube[index] = pixelAccumulation / (float) pixelCount;
+                    }
+                } else {
+                    reducedCube[index] = NAN;
                 }
             }
         }
     }
-    else
-    {
-#pragma omp parallel
-#pragma omp for
-        for (auto newZ = 0; newZ < newDimZ; newZ++)
-        {
-            int64_t  pixelCount, oldZ, oldY, oldX;
-            float pixelSum, pixVal;
-            size_t blockSizeX, blockSizeY, blockSizeZ;
-            for (auto newY = 0; newY < newDimY; newY++)
-            {
-                for (auto newX = 0; newX < newDimX; newX++)
-                {
-                    pixelSum = 0;
-                    pixelCount = 0;
-                    blockSizeX = factorX;
-                    blockSizeY = factorY;
-                    blockSizeZ = factorZ;
-                    if ((newX + 1) * factorX >= dimX) {
-                        blockSizeX = dimX - (newX*factorX);
-                    }
-                    if ((newY + 1) * factorY >= dimY) {
-                        blockSizeY = dimY - (newY*factorY);
-                    }
-                    if ((newZ + 1) * factorZ >= dimZ) {
-                        blockSizeZ = dimZ - (newZ*factorZ);
-                    }
-                    for (auto pixelZ = 0; pixelZ < blockSizeZ; pixelZ++)
-                    {
-                        oldZ = newZ * factorZ + pixelZ + smallZ - 1;
-                        for (auto pixelY = 0; pixelY < blockSizeY; pixelY++)
-                        {
-                            oldY = newY * factorY + pixelY + smallY - 1;
-                            for (auto pixelX = 0; pixelX < blockSizeX; pixelX++)
-                            {
-                                oldX = newX * factorX + pixelX + smallX - 1;
-                                pixVal = dataPtr[oldZ * dimX * dimY + oldY * dimX + oldX];
-                                if (!isnan(pixVal)) {
-                                    pixelCount++;
-                                    pixelSum += pixVal;
-                                }
-                            }
-                        }
-                    }
-                    reducedCube[newZ * newDimX * newDimY + newY * newDimX + newX] = pixelCount ? pixelSum / pixelCount : NAN;
-                }
-            }
-        }
-    }
-
     *newDataPtr = reducedCube;
     return EXIT_SUCCESS;
 }
@@ -267,7 +247,7 @@ int MaskCropAndDownsample(const int16_t *dataPtr, int16_t **newDataPtr, int64_t 
     int64_t smallX = min(cropX1, cropX2);
     int64_t smallY = min(cropY1, cropY2);
     int64_t smallZ = min(cropZ1, cropZ2);
-#pragma omp parallel 
+#pragma omp parallel
 #pragma omp for
     for (auto newZ = 0; newZ < newDimZ; newZ++)
     {
