@@ -8,13 +8,6 @@ using Debug = UnityEngine.Debug;
 
 namespace VolumeData
 {
-    public enum TextureFilterEnum
-    {
-        Point,
-        Bilinear,
-        Trilinear
-    }
-
     public enum ScalingType
     {
         Linear = 0,
@@ -48,7 +41,7 @@ namespace VolumeData
         [Range(16, 512)] public int MaxSteps = 192;
         public long MaximumCubeSizeInMB = 250;
         public ProjectionMode ProjectionMode = ProjectionMode.MaximumIntensityProjection;
-        public TextureFilterEnum TextureFilter = TextureFilterEnum.Point;
+        public FilterMode TextureFilter = FilterMode.Point;
         [Range(0, 1)] public float Jitter = 1.0f;
 
         [Header("Mask Rendering and Editing Settings")]
@@ -251,7 +244,7 @@ namespace VolumeData
         {
             // Apply settings from config
             var config = Config.Instance;
-            TextureFilter = config.bilinearFiltering ? TextureFilterEnum.Bilinear : TextureFilterEnum.Point;
+            TextureFilter = config.bilinearFiltering ? FilterMode.Bilinear : FilterMode.Point;
             FoveatedRendering = config.foveatedRendering;
             MaxSteps = config.maxRaymarchingSteps;
             FoveatedStepsHigh = config.maxRaymarchingSteps;
@@ -266,14 +259,7 @@ namespace VolumeData
             _featureManager = GetComponentInChildren<FeatureSetManager>();
             if (_featureManager == null)
                 Debug.Log($"No FeatureManager attached to VolumeDataSetRenderer. Attach prefab for use of Features.");
-            if (!FactorOverride)
-            {
-                _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
-            }
-            _dataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
-            _currentXFactor = XFactor;
-            _currentYFactor = YFactor;
-            _currentZFactor = ZFactor;
+            GenerateDownsampledCube();
             ScaleMax = _dataSet.MaxValue;
             ScaleMin = _dataSet.MinValue;
             if (!String.IsNullOrEmpty(MaskFileName))
@@ -375,7 +361,29 @@ namespace VolumeData
 
         }
 
+        private void GenerateDownsampledCube()
+        {
+            if (!FactorOverride)
+            {
+                _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
+            }
 
+            _dataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
+            _currentXFactor = XFactor;
+            _currentYFactor = YFactor;
+            _currentZFactor = ZFactor;
+        }
+
+        public void RegenerateCubes()
+        {
+            // Regenerate image and region cubes after mode changed
+            GenerateDownsampledCube();
+            if (IsCropped)
+            {
+                CropToRegion();
+            }
+        }
+        
         public VolumeDataSet GetDataSet()
         {
             return _dataSet;
