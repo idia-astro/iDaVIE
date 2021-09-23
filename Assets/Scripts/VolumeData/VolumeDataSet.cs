@@ -365,7 +365,7 @@ namespace VolumeData
             
             if (_maskFeatureSet)
             {
-                var index = _maskFeatureSet.FeatureList.FindIndex(f => f.Index == maskVal - 1);
+                var index = _maskFeatureSet.FeatureList.FindIndex(f => f.Id == maskVal - 1);
                 if (index >= 0)
                 {
                     if (sourceStats.numVoxels > 0)
@@ -392,7 +392,7 @@ namespace VolumeData
                     var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
                     var name = $"Masked Source #{maskVal}";
                     var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
-                    var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, maskVal - 1, rawStrings, _maskFeatureSet, _maskFeatureSet.FeatureList[0].Visible);
+                    var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, _maskFeatureSet.FeatureList.Count, maskVal - 1, rawStrings, _maskFeatureSet, _maskFeatureSet.FeatureList[0].Visible);
                     _maskFeatureSet.AddFeature(feature);
                 }
             }
