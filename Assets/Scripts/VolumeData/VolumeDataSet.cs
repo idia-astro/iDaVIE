@@ -469,7 +469,7 @@ namespace VolumeData
             return volumeDataSet;
         }
 
-        public void GenerateVolumeTexture(TextureFilterEnum textureFilter, int xDownsample, int yDownsample, int zDownsample)
+        public void GenerateVolumeTexture(FilterMode textureFilter, int xDownsample, int yDownsample, int zDownsample)
         {
             TextureFormat textureFormat;
             int elementSize;
@@ -499,7 +499,7 @@ namespace VolumeData
                 else
                 {
                     if (DataAnalysis.DataCropAndDownsample(FitsData, out reducedData, XDim, YDim, ZDim, 1, 1, 1, XDim, YDim, ZDim, xDownsample, yDownsample,
-                        zDownsample) != 0)
+                        zDownsample, Config.Instance.maxModeDownsampling) != 0)
                     {
                         Debug.Log("Data cube downsample error!");
                     }
@@ -520,19 +520,12 @@ namespace VolumeData
                 cubeSize[1]++;
             if (ZDim % zDownsample != 0)
                 cubeSize[2]++;
-            Texture3D dataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], textureFormat, false);
-            switch (textureFilter)
+
+            if (!DataCube || DataCube.width != cubeSize[0] || DataCube.height != cubeSize[1] || DataCube.depth != cubeSize[2])
             {
-                case TextureFilterEnum.Point:
-                    dataCube.filterMode = FilterMode.Point;
-                    break;
-                case TextureFilterEnum.Bilinear:
-                    dataCube.filterMode = FilterMode.Bilinear;
-                    break;
-                case TextureFilterEnum.Trilinear:
-                    dataCube.filterMode = FilterMode.Trilinear;
-                    break;
+                DataCube = new Texture3D(cubeSize[0], cubeSize[1], cubeSize[2], textureFormat, false);    
             }
+            DataCube.filterMode = textureFilter;
 
             int sliceSize = cubeSize[0] * cubeSize[1];
             Texture2D textureSlice = new Texture2D(cubeSize[0], cubeSize[1], textureFormat, false);
@@ -541,16 +534,15 @@ namespace VolumeData
                 textureSlice.LoadRawTextureData(IntPtr.Add(reducedData, slice * sliceSize * elementSize),
                     sliceSize * elementSize);
                 textureSlice.Apply();
-                Graphics.CopyTexture(textureSlice, 0, 0, 0, 0, cubeSize[0], cubeSize[1], dataCube, slice, 0, 0, 0);
+                Graphics.CopyTexture(textureSlice, 0, 0, 0, 0, cubeSize[0], cubeSize[1], DataCube, slice, 0, 0, 0);
             }
 
-            DataCube = dataCube;
-            //TODO output cached file
+            // TODO output cached file
             if (downsampled && reducedData != IntPtr.Zero)
                 DataAnalysis.FreeMemory(reducedData);
         }
 
-        public void GenerateCroppedVolumeTexture(TextureFilterEnum textureFilter, Vector3Int cropStart, Vector3Int cropEnd, Vector3Int downsample)
+        public void GenerateCroppedVolumeTexture(FilterMode textureFilter, Vector3Int cropStart, Vector3Int cropEnd, Vector3Int downsample)
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
@@ -572,7 +564,7 @@ namespace VolumeData
                 textureFormat = TextureFormat.RFloat;
                 elementSize = sizeof(float);
                 if (DataAnalysis.DataCropAndDownsample(FitsData, out regionData, XDim, YDim, ZDim, cropStart.x, cropStart.y, cropStart.z,
-                    cropEnd.x, cropEnd.y, cropEnd.z, downsample.x, downsample.y, downsample.z) != 0)
+                    cropEnd.x, cropEnd.y, cropEnd.z, downsample.x, downsample.y, downsample.z, Config.Instance.maxModeDownsampling) != 0)
                 {
                     Debug.Log("Data cube downsample error!");
                 }
@@ -590,20 +582,13 @@ namespace VolumeData
             if ((Math.Abs(cropStart.z - cropEnd.z) + 1) % downsample.z != 0)
                 cubeSize.z++;
 
-            RegionCube = new Texture3D(cubeSize.x, cubeSize.y, cubeSize.z, textureFormat, false);
-            switch (textureFilter)
+            if (!RegionCube || RegionCube.width != cubeSize[0] || RegionCube.height != cubeSize[1] || RegionCube.depth != cubeSize[2])
             {
-                case TextureFilterEnum.Point:
-                    RegionCube.filterMode = FilterMode.Point;
-                    break;
-                case TextureFilterEnum.Bilinear:
-                    RegionCube.filterMode = FilterMode.Bilinear;
-                    break;
-                case TextureFilterEnum.Trilinear:
-                    RegionCube.filterMode = FilterMode.Trilinear;
-                    break;
+                RegionCube = new Texture3D(cubeSize.x, cubeSize.y, cubeSize.z, textureFormat, false);    
             }
-
+            
+            RegionCube.filterMode = textureFilter;
+            
             int sliceSize = cubeSize.x * cubeSize.y;
             Texture2D textureSlice = new Texture2D(cubeSize.x, cubeSize.y, textureFormat, false);
 

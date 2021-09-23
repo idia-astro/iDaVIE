@@ -94,5 +94,15 @@ public class VolumeCommandControllerEditor : Editor
         {
             volumeCommandController.setProjection(ProjectionMode.AverageIntensityProjection);
         }
+        
+        if (GUILayout.Button("Sampling mode Maximum"))
+        {
+            volumeCommandController.SetSamplingMode(true);
+        }
+        
+        if (GUILayout.Button("Sampling mode Average"))
+        {
+            volumeCommandController.SetSamplingMode(false);
+        }
     }
 }

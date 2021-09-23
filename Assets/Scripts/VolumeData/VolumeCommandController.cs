@@ -53,6 +53,8 @@ namespace VolumeData
             public static readonly string MaskIsolated = "mask isolate";
             public static readonly string ProjectionMaximum = "projection maximum";
             public static readonly string ProjectionAverage = "projection average";
+            public static readonly string SamplingModeMaximum = "sampling mode maximum";
+            public static readonly string SamplingModeAverage = "sampling mode average";
             public static readonly string PaintMode = "paint mode";
             public static readonly string ExitPaintMode = "exit paint mode";
             public static readonly string BrushAdd = "brush add";
@@ -75,7 +77,7 @@ namespace VolumeData
                 EditThresholdMin, EditThresholdMax, EditZAxis, EditZAxisAlt, SaveThreshold, ResetThreshold, ResetTransform, ColormapPlasma, ColormapRainbow, 
                 ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ColormapTurbo, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
                 PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
-                ProjectionAverage, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline, TakePicture, CursorInfo, LinearScale,
+                ProjectionAverage, SamplingModeAverage, SamplingModeMaximum, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline, TakePicture, CursorInfo, LinearScale,
                 LogScale, SqrtScale, AddNewSource, SetSourceId, Undo, Redo, SaveSubCube
             };
         }
@@ -88,16 +90,16 @@ namespace VolumeData
 
         void OnEnable()
         {
+            var config = Config.Instance;
             _dataSets = new List<VolumeDataSetRenderer>();
             _dataSets.AddRange(GetComponentsInChildren<VolumeDataSetRenderer>(true));            
-            _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, ConfidenceLevel.Low);
+            _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, config.voiceCommandConfidenceLevel);
             _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
 
             _speechKeywordRecognizer.Start();
             _volumeInputController = FindObjectOfType<VolumeInputController>();
         }
 
-        // private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
         private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
         {
             _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
@@ -215,6 +217,14 @@ namespace VolumeData
             else if (args == Keywords.ProjectionAverage)
             {
                 setProjection(ProjectionMode.AverageIntensityProjection);
+            }
+            else if (args == Keywords.SamplingModeAverage)
+            {
+                SetSamplingMode(false);
+            }
+            else if (args == Keywords.SamplingModeMaximum)
+            {
+                SetSamplingMode(true);
             }
             else if (args == Keywords.PaintMode)
             {
@@ -425,6 +435,16 @@ namespace VolumeData
             if (_activeDataSet)
             {
                 _activeDataSet.ProjectionMode = mode;
+            }
+        }
+        
+        public void SetSamplingMode(bool maxMode)
+        {
+            var config = Config.Instance;
+            if (config.maxModeDownsampling != maxMode)
+            {
+                config.maxModeDownsampling = maxMode;
+                _activeDataSet?.RegenerateCubes();
             }
         }
 
