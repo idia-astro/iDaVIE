@@ -19,7 +19,7 @@ public static class DataAnalysis
     [PluginFunctionAttr("DataCropAndDownsample")]
     public static readonly DataCropAndDownsampleDelegate DataCropAndDownsample = null;
     public delegate int DataCropAndDownsampleDelegate(IntPtr dataPtr, out IntPtr newDataPtr, long dimX, long dimY, long dimZ, long cropX1, long cropY1, long cropZ1, 
-       long cropX2, long cropY2, long cropZ2, int factorX, int factorY, int factorZ);
+       long cropX2, long cropY2, long cropZ2, int factorX, int factorY, int factorZ, bool maxDownsampling);
 
     [PluginFunctionAttr("MaskCropAndDownsample")]
     public static readonly MaskCropAndDownsampleDelegate MaskCropAndDownsample = null;
