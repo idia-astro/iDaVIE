@@ -138,6 +138,8 @@ public class VolumeInputController : MonoBehaviour
     private VRFamily _vrFamily;
 
     private bool _paintMenuOn = false;
+    private bool _savePopupOn = false;
+    private bool _exportPopupOn = false;
 
 
     // Used for moving the pointer transform to an acceptable position for each controller type
@@ -424,8 +426,10 @@ public class VolumeInputController : MonoBehaviour
         }
 
         _paintMenuOn = CanvassQuickMenu.GetComponent<QuickMenuController>().paintMenu.activeSelf;
+        _savePopupOn = CanvassQuickMenu.GetComponent<QuickMenuController>().savePopup.activeSelf;
+        _exportPopupOn = CanvassQuickMenu.GetComponent<QuickMenuController>().exportPopup.activeSelf;
 
-        if (newState && !_paintMenuOn)
+        if (newState && !_paintMenuOn && !_savePopupOn && !_exportPopupOn)
         {
             StartRequestQuickMenu(fromSource == SteamVR_Input_Sources.LeftHand ? 0 : 1);
         }

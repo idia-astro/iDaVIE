@@ -283,7 +283,9 @@ public class QuickMenuController : MonoBehaviour
         savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
         savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
 
-        _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
+        if (_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.Painting )
+            _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
+        
         this.gameObject.SetActive(false);
         savePopup.SetActive(true);
 
