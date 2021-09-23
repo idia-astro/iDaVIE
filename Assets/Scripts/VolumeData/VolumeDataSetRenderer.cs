@@ -250,6 +250,7 @@ namespace VolumeData
             FoveatedStepsHigh = config.maxRaymarchingSteps;
             MaximumCubeSizeInMB = config.gpuMemoryLimitMb;
             ColorMap = config.defaultColorMap;
+            ScalingType = config.defaultScalingType;
             
             if (RandomVolume)
                 _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);

@@ -68,11 +68,11 @@ namespace VolumeData
         public bool UseMask = true;
 
 
-
         [Header("Color Mapping")] 
         public ColorMapEnum ColorMapM0 = ColorMapEnum.Plasma;
         public ColorMapEnum ColorMapM1 = ColorMapEnum.Turbo;
         public ScalingType ScalingTypeM0 = ScalingType.Sqrt;
+        public ScalingType ScalingTypeM1 = ScalingType.Linear;
         [Range(-1, 1)] public float ScalingBias = 0.0f;
         [Range(0, 5)] public float ScalingContrast = 1.0f;
         public float ScalingAlpha = 1000.0f;
@@ -112,6 +112,19 @@ namespace VolumeData
 
         private void Start()
         {
+            // Apply settings from config
+            var config = Config.Instance;
+            ColorMapM0 = config.momentMaps.m0.colorMap;
+            ScalingTypeM0 = config.momentMaps.m0.scalingType;
+
+            ColorMapM1 = config.momentMaps.m1.colorMap;
+            ScalingTypeM1 = config.momentMaps.m1.scalingType;
+
+            UseMask = config.momentMaps.defaultThresholdType == MomentMapMenuController.ThresholdType.Mask;
+            MomentMapThreshold = config.momentMaps.defaultThreshold;
+            
+            UseZScale = config.momentMaps.defaultLimitType == MomentMapMenuController.LimitType.ZScale;
+            
             _colormapTexture = (Texture2D) Resources.Load("allmaps");
             _colormapTexture.filterMode = FilterMode.Point;
             _colormapTexture.wrapMode = TextureWrapMode.Clamp;
@@ -273,7 +286,7 @@ namespace VolumeData
                 _computeShader.SetTexture(_colormapKernelIndex, MaterialID.ColormapTexture, _colormapTexture);
 
                 // Default MomentOne bounds: ZScale min to max (linear scaling)
-                _computeShader.SetInt(MaterialID.ScaleType, 0);
+                _computeShader.SetInt(MaterialID.ScaleType, ScalingTypeM1.GetHashCode());
                 // Switch bounds if the map needs to be inverted
                 _computeShader.SetFloat(MaterialID.ClampMin, Inverted ? _moment1Bounds.y: _moment1Bounds.x);
                 _computeShader.SetFloat(MaterialID.ClampMax, Inverted ? _moment1Bounds.x: _moment1Bounds.y);

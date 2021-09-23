@@ -22,7 +22,34 @@ namespace VolumeData
         public ColorMapEnum defaultColorMap = ColorMapEnum.Inferno;
 
         [JsonConverter(typeof(StringEnumConverter))]
+        public ScalingType defaultScalingType = ScalingType.Linear;
+
+        [JsonConverter(typeof(StringEnumConverter))]
         public ConfidenceLevel voiceCommandConfidenceLevel = ConfidenceLevel.Low;
+
+        public class RenderConfig
+        {
+            [JsonConverter(typeof(StringEnumConverter))]
+            public ColorMapEnum colorMap = ColorMapEnum.Inferno;
+
+            [JsonConverter(typeof(StringEnumConverter))]
+            public ScalingType scalingType = ScalingType.Linear;
+        }
+
+        public class MomentConfig
+        {
+            [JsonConverter(typeof(StringEnumConverter))]
+            public MomentMapMenuController.ThresholdType defaultThresholdType = MomentMapMenuController.ThresholdType.Mask;
+            [JsonConverter(typeof(StringEnumConverter))]
+            public MomentMapMenuController.LimitType defaultLimitType = MomentMapMenuController.LimitType.ZScale;
+            public float defaultThreshold = 0;
+            
+            public RenderConfig m0 = new RenderConfig { colorMap = ColorMapEnum.Plasma, scalingType = ScalingType.Sqrt };
+            public RenderConfig m1 = new RenderConfig { colorMap = ColorMapEnum.Turbo, scalingType = ScalingType.Linear };
+        }
+
+        public MomentConfig momentMaps = new MomentConfig();
+        
 
         private static Config _instance;
 
