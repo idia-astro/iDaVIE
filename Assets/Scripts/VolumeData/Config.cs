@@ -12,10 +12,10 @@ namespace VolumeData
         [JsonProperty("$schema")]
         private readonly string _schemaUri = "https://idavie.readthedocs.io/en/latest/_static/idavie_config_1.json";
         
-        public bool maxModeDownsampling = false;
+        public bool maxModeDownsampling = true;
         public bool foveatedRendering = true;
         public bool bilinearFiltering = false;
-        public int gpuMemoryLimitMb = 250;
+        public int gpuMemoryLimitMb = 384;
         public int maxRaymarchingSteps = 384;
         
         [JsonConverter(typeof(StringEnumConverter))]
