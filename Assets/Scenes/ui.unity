@@ -11703,8 +11703,8 @@ MonoBehaviour:
   plotsMenu: {fileID: 1693248399}
   voiceCommandsListCanvas: {fileID: 2093102594}
   savePopup: {fileID: 426473890}
-  ExitPopup: {fileID: 2094693825}
-  ExitSavePopup: {fileID: 2012834369}
+  exitPopup: {fileID: 2094693825}
+  exitSavePopup: {fileID: 2012834369}
   exportPopup: {fileID: 853767919}
 --- !u!225 &379983800
 CanvasGroup:
@@ -16169,8 +16169,8 @@ MonoBehaviour:
   plotsMenu: {fileID: 0}
   voiceCommandsListCanvas: {fileID: 0}
   savePopup: {fileID: 0}
-  ExitPopup: {fileID: 0}
-  ExitSavePopup: {fileID: 0}
+  exitPopup: {fileID: 0}
+  exitSavePopup: {fileID: 0}
   exportPopup: {fileID: 0}
 --- !u!1 &490989435
 GameObject:
@@ -18677,8 +18677,8 @@ MonoBehaviour:
   plotsMenu: {fileID: 0}
   voiceCommandsListCanvas: {fileID: 0}
   savePopup: {fileID: 0}
-  ExitPopup: {fileID: 0}
-  ExitSavePopup: {fileID: 0}
+  exitPopup: {fileID: 0}
+  exitSavePopup: {fileID: 0}
   exportPopup: {fileID: 0}
 --- !u!114 &557535366
 MonoBehaviour:
@@ -20637,8 +20637,8 @@ MonoBehaviour:
   plotsMenu: {fileID: 0}
   voiceCommandsListCanvas: {fileID: 0}
   savePopup: {fileID: 0}
-  ExitPopup: {fileID: 0}
-  ExitSavePopup: {fileID: 0}
+  exitPopup: {fileID: 0}
+  exitSavePopup: {fileID: 0}
   exportPopup: {fileID: 0}
 --- !u!114 &613341593
 MonoBehaviour:
@@ -21529,8 +21529,8 @@ MonoBehaviour:
   plotsMenu: {fileID: 0}
   voiceCommandsListCanvas: {fileID: 0}
   savePopup: {fileID: 0}
-  ExitPopup: {fileID: 0}
-  ExitSavePopup: {fileID: 0}
+  exitPopup: {fileID: 0}
+  exitSavePopup: {fileID: 0}
   exportPopup: {fileID: 0}
 --- !u!114 &645239846
 MonoBehaviour:
@@ -30181,8 +30181,8 @@ MonoBehaviour:
   plotsMenu: {fileID: 1693248399}
   voiceCommandsListCanvas: {fileID: 2093102594}
   savePopup: {fileID: 426473890}
-  ExitPopup: {fileID: 2094693825}
-  ExitSavePopup: {fileID: 2012834369}
+  exitPopup: {fileID: 0}
+  exitSavePopup: {fileID: 0}
   exportPopup: {fileID: 853767919}
 --- !u!1 &857410021
 GameObject:
@@ -51379,8 +51379,8 @@ MonoBehaviour:
   plotsMenu: {fileID: 0}
   voiceCommandsListCanvas: {fileID: 0}
   savePopup: {fileID: 0}
-  ExitPopup: {fileID: 0}
-  ExitSavePopup: {fileID: 0}
+  exitPopup: {fileID: 0}
+  exitSavePopup: {fileID: 0}
   exportPopup: {fileID: 0}
 --- !u!114 &1492820964
 MonoBehaviour:
@@ -69925,8 +69925,8 @@ MonoBehaviour:
   plotsMenu: {fileID: 0}
   voiceCommandsListCanvas: {fileID: 0}
   savePopup: {fileID: 0}
-  ExitPopup: {fileID: 0}
-  ExitSavePopup: {fileID: 0}
+  exitPopup: {fileID: 0}
+  exitSavePopup: {fileID: 0}
   exportPopup: {fileID: 0}
 --- !u!1 &1964121790
 GameObject:
@@ -74235,8 +74235,8 @@ MonoBehaviour:
   plotsMenu: {fileID: 0}
   voiceCommandsListCanvas: {fileID: 0}
   savePopup: {fileID: 0}
-  ExitPopup: {fileID: 0}
-  ExitSavePopup: {fileID: 0}
+  exitPopup: {fileID: 0}
+  exitSavePopup: {fileID: 0}
   exportPopup: {fileID: 0}
 --- !u!114 &2084439670
 MonoBehaviour:
@@ -75414,8 +75414,8 @@ MonoBehaviour:
   plotsMenu: {fileID: 0}
   voiceCommandsListCanvas: {fileID: 0}
   savePopup: {fileID: 0}
-  ExitPopup: {fileID: 0}
-  ExitSavePopup: {fileID: 0}
+  exitPopup: {fileID: 0}
+  exitSavePopup: {fileID: 0}
   exportPopup: {fileID: 0}
 --- !u!114 &2106689976
 MonoBehaviour:
