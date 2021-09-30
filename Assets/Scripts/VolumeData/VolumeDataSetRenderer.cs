@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using DataFeatures;
 using Vectrosity;
@@ -892,8 +893,16 @@ namespace VolumeData
             {
                 // Save a copy (overwrites existing copy)
                 FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _maskDataSet.FileName, out status);
+                Regex regex = new Regex(@"\d\d\d\d\d\d\d\d_\d\d\d\d\d\d\d\d\d");
+                string fileName = _maskDataSet.FileName;
+                Match match = regex.Match(fileName);
+                if (match.Success)
+                {
+                    var timeStamp = DateTime.Now.ToString("yyyyMMdd_Hmmssffff");
+                    fileName = fileName.Substring(0, fileName.Length - timeStamp.Length) + timeStamp;
+                }
                 string directory = Path.GetDirectoryName(_maskDataSet.FileName);
-                string filename = $"!{directory}/{Path.GetFileNameWithoutExtension(_maskDataSet.FileName)}-copy.fits";
+                string filename = $"!{directory}/{fileName}.fits";
                 if (_maskDataSet.SaveMask(cubeFitsPtr, filename) != 0)
                 {
                     Debug.LogError("Error saving copy!");
@@ -908,6 +917,14 @@ namespace VolumeData
                 {
                     Debug.LogError("Error overwriting existing mask!");
                     FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+                    return;
+                }
+                var timeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
+                if (FitsReader.FitsWriteHistory(cubeFitsPtr, $"Edited by iDaVIE at {timeStamp}", out status) != 0)
+                {
+                    Debug.LogError("Error writing history!");
+                    FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+                    return;
                 }
             }
             FitsReader.FitsCloseFile(cubeFitsPtr, out status);
