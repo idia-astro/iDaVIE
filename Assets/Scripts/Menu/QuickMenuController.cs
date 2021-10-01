@@ -105,7 +105,8 @@ public class QuickMenuController : MonoBehaviour
     }
 
     public void OpenMainMenu()
-    {   
+    {
+        ToastNotification.ShowInfo("Open Main Menu");
         spawnMenu(mainMenuCanvas);
     }
 
@@ -113,7 +114,6 @@ public class QuickMenuController : MonoBehaviour
     {
         spawnMenu(voiceCommandsListCanvas);
     }
-
 
     public void spawnMenu(GameObject menu)
     {

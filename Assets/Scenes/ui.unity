@@ -29702,6 +29702,12 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 836910944}
   m_CullTransparentMesh: 0
+--- !u!1 &843138653 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8885129616111316731, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+    type: 3}
+  m_PrefabInstance: {fileID: 1613529188}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &844068570
 GameObject:
   m_ObjectHideFlags: 0
@@ -56178,9 +56184,20 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4928587070514594467, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
         type: 3}
+      propertyPath: followHead
+      value: 
+      objectReference: {fileID: 843138653}
+    - target: {fileID: 4928587070514594467, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+        type: 3}
       propertyPath: CanvassQuickMenu
       value: 
       objectReference: {fileID: 379983798}
+    - target: {fileID: 4928587070514594467, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+        type: 3}
+      propertyPath: toastNotificationPrefab
+      value: 
+      objectReference: {fileID: 4096339361418599399, guid: 4a6b82b3b6515df4fa193cccc67ac6db,
+        type: 3}
     - target: {fileID: 8885129614517035607, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
         type: 3}
       propertyPath: m_TargetDisplay
@@ -56210,6 +56227,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Enabled
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8885129616111316731, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+        type: 3}
+      propertyPath: m_TagString
+      value: Untagged
       objectReference: {fileID: 0}
     - target: {fileID: 8885129616148772932, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
         type: 3}
