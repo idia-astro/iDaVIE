@@ -16,10 +16,8 @@ public class ToastNotification
     private static GameObject spawnedItem =null;
     private static bool fadeIn=false;
     private static bool fadeOut =false;
-    private static float fadeSpeed = 0.1f;
-    private static float stayAlive = 5;
-
-
+    private static float fadeSpeed = 0.05f;
+    private static float stayAlive = 3;
 
     public static void Update()
     {
@@ -35,13 +33,14 @@ public class ToastNotification
 
     public static IEnumerator FadeInToast()
     {
-        while (spawnedItem.GetComponent<CanvasGroup>().alpha < 1)
+        while (spawnedItem.transform.localPosition.y<0f)
         {
-            float fadeAmount = spawnedItem.GetComponent<CanvasGroup>().alpha + (fadeSpeed * Time.deltaTime);
+            float fadeAmount = spawnedItem.transform.localPosition.y + (fadeSpeed * Time.deltaTime);
 
-            spawnedItem.GetComponent<CanvasGroup>().alpha = fadeAmount;
+            spawnedItem.transform.localPosition = new Vector3(spawnedItem.transform.localPosition.x, fadeAmount, spawnedItem.transform.localPosition.z);
             yield return null;
         }
+        
         fadeIn = false;
         yield return new WaitForSeconds(stayAlive);
         fadeOut = true;
@@ -52,20 +51,20 @@ public class ToastNotification
 
     public static IEnumerator FadeOutToast()
     {
-        while (spawnedItem.GetComponent<CanvasGroup>().alpha > 0 )
+        while (spawnedItem.transform.localPosition.y > -1f)
         {
-            float fadeAmount = spawnedItem.GetComponent<CanvasGroup>().alpha - (fadeSpeed * Time.deltaTime);
+            float fadeAmount = spawnedItem.transform.position.y - (fadeSpeed * Time.deltaTime);
 
-            spawnedItem.GetComponent<CanvasGroup>().alpha = fadeAmount;
+            spawnedItem.transform.position = new Vector3(spawnedItem.transform.position.x, fadeAmount, spawnedItem.transform.position.z);
             yield return null;
         }
         fadeOut = false;
         staticToastNotification.StopCoroutine(FadeOutToast());
+        Object.Destroy(spawnedItem);
     }
 
     public static void Initialize()
     {
-
         //Hack to use Coroutine
         if (staticToastNotification == null)
         {
@@ -77,14 +76,16 @@ public class ToastNotification
 
         if (_volumeInputController == null)
             _volumeInputController = GameObject.FindObjectOfType<VolumeInputController>();
-
+        
         float targetDistance = 0.5f;
         var cameraTransform = Camera.main.transform;
         Vector3 cameraPosWorldSpace = cameraTransform.position;
         Vector3 cameraDirWorldSpace = cameraTransform.forward.normalized;
         Vector3 targetPosition = cameraPosWorldSpace + cameraDirWorldSpace * targetDistance;
+        
 
         spawnedItem = GameObject.Instantiate(_volumeInputController.toastNotificationPrefab, targetPosition, Quaternion.identity, _volumeInputController.followHead.transform);
+        spawnedItem.transform.localPosition = new Vector3(spawnedItem.transform.localPosition.x, -1f, spawnedItem.transform.localPosition.z);
         spawnedItem.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
         fadeIn = true;
     }
@@ -101,26 +102,21 @@ public class ToastNotification
 
     public static void ShowError(string message)
     {
-        if (GameObject.FindGameObjectWithTag("ToastNotification") == null)
-        {
-            ShowToast(message, new Color32(255, 0, 0, 255));
-        }
+        ShowToast(message, new Color32(255, 0, 0, 255));
+    }
+
+    public static void ShowSuccess(string message)
+    {
+        ShowToast(message, new Color32(0, 255, 0, 255));
     }
 
     public static void ShowInfo(string message)
     {
-        if (GameObject.FindGameObjectWithTag("ToastNotification") == null)
-        {
-            ShowToast(message, new Color32(255, 255, 255, 255));
-        }
+            ShowToast(message, new Color32(155, 155, 155, 255));
     }
 
     public static void ShowWarning(string message)
     {
-
-        if (GameObject.FindGameObjectWithTag("ToastNotification") == null)
-        {
-            ShowToast(message, new Color32(255, 255, 0, 255));
-        }
+            ShowToast(message, new Color32(255, 155, 0, 255));
     }
 }

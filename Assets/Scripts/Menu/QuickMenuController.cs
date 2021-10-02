@@ -112,6 +112,7 @@ public class QuickMenuController : MonoBehaviour
 
     public void OpenListOfVoiceCommands()
     {
+        ToastNotification.ShowWarning("OpenListOfVoiceCommands");
         spawnMenu(voiceCommandsListCanvas);
     }
 
