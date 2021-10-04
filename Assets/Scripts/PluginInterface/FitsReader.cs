@@ -222,11 +222,6 @@ public class FitsReader
             Debug.Log("Fits flush file error #" + status.ToString());
             return status;
         }
-        if (FitsCloseFile(oldMaskPtr, out status) != 0)
-        {
-            Debug.Log("Fits close file error #" + status.ToString());
-            return status;
-        }
         if (keyValue != IntPtr.Zero)
         {
             Marshal.FreeHGlobal(keyValue);
@@ -243,16 +238,16 @@ public class FitsReader
         return true;
     }
 
-    public static int SaveMask(IntPtr fitsPtrHeaderToCopy, IntPtr maskData, long[] maskDims, string fileName)
+    public static int SaveMask(IntPtr fitsPtr, IntPtr maskData, long[] maskDims, string fileName)
     {
         bool isNewFile = (fileName != null);
         if (isNewFile)
         {
-            return SaveNewInt16Mask(fitsPtrHeaderToCopy, maskData, maskDims, fileName);
+            return SaveNewInt16Mask(fitsPtr, maskData, maskDims, fileName);
         }
         else
         {
-            return UpdateOldInt16Mask(fitsPtrHeaderToCopy, maskData, maskDims);
+            return UpdateOldInt16Mask(fitsPtr, maskData, maskDims);
         }
     }   
 }

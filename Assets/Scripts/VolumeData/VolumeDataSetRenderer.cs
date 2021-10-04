@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using DataFeatures;
@@ -894,12 +895,16 @@ namespace VolumeData
                 // Save a copy (overwrites existing copy)
                 FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _maskDataSet.FileName, out status);
                 Regex regex = new Regex(@"\d\d\d\d\d\d\d\d_\d\d\d\d\d\d\d\d\d");
-                string fileName = _maskDataSet.FileName;
+                string fileName = Path.GetFileNameWithoutExtension(_maskDataSet.FileName);
                 Match match = regex.Match(fileName);
+                var timeStamp = DateTime.Now.ToString("yyyyMMdd_Hmmssffff");
                 if (match.Success)
                 {
-                    var timeStamp = DateTime.Now.ToString("yyyyMMdd_Hmmssffff");
                     fileName = fileName.Substring(0, fileName.Length - timeStamp.Length) + timeStamp;
+                }
+                else
+                {
+                    fileName = fileName + timeStamp;
                 }
                 string directory = Path.GetDirectoryName(_maskDataSet.FileName);
                 string filename = $"!{directory}/{fileName}.fits";
