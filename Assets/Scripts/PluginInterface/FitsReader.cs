@@ -183,6 +183,12 @@ public class FitsReader
             Debug.Log("Fits write image error #" + status.ToString());
             return status;
         }
+        var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
+        if (FitsReader.FitsWriteHistory(maskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
+        {
+            Debug.LogError("Error writing history!");
+            return status;
+        }
         if (FitsFlushFile(maskPtr, out status) != 0)
         {
             Debug.Log("Fits flush file error #" + status.ToString());
@@ -215,6 +221,12 @@ public class FitsReader
         if (FitsWriteImageInt16(oldMaskPtr, 3, nelements, maskDataToSave, out status) != 0)
         {
             Debug.Log("Fits write image error #" + status.ToString());
+            return status;
+        }
+        var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
+        if (FitsReader.FitsWriteHistory(oldMaskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
+        {
+            Debug.LogError("Error writing history!");
             return status;
         }
         if (FitsFlushFile(oldMaskPtr, out status) != 0)

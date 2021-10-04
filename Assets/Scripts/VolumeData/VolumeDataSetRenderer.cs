@@ -873,10 +873,8 @@ namespace VolumeData
                 Debug.LogError("Could not find mask data!");
                 return;
             }
-
-            IntPtr cubeFitsPtr;
+            IntPtr cubeFitsPtr = IntPtr.Zero;
             int status = 0;
-            
             if (string.IsNullOrEmpty(_maskDataSet.FileName))
             {
                 // Save new mask
@@ -886,9 +884,7 @@ namespace VolumeData
                 if (_maskDataSet.SaveMask(cubeFitsPtr, filename) != 0)
                 {
                     Debug.LogError("Error saving new mask!");
-                    FitsReader.FitsCloseFile(cubeFitsPtr, out status);
                 }
-
             }
             else if (!overwrite)
             {
@@ -911,7 +907,6 @@ namespace VolumeData
                 if (_maskDataSet.SaveMask(cubeFitsPtr, filename) != 0)
                 {
                     Debug.LogError("Error saving copy!");
-                    FitsReader.FitsCloseFile(cubeFitsPtr, out status);
                 }
             }
             else
@@ -921,18 +916,10 @@ namespace VolumeData
                 if (_maskDataSet.SaveMask(cubeFitsPtr, null) != 0)
                 {
                     Debug.LogError("Error overwriting existing mask!");
-                    FitsReader.FitsCloseFile(cubeFitsPtr, out status);
-                    return;
-                }
-                var timeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
-                if (FitsReader.FitsWriteHistory(cubeFitsPtr, $"Edited by iDaVIE at {timeStamp}", out status) != 0)
-                {
-                    Debug.LogError("Error writing history!");
-                    FitsReader.FitsCloseFile(cubeFitsPtr, out status);
-                    return;
                 }
             }
-            FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+            if (cubeFitsPtr != IntPtr.Zero)
+                FitsReader.FitsCloseFile(cubeFitsPtr, out status);
         }
 
         public void OnDestroy()
