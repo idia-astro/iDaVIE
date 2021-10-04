@@ -1150,20 +1150,7 @@ namespace VolumeData
             IntPtr oldFitsPtr = IntPtr.Zero;
             IntPtr newFitsPtr = IntPtr.Zero;
             int status = 0;
-
-            var directory = new DirectoryInfo(Application.dataPath);
-            var directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/SubCubes");
-            try
-            {
-                if (!Directory.Exists(directoryPath))
-                {
-                    Directory.CreateDirectory(directoryPath);
-                }
-            }
-            catch (IOException ex)
-            {
-                Debug.LogError(ex.Message);
-            }
+            var directoryPath = Path.GetDirectoryName(FileName);
             var timeStamp = DateTime.Now.ToString("yyyyMMdd_Hmmssffff");
             var filePath = Path.Combine(directoryPath, $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}.fits");
             var maskFilePath = Path.Combine(directoryPath, $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}_mask.fits");
