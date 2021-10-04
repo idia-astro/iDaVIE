@@ -17,8 +17,9 @@ public class QuickMenuController : MonoBehaviour
     public GameObject plotsMenu;
     public GameObject voiceCommandsListCanvas;
     public GameObject savePopup;
-    public GameObject ExitPopup;
-    public GameObject ExitSavePopup;
+    public GameObject exitPopup;
+    public GameObject exitSavePopup;
+    public GameObject exportPopup;
 
 
     int maskstatus = 0;
@@ -80,26 +81,26 @@ public class QuickMenuController : MonoBehaviour
     {
         if (_activeDataSet.FileChanged)
         {
-            ExitSavePopup.GetComponent<ExitController>()._volumeInputController = _volumeInputController;
-            ExitSavePopup.GetComponent<ExitController>()._activeDataSet = _activeDataSet;
+            exitSavePopup.GetComponent<ExitController>()._volumeInputController = _volumeInputController;
+            exitSavePopup.GetComponent<ExitController>()._activeDataSet = _activeDataSet;
 
-            ExitSavePopup.transform.SetParent(this.transform.parent, false);
-            ExitSavePopup.transform.localPosition = this.transform.localPosition;
-            ExitSavePopup.transform.localRotation = this.transform.localRotation;
-            ExitSavePopup.transform.localScale = this.transform.localScale;
+            exitSavePopup.transform.SetParent(this.transform.parent, false);
+            exitSavePopup.transform.localPosition = this.transform.localPosition;
+            exitSavePopup.transform.localRotation = this.transform.localRotation;
+            exitSavePopup.transform.localScale = this.transform.localScale;
 
             gameObject.SetActive(false);
-            ExitSavePopup.SetActive(true);
+            exitSavePopup.SetActive(true);
         }
         else
         {
-            ExitPopup.transform.SetParent(this.transform.parent, false);
-            ExitPopup.transform.localPosition = this.transform.localPosition;
-            ExitPopup.transform.localRotation = this.transform.localRotation;
-            ExitPopup.transform.localScale = this.transform.localScale;
+            exitPopup.transform.SetParent(this.transform.parent, false);
+            exitPopup.transform.localPosition = this.transform.localPosition;
+            exitPopup.transform.localRotation = this.transform.localRotation;
+            exitPopup.transform.localScale = this.transform.localScale;
 
             gameObject.SetActive(false);
-            ExitPopup.SetActive(true);
+            exitPopup.SetActive(true);
         }
     }
 
@@ -265,14 +266,12 @@ public class QuickMenuController : MonoBehaviour
         spawnMenu(plotsMenu);
     }
 
-
     public void SaveMask()
     {
         savePopup.transform.SetParent(this.transform.parent, false);
         savePopup.transform.localPosition = this.transform.localPosition;
         savePopup.transform.localRotation = this.transform.localRotation;
         savePopup.transform.localScale = this.transform.localScale;
-
 
         savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
         savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.RemoveAllListeners();
@@ -282,23 +281,52 @@ public class QuickMenuController : MonoBehaviour
         savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
         savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
 
-        _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
+        if (_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.Painting )
+            _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
+        
         this.gameObject.SetActive(false);
         savePopup.SetActive(true);
+    }
 
+    public void ExportData()
+    {
+        exportPopup.transform.SetParent(this.transform.parent, false);
+        exportPopup.transform.localPosition = this.transform.localPosition;
+        exportPopup.transform.localRotation = this.transform.localRotation;
+        exportPopup.transform.localScale = this.transform.localScale;
+
+        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
+        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("SubCube").GetComponent<Button>().onClick.RemoveAllListeners();
+        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").GetComponent<Button>().onClick.RemoveAllListeners();
+
+        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(ExportCancel);
+        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("SubCube").GetComponent<Button>().onClick.AddListener(SaveSubCube);
+        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").GetComponent<Button>().onClick.AddListener(SaveMask);
+
+        this.gameObject.SetActive(false);
+        exportPopup.SetActive(true);
+    }
+
+    public void ExportCancel()
+    {
+        exportPopup.SetActive(false);
+    }
+
+    public void SaveSubCube()
+    {
+        _activeDataSet.SaveSubCube();
+        _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
+        ExportCancel();
     }
 
     public void SaveCancel()
     {
-
         savePopup.SetActive(false);
     }
 
     public void SaveOverwriteMask()
     {
-
         _activeDataSet.SaveMask(true);
-
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
         SaveCancel();
     }
@@ -309,6 +337,4 @@ public class QuickMenuController : MonoBehaviour
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
         SaveCancel();
     }
-
-
 }
