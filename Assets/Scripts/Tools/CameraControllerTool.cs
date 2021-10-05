@@ -93,7 +93,7 @@ public class CameraControllerTool : MonoBehaviour
             {
                 Console.WriteLine(ex.Message);
             }
-            var path = Path.Combine(directoryPath, string.Format("Screenshot_{0}.png", DateTime.Now.ToString("yyyyMMdd_Hmmssffff")));
+            var path = Path.Combine(directoryPath, string.Format("Screenshot_{0}.png", DateTime.Now.ToString("yyyyMMdd_Hmmssf")));
 
             // For testing purposes, also write to a file in the project folder
             File.WriteAllBytes(path, bytes);
