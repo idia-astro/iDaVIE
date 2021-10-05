@@ -115,7 +115,7 @@ public class MomentMapMenuController : MonoBehaviour
         {
             Console.WriteLine(ex.Message);
         }
-        var path = Path.Combine(directoryPath, string.Format("Moment_maps_{0}.png", DateTime.Now.ToString("yyyyMMdd_Hmmssffff")));
+        var path = Path.Combine(directoryPath, string.Format("Moment_maps_{0}.png", DateTime.Now.ToString("yyyyMMdd_Hmmss")));
       
         
         Image im0 = this.gameObject.transform.Find("Map_container").gameObject.transform.Find("MomentMap0").GetComponent<Image>();

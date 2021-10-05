@@ -1151,7 +1151,7 @@ namespace VolumeData
             IntPtr newFitsPtr = IntPtr.Zero;
             int status = 0;
             var directoryPath = Path.GetDirectoryName(FileName);
-            var timeStamp = DateTime.Now.ToString("yyyyMMdd_Hmmssffff");
+            var timeStamp = DateTime.Now.ToString("yyyyMMdd_Hmmss");
             var filePath = Path.Combine(directoryPath, $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}.fits");
             var maskFilePath = Path.Combine(directoryPath, $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}_mask.fits");
             // Works only with 3D cubes for now... need 4D askap capability

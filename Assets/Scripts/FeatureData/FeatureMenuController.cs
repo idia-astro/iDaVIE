@@ -226,7 +226,7 @@ public class FeatureMenuController : MonoBehaviour
         {
             Console.WriteLine(ex.Message);
         }
-        var filename = string.Format("iDaVIE_cat_{0}.xml", DateTime.Now.ToString("yyyyMMdd_Hmmssffff"));
+        var filename = string.Format("iDaVIE_cat_{0}.xml", DateTime.Now.ToString("yyyyMMdd_Hmmss"));
         var path = Path.Combine(directoryPath, filename);
         featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].SaveAsVoTable(path);
         SaveConfirmation.text = $"Table saved as {filename}";
