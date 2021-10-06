@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using fts;
 using UnityEngine;
 
-[PluginAttr("libdata_analysis_tool")]
+[PluginAttr("data_analysis_tool")]
 public static class DataAnalysis
 {
     [PluginFunctionAttr("FindMaxMin")] 
