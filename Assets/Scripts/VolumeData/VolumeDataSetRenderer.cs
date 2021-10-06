@@ -890,17 +890,17 @@ namespace VolumeData
             {
                 // Save a copy (overwrites existing copy)
                 FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _maskDataSet.FileName, out status);
-                Regex regex = new Regex(@"\d\d\d\d\d\d\d\d_\d\d\d\d\d");
+                Regex regex = new Regex(@"_copy_\d{8}_\d{5}");
                 string fileName = Path.GetFileNameWithoutExtension(_maskDataSet.FileName);
                 Match match = regex.Match(fileName);
                 var timeStamp = DateTime.Now.ToString("yyyyMMdd_Hmmss");
                 if (match.Success)
                 {
-                    fileName = fileName.Substring(0, fileName.Length - timeStamp.Length) + timeStamp;
+                    fileName = fileName.Substring(0, fileName.Length - timeStamp.Length - 6) + "_copy_" + timeStamp;
                 }
                 else
                 {
-                    fileName = fileName + timeStamp;
+                    fileName = fileName + "_copy_" + timeStamp;
                 }
                 string directory = Path.GetDirectoryName(_maskDataSet.FileName);
                 string filename = $"!{directory}/{fileName}.fits";

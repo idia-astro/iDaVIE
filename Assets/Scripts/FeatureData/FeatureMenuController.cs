@@ -60,7 +60,7 @@ public class FeatureMenuController : MonoBehaviour
     {
         if (featureSetManager != null && featureSetManager.NeedToRespawnMenuList)
         {
-            if (featureSetManager.SelectedFeature != null)
+            if (featureSetManager.SelectedFeature != null && featureSetManager.SelectedFeature.Index != -1)
             {
                 UpdateInfo();
                 DisplaySet(featureSetManager.SelectedFeature.FeatureSetParent.Index);
@@ -199,9 +199,13 @@ public class FeatureMenuController : MonoBehaviour
             textObject.GetComponent<TMP_Text>().text += $"Dec: {(180f * normD / Math.PI).ToString()}{Environment.NewLine}";
             textObject.GetComponent<TMP_Text>().text += $"{_activeDataSet.Data.GetAstAttribute("System(3)")}: {normZ.ToString()}{Environment.NewLine}";
         }
-        for (int i = 0; i < featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys.Length; i++)
+        if (featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys != null)
         {
-            textObject.GetComponent<TMP_Text>().text += $"{featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys[i]} : {featureSetManager.SelectedFeature.RawData[i]}{Environment.NewLine}";
+            for (int i = 0; i < featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys.Length; i++)
+            {
+                textObject.GetComponent<TMP_Text>().text +=
+                    $"{featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys[i]} : {featureSetManager.SelectedFeature.RawData[i]}{Environment.NewLine}";
+            }
         }
     }
 
