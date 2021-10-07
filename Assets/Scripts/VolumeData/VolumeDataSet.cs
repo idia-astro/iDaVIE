@@ -69,7 +69,7 @@ namespace VolumeData
         public List<BrushStrokeTransaction> BrushStrokeRedoQueue { get; private set; }
         public Dictionary<int, DataAnalysis.SourceStats> SourceStatsDict { get; private set; }
         
-        public string FileName { get; private set; }
+        public string FileName { get; set; }
         public long XDim { get; private set; }
         public long YDim { get; private set; }
         public long ZDim { get; private set; }

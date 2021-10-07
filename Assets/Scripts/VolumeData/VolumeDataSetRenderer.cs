@@ -877,18 +877,18 @@ namespace VolumeData
             int status = 0;
             if (string.IsNullOrEmpty(_maskDataSet.FileName))
             {
-                // Save new mask
+                // Save new mask because none exists yet
                 FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _dataSet.FileName, out status);
                 string directory = Path.GetDirectoryName(_dataSet.FileName);
-                string filename = $"!{directory}/{Path.GetFileNameWithoutExtension(_dataSet.FileName)}-mask.fits";
-                if (_maskDataSet.SaveMask(cubeFitsPtr, filename) != 0)
+                _maskDataSet.FileName = $"{directory}/{Path.GetFileNameWithoutExtension(_dataSet.FileName)}-mask.fits";
+                if (_maskDataSet.SaveMask(cubeFitsPtr, $"!{_maskDataSet.FileName}") != 0)
                 {
                     Debug.LogError("Error saving new mask!");
                 }
             }
             else if (!overwrite)
             {
-                // Save a copy (overwrites existing copy)
+                // Save a copy
                 FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _maskDataSet.FileName, out status);
                 Regex regex = new Regex(@"_copy_\d{8}_\d{5}");
                 string fileName = Path.GetFileNameWithoutExtension(_maskDataSet.FileName);
