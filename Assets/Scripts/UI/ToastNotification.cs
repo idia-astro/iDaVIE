@@ -25,7 +25,7 @@ public class ToastNotification
         {
             staticToastNotification.StartCoroutine(FadeInToast());
         }
-        if (fadeOut)
+        else if (fadeOut)
         {
             staticToastNotification.StartCoroutine(FadeOutToast());
         }
@@ -45,8 +45,6 @@ public class ToastNotification
         yield return new WaitForSeconds(stayAlive);
         fadeOut = true;
         staticToastNotification.StopCoroutine(FadeInToast());
-
-
     }
 
     public static IEnumerator FadeOutToast()
@@ -60,6 +58,7 @@ public class ToastNotification
         }
         fadeOut = false;
         staticToastNotification.StopCoroutine(FadeOutToast());
+        yield return new WaitForSeconds(0.1f);
         Object.Destroy(spawnedItem);
     }
 
@@ -76,47 +75,49 @@ public class ToastNotification
 
         if (_volumeInputController == null)
             _volumeInputController = GameObject.FindObjectOfType<VolumeInputController>();
-        
-        float targetDistance = 0.5f;
-        var cameraTransform = Camera.main.transform;
-        Vector3 cameraPosWorldSpace = cameraTransform.position;
-        Vector3 cameraDirWorldSpace = cameraTransform.forward.normalized;
-        Vector3 targetPosition = cameraPosWorldSpace + cameraDirWorldSpace * targetDistance;
-        
+       
+        Vector3 playerPos = Camera.main.transform.position;
+        Vector3 playerDirection = Camera.main.transform.forward;
+        Quaternion playerRotation = Camera.main.transform.rotation;
+        float spawnDistance = 0.5f;
 
-        spawnedItem = GameObject.Instantiate(_volumeInputController.toastNotificationPrefab, targetPosition, Quaternion.identity, _volumeInputController.followHead.transform);
+        Vector3 spawnPos = playerPos + playerDirection * spawnDistance;
+
+        spawnedItem = GameObject.Instantiate(_volumeInputController.toastNotificationPrefab, spawnPos, Quaternion.LookRotation(new Vector3(spawnPos.x - playerPos.x, 0, spawnPos.z - playerPos.z)), _volumeInputController.followHead.transform);
         spawnedItem.transform.localPosition = new Vector3(spawnedItem.transform.localPosition.x, -1f, spawnedItem.transform.localPosition.z);
         spawnedItem.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
+
         fadeIn = true;
     }
 
-    public static void ShowToast(string message, Color32 color)
+    public static void ShowToast(string message, Color bgColor, Color textColor)
     {
         if (GameObject.FindGameObjectWithTag("ToastNotification") == null)
         {
             Initialize();
-            spawnedItem.transform.Find("TopPanel").gameObject.GetComponent<Image>().color = color;
+            spawnedItem.transform.Find("TopPanel").gameObject.GetComponent<Image>().color = bgColor;
             spawnedItem.transform.Find("TopPanel").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().text=message;
+            spawnedItem.transform.Find("TopPanel").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().color= textColor;
         }
     }
 
     public static void ShowError(string message)
     {
-        ShowToast(message, new Color32(255, 0, 0, 255));
+        ShowToast(message, Color.red, Color.white);
     }
 
     public static void ShowSuccess(string message)
     {
-        ShowToast(message, new Color32(0, 255, 0, 255));
+        ShowToast(message, Color.green, Color.white);
     }
 
     public static void ShowInfo(string message)
     {
-            ShowToast(message, new Color32(155, 155, 155, 255));
+            ShowToast(message, Color.grey, Color.white);
     }
 
     public static void ShowWarning(string message)
     {
-            ShowToast(message, new Color32(255, 155, 0, 255));
+            ShowToast(message, Color.yellow, Color.black );
     }
 }

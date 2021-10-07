@@ -106,19 +106,16 @@ public class QuickMenuController : MonoBehaviour
 
     public void OpenMainMenu()
     {
-        ToastNotification.ShowInfo("Open Main Menu");
         spawnMenu(mainMenuCanvas);
     }
 
     public void OpenListOfVoiceCommands()
     {
-        ToastNotification.ShowWarning("OpenListOfVoiceCommands");
         spawnMenu(voiceCommandsListCanvas);
     }
 
     public void spawnMenu(GameObject menu)
     {
-
         Vector3 playerPos = Camera.main.transform.position;
         Vector3 playerDirection = Camera.main.transform.forward;
         Quaternion playerRotation = Camera.main.transform.rotation;
@@ -131,9 +128,6 @@ public class QuickMenuController : MonoBehaviour
 
         if (!menu.activeSelf)
             menu.SetActive(true);
-
-
-
     }
 
 
