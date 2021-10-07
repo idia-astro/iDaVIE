@@ -68,6 +68,9 @@ public class FitsReader
     public static extern int FitsWriteSubImageInt16(IntPtr fptr, IntPtr array, IntPtr cornerMin, IntPtr cornerMax, out int status);
 
     [DllImport("libfits_reader")]
+    public static extern int FitsWriteHistory(IntPtr fptr, string history, out int status);
+    
+    [DllImport("libfits_reader")]
     public static extern int FitsWriteKey(IntPtr fptr, int datatype, string keyname, IntPtr value, string comment, out int status);
 
     [DllImport("libfits_reader")]
@@ -180,6 +183,12 @@ public class FitsReader
             Debug.Log("Fits write image error #" + status.ToString());
             return status;
         }
+        var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
+        if (FitsReader.FitsWriteHistory(maskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
+        {
+            Debug.LogError("Error writing history!");
+            return status;
+        }
         if (FitsFlushFile(maskPtr, out status) != 0)
         {
             Debug.Log("Fits flush file error #" + status.ToString());
@@ -214,14 +223,15 @@ public class FitsReader
             Debug.Log("Fits write image error #" + status.ToString());
             return status;
         }
+        var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
+        if (FitsReader.FitsWriteHistory(oldMaskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
+        {
+            Debug.LogError("Error writing history!");
+            return status;
+        }
         if (FitsFlushFile(oldMaskPtr, out status) != 0)
         {
             Debug.Log("Fits flush file error #" + status.ToString());
-            return status;
-        }
-        if (FitsCloseFile(oldMaskPtr, out status) != 0)
-        {
-            Debug.Log("Fits close file error #" + status.ToString());
             return status;
         }
         if (keyValue != IntPtr.Zero)
@@ -240,16 +250,16 @@ public class FitsReader
         return true;
     }
 
-    public static int SaveMask(IntPtr fitsPtrHeaderToCopy, IntPtr maskData, long[] maskDims, string fileName)
+    public static int SaveMask(IntPtr fitsPtr, IntPtr maskData, long[] maskDims, string fileName)
     {
         bool isNewFile = (fileName != null);
         if (isNewFile)
         {
-            return SaveNewInt16Mask(fitsPtrHeaderToCopy, maskData, maskDims, fileName);
+            return SaveNewInt16Mask(fitsPtr, maskData, maskDims, fileName);
         }
         else
         {
-            return UpdateOldInt16Mask(fitsPtrHeaderToCopy, maskData, maskDims);
+            return UpdateOldInt16Mask(fitsPtr, maskData, maskDims);
         }
     }   
 }

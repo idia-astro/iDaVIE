@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using DataFeatures;
 using Vectrosity;
@@ -871,33 +873,40 @@ namespace VolumeData
                 Debug.LogError("Could not find mask data!");
                 return;
             }
-
-            IntPtr cubeFitsPtr;
+            IntPtr cubeFitsPtr = IntPtr.Zero;
             int status = 0;
-            
             if (string.IsNullOrEmpty(_maskDataSet.FileName))
             {
-                // Save new mask
+                // Save new mask because none exists yet
                 FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _dataSet.FileName, out status);
                 string directory = Path.GetDirectoryName(_dataSet.FileName);
-                string filename = $"!{directory}/{Path.GetFileNameWithoutExtension(_dataSet.FileName)}-mask.fits";
-                if (_maskDataSet.SaveMask(cubeFitsPtr, filename) != 0)
+                _maskDataSet.FileName = $"{directory}/{Path.GetFileNameWithoutExtension(_dataSet.FileName)}-mask.fits";
+                if (_maskDataSet.SaveMask(cubeFitsPtr, $"!{_maskDataSet.FileName}") != 0)
                 {
                     Debug.LogError("Error saving new mask!");
-                    FitsReader.FitsCloseFile(cubeFitsPtr, out status);
                 }
-
             }
             else if (!overwrite)
             {
-                // Save a copy (overwrites existing copy)
+                // Save a copy
                 FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _maskDataSet.FileName, out status);
+                Regex regex = new Regex(@"_copy_\d{8}_\d{5}");
+                string fileName = Path.GetFileNameWithoutExtension(_maskDataSet.FileName);
+                Match match = regex.Match(fileName);
+                var timeStamp = DateTime.Now.ToString("yyyyMMdd_Hmmss");
+                if (match.Success)
+                {
+                    fileName = fileName.Substring(0, fileName.Length - timeStamp.Length - 6) + "_copy_" + timeStamp;
+                }
+                else
+                {
+                    fileName = fileName + "_copy_" + timeStamp;
+                }
                 string directory = Path.GetDirectoryName(_maskDataSet.FileName);
-                string filename = $"!{directory}/{Path.GetFileNameWithoutExtension(_maskDataSet.FileName)}-copy.fits";
+                string filename = $"!{directory}/{fileName}.fits";
                 if (_maskDataSet.SaveMask(cubeFitsPtr, filename) != 0)
                 {
                     Debug.LogError("Error saving copy!");
-                    FitsReader.FitsCloseFile(cubeFitsPtr, out status);
                 }
             }
             else
@@ -907,10 +916,10 @@ namespace VolumeData
                 if (_maskDataSet.SaveMask(cubeFitsPtr, null) != 0)
                 {
                     Debug.LogError("Error overwriting existing mask!");
-                    FitsReader.FitsCloseFile(cubeFitsPtr, out status);
                 }
             }
-            FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+            if (cubeFitsPtr != IntPtr.Zero)
+                FitsReader.FitsCloseFile(cubeFitsPtr, out status);
         }
 
         public void OnDestroy()
