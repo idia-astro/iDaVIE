@@ -10,7 +10,7 @@ You will need to download and install [vcpkg](https://github.com/microsoft/vcpkg
 
 Install dependencies using vcpkg:
 ```powershell
-vcpkg install starlink-ast:x64-windows cfitsio:x64-windows zlib:x64-windows
+vcpkg install starlink-ast:x64-windows cfitsio:x64-windows
 ```
 
 Compile plugins. You will need to know the path for your [vcpkg toolchain file](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake):
