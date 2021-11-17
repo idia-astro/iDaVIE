@@ -404,7 +404,7 @@ int Invert(AstFrameSet* src)
 
 void AstEnd()
 {
-    AstEnd;
+    astEnd;
 }
 
 void FreeMemory(void* ptrToDelete)

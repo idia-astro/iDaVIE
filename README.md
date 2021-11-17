@@ -1,44 +1,32 @@
-IDIA Unity VR
-Base project for IDIA's VR experiments with VR
+# IDIA Unity VR
+## Base project for IDIA's VR experiments with VR
 
 No datasets are currently packaged with the repo, to keep the size down to a minimum. 
 
-You will need to download and install [msys2](https://www.msys2.org/) and [CMake](https://cmake.org/download/). Remember to add the binary directory `C:\msys64\mingw64\bin` to the system PATH.
+### Building plugins
+You will need to download and install [vcpkg](https://github.com/microsoft/vcpkg) and [CMake](https://cmake.org/download/). Follow the install instructions and ensure you can run `vcpkg` and `cmake` from the commandline (or powershell). You may need to add folders to your PATH environmental variable.
 
-Run `MSYS2 MinGW 64-bit` and install xalan-c package (and other dependencies needed later) with the following commands:
-```
-pacman -Syu --noconfirm
-pacman -S mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-cross-binutils patch make dos2unix --noconfirm
-```
-Take note of any instructions in the terminal during package update & installation as sometimes you must terminate the msys2 shell to proceed.
+**NOTE**:  for now, we have to use a PR [branch](https://github.com/veggiesaurus/vcpkg/tree/veggiesaurus/starlink_ast_cminpack_fix) of vcpkg!
 
-The cfitsio package needs a special compiler flag, so a patched version of the package is in the `native_plugins_cmake/mingw-w64-cfitsio` directory in the project folder. Navigate here with msys2 (note: the Windows C drive is under /c/ in msys2) and run the following commands:
-```
-dos2unix.exe ./*
-makepkg-mingw
-pacman -U mingw-w64-x86_64-cfitsio-3.450-1-any.pkg.tar.zst --noconfirm
+Install dependencies using vcpkg:
+```powershell
+vcpkg install starlink-ast:x64-windows cfitsio:x64-windows
 ```
 
-Now build the AST plugin with the following commands in msys2:
-```
-cd <path to project>/native_plugins_cmake/ast_tool
-wget https://github.com/Starlink/ast/releases/download/v9.1.1/ast-9.1.1.tar.gz
-tar -xf ast-9.1.1.tar.gz
-cp {ast_cpp.in,makeh} ast-9.1.1
-cd ast-9.1.1
-./configure CFLAGS=-DCMINPACK_NO_DLL --without-pthreads --without-fortran --without-stardocs --enable-shared=no star_cv_cnf_trail_type=long star_cv_cnf_f2c_compatible=no CC=x86_64-w64-mingw32-gcc AR=/opt/bin/x86_64-w64-mingw32-ar.exe --prefix="$PWD/../ast"
-make
-make install
+Compile plugins. You will need to know the path for your [vcpkg toolchain file](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake):
+```powershell
+# From repo's root directory
+cd native_plugins_cmake
+mkdir build
+cd build
+cmake -DCMAKE_TOOLCHAIN_FILE=<path_to_vcpkg.cmake> -DCMAKE_BUILD_TYPE=Release ../
+cmake --build . --config Release --target install
 ```
 
-Next, use Windows Powershell to navigate to the native_plugins_cmake directory in the idia_unity_vr folder. Then build the plugins with the following commands. Make sure the Unity project is not open during this step:
+The required DLL files (along with their dependencies) will be copied to the `Assets/Plugins` directory automatically.
 
-```
-cmake -DCMAKE_C_COMPILER:FILEPATH=C:\msys64\mingw64\bin\x86_64-w64-mingw32-gcc.exe -DCMAKE_CXX_COMPILER:FILEPATH=C:\msys64\mingw64\bin\x86_64-w64-mingw32-g++.exe -B./build -G "MinGW Makefiles"
-cmake --build ./build --config Release --target install -- -j
-```
-The required DLL files will be copied to the `Assets/Plugins` directory automatically.
 
+### Other plugins and assets
 You will need to install the following Unity plugins as well before running:
 
 1) [SteamVR plugin (v2.6.1)](https://github.com/ValveSoftware/steamvr_unity_plugin/releases/download/2.6.1/steamvr_2_6_1.unitypackage)
