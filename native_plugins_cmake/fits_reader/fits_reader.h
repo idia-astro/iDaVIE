@@ -53,6 +53,8 @@ DllExport int FitsCopyCubeSection(fitsfile *, fitsfile *, char *, int *);
 
 DllExport int FitsWriteImageInt16(fitsfile * , int , int64_t , int16_t* , int* );
 
+DllExport int FitsWriteHistory(fitsfile *, char *,  int *);
+
 DllExport int FitsWriteKey(fitsfile * , int , char *, void *, char *, int *);
 
 DllExport int FitsUpdateKey(fitsfile * , int , char* , void* , char* , int* );
