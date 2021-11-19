@@ -310,12 +310,12 @@ namespace VolumeData
            
             if (volumeDataSet.HasFitsRestFrequency)
             {
-                volumeDataSet.HasRestFrequency = true;
                 StringBuilder restFreqSB = new StringBuilder(70);
                 volumeDataSet.FitsRestFrequency = AstTool.GetString(astFrameSet, new StringBuilder("RestFreq"), restFreqSB, restFreqSB.Capacity);
                 if (double.TryParse(restFreqSB.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
                 {
                     volumeDataSet.FitsRestFrequency = result;
+                    volumeDataSet.HasRestFrequency = true;
                 }
             }
             volumeDataSet.FitsData = fitsDataPtr;
