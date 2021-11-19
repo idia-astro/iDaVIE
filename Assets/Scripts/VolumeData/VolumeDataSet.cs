@@ -313,7 +313,10 @@ namespace VolumeData
                 volumeDataSet.HasRestFrequency = true;
                 StringBuilder restFreqSB = new StringBuilder(70);
                 volumeDataSet.FitsRestFrequency = AstTool.GetString(astFrameSet, new StringBuilder("RestFreq"), restFreqSB, restFreqSB.Capacity);
-                volumeDataSet.FitsRestFrequency = double.Parse(restFreqSB.ToString(), CultureInfo.InvariantCulture);
+                if (double.TryParse(restFreqSB.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
+                {
+                    volumeDataSet.FitsRestFrequency = result;
+                }
             }
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = volumeDataSet.cubeSize[0];
