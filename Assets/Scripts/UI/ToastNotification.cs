@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+
 public class ToastNotification 
 {
     public class StaticToastNotification : MonoBehaviour { }
@@ -14,20 +15,23 @@ public class ToastNotification
 
     private static VolumeInputController _volumeInputController = null;
     private static GameObject spawnedItem =null;
-    private static bool fadeIn=false;
-    private static bool fadeOut =false;
-    private static float fadeSpeed = 0.05f;
-    private static float stayAlive = 3;
+    private static float fadeSpeed = 0.7f;
+    private static float stayAlive = 4;
+
+    private static List<System.Tuple<string, Color, Color>> notifications = new List<System.Tuple<string, Color, Color>>();
 
     public static void Update()
     {
-        if (fadeIn)
+        foreach (System.Tuple<string, Color, Color> T in notifications)
         {
-            staticToastNotification.StartCoroutine(FadeInToast());
-        }
-        else if (fadeOut)
-        {
-            staticToastNotification.StartCoroutine(FadeOutToast());
+            if (GameObject.FindGameObjectWithTag("ToastNotification") == null)
+            {
+                Initialize();
+                spawnedItem.transform.Find("TopPanel").gameObject.GetComponent<Image>().color = T.Item2;
+                spawnedItem.transform.Find("TopPanel").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().text = T.Item1;
+                spawnedItem.transform.Find("TopPanel").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().color = T.Item3;
+                notifications.RemoveAt(0);
+            }
         }
     }
 
@@ -41,10 +45,10 @@ public class ToastNotification
             yield return null;
         }
         
-        fadeIn = false;
         yield return new WaitForSeconds(stayAlive);
-        fadeOut = true;
         staticToastNotification.StopCoroutine(FadeInToast());
+        staticToastNotification.StartCoroutine(FadeOutToast());
+
     }
 
     public static IEnumerator FadeOutToast()
@@ -56,7 +60,6 @@ public class ToastNotification
             spawnedItem.transform.position = new Vector3(spawnedItem.transform.position.x, fadeAmount, spawnedItem.transform.position.z);
             yield return null;
         }
-        fadeOut = false;
         staticToastNotification.StopCoroutine(FadeOutToast());
         yield return new WaitForSeconds(0.1f);
         Object.Destroy(spawnedItem);
@@ -87,18 +90,12 @@ public class ToastNotification
         spawnedItem.transform.localPosition = new Vector3(spawnedItem.transform.localPosition.x, -1f, spawnedItem.transform.localPosition.z);
         spawnedItem.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
 
-        fadeIn = true;
+        staticToastNotification.StartCoroutine(FadeInToast());
     }
 
     public static void ShowToast(string message, Color bgColor, Color textColor)
     {
-        if (GameObject.FindGameObjectWithTag("ToastNotification") == null)
-        {
-            Initialize();
-            spawnedItem.transform.Find("TopPanel").gameObject.GetComponent<Image>().color = bgColor;
-            spawnedItem.transform.Find("TopPanel").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().text=message;
-            spawnedItem.transform.Find("TopPanel").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().color= textColor;
-        }
+        notifications.Add(new System.Tuple<string, Color, Color>(message, bgColor, textColor));       
     }
 
     public static void ShowError(string message)
@@ -113,11 +110,11 @@ public class ToastNotification
 
     public static void ShowInfo(string message)
     {
-            ShowToast(message, Color.grey, Color.white);
+        ShowToast(message, Color.grey, Color.white);
     }
 
     public static void ShowWarning(string message)
     {
-            ShowToast(message, Color.yellow, Color.black );
+        ShowToast(message, Color.yellow, Color.black );
     }
 }
