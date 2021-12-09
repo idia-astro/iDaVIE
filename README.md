@@ -6,8 +6,6 @@ No datasets are currently packaged with the repo, to keep the size down to a min
 ### Building plugins
 You will need to download and install [vcpkg](https://github.com/microsoft/vcpkg) and [CMake](https://cmake.org/download/). Follow the install instructions and ensure you can run `vcpkg` and `cmake` from the commandline (or powershell). You may need to add folders to your PATH environmental variable.
 
-**NOTE**:  for now, we have to use a PR [branch](https://github.com/veggiesaurus/vcpkg/tree/veggiesaurus/starlink_ast_cminpack_fix) of vcpkg!
-
 Install dependencies using vcpkg:
 ```powershell
 vcpkg install starlink-ast:x64-windows cfitsio:x64-windows
