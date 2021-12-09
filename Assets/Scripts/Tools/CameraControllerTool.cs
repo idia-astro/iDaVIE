@@ -58,78 +58,45 @@ public class CameraControllerTool : MonoBehaviour
     IEnumerator makeScreenshot()
     {
 
-            yield return new WaitForSeconds(0.1f);
-            yield return new WaitForEndOfFrame();
-     
-            int width = Screen.width;
-            int height = Screen.height;
-            var rt = new RenderTexture(width*3, height*3, 24);
-            targetCamera.targetTexture=rt;
+        yield return new WaitForSeconds(0.1f);
+        yield return new WaitForEndOfFrame();
+ 
+        int width = Screen.width;
+        int height = Screen.height;
+        var rt = new RenderTexture(width*3, height*3, 24);
+        var oldTargetTexture = targetCamera.targetTexture;
 
-            RenderTexture.active = targetCamera.targetTexture;
+          targetCamera.targetTexture=rt;
+       
+        RenderTexture.active = targetCamera.targetTexture;
 
-            // Render the camera's view.
-            targetCamera.Render();
-            // Make a new texture and read the active Render Texture into it.
-            Texture2D tex = new Texture2D(targetCamera.targetTexture.width, targetCamera.targetTexture.height, TextureFormat.RGB24, false);
-            tex.ReadPixels(new Rect(0, 0, targetCamera.targetTexture.width, targetCamera.targetTexture.height), 0, 0);
-            tex.Apply();
-
-            // Encode texture into PNG
-            byte[] bytes = tex.EncodeToPNG();
-                Destroy(tex);
-
-            var directory = new DirectoryInfo(Application.dataPath);
-
-            var directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/Camera");
-            try
+        // Render the camera's view.
+        targetCamera.Render();
+        // Make a new texture and read the active Render Texture into it.
+        Texture2D tex = new Texture2D(targetCamera.targetTexture.width, targetCamera.targetTexture.height, TextureFormat.RGB24, false);
+        tex.ReadPixels(new Rect(0, 0, targetCamera.targetTexture.width, targetCamera.targetTexture.height), 0, 0);
+        tex.Apply();
+        // Encode texture into PNG
+        byte[] bytes = tex.EncodeToPNG();
+        Destroy(tex);
+        var directory = new DirectoryInfo(Application.dataPath);
+        var directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/Camera");
+        try
+        {
+            if (!Directory.Exists(directoryPath))
             {
-                if (!Directory.Exists(directoryPath))
-                {
-                    Directory.CreateDirectory(directoryPath);
-                }
+             Directory.CreateDirectory(directoryPath);
             }
-            catch (IOException ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-            var path = Path.Combine(directoryPath, string.Format("Screenshot_{0}.png", DateTime.Now.ToString("yyyyMMdd_Hmmssf")));
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        var path = Path.Combine(directoryPath, string.Format("Screenshot_{0}.png", DateTime.Now.ToString("yyyyMMdd_Hmmssf")));
+        File.WriteAllBytes(path, bytes);
+        QuickMenuCanvas.GetComponent<CanvasGroup>().alpha = 1;
+        targetCamera.targetTexture = oldTargetTexture;
 
-            // For testing purposes, also write to a file in the project folder
-            File.WriteAllBytes(path, bytes);
-            //write geotag
-          
-
-
-            
-            QuickMenuCanvas.GetComponent<CanvasGroup>().alpha = 1;
-
-        /*
-            toolControllerComponent.CameraControlUIp.GetComponent<CanvasGroup>().alpha = 1;
-            GameObject.Find("Canvas_Oculus").gameObject.transform.Find("CameraControlUI").GetComponent<CanvasGroup>().alpha = 1;
-
-            if (StateSingleton.stateView == StateSingleton.StateView.MODE2D_PLUS_OCULUS)
-            {
-
-
-                toolControllerComponent.hands[0].transform.position = oldpositionL;
-                toolControllerComponent.hands[1].transform.position = oldpositionR;
-
-
-
-
-
-
-            }
-
-            StartCoroutine(ShowNotification("Done!", 1.5f));
-            */
         yield return null;
-
-
     }
-
-
-
-
 }
