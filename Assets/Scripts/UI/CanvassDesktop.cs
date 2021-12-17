@@ -582,17 +582,18 @@ public class CanvassDesktop : MonoBehaviour
     public void OnRatioDropdownValueChanged(int optionIndex)
     {
         ratioDropdownIndex = optionIndex;
-        if (GetFirstActiveDataSet() != null)
+        var activeDataSet = GetFirstActiveDataSet();
+        if (activeDataSet != null)
         {
             if (optionIndex == 0)
             {
                 // X=Y=Z
-                GetFirstActiveDataSet().ZScale = 1f;
+                activeDataSet.ZScale = 1f;
             }
             else
             {
                 // X=Y
-                GetFirstActiveDataSet().ZScale = 1f * GetFirstActiveDataSet().GetCubeDimensions().z / GetFirstActiveDataSet().GetCubeDimensions().x;
+                activeDataSet.ZScale = 1f * activeDataSet.GetCubeDimensions().z / activeDataSet.GetCubeDimensions().x;
             }
         }
     }
@@ -959,10 +960,11 @@ public class CanvassDesktop : MonoBehaviour
 
     public void ChangeColorMap()
     {
-        if (GetFirstActiveDataSet())
+        var activeDataSet = GetFirstActiveDataSet();
+        if (activeDataSet != null)
         {
             activeColorMap = ColorMapUtils.FromHashCode(renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Colormap_container").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value);
-            GetFirstActiveDataSet().ColorMap = activeColorMap;
+            activeDataSet.ColorMap = activeColorMap;
         }
     }
 
@@ -1018,21 +1020,32 @@ public class CanvassDesktop : MonoBehaviour
 
     public void UpdateThresholdMin(float value)
     {
-        GetFirstActiveDataSet().ThresholdMin = Mathf.Clamp(value, 0, GetFirstActiveDataSet().ThresholdMax);
+        var activeDataSet = GetFirstActiveDataSet();
+        if (activeDataSet != null)
+        {
+            activeDataSet.ThresholdMin = Mathf.Clamp(value, 0, activeDataSet.ThresholdMax);
+        }
     }
 
     public void UpdateThresholdMax(float value)
-    {
-        GetFirstActiveDataSet().ThresholdMax = Mathf.Clamp(value, GetFirstActiveDataSet().ThresholdMin, 1);
+    {var activeDataSet = GetFirstActiveDataSet();
+        if (activeDataSet != null)
+        {
+            activeDataSet.ThresholdMax = Mathf.Clamp(value, activeDataSet.ThresholdMin, 1);
+        }
     }
 
     public void ResetThresholds()
     {
-        GetFirstActiveDataSet().ThresholdMin = GetFirstActiveDataSet().InitialThresholdMin;
-        minThreshold.value = GetFirstActiveDataSet().ThresholdMin;
+        var activeDataSet = GetFirstActiveDataSet();
+        if (activeDataSet != null)
+        {
+            activeDataSet.ThresholdMin = activeDataSet.InitialThresholdMin;
+            minThreshold.value = activeDataSet.ThresholdMin;
 
-        GetFirstActiveDataSet().ThresholdMax = GetFirstActiveDataSet().InitialThresholdMax;
-        maxThreshold.value = GetFirstActiveDataSet().ThresholdMax;
+            activeDataSet.ThresholdMax = activeDataSet.InitialThresholdMax;
+            maxThreshold.value = activeDataSet.ThresholdMax;
+        }
     }
 
     public void UpdateUI(float min, float max, Sprite img)
