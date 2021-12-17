@@ -558,9 +558,6 @@ public class CanvassDesktop : MonoBehaviour
         newCube.SetActive(true);
 
         newCube.transform.SetParent(volumeDataSetManager.transform, false);
-        // newCube.transform.parent = volumeDataSetManager.transform;
-        // newCube.transform.localPosition =  new Vector3(0, 0f, 0);;
-        // newCube.transform.localRotation = Quaternion.identity;
 
         newCube.GetComponent<VolumeDataSetRenderer>().FileName = _imagePath;//_dataSet.FileName.ToString();
         newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _maskPath;// _maskDataSet.FileName.ToString();
