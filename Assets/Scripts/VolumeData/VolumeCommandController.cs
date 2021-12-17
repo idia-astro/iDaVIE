@@ -307,6 +307,15 @@ namespace VolumeData
             _dataSets.Add(setToAdd);
         }
 
+        public void RemoveDataSet(VolumeDataSetRenderer setToRemove)
+        {
+            // Detach and remove
+            setToRemove.transform.parent = null;
+            _dataSets.Remove(setToRemove);
+            Destroy(setToRemove?.gameObject);
+            _volumeInputController.UpdateDataSets();
+        }
+
         public void resetThreshold()
         {
             if (_activeDataSet)

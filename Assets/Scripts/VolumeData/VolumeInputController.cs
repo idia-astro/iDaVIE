@@ -209,15 +209,7 @@ public class VolumeInputController : MonoBehaviour
         SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateUpListener(OnMenuDownReleased, SteamVR_Input_Sources.RightHand);
 
 
-        var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
-        if (volumeDataSetManager)
-        {
-            _volumeDataSets = volumeDataSetManager.GetComponentsInChildren<VolumeDataSetRenderer>(true);
-        }
-        else
-        {
-            _volumeDataSets = new VolumeDataSetRenderer[0];
-        }
+        UpdateDataSets();
 
         // Line renderer for showing separation between controllers while scaling/rotating
         _lineRotationAxes = new VectorLine("RotationAxes", new List<Vector3>(new Vector3[3]), 2.0f, LineType.Continuous);
@@ -237,6 +229,19 @@ public class VolumeInputController : MonoBehaviour
         _locomotionState = LocomotionState.Idle;
         
         CreateInteractionStateMachine();
+    }
+
+    public void UpdateDataSets()
+    {
+        var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
+        if (volumeDataSetManager)
+        {
+            _volumeDataSets = volumeDataSetManager.GetComponentsInChildren<VolumeDataSetRenderer>(true);
+        }
+        else
+        {
+            _volumeDataSets = Array.Empty<VolumeDataSetRenderer>();
+        }
     }
 
     private void CreateInteractionStateMachine()
