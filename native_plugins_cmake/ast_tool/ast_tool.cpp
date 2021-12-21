@@ -3,7 +3,7 @@
 #include <string>
 
 // Adapted from https://stackoverflow.com/a/29752943
-void ReplaceAll(std::string &source, std::string &currentSubstring, const std::string &newSubstring) {
+void ReplaceAll(std::string &source, const std::basic_string<char>& currentSubstring, const std::basic_string<char>& newSubstring) {
   std::string dest;
   dest.reserve(source.length());
 
@@ -17,10 +17,6 @@ void ReplaceAll(std::string &source, std::string &currentSubstring, const std::s
   }
   dest += source.substr(lastPos);
   source.swap(dest);
-}
-
-void ReplaceAll(std::string &source, const char* currentSubstring, const char* newSubstring) {
-  ReplaceAll(source, std::string(currentSubstring), std::string(newSubstring));
 }
 
 int InitAstFrameSet(AstFrameSet** astFrameSetPtr, const char* header, double restFreqGHz = 0)
