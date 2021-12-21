@@ -22,6 +22,8 @@ ENDIF ()
 
 include_directories(${CFITSIO_INCLUDE_DIR})
 
+find_package(cminpack CONFIG REQUIRED)
+
 find_path(AST_INCLUDE_DIR ast.h)
 find_library(AST_LIB_PATH ast)
 get_filename_component(AST_LIB_DIR ${AST_LIB_PATH} DIRECTORY)
@@ -36,9 +38,10 @@ SET(CMAKE_FIND_LIBRARY_PREFIXES "")
 SET(CMAKE_FIND_LIBRARY_SUFFIXES ".dll")
 find_library(CFITSIO_RUNTIME "cfitsio")
 find_library(ZLIB_RUNTIME "zlib1")
+find_library(CMINPACK_RUNTIME "cminpack")
 
 install(TARGETS fits_reader data_analysis_tool ast_tool
         RUNTIME
             DESTINATION ${PROJECT_SOURCE_DIR}/../Assets/Plugins
         )
-install(FILES ${CFITSIO_RUNTIME} ${ZLIB_RUNTIME} DESTINATION ${PROJECT_SOURCE_DIR}/../Assets/Plugins)
+install(FILES ${CFITSIO_RUNTIME} ${ZLIB_RUNTIME} ${CMINPACK_RUNTIME} DESTINATION ${PROJECT_SOURCE_DIR}/../Assets/Plugins)
