@@ -195,9 +195,9 @@ public class FeatureMenuController : MonoBehaviour
             }
             AstTool.Transform3D(_activeDataSet.AstFrame, centerX, centerY, centerZ, 1, out ra, out dec, out physz);
             AstTool.Norm(_activeDataSet.AstFrame, ra, dec, physz, out normR, out normD, out normZ);
-            textObject.GetComponent<TMP_Text>().text += $"RA: {(180f * normR / Math.PI).ToString()}{Environment.NewLine}";
-            textObject.GetComponent<TMP_Text>().text += $"Dec: {(180f * normD / Math.PI).ToString()}{Environment.NewLine}";
-            textObject.GetComponent<TMP_Text>().text += $"{_activeDataSet.Data.GetAstAttribute("System(3)")}: {normZ.ToString()}{Environment.NewLine}";
+            textObject.GetComponent<TMP_Text>().text += $"RA: {(180f * normR / Math.PI).ToString("F3")}{Environment.NewLine}";
+            textObject.GetComponent<TMP_Text>().text += $"Dec: {(180f * normD / Math.PI).ToString("F3")}{Environment.NewLine}";
+            textObject.GetComponent<TMP_Text>().text += $"{_activeDataSet.Data.GetAstAttribute("System(3)")}: {normZ.ToString("F3")} {_activeDataSet.Data.GetAstAttribute("Unit(3)")}{Environment.NewLine}";
         }
         if (featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys != null)
         {
