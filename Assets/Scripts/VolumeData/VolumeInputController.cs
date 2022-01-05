@@ -1250,8 +1250,7 @@ public class VolumeInputController : MonoBehaviour
 
     public void TakePicture()
     {
-       
-        CameraControllerTool cameraController = GameObject.Find("CameraController").GetComponentInChildren<CameraControllerTool>(true); ;
+        CameraControllerTool cameraController = GameObject.Find("CameraController").GetComponentInChildren<CameraControllerTool>(true);
         cameraController.OnUse();
     }
 
