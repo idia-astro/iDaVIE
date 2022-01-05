@@ -105,7 +105,7 @@ public class ToastNotification
 
     public static void ShowError(string message)
     {
-        ShowToast(message, Color.red, Color.white);
+        ShowToast(message, new Color(0.77f, 0, 0.14f, 1), Color.white);
     }
 
     public static void ShowSuccess(string message)
