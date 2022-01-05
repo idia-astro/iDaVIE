@@ -106,6 +106,7 @@ public class QuickMenuController : MonoBehaviour
 
     public void OpenMainMenu()
     {
+        ToastNotification.ShowInfo("Open Main Menu");
         spawnMenu(mainMenuCanvas);
     }
 

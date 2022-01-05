@@ -86,10 +86,13 @@ public class ToastNotification
 
         Vector3 spawnPos = playerPos + playerDirection * spawnDistance;
 
-        spawnedItem = GameObject.Instantiate(_volumeInputController.toastNotificationPrefab, spawnPos, Quaternion.LookRotation(new Vector3(spawnPos.x - playerPos.x, 0, spawnPos.z - playerPos.z)), _volumeInputController.followHead.transform);
+       // spawnedItem = GameObject.Instantiate(_volumeInputController.toastNotificationPrefab, spawnPos, Quaternion.LookRotation(new Vector3(spawnPos.x - playerPos.x, 0, spawnPos.z - playerPos.z)), _volumeInputController.followHead.transform);
+        spawnedItem = GameObject.Instantiate(_volumeInputController.toastNotificationPrefab, spawnPos, Quaternion.identity, _volumeInputController.followHead.transform);
+        spawnedItem.transform.localRotation = new Quaternion(0, 0, 0,1);
+
         spawnedItem.transform.localPosition = new Vector3(spawnedItem.transform.localPosition.x, -1f, spawnedItem.transform.localPosition.z);
         spawnedItem.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
-
+       
         staticToastNotification.StartCoroutine(FadeInToast());
     }
 
