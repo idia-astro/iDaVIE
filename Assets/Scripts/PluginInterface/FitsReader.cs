@@ -16,103 +16,106 @@ public class FitsReader
             return FitsOpenFileReadWrite(out fptr, filename, out status);
     }
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsOpenFileReadOnly(out IntPtr fptr, string filename, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsOpenFileReadWrite(out IntPtr fptr, string filename, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsCreateFile(out IntPtr fptr, string filename, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsCloseFile(IntPtr fptr, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsFlushFile(IntPtr fptr, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsMovabsHdu(IntPtr fptr, int hdunum, out int hdutype, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsGetNumHeaderKeys(IntPtr fptr, out int keysexist, out int morekeys, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsGetNumRows(IntPtr fptr, out long nrows, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsGetNumCols(IntPtr fptr, out int ncols, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsGetImageDims(IntPtr fptr, out int dims, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsGetImageSize(IntPtr fptr, int dims, out IntPtr naxes, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsCreateImg(IntPtr fptr, int bitpix, int naxis, IntPtr naxes, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsCopyHeader(IntPtr infptr, IntPtr outfptr, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsCopyFile(IntPtr infptr, IntPtr outfptr, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsCopyCubeSection(IntPtr infptr, IntPtr outfptr, string section, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsWriteImageInt16(IntPtr fptr, int dims, long nelements, IntPtr array, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsWriteSubImageInt16(IntPtr fptr, IntPtr array, IntPtr cornerMin, IntPtr cornerMax, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
+    public static extern int FitsWriteHistory(IntPtr fptr, string history, out int status);
+    
+    [DllImport("fits_reader")]
     public static extern int FitsWriteKey(IntPtr fptr, int datatype, string keyname, IntPtr value, string comment, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsUpdateKey(IntPtr fptr, int datatype, string keyname, IntPtr value, string comment, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsDeleteKey(IntPtr fptr, string keyname, out int status);
     
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsMakeKeyN(string keyroot, int value, StringBuilder keyname, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsReadKey(IntPtr fptr, int datatype, string keyname, StringBuilder colname, IntPtr comm, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsReadKeyN(IntPtr fptr, int keynum, StringBuilder keyname, StringBuilder keyvalue, StringBuilder comment, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsReadColFloat(IntPtr fptr, int colnum, long firstrow, long firstelem, long nelem, out IntPtr array, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsReadColString(IntPtr fptr, int colnum, long firstrow, long firstelem, long nelem, out IntPtr ptrarray, out IntPtr chararray, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsReadImageFloat(IntPtr fptr, int dims, long nelem, out IntPtr array, out int status);
     
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsReadSubImageFloat(IntPtr fptr, int dims, IntPtr startPix, IntPtr finalPix, long nelem, out IntPtr array, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsReadImageInt16(IntPtr fptr, int dims, long nelem, out IntPtr array, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FitsCreateHdrPtr(IntPtr fptr, out IntPtr header, out int nkeys, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int CreateEmptyImageInt16(long sizeX, long sizeY, long sizeZ, out IntPtr array);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FreeMemory(IntPtr pointerToDelete);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int FreeFitsMemory(IntPtr header, out int status);
 
-    [DllImport("libfits_reader")]
+    [DllImport("fits_reader")]
     public static extern int InsertSubArrayInt16(IntPtr mainArray, long mainArraySize, IntPtr subArray, long subArraySize, long startIndex);
 
     public static IDictionary<string, string> ExtractHeaders(IntPtr fptr, out int status)
@@ -180,6 +183,12 @@ public class FitsReader
             Debug.Log("Fits write image error #" + status.ToString());
             return status;
         }
+        var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
+        if (FitsReader.FitsWriteHistory(maskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
+        {
+            Debug.LogError("Error writing history!");
+            return status;
+        }
         if (FitsFlushFile(maskPtr, out status) != 0)
         {
             Debug.Log("Fits flush file error #" + status.ToString());
@@ -214,14 +223,15 @@ public class FitsReader
             Debug.Log("Fits write image error #" + status.ToString());
             return status;
         }
+        var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
+        if (FitsReader.FitsWriteHistory(oldMaskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
+        {
+            Debug.LogError("Error writing history!");
+            return status;
+        }
         if (FitsFlushFile(oldMaskPtr, out status) != 0)
         {
             Debug.Log("Fits flush file error #" + status.ToString());
-            return status;
-        }
-        if (FitsCloseFile(oldMaskPtr, out status) != 0)
-        {
-            Debug.Log("Fits close file error #" + status.ToString());
             return status;
         }
         if (keyValue != IntPtr.Zero)
@@ -240,16 +250,16 @@ public class FitsReader
         return true;
     }
 
-    public static int SaveMask(IntPtr fitsPtrHeaderToCopy, IntPtr maskData, long[] maskDims, string fileName)
+    public static int SaveMask(IntPtr fitsPtr, IntPtr maskData, long[] maskDims, string fileName)
     {
         bool isNewFile = (fileName != null);
         if (isNewFile)
         {
-            return SaveNewInt16Mask(fitsPtrHeaderToCopy, maskData, maskDims, fileName);
+            return SaveNewInt16Mask(fitsPtr, maskData, maskDims, fileName);
         }
         else
         {
-            return UpdateOldInt16Mask(fitsPtrHeaderToCopy, maskData, maskDims);
+            return UpdateOldInt16Mask(fitsPtr, maskData, maskDims);
         }
     }   
 }

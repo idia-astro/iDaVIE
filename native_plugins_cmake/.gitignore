@@ -11,3 +11,5 @@ CTestTestfile.cmake
 _deps
 *.dll
 *.dll.a
+build
+cmake-build-*

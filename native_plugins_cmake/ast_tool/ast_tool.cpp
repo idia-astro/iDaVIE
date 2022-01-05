@@ -1,5 +1,28 @@
 #include "ast_tool.h"
 
+#include <string>
+
+// Adapted from https://stackoverflow.com/a/29752943
+void ReplaceAll(std::string &source, std::string &currentSubstring, const std::string &newSubstring) {
+  std::string dest;
+  dest.reserve(source.length());
+
+  std::string::size_type lastPos = 0;
+  std::string::size_type findPos;
+
+  while (std::string::npos != (findPos = source.find(currentSubstring, lastPos))) {
+    dest.append(source, lastPos, findPos - lastPos);
+    dest += newSubstring;
+    lastPos = findPos + currentSubstring.length();
+  }
+  dest += source.substr(lastPos);
+  source.swap(dest);
+}
+
+void ReplaceAll(std::string &source, const char* currentSubstring, const char* newSubstring) {
+  ReplaceAll(source, std::string(currentSubstring), std::string(newSubstring));
+}
+
 int InitAstFrameSet(AstFrameSet** astFrameSetPtr, const char* header, double restFreqGHz = 0)
 {
     std::cout << "Initializing AstFrameSet..." << std::endl;
@@ -23,7 +46,12 @@ int InitAstFrameSet(AstFrameSet** astFrameSetPtr, const char* header, double res
         std::cout << "Missing header argument." << std::endl;
         return -1;
     }
-    astPutCards(fitschan, header);
+
+    // Replace all NCP projections with SIN as a workaround
+    std::string header_str = header;
+    ReplaceAll(header_str, "--NCP", "--SIN");
+    astPutCards(fitschan, header_str.c_str());
+
     if (restFreqGHz != 0)
     {
         if (astTestFits(fitschan, "RESTFREQ", nullptr) != 0)
@@ -404,7 +432,7 @@ int Invert(AstFrameSet* src)
 
 void AstEnd()
 {
-    AstEnd;
+    astEnd;
 }
 
 void FreeMemory(void* ptrToDelete)

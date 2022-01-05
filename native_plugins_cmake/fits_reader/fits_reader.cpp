@@ -106,6 +106,12 @@ int FitsWriteImageInt16(fitsfile* fptr, int dims, int64_t nelements, int16_t* ar
     return success;
 }
 
+int FitsWriteHistory(fitsfile *fptr, char *history,  int *status)
+{
+    int success = fits_write_history(fptr, history, status);
+    return success;
+}
+
 int FitsWriteKey(fitsfile* fptr, int datatype, char *keyname, void *value, char *comment, int *status)
 {
     int success = fits_write_key(fptr, datatype, keyname, value, comment, status);

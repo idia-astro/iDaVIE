@@ -8,7 +8,7 @@
 
 extern "C"
 {
-#include "star/ast.h"
+#include "ast.h"
 
 DllExport int InitAstFrameSet(AstFrameSet**, const char*, double);
 

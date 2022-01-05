@@ -69,7 +69,7 @@ namespace VolumeData
         public List<BrushStrokeTransaction> BrushStrokeRedoQueue { get; private set; }
         public Dictionary<int, DataAnalysis.SourceStats> SourceStatsDict { get; private set; }
         
-        public string FileName { get; private set; }
+        public string FileName { get; set; }
         public long XDim { get; private set; }
         public long YDim { get; private set; }
         public long ZDim { get; private set; }
@@ -310,10 +310,13 @@ namespace VolumeData
            
             if (volumeDataSet.HasFitsRestFrequency)
             {
-                volumeDataSet.HasRestFrequency = true;
                 StringBuilder restFreqSB = new StringBuilder(70);
                 volumeDataSet.FitsRestFrequency = AstTool.GetString(astFrameSet, new StringBuilder("RestFreq"), restFreqSB, restFreqSB.Capacity);
-                volumeDataSet.FitsRestFrequency = double.Parse(restFreqSB.ToString(), CultureInfo.InvariantCulture);
+                if (double.TryParse(restFreqSB.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
+                {
+                    volumeDataSet.FitsRestFrequency = result;
+                    volumeDataSet.HasRestFrequency = true;
+                }
             }
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = volumeDataSet.cubeSize[0];
@@ -1150,21 +1153,8 @@ namespace VolumeData
             IntPtr oldFitsPtr = IntPtr.Zero;
             IntPtr newFitsPtr = IntPtr.Zero;
             int status = 0;
-
-            var directory = new DirectoryInfo(Application.dataPath);
-            var directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/SubCubes");
-            try
-            {
-                if (!Directory.Exists(directoryPath))
-                {
-                    Directory.CreateDirectory(directoryPath);
-                }
-            }
-            catch (IOException ex)
-            {
-                Debug.LogError(ex.Message);
-            }
-            var timeStamp = DateTime.Now.ToString("yyyyMMdd_Hmmssffff");
+            var directoryPath = Path.GetDirectoryName(FileName);
+            var timeStamp = DateTime.Now.ToString("yyyyMMdd_Hmmss");
             var filePath = Path.Combine(directoryPath, $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}.fits");
             var maskFilePath = Path.Combine(directoryPath, $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}_mask.fits");
             // Works only with 3D cubes for now... need 4D askap capability
