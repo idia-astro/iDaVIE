@@ -1,4 +1,3 @@
-using SimpleFileBrowser;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,6 +13,7 @@ using Valve.VR;
 using DataFeatures;
 using VoTableReader;
 using System.Linq;
+using SFB;
 
 public class CanvassDesktop : MonoBehaviour
 {
@@ -153,13 +153,24 @@ public class CanvassDesktop : MonoBehaviour
 
     public void BrowseImageFile()
     {
-        FileBrowser.SetFilters(true, new FileBrowser.Filter("Fits File", ".fits", ".fit"));
+        string lastPath = PlayerPrefs.GetString("LastPath");
+        if (!Directory.Exists(lastPath))
+            lastPath = "";
+        var extensions = new[]
+        {
+            new ExtensionFilter("Fits Files", "fits", "fit"),
+            new ExtensionFilter("All Files", "*"),
+        };
+        StandaloneFileBrowser.OpenFilePanelAsync("Open File", lastPath, extensions, false, (string[] paths) =>
+        {
+            if (paths.Length == 1)
+            {
+                PlayerPrefs.SetString("LastPath", Path.GetDirectoryName(paths[0]));
+                PlayerPrefs.Save();
 
-        // Set default filter that is selected when the dialog is shown (optional)
-        // Returns true if the default filter is set successfully
-        // In this case, set Images filter as the default filter
-        FileBrowser.SetDefaultFilter(".fits");
-        showLoadDialogCoroutine = StartCoroutine(ShowLoadDialogCoroutine(0));
+                _browseImageFile(paths[0]);
+            }
+        });
     }
 
     private void _browseImageFile(string path)
@@ -320,14 +331,24 @@ public class CanvassDesktop : MonoBehaviour
 
     public void BrowseMaskFile()
     {
-        FileBrowser.SetFilters(true, new FileBrowser.Filter("Fits File", ".fits", ".fit"));
-        FileBrowser.SetExcludedExtensions(".lnk", ".tmp", ".zip", ".rar", ".exe", ".sys");
+        string lastPath = PlayerPrefs.GetString("LastPath");
+        if (!Directory.Exists(lastPath))
+            lastPath = "";
+        var extensions = new[]
+        {
+            new ExtensionFilter("Fits Files", "fits", "fit"),
+            new ExtensionFilter("All Files", "*"),
+        };
+        StandaloneFileBrowser.OpenFilePanelAsync("Open File", lastPath, extensions, false, (string[] paths) =>
+        {
+            if (paths.Length == 1)
+            {
+                PlayerPrefs.SetString("LastPath", Path.GetDirectoryName(paths[0]));
+                PlayerPrefs.Save();
 
-        // Set default filter that is selected when the dialog is shown (optional)
-        // Returns true if the default filter is set successfully
-        // In this case, set Images filter as the default filter
-        FileBrowser.SetDefaultFilter(".fits");
-        showLoadDialogCoroutine = StartCoroutine(ShowLoadDialogCoroutine(1));
+                _browseMaskFile(paths[0]);
+            }
+        });
     }
 
     private void _browseMaskFile(string path)
@@ -433,65 +454,24 @@ public class CanvassDesktop : MonoBehaviour
 
     IEnumerator ShowSaveDialogCoroutine(int type)
     {
-        string lastPath = PlayerPrefs.GetString("LastPath");
-        if (!FileBrowserHelpers.DirectoryExists(lastPath))
-            lastPath = null;
-        yield return FileBrowser.WaitForSaveDialog(false, false, lastPath);
-        if (FileBrowser.Success)
-        {
-            PlayerPrefs.SetString("LastPath", Path.GetDirectoryName(FileBrowser.Result[0]));
-            PlayerPrefs.Save();
-            switch (type)
-            {
-                case 0:
-                    _saveMappingFile(FileBrowser.Result[0]);
-                    break;
-            }
-        }
-
         yield return null;
     }
 
-    IEnumerator ShowLoadDialogCoroutine(int type)
-    {
-        string lastPath = PlayerPrefs.GetString("LastPath");
-        if (!FileBrowserHelpers.DirectoryExists(lastPath))
-            lastPath = null;
-
-        // Show a load file dialog and wait for a response from user
-        // Load file/folder: file, Initial path: last path or default (Documents), Title: "Load File", submit button text: "Load"
-        yield return FileBrowser.WaitForLoadDialog(false, false, lastPath, "Load File", "Load");
-
-        // Dialog is closed
-        // Print whether a file is chosen (FileBrowser.Success)
-        // and the path to the selected file (FileBrowser.Result) (null, if FileBrowser.Success is false)
-
-        if (FileBrowser.Success)
-        {
-            PlayerPrefs.SetString("LastPath", Path.GetDirectoryName(FileBrowser.Result[0]));
-            PlayerPrefs.Save();
-
-            // If a file was chosen, read its bytes via FileBrowserHelpers
-            // Contrary to File.ReadAllBytes, this function works on Android 10+, as well
-            switch (type)
+    /*
+       var extensions = new[] {
+            new ExtensionFilter("VOTables", "xml"),
+            new ExtensionFilter("All Files", "*" ),
+        };
+        StandaloneFileBrowser.OpenFilePanelAsync("Open File", lastPath, extensions, false, (string[] paths) => {
+            if (paths.Length == 1)
             {
-                case 0:
-                    _browseImageFile(FileBrowser.Result[0]);
-                    break;
-                case 1:
-                    _browseMaskFile(FileBrowser.Result[0]);
-                    break;
-                case 2:
-                    _browseSourcesFile(FileBrowser.Result[0]);
-                    break;
-                case 3:
-                    _browseMappingFile(FileBrowser.Result[0]);
-                    break;
-            }
-        }
+                PlayerPrefs.SetString("LastPath", Path.GetDirectoryName(paths[0]));
+                PlayerPrefs.Save();
 
-        yield return null;
-    }
+                _browseSourcesFile(paths[0]);
+            }
+        });
+    */
 
     public void LoadFileFromFileSystem()
     {
@@ -649,9 +629,24 @@ public class CanvassDesktop : MonoBehaviour
 
     public void BrowseSourcesFile()
     {
-        FileBrowser.SetFilters(true, new FileBrowser.Filter("VOTable", ".xml"));
-        FileBrowser.SetDefaultFilter(".xml");
-        showLoadDialogCoroutine = StartCoroutine(ShowLoadDialogCoroutine(2));
+        string lastPath = PlayerPrefs.GetString("LastPath");
+        if (!Directory.Exists(lastPath))
+            lastPath = "";
+        var extensions = new[]
+        {
+            new ExtensionFilter("VOTables", "xml"),
+            new ExtensionFilter("All Files", "*"),
+        };
+        StandaloneFileBrowser.OpenFilePanelAsync("Open File", lastPath, extensions, false, (string[] paths) =>
+        {
+            if (paths.Length == 1)
+            {
+                PlayerPrefs.SetString("LastPath", Path.GetDirectoryName(paths[0]));
+                PlayerPrefs.Save();
+
+                _browseSourcesFile(paths[0]);
+            }
+        });
     }
 
     private void _browseSourcesFile(string path)
@@ -692,9 +687,24 @@ public class CanvassDesktop : MonoBehaviour
 
     public void BrowseMappingFile()
     {
-        FileBrowser.SetFilters(true, new FileBrowser.Filter("JSON", ".json"));
-        FileBrowser.SetDefaultFilter(".json");
-        showLoadDialogCoroutine = StartCoroutine(ShowLoadDialogCoroutine(3));
+        string lastPath = PlayerPrefs.GetString("LastPath");
+        if (!Directory.Exists(lastPath))
+            lastPath = "";
+        var extensions = new[]
+        {
+            new ExtensionFilter("JSON", "json"),
+            new ExtensionFilter("All Files", "*"),
+        };
+        StandaloneFileBrowser.OpenFilePanelAsync("Open File", lastPath, extensions, false, (string[] paths) =>
+        {
+            if (paths.Length == 1)
+            {
+                PlayerPrefs.SetString("LastPath", Path.GetDirectoryName(paths[0]));
+                PlayerPrefs.Save();
+
+                _browseMappingFile(paths[0]);
+            }
+        });
     }
 
     private void _browseMappingFile(string path)
@@ -795,9 +805,25 @@ public class CanvassDesktop : MonoBehaviour
 
     public void SaveMappingFile()
     {
-        FileBrowser.SetFilters(true, new FileBrowser.Filter("JSON", ".json"));
-        FileBrowser.SetDefaultFilter(".json");
-        showLoadDialogCoroutine = StartCoroutine(ShowSaveDialogCoroutine(0));
+        string lastPath = PlayerPrefs.GetString("LastPath");
+        if (!Directory.Exists(lastPath))
+            lastPath = null;
+
+        var extensionList = new[]
+        {
+            new ExtensionFilter("JSON", "json"),
+        };
+
+        StandaloneFileBrowser.SaveFilePanelAsync("Save File", lastPath, "", extensionList, (string path) =>
+        {
+            if (path != "")
+            {
+                PlayerPrefs.SetString("LastPath", Path.GetDirectoryName(path));
+                PlayerPrefs.Save();
+
+                _saveMappingFile(path);
+            }
+        });
     }
 
     private void _saveMappingFile(string path)
@@ -965,9 +991,9 @@ public class CanvassDesktop : MonoBehaviour
 
     void ShowGUI(int windowID)
     {
-        // You may put a label to show a message to the player
+// You may put a label to show a message to the player
         GUI.Label(new Rect(65, 40, 300, 250), textPopUp);
-        // You may put a button to close the pop up too
+// You may put a button to close the pop up too
         if (GUI.Button(new Rect(50, 150, 75, 30), "OK"))
         {
             showPopUp = false;

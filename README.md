@@ -37,6 +37,7 @@ You will need to install the following Unity plugins as well before running:
 
 5) [Recyclable Scroll Rect with scroll-to functionality](https://github.com/CosmicElysium/Recyclable-Scroll-Rect/releases/download/v1.0/recyclable-scroll-rect.unitypackage) 
 
+6) [Unity Standalone File Browser](https://github.com/gkngkc/UnityStandaloneFileBrowser/releases/download/1.2/StandaloneFileBrowser.unitypackage). You will need to replace the existing `System.Windows.Forms` dll from `Assets/StandaloneFileBrowser/Plugins` folder and import v4.0 dll from `C:\Windows\Microsoft.NET\Framework\v4.0.x` folder
 
 
 Remember to exit and relaunch the project in the Unity Editor after installing the plugins the first time.
