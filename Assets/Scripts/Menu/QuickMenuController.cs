@@ -5,7 +5,6 @@ using VolumeData;
 
 public class QuickMenuController : MonoBehaviour
 {
-
     public GameObject volumeDatasetRendererObj = null;
     public GameObject notificationText = null;
 
@@ -21,7 +20,6 @@ public class QuickMenuController : MonoBehaviour
     public GameObject exitSavePopup;
     public GameObject exportPopup;
 
-
     int maskstatus = 0;
     int cropstatus = 0;
     int featureStatus = 0;
@@ -32,10 +30,8 @@ public class QuickMenuController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-
         if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
-
     }
 
     public void OnEnable()
@@ -64,17 +60,14 @@ public class QuickMenuController : MonoBehaviour
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
-
         foreach (var dataSet in _dataSets)
         {
-
             if (dataSet.isActiveAndEnabled)
             {
                 return dataSet;
             }
         }
         return null;
-
     }
 
     public void Exit()
@@ -106,8 +99,7 @@ public class QuickMenuController : MonoBehaviour
 
     public void OpenMainMenu()
     {
-        ToastNotification.ShowInfo("Open Main Menu");
-        spawnMenu(mainMenuCanvas);
+        spawnMenu(mainMenuCanvas, "Open Main Menu");
     }
 
     public void OpenListOfVoiceCommands()
@@ -115,7 +107,7 @@ public class QuickMenuController : MonoBehaviour
         spawnMenu(voiceCommandsListCanvas);
     }
 
-    public void spawnMenu(GameObject menu)
+    public void spawnMenu(GameObject menu, string text="")
     {
         Vector3 playerPos = Camera.main.transform.position;
         Vector3 playerDirection = Camera.main.transform.forward;
@@ -128,9 +120,11 @@ public class QuickMenuController : MonoBehaviour
         menu.transform.rotation = Quaternion.LookRotation(new Vector3(spawnPos.x - playerPos.x, 0, spawnPos.z - playerPos.z));
 
         if (!menu.activeSelf)
+        {
             menu.SetActive(true);
+            ToastNotification.ShowInfo(text);
+        }
     }
-
 
     public void ToggleFeatures()
     {
@@ -154,7 +148,6 @@ public class QuickMenuController : MonoBehaviour
                     this.gameObject.transform.Find("Image_fet_off").gameObject.SetActive(true);
                     notificationText.GetComponent<Text>().text = "Features disabled";
                     _activeDataSet.GetComponentInChildren<FeatureSetManager>().GetComponentsInChildren<FeatureSetRenderer>()[1].ToggleVisibility();
-
                     break;
             }
         }
@@ -165,7 +158,6 @@ public class QuickMenuController : MonoBehaviour
         if (maskstatus == 3)
             maskstatus = -1;
         maskstatus++;
-
 
         this.gameObject.transform.Find("Image_nf").gameObject.SetActive(false);
         this.gameObject.transform.Find("Image_f1").gameObject.SetActive(false);
@@ -195,29 +187,23 @@ public class QuickMenuController : MonoBehaviour
                 this.gameObject.transform.Find("Image_f3").gameObject.SetActive(true);
                 break;
         }
-
     }
-
 
     private void setMask(MaskMode mode)
     {
-
         if (_activeDataSet)
         {
             _activeDataSet.MaskMode = mode;
         }
     }
 
-
     public void cropDataSet()
     {
-
         this.gameObject.transform.Find("Image_dis").gameObject.SetActive(false);
         this.gameObject.transform.Find("Image_en").gameObject.SetActive(false);
 
         if (_activeDataSet)
         {
-
             if (_activeDataSet.IsCropped)
             {
                 this.gameObject.transform.Find("Image_dis").gameObject.SetActive(true);

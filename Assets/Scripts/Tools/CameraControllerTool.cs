@@ -97,6 +97,7 @@ public class CameraControllerTool : MonoBehaviour
         QuickMenuCanvas.GetComponent<CanvasGroup>().alpha = 1;
         targetCamera.targetTexture = oldTargetTexture;
 
+        ToastNotification.ShowSuccess("Screenshot taken successfully");
         yield return null;
     }
 }

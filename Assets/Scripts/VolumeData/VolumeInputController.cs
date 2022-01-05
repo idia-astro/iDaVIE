@@ -1259,21 +1259,4 @@ public class VolumeInputController : MonoBehaviour
     {
         ActiveDataSet.SaveSubCube();
     }
-
-    /*
-    public void ShowToast()
-    {
-        if (GameObject.FindGameObjectWithTag("ToastNotification") == null)
-        {
-            float targetDistance = 0.5f;
-            var cameraTransform = Camera.main.transform;
-            Vector3 cameraPosWorldSpace = cameraTransform.position;
-            Vector3 cameraDirWorldSpace = cameraTransform.forward.normalized;
-            Vector3 targetPosition = cameraPosWorldSpace + cameraDirWorldSpace * targetDistance;
-
-            GameObject SpawnedItem = Instantiate(toastNotificationPrefab, targetPosition, Quaternion.identity, followHead.transform);
-            SpawnedItem.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
-        }
-    }
-    */
 }
