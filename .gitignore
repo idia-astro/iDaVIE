@@ -447,6 +447,8 @@ Assets/Vectrosity.meta
 Assets/SteamVR_Resources.meta
 Assets/Recyclable\ Scroll\ Rect
 Assets/Recyclable\ Scroll\ Rect.meta
+Assets/StandaloneFileBrowser/
+Assets/StandaloneFileBrowser.meta
 
 # feature tables
 *.ascii
