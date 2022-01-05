@@ -38,7 +38,7 @@ public class ToastNotification
 
     public static IEnumerator FadeInToast()
     {
-        while (spawnedItem.transform.localPosition.y<0f)
+        while (spawnedItem.transform.localPosition.y< -0.22f)
         {
             float fadeAmount = spawnedItem.transform.localPosition.y + (fadeSpeed * Time.deltaTime);
 

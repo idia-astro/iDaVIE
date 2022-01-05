@@ -56198,6 +56198,26 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 4096339361418599399, guid: 4a6b82b3b6515df4fa193cccc67ac6db,
         type: 3}
+    - target: {fileID: 8885129614186782682, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+        type: 3}
+      propertyPath: m_Mass
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8885129614186782682, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+        type: 3}
+      propertyPath: m_UseGravity
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8885129614186782682, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+        type: 3}
+      propertyPath: m_AngularDrag
+      value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 8885129614186782682, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+        type: 3}
+      propertyPath: m_IsKinematic
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8885129614517035607, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
         type: 3}
       propertyPath: m_TargetDisplay
