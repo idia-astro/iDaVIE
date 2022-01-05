@@ -9,7 +9,6 @@ using Valve.Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
-
 using Valve;
 using Valve.VR;
 using DataFeatures;
@@ -79,11 +78,19 @@ public class CanvassDesktop : MonoBehaviour
 
         checkCubesDataSet();
 
-        minThreshold = renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_min").gameObject.transform.Find("Slider").GetComponent<Slider>();
-        minThresholdLabel = renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_min").gameObject.transform.Find("Min_label").GetComponent<TextMeshProUGUI>();
+        minThreshold = renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject
+            .transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_min").gameObject.transform.Find("Slider")
+            .GetComponent<Slider>();
+        minThresholdLabel = renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
+            .gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_min").gameObject.transform
+            .Find("Min_label").GetComponent<TextMeshProUGUI>();
 
-        maxThreshold = renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max").gameObject.transform.Find("Slider").GetComponent<Slider>();
-        maxThresholdLabel = renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max").gameObject.transform.Find("Max_label").GetComponent<TextMeshProUGUI>();
+        maxThreshold = renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject
+            .transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max").gameObject.transform.Find("Slider")
+            .GetComponent<Slider>();
+        maxThresholdLabel = renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
+            .gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max").gameObject.transform
+            .Find("Max_label").GetComponent<TextMeshProUGUI>();
     }
 
     void checkCubesDataSet()
@@ -120,6 +127,7 @@ public class CanvassDesktop : MonoBehaviour
             {
                 minThreshold.value = dataSet.ThresholdMin;
             }
+
             if (dataSet.ThresholdMax != maxThreshold.value)
             {
                 maxThreshold.value = dataSet.ThresholdMax;
@@ -137,12 +145,10 @@ public class CanvassDesktop : MonoBehaviour
 
     public void InformationTab()
     {
-
     }
 
     public void RenderingTab()
     {
-
     }
 
     public void BrowseImageFile()
@@ -155,7 +161,7 @@ public class CanvassDesktop : MonoBehaviour
         FileBrowser.SetDefaultFilter(".fits");
         showLoadDialogCoroutine = StartCoroutine(ShowLoadDialogCoroutine(0));
     }
-    
+
     private void _browseImageFile(string path)
     {
         if (path != null)
@@ -185,7 +191,8 @@ public class CanvassDesktop : MonoBehaviour
             List<double> list = new List<double>();
 
             //set the path of selected file to the ui
-            informationPanelContent.gameObject.transform.Find("ImageFile_container").gameObject.transform.Find("ImageFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(imagePath);
+            informationPanelContent.gameObject.transform.Find("ImageFile_container").gameObject.transform.Find("ImageFilePath_text").GetComponent<TextMeshProUGUI>().text =
+                System.IO.Path.GetFileName(imagePath);
 
             //visualize the header into the scroll view
             string _header = "";
@@ -198,7 +205,6 @@ public class CanvassDesktop : MonoBehaviour
                 if (entry.Key.Length > 4)
                     switch (entry.Key.Substring(0, 5))
                     {
-
                         case "NAXIS":
                             string sub = entry.Key.Substring(5);
 
@@ -208,17 +214,20 @@ public class CanvassDesktop : MonoBehaviour
                                 axisSize.Add(Convert.ToDouble(sub, CultureInfo.InvariantCulture), Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture));
                             break;
                     }
+
                 _header += entry.Key + "\t\t " + entry.Value + "\n";
             }
-            informationPanelContent.gameObject.transform.Find("Header_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Header").GetComponent<TextMeshProUGUI>().text = _header;
-            informationPanelContent.gameObject.transform.Find("Header_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Scrollbar Vertical").GetComponent<Scrollbar>().value = 1;
+
+            informationPanelContent.gameObject.transform.Find("Header_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject
+                .transform.Find("Content").gameObject.transform.Find("Header").GetComponent<TextMeshProUGUI>().text = _header;
+            informationPanelContent.gameObject.transform.Find("Header_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Scrollbar Vertical")
+                .GetComponent<Scrollbar>().value = 1;
 
             //check if it is a valid fits cube
             if (imageNAxis > 2)
             {
                 if (imageNAxis == 3)
                 {
-
                     //check if all 3 axis dim are > 1
                     //foreach (var axes in axisSize)
                     foreach (KeyValuePair<double, double> axes in axisSize)
@@ -250,6 +259,7 @@ public class CanvassDesktop : MonoBehaviour
                             imageSize *= axes.Value;
                         }
                     }
+
                     //more than 3 axis but just 3 axis have nelement > 1
                     if (list.Count == 3)
                     {
@@ -267,9 +277,11 @@ public class CanvassDesktop : MonoBehaviour
                 {
                     if (axes.Value > 1 && axes.Key > 2)
                     {
-                        informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options.Add((new TMP_Dropdown.OptionData() { text = axes.Key.ToString() }));
+                        informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options
+                            .Add((new TMP_Dropdown.OptionData() { text = axes.Key.ToString() }));
                     }
                 }
+
                 informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().RefreshShownValue();
                 informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value = 0;
                 //end update dropdown
@@ -283,15 +295,17 @@ public class CanvassDesktop : MonoBehaviour
                 //cube is not loadable with more than 3 axis with nelement
                 else if (!loadable && list.Count > 3)
                 {
-
                     informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().interactable = true;
 
                     loadable = true;
-
                 }
-
             }
-            else { loadable = false; localMsg = "Please select a valid cube!"; }
+            else
+            {
+                loadable = false;
+                localMsg = "Please select a valid cube!";
+            }
+
             //if it is valid enable loading button
             if (loadable)
             {
@@ -318,7 +332,6 @@ public class CanvassDesktop : MonoBehaviour
 
     private void _browseMaskFile(string path)
     {
-
         bool loadable = false;
 
         if (maskPath != null)
@@ -335,7 +348,8 @@ public class CanvassDesktop : MonoBehaviour
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
 
-            informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("MaskFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(maskPath);
+            informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("MaskFilePath_text").GetComponent<TextMeshProUGUI>().text =
+                System.IO.Path.GetFileName(maskPath);
 
             maskAxisSize = new Dictionary<double, double>();
             List<double> list = new List<double>();
@@ -350,7 +364,6 @@ public class CanvassDesktop : MonoBehaviour
                 if (entry.Key.Length > 4)
                     switch (entry.Key.Substring(0, 5))
                     {
-
                         case "NAXIS":
                             string sub = entry.Key.Substring(5);
 
@@ -360,6 +373,7 @@ public class CanvassDesktop : MonoBehaviour
                             {
                                 maskAxisSize.Add(Convert.ToDouble(sub, CultureInfo.InvariantCulture), Convert.ToDouble(entry.Value, CultureInfo.InvariantCulture));
                             }
+
                             break;
                     }
             }
@@ -367,7 +381,11 @@ public class CanvassDesktop : MonoBehaviour
             if (maskNAxis > 2)
             {
                 //Get Axis size from Image Cube
-                int i2 = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
+                int i2 = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>()
+                             .options[
+                                 informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value]
+                             .text) -
+                         1;
                 if (axisSize[1] == maskAxisSize[1] && axisSize[2] == maskAxisSize[2] && axisSize[i2 + 1] == maskAxisSize[3])
                 {
                     loadable = true;
@@ -396,7 +414,8 @@ public class CanvassDesktop : MonoBehaviour
         if (maskPath != "")
         {
             //Get Axis size from Image Cube
-            int i2 = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
+            int i2 = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>()
+                .options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
 
             if (axisSize[1] != maskAxisSize[1] || axisSize[2] != maskAxisSize[2] || axisSize[i2 + 1] != maskAxisSize[3])
             {
@@ -429,6 +448,7 @@ public class CanvassDesktop : MonoBehaviour
                     break;
             }
         }
+
         yield return null;
     }
 
@@ -475,7 +495,6 @@ public class CanvassDesktop : MonoBehaviour
 
     public void LoadFileFromFileSystem()
     {
-
         StartCoroutine(LoadCubeCoroutine(imagePath, maskPath));
     }
 
@@ -487,7 +506,9 @@ public class CanvassDesktop : MonoBehaviour
         VolumePlayer.SetActive(false);
         VolumePlayer.SetActive(true);
 
-        renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Mask_container").gameObject.transform.Find("Dropdown_mask").GetComponent<TMP_Dropdown>().interactable = GetFirstActiveDataSet().MaskFileName != "";
+        renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
+                .Find("Settings").gameObject.transform.Find("Mask_container").gameObject.transform.Find("Dropdown_mask").GetComponent<TMP_Dropdown>().interactable =
+            GetFirstActiveDataSet().MaskFileName != "";
 
         populateColorMapDropdown();
         populateStatsValue();
@@ -495,14 +516,16 @@ public class CanvassDesktop : MonoBehaviour
         LoadingText.gameObject.SetActive(false);
         WelcomeMenu.gameObject.SetActive(false);
 
-        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>().interactable = true;
-        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Stats_Button").GetComponent<Button>().interactable = true;
-        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Sources_Button").GetComponent<Button>().interactable = true;
+        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>()
+            .interactable = true;
+        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Stats_Button").GetComponent<Button>()
+            .interactable = true;
+        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Sources_Button").GetComponent<Button>()
+            .interactable = true;
 
-        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Stats_Button").GetComponent<Button>().onClick.Invoke();
-
+        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Stats_Button").GetComponent<Button>()
+            .onClick.Invoke();
     }
-
 
 
     public IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath)
@@ -514,7 +537,8 @@ public class CanvassDesktop : MonoBehaviour
         if (ratioDropdownIndex == 1)
         {
             // case X=Y, calculate z scale from NAXIS1 and NAXIS3
-            int i2 = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
+            int i2 = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>()
+                .options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
 
             double x, z;
             if (axisSize.TryGetValue(1, out x) && axisSize.TryGetValue(i2 + 1, out z))
@@ -527,7 +551,7 @@ public class CanvassDesktop : MonoBehaviour
         Quaternion oldrot = Quaternion.identity;
         Vector3 oldscale = new Vector3(1, 1, zScale);
 
-        var activeDataSet = GetFirstActiveDataSet(); 
+        var activeDataSet = GetFirstActiveDataSet();
         if (activeDataSet != null)
         {
             activeDataSet._voxelOutline.active = false;
@@ -559,9 +583,11 @@ public class CanvassDesktop : MonoBehaviour
 
         newCube.transform.SetParent(volumeDataSetManager.transform, false);
 
-        newCube.GetComponent<VolumeDataSetRenderer>().FileName = _imagePath;//_dataSet.FileName.ToString();
-        newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _maskPath;// _maskDataSet.FileName.ToString();
-        newCube.GetComponent<VolumeDataSetRenderer>().CubeDepthAxis = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
+        newCube.GetComponent<VolumeDataSetRenderer>().FileName = _imagePath; //_dataSet.FileName.ToString();
+        newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _maskPath; // _maskDataSet.FileName.ToString();
+        newCube.GetComponent<VolumeDataSetRenderer>().CubeDepthAxis = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform
+            .Find("Z_Dropdown").GetComponent<TMP_Dropdown>()
+            .options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
         informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().interactable = false;
 
         checkCubesDataSet();
@@ -576,6 +602,7 @@ public class CanvassDesktop : MonoBehaviour
         {
             yield return new WaitForSeconds(.1f);
         }
+
         postLoadFileFileSystem();
     }
 
@@ -619,7 +646,7 @@ public class CanvassDesktop : MonoBehaviour
         if (activeDataSet.OverrideRestFrequency)
             activeDataSet.RestFrequency = restFrequency;
     }
-    
+
     public void BrowseSourcesFile()
     {
         FileBrowser.SetFilters(true, new FileBrowser.Filter("VOTable", ".xml"));
@@ -636,15 +663,18 @@ public class CanvassDesktop : MonoBehaviour
         sourcesPanelContent.gameObject.transform.Find("MappingSave_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
         sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
         //activate load features button
-        sourcesPanelContent.gameObject.transform.Find("SourcesFile_container").gameObject.transform.Find("SourcesFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(path);
+        sourcesPanelContent.gameObject.transform.Find("SourcesFile_container").gameObject.transform.Find("SourcesFilePath_text").GetComponent<TextMeshProUGUI>().text =
+            System.IO.Path.GetFileName(path);
         VoTable voTable = FeatureMapper.GetVOTableFromFile(path); //be more flexible with file input (ascii)
-        Transform sourceBody = sourcesPanelContent.gameObject.transform.Find("SourcesInfo_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform;
+        Transform sourceBody = sourcesPanelContent.gameObject.transform.Find("SourcesInfo_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport")
+            .gameObject.transform.Find("Content").gameObject.transform;
         if (_sourceRowObjects != null)
         {
             foreach (var row in _sourceRowObjects)
                 Destroy(row);
             _sourceRowObjects = null;
         }
+
         _sourceRowObjects = new GameObject[voTable.Column.Count];
         for (var i = 0; i < voTable.Column.Count; i++)
         {
@@ -656,6 +686,7 @@ public class CanvassDesktop : MonoBehaviour
             rowScript.SourceIndex = i;
             _sourceRowObjects[i] = row;
         }
+
         sourcesPanelContent.gameObject.transform.Find("MappingFile_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
     }
 
@@ -668,7 +699,8 @@ public class CanvassDesktop : MonoBehaviour
 
     private void _browseMappingFile(string path)
     {
-        sourcesPanelContent.gameObject.transform.Find("MappingFile_container").gameObject.transform.Find("MappingFilePath_text").GetComponent<TextMeshProUGUI>().text = System.IO.Path.GetFileName(path);
+        sourcesPanelContent.gameObject.transform.Find("MappingFile_container").gameObject.transform.Find("MappingFilePath_text").GetComponent<TextMeshProUGUI>().text =
+            System.IO.Path.GetFileName(path);
         featureMapping = FeatureMapping.GetMappingFromFile(path);
         foreach (var sourceRowObject in _sourceRowObjects)
         {
@@ -676,6 +708,7 @@ public class CanvassDesktop : MonoBehaviour
             dropdown.value = 0;
             sourceRowObject.transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().isOn = false;
         }
+
         foreach (var sourceRowObject in _sourceRowObjects)
         {
             var sourceRow = sourceRowObject.GetComponent<SourceRow>();
@@ -685,77 +718,77 @@ public class CanvassDesktop : MonoBehaviour
             if (sourceRow.SourceName == featureMapping.Mapping.ID.Source)
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.ID;
-                dropdown.value = (int) SourceMappingOptions.ID;
+                dropdown.value = (int)SourceMappingOptions.ID;
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.X.Source)
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.X;
-                dropdown.value = (int) SourceMappingOptions.X;
+                dropdown.value = (int)SourceMappingOptions.X;
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.Y.Source)
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.Y;
-                dropdown.value = (int) SourceMappingOptions.Y;
+                dropdown.value = (int)SourceMappingOptions.Y;
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.Z.Source)
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.Z;
-                dropdown.value = (int) SourceMappingOptions.Z;
+                dropdown.value = (int)SourceMappingOptions.Z;
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.XMin.Source)
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.Xmin;
-                dropdown.value = (int) SourceMappingOptions.Xmin;
+                dropdown.value = (int)SourceMappingOptions.Xmin;
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.XMax.Source)
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.Xmax;
-                dropdown.value = (int) SourceMappingOptions.Xmax;
+                dropdown.value = (int)SourceMappingOptions.Xmax;
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.YMin.Source)
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.Ymin;
-                dropdown.value = (int) SourceMappingOptions.Ymin;
+                dropdown.value = (int)SourceMappingOptions.Ymin;
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.YMax.Source)
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.Ymax;
-                dropdown.value = (int) SourceMappingOptions.Ymax;
+                dropdown.value = (int)SourceMappingOptions.Ymax;
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.ZMin.Source)
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.Zmin;
-                dropdown.value = (int) SourceMappingOptions.Zmin;
+                dropdown.value = (int)SourceMappingOptions.Zmin;
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.ZMax.Source)
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.Zmax;
-                dropdown.value = (int) SourceMappingOptions.Zmax;
+                dropdown.value = (int)SourceMappingOptions.Zmax;
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.RA.Source)
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.Ra;
-                dropdown.value = (int) SourceMappingOptions.Ra;
+                dropdown.value = (int)SourceMappingOptions.Ra;
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.Dec.Source)
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.Dec;
-                dropdown.value = (int) SourceMappingOptions.Dec;
+                dropdown.value = (int)SourceMappingOptions.Dec;
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.Vel.Source)
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.Velo;
-                dropdown.value = (int) SourceMappingOptions.Velo;
+                dropdown.value = (int)SourceMappingOptions.Velo;
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.Freq.Source)
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.Freq;
-                dropdown.value = (int) SourceMappingOptions.Freq;
+                dropdown.value = (int)SourceMappingOptions.Freq;
             }
             else if (sourceRow.SourceName == featureMapping.Mapping.Redshift.Source)
             {
                 sourceRow.CurrentMapping = SourceMappingOptions.Redshift;
-                dropdown.value = (int) SourceMappingOptions.Redshift;
+                dropdown.value = (int)SourceMappingOptions.Redshift;
             }
         }
     }
@@ -769,7 +802,7 @@ public class CanvassDesktop : MonoBehaviour
 
     private void _saveMappingFile(string path)
     {
-        Dictionary<SourceMappingOptions,MapEntry> mapping = new Dictionary<SourceMappingOptions, MapEntry>();
+        Dictionary<SourceMappingOptions, MapEntry> mapping = new Dictionary<SourceMappingOptions, MapEntry>();
         List<string> importedColumns = new List<string>();
         for (int i = 0; i < _sourceRowObjects.Length; i++)
         {
@@ -777,27 +810,29 @@ public class CanvassDesktop : MonoBehaviour
             if (_sourceRowObjects[i].transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().isOn)
                 importedColumns.Add(row.SourceName);
             if (row.CurrentMapping != SourceMappingOptions.none)
-                mapping.Add(row.CurrentMapping, new MapEntry{ Source =  row.SourceName });
+                mapping.Add(row.CurrentMapping, new MapEntry { Source = row.SourceName });
         }
-        var mappingObject = new Mapping{
-                                ID = mapping.ContainsKey(SourceMappingOptions.ID) ? mapping[SourceMappingOptions.ID] : new MapEntry {Source = ""},
-                                X = mapping.ContainsKey(SourceMappingOptions.X) ? mapping[SourceMappingOptions.X] : new MapEntry {Source = ""},
-                                Y = mapping.ContainsKey(SourceMappingOptions.Y) ? mapping[SourceMappingOptions.Y] : new MapEntry {Source = ""},
-                                Z = mapping.ContainsKey(SourceMappingOptions.Z) ? mapping[SourceMappingOptions.Z] : new MapEntry {Source = ""},
-                                XMin = mapping.ContainsKey(SourceMappingOptions.Xmin) ? mapping[SourceMappingOptions.Xmin] : new MapEntry {Source = ""},
-                                XMax = mapping.ContainsKey(SourceMappingOptions.Xmax) ? mapping[SourceMappingOptions.Xmax] : new MapEntry {Source = ""},
-                                YMin = mapping.ContainsKey(SourceMappingOptions.Ymin) ? mapping[SourceMappingOptions.Ymin] : new MapEntry {Source = ""},
-                                YMax = mapping.ContainsKey(SourceMappingOptions.Ymax) ? mapping[SourceMappingOptions.Ymax] : new MapEntry {Source = ""},
-                                ZMin = mapping.ContainsKey(SourceMappingOptions.Zmin) ? mapping[SourceMappingOptions.Zmin] : new MapEntry {Source = ""},
-                                ZMax = mapping.ContainsKey(SourceMappingOptions.Zmax) ? mapping[SourceMappingOptions.Zmax] : new MapEntry {Source = ""},
-                                RA = mapping.ContainsKey(SourceMappingOptions.Ra) ? mapping[SourceMappingOptions.Ra] : new MapEntry {Source = ""},
-                                Dec =mapping.ContainsKey(SourceMappingOptions.Dec) ?  mapping[SourceMappingOptions.Dec] : new MapEntry {Source = ""},
-                                Vel = mapping.ContainsKey(SourceMappingOptions.Velo) ? mapping[SourceMappingOptions.Velo] : new MapEntry {Source = ""},
-                                Freq = mapping.ContainsKey(SourceMappingOptions.Freq) ? mapping[SourceMappingOptions.Freq] : new MapEntry {Source = ""},
-                                Redshift = mapping.ContainsKey(SourceMappingOptions.Redshift) ? mapping[SourceMappingOptions.Redshift] : new MapEntry {Source = ""},
-                                ImportedColumns = importedColumns.ToArray()
-                            };
-        var featureMappingObject = new FeatureMapping{ Mapping = mappingObject }; 
+
+        var mappingObject = new Mapping
+        {
+            ID = mapping.ContainsKey(SourceMappingOptions.ID) ? mapping[SourceMappingOptions.ID] : new MapEntry { Source = "" },
+            X = mapping.ContainsKey(SourceMappingOptions.X) ? mapping[SourceMappingOptions.X] : new MapEntry { Source = "" },
+            Y = mapping.ContainsKey(SourceMappingOptions.Y) ? mapping[SourceMappingOptions.Y] : new MapEntry { Source = "" },
+            Z = mapping.ContainsKey(SourceMappingOptions.Z) ? mapping[SourceMappingOptions.Z] : new MapEntry { Source = "" },
+            XMin = mapping.ContainsKey(SourceMappingOptions.Xmin) ? mapping[SourceMappingOptions.Xmin] : new MapEntry { Source = "" },
+            XMax = mapping.ContainsKey(SourceMappingOptions.Xmax) ? mapping[SourceMappingOptions.Xmax] : new MapEntry { Source = "" },
+            YMin = mapping.ContainsKey(SourceMappingOptions.Ymin) ? mapping[SourceMappingOptions.Ymin] : new MapEntry { Source = "" },
+            YMax = mapping.ContainsKey(SourceMappingOptions.Ymax) ? mapping[SourceMappingOptions.Ymax] : new MapEntry { Source = "" },
+            ZMin = mapping.ContainsKey(SourceMappingOptions.Zmin) ? mapping[SourceMappingOptions.Zmin] : new MapEntry { Source = "" },
+            ZMax = mapping.ContainsKey(SourceMappingOptions.Zmax) ? mapping[SourceMappingOptions.Zmax] : new MapEntry { Source = "" },
+            RA = mapping.ContainsKey(SourceMappingOptions.Ra) ? mapping[SourceMappingOptions.Ra] : new MapEntry { Source = "" },
+            Dec = mapping.ContainsKey(SourceMappingOptions.Dec) ? mapping[SourceMappingOptions.Dec] : new MapEntry { Source = "" },
+            Vel = mapping.ContainsKey(SourceMappingOptions.Velo) ? mapping[SourceMappingOptions.Velo] : new MapEntry { Source = "" },
+            Freq = mapping.ContainsKey(SourceMappingOptions.Freq) ? mapping[SourceMappingOptions.Freq] : new MapEntry { Source = "" },
+            Redshift = mapping.ContainsKey(SourceMappingOptions.Redshift) ? mapping[SourceMappingOptions.Redshift] : new MapEntry { Source = "" },
+            ImportedColumns = importedColumns.ToArray()
+        };
+        var featureMappingObject = new FeatureMapping { Mapping = mappingObject };
         featureMappingObject.SaveMappingToFile(path);
     }
 
@@ -818,14 +853,16 @@ public class CanvassDesktop : MonoBehaviour
 
     private bool AreMappingsIncompatible(SourceMappingOptions option1, SourceMappingOptions option2)
     {
-        return  option1 == option2 ||
-                (option1 == SourceMappingOptions.X || option1 == SourceMappingOptions.Y || option1 == SourceMappingOptions.Z) && 
-                (option2 == SourceMappingOptions.Ra || option2 == SourceMappingOptions.Dec || option2 == SourceMappingOptions.Velo || option2 == SourceMappingOptions.Freq || option2 == SourceMappingOptions.Redshift) ||
-                (option2 == SourceMappingOptions.X || option2 == SourceMappingOptions.Y || option2 == SourceMappingOptions.Z) && 
-                (option1 == SourceMappingOptions.Ra || option1 == SourceMappingOptions.Dec || option1 == SourceMappingOptions.Velo || option1 == SourceMappingOptions.Freq || option1 == SourceMappingOptions.Redshift) ||
-                option1 == SourceMappingOptions.Velo && (option2 == SourceMappingOptions.Freq || option2 == SourceMappingOptions.Redshift) ||
-                option1 == SourceMappingOptions.Freq && (option2 == SourceMappingOptions.Redshift || option2 == SourceMappingOptions.Velo) ||
-                option1 == SourceMappingOptions.Redshift && (option2 == SourceMappingOptions.Freq || option2 == SourceMappingOptions.Velo);
+        return option1 == option2 ||
+               (option1 == SourceMappingOptions.X || option1 == SourceMappingOptions.Y || option1 == SourceMappingOptions.Z) &&
+               (option2 == SourceMappingOptions.Ra || option2 == SourceMappingOptions.Dec || option2 == SourceMappingOptions.Velo || option2 == SourceMappingOptions.Freq ||
+                option2 == SourceMappingOptions.Redshift) ||
+               (option2 == SourceMappingOptions.X || option2 == SourceMappingOptions.Y || option2 == SourceMappingOptions.Z) &&
+               (option1 == SourceMappingOptions.Ra || option1 == SourceMappingOptions.Dec || option1 == SourceMappingOptions.Velo || option1 == SourceMappingOptions.Freq ||
+                option1 == SourceMappingOptions.Redshift) ||
+               option1 == SourceMappingOptions.Velo && (option2 == SourceMappingOptions.Freq || option2 == SourceMappingOptions.Redshift) ||
+               option1 == SourceMappingOptions.Freq && (option2 == SourceMappingOptions.Redshift || option2 == SourceMappingOptions.Velo) ||
+               option1 == SourceMappingOptions.Redshift && (option2 == SourceMappingOptions.Freq || option2 == SourceMappingOptions.Velo);
     }
 
     private bool AreMinimalMappingsSet()
@@ -837,9 +874,11 @@ public class CanvassDesktop : MonoBehaviour
             if (currentMapping != SourceMappingOptions.none)
                 setOptions.Add(currentMapping);
         }
+
         bool spatialIsSet = setOptions.Contains(SourceMappingOptions.X) && setOptions.Contains(SourceMappingOptions.Y) && setOptions.Contains(SourceMappingOptions.Z) ||
-                            setOptions.Contains(SourceMappingOptions.Ra) && setOptions.Contains(SourceMappingOptions.Dec) && 
-                                (setOptions.Contains(SourceMappingOptions.Freq) || setOptions.Contains(SourceMappingOptions.Velo) || setOptions.Contains(SourceMappingOptions.Redshift)) ||
+                            setOptions.Contains(SourceMappingOptions.Ra) && setOptions.Contains(SourceMappingOptions.Dec) &&
+                            (setOptions.Contains(SourceMappingOptions.Freq) || setOptions.Contains(SourceMappingOptions.Velo) ||
+                             setOptions.Contains(SourceMappingOptions.Redshift)) ||
                             setOptions.Contains(SourceMappingOptions.Xmin);
         bool boxCornersWork = !setOptions.Contains(SourceMappingOptions.Xmin) && !setOptions.Contains(SourceMappingOptions.Xmax) &&
                               !setOptions.Contains(SourceMappingOptions.Ymin) && !setOptions.Contains(SourceMappingOptions.Ymax) &&
@@ -863,8 +902,9 @@ public class CanvassDesktop : MonoBehaviour
             loadingText.GetComponent<TextMeshProUGUI>().text = "Spatial coordinates not set!";
             return;
         }
+
         var featureSetManager = GetFirstActiveDataSet().GetComponentInChildren<FeatureSetManager>();
-        Dictionary<SourceMappingOptions,string> finalMapping = new Dictionary<SourceMappingOptions, string>();
+        Dictionary<SourceMappingOptions, string> finalMapping = new Dictionary<SourceMappingOptions, string>();
         for (int i = 0; i < _sourceRowObjects.Length; i++)
         {
             var row = _sourceRowObjects[i].GetComponent<SourceRow>();
@@ -872,7 +912,8 @@ public class CanvassDesktop : MonoBehaviour
                 finalMapping.Add(row.CurrentMapping, row.SourceName);
             columnsMask[i] = _sourceRowObjects[i].transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().isOn;
         }
-        if(featureSetManager.FeatureFileToLoad != "")
+
+        if (featureSetManager.FeatureFileToLoad != "")
             featureSetManager.ImportFeatureSet(finalMapping, FeatureMapper.GetVOTableFromFile(sourcesPath), Path.GetFileName(sourcesPath), columnsMask);
         loadingText.GetComponent<TextMeshProUGUI>().text = $"Successfully loaded sources from:{Environment.NewLine}{Path.GetFileName(sourcesPath)}";
         sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;
@@ -918,7 +959,7 @@ public class CanvassDesktop : MonoBehaviour
         {
             GUI.backgroundColor = new Color(1, 0, 0, 1f);
             GUI.Window(0, new Rect((Screen.width / 2) - 150, (Screen.height / 2) - 75
-                   , 300, 250), ShowGUI, "Invalid Cube");
+                , 300, 250), ShowGUI, "Invalid Cube");
         }
     }
 
@@ -933,29 +974,37 @@ public class CanvassDesktop : MonoBehaviour
             textPopUp = "";
             // you may put other code to run according to your game too
         }
-
     }
 
     private void populateStatsValue()
     {
         VolumeDataSet volumeDataSet = GetFirstActiveDataSet().Data;
 
-        Transform stats = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats");
+        Transform stats = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject
+            .transform.Find("Stats");
         stats.gameObject.transform.Find("Line_min").gameObject.transform.Find("InputField_min").GetComponent<TMP_InputField>().text = volumeDataSet.MinValue.ToString();
         stats.gameObject.transform.Find("Line_max").gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text = volumeDataSet.MaxValue.ToString();
         stats.gameObject.transform.Find("Line_std").gameObject.transform.Find("Text_std").GetComponent<TextMeshProUGUI>().text = volumeDataSet.StanDev.ToString();
         stats.gameObject.transform.Find("Line_mean").gameObject.transform.Find("Text_mean").GetComponent<TextMeshProUGUI>().text = volumeDataSet.MeanValue.ToString();
-        histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, volumeDataSet.MinValue, volumeDataSet.MaxValue, volumeDataSet.MeanValue, volumeDataSet.StanDev);
+        histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, volumeDataSet.MinValue, volumeDataSet.MaxValue, volumeDataSet.MeanValue,
+            volumeDataSet.StanDev);
     }
+
     private void populateColorMapDropdown()
     {
-        renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Colormap_container").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().options.Clear();
+        renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
+            .Find("Settings").gameObject.transform.Find("Colormap_container").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().options.Clear();
 
         foreach (var colorMap in Enum.GetValues(typeof(ColorMapEnum)))
         {
-            renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Colormap_container").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().options.Add((new TMP_Dropdown.OptionData() { text = colorMap.ToString() }));
+            renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
+                .Find("Settings").gameObject.transform.Find("Colormap_container").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().options
+                .Add((new TMP_Dropdown.OptionData() { text = colorMap.ToString() }));
         }
-        renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Colormap_container").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value = Config.Instance.defaultColorMap.GetHashCode();
+
+        renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
+                .Find("Settings").gameObject.transform.Find("Colormap_container").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value =
+            Config.Instance.defaultColorMap.GetHashCode();
     }
 
     public void ChangeColorMap()
@@ -963,7 +1012,9 @@ public class CanvassDesktop : MonoBehaviour
         var activeDataSet = GetFirstActiveDataSet();
         if (activeDataSet != null)
         {
-            activeColorMap = ColorMapUtils.FromHashCode(renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Colormap_container").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value);
+            activeColorMap = ColorMapUtils.FromHashCode(renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject
+                .transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Colormap_container").gameObject.transform.Find("Dropdown_colormap")
+                .GetComponent<TMP_Dropdown>().value);
             activeDataSet.ColorMap = activeColorMap;
         }
     }
@@ -971,9 +1022,11 @@ public class CanvassDesktop : MonoBehaviour
     public void UpdateSigma(Int32 optionIndex)
     {
         float sigma = optionIndex + 1f;
-        float histMin = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_min")
+        float histMin = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
+            .gameObject.transform.Find("Stats").gameObject.transform.Find("Line_min")
             .gameObject.transform.Find("InputField_min").GetComponent<TMP_InputField>().text);
-        float histMax = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_max")
+        float histMax = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
+            .gameObject.transform.Find("Stats").gameObject.transform.Find("Line_max")
             .gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text);
         VolumeDataSet volumeDataSet = GetFirstActiveDataSet().Data;
         histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, histMin, histMax, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
@@ -994,9 +1047,11 @@ public class CanvassDesktop : MonoBehaviour
         VolumeDataSet volumeDataSet = volumeDataSetRenderer.Data;
         float newMin = float.Parse(min);
         float histMin = newMin;
-        float histMax = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_max")
+        float histMax = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
+            .gameObject.transform.Find("Stats").gameObject.transform.Find("Line_max")
             .gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text);
-        float sigma = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_sigma")
+        float sigma = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
+            .Find("Stats").gameObject.transform.Find("Line_sigma")
             .gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value + 1f;
         volumeDataSetRenderer.ScaleMin = newMin;
         VolumeDataSet.UpdateHistogram(volumeDataSet, histMin, histMax);
@@ -1008,10 +1063,12 @@ public class CanvassDesktop : MonoBehaviour
         VolumeDataSetRenderer volumeDataSetRenderer = GetFirstActiveDataSet();
         VolumeDataSet volumeDataSet = volumeDataSetRenderer.Data;
         float newMax = float.Parse(max);
-        float histMin = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_min")
+        float histMin = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
+            .gameObject.transform.Find("Stats").gameObject.transform.Find("Line_min")
             .gameObject.transform.Find("InputField_min").GetComponent<TMP_InputField>().text);
         float histMax = newMax;
-        float sigma = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_sigma")
+        float sigma = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
+            .Find("Stats").gameObject.transform.Find("Line_sigma")
             .gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value + 1f;
         volumeDataSetRenderer.ScaleMax = newMax;
         VolumeDataSet.UpdateHistogram(volumeDataSet, histMin, histMax);
@@ -1028,7 +1085,8 @@ public class CanvassDesktop : MonoBehaviour
     }
 
     public void UpdateThresholdMax(float value)
-    {var activeDataSet = GetFirstActiveDataSet();
+    {
+        var activeDataSet = GetFirstActiveDataSet();
         if (activeDataSet != null)
         {
             activeDataSet.ThresholdMax = Mathf.Clamp(value, activeDataSet.ThresholdMin, 1);
@@ -1050,9 +1108,11 @@ public class CanvassDesktop : MonoBehaviour
 
     public void UpdateUI(float min, float max, Sprite img)
     {
-        statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_min")
+        statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats")
+            .gameObject.transform.Find("Line_min")
             .gameObject.transform.Find("InputField_min").GetComponent<TMP_InputField>().text = min.ToString();
-        statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats").gameObject.transform.Find("Line_max")
+        statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats")
+            .gameObject.transform.Find("Line_max")
             .gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text = max.ToString();
         statsPanelContent.gameObject.transform.Find("Histogram_container").gameObject.transform.Find("Histogram").GetComponent<Image>().sprite = img;
     }
