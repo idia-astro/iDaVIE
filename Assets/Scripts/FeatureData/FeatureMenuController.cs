@@ -44,20 +44,24 @@ public class FeatureMenuController : MonoBehaviour
         {
             featureSetManager = _activeDataSet.GetComponentInChildren<FeatureSetManager>();
         }
-        if (featureSetManager.ImportedFeatureSetList.Count > 0)
+
+        if (featureSetManager)
         {
-            RecyclableScrollView.Initialize(featureSetManager.ImportedFeatureSetList[0].FeatureMenuScrollerDataSource);
-            ListTitle.text = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].name;
             featureSetManager.NeedToRespawnMenuList = true;
-        }   
+            if (featureSetManager.ImportedFeatureSetList?.Count > 0)
+            {
+                RecyclableScrollView.Initialize(featureSetManager.ImportedFeatureSetList[0].FeatureMenuScrollerDataSource);
+                ListTitle.text = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].name;
+            }
+        }
     }
 
     private void OnDisable()
     {
-        volumeDatasetRendererObj = null;
         _activeDataSet = null;
         CurrentFeatureSetIndex = 0;
         featureSetManager = null;
+        _dataSets = null;
     }
 
     void Update()

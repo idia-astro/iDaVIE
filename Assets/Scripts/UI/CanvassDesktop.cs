@@ -570,6 +570,7 @@ public class CanvassDesktop : MonoBehaviour
 
         // Toggle VolumeInputController activation to update VolumeInputController's list of datasets
         _volumeInputController.gameObject.SetActive(false);
+        yield return new WaitForSeconds(0.001f);
         _volumeInputController.gameObject.SetActive(true);
 
         // Toggle FeatureMenuController activation to reload source list
@@ -577,6 +578,7 @@ public class CanvassDesktop : MonoBehaviour
         if (featureMenu?.gameObject?.activeSelf == true)
         {
             featureMenu.gameObject.SetActive(false);
+            yield return new WaitForSeconds(0.001f);
             featureMenu.gameObject.SetActive(true);
         }
         
