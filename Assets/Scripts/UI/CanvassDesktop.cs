@@ -527,10 +527,6 @@ public class CanvassDesktop : MonoBehaviour
             }
         }
 
-        Vector3 oldpos = new Vector3(0, 0f, 0);
-        Quaternion oldrot = Quaternion.identity;
-        Vector3 oldscale = new Vector3(1, 1, zScale);
-
         var activeDataSet = GetFirstActiveDataSet();
         if (activeDataSet != null)
         {
@@ -572,9 +568,18 @@ public class CanvassDesktop : MonoBehaviour
 
         checkCubesDataSet();
 
-        //Deactivate and reactivate VolumeInputController to update VolumeInputController's list of datasets
+        // Toggle VolumeInputController activation to update VolumeInputController's list of datasets
         _volumeInputController.gameObject.SetActive(false);
         _volumeInputController.gameObject.SetActive(true);
+
+        // Toggle FeatureMenuController activation to reload source list
+        var featureMenu = FindObjectOfType<FeatureMenuController>();
+        if (featureMenu?.gameObject?.activeSelf == true)
+        {
+            featureMenu.gameObject.SetActive(false);
+            featureMenu.gameObject.SetActive(true);
+        }
+        
 
         _volumeCommandController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
 

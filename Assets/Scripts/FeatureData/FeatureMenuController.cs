@@ -18,8 +18,6 @@ public class FeatureMenuController : MonoBehaviour
     [SerializeField]
     private RectTransform content = null;
 
-    public List<GameObject> SofiaObjectsList {get; private set;}
-
     public GameObject volumeDatasetRendererObj = null;
     public RecyclableScrollRect RecyclableScrollView;
     public GameObject InfoWindow = null;
@@ -34,8 +32,6 @@ public class FeatureMenuController : MonoBehaviour
 
 
     void OnEnable() {
-        SofiaObjectsList = new List<GameObject>();
-       
         if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
 
@@ -56,11 +52,19 @@ public class FeatureMenuController : MonoBehaviour
         }   
     }
 
+    private void OnDisable()
+    {
+        volumeDatasetRendererObj = null;
+        _activeDataSet = null;
+        CurrentFeatureSetIndex = 0;
+        featureSetManager = null;
+    }
+
     void Update()
     {
-        if (featureSetManager != null && featureSetManager.NeedToRespawnMenuList)
+        if (featureSetManager?.NeedToRespawnMenuList == true)
         {
-            if (featureSetManager.SelectedFeature != null && featureSetManager.SelectedFeature.Index != -1)
+            if (featureSetManager.SelectedFeature?.Index != null && featureSetManager.SelectedFeature.Index != -1)
             {
                 UpdateInfo();
                 DisplaySet(featureSetManager.SelectedFeature.FeatureSetParent.Index);
@@ -70,7 +74,7 @@ public class FeatureMenuController : MonoBehaviour
                 RecyclableScrollView.ReloadData();
             featureSetManager.NeedToRespawnMenuList = false;
         }
-        if (featureSetManager.NeedToUpdateInfo)
+        if (featureSetManager?.NeedToUpdateInfo == true)
         {
             UpdateInfo();
             featureSetManager.NeedToUpdateInfo = false;
@@ -91,7 +95,7 @@ public class FeatureMenuController : MonoBehaviour
 
     public void DisplayNextSet()
     {
-        if ( featureSetManager.ImportedFeatureSetList.Count > 1)
+        if (featureSetManager?.ImportedFeatureSetList?.Count > 1)
         {
             CurrentFeatureSetIndex++;
             if (CurrentFeatureSetIndex >= featureSetManager.ImportedFeatureSetList.Count)
@@ -102,7 +106,7 @@ public class FeatureMenuController : MonoBehaviour
 
     public void DisplayPreviousSet()
     {
-        if (featureSetManager.ImportedFeatureSetList.Count > 1)
+        if (featureSetManager?.ImportedFeatureSetList?.Count > 1)
         {
             CurrentFeatureSetIndex--;
             if (CurrentFeatureSetIndex < 0)

@@ -152,12 +152,12 @@ public class QuickMenuController : MonoBehaviour
                 case 0:
                     this.gameObject.transform.Find("Image_fet_on").gameObject.SetActive(true);
                     notificationText.GetComponent<Text>().text = "Features enabled";
-                    _activeDataSet.GetComponentInChildren<FeatureSetManager>().GetComponentsInChildren<FeatureSetRenderer>()[1].ToggleVisibility();
+                    _activeDataSet.GetComponentInChildren<FeatureSetManager>()?.GetComponentsInChildren<FeatureSetRenderer>()?[1]?.ToggleVisibility();
                     break;
                 case 1:
                     this.gameObject.transform.Find("Image_fet_off").gameObject.SetActive(true);
                     notificationText.GetComponent<Text>().text = "Features disabled";
-                    _activeDataSet.GetComponentInChildren<FeatureSetManager>().GetComponentsInChildren<FeatureSetRenderer>()[1].ToggleVisibility();
+                    _activeDataSet.GetComponentInChildren<FeatureSetManager>()?.GetComponentsInChildren<FeatureSetRenderer>()?[1]?.ToggleVisibility();
 
                     break;
             }
