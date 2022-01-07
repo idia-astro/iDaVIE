@@ -8,8 +8,10 @@ const double M_PI = 3.141592653589793238463;
 std::string GetStringFromFitsChan(const AstFitsChan *chan, const char *name) {
   char *val_ptr;
   if (astGetFitsS(chan, name, &val_ptr)) {
+    astClear(chan, "Card");
     return val_ptr;
   }
+  astClear(chan, "Card");
   return "";
 }
 
