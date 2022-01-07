@@ -13,6 +13,7 @@ TagManager:
   - cursor
   - ScrollView
   - keypad
+  - ToastNotification
   layers:
   - Default
   - TransparentFX

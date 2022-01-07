@@ -141,6 +141,9 @@ public class VolumeInputController : MonoBehaviour
     private bool _savePopupOn = false;
     private bool _exportPopupOn = false;
 
+    [SerializeField]
+    public GameObject toastNotificationPrefab = null;
+    public GameObject followHead = null;
 
     // Used for moving the pointer transform to an acceptable position for each controller type
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsLeft = new Dictionary<VRFamily, Vector3>
@@ -679,6 +682,7 @@ public class VolumeInputController : MonoBehaviour
             ScrollObject.GetComponent<CustomDragHandler>().MoveUp();
         }
 
+        ToastNotification.Update();
     }
 
     private void UpdateVignette()
@@ -1251,7 +1255,7 @@ public class VolumeInputController : MonoBehaviour
 
     public void TakePicture()
     {
-        CameraControllerTool cameraController = GameObject.Find("CameraController").GetComponentInChildren<CameraControllerTool>(true); ;
+        CameraControllerTool cameraController = GameObject.Find("CameraController").GetComponentInChildren<CameraControllerTool>(true);
         cameraController.OnUse();
     }
 
