@@ -4,6 +4,19 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+struct Notification
+{
+    public string text;
+    public Color textColor;
+    public Color bgColor;
+
+    public Notification( string t, Color bc, Color tc)
+    {
+        this.text = t;
+        this.textColor = tc;
+        this.bgColor = bc;
+    }
+}
 
 public class ToastNotification 
 {
@@ -18,18 +31,19 @@ public class ToastNotification
     private static float fadeSpeed = 0.7f;
     private static float stayAlive = 4;
 
-    private static List<System.Tuple<string, Color, Color>> notifications = new List<System.Tuple<string, Color, Color>>();
+    private static List<Notification> notifications = new List<Notification>();
 
     public static void Update()
     {
-        foreach (System.Tuple<string, Color, Color> T in notifications)
+        for (int i=0; i<notifications.Count;i++)
         {
             if (GameObject.FindGameObjectWithTag("ToastNotification") == null)
             {
                 Initialize();
-                spawnedItem.transform.Find("TopPanel").gameObject.GetComponent<Image>().color = T.Item2;
-                spawnedItem.transform.Find("TopPanel").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().text = T.Item1;
-                spawnedItem.transform.Find("TopPanel").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().color = T.Item3;
+
+                spawnedItem.transform.Find("TopPanel").gameObject.GetComponent<Image>().color = notifications[i].bgColor;
+                spawnedItem.transform.Find("TopPanel").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().text = notifications[i].text;
+                spawnedItem.transform.Find("TopPanel").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().color = notifications[i].textColor;
                
                 notifications.RemoveAt(0);
             }
@@ -86,7 +100,6 @@ public class ToastNotification
         float spawnDistance = 0.5f;
         Vector3 spawnPos = playerPos + playerDirection * spawnDistance;
 
-       // spawnedItem = GameObject.Instantiate(_volumeInputController.toastNotificationPrefab, spawnPos, Quaternion.LookRotation(new Vector3(spawnPos.x - playerPos.x, 0, spawnPos.z - playerPos.z)), _volumeInputController.followHead.transform);
         spawnedItem = GameObject.Instantiate(_volumeInputController.toastNotificationPrefab, spawnPos, Quaternion.identity, _volumeInputController.followHead.transform);
         spawnedItem.transform.localRotation = new Quaternion(0, 0, 0,1);
         spawnedItem.transform.localPosition = new Vector3(spawnedItem.transform.localPosition.x, -1f, spawnedItem.transform.localPosition.z);
@@ -99,8 +112,9 @@ public class ToastNotification
 
     public static void ShowToast(string message, Color bgColor, Color textColor)
     {
-        notifications.Add(new System.Tuple<string, Color, Color>(message, bgColor, textColor));
-        spawnedItem.transform.Find("CounterContainer").Find("Counter").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().text = notifications.Count.ToString();
+        notifications.Add(new Notification(message, bgColor, textColor));
+        if(spawnedItem)
+            spawnedItem.transform.Find("CounterContainer").Find("Counter").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().text = notifications.Count.ToString();
     }
 
     public static void ShowError(string message)
