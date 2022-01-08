@@ -87,17 +87,19 @@ public class CameraControllerTool : MonoBehaviour
             {
              Directory.CreateDirectory(directoryPath);
             }
+            var filename = string.Format("Screenshot_{0}.png", DateTime.Now.ToString("yyyyMMdd_Hmmssf"));
+            var path = Path.Combine(directoryPath, filename);
+            File.WriteAllBytes(path, bytes);
+            ToastNotification.ShowSuccess($"Screenshot saved as {filename}");
         }
-        catch (IOException ex)
+        catch (Exception ex)
         {
             Console.WriteLine(ex.Message);
+            ToastNotification.ShowError("Error taking screenshot");
         }
-        var path = Path.Combine(directoryPath, string.Format("Screenshot_{0}.png", DateTime.Now.ToString("yyyyMMdd_Hmmssf")));
-        File.WriteAllBytes(path, bytes);
         QuickMenuCanvas.GetComponent<CanvasGroup>().alpha = 1;
         targetCamera.targetTexture = oldTargetTexture;
 
-        ToastNotification.ShowSuccess("Screenshot taken successfully");
         yield return null;
     }
 }
