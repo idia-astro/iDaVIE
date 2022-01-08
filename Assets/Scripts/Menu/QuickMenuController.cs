@@ -99,7 +99,7 @@ public class QuickMenuController : MonoBehaviour
 
     public void OpenMainMenu()
     {
-        spawnMenu(mainMenuCanvas, "Open Main Menu");
+        spawnMenu(mainMenuCanvas);
     }
 
     public void OpenListOfVoiceCommands()
@@ -107,7 +107,7 @@ public class QuickMenuController : MonoBehaviour
         spawnMenu(voiceCommandsListCanvas);
     }
 
-    public void spawnMenu(GameObject menu, string text="")
+    public void spawnMenu(GameObject menu)
     {
         Vector3 playerPos = Camera.main.transform.position;
         Vector3 playerDirection = Camera.main.transform.forward;
@@ -122,7 +122,6 @@ public class QuickMenuController : MonoBehaviour
         if (!menu.activeSelf)
         {
             menu.SetActive(true);
-            ToastNotification.ShowInfo(text);
         }
     }
 
@@ -229,8 +228,7 @@ public class QuickMenuController : MonoBehaviour
         // Prevent painting of downsampled data
         if (!_activeDataSet.IsFullResolution)
         {
-            notificationText.GetComponent<Text>().text = "Cannot paint downsampled region";
-            return;
+            ToastNotification.ShowError("Cannot paint downsampled mask!\nPlease select a smaller region");
         }
         else {             
             paintMenu.transform.SetParent(this.transform.parent, false);

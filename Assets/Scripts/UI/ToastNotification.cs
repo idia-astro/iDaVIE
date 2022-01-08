@@ -27,9 +27,9 @@ public class ToastNotification
     private static StaticToastNotification staticToastNotification;
 
     private static VolumeInputController _volumeInputController = null;
-    private static GameObject spawnedItem =null;
-    private static float fadeSpeed = 0.7f;
-    private static float stayAlive = 4;
+    private static GameObject spawnedItem = null;
+    private static float fadeSpeed = 1.0f;
+    private static float stayAlive = 3;
 
     private static List<Notification> notifications = new List<Notification>();
 
@@ -52,13 +52,14 @@ public class ToastNotification
 
     public static IEnumerator FadeInToast()
     {
-        while (spawnedItem.transform.localPosition.y< -0.22f)
+        var canvasGroup = spawnedItem.GetComponent<CanvasGroup>();
+        while (canvasGroup.alpha < 1.0f)
         {
-            float fadeAmount = spawnedItem.transform.localPosition.y + (fadeSpeed * Time.deltaTime);
-
-            spawnedItem.transform.localPosition = new Vector3(spawnedItem.transform.localPosition.x, fadeAmount, spawnedItem.transform.localPosition.z);
+            canvasGroup.alpha += fadeSpeed * Time.deltaTime;
             yield return null;
         }
+
+        canvasGroup.alpha = 1.0f;
         
         yield return new WaitForSeconds(stayAlive);
         staticToastNotification.StopCoroutine(FadeInToast());
@@ -68,15 +69,15 @@ public class ToastNotification
 
     public static IEnumerator FadeOutToast()
     {
-        while (spawnedItem.transform.localPosition.y > -1f)
+        var canvasGroup = spawnedItem.GetComponent<CanvasGroup>();
+        while (canvasGroup.alpha > 0.0f)
         {
-            float fadeAmount = spawnedItem.transform.position.y - (fadeSpeed * Time.deltaTime);
-
-            spawnedItem.transform.position = new Vector3(spawnedItem.transform.position.x, fadeAmount, spawnedItem.transform.position.z);
+            canvasGroup.alpha -= fadeSpeed * Time.deltaTime;
             yield return null;
         }
+        canvasGroup.alpha = 0.0f;
         staticToastNotification.StopCoroutine(FadeOutToast());
-        yield return new WaitForSeconds(0.1f);
+        yield return new WaitForSeconds(0.01f);
         Object.Destroy(spawnedItem);
     }
 
@@ -96,17 +97,17 @@ public class ToastNotification
        
         Vector3 playerPos = Camera.main.transform.position;
         Vector3 playerDirection = Camera.main.transform.forward;
-        Quaternion playerRotation = Camera.main.transform.rotation;
         float spawnDistance = 0.5f;
         Vector3 spawnPos = playerPos + playerDirection * spawnDistance;
 
         spawnedItem = GameObject.Instantiate(_volumeInputController.toastNotificationPrefab, spawnPos, Quaternion.identity, _volumeInputController.followHead.transform);
         spawnedItem.transform.localRotation = new Quaternion(0, 0, 0,1);
-        spawnedItem.transform.localPosition = new Vector3(spawnedItem.transform.localPosition.x, -1f, spawnedItem.transform.localPosition.z);
+        spawnedItem.transform.localPosition = new Vector3(spawnedItem.transform.localPosition.x, -0.22f, spawnedItem.transform.localPosition.z);
         spawnedItem.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
 
         spawnedItem.transform.Find("CounterContainer").Find("Counter").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().text = notifications.Count.ToString();
-
+        var canvasGroup = spawnedItem.GetComponent<CanvasGroup>();
+        canvasGroup.alpha = 0;
         staticToastNotification.StartCoroutine(FadeInToast());
     }
 
@@ -120,6 +121,7 @@ public class ToastNotification
     public static void ShowError(string message)
     {
         ShowToast(message, new Color(0.77f, 0, 0.14f, 1), Color.white);
+        Debug.LogError(message);
     }
 
     public static void ShowSuccess(string message)
@@ -135,5 +137,6 @@ public class ToastNotification
     public static void ShowWarning(string message)
     {
         ShowToast(message, Color.yellow, Color.black );
+        Debug.LogWarning(message);
     }
 }

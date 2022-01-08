@@ -641,6 +641,17 @@ namespace VolumeData
                 _maskDataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel,
                     new Vector3Int(_currentXFactor, _currentYFactor, _currentZFactor));
             }
+
+            string resolutionString;
+            if (_currentXFactor * _currentYFactor * _currentZFactor == 1)
+            {
+                resolutionString = "Data is full resolution";
+            }
+            else
+            {
+                resolutionString = $"Downsampled by ({_currentXFactor} \u00D7 {_currentYFactor} \u00D7 {_currentZFactor})";
+            }
+            ToastNotification.ShowInfo($"Cropped to ({regionSize.x} \u00D7 {regionSize.y} \u00D7 {regionSize.z}) region\n{resolutionString}");
         }
 
         public void TeleportToRegion()
@@ -870,7 +881,7 @@ namespace VolumeData
         {
             if (_maskDataSet == null)
             {
-                Debug.LogError("Could not find mask data!");
+                ToastNotification.ShowError("Could not find mask data!");
                 return;
             }
             IntPtr cubeFitsPtr = IntPtr.Zero;
@@ -883,7 +894,7 @@ namespace VolumeData
                 _maskDataSet.FileName = $"{directory}/{Path.GetFileNameWithoutExtension(_dataSet.FileName)}-mask.fits";
                 if (_maskDataSet.SaveMask(cubeFitsPtr, $"!{_maskDataSet.FileName}") != 0)
                 {
-                    Debug.LogError("Error saving new mask!");
+                    ToastNotification.ShowError("Error saving new mask!");
                 }
             }
             else if (!overwrite)
@@ -903,10 +914,14 @@ namespace VolumeData
                     fileName = fileName + "_copy_" + timeStamp;
                 }
                 string directory = Path.GetDirectoryName(_maskDataSet.FileName);
-                string filename = $"!{directory}/{fileName}.fits";
-                if (_maskDataSet.SaveMask(cubeFitsPtr, filename) != 0)
+                string fullPath = $"!{directory}/{fileName}.fits";
+                if (_maskDataSet.SaveMask(cubeFitsPtr, fullPath) != 0)
                 {
-                    Debug.LogError("Error saving copy!");
+                    ToastNotification.ShowError("Error saving mask copy!");
+                }
+                else
+                {
+                    ToastNotification.ShowSuccess($"Mask saved to {fileName}");
                 }
             }
             else
@@ -915,7 +930,11 @@ namespace VolumeData
                 FitsReader.FitsOpenFileReadWrite(out cubeFitsPtr, _maskDataSet.FileName, out status);
                 if (_maskDataSet.SaveMask(cubeFitsPtr, null) != 0)
                 {
-                    Debug.LogError("Error overwriting existing mask!");
+                    ToastNotification.ShowError("Error overwriting existing mask!");
+                }
+                else
+                {
+                    ToastNotification.ShowSuccess($"Mask saved to disk");
                 }
             }
             if (cubeFitsPtr != IntPtr.Zero)
