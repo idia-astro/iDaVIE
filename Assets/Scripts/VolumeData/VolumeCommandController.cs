@@ -5,9 +5,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Windows.Speech;
-using UnityEngine.WSA;
-using Valve.VR;
-using Valve.VR.InteractionSystem;
 
 namespace VolumeData
 {
