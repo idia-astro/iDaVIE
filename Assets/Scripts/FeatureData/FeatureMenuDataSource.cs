@@ -45,7 +45,7 @@ public class FeatureMenuDataSource : MonoBehaviour, IRecyclableScrollRectDataSou
     /// </summary>
     public int GetItemCount()
     {
-        return _sofiaList.Count;
+        return _sofiaList?.Count ?? 0;
     }
 
     /// <summary>

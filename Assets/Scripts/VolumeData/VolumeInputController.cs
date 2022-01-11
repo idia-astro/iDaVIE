@@ -141,6 +141,9 @@ public class VolumeInputController : MonoBehaviour
     private bool _savePopupOn = false;
     private bool _exportPopupOn = false;
 
+    [SerializeField]
+    public GameObject toastNotificationPrefab = null;
+    public GameObject followHead = null;
 
     // Used for moving the pointer transform to an acceptable position for each controller type
     private static readonly Dictionary<VRFamily, Vector3> PointerOffsetsLeft = new Dictionary<VRFamily, Vector3>
@@ -209,15 +212,7 @@ public class VolumeInputController : MonoBehaviour
         SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateUpListener(OnMenuDownReleased, SteamVR_Input_Sources.RightHand);
 
 
-        var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
-        if (volumeDataSetManager)
-        {
-            _volumeDataSets = volumeDataSetManager.GetComponentsInChildren<VolumeDataSetRenderer>(true);
-        }
-        else
-        {
-            _volumeDataSets = new VolumeDataSetRenderer[0];
-        }
+        UpdateDataSets();
 
         // Line renderer for showing separation between controllers while scaling/rotating
         _lineRotationAxes = new VectorLine("RotationAxes", new List<Vector3>(new Vector3[3]), 2.0f, LineType.Continuous);
@@ -237,6 +232,19 @@ public class VolumeInputController : MonoBehaviour
         _locomotionState = LocomotionState.Idle;
         
         CreateInteractionStateMachine();
+    }
+
+    public void UpdateDataSets()
+    {
+        var volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
+        if (volumeDataSetManager)
+        {
+            _volumeDataSets = volumeDataSetManager.GetComponentsInChildren<VolumeDataSetRenderer>(true);
+        }
+        else
+        {
+            _volumeDataSets = Array.Empty<VolumeDataSetRenderer>();
+        }
     }
 
     private void CreateInteractionStateMachine()
@@ -674,6 +682,7 @@ public class VolumeInputController : MonoBehaviour
             ScrollObject.GetComponent<CustomDragHandler>().MoveUp();
         }
 
+        ToastNotification.Update();
     }
 
     private void UpdateVignette()
@@ -1246,7 +1255,7 @@ public class VolumeInputController : MonoBehaviour
 
     public void TakePicture()
     {
-        CameraControllerTool cameraController = GameObject.Find("CameraController").GetComponentInChildren<CameraControllerTool>(true); ;
+        CameraControllerTool cameraController = GameObject.Find("CameraController").GetComponentInChildren<CameraControllerTool>(true);
         cameraController.OnUse();
     }
 

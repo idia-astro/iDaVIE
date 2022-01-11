@@ -1155,7 +1155,8 @@ namespace VolumeData
             int status = 0;
             var directoryPath = Path.GetDirectoryName(FileName);
             var timeStamp = DateTime.Now.ToString("yyyyMMdd_Hmmss");
-            var filePath = Path.Combine(directoryPath, $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}.fits");
+            var newFilename = $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}.fits";
+            var filePath = Path.Combine(directoryPath, newFilename);
             var maskFilePath = Path.Combine(directoryPath, $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}_mask.fits");
             // Works only with 3D cubes for now... need 4D askap capability
             if (FitsReader.FitsOpenFile(out oldFitsPtr, FileName + $"[{cornerMin.x}:{cornerMax.x},{cornerMin.y}:{cornerMax.y},{cornerMin.z}:{cornerMax.z}]", out status, true) == 0)
@@ -1171,8 +1172,16 @@ namespace VolumeData
                 }
                 FitsReader.FitsCloseFile(oldFitsPtr, out status);
             }
+
             if (status != 0)
-                Debug.LogError($"Fits Read mask cube data error #{status.ToString()}");
+            {
+                ToastNotification.ShowError($"Error saving sub-cube (Error #{status.ToString()})");
+            }
+            else
+            {
+                ToastNotification.ShowSuccess($"Sub-cube saved to ${newFilename}");
+            }
+
             return status;
         }
 

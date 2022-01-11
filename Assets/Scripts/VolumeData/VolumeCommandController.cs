@@ -5,8 +5,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Windows.Speech;
-using Valve.VR;
-using Valve.VR.InteractionSystem;
 
 namespace VolumeData
 {
@@ -307,6 +305,15 @@ namespace VolumeData
             _dataSets.Add(setToAdd);
         }
 
+        public void RemoveDataSet(VolumeDataSetRenderer setToRemove)
+        {
+            // Detach and remove
+            setToRemove.transform.parent = null;
+            _dataSets.Remove(setToRemove);
+            Destroy(setToRemove?.gameObject);
+            _volumeInputController.UpdateDataSets();
+        }
+
         public void resetThreshold()
         {
             if (_activeDataSet)
@@ -375,6 +382,7 @@ namespace VolumeData
             if (_activeDataSet)
             {
                 _activeDataSet.ColorMap = colorMap;
+                ToastNotification.ShowInfo($"Color map set to {colorMap.ToString()}");
             }
         }               
 
@@ -436,6 +444,7 @@ namespace VolumeData
             {
                 _activeDataSet.ProjectionMode = mode;
             }
+            ToastNotification.ShowInfo($"Accumulation set to {mode.ToString()}");
         }
         
         public void SetSamplingMode(bool maxMode)
@@ -446,6 +455,9 @@ namespace VolumeData
                 config.maxModeDownsampling = maxMode;
                 _activeDataSet?.RegenerateCubes();
             }
+
+            var modeString = maxMode ? "max" : "average";
+            ToastNotification.ShowInfo($"Downsampling mode set to {modeString}");
         }
 
         public void EnablePaintMode()
@@ -497,6 +509,7 @@ namespace VolumeData
         public void ChangeScalingType(ScalingType scalingType)
         {
             getFirstActiveDataSet().ScalingType = scalingType;
+            ToastNotification.ShowInfo($"Scaling type set to {scalingType.ToString()}");
         }
 
         public void AddNewSource()

@@ -56,7 +56,7 @@ public class OptionController : MonoBehaviour
     {
         foreach (var dataSet in _dataSets)
         {
-            if (dataSet.isActiveAndEnabled)
+            if (dataSet?.isActiveAndEnabled == true)
             {
                 return dataSet;
             }
