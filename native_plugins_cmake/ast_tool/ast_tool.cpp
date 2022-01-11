@@ -1,26 +1,42 @@
 #include "ast_tool.h"
 
 #include <string>
+#include <regex>
 
-// Adapted from https://stackoverflow.com/a/29752943
-void ReplaceAll(std::string &source, std::string &currentSubstring, const std::string &newSubstring) {
-  std::string dest;
-  dest.reserve(source.length());
+const double M_PI = 3.141592653589793238463;
 
-  std::string::size_type lastPos = 0;
-  std::string::size_type findPos;
-
-  while (std::string::npos != (findPos = source.find(currentSubstring, lastPos))) {
-    dest.append(source, lastPos, findPos - lastPos);
-    dest += newSubstring;
-    lastPos = findPos + currentSubstring.length();
+std::string GetStringFromFitsChan(const AstFitsChan *chan, const char *name) {
+  char *val_ptr;
+  if (astGetFitsS(chan, name, &val_ptr)) {
+    astClear(chan, "Card");
+    return val_ptr;
   }
-  dest += source.substr(lastPos);
-  source.swap(dest);
+  astClear(chan, "Card");
+  return "";
 }
 
-void ReplaceAll(std::string &source, const char* currentSubstring, const char* newSubstring) {
-  ReplaceAll(source, std::string(currentSubstring), std::string(newSubstring));
+bool FixNcpHeaders(AstFitsChan* fitschan)
+{
+  std::string ra_type = GetStringFromFitsChan(fitschan, "CTYPE1");
+  std::string dec_type = GetStringFromFitsChan(fitschan, "CTYPE2");
+  double crval2 = 0.0;
+  if (ra_type.find("-NCP") != std::string::npos && dec_type.find("-NCP") != std::string::npos && astGetFitsF(fitschan, "CRVAL2", &crval2)) {
+    std::cout << "Need to translate NCP->SIN and define PV matrix" << std::endl;
+    ra_type = std::regex_replace(ra_type, std::regex("-NCP"), "-SIN");
+    dec_type = std::regex_replace(dec_type, std::regex("-NCP"), "-SIN");
+    double pv22 = 1.0 / std::tan(crval2 * M_PI / 180.0);
+
+    astClear(fitschan, "Card");
+    astFindFits(fitschan, "CTYPE1", nullptr, 0);
+    astSetFitsS(fitschan, "CTYPE1", ra_type.c_str(), nullptr, 1);
+    astFindFits(fitschan, "CTYPE2", nullptr, 0);
+    astSetFitsS(fitschan, "CTYPE2", dec_type.c_str(), nullptr, 1);
+    astSetFitsF(fitschan, "PV2_1", 0.0, "Edited by iDaVIE", 0);
+    astSetFitsF(fitschan, "PV2_2", pv22, "Edited by iDaVIE", 0);
+    astClear(fitschan, "Card");
+    return true;
+  }
+  return false;
 }
 
 int InitAstFrameSet(AstFrameSet** astFrameSetPtr, const char* header, double restFreqGHz = 0)
@@ -32,7 +48,7 @@ int InitAstFrameSet(AstFrameSet** astFrameSetPtr, const char* header, double res
     {
         astEnd;
     }
-	astClearStatus;
+    astClearStatus;
     astBegin;
     fitschan = astFitsChan(nullptr, nullptr, "");
     if (!fitschan)
@@ -46,24 +62,23 @@ int InitAstFrameSet(AstFrameSet** astFrameSetPtr, const char* header, double res
         std::cout << "Missing header argument." << std::endl;
         return -1;
     }
+    astPutCards(fitschan, header);
 
     // Replace all NCP projections with SIN as a workaround
-    std::string header_str = header;
-    ReplaceAll(header_str, "--NCP", "--SIN");
-    astPutCards(fitschan, header_str.c_str());
+    FixNcpHeaders(fitschan);
 
     if (restFreqGHz != 0)
     {
         if (astTestFits(fitschan, "RESTFREQ", nullptr) != 0)
         {
             astFindFits(fitschan, "RESTFREQ", nullptr, 0);
-            astSetFitsF(fitschan, "RESTFREQ", restFreqGHz * 1.0e9, NULL, 1);
+            astSetFitsF(fitschan, "RESTFREQ", restFreqGHz * 1.0e9, nullptr, 1);
             astClear(fitschan, "Card");
         }
         else
         {
             astFindFits(fitschan, "RESTFRQ", nullptr, 0);
-            astSetFitsF(fitschan, "RESTFRQ", restFreqGHz * 1.0e9, NULL, 1);    
+            astSetFitsF(fitschan, "RESTFRQ", restFreqGHz * 1.0e9, nullptr, 1);
             astClear(fitschan, "Card");
         }
     }

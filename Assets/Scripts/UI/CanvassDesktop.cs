@@ -109,10 +109,9 @@ public class CanvassDesktop : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (getFirstActiveDataSet() != null)
+        if (GetFirstActiveDataSet() != null)
         {
-            ;
-            VolumeDataSetRenderer dataSet = getFirstActiveDataSet();
+            VolumeDataSetRenderer dataSet = GetFirstActiveDataSet();
 
             if (minThreshold.value > maxThreshold.value)
             {
@@ -489,7 +488,7 @@ public class CanvassDesktop : MonoBehaviour
 
         renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
                 .Find("Settings").gameObject.transform.Find("Mask_container").gameObject.transform.Find("Dropdown_mask").GetComponent<TMP_Dropdown>().interactable =
-            getFirstActiveDataSet().MaskFileName != "";
+            GetFirstActiveDataSet().MaskFileName != "";
 
         populateColorMapDropdown();
         populateStatsValue();
@@ -528,29 +527,37 @@ public class CanvassDesktop : MonoBehaviour
             }
         }
 
-        Vector3 oldpos = new Vector3(0, 0f, 0);
-        Quaternion oldrot = Quaternion.identity;
-        Vector3 oldscale = new Vector3(1, 1, zScale);
-
-        if (getFirstActiveDataSet() != null)
+        var activeDataSet = GetFirstActiveDataSet();
+        if (activeDataSet != null)
         {
-            getFirstActiveDataSet()._voxelOutline.active = false;
-            getFirstActiveDataSet()._regionOutline.active = false;
-            getFirstActiveDataSet()._cubeOutline.active = false;
+            activeDataSet._voxelOutline.active = false;
+            activeDataSet._regionOutline.active = false;
+            activeDataSet._cubeOutline.active = false;
 
-            oldpos = getFirstActiveDataSet().transform.localPosition;
-            oldrot = getFirstActiveDataSet().transform.localRotation;
-            oldscale = getFirstActiveDataSet().transform.localScale;
-            getFirstActiveDataSet().transform.gameObject.SetActive(false);
+            activeDataSet.transform.gameObject.SetActive(false);
+            _volumeCommandController.RemoveDataSet(activeDataSet);
+            // Reset UI to default
+            try
+            {
+                _volumeInputController = FindObjectOfType<VolumeInputController>();
+                _volumeInputController.gameObject.SetActive(false);
+                _volumeInputController.gameObject.SetActive(true);
+
+                _volumeCommandController.DisablePaintMode();
+                _volumeCommandController.endThresholdEditing();
+                _volumeCommandController.endZAxisEditing();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         GameObject newCube = Instantiate(cubeprefab, new Vector3(0, 0f, 0), Quaternion.identity);
+        newCube.transform.localScale = new Vector3(1, 1, zScale);
         newCube.SetActive(true);
 
-        newCube.transform.parent = volumeDataSetManager.transform;
-        newCube.transform.localPosition = oldpos;
-        newCube.transform.localRotation = oldrot;
-        newCube.transform.localScale = oldscale;
+        newCube.transform.SetParent(volumeDataSetManager.transform, false);
 
         newCube.GetComponent<VolumeDataSetRenderer>().FileName = _imagePath; //_dataSet.FileName.ToString();
         newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _maskPath; // _maskDataSet.FileName.ToString();
@@ -561,9 +568,20 @@ public class CanvassDesktop : MonoBehaviour
 
         checkCubesDataSet();
 
-        //Deactivate and reactivate VolumeInputController to update VolumeInputController's list of datasets
+        // Toggle VolumeInputController activation to update VolumeInputController's list of datasets
         _volumeInputController.gameObject.SetActive(false);
+        yield return new WaitForSeconds(0.001f);
         _volumeInputController.gameObject.SetActive(true);
+
+        // Toggle FeatureMenuController activation to reload source list
+        var featureMenu = FindObjectOfType<FeatureMenuController>();
+        if (featureMenu?.gameObject?.activeSelf == true)
+        {
+            featureMenu.gameObject.SetActive(false);
+            yield return new WaitForSeconds(0.001f);
+            featureMenu.gameObject.SetActive(true);
+        }
+        
 
         _volumeCommandController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
 
@@ -578,24 +596,25 @@ public class CanvassDesktop : MonoBehaviour
     public void OnRatioDropdownValueChanged(int optionIndex)
     {
         ratioDropdownIndex = optionIndex;
-        if (getFirstActiveDataSet() != null)
+        var activeDataSet = GetFirstActiveDataSet();
+        if (activeDataSet != null)
         {
             if (optionIndex == 0)
             {
                 // X=Y=Z
-                getFirstActiveDataSet().ZScale = 1f;
+                activeDataSet.ZScale = 1f;
             }
             else
             {
                 // X=Y
-                getFirstActiveDataSet().ZScale = 1f * getFirstActiveDataSet().GetCubeDimensions().z / getFirstActiveDataSet().GetCubeDimensions().x;
+                activeDataSet.ZScale = 1f * activeDataSet.GetCubeDimensions().z / activeDataSet.GetCubeDimensions().x;
             }
         }
     }
 
     public void OnRestFrequencyOverrideValueChanged(bool option)
     {
-        var activeDataSet = getFirstActiveDataSet();
+        var activeDataSet = GetFirstActiveDataSet();
         activeDataSet.OverrideRestFrequency = option;
         if (option)
         {
@@ -610,7 +629,7 @@ public class CanvassDesktop : MonoBehaviour
     public void OnRestFrequencyValueChanged(String val)
     {
         restFrequency = float.Parse(val);
-        var activeDataSet = getFirstActiveDataSet();
+        var activeDataSet = GetFirstActiveDataSet();
         if (activeDataSet.OverrideRestFrequency)
             activeDataSet.RestFrequency = restFrequency;
     }
@@ -639,7 +658,7 @@ public class CanvassDesktop : MonoBehaviour
 
     private void _browseSourcesFile(string path)
     {
-        var volumeDataSet = getFirstActiveDataSet();
+        var volumeDataSet = GetFirstActiveDataSet();
         var featureDataSet = volumeDataSet.GetComponentInChildren<FeatureSetManager>();
         sourcesPath = path;
         featureDataSet.FeatureFileToLoad = path;
@@ -917,7 +936,7 @@ public class CanvassDesktop : MonoBehaviour
             return;
         }
 
-        var featureSetManager = getFirstActiveDataSet().GetComponentInChildren<FeatureSetManager>();
+        var featureSetManager = GetFirstActiveDataSet().GetComponentInChildren<FeatureSetManager>();
         Dictionary<SourceMappingOptions, string> finalMapping = new Dictionary<SourceMappingOptions, string>();
         for (int i = 0; i < _sourceRowObjects.Length; i++)
         {
@@ -950,13 +969,16 @@ public class CanvassDesktop : MonoBehaviour
         Application.Quit();
     }
 
-    private VolumeDataSetRenderer getFirstActiveDataSet()
+    private VolumeDataSetRenderer GetFirstActiveDataSet()
     {
-        foreach (var dataSet in _volumeDataSets)
+        if (_volumeDataSets != null)
         {
-            if (dataSet.isActiveAndEnabled)
+            foreach (var dataSet in _volumeDataSets)
             {
-                return dataSet;
+                if (dataSet.isActiveAndEnabled)
+                {
+                    return dataSet;
+                }
             }
         }
 
@@ -989,7 +1011,7 @@ public class CanvassDesktop : MonoBehaviour
 
     private void populateStatsValue()
     {
-        VolumeDataSet volumeDataSet = getFirstActiveDataSet().Data;
+        VolumeDataSet volumeDataSet = GetFirstActiveDataSet().Data;
 
         Transform stats = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject
             .transform.Find("Stats");
@@ -1020,12 +1042,13 @@ public class CanvassDesktop : MonoBehaviour
 
     public void ChangeColorMap()
     {
-        if (getFirstActiveDataSet())
+        var activeDataSet = GetFirstActiveDataSet();
+        if (activeDataSet != null)
         {
             activeColorMap = ColorMapUtils.FromHashCode(renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject
                 .transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Colormap_container").gameObject.transform.Find("Dropdown_colormap")
                 .GetComponent<TMP_Dropdown>().value);
-            getFirstActiveDataSet().ColorMap = activeColorMap;
+            activeDataSet.ColorMap = activeColorMap;
         }
     }
 
@@ -1038,7 +1061,7 @@ public class CanvassDesktop : MonoBehaviour
         float histMax = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
             .gameObject.transform.Find("Stats").gameObject.transform.Find("Line_max")
             .gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text);
-        VolumeDataSet volumeDataSet = getFirstActiveDataSet().Data;
+        VolumeDataSet volumeDataSet = GetFirstActiveDataSet().Data;
         histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, histMin, histMax, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
     }
 
@@ -1047,13 +1070,13 @@ public class CanvassDesktop : MonoBehaviour
         statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats")
             .gameObject.transform.Find("Line_sigma").gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value = 0;
 
-        VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().Data, getFirstActiveDataSet().Data.MinValue, getFirstActiveDataSet().Data.MaxValue);
+        VolumeDataSet.UpdateHistogram(GetFirstActiveDataSet().Data, GetFirstActiveDataSet().Data.MinValue, GetFirstActiveDataSet().Data.MaxValue);
         populateStatsValue();
     }
 
     public void UpdateScaleMin(String min)
     {
-        VolumeDataSetRenderer volumeDataSetRenderer = getFirstActiveDataSet();
+        VolumeDataSetRenderer volumeDataSetRenderer = GetFirstActiveDataSet();
         VolumeDataSet volumeDataSet = volumeDataSetRenderer.Data;
         float newMin = float.Parse(min);
         float histMin = newMin;
@@ -1070,7 +1093,7 @@ public class CanvassDesktop : MonoBehaviour
 
     public void UpdateScaleMax(String max)
     {
-        VolumeDataSetRenderer volumeDataSetRenderer = getFirstActiveDataSet();
+        VolumeDataSetRenderer volumeDataSetRenderer = GetFirstActiveDataSet();
         VolumeDataSet volumeDataSet = volumeDataSetRenderer.Data;
         float newMax = float.Parse(max);
         float histMin = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
@@ -1087,21 +1110,33 @@ public class CanvassDesktop : MonoBehaviour
 
     public void UpdateThresholdMin(float value)
     {
-        getFirstActiveDataSet().ThresholdMin = Mathf.Clamp(value, 0, getFirstActiveDataSet().ThresholdMax);
+        var activeDataSet = GetFirstActiveDataSet();
+        if (activeDataSet != null)
+        {
+            activeDataSet.ThresholdMin = Mathf.Clamp(value, 0, activeDataSet.ThresholdMax);
+        }
     }
 
     public void UpdateThresholdMax(float value)
     {
-        getFirstActiveDataSet().ThresholdMax = Mathf.Clamp(value, getFirstActiveDataSet().ThresholdMin, 1);
+        var activeDataSet = GetFirstActiveDataSet();
+        if (activeDataSet != null)
+        {
+            activeDataSet.ThresholdMax = Mathf.Clamp(value, activeDataSet.ThresholdMin, 1);
+        }
     }
 
     public void ResetThresholds()
     {
-        getFirstActiveDataSet().ThresholdMin = getFirstActiveDataSet().InitialThresholdMin;
-        minThreshold.value = getFirstActiveDataSet().ThresholdMin;
+        var activeDataSet = GetFirstActiveDataSet();
+        if (activeDataSet != null)
+        {
+            activeDataSet.ThresholdMin = activeDataSet.InitialThresholdMin;
+            minThreshold.value = activeDataSet.ThresholdMin;
 
-        getFirstActiveDataSet().ThresholdMax = getFirstActiveDataSet().InitialThresholdMax;
-        maxThreshold.value = getFirstActiveDataSet().ThresholdMax;
+            activeDataSet.ThresholdMax = activeDataSet.InitialThresholdMax;
+            maxThreshold.value = activeDataSet.ThresholdMax;
+        }
     }
 
     public void UpdateUI(float min, float max, Sprite img)

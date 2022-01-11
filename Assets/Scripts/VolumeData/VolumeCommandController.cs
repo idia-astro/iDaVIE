@@ -5,9 +5,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Windows.Speech;
-using UnityEngine.WSA;
-using Valve.VR;
-using Valve.VR.InteractionSystem;
 
 namespace VolumeData
 {
@@ -306,6 +303,15 @@ namespace VolumeData
         public void AddDataSet(VolumeDataSetRenderer setToAdd)
         {
             _dataSets.Add(setToAdd);
+        }
+
+        public void RemoveDataSet(VolumeDataSetRenderer setToRemove)
+        {
+            // Detach and remove
+            setToRemove.transform.parent = null;
+            _dataSets.Remove(setToRemove);
+            Destroy(setToRemove?.gameObject);
+            _volumeInputController.UpdateDataSets();
         }
 
         public void resetThreshold()
