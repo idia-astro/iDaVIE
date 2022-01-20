@@ -86,7 +86,6 @@ public class VolumeInputController : MonoBehaviour
     public bool AdditiveBrush { get; private set; } = true;
     public int BrushSize = 1;
     public short SourceId = -1;
-    public short NewSourceId = 1000;
     
     private Player _player;
     private VRHand[] _hands;
@@ -1224,15 +1223,15 @@ public class VolumeInputController : MonoBehaviour
 
     public void AddNewSource()
     {
-        SourceId = NewSourceId;
         AdditiveBrush = true;
         if (ActiveDataSet)
         {
-            ActiveDataSet.HighlightedSource = NewSourceId;
+            SourceId = ActiveDataSet.Data.NewSourceId;
+            ActiveDataSet.HighlightedSource = SourceId;
+            ActiveDataSet.Data.NewSourceId++;
+            // End editing mode without updating the source ID to the cursor voxel
+            InteractionStateMachine.Fire(InteractionEvents.CancelEditSource);
         }
-        NewSourceId++;
-        // End editing mode without updating the source ID to the cursor voxel
-        InteractionStateMachine.Fire(InteractionEvents.CancelEditSource);
     }
     
     public void SetBrushAdditive()

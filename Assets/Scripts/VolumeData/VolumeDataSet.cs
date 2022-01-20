@@ -98,6 +98,7 @@ namespace VolumeData
         private short[] _regionMaskVoxels;
         private readonly Dictionary<int, int> _addedMaskEntriesDict = new Dictionary<int, int>();
         private static int BrushStrokeLimit = 16777216;
+        public short NewSourceId = 1000;
 
         public IntPtr FitsData = IntPtr.Zero;
         public IntPtr FitsHeader = IntPtr.Zero;
@@ -338,6 +339,7 @@ namespace VolumeData
                 {
                     volumeDataSet.SourceStatsDict[source.maskVal] = DataAnalysis.SourceStats.FromSourceInfo(source);
                     volumeDataSet.UpdateStats(source.maskVal);
+                    volumeDataSet.NewSourceId = Math.Max(volumeDataSet.NewSourceId, source.maskVal);
                 }
                 sw.Stop();
                 Debug.Log($"Calculated stats for {volumeDataSet.SourceStatsDict?.Count} sources in {sw.Elapsed.TotalMilliseconds} ms");
