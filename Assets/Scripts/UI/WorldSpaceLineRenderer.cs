@@ -3,15 +3,12 @@ using UnityEngine;
 
 namespace UI
 {
-    public class PolyLine
+    public class LineShape
     {
         public Transform Parent;
-        public List<Vector3> Vertices;
         public Color Color;
         public bool Active;
-        
-        public bool AutoDrawing { get; private set; }
-
+        private bool _addedToRenderer;
         public bool Destroyed { get; private set; }
 
         public void Destroy()
@@ -19,19 +16,47 @@ namespace UI
             Destroyed = true;
         }
 
-        public void Activate()
+        public virtual void Activate()
         {
             Active = true;
-            if (!AutoDrawing)
+            if (!_addedToRenderer)
             {
-                AutoDrawing = true;
-                WorldSpaceLineRenderer.Instance.AddLine(this);
+                _addedToRenderer = true;
+                WorldSpaceLineRenderer.Instance.AddShape(this);
             }
         }
 
-        public void Deactivate()
+        public virtual void Deactivate()
         {
             Active = false;
+        }
+
+        public virtual void RenderShape()
+        {
+            
+        }
+    }
+
+    public class PolyLine : LineShape
+    {
+        public List<Vector3> Vertices;
+
+        public override void RenderShape()
+        {
+            if (Vertices == null || Vertices.Count < 2)
+            {
+                return;
+            }
+
+            GL.Begin(GL.LINES);
+            {
+                GL.Color(Color);
+                foreach (var vertex in Vertices)
+                {
+                    GL.Vertex3(vertex.x, vertex.y, vertex.z);
+                }
+            }
+            GL.End();
         }
     }
 
@@ -74,17 +99,17 @@ namespace UI
             }
         }
 
-        private List<PolyLine> _lines = new List<PolyLine>();
+        private List<LineShape> _shapes = new List<LineShape>();
 
-        public void AddLine(PolyLine polyLine)
+        public void AddShape(LineShape lineShape)
         {
-            _lines.Add(polyLine);
+            _shapes.Add(lineShape);
         }
 
         private void PurgeDestroyedLines()
         {
             bool requiresRebuild = false;
-            foreach (var ls in _lines)
+            foreach (var ls in _shapes)
             {
                 if (ls.Destroyed)
                 {
@@ -95,16 +120,16 @@ namespace UI
 
             if (requiresRebuild)
             {
-                var newLines = new List<PolyLine>();
-                foreach (var ls in _lines)
+                var newShapes = new List<LineShape>();
+                foreach (var ls in _shapes)
                 {
                     if (!ls.Destroyed)
                     {
-                        newLines.Add(ls);
+                        newShapes.Add(ls);
                     }
                 }
 
-                _lines = newLines;
+                _shapes = newShapes;
             }
         }
 
@@ -115,26 +140,18 @@ namespace UI
             CreateLineMaterial();
             _lineMaterial.SetPass(0);
 
-            foreach (var polyLine in _lines)
+            foreach (var shape in _shapes)
             {
                 // Skip deactivated lines and empty lines
-                if (!polyLine.Active || polyLine.Destroyed || polyLine.Vertices == null || polyLine.Vertices.Count < 2)
+                if (!shape.Active || shape.Destroyed)
                 {
                     continue;
                 }
 
                 GL.PushMatrix();
                 {
-                    GL.MultMatrix(polyLine.Parent.localToWorldMatrix);
-                    GL.Begin(GL.LINES);
-                    {
-                        GL.Color(polyLine.Color);
-                        foreach (var vertex in polyLine.Vertices)
-                        {
-                            GL.Vertex3(vertex.x, vertex.y, vertex.z);
-                        }
-                    }
-                    GL.End();
+                    GL.MultMatrix(shape.Parent.localToWorldMatrix);
+                    shape.RenderShape();
                 }
                 GL.PopMatrix();
             }
@@ -142,12 +159,12 @@ namespace UI
 
         public void OnDestroy()
         {
-            foreach (var ls in _lines)
+            foreach (var ls in _shapes)
             {
                 ls.Destroy();
             }
-            
-            _lines.Clear();
+
+            _shapes.Clear();
         }
     }
 }
