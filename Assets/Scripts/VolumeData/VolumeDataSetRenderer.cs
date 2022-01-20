@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using DataFeatures;
+using UI;
 using Vectrosity;
 using Debug = UnityEngine.Debug;
 
@@ -129,7 +130,8 @@ namespace VolumeData
 
         public FeatureSetManager FeatureSetManagerPrefab;
 
-        public VectorLine _voxelOutline, _cubeOutline, _regionOutline, _regionMeasure;
+        public VectorLine _voxelOutline, _cubeOutline, _regionOutline;
+        private PolyLine _testPolyLine;
 
         private FeatureSetManager _featureManager = null;
 
@@ -314,12 +316,13 @@ namespace VolumeData
             _regionOutline.active = false;
             _regionOutline.Draw3DAuto();
 
-            //Region measuring line
-            _regionMeasure = new VectorLine("RegionMeasure", new List<Vector3>(), 1.0f);
-            _regionMeasure.drawTransform = transform;
-            _regionMeasure.color = Color.white;
-            _regionMeasure.active = false;
-            _regionMeasure.Draw3DAuto();
+            
+            _testPolyLine = new PolyLine
+            {
+                Parent = transform,
+                Color = Color.white,
+                Active = false
+            };
 
             if (_featureManager != null)
             {
@@ -498,8 +501,11 @@ namespace VolumeData
                 }
 
                 _regionOutline.active = true;
-                if (ShowMeasuringLine == true)
-                    _regionMeasure.active = true;
+                if (ShowMeasuringLine)
+                {
+                    _testPolyLine?.Activate();
+                }
+                    
             }
         }
 
@@ -535,13 +541,14 @@ namespace VolumeData
 
             Vector3 regionCenterObjectSpace = new Vector3(regionCenter.x / _dataSet.XDim - 0.5f, regionCenter.y / _dataSet.YDim - 0.5f, regionCenter.z / _dataSet.ZDim - 0.5f);
             _regionOutline.MakeCube(regionCenterObjectSpace, regionSize.x / _dataSet.XDim, regionSize.y / _dataSet.YDim, regionSize.z / _dataSet.ZDim);
-            _regionMeasure.points3.Clear();
-            _regionMeasure.points3.Add(new Vector3((float)measureStart.x/_dataSet.XDim- 0.5f, (float)measureStart.y/_dataSet.YDim- 0.5f, (float)measureStart.z/_dataSet.ZDim- 0.5f));
-            _regionMeasure.points3.Add(new Vector3((float)measureEnd.x/_dataSet.XDim- 0.5f, (float)measureEnd.y/_dataSet.YDim- 0.5f, (float)measureEnd.z/_dataSet.ZDim- 0.5f));
-
+            
             var regionSizeBytes = regionSize.x * regionSize.y * regionSize.z * sizeof(float);
             bool regionIsFullResolution = (regionSizeBytes <= MaximumCubeSizeInMB * 1e6);
             Feature.SetCubeColors(_regionOutline, regionIsFullResolution ? Color.white : Color.yellow, regionIsFullResolution);
+
+            var startPoint = new Vector3((float)measureStart.x / _dataSet.XDim - 0.5f, (float)measureStart.y / _dataSet.YDim - 0.5f, (float)measureStart.z / _dataSet.ZDim - 0.5f);
+            var endPoint = new Vector3((float)measureEnd.x / _dataSet.XDim - 0.5f, (float)measureEnd.y / _dataSet.YDim - 0.5f, (float)measureEnd.z / _dataSet.ZDim - 0.5f);
+            _testPolyLine.Vertices = new List<Vector3> { startPoint, endPoint };
         }
 
         public void ClearRegion()
@@ -554,10 +561,7 @@ namespace VolumeData
 
         public void ClearMeasure()
         {
-            if (_regionMeasure != null)
-            {
-                _regionMeasure.active = false;
-            }
+            _testPolyLine?.Deactivate();
         }
 
         public void SelectFeature(Vector3 cursor)
@@ -945,6 +949,7 @@ namespace VolumeData
         {
             _dataSet.CleanUp(RandomVolume);
             _maskDataSet?.CleanUp(false);
+            _testPolyLine?.Destroy();
         }
     }
 
