@@ -16,7 +16,7 @@ powershell "Invoke-WebRequest https://github.com/CosmicElysium/Recyclable-Scroll
 powershell "Invoke-WebRequest https://github.com/gkngkc/UnityStandaloneFileBrowser/releases/download/1.2/StandaloneFileBrowser.unitypackage -OutFile file_browser.unitypackage"
 ECHO Packages downloaded!
 ECHO Importing packages into project...
-"C:\Program Files\Unity\Hub\Editor\2019.4.34f1\Editor\Unity.exe" -projectPath C:\Users\sivi\Documents\GitHub\idia_unity_vr -batchmode -nographics -executeMethod PackageImporter.ImportPackages -quit
+"C:\Program Files\Unity\Hub\Editor\2019.4.34f1\Editor\Unity.exe" -projectPath %~dp0 -batchmode -nographics -executeMethod PackageImporter.ImportPackages -quit
 cd ..
 ECHO Deleting downloaded packages
 del /Q plugin_build 
