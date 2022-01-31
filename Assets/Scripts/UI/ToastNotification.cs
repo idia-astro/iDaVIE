@@ -102,7 +102,7 @@ public class ToastNotification
 
         spawnedItem = GameObject.Instantiate(_volumeInputController.toastNotificationPrefab, spawnPos, Quaternion.identity, _volumeInputController.followHead.transform);
         spawnedItem.transform.localRotation = new Quaternion(0, 0, 0,1);
-        spawnedItem.transform.localPosition = new Vector3(spawnedItem.transform.localPosition.x, -0.22f, spawnedItem.transform.localPosition.z);
+        spawnedItem.transform.localPosition = new Vector3(-0.10f, 0.15f, spawnedItem.transform.localPosition.z);
         spawnedItem.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
 
         spawnedItem.transform.Find("CounterContainer").Find("Counter").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().text = notifications.Count.ToString();
