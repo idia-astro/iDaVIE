@@ -531,9 +531,6 @@ public class CanvassDesktop : MonoBehaviour
         if (activeDataSet != null)
         {
             Debug.Log("Replacing data cube...");
-            activeDataSet._voxelOutline.active = false;
-            activeDataSet._regionOutline.active = false;
-            activeDataSet._cubeOutline.active = false;
 
             activeDataSet.transform.gameObject.SetActive(false);
             _volumeCommandController.RemoveDataSet(activeDataSet);
@@ -552,6 +549,8 @@ public class CanvassDesktop : MonoBehaviour
             {
                 // ignored
             }
+
+            Destroy(activeDataSet);
         }
 
         GameObject newCube = Instantiate(cubeprefab, new Vector3(0, 0f, 0), Quaternion.identity);
