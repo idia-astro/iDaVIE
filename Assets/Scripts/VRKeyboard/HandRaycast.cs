@@ -6,12 +6,12 @@ using Valve.VR;
 
 public class HandRaycast : MonoBehaviour
 {
+    SteamVR_Action_Boolean _trigger = SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI");
     private int m_RayLength = 100;
 
     // Update is called once per frame
     void Update()
     {
-        SteamVR_Action_Boolean trigger = SteamVR_Actions._default.InteractUI;
         RaycastHit hit;
 
         if (Physics.Raycast(transform.position, transform.forward, out hit, m_RayLength))
@@ -21,12 +21,12 @@ public class HandRaycast : MonoBehaviour
                 //this is to highlight the pointed button
                 hit.collider.gameObject.GetComponent<Abstract_VR_button>().keepSelected = .05f;
 
-                if (trigger.stateDown)
+                if (_trigger.stateDown)
                 {
                     hit.collider.gameObject.GetComponent<Abstract_VR_button>().onPress();
                 }
             }
-            else if (hit.collider.gameObject.GetComponent<VRKeyboard_Text>() && trigger.stateUp)
+            else if (hit.collider.gameObject.GetComponent<VRKeyboard_Text>() && _trigger.stateUp)
             {
                 hit.collider.gameObject.GetComponent<VRKeyboard_Text>().OnSelect();
                 hit.collider.gameObject.GetComponent<VRKeyboard_Text>().GoOnLastChar();
