@@ -96,6 +96,7 @@ namespace VolumeData
         private Texture2D _updateTexture;
         private byte[] _cachedBrush;
         private short[] _regionMaskVoxels;
+        private Bounds _dirtyMaskBounds;
         private readonly Dictionary<int, int> _addedMaskEntriesDict = new Dictionary<int, int>();
         private static int BrushStrokeLimit = 16777216;
 
@@ -903,6 +904,7 @@ namespace VolumeData
                 Debug.Log("Error updating mask");
                 return false;
             }
+            _dirtyMaskBounds.Encapsulate(location);
 
             if (SourceStatsDict.ContainsKey(value))
             {
@@ -1023,6 +1025,20 @@ namespace VolumeData
             }
             BrushStrokeHistory.Add(CurrentBrushStroke);
             CurrentBrushStroke = new BrushStrokeTransaction(CurrentBrushStroke.NewValue);
+        }
+
+        public void ConsolidateDownsampledMask()
+        {
+            if (_dirtyMaskBounds.size.sqrMagnitude == 0)
+            {
+                return;
+            }
+
+            var currentSizeMb = Mathf.CeilToInt(DataCube.width * DataCube.height * DataCube.depth * 4.0e-6f);
+            FindDownsampleFactors(currentSizeMb, out int xFactor, out int yFactor, out int zFactor);
+            // TODO: only update the dirty section of the cube, as this is far more efficient than downsampling the entire cube again
+            GenerateVolumeTexture(FilterMode.Point, xFactor, yFactor, zFactor);
+            _dirtyMaskBounds = new Bounds();
         }
 
         private void ConsolidateMaskEntries()

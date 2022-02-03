@@ -268,7 +268,8 @@ namespace VolumeData
             if (!String.IsNullOrEmpty(MaskFileName))
             {
                 _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, _dataSet.FitsData);
-                _maskDataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
+                // Mask data is always point-filtered
+                _maskDataSet.GenerateVolumeTexture(FilterMode.Point, XFactor, YFactor, ZFactor);
             }
             _renderer = GetComponent<MeshRenderer>();
             _materialInstance = Instantiate(RayMarchingMaterial);
@@ -620,6 +621,7 @@ namespace VolumeData
             _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.DataCube);
             if (_maskDataSet != null)
             {
+                _maskDataSet.ConsolidateDownsampledMask();
                 _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.DataCube);
                 _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, null);
                 _momentMapRenderer.MaskCube = _maskDataSet.DataCube;
