@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using DataFeatures;
-using Vectrosity;
+using LineRenderer;
 using Debug = UnityEngine.Debug;
 
 namespace VolumeData
@@ -129,7 +128,8 @@ namespace VolumeData
 
         public FeatureSetManager FeatureSetManagerPrefab;
 
-        public VectorLine _voxelOutline, _cubeOutline, _regionOutline, _regionMeasure;
+        private PolyLine _measuringLine;
+        private CuboidLine _cubeOutline, _voxelOutline, _regionOutline;
 
         private FeatureSetManager _featureManager = null;
 
@@ -241,7 +241,6 @@ namespace VolumeData
             }
         }
 
-        
         public void Start()
         {
             // Apply settings from config
@@ -291,35 +290,46 @@ namespace VolumeData
             InitialThresholdMax = ThresholdMax;
             InitialThresholdMin = ThresholdMin;
 
-            _cubeOutline = new VectorLine("CubeAxes", new List<Vector3>(24), 2.0f);
-            _cubeOutline.MakeCube(Vector3.zero, 1, 1, 1);
+            _cubeOutline = new CuboidLine
+            {
+                Parent = transform,
+                Center = Vector3.zero,
+                Bounds = Vector3.one
+            };
+            
+            _cubeOutline.Activate();
             Feature.SetCubeColors(_cubeOutline, Color.white, true);
-            _cubeOutline.drawTransform = transform;
-            _cubeOutline.Draw3DAuto();
+
+            // _cubeOutline = new VectorLine("CubeAxes", new List<Vector3>(24), 2.0f);
+            // _cubeOutline.MakeCube(Vector3.zero, 1, 1, 1);
+            // Feature.SetCubeColors(_cubeOutline, Color.white, true);
+            // _cubeOutline.drawTransform = transform;
+            // _cubeOutline.Draw3DAuto();
 
             // Voxel axes
             CursorVoxel = new Vector3Int(-1, -1, -1);
-            _voxelOutline = new VectorLine("VoxelOutline", new List<Vector3>(24), 1.0f);
-            _voxelOutline.MakeCube(Vector3.zero, 1, 1, 1);
-            _voxelOutline.drawTransform = transform;
-            _voxelOutline.color = Color.green;
-            _voxelOutline.active = false;
-            _voxelOutline.Draw3DAuto();
-
-            // Voxel axes
-            _regionOutline = new VectorLine("VoxelOutline", new List<Vector3>(24), 1.0f);
-            _regionOutline.MakeCube(Vector3.zero, 1, 1, 1);
-            _regionOutline.drawTransform = transform;
-            _regionOutline.color = Color.green;
-            _regionOutline.active = false;
-            _regionOutline.Draw3DAuto();
-
-            //Region measuring line
-            _regionMeasure = new VectorLine("RegionMeasure", new List<Vector3>(), 1.0f);
-            _regionMeasure.drawTransform = transform;
-            _regionMeasure.color = Color.white;
-            _regionMeasure.active = false;
-            _regionMeasure.Draw3DAuto();
+            _voxelOutline = new CuboidLine
+            {
+                Parent = transform,
+                Center = Vector3.zero,
+                Color = Color.green,
+                Bounds = Vector3.one
+            };
+            
+            // Region axes
+            _regionOutline = new CuboidLine
+            {
+                Parent = transform,
+                Center = Vector3.zero,
+                Color = Color.green,
+                Bounds = Vector3.one
+            };
+            
+            _measuringLine = new PolyLine
+            {
+                Parent = transform,
+                Color = Color.white,
+            };
 
             if (_featureManager != null)
             {
@@ -363,6 +373,7 @@ namespace VolumeData
             started = true;
 
         }
+
 
         private void GenerateDownsampledCube()
         {
@@ -434,18 +445,15 @@ namespace VolumeData
 
                     Vector3 voxelCenterObjectSpace = new Vector3(voxelCenterCubeSpace.x / _dataSet.XDim - 0.5f, voxelCenterCubeSpace.y / _dataSet.YDim - 0.5f,
                         voxelCenterCubeSpace.z / _dataSet.ZDim - 0.5f);
-                    _voxelOutline.MakeCube(voxelCenterObjectSpace, (float)brushSize / _dataSet.XDim, (float)brushSize / _dataSet.YDim, (float)brushSize / _dataSet.ZDim);
+                    _voxelOutline.Center = voxelCenterObjectSpace;
+                    _voxelOutline.Bounds = brushSize * new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
                 }
 
-                _voxelOutline.active = true;
+                _voxelOutline.Activate();
             }
             else
             {
-                if (_voxelOutline != null && _voxelOutline.active)
-                {
-                    _voxelOutline.active = false;
-                }
-
+                _voxelOutline?.Deactivate();
                 CursorValue = float.NaN;
                 CursorVoxel = new Vector3Int(-1, -1, -1);
             }
@@ -497,9 +505,12 @@ namespace VolumeData
 
                 }
 
-                _regionOutline.active = true;
-                if (ShowMeasuringLine == true)
-                    _regionMeasure.active = true;
+                _regionOutline.Activate();
+                if (ShowMeasuringLine)
+                {
+                    _measuringLine?.Activate();
+                }
+                    
             }
         }
 
@@ -534,30 +545,26 @@ namespace VolumeData
             Vector3 regionCenter = (regionMax + regionMin) / 2.0f - 0.5f * Vector3.one;
 
             Vector3 regionCenterObjectSpace = new Vector3(regionCenter.x / _dataSet.XDim - 0.5f, regionCenter.y / _dataSet.YDim - 0.5f, regionCenter.z / _dataSet.ZDim - 0.5f);
-            _regionOutline.MakeCube(regionCenterObjectSpace, regionSize.x / _dataSet.XDim, regionSize.y / _dataSet.YDim, regionSize.z / _dataSet.ZDim);
-            _regionMeasure.points3.Clear();
-            _regionMeasure.points3.Add(new Vector3((float)measureStart.x/_dataSet.XDim- 0.5f, (float)measureStart.y/_dataSet.YDim- 0.5f, (float)measureStart.z/_dataSet.ZDim- 0.5f));
-            _regionMeasure.points3.Add(new Vector3((float)measureEnd.x/_dataSet.XDim- 0.5f, (float)measureEnd.y/_dataSet.YDim- 0.5f, (float)measureEnd.z/_dataSet.ZDim- 0.5f));
+            _regionOutline.Center = regionCenterObjectSpace;
+            _regionOutline.Bounds = new Vector3(regionSize.x / _dataSet.XDim, regionSize.y / _dataSet.YDim, regionSize.z / _dataSet.ZDim);
 
             var regionSizeBytes = regionSize.x * regionSize.y * regionSize.z * sizeof(float);
             bool regionIsFullResolution = (regionSizeBytes <= MaximumCubeSizeInMB * 1e6);
             Feature.SetCubeColors(_regionOutline, regionIsFullResolution ? Color.white : Color.yellow, regionIsFullResolution);
+
+            var startPoint = new Vector3((float)measureStart.x / _dataSet.XDim - 0.5f, (float)measureStart.y / _dataSet.YDim - 0.5f, (float)measureStart.z / _dataSet.ZDim - 0.5f);
+            var endPoint = new Vector3((float)measureEnd.x / _dataSet.XDim - 0.5f, (float)measureEnd.y / _dataSet.YDim - 0.5f, (float)measureEnd.z / _dataSet.ZDim - 0.5f);
+            _measuringLine.Vertices = new List<Vector3> { startPoint, endPoint };
         }
 
         public void ClearRegion()
         {
-            if (_regionOutline != null)
-            {
-                _regionOutline.active = false;
-            }
+            _regionOutline?.Deactivate();
         }
 
         public void ClearMeasure()
         {
-            if (_regionMeasure != null)
-            {
-                _regionMeasure.active = false;
-            }
+            _measuringLine?.Deactivate();
         }
 
         public void SelectFeature(Vector3 cursor)
@@ -697,7 +704,7 @@ namespace VolumeData
                 _materialInstance.SetInt(MaterialID.FoveatedStepsHigh, MaxSteps);
             }
 
-            if (_regionOutline.active)
+            if (_regionOutline.Active)
             {
                 Vector3 regionStartObjectSpace = new Vector3((float)(RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
                 Vector3 regionEndObjectSpace = new Vector3((float)(RegionEndVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionEndVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
@@ -945,6 +952,10 @@ namespace VolumeData
         {
             _dataSet.CleanUp(RandomVolume);
             _maskDataSet?.CleanUp(false);
+            _measuringLine?.Destroy();
+            _cubeOutline?.Destroy();
+            _regionOutline?.Destroy();
+            _voxelOutline?.Destroy();
         }
     }
 
