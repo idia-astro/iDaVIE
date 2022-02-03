@@ -52,7 +52,8 @@ public class FeatureMenuController : MonoBehaviour
             featureSetManager.NeedToRespawnMenuList = true;
             if (featureSetManager.ImportedFeatureSetList?.Count > 0)
             {
-                RecyclableScrollView =  Instantiate(RecyclableScrollViewPrefab, this.transform).GetComponent<RecyclableScrollRect>();
+                if (RecyclableScrollView == null)
+                    RecyclableScrollView =  Instantiate(RecyclableScrollViewPrefab, this.transform).GetComponent<RecyclableScrollRect>();
                 RecyclableScrollView.Initialize(featureSetManager.ImportedFeatureSetList[0].FeatureMenuScrollerDataSource);
                 ListTitle.text = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].name;
             }
