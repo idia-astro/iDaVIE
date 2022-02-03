@@ -6,7 +6,7 @@ using Valve.VR;
 
 public class HandRaycast : MonoBehaviour
 {
-    SteamVR_Action_Boolean _trigger = SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI");
+    private readonly SteamVR_Action_Boolean _trigger = SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI");
     private int m_RayLength = 100;
 
     // Update is called once per frame

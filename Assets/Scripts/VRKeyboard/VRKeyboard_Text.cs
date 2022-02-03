@@ -14,7 +14,7 @@ public class VRKeyboard_Text : MonoBehaviour
 
     private KeyboardManager vrKeyboard = null;
     private InputField inputField = null;
-    private SteamVR_Action_Boolean _trigger = SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI");
+    private readonly SteamVR_Action_Boolean _trigger = SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI");
 
     private float waitTime = 0.2f;
     private float timer = 0.0f;
