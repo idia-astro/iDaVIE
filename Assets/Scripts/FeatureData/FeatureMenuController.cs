@@ -19,9 +19,11 @@ public class FeatureMenuController : MonoBehaviour
     private RectTransform content = null;
 
     public GameObject volumeDatasetRendererObj = null;
-    public RecyclableScrollRect RecyclableScrollView;
+    public GameObject RecyclableScrollViewPrefab;
     public GameObject InfoWindow = null;
 
+    public RecyclableScrollRect RecyclableScrollView;
+    
     public TMP_Text ListTitle; 
     public Image ListColorDisplay;
     public TMP_Text SaveConfirmation;
@@ -50,6 +52,7 @@ public class FeatureMenuController : MonoBehaviour
             featureSetManager.NeedToRespawnMenuList = true;
             if (featureSetManager.ImportedFeatureSetList?.Count > 0)
             {
+                RecyclableScrollView =  Instantiate(RecyclableScrollViewPrefab, this.transform).GetComponent<RecyclableScrollRect>();
                 RecyclableScrollView.Initialize(featureSetManager.ImportedFeatureSetList[0].FeatureMenuScrollerDataSource);
                 ListTitle.text = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].name;
             }
