@@ -530,6 +530,7 @@ public class CanvassDesktop : MonoBehaviour
         var activeDataSet = GetFirstActiveDataSet();
         if (activeDataSet != null)
         {
+            Debug.Log("Replacing data cube...");
             activeDataSet._voxelOutline.active = false;
             activeDataSet._regionOutline.active = false;
             activeDataSet._cubeOutline.active = false;

@@ -47,17 +47,7 @@ public class FeatureMenuController : MonoBehaviour
             featureSetManager = _activeDataSet.GetComponentInChildren<FeatureSetManager>();
         }
 
-        if (featureSetManager)
-        {
-            featureSetManager.NeedToRespawnMenuList = true;
-            if (featureSetManager.ImportedFeatureSetList?.Count > 0)
-            {
-                if (RecyclableScrollView == null)
-                    RecyclableScrollView =  Instantiate(RecyclableScrollViewPrefab, this.transform).GetComponent<RecyclableScrollRect>();
-                RecyclableScrollView.Initialize(featureSetManager.ImportedFeatureSetList[0].FeatureMenuScrollerDataSource);
-                ListTitle.text = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].name;
-            }
-        }
+        
     }
 
     private void OnDisable()
@@ -70,7 +60,22 @@ public class FeatureMenuController : MonoBehaviour
 
     void Update()
     {
-        if (featureSetManager?.NeedToRespawnMenuList == true)
+        //need to check if new list loaded
+        if (featureSetManager?.NeedToResetList == true && RecyclableScrollView != null)
+        {
+            Destroy(RecyclableScrollView.gameObject);
+            RecyclableScrollView = null;
+            ListTitle.text = "";
+            featureSetManager.NeedToResetList = false;
+        }
+        if (RecyclableScrollView == null && featureSetManager?.ImportedFeatureSetList?.Count > 0)
+        {
+            RecyclableScrollView =  Instantiate(RecyclableScrollViewPrefab, this.transform).GetComponent<RecyclableScrollRect>();
+            RecyclableScrollView.Initialize(featureSetManager.ImportedFeatureSetList[0].FeatureMenuScrollerDataSource);
+            ListTitle.text = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].name;
+            featureSetManager.NeedToRespawnMenuList = true;
+        }
+        if (featureSetManager?.NeedToRespawnMenuList == true && RecyclableScrollView != null)
         {
             if (featureSetManager.SelectedFeature?.Index != null && featureSetManager.SelectedFeature.Index != -1)
             {

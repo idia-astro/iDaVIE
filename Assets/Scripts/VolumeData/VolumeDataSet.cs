@@ -1502,7 +1502,7 @@ namespace VolumeData
             if (AstFrameSet != IntPtr.Zero)
             {
                 AstTool.DeleteObject(AstFrameSet);
-                AstTool.AstEnd();
+                AstFrameSet = IntPtr.Zero;
             }
 
             ExistingMaskBuffer?.Release();

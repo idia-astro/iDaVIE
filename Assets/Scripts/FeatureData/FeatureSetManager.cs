@@ -19,6 +19,8 @@ namespace DataFeatures
         private StreamWriter _streamWriter;
         private Feature _selectedFeature;
 
+        public bool NeedToResetList = true;
+
         public bool NeedToRespawnMenuList = true;
         public bool NeedToUpdateInfo = false;
 
