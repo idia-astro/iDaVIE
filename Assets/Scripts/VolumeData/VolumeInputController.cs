@@ -1226,9 +1226,9 @@ public class VolumeInputController : MonoBehaviour
         AdditiveBrush = true;
         if (ActiveDataSet)
         {
-            SourceId = ActiveDataSet.Data.NewSourceId;
+            SourceId = ActiveDataSet.Mask.NewSourceId;
             ActiveDataSet.HighlightedSource = SourceId;
-            ActiveDataSet.Data.NewSourceId++;
+            ActiveDataSet.Mask.NewSourceId++;
             // End editing mode without updating the source ID to the cursor voxel
             InteractionStateMachine.Fire(InteractionEvents.CancelEditSource);
         }

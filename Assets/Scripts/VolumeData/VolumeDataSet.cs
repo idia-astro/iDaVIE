@@ -339,7 +339,7 @@ namespace VolumeData
                 {
                     volumeDataSet.SourceStatsDict[source.maskVal] = DataAnalysis.SourceStats.FromSourceInfo(source);
                     volumeDataSet.UpdateStats(source.maskVal);
-                    volumeDataSet.NewSourceId = Math.Max(volumeDataSet.NewSourceId, source.maskVal);
+                    volumeDataSet.NewSourceId = Math.Max(volumeDataSet.NewSourceId, (short)(source.maskVal + 1));
                 }
                 sw.Stop();
                 Debug.Log($"Calculated stats for {volumeDataSet.SourceStatsDict?.Count} sources in {sw.Elapsed.TotalMilliseconds} ms");
