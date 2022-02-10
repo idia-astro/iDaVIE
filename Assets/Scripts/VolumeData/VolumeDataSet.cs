@@ -14,6 +14,13 @@ using Debug = UnityEngine.Debug;
 
 namespace VolumeData
 {
+    
+    public enum AngleCoordFormat
+    {
+        Sexagesimal = 0,
+        Decimal = 1
+    }
+    
     public struct VoxelEntry
     {
         public readonly int Index;
@@ -319,6 +326,15 @@ namespace VolumeData
                     volumeDataSet.HasRestFrequency = true;
                 }
             }
+            
+            // Set wcs angle format from config file. Defaults as sexagesimal
+            var config = Config.Instance;
+            if (config.angleCoordFormat == AngleCoordFormat.Decimal)
+            {
+                AstTool.SetString(astFrameSet, new StringBuilder("Format(1)"), new StringBuilder("d.*"));
+                AstTool.SetString(astFrameSet, new StringBuilder("Format(2)"), new StringBuilder("d.*"));
+            }
+
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = volumeDataSet.cubeSize[0];
             volumeDataSet.YDim = volumeDataSet.cubeSize[1];
