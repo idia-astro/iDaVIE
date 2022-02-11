@@ -40,7 +40,7 @@ public class FeatureSetManagerEditor : Editor
                 VolumeDataSetRenderer volumeDataSetRenderer = featureSetManager.GetComponentInParent<VolumeDataSetRenderer>();
                 if (volumeDataSetRenderer)
                 {
-                    volumeDataSetRenderer.CropToRegion();
+                    volumeDataSetRenderer.CropToFeature();
                 }
             }
             GUILayout.EndHorizontal();

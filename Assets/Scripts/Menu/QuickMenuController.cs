@@ -213,7 +213,7 @@ public class QuickMenuController : MonoBehaviour
             {
                 this.gameObject.transform.Find("Image_en").gameObject.SetActive(true);
                 notificationText.GetComponent<Text>().text = "Crop enabled";
-                _activeDataSet.CropToRegion();
+                _activeDataSet.CropToFeature();
             }
         }
     }
@@ -225,6 +225,7 @@ public class QuickMenuController : MonoBehaviour
             gameObject.SetActive(true);
             Update();
         }
+        Debug.Log(_activeDataSet.XFactor);
         // Prevent painting of downsampled data
         if (!_activeDataSet.IsFullResolution)
         {
