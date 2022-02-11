@@ -123,15 +123,15 @@ namespace LineRenderer
             Vector3[] vertices =
             {
                 // Front face, clockwise from bottom left
-                Center + new Vector3(-offsets.x, -offsets.y, -offsets.z),
-                Center + new Vector3(-offsets.x, +offsets.y, -offsets.z),
-                Center + new Vector3(+offsets.x, +offsets.y, -offsets.z),
-                Center + new Vector3(+offsets.x, -offsets.y, -offsets.z),
-                // Back face, clockwise from bottom left
                 Center + new Vector3(-offsets.x, -offsets.y, +offsets.z),
                 Center + new Vector3(-offsets.x, +offsets.y, +offsets.z),
                 Center + new Vector3(+offsets.x, +offsets.y, +offsets.z),
                 Center + new Vector3(+offsets.x, -offsets.y, +offsets.z),
+                // Back face, clockwise from bottom left
+                Center + new Vector3(-offsets.x, -offsets.y, -offsets.z),
+                Center + new Vector3(-offsets.x, +offsets.y, -offsets.z),
+                Center + new Vector3(+offsets.x, +offsets.y, -offsets.z),
+                Center + new Vector3(+offsets.x, -offsets.y, -offsets.z),
             };
 
          
