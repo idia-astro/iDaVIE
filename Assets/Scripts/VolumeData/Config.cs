@@ -19,6 +19,9 @@ namespace VolumeData
         public int maxRaymarchingSteps = 384;
         
         [JsonConverter(typeof(StringEnumConverter))]
+        public AngleCoordFormat angleCoordFormat = AngleCoordFormat.Sexagesimal;
+        
+        [JsonConverter(typeof(StringEnumConverter))]
         public ColorMapEnum defaultColorMap = ColorMapEnum.Inferno;
 
         [JsonConverter(typeof(StringEnumConverter))]

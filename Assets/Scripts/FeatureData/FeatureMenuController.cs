@@ -19,9 +19,11 @@ public class FeatureMenuController : MonoBehaviour
     private RectTransform content = null;
 
     public GameObject volumeDatasetRendererObj = null;
-    public RecyclableScrollRect RecyclableScrollView;
+    public GameObject RecyclableScrollViewPrefab;
     public GameObject InfoWindow = null;
 
+    public RecyclableScrollRect RecyclableScrollView;
+    
     public TMP_Text ListTitle; 
     public Image ListColorDisplay;
     public TMP_Text SaveConfirmation;
@@ -45,15 +47,7 @@ public class FeatureMenuController : MonoBehaviour
             featureSetManager = _activeDataSet.GetComponentInChildren<FeatureSetManager>();
         }
 
-        if (featureSetManager)
-        {
-            featureSetManager.NeedToRespawnMenuList = true;
-            if (featureSetManager.ImportedFeatureSetList?.Count > 0)
-            {
-                RecyclableScrollView.Initialize(featureSetManager.ImportedFeatureSetList[0].FeatureMenuScrollerDataSource);
-                ListTitle.text = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].name;
-            }
-        }
+        
     }
 
     private void OnDisable()
@@ -66,7 +60,22 @@ public class FeatureMenuController : MonoBehaviour
 
     void Update()
     {
-        if (featureSetManager?.NeedToRespawnMenuList == true)
+        //need to check if new list loaded
+        if (featureSetManager?.NeedToResetList == true && RecyclableScrollView != null)
+        {
+            Destroy(RecyclableScrollView.gameObject);
+            RecyclableScrollView = null;
+            ListTitle.text = "";
+            featureSetManager.NeedToResetList = false;
+        }
+        if (RecyclableScrollView == null && featureSetManager?.ImportedFeatureSetList?.Count > 0)
+        {
+            RecyclableScrollView =  Instantiate(RecyclableScrollViewPrefab, this.transform).GetComponent<RecyclableScrollRect>();
+            RecyclableScrollView.Initialize(featureSetManager.ImportedFeatureSetList[0].FeatureMenuScrollerDataSource);
+            ListTitle.text = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].name;
+            featureSetManager.NeedToRespawnMenuList = true;
+        }
+        if (featureSetManager?.NeedToRespawnMenuList == true && RecyclableScrollView != null)
         {
             if (featureSetManager.SelectedFeature?.Index != null && featureSetManager.SelectedFeature.Index != -1)
             {
@@ -181,31 +190,33 @@ public class FeatureMenuController : MonoBehaviour
 
 
         public void UpdateInfo()
-    {
-        var textObject = InfoWindow.transform.Find("PanelContents").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport")
-            .gameObject.transform.Find("Content").gameObject.transform.Find("SourceInfoText").gameObject;
-        textObject.GetComponent<TMP_Text>().text = "";
-        textObject.GetComponent<TMP_Text>().text += $"Source # : {featureSetManager.SelectedFeature.Id + 1}{Environment.NewLine}";  
-        if (_activeDataSet.HasWCS)
         {
-            double centerX, centerY, centerZ, ra, dec, physz, normR, normD, normZ;
-            if (featureSetManager.VolumeRenderer.SourceStatsDict == null)
+            var dataSet = _activeDataSet.GetDataSet();
+            var textObject = InfoWindow.transform.Find("PanelContents").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport")
+                .gameObject.transform.Find("Content").gameObject.transform.Find("SourceInfoText").gameObject;
+            textObject.GetComponent<TMP_Text>().text = "";
+            textObject.GetComponent<TMP_Text>().text += $"Source # : {featureSetManager.SelectedFeature.Id + 1}{Environment.NewLine}";  
+            if (_activeDataSet.HasWCS)
             {
-                centerX = featureSetManager.SelectedFeature.Center.x;
-                centerY = featureSetManager.SelectedFeature.Center.y;
-                centerZ = featureSetManager.SelectedFeature.Center.z;
-            }
-            else
-            {
-                centerX = featureSetManager.VolumeRenderer.SourceStatsDict[featureSetManager.SelectedFeature.Index].cX;
-                centerY = featureSetManager.VolumeRenderer.SourceStatsDict[featureSetManager.SelectedFeature.Index].cY;
-                centerZ = featureSetManager.VolumeRenderer.SourceStatsDict[featureSetManager.SelectedFeature.Index].cZ;
-            }
-            AstTool.Transform3D(_activeDataSet.AstFrame, centerX, centerY, centerZ, 1, out ra, out dec, out physz);
-            AstTool.Norm(_activeDataSet.AstFrame, ra, dec, physz, out normR, out normD, out normZ);
-            textObject.GetComponent<TMP_Text>().text += $"RA: {(180f * normR / Math.PI).ToString("F3")}{Environment.NewLine}";
-            textObject.GetComponent<TMP_Text>().text += $"Dec: {(180f * normD / Math.PI).ToString("F3")}{Environment.NewLine}";
-            textObject.GetComponent<TMP_Text>().text += $"{_activeDataSet.Data.GetAstAttribute("System(3)")}: {normZ.ToString("F3")} {_activeDataSet.Data.GetAstAttribute("Unit(3)")}{Environment.NewLine}";
+                double centerX, centerY, centerZ, ra, dec, physz, normR, normD, normZ;
+                if (featureSetManager.VolumeRenderer.SourceStatsDict == null)
+                {
+                    centerX = featureSetManager.SelectedFeature.Center.x;
+                    centerY = featureSetManager.SelectedFeature.Center.y;
+                    centerZ = featureSetManager.SelectedFeature.Center.z;
+                }
+                else
+                {
+                    centerX = featureSetManager.VolumeRenderer.SourceStatsDict[featureSetManager.SelectedFeature.Index].cX;
+                    centerY = featureSetManager.VolumeRenderer.SourceStatsDict[featureSetManager.SelectedFeature.Index].cY;
+                    centerZ = featureSetManager.VolumeRenderer.SourceStatsDict[featureSetManager.SelectedFeature.Index].cZ;
+                }
+                AstTool.Transform3D(_activeDataSet.AstFrame, centerX, centerY, centerZ, 1, out ra, out dec, out physz);
+                AstTool.Norm(_activeDataSet.AstFrame, ra, dec, physz, out normR, out normD, out normZ);
+                
+                textObject.GetComponent<TMP_Text>().text += $"RA: {dataSet.GetFormattedCoord(normR, 1)}{Environment.NewLine}";
+                textObject.GetComponent<TMP_Text>().text += $"Dec: {dataSet.GetFormattedCoord(normD, 2)}{Environment.NewLine}";
+                textObject.GetComponent<TMP_Text>().text += $"{_activeDataSet.Data.GetAstAttribute("System(3)")}: {normZ.ToString("F3")} {_activeDataSet.Data.GetAstAttribute("Unit(3)")}{Environment.NewLine}";
         }
         if (featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys != null)
         {

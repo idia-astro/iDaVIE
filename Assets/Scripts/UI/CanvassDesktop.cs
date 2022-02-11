@@ -530,7 +530,8 @@ public class CanvassDesktop : MonoBehaviour
         var activeDataSet = GetFirstActiveDataSet();
         if (activeDataSet != null)
         {
-            
+            Debug.Log("Replacing data cube...");
+
             activeDataSet.transform.gameObject.SetActive(false);
             _volumeCommandController.RemoveDataSet(activeDataSet);
             // Reset UI to default
