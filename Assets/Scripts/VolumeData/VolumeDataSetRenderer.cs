@@ -614,7 +614,7 @@ namespace VolumeData
             if (_maskDataSet != null)
             {
                 _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
-                var regionMin = Vector3.Min(RegionStartVoxel, RegionEndVoxel);
+                var regionMin = Vector3.Min(startVoxel, endVoxel);
                 _maskMaterialInstance.SetVector(MaterialID.RegionOffset, new Vector4(regionMin.x, regionMin.y, regionMin.z, 0));
                 var regionDimensions = new Vector4(_maskDataSet.RegionCube.width, _maskDataSet.RegionCube.height, _maskDataSet.RegionCube.depth, 0);
                 _maskMaterialInstance.SetVector(MaterialID.RegionDimensions, regionDimensions);

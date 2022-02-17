@@ -225,7 +225,7 @@ public class QuickMenuController : MonoBehaviour
             gameObject.SetActive(true);
             Update();
         }
-        Debug.Log(_activeDataSet.XFactor);
+
         // Prevent painting of downsampled data
         if (!_activeDataSet.IsFullResolution)
         {
