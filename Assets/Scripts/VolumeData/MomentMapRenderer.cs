@@ -268,6 +268,12 @@ namespace VolumeData
                 int threadGroupsX = Mathf.CeilToInt(_dataCube.width / ((float)(_kernelThreadGroupX)));
                 int threadGroupsY = Mathf.CeilToInt(_dataCube.height / ((float)(_kernelThreadGroupY)));
                 _computeShader.Dispatch(_colormapKernelIndex, threadGroupsX, threadGroupsY, 1);
+                
+                var colorBarM0 =  momentMapMenuController.gameObject.transform.Find("Map_container").gameObject.transform.Find("ColorbarM0").GetComponent<Colorbar>();
+                colorBarM0.ScalingType = ScalingTypeM0;
+                colorBarM0.ColorMap = ColorMapM0;
+                colorBarM0.ScaleMin = Inverted ? _moment1Bounds.y : _moment1Bounds.x;
+                colorBarM0.ScaleMax = Inverted ? _moment1Bounds.x : _moment1Bounds.y;
 
                 Texture2D tex = new Texture2D(ImageOutput.width, ImageOutput.height);
                 RenderTexture currentActiveRT = RenderTexture.active;
@@ -290,6 +296,12 @@ namespace VolumeData
                 // Switch bounds if the map needs to be inverted
                 _computeShader.SetFloat(MaterialID.ClampMin, Inverted ? _moment1Bounds.y: _moment1Bounds.x);
                 _computeShader.SetFloat(MaterialID.ClampMax, Inverted ? _moment1Bounds.x: _moment1Bounds.y);
+                
+                var colorBarM1 =  momentMapMenuController.gameObject.transform.Find("Map_container").gameObject.transform.Find("ColorbarM1").GetComponent<Colorbar>();
+                colorBarM1.ScalingType = ScalingTypeM1;
+                colorBarM1.ColorMap = ColorMapM1;
+                colorBarM1.ScaleMin = Inverted ? _moment1Bounds.y : _moment1Bounds.x;
+                colorBarM1.ScaleMax = Inverted ? _moment1Bounds.x : _moment1Bounds.y;
 
                 offset = (ColorMapM1.GetHashCode() + 0.5f) / ColorMapUtils.NumColorMaps;
                 _computeShader.SetFloat(MaterialID.ColormapOffset, offset);
@@ -310,7 +322,6 @@ namespace VolumeData
                 imageM1.preserveAspect = true;
                 momentMapMenuController.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_Threshold").gameObject.transform.Find("ThresholdValue").GetComponent<Text>().text = MomentMapThreshold.ToString();
                 RenderTexture.active = currentActiveRT;
-
             }
         }
 

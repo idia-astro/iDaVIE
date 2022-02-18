@@ -54,7 +54,6 @@ MonoBehaviour:
   ScalingType: 0
   ScaleMin: 0
   ScaleMax: 1
-  Units: 
   TickPrefab: {fileID: 2339003393975507448, guid: 13b74d99de9714c4fb4966f8153943e2,
     type: 3}
 --- !u!1 &844079035986550920
