@@ -272,8 +272,8 @@ namespace VolumeData
                 var colorBarM0 =  momentMapMenuController.gameObject.transform.Find("Map_container").gameObject.transform.Find("ColorbarM0").GetComponent<Colorbar>();
                 colorBarM0.ScalingType = ScalingTypeM0;
                 colorBarM0.ColorMap = ColorMapM0;
-                colorBarM0.ScaleMin = Inverted ? _moment1Bounds.y : _moment1Bounds.x;
-                colorBarM0.ScaleMax = Inverted ? _moment1Bounds.x : _moment1Bounds.y;
+                colorBarM0.ScaleMin = _moment0Bounds.x;
+                colorBarM0.ScaleMax = _moment0Bounds.y;
 
                 Texture2D tex = new Texture2D(ImageOutput.width, ImageOutput.height);
                 RenderTexture currentActiveRT = RenderTexture.active;
