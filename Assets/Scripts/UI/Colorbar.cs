@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using VolumeData;
 
 public class Colorbar : MonoBehaviour
@@ -14,15 +15,22 @@ public class Colorbar : MonoBehaviour
     public GameObject TickPrefab;
 
     private TMP_Text[] _ticks;
-    private Canvas _canvas;
+    private Image _colorbarImage;
     private RectTransform _rectTransform;
+    private Sprite[] _colormapSprites;
+    
     private void OnEnable()
     {
-        _canvas = GetComponentInChildren<Canvas>();
+        _colormapSprites = Resources.LoadAll<Sprite>("allmaps_sprites");
+        if (_colormapSprites?.Length != ColorMapUtils.NumColorMaps)
+        {
+            _colormapSprites = null;
+        }
+        
+         _colorbarImage = GetComponentInChildren<Image>();
         _rectTransform = GetComponent<RectTransform>();
         BuildTicks();
-        
-        Debug.Log($"Found canvas with height {_rectTransform.rect.height}");
+        ApplyColormap();
     }
     
     // Update is called once per frame
@@ -34,6 +42,7 @@ public class Colorbar : MonoBehaviour
         }
 
         UpdateTickText();
+        ApplyColormap();
     }
 
     private void UpdateTickText()
@@ -66,6 +75,15 @@ public class Colorbar : MonoBehaviour
             tickObject.GetComponent<RectTransform>().localPosition = new Vector3(7.5f, -height/2.0f + i * delta, 0);
             tickObject.name = $"Tick{i}";
             _ticks[i] = tickObject.GetComponentInChildren<TMP_Text>();
+        }
+    }
+
+    private void ApplyColormap()
+    {
+        int index = ColorMap.GetHashCode();
+        if (index >= 0 && index < _colormapSprites?.Length)
+        {
+            _colorbarImage.sprite = _colormapSprites[index];
         }
     }
 }
