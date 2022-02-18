@@ -14,6 +14,7 @@ public class VRKeyboard_Text : MonoBehaviour
 
     private KeyboardManager vrKeyboard = null;
     private InputField inputField = null;
+    private readonly SteamVR_Action_Boolean _trigger = SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI");
 
     private float waitTime = 0.2f;
     private float timer = 0.0f;
@@ -36,11 +37,8 @@ public class VRKeyboard_Text : MonoBehaviour
 
     public void Update()
     {
-        //Debug.Log("Caret Shift: " + caretShift);
-        SteamVR_Action_Boolean trigger = SteamVR_Actions._default.InteractUI;
-
         position = inputField.caretPosition;
-        if (inputField.isFocused && trigger.stateUp)
+        if (inputField.isFocused && _trigger.stateUp)
         {
             selectionActive = !selectionActive;
         }

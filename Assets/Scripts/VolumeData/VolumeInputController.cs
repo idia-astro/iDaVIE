@@ -7,11 +7,10 @@ using UnityEngine;
 using UnityEngine.XR;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
-using Vectrosity;
 using System.Diagnostics;
 using System.Linq;
 using DataFeatures;
-using Stateless.Graph;
+using LineRenderer;
 using Debug = UnityEngine.Debug;
 using VRHand = Valve.VR.InteractionSystem.Hand;
 
@@ -86,7 +85,6 @@ public class VolumeInputController : MonoBehaviour
     public bool AdditiveBrush { get; private set; } = true;
     public int BrushSize = 1;
     public short SourceId = -1;
-    public short NewSourceId = 1000;
     
     private Player _player;
     private VRHand[] _hands;
@@ -110,8 +108,7 @@ public class VolumeInputController : MonoBehaviour
     private FeatureAnchor _hoveredAnchor, _editingAnchor;
     private bool _showCursorInfo = true;
 
-    private VectorLine _lineAxisSeparation;
-    private VectorLine _lineRotationAxes;
+    private PolyLine _lineAxisSeparation, _lineRotationAxes;
 
     private Vector3Int _coordDecimcalPlaces;
 
@@ -215,14 +212,20 @@ public class VolumeInputController : MonoBehaviour
         UpdateDataSets();
 
         // Line renderer for showing separation between controllers while scaling/rotating
-        _lineRotationAxes = new VectorLine("RotationAxes", new List<Vector3>(new Vector3[3]), 2.0f, LineType.Continuous);
-        _lineRotationAxes.color = Color.white;
-        _lineRotationAxes.Draw3DAuto();
+        _lineRotationAxes = new PolyLine
+        {
+            Color = Color.white,
+            Vertices = new List<Vector3>(new Vector3[3])
+        };
+        _lineRotationAxes.Activate();
 
-        _lineAxisSeparation = new VectorLine("AxisSeparation", new List<Vector3>(new Vector3[3]), 2.0f, LineType.Continuous);
-        _lineAxisSeparation.color = Color.red;
-        _lineAxisSeparation.Draw3DAuto();
-
+        _lineAxisSeparation = new PolyLine
+        {
+            Color = Color.red,
+            Vertices = new List<Vector3>(new Vector3[3])
+        };
+        _lineAxisSeparation.Activate();
+        
         _handInfoComponents = new[] {_hands[0].GetComponentInChildren<TextMeshPro>(), _hands[1].GetComponentInChildren<TextMeshPro>()};
         _startDataSetScales = new float[_volumeDataSets.Length];
         _currentGripPositions = new Vector3[2];
@@ -611,16 +614,16 @@ public class VolumeInputController : MonoBehaviour
             }
         }
 
-        _lineAxisSeparation.points3[0] = _currentGripPositions[0];
-        _lineAxisSeparation.points3[1] = _startGripCenter;
-        _lineAxisSeparation.points3[2] = _currentGripPositions[1];
-        _lineAxisSeparation.active = true;
+        _lineAxisSeparation.Vertices[0] = _currentGripPositions[0];
+        _lineAxisSeparation.Vertices[1] = _startGripCenter;
+        _lineAxisSeparation.Vertices[2] = _currentGripPositions[1];
+        _lineAxisSeparation.Activate();
 
         // Axis lines: 10 cm length
-        _lineRotationAxes.points3[0] = _startGripCenter + _starGripForwardAxis * 0.1f;
-        _lineRotationAxes.points3[1] = _startGripCenter;
-        _lineRotationAxes.points3[2] = _startGripCenter + Vector3.up * 0.1f;
-        _lineRotationAxes.active = true;
+        _lineRotationAxes.Vertices[0] = _startGripCenter + _starGripForwardAxis * 0.1f;
+        _lineRotationAxes.Vertices[1] = _startGripCenter;
+        _lineRotationAxes.Vertices[2] = _startGripCenter + Vector3.up * 0.1f;
+        _lineRotationAxes.Activate();
 
         if (_handInfoComponents != null)
         {
@@ -632,8 +635,8 @@ public class VolumeInputController : MonoBehaviour
     private void StateTransitionScalingToMoving()
     {
         _locomotionState = LocomotionState.Moving;
-        _lineRotationAxes.active = false;
-        _lineAxisSeparation.active = false;
+        _lineRotationAxes.Deactivate();
+        _lineAxisSeparation.Deactivate();
 
         if (_handInfoComponents != null)
         {
@@ -831,13 +834,13 @@ public class VolumeInputController : MonoBehaviour
         }
 
         var rotationPoint = InPlaceScaling ? _startGripCenter : currentGripCenter;
-        _lineAxisSeparation.points3[0] = _currentGripPositions[0];
-        _lineAxisSeparation.points3[1] = rotationPoint;
-        _lineAxisSeparation.points3[2] = _currentGripPositions[1];
+        _lineAxisSeparation.Vertices[0] = _currentGripPositions[0];
+        _lineAxisSeparation.Vertices[1] = rotationPoint;
+        _lineAxisSeparation.Vertices[2] = _currentGripPositions[1];
 
-        _lineRotationAxes.points3[0] = _startGripCenter + _starGripForwardAxis * (rollCurrentlyActive ? 0.1f : 0.0f);
-        _lineRotationAxes.points3[1] = rotationPoint;
-        _lineRotationAxes.points3[2] = _startGripCenter + Vector3.up * (yawCurrentlyActive ? 0.1f : 0.0f);
+        _lineRotationAxes.Vertices[0] = _startGripCenter + _starGripForwardAxis * (rollCurrentlyActive ? 0.1f : 0.0f);
+        _lineRotationAxes.Vertices[1] = rotationPoint;
+        _lineRotationAxes.Vertices[2] = _startGripCenter + Vector3.up * (yawCurrentlyActive ? 0.1f : 0.0f);
     }
 
     // Update function for FSM Moving state
@@ -1224,15 +1227,15 @@ public class VolumeInputController : MonoBehaviour
 
     public void AddNewSource()
     {
-        SourceId = NewSourceId;
         AdditiveBrush = true;
         if (ActiveDataSet)
         {
-            ActiveDataSet.HighlightedSource = NewSourceId;
+            SourceId = ActiveDataSet.Mask.NewSourceId;
+            ActiveDataSet.HighlightedSource = SourceId;
+            ActiveDataSet.Mask.NewSourceId++;
+            // End editing mode without updating the source ID to the cursor voxel
+            InteractionStateMachine.Fire(InteractionEvents.CancelEditSource);
         }
-        NewSourceId++;
-        // End editing mode without updating the source ID to the cursor voxel
-        InteractionStateMachine.Fire(InteractionEvents.CancelEditSource);
     }
     
     public void SetBrushAdditive()
@@ -1262,5 +1265,11 @@ public class VolumeInputController : MonoBehaviour
     public void SaveSubCube()
     {
         ActiveDataSet.SaveSubCube();
+    }
+
+    private void OnDestroy()
+    {
+        _lineAxisSeparation?.Destroy();
+        _lineRotationAxes?.Destroy();
     }
 }

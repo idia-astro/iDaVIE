@@ -403,6 +403,7 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
         double sumX = 0.0;
         double sumY = 0.0;
         double sumZ = 0.0;
+        double totalPositiveFlux = 0.0;
 
         double peakFlux = std::numeric_limits<double>::lowest();
         int64_t numVoxels = 0;
@@ -443,9 +444,13 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
                             stats->minZ = min(stats->minZ, k);
                             stats->maxZ = max(stats->maxZ, k);
 
-                            sumX += i * flux;
-                            sumY += j * flux;
-                            sumZ += k * flux;
+                            if (flux >= 0)
+                            {
+                              totalPositiveFlux += flux;
+                              sumX += i * flux;
+                              sumY += j * flux;
+                              sumZ += k * flux;
+                            }
 
                             spectralSum += flux;
                         }
@@ -460,9 +465,9 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
             stats->numVoxels = numVoxels;
             stats->peak = peakFlux;
             stats->sum = totalFlux;
-            stats->cX = sumX / totalFlux;
-            stats->cY = sumY / totalFlux;
-            stats->cZ = sumZ / totalFlux;
+            stats->cX = sumX / totalPositiveFlux;
+            stats->cY = sumY / totalPositiveFlux;
+            stats->cZ = sumZ / totalPositiveFlux;
 
             // Find peak value
             double spectralPeak = std::numeric_limits<double>::lowest();

@@ -237,9 +237,11 @@ namespace DataFeatures
             int[] posIndices = new int[3];
             IntPtr astFrameSet = IntPtr.Zero;
             string[] colNames = new string[voTable.Column.Count];
+            string[] colUnits = new string[voTable.Column.Count];
             for (int i = 0; i < voTable.Column.Count; i++)
             {
                 colNames[i] = voTable.Column[i].Name;
+                colUnits[i] = voTable.Column[i].Unit;
                 if (columnsMask[i])
                     rawDataKeysList.Add(colNames[i]);
             }
@@ -258,32 +260,33 @@ namespace DataFeatures
                 if (setCoordinates.Contains(SourceMappingOptions.Velo))
                 {
                     ZType = CoordTypes.velz;
-                    if (AstTool.GetAltSpecSet(volumeAstFrame, out astFrameSet, new StringBuilder("VRAD"), new StringBuilder("m/s"), new StringBuilder(VolumeRenderer.StdOfRest)) != 0)
+                    posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Velo]);
+                    if (AstTool.GetAltSpecSet(volumeAstFrame, out astFrameSet, new StringBuilder("VRAD"), new StringBuilder(colUnits[posIndices[2]]), new StringBuilder(VolumeRenderer.StdOfRest)) != 0)
                     {
                         Debug.Log($"Error creating feature astframe!");
                         return;
                     }
-                    posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Velo]); 
+                     
                 }
                 else if (setCoordinates.Contains(SourceMappingOptions.Freq))
                 {
                     ZType = CoordTypes.freqz;
-                    if (AstTool.GetAltSpecSet(volumeAstFrame, out astFrameSet, new StringBuilder("FREQ"), new StringBuilder("Hz"), new StringBuilder(VolumeRenderer.StdOfRest)) != 0)
+                    posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Freq]); 
+                    if (AstTool.GetAltSpecSet(volumeAstFrame, out astFrameSet, new StringBuilder("FREQ"), new StringBuilder(colUnits[posIndices[2]]), new StringBuilder(VolumeRenderer.StdOfRest)) != 0)
                     {
                         Debug.Log($"Error creating feature astframe!");
                         return;
                     }
-                    posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Freq]); 
                 }
                 else if (setCoordinates.Contains(SourceMappingOptions.Redshift))
                 {
                     ZType = CoordTypes.redz;
+                    posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Redshift]);
                     if (AstTool.GetAltSpecSet(volumeAstFrame, out astFrameSet, new StringBuilder("REDSHIFT"), new StringBuilder(""), new StringBuilder(VolumeRenderer.StdOfRest)) != 0)
                     {
                         Debug.Log($"Error creating feature astframe!");
                         return;
-                    }
-                    posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Redshift]); 
+                    } 
                 }
                 if (AstTool.Invert(astFrameSet) != 0)
                 {
