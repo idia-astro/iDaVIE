@@ -588,14 +588,17 @@ namespace VolumeData
             }
         }
 
-        public void CropToFeature()
+        public bool CropToFeature()
         {
             if (_featureManager != null && _featureManager.SelectedFeature != null)
             {
                 var cornerMin = _featureManager.SelectedFeature.CornerMin;
                 var cornerMax = _featureManager.SelectedFeature.CornerMax;
                 CropToRegion(cornerMin, cornerMax);
+                return true;
             }
+
+            return false;
         }
 
         public void CropToRegion(Vector3 cornerMin, Vector3 cornerMax)
@@ -822,7 +825,10 @@ namespace VolumeData
             {
                 _maskDataSet = _dataSet.GenerateEmptyMask();
                 // Re-crop both datasets to ensure that they match correctly
-                CropToFeature();
+                if (!CropToFeature() && IsFullResolution)
+                {
+                    CropToRegion(Vector3.one, new Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
+                }
             }
         }
 
