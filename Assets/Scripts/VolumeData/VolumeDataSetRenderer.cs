@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using DataFeatures;
-using Vectrosity;
+using LineRenderer;
 using Debug = UnityEngine.Debug;
 
 namespace VolumeData
@@ -129,7 +128,8 @@ namespace VolumeData
 
         public FeatureSetManager FeatureSetManagerPrefab;
 
-        public VectorLine _voxelOutline, _cubeOutline, _regionOutline, _regionMeasure;
+        private PolyLine _measuringLine;
+        private CuboidLine _cubeOutline, _voxelOutline, _regionOutline;
 
         private FeatureSetManager _featureManager = null;
 
@@ -241,7 +241,6 @@ namespace VolumeData
             }
         }
 
-        
         public void Start()
         {
             // Apply settings from config
@@ -292,35 +291,40 @@ namespace VolumeData
             InitialThresholdMax = ThresholdMax;
             InitialThresholdMin = ThresholdMin;
 
-            _cubeOutline = new VectorLine("CubeAxes", new List<Vector3>(24), 2.0f);
-            _cubeOutline.MakeCube(Vector3.zero, 1, 1, 1);
+            _cubeOutline = new CuboidLine
+            {
+                Parent = transform,
+                Center = Vector3.zero,
+                Bounds = Vector3.one
+            };
+            
+            _cubeOutline.Activate();
             Feature.SetCubeColors(_cubeOutline, Color.white, true);
-            _cubeOutline.drawTransform = transform;
-            _cubeOutline.Draw3DAuto();
 
             // Voxel axes
             CursorVoxel = new Vector3Int(-1, -1, -1);
-            _voxelOutline = new VectorLine("VoxelOutline", new List<Vector3>(24), 1.0f);
-            _voxelOutline.MakeCube(Vector3.zero, 1, 1, 1);
-            _voxelOutline.drawTransform = transform;
-            _voxelOutline.color = Color.green;
-            _voxelOutline.active = false;
-            _voxelOutline.Draw3DAuto();
-
-            // Voxel axes
-            _regionOutline = new VectorLine("VoxelOutline", new List<Vector3>(24), 1.0f);
-            _regionOutline.MakeCube(Vector3.zero, 1, 1, 1);
-            _regionOutline.drawTransform = transform;
-            _regionOutline.color = Color.green;
-            _regionOutline.active = false;
-            _regionOutline.Draw3DAuto();
-
-            //Region measuring line
-            _regionMeasure = new VectorLine("RegionMeasure", new List<Vector3>(), 1.0f);
-            _regionMeasure.drawTransform = transform;
-            _regionMeasure.color = Color.white;
-            _regionMeasure.active = false;
-            _regionMeasure.Draw3DAuto();
+            _voxelOutline = new CuboidLine
+            {
+                Parent = transform,
+                Center = Vector3.zero,
+                Color = Color.green,
+                Bounds = Vector3.one
+            };
+            
+            // Region axes
+            _regionOutline = new CuboidLine
+            {
+                Parent = transform,
+                Center = Vector3.zero,
+                Color = Color.green,
+                Bounds = Vector3.one
+            };
+            
+            _measuringLine = new PolyLine
+            {
+                Parent = transform,
+                Color = Color.white,
+            };
 
             if (_featureManager != null)
             {
@@ -359,11 +363,17 @@ namespace VolumeData
                 }    
             }
             
+            if (IsFullResolution)
+            {
+                CropToRegion(Vector3.one, new Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
+            }
+            
             Shader.WarmupAllShaders();
 
             started = true;
 
         }
+
 
         private void GenerateDownsampledCube()
         {
@@ -384,7 +394,10 @@ namespace VolumeData
             GenerateDownsampledCube();
             if (IsCropped)
             {
-                CropToRegion();
+                CropToFeature();
+            } else if (IsFullResolution)
+            {
+                CropToRegion(Vector3.one, new Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
             }
         }
         
@@ -435,18 +448,15 @@ namespace VolumeData
 
                     Vector3 voxelCenterObjectSpace = new Vector3(voxelCenterCubeSpace.x / _dataSet.XDim - 0.5f, voxelCenterCubeSpace.y / _dataSet.YDim - 0.5f,
                         voxelCenterCubeSpace.z / _dataSet.ZDim - 0.5f);
-                    _voxelOutline.MakeCube(voxelCenterObjectSpace, (float)brushSize / _dataSet.XDim, (float)brushSize / _dataSet.YDim, (float)brushSize / _dataSet.ZDim);
+                    _voxelOutline.Center = voxelCenterObjectSpace;
+                    _voxelOutline.Bounds = brushSize * new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
                 }
 
-                _voxelOutline.active = true;
+                _voxelOutline.Activate();
             }
             else
             {
-                if (_voxelOutline != null && _voxelOutline.active)
-                {
-                    _voxelOutline.active = false;
-                }
-
+                _voxelOutline?.Deactivate();
                 CursorValue = float.NaN;
                 CursorVoxel = new Vector3Int(-1, -1, -1);
             }
@@ -498,9 +508,12 @@ namespace VolumeData
 
                 }
 
-                _regionOutline.active = true;
-                if (ShowMeasuringLine == true)
-                    _regionMeasure.active = true;
+                _regionOutline.Activate();
+                if (ShowMeasuringLine)
+                {
+                    _measuringLine?.Activate();
+                }
+                    
             }
         }
 
@@ -535,30 +548,26 @@ namespace VolumeData
             Vector3 regionCenter = (regionMax + regionMin) / 2.0f - 0.5f * Vector3.one;
 
             Vector3 regionCenterObjectSpace = new Vector3(regionCenter.x / _dataSet.XDim - 0.5f, regionCenter.y / _dataSet.YDim - 0.5f, regionCenter.z / _dataSet.ZDim - 0.5f);
-            _regionOutline.MakeCube(regionCenterObjectSpace, regionSize.x / _dataSet.XDim, regionSize.y / _dataSet.YDim, regionSize.z / _dataSet.ZDim);
-            _regionMeasure.points3.Clear();
-            _regionMeasure.points3.Add(new Vector3((float)measureStart.x/_dataSet.XDim- 0.5f, (float)measureStart.y/_dataSet.YDim- 0.5f, (float)measureStart.z/_dataSet.ZDim- 0.5f));
-            _regionMeasure.points3.Add(new Vector3((float)measureEnd.x/_dataSet.XDim- 0.5f, (float)measureEnd.y/_dataSet.YDim- 0.5f, (float)measureEnd.z/_dataSet.ZDim- 0.5f));
+            _regionOutline.Center = regionCenterObjectSpace;
+            _regionOutline.Bounds = new Vector3(regionSize.x / _dataSet.XDim, regionSize.y / _dataSet.YDim, regionSize.z / _dataSet.ZDim);
 
             var regionSizeBytes = regionSize.x * regionSize.y * regionSize.z * sizeof(float);
             bool regionIsFullResolution = (regionSizeBytes <= MaximumCubeSizeInMB * 1e6);
             Feature.SetCubeColors(_regionOutline, regionIsFullResolution ? Color.white : Color.yellow, regionIsFullResolution);
+
+            var startPoint = new Vector3((float)measureStart.x / _dataSet.XDim - 0.5f, (float)measureStart.y / _dataSet.YDim - 0.5f, (float)measureStart.z / _dataSet.ZDim - 0.5f);
+            var endPoint = new Vector3((float)measureEnd.x / _dataSet.XDim - 0.5f, (float)measureEnd.y / _dataSet.YDim - 0.5f, (float)measureEnd.z / _dataSet.ZDim - 0.5f);
+            _measuringLine.Vertices = new List<Vector3> { startPoint, endPoint };
         }
 
         public void ClearRegion()
         {
-            if (_regionOutline != null)
-            {
-                _regionOutline.active = false;
-            }
+            _regionOutline?.Deactivate();
         }
 
         public void ClearMeasure()
         {
-            if (_regionMeasure != null)
-            {
-                _regionMeasure.active = false;
-            }
+            _measuringLine?.Deactivate();
         }
 
         public void SelectFeature(Vector3 cursor)
@@ -580,38 +589,46 @@ namespace VolumeData
             }
         }
 
-        public void CropToRegion()
+        public bool CropToFeature()
         {
             if (_featureManager != null && _featureManager.SelectedFeature != null)
             {
                 var cornerMin = _featureManager.SelectedFeature.CornerMin;
                 var cornerMax = _featureManager.SelectedFeature.CornerMax;
-                Vector3Int startVoxel = new Vector3Int(Convert.ToInt32(cornerMin.x), Convert.ToInt32(cornerMin.y), Convert.ToInt32(cornerMin.z));
-                Vector3Int endVoxel = new Vector3Int(Convert.ToInt32(cornerMax.x), Convert.ToInt32(cornerMax.y), Convert.ToInt32(cornerMax.z));
-
-                Vector3 regionStartObjectSpace = new Vector3(cornerMin.x / _dataSet.XDim - 0.5f, cornerMin.y / _dataSet.YDim - 0.5f, cornerMin.z / _dataSet.ZDim - 0.5f);
-                Vector3 regionEndObjectSpace = new Vector3(cornerMax.x / _dataSet.XDim - 0.5f, cornerMax.y / _dataSet.YDim - 0.5f, cornerMax.z / _dataSet.ZDim - 0.5f);
-                Vector3 padding = new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
-                SliceMin = Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
-                SliceMax = Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
-                LoadRegionData(startVoxel, endVoxel);
-                _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.RegionCube);
-
-                if (_maskDataSet != null)
-                {
-                    _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
-                    var regionMin = Vector3.Min(RegionStartVoxel, RegionEndVoxel);
-                    _maskMaterialInstance.SetVector(MaterialID.RegionOffset, new Vector4(regionMin.x, regionMin.y, regionMin.z, 0));
-                    var regionDimensions = new Vector4(_maskDataSet.RegionCube.width, _maskDataSet.RegionCube.height, _maskDataSet.RegionCube.depth, 0);
-                    _maskMaterialInstance.SetVector(MaterialID.RegionDimensions, regionDimensions);
-                    var cubeDimensions = new Vector4(_maskDataSet.XDim, _maskDataSet.YDim, _maskDataSet.ZDim, 1);
-                    _maskMaterialInstance.SetVector(MaterialID.CubeDimensions, cubeDimensions);
-                    _momentMapRenderer.MaskCube = _maskDataSet.RegionCube;
-                }
-                _momentMapRenderer.DataCube = _dataSet.RegionCube;
-
-                IsCropped = true;
+                CropToRegion(cornerMin, cornerMax);
+                return true;
             }
+
+            return false;
+        }
+
+        public void CropToRegion(Vector3 cornerMin, Vector3 cornerMax)
+        {
+            Vector3Int startVoxel = new Vector3Int(Convert.ToInt32(cornerMin.x), Convert.ToInt32(cornerMin.y), Convert.ToInt32(cornerMin.z));
+            Vector3Int endVoxel = new Vector3Int(Convert.ToInt32(cornerMax.x), Convert.ToInt32(cornerMax.y), Convert.ToInt32(cornerMax.z));
+
+            Vector3 regionStartObjectSpace = new Vector3(cornerMin.x / _dataSet.XDim - 0.5f, cornerMin.y / _dataSet.YDim - 0.5f, cornerMin.z / _dataSet.ZDim - 0.5f);
+            Vector3 regionEndObjectSpace = new Vector3(cornerMax.x / _dataSet.XDim - 0.5f, cornerMax.y / _dataSet.YDim - 0.5f, cornerMax.z / _dataSet.ZDim - 0.5f);
+            Vector3 padding = new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
+            SliceMin = Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
+            SliceMax = Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
+            LoadRegionData(startVoxel, endVoxel);
+            _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.RegionCube);
+
+            if (_maskDataSet != null)
+            {
+                _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
+                var regionMin = Vector3.Min(startVoxel, endVoxel);
+                _maskMaterialInstance.SetVector(MaterialID.RegionOffset, new Vector4(regionMin.x, regionMin.y, regionMin.z, 0));
+                var regionDimensions = new Vector4(_maskDataSet.RegionCube.width, _maskDataSet.RegionCube.height, _maskDataSet.RegionCube.depth, 0);
+                _maskMaterialInstance.SetVector(MaterialID.RegionDimensions, regionDimensions);
+                var cubeDimensions = new Vector4(_maskDataSet.XDim, _maskDataSet.YDim, _maskDataSet.ZDim, 1);
+                _maskMaterialInstance.SetVector(MaterialID.CubeDimensions, cubeDimensions);
+                _momentMapRenderer.MaskCube = _maskDataSet.RegionCube;
+            }
+            _momentMapRenderer.DataCube = _dataSet.RegionCube;
+
+            IsCropped = true;
         }
 
         public void ResetCrop()
@@ -628,6 +645,10 @@ namespace VolumeData
             }
             _momentMapRenderer.DataCube = _dataSet.DataCube;
 
+            if (IsFullResolution)
+            {
+                CropToRegion(Vector3.one, new Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
+            }
             IsCropped = false;
         }
 
@@ -653,7 +674,18 @@ namespace VolumeData
             {
                 resolutionString = $"Downsampled by ({_currentXFactor} \u00D7 {_currentYFactor} \u00D7 {_currentZFactor})";
             }
-            ToastNotification.ShowInfo($"Cropped to ({regionSize.x} \u00D7 {regionSize.y} \u00D7 {regionSize.z}) region\n{resolutionString}");
+
+            string cropString;
+            if (regionSize.x == _dataSet.XDim && regionSize.y == _dataSet.YDim && regionSize.z == _dataSet.ZDim)
+            {
+                cropString = "Showing entire cube";
+            }
+            else
+            {
+                cropString = $"Cropped to ({regionSize.x} \u00D7 {regionSize.y} \u00D7 {regionSize.z}) region";
+            }
+
+            ToastNotification.ShowInfo($"{cropString}\n{resolutionString}");
         }
 
         public void TeleportToRegion()
@@ -699,7 +731,7 @@ namespace VolumeData
                 _materialInstance.SetInt(MaterialID.FoveatedStepsHigh, MaxSteps);
             }
 
-            if (_regionOutline.active)
+            if (_regionOutline.Active)
             {
                 Vector3 regionStartObjectSpace = new Vector3((float)(RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
                 Vector3 regionEndObjectSpace = new Vector3((float)(RegionEndVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionEndVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
@@ -795,7 +827,10 @@ namespace VolumeData
             {
                 _maskDataSet = _dataSet.GenerateEmptyMask();
                 // Re-crop both datasets to ensure that they match correctly
-                CropToRegion();
+                if (!CropToFeature() && IsFullResolution)
+                {
+                    CropToRegion(Vector3.one, new Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
+                }
             }
         }
 
@@ -947,6 +982,10 @@ namespace VolumeData
         {
             _dataSet.CleanUp(RandomVolume);
             _maskDataSet?.CleanUp(false);
+            _measuringLine?.Destroy();
+            _cubeOutline?.Destroy();
+            _regionOutline?.Destroy();
+            _voxelOutline?.Destroy();
         }
     }
 

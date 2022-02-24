@@ -14,6 +14,13 @@ using Debug = UnityEngine.Debug;
 
 namespace VolumeData
 {
+    
+    public enum AngleCoordFormat
+    {
+        Sexagesimal = 0,
+        Decimal = 1
+    }
+    
     public struct VoxelEntry
     {
         public readonly int Index;
@@ -99,6 +106,7 @@ namespace VolumeData
         private Bounds _dirtyMaskBounds;
         private readonly Dictionary<int, int> _addedMaskEntriesDict = new Dictionary<int, int>();
         private static int BrushStrokeLimit = 16777216;
+        public short NewSourceId = 1000;
 
         public IntPtr FitsData = IntPtr.Zero;
         public IntPtr FitsHeader = IntPtr.Zero;
@@ -319,6 +327,15 @@ namespace VolumeData
                     volumeDataSet.HasRestFrequency = true;
                 }
             }
+            
+            // Set wcs angle format from config file. Defaults as sexagesimal
+            var config = Config.Instance;
+            if (config.angleCoordFormat == AngleCoordFormat.Decimal)
+            {
+                AstTool.SetString(astFrameSet, new StringBuilder("Format(1)"), new StringBuilder("d.*"));
+                AstTool.SetString(astFrameSet, new StringBuilder("Format(2)"), new StringBuilder("d.*"));
+            }
+
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = volumeDataSet.cubeSize[0];
             volumeDataSet.YDim = volumeDataSet.cubeSize[1];
@@ -339,6 +356,7 @@ namespace VolumeData
                 {
                     volumeDataSet.SourceStatsDict[source.maskVal] = DataAnalysis.SourceStats.FromSourceInfo(source);
                     volumeDataSet.UpdateStats(source.maskVal);
+                    volumeDataSet.NewSourceId = Math.Max(volumeDataSet.NewSourceId, (short)(source.maskVal + 1));
                 }
                 sw.Stop();
                 Debug.Log($"Calculated stats for {volumeDataSet.SourceStatsDict?.Count} sources in {sw.Elapsed.TotalMilliseconds} ms");
@@ -1518,7 +1536,7 @@ namespace VolumeData
             if (AstFrameSet != IntPtr.Zero)
             {
                 AstTool.DeleteObject(AstFrameSet);
-                AstTool.AstEnd();
+                AstFrameSet = IntPtr.Zero;
             }
 
             ExistingMaskBuffer?.Release();

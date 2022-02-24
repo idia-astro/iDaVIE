@@ -1,5 +1,4 @@
-﻿using Vectrosity;
-using System.Collections.Generic;
+﻿using LineRenderer;
 using UnityEngine;
 
 namespace DataFeatures
@@ -10,17 +9,17 @@ namespace DataFeatures
         public bool Temporary;
         public string Comment;
         public float Metric;
-        public int Index {get;}
-        public int Id {get;}
-        public string Name { get;}
+        public int Index { get; }
+        public int Id { get; }
+        public string Name { get; }
         private bool _selected;
         private Color _color;
         private bool _active;
         private Bounds _unityBounds;
         private Vector3 _position;
         private Vector3[] _corners = new Vector3[2];
-        public string[] RawData {get; set;}
-        public FeatureSetRenderer FeatureSetParent {get; private set;}
+        public string[] RawData { get; set; }
+        public FeatureSetRenderer FeatureSetParent { get; private set; }
 
         public bool StatusChanged;
 
@@ -84,6 +83,7 @@ namespace DataFeatures
                 {
                     FeatureSetParent.SetFeatureAsDirty(Index);
                 }
+
                 _color = value;
             }
         }
@@ -97,6 +97,7 @@ namespace DataFeatures
                 {
                     FeatureSetParent.SetFeatureAsDirty(Index);
                 }
+
                 _active = value;
             }
         }
@@ -111,6 +112,7 @@ namespace DataFeatures
                 {
                     FeatureSetParent.SetFeatureAsDirty(Index);
                 }
+
                 _selected = value;
             }
         }
@@ -147,18 +149,18 @@ namespace DataFeatures
             FeatureSetParent.SetFeatureAsDirty(Index);
         }
         
-        public static void SetCubeColors(VectorLine cube, Color32 baseColor, bool colorAxes, int index = 0)
+        public static void SetCubeColors(CuboidLine cube, Color baseColor, bool colorAxes)
         {
-            cube.SetColor(baseColor);
+            cube.Color = baseColor;
 
             if (colorAxes)
             {
                 var colorAxisX = new Color(1.0f, 0.3f, 0.3f);
                 var colorAxisY = new Color(0.3f, 1.0f, 0.3f);
                 var colorAxisZ = new Color(0.3f, 0.3f, 1.0f);
-                cube.SetColor(colorAxisX, 8 + index);
-                cube.SetColor(colorAxisY, 4 + index);
-                cube.SetColor(colorAxisZ, 11 + index);
+                cube.SetColor(colorAxisX, 7);
+                cube.SetColor(colorAxisY, 4);
+                cube.SetColor(colorAxisZ, 8);
             }
         }
     }
