@@ -54,7 +54,6 @@ public class RenderingController : MonoBehaviour
         {
             _activeDataSet = firstActive;
         }
-
         if (_activeDataSet.ColorMap != ColorMapUtils.FromHashCode(colorIndex))
         {
             colorIndex = (int)_activeDataSet.ColorMap;
@@ -93,11 +92,16 @@ public class RenderingController : MonoBehaviour
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
-        foreach (var dataSet in _dataSets)
+        _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
+
+        if (_dataSets != null)
         {
-            if (dataSet.isActiveAndEnabled)
+            foreach (var dataSet in _dataSets)
             {
-                return dataSet;
+                if (dataSet.isActiveAndEnabled)
+                {
+                    return dataSet;
+                }
             }
         }
         return null;
