@@ -129,10 +129,7 @@ public class RenderingController : MonoBehaviour
     {
 
         LabelColormap.gameObject.GetComponent<Text>().text = colorMap + "";
-        if (_activeDataSet)
-        {
-            _activeDataSet.ColorMap = colorMap;
-        }
+         _volumeCommandController.setColorMap(colorMap);
     }
 
     public void ResetColorMap()
