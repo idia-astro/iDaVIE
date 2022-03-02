@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -8,9 +7,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using DataFeatures;
-using Unity.Collections;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
+using Object = UnityEngine.Object;
 
 namespace VolumeData
 {
@@ -1511,10 +1510,12 @@ namespace VolumeData
                     Marshal.FreeHGlobal(FitsData);
                 else
                     FitsReader.FreeMemory(FitsData);
+                FitsData = IntPtr.Zero;
             }
             if (FitsHeader != IntPtr.Zero)
             {
                 FitsReader.FreeFitsMemory(FitsHeader, out status);
+                FitsHeader = IntPtr.Zero;
             }
 
             if (AstFrameSet != IntPtr.Zero)
@@ -1525,6 +1526,9 @@ namespace VolumeData
 
             ExistingMaskBuffer?.Release();
             AddedMaskBuffer?.Release();
+            
+            Object.DestroyImmediate(DataCube);
+            Object.DestroyImmediate(RegionCube);
         }
     }
 }
