@@ -17,11 +17,14 @@ public class HistogramMenuController : MonoBehaviour
     [SerializeField] private Button DecreaseMinScaleButton;
     [SerializeField] private Button IncreaseMinScaleButton;
     [SerializeField] private Text minText;
+    [SerializeField] private Button editMinScale;
+
 
     [SerializeField] private Button DecreaseMaxScaleButton;
     [SerializeField] private Button IncreaseMaxScaleButton;
     [SerializeField] private Text maxText;
-
+    [SerializeField] private Button editMaxScale;
+    [SerializeField] private GameObject keypadPrefab = null;
     // Start is called before the first frame update
     void Start()
     {
@@ -63,6 +66,27 @@ public class HistogramMenuController : MonoBehaviour
             maxText.text = Mathf.Clamp(float.Parse(maxText.text) + 0.01f, float.Parse(minText.text), getFirstActiveDataSet().Data.MaxValue * 2).ToString();
         }
 
+        if (editMinScale.gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
+        {
+            OpenKeypad(minText);
+        }
+
+        if (editMaxScale.gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
+        {
+            OpenKeypad(maxText);
+        }
+
+    }
+    public void OpenKeypad(Text target)
+    {
+        if (GameObject.FindGameObjectWithTag("keypad") == null)
+        {
+            Vector3 pos = new Vector3(this.transform.parent.position.x, this.transform.parent.position.y - 0.5f, this.transform.parent.position.z);
+            //instantiate item
+            GameObject SpawnedItem = Instantiate(keypadPrefab, pos, this.transform.parent.rotation);
+            SpawnedItem.transform.localRotation = this.transform.parent.rotation;
+            SpawnedItem.GetComponent<KeypadController>().targetText = target;
+        }
     }
 
     public void MinSliderHandler(float value)
