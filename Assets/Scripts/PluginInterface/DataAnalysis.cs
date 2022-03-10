@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using fts;
 using UnityEngine;
 
-[PluginAttr("data_analysis_tool")]
+[PluginAttr("idavie_native")]
 public static class DataAnalysis
 {
     [PluginFunctionAttr("FindMaxMin")] 
@@ -140,9 +140,9 @@ public static class DataAnalysis
     public unsafe delegate int GetZScaleDelegate(void* dataPtr, long width, long height, out float z1, out float z2);
     
     
-    [PluginFunctionAttr("FreeMemory")] 
-    public static readonly FreeMemoryDelegate FreeMemory = null;
-    public delegate int FreeMemoryDelegate(IntPtr pointerToDelete);
+    [PluginFunctionAttr("FreeDataAnalysisMemory")] 
+    public static readonly FreeDataAnalysisMemoryDelegate FreeDataAnalysisMemory = null;
+    public delegate int FreeDataAnalysisMemoryDelegate(IntPtr pointerToDelete);
 
     public static float[] GetXProfileAsArray(IntPtr dataPtr, long dimX, long dimY, long dimZ, long y, long z)
     {
@@ -155,7 +155,7 @@ public static class DataAnalysis
         }
         Marshal.Copy(profilePtr, profile, 0, (int)dimX);
         if (profilePtr != IntPtr.Zero)
-            FreeMemory(profilePtr);
+            FreeDataAnalysisMemory(profilePtr);
         return profile;
     }
 
@@ -170,7 +170,7 @@ public static class DataAnalysis
         }
         Marshal.Copy(profilePtr, profile, 0, (int)dimY);
         if (profilePtr != IntPtr.Zero)
-            FreeMemory(profilePtr);
+            FreeDataAnalysisMemory(profilePtr);
         return profile;
     }
 
@@ -185,7 +185,7 @@ public static class DataAnalysis
         }
         Marshal.Copy(profilePtr, profile, 0, (int)dimZ);
         if (profilePtr != IntPtr.Zero)
-            FreeMemory(profilePtr);
+            FreeDataAnalysisMemory(profilePtr);
         return profile;
     }
 
@@ -212,7 +212,7 @@ public static class DataAnalysis
         {
             Console.WriteLine(e);
         }
-        FreeMemory(sourcesPtr);
+        FreeDataAnalysisMemory(sourcesPtr);
         sources.Sort((s1, s2) => s1.maskVal - s2.maskVal);
         return sources;
     }

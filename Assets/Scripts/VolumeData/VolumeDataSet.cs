@@ -178,7 +178,7 @@ namespace VolumeData
             DataAnalysis.GetHistogram(dataPtr, numberDataPoints, histogramSize, volumeDataSet.MinValue, volumeDataSet.MaxValue, out histogramPtr);
             Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
             if (histogramPtr != IntPtr.Zero)
-                DataAnalysis.FreeMemory(histogramPtr);
+                DataAnalysis.FreeDataAnalysisMemory(histogramPtr);
             return volumeDataSet;
         }
 
@@ -245,7 +245,7 @@ namespace VolumeData
             volumeDataSet.cubeSize = new long[cubeDimensions];
             Marshal.Copy(dataPtr, volumeDataSet.cubeSize, 0, cubeDimensions);
             if (dataPtr != IntPtr.Zero)
-                FitsReader.FreeMemory(dataPtr);
+                FitsReader.FreeFitsPtrMemory(dataPtr);
             long numberDataPoints = volumeDataSet.cubeSize[0] * volumeDataSet.cubeSize[1] * volumeDataSet.cubeSize[index2];
             IntPtr fitsDataPtr = IntPtr.Zero;
             if (volumeDataSet.IsMask)
@@ -310,7 +310,7 @@ namespace VolumeData
                 DataAnalysis.GetHistogram(fitsDataPtr, numberDataPoints, histogramSize, volumeDataSet.MinValue, volumeDataSet.MaxValue, out histogramPtr);
                 Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
                 if (histogramPtr != IntPtr.Zero)
-                    DataAnalysis.FreeMemory(histogramPtr);
+                    DataAnalysis.FreeDataAnalysisMemory(histogramPtr);
                 volumeDataSet.HasFitsRestFrequency =
                     volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ") || volumeDataSet.HeaderDictionary.ContainsKey("RESTFREQ");
             }
@@ -468,7 +468,7 @@ namespace VolumeData
             DataAnalysis.GetHistogram(volumeDataSet.FitsData, numberDataPoints, volumeDataSet.Histogram.Length, min, max, out histogramPtr);
             Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, volumeDataSet.Histogram.Length);
             if (histogramPtr != IntPtr.Zero)
-                DataAnalysis.FreeMemory(histogramPtr);
+                DataAnalysis.FreeDataAnalysisMemory(histogramPtr);
         }
         
         public VolumeDataSet GenerateEmptyMask()
@@ -559,7 +559,7 @@ namespace VolumeData
 
             // TODO output cached file
             if (downsampled && reducedData != IntPtr.Zero)
-                DataAnalysis.FreeMemory(reducedData);
+                DataAnalysis.FreeDataAnalysisMemory(reducedData);
         }
 
         public void GenerateCroppedVolumeTexture(FilterMode textureFilter, Vector3Int cropStart, Vector3Int cropEnd, Vector3Int downsample)
@@ -667,7 +667,7 @@ namespace VolumeData
             }
 
             if (regionData != IntPtr.Zero)
-                DataAnalysis.FreeMemory(regionData);
+                DataAnalysis.FreeDataAnalysisMemory(regionData);
             sw.Stop();
             Debug.Log(
                 $"Cropped into {cubeSize.x} x {cubeSize.y} x {cubeSize.z} region ({cubeSize.x * cubeSize.y * cubeSize.z * 4e-6} MB) in {sw.ElapsedMilliseconds} ms");
@@ -1238,7 +1238,7 @@ namespace VolumeData
             if (status != 0)
                 Debug.LogError($"Fits Read mask cube data error #{status.ToString()}");
             if (subCubeData != IntPtr.Zero)
-                FitsReader.FreeMemory(subCubeData);
+                FitsReader.FreeFitsPtrMemory(subCubeData);
             return status;
         }
         public int SaveMask(IntPtr cubeFitsPtr, string filename)
@@ -1509,7 +1509,7 @@ namespace VolumeData
                 if (randomCube)
                     Marshal.FreeHGlobal(FitsData);
                 else
-                    FitsReader.FreeMemory(FitsData);
+                    FitsReader.FreeFitsPtrMemory(FitsData);
                 FitsData = IntPtr.Zero;
             }
             if (FitsHeader != IntPtr.Zero)

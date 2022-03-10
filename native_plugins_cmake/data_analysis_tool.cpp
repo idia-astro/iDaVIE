@@ -545,7 +545,7 @@ int GetZScale(const float* data, int64_t width, int64_t height, float* z1, float
     return EXIT_SUCCESS;
 }
 
-int FreeMemory(void* ptrToDelete)
+int FreeDataAnalysisMemory(void* ptrToDelete)
 {
     delete[] ptrToDelete;
     return EXIT_SUCCESS;

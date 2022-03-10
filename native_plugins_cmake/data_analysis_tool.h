@@ -61,7 +61,7 @@ DllExport int GetHistogram(const float* , int64_t , int , float , float , int** 
 DllExport int GetMaskedSources(const int16_t*, int64_t, int64_t, int64_t, int*, SourceInfo**);
 DllExport int GetSourceStats(const float*, const int16_t*, int64_t, int64_t, int64_t, SourceInfo, SourceStats*);
 DllExport int GetZScale(const float*, int64_t, int64_t, float*, float*);
-DllExport int FreeMemory(void* );
+DllExport int FreeDataAnalysisMemory(void* );
 }
 
 #endif //NATIVE_PLUGINS_DATA_ANALYSIS_TOOL_H

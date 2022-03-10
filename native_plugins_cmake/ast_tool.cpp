@@ -450,7 +450,7 @@ void AstEnd()
     astEnd;
 }
 
-void FreeMemory(void* ptrToDelete)
+void FreeAstMemory(void* ptrToDelete)
 {
     delete[] ptrToDelete;
 }
