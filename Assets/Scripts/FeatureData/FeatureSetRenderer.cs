@@ -206,8 +206,9 @@ namespace DataFeatures
 
         public void SpawnFeaturesFromSourceStats(Dictionary<int, DataAnalysis.SourceStats> sourceStatsDict)
         {
-            var physZUnit = VolumeRenderer.Data.GetAstAttribute("Unit(3)");
-            RawDataKeys = new[] {"Sum", "Peak", "VSys (Channel)", "W20 (Channel)", $"VSys ({physZUnit})", $"W20 ({physZUnit})"};
+            bool astframeIsFreq = VolumeRenderer.Data.GetAstAttribute("System(3)") == "FREQ";
+            var velocityUnit = astframeIsFreq ? VolumeRenderer.Data.GetAstAltAttribute("Unit(3)") : VolumeRenderer.Data.GetAstAttribute("Unit(3)") ;
+            RawDataKeys = new[] {"Sum", "Peak", "VSys (Channel)", "W20 (Channel)", $"VSys ({velocityUnit})", $"W20 ({velocityUnit})"};
             RawDataTypes = new[] {"float", "float", "float", "float", "float", "float"};
             foreach (var item in sourceStatsDict)
             {

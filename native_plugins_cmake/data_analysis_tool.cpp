@@ -534,7 +534,7 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
                     astTranN(frameSetPtr, 1, 3, 1, xInL, 1, 3, 1, vOutL);
                     astTranN(frameSetPtr, 1, 3, 1, xInR, 1, 3, 1, vOutR);
                     stats->veloVsys = (vOutL[2] + vOutR[2]) / 2.0;
-                    stats->veloW20 = vOutR[2] - vOutL[2];
+                    stats->veloW20 = abs(vOutR[2] - vOutL[2]);
                 }
                 else
                 {
