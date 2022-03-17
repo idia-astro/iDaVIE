@@ -372,8 +372,9 @@ namespace VolumeData
                 return;
             }
             var sourceStats = SourceStatsDict[maskVal];
-
-            DataAnalysis.GetSourceStats(ImageDataPtr, FitsData, XDim, YDim, ZDim, DataAnalysis.SourceInfo.FromSourceStats(sourceStats, maskVal), ref sourceStats);
+            //Check if AstFrameSet or AltSpecSet have velocity
+            
+            DataAnalysis.GetSourceStats(ImageDataPtr, FitsData, XDim, YDim, ZDim, DataAnalysis.SourceInfo.FromSourceStats(sourceStats, maskVal), ref sourceStats, AstFrameSet);
             if (sourceStats.numVoxels > 0)
             {
                 SourceStatsDict[maskVal] = sourceStats;
@@ -396,7 +397,7 @@ namespace VolumeData
                         var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
                         var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
                         feature.SetBounds(boxMin, boxMax);
-                        feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
+                        feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
                         _maskFeatureSet.FeatureManager.NeedToRespawnMenuList = true;
                         
                     }
@@ -412,7 +413,7 @@ namespace VolumeData
                     var boxMin = new Vector3(sourceStats.minX, sourceStats.minY, sourceStats.minZ);
                     var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
                     var name = $"Masked Source #{maskVal}";
-                    var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
+                    var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
                     var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, _maskFeatureSet.FeatureList.Count, maskVal - 1, rawStrings, _maskFeatureSet, _maskFeatureSet.FeatureList[0].Visible);
                     _maskFeatureSet.AddFeature(feature);
                 }

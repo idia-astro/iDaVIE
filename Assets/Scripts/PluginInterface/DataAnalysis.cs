@@ -90,6 +90,8 @@ public static class DataAnalysis
         // Vsys (in channel units)
         public double channelVsys;
         public double channelW20;
+        public double veloVsys;
+        public double veloW20;
 
         public bool IsEmpty => numVoxels == 0;
         public void AddPointToBoundingBox(long x, long y, long z)
@@ -133,7 +135,7 @@ public static class DataAnalysis
     
     [PluginFunctionAttr("GetSourceStats")] 
     public static readonly GetSourceStatsDelegate GetSourceStats = null;
-    public delegate int GetSourceStatsDelegate(IntPtr dataPtr, IntPtr maskDataPtr, long dimX, long dimY, long dimZ, SourceInfo source, ref SourceStats stats);
+    public delegate int GetSourceStatsDelegate(IntPtr dataPtr, IntPtr maskDataPtr, long dimX, long dimY, long dimZ, SourceInfo source, ref SourceStats stats, IntPtr astFrame);
 
     [PluginFunctionAttr("GetZScale")] 
     public static readonly GetZScaleDelegate GetZScale = null;

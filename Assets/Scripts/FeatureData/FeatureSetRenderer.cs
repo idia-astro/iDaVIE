@@ -206,15 +206,15 @@ namespace DataFeatures
 
         public void SpawnFeaturesFromSourceStats(Dictionary<int, DataAnalysis.SourceStats> sourceStatsDict)
         {
-            RawDataKeys = new[] {"Sum", "Peak", "VSys (Channel)", "W20 (Channel)"};
-            RawDataTypes = new[] {"float", "float", "float", "float"};
+            RawDataKeys = new[] {"Sum", "Peak", "VSys (Channel)", "W20 (Channel)", "VSys (Velocity)", "W20 (Velocity)"};
+            RawDataTypes = new[] {"float", "float", "float", "float", "float", "float"};
             foreach (var item in sourceStatsDict)
             {
                 var sourceStats = item.Value;
                 var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
                 var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
                 var featureName = $"Masked Source #{item.Key}";
-                var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
+                var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
                 AddFeature(new Feature(boxMin, boxMax, FeatureColor, featureName, FeatureList.Count, item.Key - 1, rawStrings, this, false));
             }
             FeatureMenuScrollerDataSource.InitData();
