@@ -407,7 +407,7 @@ namespace VolumeData
         {
             if (_activeDataSet)
             {
-                _activeDataSet.CropToRegion();
+                _activeDataSet.CropToFeature();
             }
         }
 

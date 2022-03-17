@@ -215,7 +215,7 @@ int CreateEmptyImageInt16(int64_t sizeX, int64_t sizeY, int64_t sizeZ, int16_t**
     return 0;
 }
 
-int FreeMemory(void* ptrToDelete)
+int FreeFitsPtrMemory(void* ptrToDelete)
 {
     delete[] ptrToDelete;
     return 0;

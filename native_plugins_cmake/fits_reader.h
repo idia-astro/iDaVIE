@@ -79,7 +79,7 @@ DllExport int FitsCreateHdrPtr(fitsfile *, char **, int *, int *);
 
 DllExport int CreateEmptyImageInt16(int64_t , int64_t , int64_t , int16_t** );
 
-DllExport int FreeMemory(void* );
+DllExport int FreeFitsPtrMemory(void* );
 
 DllExport void FreeFitsMemory(char* header, int* status);
 
