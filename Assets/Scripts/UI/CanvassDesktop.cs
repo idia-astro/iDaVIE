@@ -550,6 +550,9 @@ public class CanvassDesktop : MonoBehaviour
                 // ignored
             }
 
+            // Manually clean up
+            activeDataSet.Data.CleanUp(activeDataSet.RandomVolume);
+            activeDataSet.Mask?.CleanUp(false);
             Destroy(activeDataSet);
         }
 
