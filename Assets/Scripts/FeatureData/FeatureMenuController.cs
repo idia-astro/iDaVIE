@@ -216,7 +216,7 @@ public class FeatureMenuController : MonoBehaviour
                 
                 textObject.GetComponent<TMP_Text>().text += $"RA: {dataSet.GetFormattedCoord(normR, 1)}{Environment.NewLine}";
                 textObject.GetComponent<TMP_Text>().text += $"Dec: {dataSet.GetFormattedCoord(normD, 2)}{Environment.NewLine}";
-                textObject.GetComponent<TMP_Text>().text += $"{_activeDataSet.Data.GetAstAttribute("System(3)")}: {normZ.ToString("F3")} {_activeDataSet.Data.GetAstAttribute("Unit(3)")}{Environment.NewLine}";
+                textObject.GetComponent<TMP_Text>().text += $"{_activeDataSet.Data.GetAstAttribute("System(3)")}: {normZ.ToString("F3")} {_activeDataSet.Data.GetAxisUnit(3)}{Environment.NewLine}";
         }
         if (featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys != null)
         {

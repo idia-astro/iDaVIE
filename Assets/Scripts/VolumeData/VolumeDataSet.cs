@@ -19,6 +19,12 @@ namespace VolumeData
         Sexagesimal = 0,
         Decimal = 1
     }
+
+    public enum VelocityUnit
+    {
+        Km = 0,
+        M = 1
+    }
     
     public struct VoxelEntry
     {
@@ -74,7 +80,7 @@ namespace VolumeData
         public List<BrushStrokeTransaction> BrushStrokeHistory { get; private set; }
         public List<BrushStrokeTransaction> BrushStrokeRedoQueue { get; private set; }
         public Dictionary<int, DataAnalysis.SourceStats> SourceStatsDict { get; private set; }
-        
+
         public string FileName { get; set; }
         public long XDim { get; private set; }
         public long YDim { get; private set; }
@@ -111,6 +117,7 @@ namespace VolumeData
         public int NumberHeaderKeys;
         public IntPtr AstFrameSet { get; private set; }
         public IntPtr AstAltSpecSet { get; private set; }
+        public bool AstframeIsFreq = false;
         public bool HasFitsRestFrequency { get; private set; } = false;
         public bool HasRestFrequency { get; set; }
         public double FitsRestFrequency { get; set;}
@@ -333,12 +340,28 @@ namespace VolumeData
                 AstTool.SetString(astFrameSet, new StringBuilder("Format(1)"), new StringBuilder("d.*"));
                 AstTool.SetString(astFrameSet, new StringBuilder("Format(2)"), new StringBuilder("d.*"));
             }
-
+            
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = volumeDataSet.cubeSize[0];
             volumeDataSet.YDim = volumeDataSet.cubeSize[1];
             volumeDataSet.ZDim = volumeDataSet.cubeSize[index2];
             volumeDataSet.AstFrameSet = astFrameSet;
+            
+            //Create alternate AstFrame with frequency or velocity depending on primary's unit
+            volumeDataSet.CreateAltSpecFrame();
+            
+            //Check if AstFrameSet or AltSpecSet have velocity
+            string primaryFrameZUnit = volumeDataSet.GetAstAttribute("System(3)");
+            volumeDataSet.AstframeIsFreq = primaryFrameZUnit == "FREQ";
+            var frameWithVelocity = volumeDataSet.AstframeIsFreq ?  volumeDataSet.AstAltSpecSet : volumeDataSet.AstFrameSet;
+            if (config.velocityUnit == VelocityUnit.Km)
+            {
+                volumeDataSet.SetAxisUnit(3, "km/s");
+            }
+            else
+            {
+                volumeDataSet.SetAxisUnit(3, "m/s");
+            }
 
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
@@ -372,8 +395,7 @@ namespace VolumeData
             }
             var sourceStats = SourceStatsDict[maskVal];
             //Check if AstFrameSet or AltSpecSet have velocity
-            bool astframeIsFreq = GetAstAttribute("System(3)") == "FREQ";
-            var frameWithVelocity = astframeIsFreq ? AstAltSpecSet : AstFrameSet ;
+            var frameWithVelocity = AstframeIsFreq ?  AstAltSpecSet : AstFrameSet;
             DataAnalysis.GetSourceStats(ImageDataPtr, FitsData, XDim, YDim, ZDim, DataAnalysis.SourceInfo.FromSourceStats(sourceStats, maskVal), ref sourceStats, frameWithVelocity);
             if (sourceStats.numVoxels > 0)
             {

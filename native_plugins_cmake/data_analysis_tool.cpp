@@ -527,10 +527,6 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
                     xInR[0] = 1;
                     xInR[1] = 1;
                     xInR[2] = rightChannel;
-                    cout << "channels" << endl;
-                    cout << leftChannel << endl;
-                    cout << rightChannel << endl;
-
                     astTranN(frameSetPtr, 1, 3, 1, xInL, 1, 3, 1, vOutL);
                     astTranN(frameSetPtr, 1, 3, 1, xInR, 1, 3, 1, vOutR);
                     stats->veloVsys = (vOutL[2] + vOutR[2]) / 2.0;
