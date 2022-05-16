@@ -353,15 +353,12 @@ namespace VolumeData
             //Check if AstFrameSet or AltSpecSet have velocity
             string primaryFrameZUnit = volumeDataSet.GetAstAttribute("System(3)");
             volumeDataSet.AstframeIsFreq = primaryFrameZUnit == "FREQ";
-            var frameWithVelocity = volumeDataSet.AstframeIsFreq ?  volumeDataSet.AstAltSpecSet : volumeDataSet.AstFrameSet;
-            if (config.velocityUnit == VelocityUnit.Km)
-            {
-                volumeDataSet.SetAxisUnit(3, "km/s");
-            }
+            var velocityUnitToSet = config.velocityUnit == VelocityUnit.Km ? "km/s" : "m/s";
+            if (volumeDataSet.AstframeIsFreq)
+                volumeDataSet.SetAltAxisUnit(3, velocityUnitToSet);
             else
-            {
-                volumeDataSet.SetAxisUnit(3, "m/s");
-            }
+                volumeDataSet.SetAxisUnit(3, velocityUnitToSet);
+
 
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
@@ -419,7 +416,7 @@ namespace VolumeData
                         var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
                         var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
                         feature.SetBounds(boxMin, boxMax);
-                        feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
+                        feature.RawData = new [] {sourceStats.sum, sourceStats.peak, sourceStats.channelVsys, sourceStats.channelW20, sourceStats.veloVsys, sourceStats.veloW20};
                         _maskFeatureSet.FeatureManager.NeedToRespawnMenuList = true;
                         
                     }
@@ -435,7 +432,7 @@ namespace VolumeData
                     var boxMin = new Vector3(sourceStats.minX, sourceStats.minY, sourceStats.minZ);
                     var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
                     var name = $"Masked Source #{maskVal}";
-                    var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
+                    var rawStrings = new [] {sourceStats.sum, sourceStats.peak, sourceStats.channelVsys, sourceStats.channelW20, sourceStats.veloVsys, sourceStats.veloW20};
                     var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, _maskFeatureSet.FeatureList.Count, maskVal - 1, rawStrings, _maskFeatureSet, _maskFeatureSet.FeatureList[0].Visible);
                     _maskFeatureSet.AddFeature(feature);
                 }
@@ -1407,31 +1404,7 @@ namespace VolumeData
             StringBuilder attributeToCheckSB = new StringBuilder(attributeToCheck);
             return AstTool.HasAttribute(AstFrameSet, attributeToCheckSB);
         }
-
-        public void MakeDepthReadable(double z)
-        {
-            string depthUnit = GetAxisUnit(3);
-            switch (depthUnit)
-            {
-                case "m/s":
-                    if (Mathf.Abs((float) z) >= 1000)
-                        SetAxisUnit(3, "km/s");
-                    break;
-                case "km/s":
-                    if (Mathf.Abs((float) z) < 1)
-                        SetAxisUnit(3, "m/s");
-                    break;
-                case "Hz":
-                    if (Mathf.Abs((float) z) >= 1.0E9)
-                        SetAxisUnit(3, "GHz");
-                    break;
-                case "GHz":
-                    if (Mathf.Abs((float) z) < 1)
-                        SetAxisUnit(3, "Hz");
-                    break;
-            }
-        }
-
+        
         public string GetConvertedDepth(double zIn)
         {
             if (!HasRestFrequency)
@@ -1444,26 +1417,6 @@ namespace VolumeData
             string unit = GetAstAltAttribute("Unit(3)");
             double zOut, dummyX, dummyY;
             AstTool.Transform3D(AstAltSpecSet, 1, 1, zIn, 1, out dummyX, out dummyY, out zOut);
-            switch (unit)
-            {
-                case "m/s":
-                    if (Mathf.Abs((float) zOut) >= 1000)
-                        SetAltAxisUnit(3, "km/s");
-                    break;
-                case "km/s":
-                    if (Mathf.Abs((float) zOut) < 1)
-                        SetAltAxisUnit(3, "m/s");
-                    break;
-                case "Hz":
-                    if (Mathf.Abs((float) zOut) >= 1.0E9)
-                        SetAltAxisUnit(3, "GHz");
-                    break;
-                case "GHz":
-                    if (Mathf.Abs((float) zOut) < 1)
-                        SetAltAxisUnit(3, "Hz");
-                    break;
-            }
-
             return $"{system}: {GetFormattedAltCoord(zOut),12} {unit}";
         }
 

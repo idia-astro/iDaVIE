@@ -215,7 +215,7 @@ namespace DataFeatures
                 var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
                 var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
                 var featureName = $"Masked Source #{item.Key}";
-                var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
+                var rawStrings = new [] {sourceStats.sum, sourceStats.peak, sourceStats.channelVsys, sourceStats.channelW20, sourceStats.veloVsys, sourceStats.veloW20};
                 AddFeature(new Feature(boxMin, boxMax, FeatureColor, featureName, FeatureList.Count, item.Key - 1, rawStrings, this, false));
             }
             FeatureMenuScrollerDataSource.InitData();
@@ -233,7 +233,7 @@ namespace DataFeatures
             IntPtr volumeAstFrame = VolumeRenderer.AstFrame;
             var setCoordinates = mapping.Keys;
             bool containsBoxes = false;
-            List<string>[] featureRawData = new List<string>[voTable.Rows.Count];
+            List<double>[] featureRawData = new List<double>[voTable.Rows.Count];
             ZType = CoordTypes.cartesian;
             int[] posIndices = new int[3];
             IntPtr astFrameSet = IntPtr.Zero;
@@ -323,11 +323,11 @@ namespace DataFeatures
             xPhys = yPhys = zPhys = double.NaN;
             for (int row = 0; row < voTable.Rows.Count; row++)   // For each row (feature)...
             {
-                featureRawData[row] = new List<string>();
+                featureRawData[row] = new List<double>();
                 for (int i = 0; i < voTable.Columns.Count; i++)
                 {
                     if (columnsMask[i])
-                        featureRawData[row].Add(voTable.Rows[row].ColumnData[i].ToString());
+                        featureRawData[row].Add(Convert.ToDouble(voTable.Rows[row].ColumnData[i]));
                 }
                 if (containsPositions && !containsBoxes)
                 {

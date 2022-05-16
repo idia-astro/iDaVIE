@@ -18,12 +18,12 @@ namespace DataFeatures
         private Bounds _unityBounds;
         private Vector3 _position;
         private Vector3[] _corners = new Vector3[2];
-        public string[] RawData { get; set; }
+        public double[] RawData { get; set; }
         public FeatureSetRenderer FeatureSetParent { get; private set; }
 
         public bool StatusChanged;
 
-        public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, string name, int index, int id, string[] rawData, FeatureSetRenderer parent, bool startVisible)
+        public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, string name, int index, int id, double[] rawData, FeatureSetRenderer parent, bool startVisible)
         {
             FeatureSetParent = parent;
             Index = index;
