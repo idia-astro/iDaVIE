@@ -826,6 +826,14 @@ namespace VolumeData
             if (_dataSet != null && _maskDataSet == null)
             {
                 _maskDataSet = _dataSet.GenerateEmptyMask();
+                if (!FactorOverride)
+                {
+                    _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
+                }
+
+                _maskDataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
+                _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.DataCube);
+                
                 // Re-crop both datasets to ensure that they match correctly
                 if (!CropToFeature() && IsFullResolution)
                 {
