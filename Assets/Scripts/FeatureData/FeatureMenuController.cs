@@ -220,10 +220,10 @@ public class FeatureMenuController : MonoBehaviour
         }
         if (featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys != null)
         {
-            for (int i = 0; i < featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys.Length; i++)
+            for (var i = 0; i < featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys.Length; i++)
             {
-                textObject.GetComponent<TMP_Text>().text +=
-                    $"{featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys[i]} : {featureSetManager.SelectedFeature.RawData[i]}{Environment.NewLine}";
+                var dataToAdd = featureSetManager.SelectedFeature.FeatureSetParent.RawDataTypes[i] == "float" ? $"{Convert.ToDouble(featureSetManager.SelectedFeature.RawData[i]):F3}" : featureSetManager.SelectedFeature.RawData[i];
+                textObject.GetComponent<TMP_Text>().text += $"{featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys[i]} : {dataToAdd}{Environment.NewLine}";
             }
         }
     }
