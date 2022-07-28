@@ -223,7 +223,7 @@ public class FeatureMenuController : MonoBehaviour
             for (int i = 0; i < featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys.Length; i++)
             {
                 textObject.GetComponent<TMP_Text>().text +=
-                    $"{featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys[i]} : {featureSetManager.SelectedFeature.RawData[i]:F3}{Environment.NewLine}";
+                    $"{featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys[i]} : {featureSetManager.SelectedFeature.RawData[i]}{Environment.NewLine}";
             }
         }
     }
