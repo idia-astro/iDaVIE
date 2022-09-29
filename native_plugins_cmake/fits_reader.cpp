@@ -200,9 +200,37 @@ int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array,
     return success;
 }
 
-int FitsCreateHdrPtr(fitsfile *fptr, char **header, int *nkeys, int *status)    //need to free header string with FreeFitsMemory() after use
+int FitsCreateHdrPtrForAst(fitsfile *fptr, char **header, int *nkeys, int *status)    //need to free header string with FreeFitsMemory() after use
 {
-    int success = fits_hdr2str(fptr, 0, NULL, 0, header, nkeys, status);
+    int spectrumIndex;
+    char *ctype4 = nullptr, *subtype4 = nullptr, *excludeList[12];
+    fits_read_keyword(fptr, "CTYPE4", ctype4, NULL, status);
+    strncpy(subtype4, ctype4, 4);
+
+    // Check if spectral axis is in axis 4, otherwise assume it is in axis 3. Exclude the non-spectral axis of the two.
+    if (strcmp(subtype4, "FREQ") || strcmp(subtype4, "VRAD") || strcmp(subtype4, "VOPT") || strcmp(subtype4, "VELO") || strcmp(subtype4, "ZOPT"))
+    {
+        excludeList[0] = "C????3";
+        excludeList[1] = "NAXIS3";
+    }
+    else
+    {
+        excludeList[0] = "C????4";
+        excludeList[1] = "NAXIS4";
+    }
+    // Exclude higher dimension axes for AST
+    excludeList[2] = "C????5";
+    excludeList[3] = "C????6";
+    excludeList[4] = "C????7";
+    excludeList[5] = "C????8";
+    excludeList[6] = "C????9";
+    excludeList[7] = "NAXIS5";
+    excludeList[8] = "NAXIS6";
+    excludeList[9] = "NAXIS7";
+    excludeList[10] = "NAXIS8";
+    excludeList[11] = "NAXIS9";
+
+    int success = fits_hdr2str(fptr, 1, excludeList, 1, header, nkeys, status);
     return success;
 }
 

@@ -205,7 +205,7 @@ namespace VolumeData
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
-            if (FitsReader.FitsCreateHdrPtr(fptr, out volumeDataSet.FitsHeader, out volumeDataSet.NumberHeaderKeys, out status) != 0)
+            if (FitsReader.FitsCreateHdrPtrForAst(fptr, out volumeDataSet.FitsHeader, out volumeDataSet.NumberHeaderKeys, out status) != 0)
             {
                 Debug.Log("Fits create header pointer failure... code #" + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
