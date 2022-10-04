@@ -1,3 +1,5 @@
+#include <string>
+#include <regex>
 #include "fits_reader.h"
 
 int FitsOpenFileReadOnly(fitsfile **fptr, char* filename,  int *status)
@@ -202,36 +204,58 @@ int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array,
 
 int FitsCreateHdrPtrForAst(fitsfile *fptr, char **header, int *nkeys, int *status)    //need to free header string with FreeFitsMemory() after use
 {
-    int spectrumIndex;
-    char *ctype4 = nullptr, *subtype4 = nullptr, *excludeList[12];
-    fits_read_keyword(fptr, "CTYPE4", ctype4, NULL, status);
-    strncpy(subtype4, ctype4, 4);
-
-    // Check if spectral axis is in axis 4, otherwise assume it is in axis 3. Exclude the non-spectral axis of the two.
-    if (strcmp(subtype4, "FREQ") || strcmp(subtype4, "VRAD") || strcmp(subtype4, "VOPT") || strcmp(subtype4, "VELO") || strcmp(subtype4, "ZOPT"))
+    bool needToSwap = false;
+    int numberExcl = 12;
+    char ctype4[68], subtype4[5];
+    char **excludeList = new char*[sizeof(char*) * numberExcl];
+    for (int i = 0; i < numberExcl; i++)
     {
-        excludeList[0] = "C????3";
-        excludeList[1] = "NAXIS3";
+        excludeList[i] = new char[7];
     }
-    else
+    for (int i = 0; i < 5; i++)
     {
-        excludeList[0] = "C????4";
-        excludeList[1] = "NAXIS4";
+        std::string cString = "C????" + std::to_string(i + 5);
+        std::string nString = "NAXIS" + std::to_string(i + 5);
+        strcpy_s(excludeList[i], 7, cString.c_str() );
+        strcpy_s(excludeList[i + 5], 7, nString.c_str());
     }
-    // Exclude higher dimension axes for AST
-    excludeList[2] = "C????5";
-    excludeList[3] = "C????6";
-    excludeList[4] = "C????7";
-    excludeList[5] = "C????8";
-    excludeList[6] = "C????9";
-    excludeList[7] = "NAXIS5";
-    excludeList[8] = "NAXIS6";
-    excludeList[9] = "NAXIS7";
-    excludeList[10] = "NAXIS8";
-    excludeList[11] = "NAXIS9";
-
-    int success = fits_hdr2str(fptr, 1, excludeList, 1, header, nkeys, status);
-    return success;
+    if (fits_read_keyword(fptr, "CTYPE4", ctype4, nullptr, status) == 202) {
+        *status = 0;
+        strcpy_s(excludeList[10], 7, "C????4");
+        strcpy_s(excludeList[11], 7, "NAXIS4");
+        //if an axis 4, check if it is spectral, in which case swap with axis 3 later
+    } else {
+        strncpy_s(subtype4, 5,  ctype4 + 1, 4);
+        subtype4[4] = '\0';
+        if (strcmp(subtype4, "FREQ") == 0 || strcmp(subtype4, "VRAD") == 0 || strcmp(subtype4, "VOPT") == 0 ||
+        strcmp(subtype4, "VELO") == 0 || strcmp(subtype4, "ZOPT") == 0)
+        {
+            needToSwap = true;
+            strcpy_s(excludeList[10], 7, "C????3");
+            strcpy_s(excludeList[11], 7, "NAXIS3");
+        }
+        else
+        {
+            strcpy_s(excludeList[10], 7, "C????4");
+            strcpy_s(excludeList[11], 7, "NAXIS4");
+        }
+        int dimensions = 3;
+        fits_update_key(fptr, TINT, "NAXIS", &dimensions, nullptr, status);
+        fits_hdr2str(fptr, 1, excludeList, numberExcl, header, nkeys, status);
+        if (needToSwap)
+        {
+            std::string headerString(*header);
+            std::regex regPattern ("(CTYPE|CDELT|CRPIX|CRVAL|CUNIT|NAXIS|CROTA)(4)");
+            std::string result = std::regex_replace(headerString, regPattern, "$013");
+            strcpy_s(*header, *nkeys * 80 + 1, result.c_str());
+        }
+    }
+    for (int i = 0; i < numberExcl; i++)
+    {
+        delete[](excludeList[i]);
+    }
+    delete[](excludeList);
+    return EXIT_SUCCESS;
 }
 
 int CreateEmptyImageInt16(int64_t sizeX, int64_t sizeY, int64_t sizeZ, int16_t** array)
