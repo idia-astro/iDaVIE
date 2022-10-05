@@ -239,16 +239,16 @@ int FitsCreateHdrPtrForAst(fitsfile *fptr, char **header, int *nkeys, int *statu
             strcpy_s(excludeList[10], 7, "C????4");
             strcpy_s(excludeList[11], 7, "NAXIS4");
         }
-        int dimensions = 3;
-        fits_update_key(fptr, TINT, "NAXIS", &dimensions, nullptr, status);
-        fits_hdr2str(fptr, 1, excludeList, numberExcl, header, nkeys, status);
-        if (needToSwap)
-        {
-            std::string headerString(*header);
-            std::regex regPattern ("(CTYPE|CDELT|CRPIX|CRVAL|CUNIT|NAXIS|CROTA)(4)");
-            std::string result = std::regex_replace(headerString, regPattern, "$013");
-            strcpy_s(*header, *nkeys * 80 + 1, result.c_str());
-        }
+    }
+    int dimensions = 3;
+    fits_update_key(fptr, TINT, "NAXIS", &dimensions, nullptr, status);
+    fits_hdr2str(fptr, 1, excludeList, numberExcl, header, nkeys, status);
+    if (needToSwap)
+    {
+        std::string headerString(*header);
+        std::regex regPattern ("(CTYPE|CDELT|CRPIX|CRVAL|CUNIT|NAXIS|CROTA)(4)");
+        std::string result = std::regex_replace(headerString, regPattern, "$013");
+        strcpy_s(*header, *nkeys * 80 + 1, result.c_str());
     }
     for (int i = 0; i < numberExcl; i++)
     {
