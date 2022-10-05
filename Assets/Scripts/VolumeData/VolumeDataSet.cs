@@ -469,6 +469,21 @@ namespace VolumeData
             if (AstTool.InitAstFrameSet(out astFrameSet, FitsHeader, restFreq) != 0)
                 Debug.Log("Failed to recreate AstFrameSet!");
             AstFrameSet = astFrameSet; //Need to delete old one?
+            
+            //Reset velocity units and skyframe formatting on new astframe
+            var config = Config.Instance;
+            if (config.angleCoordFormat == AngleCoordFormat.Decimal)
+            {
+                AstTool.SetString(astFrameSet, new StringBuilder("Format(1)"), new StringBuilder("d.*"));
+                AstTool.SetString(astFrameSet, new StringBuilder("Format(2)"), new StringBuilder("d.*"));
+            }
+            string primaryFrameZUnit = GetAstAttribute("System(3)");
+            AstframeIsFreq = primaryFrameZUnit == "FREQ";
+            var velocityUnitToSet = config.velocityUnit == VelocityUnit.Km ? "km/s" : "m/s";
+            if (AstframeIsFreq)
+                SetAltAxisUnit(3, velocityUnitToSet);
+            else
+                SetAxisUnit(3, velocityUnitToSet);
         }
 
         public void CreateAltSpecFrame()
