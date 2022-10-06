@@ -13,6 +13,8 @@ RWTexture2D<float> Moment1Result;
 Texture3D<float> DataCube;
 Texture3D<int> MaskCube;
 
+RWStructuredBuffer<float> Spectrum;
+
 float Threshold;
 int Depth;
 
@@ -31,7 +33,7 @@ void MomentsGenerator (uint3 id : SV_DispatchThreadID)
         if (val >= Threshold)
         {
             sum += val;
-            sumWeighted += val * i;
+            sumWeighted += val * Spectrum[i];
         }
     }
     Moment0Result[id.xy] = sum;
@@ -53,7 +55,7 @@ void MaskedMomentsGenerator (uint3 id : SV_DispatchThreadID)
         {
             float val = DataCube[index];
             sum += val;
-            sumWeighted += val * i;            
+            sumWeighted += val * Spectrum[i];            
         }
     }
     Moment0Result[id.xy] = sum;
