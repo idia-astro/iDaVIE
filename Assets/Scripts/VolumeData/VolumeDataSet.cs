@@ -353,7 +353,7 @@ namespace VolumeData
             
             //Check if AstFrameSet or AltSpecSet have velocity
             string primaryFrameZUnit = volumeDataSet.GetAstAttribute("System(3)");
-            volumeDataSet.AstframeIsFreq = primaryFrameZUnit == "FREQ";
+            volumeDataSet.AstframeIsFreq = primaryFrameZUnit == "FREQ" || primaryFrameZUnit == "AWAV";
             var velocityUnitToSet = config.velocityUnit == VelocityUnit.Km ? "km/s" : "m/s";
             if (volumeDataSet.AstframeIsFreq)
                 volumeDataSet.SetAltAxisUnit(3, velocityUnitToSet);
@@ -478,7 +478,7 @@ namespace VolumeData
                 AstTool.SetString(astFrameSet, new StringBuilder("Format(2)"), new StringBuilder("d.*"));
             }
             string primaryFrameZUnit = GetAstAttribute("System(3)");
-            AstframeIsFreq = primaryFrameZUnit == "FREQ";
+            AstframeIsFreq = primaryFrameZUnit == "FREQ" || primaryFrameZUnit == "AWAV";
             var velocityUnitToSet = config.velocityUnit == VelocityUnit.Km ? "km/s" : "m/s";
             if (AstframeIsFreq)
                 SetAltAxisUnit(3, velocityUnitToSet);
@@ -1484,6 +1484,9 @@ namespace VolumeData
                 case "WAVE":
                 case "WAVELEN":
                 case "AWAV":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "AIRWAVE":
                 case "ZOPT":
                 case "REDSHIFT":
