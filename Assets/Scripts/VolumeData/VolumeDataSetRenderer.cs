@@ -356,7 +356,7 @@ namespace VolumeData
             if (_momentMapRenderer)
             {
                 _momentMapRenderer.DataCube = _dataSet.DataCube;
-                _momentMapRenderer.Inverted = _dataSet.VelocityDirection == -1;
+                _momentMapRenderer.Inverted = _dataSet.VelocityDirection == 1;
                 _momentMapRenderer.momentMapMenuController = FindObjectOfType<VolumeCommandController>().momentMapMenuController;
 
                 if (_maskDataSet != null)
