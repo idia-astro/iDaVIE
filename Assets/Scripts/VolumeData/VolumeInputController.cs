@@ -1026,27 +1026,8 @@ public class VolumeInputController : MonoBehaviour
         {
             dataSet.GetFitsLengthsAst(regionMin, regionMax + Vector3.one, out xLength, out yLength, out zLength, out angle);
             string depthUnit = dataSet.GetAxisUnit(3);
-            switch (depthUnit)
-            {
-                case "m/s":
-                    if (Mathf.Abs((float) zLength) >= 1000)
-                        dataSet.SetAxisUnit(3, "km/s");
-                    break;
-                case "km/s":
-                    if (Mathf.Abs((float) zLength) < 1)
-                        dataSet.SetAxisUnit(3, "m/s");
-                    break;
-                case "Hz":
-                    if (Mathf.Abs((float) zLength) >= 1.0E9)
-                        dataSet.SetAxisUnit(3, "GHz");
-                    break;
-                case "GHz":
-                    if (Mathf.Abs((float) zLength) < 1)
-                        dataSet.SetAxisUnit(3, "Hz");
-                    break;
-            }
             stringToReturn += $"Angle: {FormatAngle(angle)}{Environment.NewLine}"
-                            + $"Depth: {dataSet.GetFormattedCoord(Math.Abs(zLength), 3),15} {dataSet.GetAstAttribute("Unit(3)")}";
+                              + $"Depth: {dataSet.GetFormattedCoord(Math.Abs(zLength), 3),15} {dataSet.GetAstAttribute("Unit(3)")}";
         }
 
         return stringToReturn;
@@ -1062,19 +1043,16 @@ public class VolumeInputController : MonoBehaviour
         {
             return "";
         }
-        double physX, physY, physZ, normX, normY;
-        double normZ = 0;
-
         string stringToReturn = "";
         
         if (dataSetRenderer.HasWCS)
         {
+            double physX, physY, physZ, normX, normY;
+            double normZ = 0;
             dataSet.GetFitsCoordsAst(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z, out physX, out physY, out physZ);
             dataSet.GetNormCoords(physX, physY, physZ, out normX, out normY, out normZ);
-            dataSet.MakeDepthReadable(normZ);
-
             stringToReturn += $"WCS: ({dataSet.GetFormattedCoord(normX, 1)}, {dataSet.GetFormattedCoord(normY, 2)}){Environment.NewLine}"
-               + $"{dataSet.GetAstAttribute("System(3)")}: {dataSet.GetFormattedCoord(normZ, 3),10} {dataSet.GetAstAttribute("Unit(3)")}{Environment.NewLine}";
+                              + $"{dataSet.GetAstAttribute("System(3)")}: {dataSet.GetFormattedCoord(normZ, 3),10} {dataSet.GetAstAttribute("Unit(3)")}{Environment.NewLine}";
         }
         
         stringToReturn += $"Image: ({voxelCoordinate.x,5}, {voxelCoordinate.y,5}, {voxelCoordinate.z,5}){Environment.NewLine}"

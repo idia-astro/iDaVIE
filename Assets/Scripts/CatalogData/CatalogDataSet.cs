@@ -362,7 +362,7 @@ namespace CatalogData
                     float[] numericDataFromColumn = new float[nrows];
                     Marshal.Copy(ptrDataFromColumn, numericDataFromColumn, 0, (int)nrows);
                     dataSet.DataColumns[column.NumericIndex] = numericDataFromColumn;
-                    FitsReader.FreeMemory(ptrDataFromColumn);
+                    FitsReader.FreeFitsPtrMemory(ptrDataFromColumn);
 
                 }
                 else if (loadMeta)
@@ -380,8 +380,8 @@ namespace CatalogData
                     {
                         dataSet.MetaColumns[column.MetaIndex][row] = Marshal.PtrToStringAnsi(metaDataFromColumn[row]);
                     }
-                    FitsReader.FreeMemory(ptrDataFromColumn);
-                    FitsReader.FreeMemory(ptrRawDataFromColumn);
+                    FitsReader.FreeFitsPtrMemory(ptrDataFromColumn);
+                    FitsReader.FreeFitsPtrMemory(ptrRawDataFromColumn);
                 }
             }
             FitsReader.FitsCloseFile(fptr, out status);

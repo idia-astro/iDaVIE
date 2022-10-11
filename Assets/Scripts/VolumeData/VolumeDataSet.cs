@@ -19,6 +19,12 @@ namespace VolumeData
         Sexagesimal = 0,
         Decimal = 1
     }
+
+    public enum VelocityUnit
+    {
+        Km = 0,
+        M = 1
+    }
     
     public struct VoxelEntry
     {
@@ -74,7 +80,7 @@ namespace VolumeData
         public List<BrushStrokeTransaction> BrushStrokeHistory { get; private set; }
         public List<BrushStrokeTransaction> BrushStrokeRedoQueue { get; private set; }
         public Dictionary<int, DataAnalysis.SourceStats> SourceStatsDict { get; private set; }
-        
+
         public string FileName { get; set; }
         public long XDim { get; private set; }
         public long YDim { get; private set; }
@@ -112,6 +118,7 @@ namespace VolumeData
         public int NumberHeaderKeys;
         public IntPtr AstFrameSet { get; private set; }
         public IntPtr AstAltSpecSet { get; private set; }
+        public bool AstframeIsFreq = false;
         public bool HasFitsRestFrequency { get; private set; } = false;
         public bool HasRestFrequency { get; set; }
         public double FitsRestFrequency { get; set;}
@@ -179,7 +186,7 @@ namespace VolumeData
             DataAnalysis.GetHistogram(dataPtr, numberDataPoints, histogramSize, volumeDataSet.MinValue, volumeDataSet.MaxValue, out histogramPtr);
             Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
             if (histogramPtr != IntPtr.Zero)
-                DataAnalysis.FreeMemory(histogramPtr);
+                DataAnalysis.FreeDataAnalysisMemory(histogramPtr);
             return volumeDataSet;
         }
 
@@ -198,7 +205,7 @@ namespace VolumeData
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
-            if (FitsReader.FitsCreateHdrPtr(fptr, out volumeDataSet.FitsHeader, out volumeDataSet.NumberHeaderKeys, out status) != 0)
+            if (FitsReader.FitsCreateHdrPtrForAst(fptr, out volumeDataSet.FitsHeader, out volumeDataSet.NumberHeaderKeys, out status) != 0)
             {
                 Debug.Log("Fits create header pointer failure... code #" + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
@@ -246,7 +253,7 @@ namespace VolumeData
             volumeDataSet.cubeSize = new long[cubeDimensions];
             Marshal.Copy(dataPtr, volumeDataSet.cubeSize, 0, cubeDimensions);
             if (dataPtr != IntPtr.Zero)
-                FitsReader.FreeMemory(dataPtr);
+                FitsReader.FreeFitsPtrMemory(dataPtr);
             long numberDataPoints = volumeDataSet.cubeSize[0] * volumeDataSet.cubeSize[1] * volumeDataSet.cubeSize[index2];
             IntPtr fitsDataPtr = IntPtr.Zero;
             if (volumeDataSet.IsMask)
@@ -311,7 +318,7 @@ namespace VolumeData
                 DataAnalysis.GetHistogram(fitsDataPtr, numberDataPoints, histogramSize, volumeDataSet.MinValue, volumeDataSet.MaxValue, out histogramPtr);
                 Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
                 if (histogramPtr != IntPtr.Zero)
-                    DataAnalysis.FreeMemory(histogramPtr);
+                    DataAnalysis.FreeDataAnalysisMemory(histogramPtr);
                 volumeDataSet.HasFitsRestFrequency =
                     volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ") || volumeDataSet.HeaderDictionary.ContainsKey("RESTFREQ");
             }
@@ -334,12 +341,25 @@ namespace VolumeData
                 AstTool.SetString(astFrameSet, new StringBuilder("Format(1)"), new StringBuilder("d.*"));
                 AstTool.SetString(astFrameSet, new StringBuilder("Format(2)"), new StringBuilder("d.*"));
             }
-
+            
             volumeDataSet.FitsData = fitsDataPtr;
             volumeDataSet.XDim = volumeDataSet.cubeSize[0];
             volumeDataSet.YDim = volumeDataSet.cubeSize[1];
             volumeDataSet.ZDim = volumeDataSet.cubeSize[index2];
             volumeDataSet.AstFrameSet = astFrameSet;
+            
+            //Create alternate AstFrame with frequency or velocity depending on primary's unit
+            volumeDataSet.CreateAltSpecFrame();
+            
+            //Check if AstFrameSet or AltSpecSet have velocity
+            string primaryFrameZUnit = volumeDataSet.GetAstAttribute("System(3)");
+            volumeDataSet.AstframeIsFreq = primaryFrameZUnit == "FREQ" || primaryFrameZUnit == "AWAV";
+            var velocityUnitToSet = config.velocityUnit == VelocityUnit.Km ? "km/s" : "m/s";
+            if (volumeDataSet.AstframeIsFreq)
+                volumeDataSet.SetAltAxisUnit(3, velocityUnitToSet);
+            else
+                volumeDataSet.SetAxisUnit(3, velocityUnitToSet);
+
 
             volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
@@ -372,8 +392,9 @@ namespace VolumeData
                 return;
             }
             var sourceStats = SourceStatsDict[maskVal];
-
-            DataAnalysis.GetSourceStats(ImageDataPtr, FitsData, XDim, YDim, ZDim, DataAnalysis.SourceInfo.FromSourceStats(sourceStats, maskVal), ref sourceStats);
+            //Check if AstFrameSet or AltSpecSet have velocity
+            var frameWithVelocity = AstframeIsFreq ?  AstAltSpecSet : AstFrameSet;
+            DataAnalysis.GetSourceStats(ImageDataPtr, FitsData, XDim, YDim, ZDim, DataAnalysis.SourceInfo.FromSourceStats(sourceStats, maskVal), ref sourceStats, frameWithVelocity);
             if (sourceStats.numVoxels > 0)
             {
                 SourceStatsDict[maskVal] = sourceStats;
@@ -396,7 +417,7 @@ namespace VolumeData
                         var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
                         var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
                         feature.SetBounds(boxMin, boxMax);
-                        feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
+                        feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
                         _maskFeatureSet.FeatureManager.NeedToRespawnMenuList = true;
                         
                     }
@@ -412,7 +433,7 @@ namespace VolumeData
                     var boxMin = new Vector3(sourceStats.minX, sourceStats.minY, sourceStats.minZ);
                     var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
                     var name = $"Masked Source #{maskVal}";
-                    var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}"};
+                    var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
                     var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, _maskFeatureSet.FeatureList.Count, maskVal - 1, rawStrings, _maskFeatureSet, _maskFeatureSet.FeatureList[0].Visible);
                     _maskFeatureSet.AddFeature(feature);
                 }
@@ -448,6 +469,21 @@ namespace VolumeData
             if (AstTool.InitAstFrameSet(out astFrameSet, FitsHeader, restFreq) != 0)
                 Debug.Log("Failed to recreate AstFrameSet!");
             AstFrameSet = astFrameSet; //Need to delete old one?
+            
+            //Reset velocity units and skyframe formatting on new astframe
+            var config = Config.Instance;
+            if (config.angleCoordFormat == AngleCoordFormat.Decimal)
+            {
+                AstTool.SetString(astFrameSet, new StringBuilder("Format(1)"), new StringBuilder("d.*"));
+                AstTool.SetString(astFrameSet, new StringBuilder("Format(2)"), new StringBuilder("d.*"));
+            }
+            string primaryFrameZUnit = GetAstAttribute("System(3)");
+            AstframeIsFreq = primaryFrameZUnit == "FREQ" || primaryFrameZUnit == "AWAV";
+            var velocityUnitToSet = config.velocityUnit == VelocityUnit.Km ? "km/s" : "m/s";
+            if (AstframeIsFreq)
+                SetAltAxisUnit(3, velocityUnitToSet);
+            else
+                SetAxisUnit(3, velocityUnitToSet);
         }
 
         public void CreateAltSpecFrame()
@@ -469,7 +505,7 @@ namespace VolumeData
             DataAnalysis.GetHistogram(volumeDataSet.FitsData, numberDataPoints, volumeDataSet.Histogram.Length, min, max, out histogramPtr);
             Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, volumeDataSet.Histogram.Length);
             if (histogramPtr != IntPtr.Zero)
-                DataAnalysis.FreeMemory(histogramPtr);
+                DataAnalysis.FreeDataAnalysisMemory(histogramPtr);
         }
         
         public VolumeDataSet GenerateEmptyMask()
@@ -560,7 +596,7 @@ namespace VolumeData
 
             // TODO output cached file
             if (downsampled && reducedData != IntPtr.Zero)
-                DataAnalysis.FreeMemory(reducedData);
+                DataAnalysis.FreeDataAnalysisMemory(reducedData);
         }
 
         public void GenerateCroppedVolumeTexture(FilterMode textureFilter, Vector3Int cropStart, Vector3Int cropEnd, Vector3Int downsample)
@@ -668,7 +704,7 @@ namespace VolumeData
             }
 
             if (regionData != IntPtr.Zero)
-                DataAnalysis.FreeMemory(regionData);
+                DataAnalysis.FreeDataAnalysisMemory(regionData);
             sw.Stop();
             Debug.Log(
                 $"Cropped into {cubeSize.x} x {cubeSize.y} x {cubeSize.z} region ({cubeSize.x * cubeSize.y * cubeSize.z * 4e-6} MB) in {sw.ElapsedMilliseconds} ms");
@@ -1254,7 +1290,7 @@ namespace VolumeData
             if (status != 0)
                 Debug.LogError($"Fits Read mask cube data error #{status.ToString()}");
             if (subCubeData != IntPtr.Zero)
-                FitsReader.FreeMemory(subCubeData);
+                FitsReader.FreeFitsPtrMemory(subCubeData);
             return status;
         }
         public int SaveMask(IntPtr cubeFitsPtr, string filename)
@@ -1399,31 +1435,7 @@ namespace VolumeData
             StringBuilder attributeToCheckSB = new StringBuilder(attributeToCheck);
             return AstTool.HasAttribute(AstFrameSet, attributeToCheckSB);
         }
-
-        public void MakeDepthReadable(double z)
-        {
-            string depthUnit = GetAxisUnit(3);
-            switch (depthUnit)
-            {
-                case "m/s":
-                    if (Mathf.Abs((float) z) >= 1000)
-                        SetAxisUnit(3, "km/s");
-                    break;
-                case "km/s":
-                    if (Mathf.Abs((float) z) < 1)
-                        SetAxisUnit(3, "m/s");
-                    break;
-                case "Hz":
-                    if (Mathf.Abs((float) z) >= 1.0E9)
-                        SetAxisUnit(3, "GHz");
-                    break;
-                case "GHz":
-                    if (Mathf.Abs((float) z) < 1)
-                        SetAxisUnit(3, "Hz");
-                    break;
-            }
-        }
-
+        
         public string GetConvertedDepth(double zIn)
         {
             if (!HasRestFrequency)
@@ -1436,26 +1448,6 @@ namespace VolumeData
             string unit = GetAstAltAttribute("Unit(3)");
             double zOut, dummyX, dummyY;
             AstTool.Transform3D(AstAltSpecSet, 1, 1, zIn, 1, out dummyX, out dummyY, out zOut);
-            switch (unit)
-            {
-                case "m/s":
-                    if (Mathf.Abs((float) zOut) >= 1000)
-                        SetAltAxisUnit(3, "km/s");
-                    break;
-                case "km/s":
-                    if (Mathf.Abs((float) zOut) < 1)
-                        SetAltAxisUnit(3, "m/s");
-                    break;
-                case "Hz":
-                    if (Mathf.Abs((float) zOut) >= 1.0E9)
-                        SetAltAxisUnit(3, "GHz");
-                    break;
-                case "GHz":
-                    if (Mathf.Abs((float) zOut) < 1)
-                        SetAltAxisUnit(3, "Hz");
-                    break;
-            }
-
             return $"{system}: {GetFormattedAltCoord(zOut),12} {unit}";
         }
 
@@ -1492,6 +1484,9 @@ namespace VolumeData
                 case "WAVE":
                 case "WAVELEN":
                 case "AWAV":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "AIRWAVE":
                 case "ZOPT":
                 case "REDSHIFT":
@@ -1525,7 +1520,7 @@ namespace VolumeData
                 if (randomCube)
                     Marshal.FreeHGlobal(FitsData);
                 else
-                    FitsReader.FreeMemory(FitsData);
+                    FitsReader.FreeFitsPtrMemory(FitsData);
                 FitsData = IntPtr.Zero;
             }
             if (FitsHeader != IntPtr.Zero)

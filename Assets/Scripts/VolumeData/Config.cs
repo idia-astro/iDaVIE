@@ -22,6 +22,9 @@ namespace VolumeData
         public AngleCoordFormat angleCoordFormat = AngleCoordFormat.Sexagesimal;
         
         [JsonConverter(typeof(StringEnumConverter))]
+        public VelocityUnit velocityUnit = VelocityUnit.Km;
+
+        [JsonConverter(typeof(StringEnumConverter))]
         public ColorMapEnum defaultColorMap = ColorMapEnum.Inferno;
 
         [JsonConverter(typeof(StringEnumConverter))]
