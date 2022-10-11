@@ -1,3 +1,5 @@
+#include <string>
+#include <regex>
 #include "fits_reader.h"
 
 int FitsOpenFileReadOnly(fitsfile **fptr, char* filename,  int *status)
@@ -200,10 +202,60 @@ int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array,
     return success;
 }
 
-int FitsCreateHdrPtr(fitsfile *fptr, char **header, int *nkeys, int *status)    //need to free header string with FreeFitsMemory() after use
+int FitsCreateHdrPtrForAst(fitsfile *fptr, char **header, int *nkeys, int *status)    //need to free header string with FreeFitsMemory() after use
 {
-    int success = fits_hdr2str(fptr, 0, NULL, 0, header, nkeys, status);
-    return success;
+    bool needToSwap = false;
+    int numberExcl = 12;
+    char ctype4[68], subtype4[5];
+    char **excludeList = new char*[sizeof(char*) * numberExcl];
+    for (int i = 0; i < numberExcl; i++)
+    {
+        excludeList[i] = new char[7];
+    }
+    for (int i = 0; i < 5; i++)
+    {
+        std::string cString = "C????" + std::to_string(i + 5);
+        std::string nString = "NAXIS" + std::to_string(i + 5);
+        strcpy_s(excludeList[i], 7, cString.c_str() );
+        strcpy_s(excludeList[i + 5], 7, nString.c_str());
+    }
+    if (fits_read_keyword(fptr, "CTYPE4", ctype4, nullptr, status) == 202) {
+        *status = 0;
+        strcpy_s(excludeList[10], 7, "C????4");
+        strcpy_s(excludeList[11], 7, "NAXIS4");
+        //if an axis 4, check if it is spectral, in which case swap with axis 3 later
+    } else {
+        strncpy_s(subtype4, 5,  ctype4 + 1, 4);
+        subtype4[4] = '\0';
+        if (strcmp(subtype4, "FREQ") == 0 || strcmp(subtype4, "VRAD") == 0 || strcmp(subtype4, "VOPT") == 0 ||
+        strcmp(subtype4, "VELO") == 0 || strcmp(subtype4, "ZOPT") == 0)
+        {
+            needToSwap = true;
+            strcpy_s(excludeList[10], 7, "C????3");
+            strcpy_s(excludeList[11], 7, "NAXIS3");
+        }
+        else
+        {
+            strcpy_s(excludeList[10], 7, "C????4");
+            strcpy_s(excludeList[11], 7, "NAXIS4");
+        }
+    }
+    int dimensions = 3;
+    fits_update_key(fptr, TINT, "NAXIS", &dimensions, nullptr, status);
+    fits_hdr2str(fptr, 1, excludeList, numberExcl, header, nkeys, status);
+    if (needToSwap)
+    {
+        std::string headerString(*header);
+        std::regex regPattern ("(CTYPE|CDELT|CRPIX|CRVAL|CUNIT|NAXIS|CROTA)(4)");
+        std::string result = std::regex_replace(headerString, regPattern, "$013");
+        strcpy_s(*header, *nkeys * 80 + 1, result.c_str());
+    }
+    for (int i = 0; i < numberExcl; i++)
+    {
+        delete[](excludeList[i]);
+    }
+    delete[](excludeList);
+    return EXIT_SUCCESS;
 }
 
 int CreateEmptyImageInt16(int64_t sizeX, int64_t sizeY, int64_t sizeZ, int16_t** array)
@@ -215,7 +267,7 @@ int CreateEmptyImageInt16(int64_t sizeX, int64_t sizeY, int64_t sizeZ, int16_t**
     return 0;
 }
 
-int FreeMemory(void* ptrToDelete)
+int FreeFitsPtrMemory(void* ptrToDelete)
 {
     delete[] ptrToDelete;
     return 0;

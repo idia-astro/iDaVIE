@@ -395,7 +395,7 @@ int GetMaskedSources(const int16_t* maskDataPtr, int64_t dimX, int64_t dimY, int
     return EXIT_SUCCESS;
 }
 
-int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dimX, int64_t dimY, int64_t dimZ, SourceInfo source, SourceStats* stats)
+int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dimX, int64_t dimY, int64_t dimZ, SourceInfo source, SourceStats* stats, AstFrameSet* frameSetPtr)
 {
     if (stats && source.minX >= 0 && source.maxX < dimX && source.minY >= 0 && source.maxY < dimY && source.minZ >= 0 && source.maxZ < dimZ)
     {
@@ -404,6 +404,11 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
         double sumY = 0.0;
         double sumZ = 0.0;
         double totalPositiveFlux = 0.0;
+        //Arrays for ast velocity conversion
+        double xInL[3];
+        double xInR[3];
+        double vOutL[3];
+        double vOutR[3];
 
         double peakFlux = std::numeric_limits<double>::lowest();
         int64_t numVoxels = 0;
@@ -514,11 +519,31 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
             {
                 stats->channelVsys = (leftChannel + rightChannel) / 2.0;
                 stats->channelW20 = rightChannel - leftChannel;
+                if (frameSetPtr != nullptr)
+                {
+                    xInL[0] = 1;
+                    xInL[1] = 1;
+                    xInL[2] = leftChannel;
+                    xInR[0] = 1;
+                    xInR[1] = 1;
+                    xInR[2] = rightChannel;
+                    astTranN(frameSetPtr, 1, 3, 1, xInL, 1, 3, 1, vOutL);
+                    astTranN(frameSetPtr, 1, 3, 1, xInR, 1, 3, 1, vOutR);
+                    stats->veloVsys = (vOutL[2] + vOutR[2]) / 2.0;
+                    stats->veloW20 = abs(vOutR[2] - vOutL[2]);
+                }
+                else
+                {
+                    stats->veloVsys = NAN;
+                    stats->veloW20 = NAN;
+                }
             }
             else
             {
                 stats->channelVsys = NAN;
                 stats->channelW20 = NAN;
+                stats->veloVsys = NAN;
+                stats->veloW20 = NAN;
             }
 
             return EXIT_SUCCESS;
@@ -545,7 +570,7 @@ int GetZScale(const float* data, int64_t width, int64_t height, float* z1, float
     return EXIT_SUCCESS;
 }
 
-int FreeMemory(void* ptrToDelete)
+int FreeDataAnalysisMemory(void* ptrToDelete)
 {
     delete[] ptrToDelete;
     return EXIT_SUCCESS;

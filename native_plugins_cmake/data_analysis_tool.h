@@ -7,11 +7,6 @@
 #include <math.h>
 #include <omp.h>
 
-///Insert these three lines to debug directly out to a file:
-//char* str = new char[70];
-//freopen("debug.txt", "a", stdout);
-//printf("%s\n", str);
-
 #define DllExport __declspec (dllexport)
 
 #define EXIT_SUCCESS 0
@@ -42,12 +37,15 @@ struct SourceStats
     // Vsys (in channel units)
     double channelVsys;
     double channelW20;
+    double veloVsys;
+    double veloW20;
 };
 
 template<bool maxMode> int DataCropAndDownsample(const float *, float **, int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int , int , int);
 
 extern "C"
 {
+#include "ast.h"
 DllExport int FindMaxMin(const float *, int64_t , float *, float *);
 DllExport int FindStats(const float* , int64_t , float* , float* , float* , float* );
 DllExport int GetVoxelFloatValue(const float *, float *, int64_t , int64_t , int64_t , int64_t , int64_t , int64_t );
@@ -59,9 +57,9 @@ DllExport int DataCropAndDownsample(const float *, float **, int64_t , int64_t ,
 DllExport int MaskCropAndDownsample(const int16_t *, int16_t **, int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int , int , int );
 DllExport int GetHistogram(const float* , int64_t , int , float , float , int** );
 DllExport int GetMaskedSources(const int16_t*, int64_t, int64_t, int64_t, int*, SourceInfo**);
-DllExport int GetSourceStats(const float*, const int16_t*, int64_t, int64_t, int64_t, SourceInfo, SourceStats*);
+DllExport int GetSourceStats(const float*, const int16_t*, int64_t, int64_t, int64_t, SourceInfo, SourceStats*, AstFrameSet*);
 DllExport int GetZScale(const float*, int64_t, int64_t, float*, float*);
-DllExport int FreeMemory(void* );
+DllExport int FreeDataAnalysisMemory(void* );
 }
 
 #endif //NATIVE_PLUGINS_DATA_ANALYSIS_TOOL_H

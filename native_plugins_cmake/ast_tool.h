@@ -52,7 +52,7 @@ DllExport int Invert(AstFrameSet*);
 
 DllExport void AstEnd();
 
-DllExport void FreeMemory(void*);
+DllExport void FreeAstMemory(void*);
 
 }
 
