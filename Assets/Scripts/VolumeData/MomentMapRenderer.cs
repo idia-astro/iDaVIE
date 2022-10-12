@@ -347,7 +347,10 @@ namespace VolumeData
             {
                 double spectrumZ;
                 if (_parentVolumeDataSetRenderer.HasWCS)
-                    AstTool.Transform3D(dataSet.AstFrameSet, 0, 0, voxelsZ[i], 1, out _, out _, out spectrumZ);
+                    if (!_parentVolumeDataSetRenderer.Data.AstframeIsFreq)
+                        AstTool.Transform3D(dataSet.AstFrameSet, 0, 0, voxelsZ[i], 1, out _, out _, out spectrumZ);
+                    else
+                        AstTool.Transform3D(dataSet.AstAltSpecSet, 0, 0, voxelsZ[i], 1, out _, out _, out spectrumZ);
                 else
                     spectrumZ = voxelsZ[i];
                 spectraZ[i] = (float) spectrumZ;
