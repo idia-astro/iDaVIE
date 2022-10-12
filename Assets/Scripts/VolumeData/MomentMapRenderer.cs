@@ -340,8 +340,7 @@ namespace VolumeData
         private ComputeBuffer GetSpectrumBuffer()
         {
             var dataSet = _parentVolumeDataSetRenderer.GetDataSet();
-            var depth = _parentVolumeDataSetRenderer.CurrentCropMax.z - _parentVolumeDataSetRenderer.CurrentCropMin.z;
-            var spectraZ = new float[depth];
+            var spectraZ = new float[_parentVolumeDataSetRenderer.CurrentCropMax.z - _parentVolumeDataSetRenderer.CurrentCropMin.z];
             var voxelsZ = Enumerable.Range(_parentVolumeDataSetRenderer.CurrentCropMin.z,
                 _parentVolumeDataSetRenderer.CurrentCropMax.z).ToArray();
             for (int i = 0; i < spectraZ.Length; i++)
@@ -353,13 +352,8 @@ namespace VolumeData
                     spectrumZ = voxelsZ[i];
                 spectraZ[i] = (float) spectrumZ;
             }
-            var correctedSpectraZ = new float[depth];   //corrected to 0 velocity at center of box
-            for (int i = 0; i < correctedSpectraZ.Length; i++)
-            {
-                correctedSpectraZ[i] = spectraZ[i] - spectraZ[depth / 2];
-            }
             var spectrumBuffer = new ComputeBuffer((int)dataSet.ZDim, sizeof(float));
-            spectrumBuffer.SetData(correctedSpectraZ);
+            spectrumBuffer.SetData(spectraZ);
             return spectrumBuffer;
         }
 
