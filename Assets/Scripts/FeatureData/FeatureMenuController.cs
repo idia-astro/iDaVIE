@@ -227,13 +227,13 @@ public class FeatureMenuController : MonoBehaviour
                     textObject.GetComponent<TMP_Text>().text +=
                         $"Dec : {dataSet.GetFormattedCoord(normD, 2)}{Environment.NewLine}";
                     textObject.GetComponent<TMP_Text>().text +=
-                        $"{_activeDataSet.Data.GetAstAttribute("System(3)")} ({_activeDataSet.Data.GetAxisUnit(3)}) : {normZ:F3}{Environment.NewLine}";
+                        FormattableString.Invariant($"{_activeDataSet.Data.GetAstAttribute("System(3)")} ({_activeDataSet.Data.GetAxisUnit(3)}) : {normZ:F3}{Environment.NewLine}");
                 }
                 if (featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys != null)
                 {
                     for (var i = 0; i < featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys.Length; i++)
                     {
-                        var dataToAdd = featureSetManager.SelectedFeature.FeatureSetParent.RawDataTypes[i] == "float" ? $"{Convert.ToDouble(featureSetManager.SelectedFeature.RawData[i]):F3}" : featureSetManager.SelectedFeature.RawData[i];
+                        var dataToAdd = featureSetManager.SelectedFeature.FeatureSetParent.RawDataTypes[i] == "float" ? FormattableString.Invariant($"{Convert.ToDouble(featureSetManager.SelectedFeature.RawData[i]):F3}") : featureSetManager.SelectedFeature.RawData[i];
                         textObject.GetComponent<TMP_Text>().text += $"{featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys[i]} : {dataToAdd}{Environment.NewLine}";
                     }
                 }
