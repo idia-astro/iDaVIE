@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 using System.IO;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
@@ -12,6 +13,8 @@ public class MomentMapMenuController : MonoBehaviour
 
     public Text ThresholdTypeText;
     public Text LimitTypeText;
+    public TMP_Text MomentMap0Title;
+    public TMP_Text MomentMap1Title;
     public GameObject volumeDataSetManager;
     private VolumeDataSetRenderer[] dataSets;
     int thresholdType = 0;
@@ -50,6 +53,11 @@ public class MomentMapMenuController : MonoBehaviour
                     ThresholdTypeText.gameObject.GetComponent<Text>().text = (ThresholdType)1 + "";
                     this.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_Threshold").gameObject.SetActive(true);
                 }
+                MomentMap0Title.text += $" ({dataSet.GetPixelUnit()})";
+                if (dataSet.AstframeIsFreq)
+                    MomentMap1Title.text = $" ({dataSet.GetAltAxisUnit(3)})";
+                else 
+                    MomentMap1Title.text = $" ({dataSet.GetAxisUnit(3)})";
             }
         }
     }
