@@ -240,8 +240,6 @@ int FitsCreateHdrPtrForAst(fitsfile *fptr, char **header, int *nkeys, int *statu
             strcpy_s(excludeList[11], 7, "NAXIS4");
         }
     }
-    int dimensions = 3;
-    fits_update_key(fptr, TINT, "NAXIS", &dimensions, nullptr, status);
     fits_hdr2str(fptr, 1, excludeList, numberExcl, header, nkeys, status);
     if (needToSwap)
     {

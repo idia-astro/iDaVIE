@@ -231,6 +231,32 @@ namespace VolumeData
 
         public bool FileChanged = true;
 		
+        public float XScale
+        {
+            get
+            {
+                return gameObject.transform.localScale.x;
+            }
+            set
+            {
+                Vector3 oldScale = gameObject.transform.localScale;
+                gameObject.transform.localScale = new Vector3(value, oldScale.y, oldScale.z);
+            }
+        }
+        
+        public float YScale
+        {
+            get
+            {
+                return gameObject.transform.localScale.y;
+            }
+            set
+            {
+                Vector3 oldScale = gameObject.transform.localScale;
+                gameObject.transform.localScale = new Vector3(oldScale.x, value, oldScale.z);
+            }
+        }
+        
         public float ZScale
         {
             get

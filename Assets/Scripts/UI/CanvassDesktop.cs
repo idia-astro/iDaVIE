@@ -605,12 +605,12 @@ public class CanvassDesktop : MonoBehaviour
             if (optionIndex == 0)
             {
                 // X=Y=Z
-                activeDataSet.ZScale = 1f;
+                activeDataSet.ZScale = activeDataSet.XScale;
             }
             else
             {
                 // X=Y
-                activeDataSet.ZScale = 1f * activeDataSet.GetCubeDimensions().z / activeDataSet.GetCubeDimensions().x;
+                activeDataSet.ZScale = activeDataSet.XScale * activeDataSet.GetCubeDimensions().z / activeDataSet.GetCubeDimensions().x;
             }
         }
     }

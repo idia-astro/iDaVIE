@@ -11,7 +11,7 @@ Install dependencies using vcpkg:
 vcpkg install starlink-ast:x64-windows cfitsio:x64-windows
 ```
 
-Compile plugins. You will need to know the path for your [vcpkg toolchain file](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake):
+Compile plugins. You will need to know the path for your [vcpkg toolchain file](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake) (this will often be located at `C:\vcpkg\scripts\buildsystems\vcpkg.cmake` for most installations):
 ```powershell
 # From repo's root directory
 cd native_plugins_cmake
