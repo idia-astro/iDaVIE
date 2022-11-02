@@ -17,6 +17,7 @@ public class MomentMapMenuController : MonoBehaviour
     public TMP_Text MomentMap1Title;
     public GameObject volumeDataSetManager;
     private VolumeDataSetRenderer[] dataSets;
+    public Camera MomentMapCamera;
     int thresholdType = 0;
     public enum ThresholdType
     {
@@ -124,61 +125,17 @@ public class MomentMapMenuController : MonoBehaviour
             Console.WriteLine(ex.Message);
         }
         var path = Path.Combine(directoryPath, string.Format("Moment_maps_{0}.png", DateTime.Now.ToString("yyyyMMdd_Hmmss")));
-      
-        
-        Image im0 = this.gameObject.transform.Find("Map_container").gameObject.transform.Find("MomentMap0").GetComponent<Image>();
-        Image im1 = this.gameObject.transform.Find("Map_container").gameObject.transform.Find("MomentMap1").GetComponent<Image>();
-
-        Texture2D mom0 = im0.sprite.texture;
-        Texture2D mom1 = im1.sprite.texture;
-
-        int width = im0.sprite.texture.width;
-        int height = im0.sprite.texture.height + im1.sprite.texture.height;
-     
-
-        //Create new textures
-        Texture2D textureResult = new Texture2D(width, height);
-        //create clone form texture
-       // textureResult.SetPixels(mom0.GetPixels()+mom1.GetPixels());
-        for (int x = 0; x < mom0.width; x++)
-        {
-            for (int y = 0; y < mom0.height; y++)
-            {
-                Color c = mom0.GetPixel(x, y);
-                if (c.a > 0.0f) //Is not transparent
-                {
-                    textureResult.SetPixel(x, +mom0.height+y, c);
-                }
-                else
-                {
-                    textureResult.SetPixel(x, y, Color.white);
-                }
-            }
-        }
-        
-        for (int x = 0; x < mom1.width; x++)
-        {
-            for (int y =0; y < mom1.height; y++)
-            {
-                Color c = mom1.GetPixel(x, y);
-                if (c.a > 0.0f) //Is not transparent
-                {
-                    textureResult.SetPixel(x, y, c);
-                }
-                else
-                {
-                    textureResult.SetPixel(x, y, Color.white);
-                }
-            }
-        }
-        
-        //Apply colors
-        textureResult.Apply();
-      
-        byte[] bytes_mom = textureResult.EncodeToPNG();
-
+        int image_height = 1000;
+        int image_width = 1000;
+        RenderTexture screenTexture = new RenderTexture(image_width, image_height, 32);
+        MomentMapCamera.targetTexture = screenTexture;
+        RenderTexture.active = screenTexture;
+        MomentMapCamera.Render();
+        Texture2D renderedTexture = new Texture2D(image_width, image_height);
+        renderedTexture.ReadPixels(new Rect(0, 0, image_width, image_height), 0, 0);
+        RenderTexture.active = null;
+        byte[] bytes_mom = renderedTexture.EncodeToPNG();
         File.WriteAllBytes(path, bytes_mom);
-
     }
     
     public void ChangeLimitType()
