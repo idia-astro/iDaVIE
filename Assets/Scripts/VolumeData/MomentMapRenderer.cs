@@ -100,6 +100,7 @@ namespace VolumeData
             public static readonly int Threshold = Shader.PropertyToID("Threshold");
             public static readonly int Depth = Shader.PropertyToID("Depth");
             public static readonly int Spectrum = Shader.PropertyToID("Spectrum");
+            public static readonly int Mom1MaskThreshold = Shader.PropertyToID("Mom1MaskThreshold");
 
             public static readonly int ClampMin = Shader.PropertyToID("ClampMin");
             public static readonly int ClampMax = Shader.PropertyToID("ClampMax");
@@ -196,6 +197,8 @@ namespace VolumeData
             }
 
             _computeShader.SetInt(MaterialID.Depth, _dataCube.depth);
+            var config = Config.Instance;
+            _computeShader.SetFloat(MaterialID.Mom1MaskThreshold, config.momentMaps.mom1MaskThreshold);
 
             SpectrumBuffer = GetSpectrumBuffer();
             float[] bufferhold = new float[_parentVolumeDataSetRenderer.GetDataSet().ZDim];

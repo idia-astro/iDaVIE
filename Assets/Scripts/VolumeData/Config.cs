@@ -17,7 +17,7 @@ namespace VolumeData
         public bool bilinearFiltering = false;
         public int gpuMemoryLimitMb = 384;
         public int maxRaymarchingSteps = 384;
-        
+
         [JsonConverter(typeof(StringEnumConverter))]
         public AngleCoordFormat angleCoordFormat = AngleCoordFormat.Sexagesimal;
         
@@ -49,6 +49,7 @@ namespace VolumeData
             [JsonConverter(typeof(StringEnumConverter))]
             public MomentMapMenuController.LimitType defaultLimitType = MomentMapMenuController.LimitType.ZScale;
             public float defaultThreshold = 0;
+            public float mom1MaskThreshold = 0;
             
             public RenderConfig m0 = new RenderConfig { colorMap = ColorMapEnum.Plasma, scalingType = ScalingType.Sqrt };
             public RenderConfig m1 = new RenderConfig { colorMap = ColorMapEnum.Turbo, scalingType = ScalingType.Linear };

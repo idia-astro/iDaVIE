@@ -17,6 +17,7 @@ RWStructuredBuffer<float> Spectrum;
 
 float Threshold;
 int Depth;
+float Mom1MaskThreshold;
 
 [numthreads(8,8,1)]
 void MomentsGenerator (uint3 id : SV_DispatchThreadID)
@@ -43,8 +44,10 @@ void MomentsGenerator (uint3 id : SV_DispatchThreadID)
 [numthreads(8,8,1)]
 void MaskedMomentsGenerator (uint3 id : SV_DispatchThreadID)
 {    
-    float sum = 0.0f;
-    float sumWeighted = 0.0f;
+    float mom0Sum = 0.0f;
+    float mom1Sum = 0.0f;
+    float mom1SumWeighted = 0.0f;
+    
     uint3 index = id.xyz;
 
     for (int i = 0; i < Depth; i++)
@@ -54,12 +57,15 @@ void MaskedMomentsGenerator (uint3 id : SV_DispatchThreadID)
         if (maskVal)
         {
             float val = DataCube[index];
-            sum += val;
-            sumWeighted += val * Spectrum[i];            
+            mom0Sum += val;
+            if (val < Mom1MaskThreshold)
+                continue;
+            mom1Sum += val;
+            mom1SumWeighted += val * Spectrum[i];            
         }
     }
-    Moment0Result[id.xy] = sum;
-    Moment1Result[id.xy] = sumWeighted / sum;
+    Moment0Result[id.xy] = mom0Sum;
+    Moment1Result[id.xy] = mom1SumWeighted / mom1Sum;
 }
 
 #pragma kernel LinearColormap
