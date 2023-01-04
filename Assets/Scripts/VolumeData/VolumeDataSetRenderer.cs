@@ -160,6 +160,9 @@ namespace VolumeData
 
         public bool IsCropped { get; private set; }
 
+        public Vector3Int CurrentCropMin { get; private set; }
+        public Vector3Int CurrentCropMax { get; private set; }
+
         public Dictionary<int, DataAnalysis.SourceStats> SourceStatsDict
         { 
             get 
@@ -380,7 +383,7 @@ namespace VolumeData
             if (_momentMapRenderer)
             {
                 _momentMapRenderer.DataCube = _dataSet.DataCube;
-                _momentMapRenderer.Inverted = _dataSet.VelocityDirection == -1;
+                _momentMapRenderer.Inverted = _dataSet.VelocityDirection == 1;
                 _momentMapRenderer.momentMapMenuController = FindObjectOfType<VolumeCommandController>().momentMapMenuController;
 
                 if (_maskDataSet != null)
@@ -395,6 +398,9 @@ namespace VolumeData
             }
             
             Shader.WarmupAllShaders();
+
+            CurrentCropMin = new Vector3Int(0, 0, 0);
+            CurrentCropMax = new Vector3Int((int)_dataSet.XDim, (int)_dataSet.YDim, (int)_dataSet.ZDim);
 
             started = true;
 
@@ -652,6 +658,10 @@ namespace VolumeData
                 _maskMaterialInstance.SetVector(MaterialID.CubeDimensions, cubeDimensions);
                 _momentMapRenderer.MaskCube = _maskDataSet.RegionCube;
             }
+            
+            CurrentCropMin = new Vector3Int(startVoxel.x, startVoxel.y, startVoxel.z);
+            CurrentCropMax = new Vector3Int(endVoxel.x, endVoxel.y, endVoxel.z);
+            
             _momentMapRenderer.DataCube = _dataSet.RegionCube;
 
             IsCropped = true;

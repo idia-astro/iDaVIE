@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,6 +11,8 @@ namespace VolumeData
         public RenderTexture Moment0Map { get; private set; }
         public RenderTexture Moment1Map { get; private set; }
         public RenderTexture ImageOutput { get; private set; }
+        
+        public ComputeBuffer SpectrumBuffer { get; private set; }
 
         public bool Inverted = false;
         
@@ -86,6 +89,7 @@ namespace VolumeData
         private Texture3D _maskCube;
         private Texture2D _colormapTexture;
         private Vector2 _moment0Bounds, _moment1Bounds;
+        private VolumeDataSetRenderer _parentVolumeDataSetRenderer;
         
         private struct MaterialID
         {
@@ -95,6 +99,8 @@ namespace VolumeData
             public static readonly int Moment1Result = Shader.PropertyToID("Moment1Result");
             public static readonly int Threshold = Shader.PropertyToID("Threshold");
             public static readonly int Depth = Shader.PropertyToID("Depth");
+            public static readonly int Spectrum = Shader.PropertyToID("Spectrum");
+            public static readonly int Mom1MaskThreshold = Shader.PropertyToID("Mom1MaskThreshold");
 
             public static readonly int ClampMin = Shader.PropertyToID("ClampMin");
             public static readonly int ClampMax = Shader.PropertyToID("ClampMax");
@@ -136,6 +142,8 @@ namespace VolumeData
             uint temp;
             // This assumes the masked and unmasked kernels use the same group size. They really should, though
             _computeShader.GetKernelThreadGroupSizes(_kernelIndex, out _kernelThreadGroupX, out _kernelThreadGroupY, out temp);
+
+            _parentVolumeDataSetRenderer = GetComponentInParent<VolumeDataSetRenderer>();
         }
 
         private void Update()
@@ -189,6 +197,13 @@ namespace VolumeData
             }
 
             _computeShader.SetInt(MaterialID.Depth, _dataCube.depth);
+            var config = Config.Instance;
+            _computeShader.SetFloat(MaterialID.Mom1MaskThreshold, config.momentMaps.mom1MaskThreshold);
+
+            SpectrumBuffer = GetSpectrumBuffer();
+            float[] bufferhold = new float[_parentVolumeDataSetRenderer.GetDataSet().ZDim];
+            SpectrumBuffer.GetData(bufferhold);
+            _computeShader.SetBuffer(activeKernelIndex, MaterialID.Spectrum, SpectrumBuffer);
 
             // Run compute shader in tiles, based on kernel's group size
             int threadGroupsX = Mathf.CeilToInt(_dataCube.width / ((float) (_kernelThreadGroupX)));
@@ -268,6 +283,12 @@ namespace VolumeData
                 int threadGroupsX = Mathf.CeilToInt(_dataCube.width / ((float)(_kernelThreadGroupX)));
                 int threadGroupsY = Mathf.CeilToInt(_dataCube.height / ((float)(_kernelThreadGroupY)));
                 _computeShader.Dispatch(_colormapKernelIndex, threadGroupsX, threadGroupsY, 1);
+                
+                var colorBarM0 =  momentMapMenuController.gameObject.transform.Find("Map_container").gameObject.transform.Find("ColorbarM0").GetComponent<Colorbar>();
+                colorBarM0.ScalingType = ScalingTypeM0;
+                colorBarM0.ColorMap = ColorMapM0;
+                colorBarM0.ScaleMin = _moment0Bounds.x;
+                colorBarM0.ScaleMax = _moment0Bounds.y;
 
                 Texture2D tex = new Texture2D(ImageOutput.width, ImageOutput.height);
                 RenderTexture currentActiveRT = RenderTexture.active;
@@ -290,6 +311,12 @@ namespace VolumeData
                 // Switch bounds if the map needs to be inverted
                 _computeShader.SetFloat(MaterialID.ClampMin, Inverted ? _moment1Bounds.y: _moment1Bounds.x);
                 _computeShader.SetFloat(MaterialID.ClampMax, Inverted ? _moment1Bounds.x: _moment1Bounds.y);
+                
+                var colorBarM1 =  momentMapMenuController.gameObject.transform.Find("Map_container").gameObject.transform.Find("ColorbarM1").GetComponent<Colorbar>();
+                colorBarM1.ScalingType = ScalingTypeM1;
+                colorBarM1.ColorMap = ColorMapM1;
+                colorBarM1.ScaleMin = Inverted ? _moment1Bounds.y : _moment1Bounds.x;
+                colorBarM1.ScaleMax = Inverted ? _moment1Bounds.x : _moment1Bounds.y;
 
                 offset = (ColorMapM1.GetHashCode() + 0.5f) / ColorMapUtils.NumColorMaps;
                 _computeShader.SetFloat(MaterialID.ColormapOffset, offset);
@@ -310,8 +337,30 @@ namespace VolumeData
                 imageM1.preserveAspect = true;
                 momentMapMenuController.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_Threshold").gameObject.transform.Find("ThresholdValue").GetComponent<Text>().text = MomentMapThreshold.ToString();
                 RenderTexture.active = currentActiveRT;
-
             }
+        }
+        
+        private ComputeBuffer GetSpectrumBuffer()
+        {
+            var dataSet = _parentVolumeDataSetRenderer.GetDataSet();
+            var spectraZ = new float[_parentVolumeDataSetRenderer.CurrentCropMax.z - _parentVolumeDataSetRenderer.CurrentCropMin.z];
+            var voxelsZ = Enumerable.Range(_parentVolumeDataSetRenderer.CurrentCropMin.z,
+                _parentVolumeDataSetRenderer.CurrentCropMax.z).ToArray();
+            for (int i = 0; i < spectraZ.Length; i++)
+            {
+                double spectrumZ;
+                if (_parentVolumeDataSetRenderer.HasWCS)
+                    if (!_parentVolumeDataSetRenderer.Data.AstframeIsFreq)
+                        AstTool.Transform3D(dataSet.AstFrameSet, 0, 0, voxelsZ[i], 1, out _, out _, out spectrumZ);
+                    else
+                        AstTool.Transform3D(dataSet.AstAltSpecSet, 0, 0, voxelsZ[i], 1, out _, out _, out spectrumZ);
+                else
+                    spectrumZ = voxelsZ[i];
+                spectraZ[i] = (float) spectrumZ;
+            }
+            var spectrumBuffer = new ComputeBuffer((int)dataSet.ZDim, sizeof(float));
+            spectrumBuffer.SetData(spectraZ);
+            return spectrumBuffer;
         }
 
     }

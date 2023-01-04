@@ -1316,6 +1316,19 @@ namespace VolumeData
 
             return attributeReceived.ToString();
         }
+        
+        public string GetAltAstAttribute(string attributeToGet)
+        {
+            StringBuilder attributeReceived = new StringBuilder(70);
+            StringBuilder attributeToGetSB = new StringBuilder(attributeToGet);
+            if (AstTool.GetString(AstAltSpecSet, attributeToGetSB, attributeReceived, attributeReceived.Capacity) != 0)
+            {
+                Debug.Log("Cannot find attribute " + attributeToGet + " in Frame!");
+                return "";
+            }
+
+            return attributeReceived.ToString();
+        }
 
         public string GetAstAltAttribute(string attributeToGet)
         {
@@ -1399,6 +1412,11 @@ namespace VolumeData
         {
             return GetAstAttribute("Unit(" + axis + ")");
         }
+        
+        public string GetAltAxisUnit(int axis)
+        {
+            return GetAltAstAttribute("Unit(" + axis + ")");
+        }
 
         public void SetAxisUnit(int axis, string unit)
         {
@@ -1409,7 +1427,7 @@ namespace VolumeData
         {
             SetAltAstAttribute("Unit(" + axis + ")", unit);
         }
-
+        
         public void SetAstAttribute(string attribute, string value)
         {
             StringBuilder attributeSB = new StringBuilder(attribute);

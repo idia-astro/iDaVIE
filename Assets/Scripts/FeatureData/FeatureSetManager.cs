@@ -212,6 +212,14 @@ namespace DataFeatures
             }
             return SelectedFeature != null;
         }
+        
+        public bool SelectFeature(Feature feature)
+        {
+            DeselectFeature();
+            SelectedFeature = feature;
+            SelectedFeature.Selected = true;
+            return SelectedFeature != null;
+        }
 
         public void DeselectFeature()
         {
