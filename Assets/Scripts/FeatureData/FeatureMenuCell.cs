@@ -117,7 +117,7 @@ public void SetVisible()
 
     public void Select()
     {
-        featureSetManager.SelectedFeature = feature;
+        featureSetManager.SelectFeature(feature);
         int siblingCount = this.gameObject.transform.parent.childCount;
         for (int i = 0; i < siblingCount; i++)
         {

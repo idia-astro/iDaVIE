@@ -382,7 +382,6 @@ namespace VolumeData
             if (_activeDataSet)
             {
                 _activeDataSet.ColorMap = colorMap;
-                ToastNotification.ShowInfo($"Color map set to {colorMap.ToString()}");
             }
         }               
 
