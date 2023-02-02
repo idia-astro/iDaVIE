@@ -463,7 +463,7 @@ Outputs/
 # Config
 config.json
 
-# Borrowed from https://github.com/github/gitignore/blob/main/Unity.gitignore
+# The following is suggested from https://github.com/github/gitignore/blob/main/Unity.gitignore
 #
 /[Ll]ibrary/
 /[Tt]emp/
