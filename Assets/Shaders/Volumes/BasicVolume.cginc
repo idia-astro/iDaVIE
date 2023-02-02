@@ -51,7 +51,7 @@ uniform float FoveationJitter;
 uniform int FoveatedStepsLow, FoveatedStepsHigh;
 
 // Depth buffer
-uniform sampler2D _CameraDepthTexture;
+UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
 
 // Highlight selection
 uniform float3 HighlightMin, HighlightMax;

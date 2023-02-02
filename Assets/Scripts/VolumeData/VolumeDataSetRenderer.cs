@@ -207,7 +207,7 @@ namespace VolumeData
             public static readonly int VignetteFadeStart = Shader.PropertyToID("VignetteFadeStart");
             public static readonly int VignetteFadeEnd = Shader.PropertyToID("VignetteFadeEnd");
             public static readonly int VignetteIntensity = Shader.PropertyToID("VignetteIntensity");
-            public static readonly int VignetteColor = Shader.PropertyToID("VignetteIntensity");
+            public static readonly int VignetteColor = Shader.PropertyToID("VignetteColor");
 
             public static readonly int HighlightMin = Shader.PropertyToID("HighlightMin");
             public static readonly int HighlightMax = Shader.PropertyToID("HighlightMax");
@@ -676,7 +676,8 @@ namespace VolumeData
             {
                 _maskDataSet.ConsolidateDownsampledMask();
                 _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.DataCube);
-                _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, null);
+                ComputeBuffer nullBuffer = null;
+                _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, nullBuffer);
                 _momentMapRenderer.MaskCube = _maskDataSet.DataCube;
             }
             _momentMapRenderer.DataCube = _dataSet.DataCube;

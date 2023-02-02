@@ -243,7 +243,7 @@ TextureImporter:
       213: -9011952955087319641
     second: allmaps_79
   externalObjects: {}
-  serializedVersion: 11
+  serializedVersion: 12
   mipmaps:
     mipMapMode: 0
     enableMipMap: 0
@@ -263,6 +263,8 @@ TextureImporter:
   isReadable: 0
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMasterTextureLimit: 0
   grayScaleToAlpha: 0
   generateCubemap: 6
   cubemapConvolution: 0
@@ -294,10 +296,14 @@ TextureImporter:
   textureType: 8
   textureShape: 1
   singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
   maxTextureSizeSet: 0
   compressionQualitySet: 0
   textureFormatSet: 0
+  ignorePngGamma: 0
   applyGammaDecoding: 0
+  cookieLightType: 1
   platformSettings:
   - serializedVersion: 3
     buildTarget: DefaultTexturePlatform
@@ -313,6 +319,30 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 3
     buildTarget: Standalone
+    maxTextureSize: 1024
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Server
+    maxTextureSize: 1024
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Android
     maxTextureSize: 1024
     resizeAlgorithm: 0
     textureFormat: -1
@@ -2016,6 +2046,87 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
+    nameFileIdTable:
+      allmaps_6: -3385090371281365735
+      allmaps_44: -8539165022618757608
+      allmaps_46: 3029937983648157736
+      allmaps_59: 1877917355352900769
+      allmaps_74: 4750612261463106369
+      allmaps_48: -1203516284079797584
+      allmaps_66: 2092905316899388823
+      allmaps_11: 8173435149665112403
+      allmaps_35: -5881758095596749361
+      allmaps_63: 1897969085185356717
+      allmaps_71: 8849395470860047771
+      allmaps_3: -3560072960296841483
+      allmaps_17: -4388230955762662503
+      allmaps_68: 9100573747443967452
+      allmaps_37: 312877136944121738
+      allmaps_16: -3387246275913544070
+      allmaps_7: 1304898970107813596
+      allmaps_22: 4794389046313242940
+      allmaps_76: -374190674352112547
+      allmaps_78: 2576941076531628894
+      allmaps_47: -5194736391616128629
+      allmaps_30: 3492381494792550355
+      allmaps_41: -7557854598506021943
+      allmaps_33: 1614321904073682080
+      allmaps_36: 8282296406990209357
+      allmaps_39: 8987939824014673449
+      allmaps_9: -8135590974035035536
+      allmaps_12: 2331586353310613041
+      allmaps_29: 6504623492535439575
+      allmaps_45: 7235903992203473994
+      allmaps_64: -6430828521278322578
+      allmaps_0: 2256711327582946564
+      allmaps_73: 1455630136137843209
+      allmaps_15: 8122958945645635999
+      allmaps_43: -527513864613169574
+      allmaps_70: -3134932479402434300
+      allmaps_32: 6175084796343136715
+      allmaps_2: 4818818219496893712
+      allmaps_21: -8941712407657065081
+      allmaps_50: 5779193401688803694
+      allmaps_34: 5324060520014363594
+      allmaps_42: 3418195666859420965
+      allmaps_69: 4394726441822246048
+      allmaps_58: 2452065073270116841
+      allmaps_49: 7617362239252491617
+      allmaps_31: -5787348352280233167
+      allmaps_79: -9011952955087319641
+      allmaps_77: -1728757593589537488
+      allmaps_8: -5726505194131304925
+      allmaps_23: -3286540474913963897
+      allmaps_72: -4301235639169174048
+      allmaps_24: -6106713032188600357
+      allmaps_5: -4844661151947941322
+      allmaps_25: 5648812544136238780
+      allmaps_10: 6745571902764093555
+      allmaps_38: -2499010980926724346
+      allmaps_26: 5706210897769341268
+      allmaps_53: 2979752445890042671
+      allmaps_65: -7024138469919758585
+      allmaps_54: -2813950662218841231
+      allmaps_13: 4819944652229289976
+      allmaps_57: 6276139333182096931
+      allmaps_27: 1558602640950573394
+      allmaps_52: -8789910662027403895
+      allmaps_62: 4259510721785524438
+      allmaps_14: -2043327145475445692
+      allmaps_4: -6179157583232068724
+      allmaps_40: 380009862802474769
+      allmaps_28: 4752716267666262228
+      allmaps_20: 7459218954210967464
+      allmaps_1: 7857691312200210519
+      allmaps_67: 7101395466217194378
+      allmaps_55: -6205573669202666883
+      allmaps_18: -387227030735916706
+      allmaps_51: 3820811220921745727
+      allmaps_56: -7084698551761908428
+      allmaps_75: -394781726510750072
+      allmaps_61: 8638127926241502904
+      allmaps_19: -5563404229006711812
+      allmaps_60: 119739395043266690
   spritePackingTag: 
   pSDRemoveMatte: 0
   pSDShowRemoveMatteOption: 0

@@ -1087,7 +1087,7 @@ public class VolumeInputController : MonoBehaviour
 
     private static VRFamily DetermineVRFamily()
     {
-        string vrModel = InputDevices.GetDeviceAtXRNode(XRNode.Head).name.ToLower();
+        string vrModel = SteamVR.instance.hmd_ModelNumber.ToLower();
         if (vrModel.Contains("oculus"))
         {
             return VRFamily.Oculus;
