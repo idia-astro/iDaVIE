@@ -353,7 +353,7 @@ namespace VolumeData
             
             //Check if AstFrameSet or AltSpecSet have velocity
             string primaryFrameZUnit = volumeDataSet.GetAstAttribute("System(3)");
-            volumeDataSet.AstframeIsFreq = primaryFrameZUnit == "FREQ" || primaryFrameZUnit == "AWAV";
+            volumeDataSet.AstframeIsFreq = primaryFrameZUnit is  "FREQ" or "AWAV" or "WAVE" or "WAVELEN" or "WAVENUM" or "AIRWAVE";
             var velocityUnitToSet = config.velocityUnit == VelocityUnit.Km ? "km/s" : "m/s";
             if (volumeDataSet.AstframeIsFreq)
                 volumeDataSet.SetAltAxisUnit(3, velocityUnitToSet);
@@ -1487,27 +1487,65 @@ namespace VolumeData
                     unit = "km/s";
                     break;
                 case "VRAD":
+                    system = "FREQ";
+                    unit = "Hz";
+                    break;
                 case "VRADIO":
+                    system = "FREQ";
+                    unit = "Hz";
+                    break;
                 case "VOPT":
+                    system = "FREQ";
+                    unit = "Hz";
+                    break;
                 case "VOPTICAL":
+                    system = "FREQ";
+                    unit = "Hz";
+                    break;
                 case "VELO":
+                    system = "FREQ";
+                    unit = "Hz";
+                    break;
                 case "VREL":
                     system = "FREQ";
                     unit = "Hz";
                     break;
                 case "ENER":
+                    Debug.Log("Unsupported spectral unit for depth!");
+                    break;
                 case "ENERGY":
+                    Debug.Log("Unsupported spectral unit for depth!");
+                    break;
                 case "WAVN":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "WAVENUM":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "WAVE":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "WAVELEN":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "AWAV":
                     system = "VRAD";
                     unit = "km/s";
                     break;
                 case "AIRWAVE":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "ZOPT":
+                    Debug.Log("Unsupported spectral unit for depth!");
+                    break;
                 case "REDSHIFT":
+                    Debug.Log("Unsupported spectral unit for depth!");
+                    break;
                 case "BETA":
                     Debug.Log("Unsupported spectral unit for depth!");
                     break;
