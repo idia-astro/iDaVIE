@@ -1,3 +1,48 @@
+<#
+	Automated build script for i-DaVIE-v Unity project. Currently, assumes vcpkg is installed, and that starlink-ast:x64-windows and cfitsio:x64-windows
+	packages are installed via vcpkg.
+	Run this script to download the various Unity packages needed, configure the project, and build the final executable.
+	Usage: 
+		.\build.ps1 <path/to/vcpkg_toolchain> <path/to/unityEXE> [path/to/buildFolder]
+		.\build.ps1 -vcpkg|vcpkgcmake <path/to/vcpkg_toolchain> -u|unity <path/to/unityEXE> -d|destination [path/to/buildFolder]
+	@Param VCPKGCMAKE: the toolchain file from vcpkg, used for building the native plugins.
+	@Param UNITYPATH: the Unity executable file, used for building the project.
+	@Param DestFolder: the folder where the final executable will end up, defaults to ..\build\.
+#>
+
+param (
+	[Parameter(Mandatory, Position=0)]
+	[Alias("vcpkg")]
+	[System.String]
+	$VCPKGCMAKE,
+	
+	[Parameter(Mandatory, Position=1)]
+	[Alias("unity", "u")]
+	[System.String]
+	$UNITYPATH,
+	
+	[Parameter(Mandatory=$false, Position=2)]
+	[Alias("d", "destination")]
+	[System.String]
+	$DestFolder = "..\build"	
+)
+
+#Test that vcpkg cmake exists and is a file
+if (-not ((Test-Path $VCPKGCMAKE) -and (Test-Path -Path $VCPKGCMAKE -PathType Leaf)))
+{
+    Write-Host "vcpkg's Cmake file can't be found at $VCPKGCMAKE, exiting..." -ForegroundColor Red
+	Set-Location ../..
+	exit
+}
+
+#Test that Unity.exe exists and is a file
+if (-not ((Test-Path $UNITYPATH) -and (Test-Path -Path $UNITYPATH -PathType Leaf)))
+{
+    Write-Host "Unity's executable file can't be found at $UNITYPATH, exiting..." -ForegroundColor Red
+	Set-Location ../..
+	exit
+}
+
 Write-Progress "Building native plugins..."
 Set-Location native_plugins_cmake
 $BuildFolderName = "build"
@@ -11,13 +56,6 @@ else
     Write-Host "build folder created successfully"
 }
 Set-Location $BuildFolderName
-$VCPKGCMAKE = "C:\Users\Public\IT\vcpkg\scripts\buildsystems\vcpkg.cmake"
-if (-not ((Test-Path $VCPKGCMAKE) -and (Test-Path -Path $VCPKGCMAKE -PathType leaf)))
-{
-    Write-Host "vcpkg's Cmake file can't be found at $VCPKGCMAKE, exiting..." -ForegroundColor Red
-	Set-Location ../..
-	exit
-}
 cmake --fresh -DCMAKE_TOOLCHAIN_FILE="$VCPKGCMAKE" -DCMAKE_BUILD_TYPE=Release ../
 cmake --build . --config Release --target install
 Write-Host "Native plugins built!"
@@ -93,8 +131,8 @@ else
 	Write-Progress "Done." -Status "100% complete" -PercentComplete 100
 }
 
-Expand-Archive .\unitypackage_extractor-x64.zip -DestinationPath .
-Remove-Item .\unitypackage_extractor-x64.zip
+Expand-Archive ".\unitypackage_extractor-x64.zip" -DestinationPath .
+Remove-Item ".\unitypackage_extractor-x64.zip"
 if (Test-Path "Assets")
 {
     Write-Host "extract target folder Exists"
@@ -121,21 +159,26 @@ Write-Progress "Extracting scroll_rect.unitypackage... " -Status "75% complete" 
 Start-Process ".\extractor.exe" -Wait -ArgumentList ".\scroll_rect.unitypackage ."
 Write-Progress "scroll_rect.unitypackage extracted" -Status "100% complete" -PercentComplete 100
 
-#Start-Process "C:\Users\Public\IT\Unity\2021.3.17f1\Editor\Unity.exe" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -logfile $PSScriptRoot\import.log -executeMethod AutoBuilder.ImportPackages -quit"
-Copy-Item -Path ".\Assets\*" -Destination "..\Assets" -Recurse
-#Write-Host "Packages imported."
+Remove-Item ".\extractor.exe"
+
+Copy-Item -Path ".\Assets\*" -Destination "..\Assets" -Recurse -Force
+
 Set-Location ..
+
+Start-Process $UNITYPATH -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import.log -importPackage $PSScriptRoot\plugin_build\textMeshPro-3.0.6.unitypackage -quit"
+
+Write-Host "Packages imported."
+
 Write-Host "Building player..."
-$GameBuildFolderName = "..\build"
-if (Test-Path $GameBuildFolderName)
+if (Test-Path $DestFolder)
 {
     Write-Host "build folder Exists"
 }
 else
 {
-    New-Item $GameBuildFolderName -ItemType Directory
+    New-Item $DestFolder -ItemType Directory
     Write-Host "build folder created successfully"
 }
-#Start-Process "C:\Users\Public\IT\Unity\2021.3.17f1\Editor\Unity.exe" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\build.log -executeMethod AutoBuilder.buildApplicationDev -quit"
-Start-Process "C:\Users\Public\IT\Unity\2021.3.17f1\Editor\Unity.exe" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\build.log -buildWindows64Player $GameBuildFolderName\i-DaVIE-v.exe -quit"
+
+Start-Process $UNITYPATH -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\build.log -buildWindows64Player $DestFolder\iDaVIE-v.exe -quit"
 Write-Host "Finished!"
