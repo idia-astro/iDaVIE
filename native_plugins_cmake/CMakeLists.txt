@@ -25,7 +25,7 @@ include_directories(${CFITSIO_INCLUDE_DIR})
 find_package(cminpack CONFIG REQUIRED)
 
 find_path(AST_INCLUDE_DIR ast.h)
-find_library(AST_LIB_PATH ast)
+find_library(AST_LIB_PATH libast)
 get_filename_component(AST_LIB_DIR ${AST_LIB_PATH} DIRECTORY)
 include_directories(${AST_INCLUDE_DIR})
 link_directories(${AST_LIB_DIR})
@@ -41,7 +41,7 @@ set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 
-target_link_libraries(idavie_native cfitsio cminpack::cminpack ast ast_err ast_pal ast_grf_5.6 ast_grf_3.2 ast_grf_2.0 ast_grf3d OpenMP::OpenMP_CXX)
+target_link_libraries(idavie_native cfitsio cminpack::cminpack libast libast_err libast_pal libast_grf_5.6 libast_grf_3.2 libast_grf_2.0 libast_grf3d OpenMP::OpenMP_CXX)
 
 
 SET(CMAKE_FIND_LIBRARY_PREFIXES "")
