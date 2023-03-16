@@ -1,0 +1,13 @@
+name: build-iDaVIE-v-on-push
+run-name: ${{ github.actor }} is building to test commit on ${{ github.ref }}
+on: [push]
+jobs:
+    auto-build:
+        runs-on: windows-2022
+        steps:
+          -  uses: ./.github/actions/install-unity
+          -  uses: ./.github/actions/install-vcpkg-and-libs
+          -  uses: actions/checkout@v3
+          -  name: Run the project build script
+             run: ./build
+             shell: pwsh
