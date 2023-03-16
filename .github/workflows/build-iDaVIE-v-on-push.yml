@@ -1,13 +1,23 @@
 name: build-iDaVIE-v-on-push
 run-name: ${{ github.actor }} is building to test commit on ${{ github.ref }}
-on: [push]
+on: 
+  schedule:
+    - cron: "30 0 31 12 *"
+#  push:
+#    branches:
+#      - alex/automated_build
 jobs:
     auto-build:
         runs-on: windows-2022
         steps:
-          -  uses: ./.github/actions/install-unity
+          -  name: Checkout
+             uses: actions/checkout@v3.4.0
+          -  name: Setup Unity
+             uses: kuler90/setup-unity@v1.1.0
+             with:
+               unity-version: 2021.3.17f1
+               install-path: ./Unity/
           -  uses: ./.github/actions/install-vcpkg-and-libs
-          -  uses: actions/checkout@v3
           -  name: Run the project build script
              run: ./build
              shell: pwsh
