@@ -10,14 +10,25 @@ jobs:
     auto-build:
         runs-on: windows-2022
         steps:
-          -  name: Checkout
-             uses: actions/checkout@v3.4.0
           -  name: Setup Unity
+             id: setup-unity
              uses: kuler90/setup-unity@v1.1.0
              with:
                unity-version: 2021.3.17f1
-               install-path: ./Unity/
-          -  uses: ./.github/actions/install-vcpkg-and-libs
+               install-path: C:\Unity
+          -  name: install-cmake
+             uses: Symbitic/install-cmake@v0.1.0
+             with:
+               cmake: 3.26
+               platform: win
+          -  name: Install vcpkg libraries
+             run: C:\vcpkg\vcpkg.exe install starlink-ast:x64-windows cfitsio:x64-windows
+             shell: pwsh
+          -  name: Checkout
+             uses: actions/checkout@v3.4.0
+             with:
+               path: C:\Repo\
+               ref: cilliers/autoBuild
           -  name: Run the project build script
-             run: ./build
+             run: C:\Repo\idia-unity-vr\build.ps1 C:\vcpkg\scripts\buildsystems\vcpkg.cmake ${{steps.setup-unity.outputs.unity-path}} C:\Repo\build
              shell: pwsh
