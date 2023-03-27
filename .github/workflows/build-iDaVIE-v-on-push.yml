@@ -1,11 +1,11 @@
 name: build-iDaVIE-v-on-push
 run-name: ${{ github.actor }} is building to test commit on ${{ github.ref }}
 on: 
-  schedule:
-    - cron: "30 0 31 12 *"
-#  push:
-#    branches:
-#      - alex/automated_build
+#  schedule:
+#    - cron: "30 0 31 12 *"
+  push:
+    branches:
+      - cilliers/autoBuild
 jobs:
     auto-build:
         runs-on: windows-2022
@@ -16,11 +16,6 @@ jobs:
              with:
                unity-version: 2021.3.17f1
                install-path: C:\Unity
-          -  name: install-cmake
-             uses: Symbitic/install-cmake@v0.1.0
-             with:
-               cmake: 3.26
-               platform: win
           -  name: Install vcpkg libraries
              run: C:\vcpkg\vcpkg.exe install starlink-ast:x64-windows cfitsio:x64-windows
              shell: pwsh
