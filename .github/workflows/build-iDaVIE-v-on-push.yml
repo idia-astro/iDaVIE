@@ -10,27 +10,27 @@ jobs:
     auto-build:
         runs-on: windows-2022
         steps:
-          # Install unity using another user's published github action.
-          -  name: Setup Unity
-             id: setup-unity
-             uses: kuler90/setup-unity@v1.1.0
-             with:
-               unity-version: 2021.3.17f1
-               
           # Edit the vcpkg triplet files to only install release versions of packages
           # See https://github.com/Microsoft/vcpkg/issues/143#issuecomment-346973704 for source
           -  name: Edit vcpkg triplets
-             run: Add-Content -Path C:\vcpkg\triplets\*.cmake -Value '\nset(VCPKG_BUILD_TYPE release)\n'
+             run: Add-Content -Path C:\vcpkg\triplets\*.cmake -Value 'set(VCPKG_BUILD_TYPE release)'
              shell: pwsh
              
           # Install starlink-ast and cfitsio libraries onto the runner
           -  name: Install vcpkg libraries
              run: C:\vcpkg\vcpkg.exe install starlink-ast:x64-windows cfitsio:x64-windows
              shell: pwsh
-          
+               
           # Fetch the idia-unity-vr repository
           -  name: Checkout
              uses: actions/checkout@v3.4.0
+          
+          # Install unity using another user's published github action.
+          -  name: Setup Unity
+             id: setup-unity
+             uses: kuler90/setup-unity@v1.1.0
+             with:
+               unity-version: 2021.3.17f1
           
           # Build the project using the build script
           -  name: Run the project build script
