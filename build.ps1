@@ -165,7 +165,7 @@ Copy-Item -Path ".\Assets\*" -Destination "..\Assets" -Recurse -Force
 
 Set-Location ..
 
-Start-Process $UNITYPATH -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import.log -importPackage $PSScriptRoot\plugin_build\textMeshPro-3.0.6.unitypackage -quit"
+Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import.log -importPackage $PSScriptRoot\plugin_build\textMeshPro-3.0.6.unitypackage -quit"
 
 Write-Host "Packages imported."
 
@@ -180,5 +180,5 @@ else
     Write-Host "build folder created successfully"
 }
 
-Start-Process $UNITYPATH -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\build.log -buildWindows64Player $DestFolder\iDaVIE-v.exe -quit"
+Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\build.log -buildWindows64Player $DestFolder\iDaVIE-v.exe -quit"
 Write-Host "Finished!"
