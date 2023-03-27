@@ -34,5 +34,5 @@ jobs:
           
           # Build the project using the build script
           -  name: Run the project build script
-             run: ${{ github.workspace }}\idia-unity-vr\build.ps1 -vcpkg C:\vcpkg\scripts\buildsystems\vcpkg.cmake -u ${{steps.setup-unity.outputs.unity-path}} -d ${{ github.workspace }}\build
+             run: ${{ github.workspace }}\build.ps1 -vcpkg C:\vcpkg\scripts\buildsystems\vcpkg.cmake -u ${{steps.setup-unity.outputs.unity-path}} -d ${{ github.workspace }}\..\build
              shell: pwsh
