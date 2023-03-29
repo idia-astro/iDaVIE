@@ -1,9 +1,17 @@
 #ifndef FITS_READER_FITS_READER_H
 #define FITS_READER_FITS_READER_H
 
-#define DllExport __declspec (dllexport)
+#if _WIN32
+    #define DllExport __declspec (dllexport)
+#else
+    #define DllExport
+#endif
 
-#include <cfitsio/fitsio.h>
+#if _WIN32
+    #include <cfitsio/fitsio.h>
+#else
+    #include "fitsio.h"
+#endif
 #include <iostream>
 #include <cstring>
 

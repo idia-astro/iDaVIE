@@ -41,11 +41,24 @@ set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 
-target_link_libraries(idavie_native cfitsio cminpack::cminpack libast libast_err libast_pal libast_grf_5.6 libast_grf_3.2 libast_grf_2.0 libast_grf3d OpenMP::OpenMP_CXX)
+if (WIN32)
+    target_link_libraries(idavie_native cfitsio cminpack::cminpack libast libast_err libast_pal libast_grf_5.6 libast_grf_3.2 libast_grf_2.0 libast_grf3d OpenMP::OpenMP_CXX)
+endif (WIN32)
 
+if (UNIX)
+    target_link_libraries(idavie_native cfitsio cminpack::cminpack ast ast_err ast_pal ast_grf_5.6 ast_grf_3.2 ast_grf_2.0 ast_grf3d OpenMP::OpenMP_CXX)
+endif (UNIX)
 
-SET(CMAKE_FIND_LIBRARY_PREFIXES "")
-SET(CMAKE_FIND_LIBRARY_SUFFIXES ".dll")
+if (WIN32)
+    SET(CMAKE_FIND_LIBRARY_PREFIXES "")
+    SET(CMAKE_FIND_LIBRARY_SUFFIXES ".dll")
+endif (WIN32)
+
+if (UNIX)
+    SET(CMAKE_FIND_LIBRARY_PREFIXES "")
+    SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so")
+endif (UNIX)
+
 find_library(CFITSIO_RUNTIME "cfitsio")
 find_library(ZLIB_RUNTIME "zlib1")
 find_library(CMINPACK_RUNTIME "cminpack")
@@ -54,4 +67,7 @@ install(TARGETS idavie_native
         RUNTIME
             DESTINATION ${PROJECT_SOURCE_DIR}/../Assets/Plugins
         )
-install(FILES ${CFITSIO_RUNTIME} ${ZLIB_RUNTIME} ${CMINPACK_RUNTIME} DESTINATION ${PROJECT_SOURCE_DIR}/../Assets/Plugins)
+
+if (WIN32)
+    install(FILES ${CFITSIO_RUNTIME} ${ZLIB_RUNTIME} ${CMINPACK_RUNTIME} DESTINATION ${PROJECT_SOURCE_DIR}/../Assets/Plugins)
+endif (WIN32)

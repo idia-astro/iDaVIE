@@ -128,9 +128,20 @@ int FitsUpdateKey(fitsfile* fptr, int datatype, char* keyname, void* value, char
 
 int FitsGetImageSize(fitsfile *fptr, int dims, int64_t **naxes, int *status)
 {
-    int64_t* imageSize = new int64_t[dims];
+    #if _WIN32
+        int64_t* imageSize = new int64_t[dims];
+    #else
+        LONGLONG * imageSize = new LONGLONG[dims];
+    #endif
     int success = fits_get_img_sizell(fptr, dims, imageSize, status);
-    *naxes = imageSize;
+
+    #if _WIN32
+        *naxes = imageSize;
+    #else
+        *naxes = (long int * ) imageSize;
+    #endif
+
+
     return success;
 }
 
@@ -168,7 +179,13 @@ int FitsReadImageFloat(fitsfile *fptr, int dims, int64_t nelem, float **array, i
     int64_t* startPix = new int64_t[dims];
     for (int i = 0; i < dims; i++)
         startPix[i] = 1;
-    int success = fits_read_pixll(fptr, TFLOAT, startPix, nelem, &nulval, dataarray, &anynul, status);
+
+    #if _WIN32
+        int success = fits_read_pixll(fptr, TFLOAT, startPix, nelem, &nulval, dataarray, &anynul, status);
+    #else
+        int success = fits_read_pixll(fptr, TFLOAT, (LONGLONG *) startPix, nelem, &nulval, dataarray, &anynul, status);
+    #endif
+
     delete[] startPix;
     *array = dataarray;
     return success;
@@ -196,7 +213,12 @@ int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array,
     int64_t* startPix = new int64_t[dims];
     for (int i = 0; i < dims; i++)
         startPix[i] = 1;
-    int success = fits_read_pixll(fptr, TSHORT, startPix, nelem, &nulval, dataarray, &anynul, status);
+
+    #if _WIN32
+        int success = fits_read_pixll(fptr, TSHORT, startPix, nelem, &nulval, dataarray, &anynul, status);
+    #else
+        int success = fits_read_pixll(fptr, TFLOAT, (LONGLONG *) startPix, nelem, &nulval, dataarray, &anynul, status);
+    #endif
     delete[] startPix;
     *array = dataarray;
     return success;
@@ -216,28 +238,53 @@ int FitsCreateHdrPtrForAst(fitsfile *fptr, char **header, int *nkeys, int *statu
     {
         std::string cString = "C????" + std::to_string(i + 5);
         std::string nString = "NAXIS" + std::to_string(i + 5);
-        strcpy_s(excludeList[i], 7, cString.c_str() );
-        strcpy_s(excludeList[i + 5], 7, nString.c_str());
+        #if _WIN32
+            strcpy_s(excludeList[i], 7, cString.c_str());
+            strcpy_s(excludeList[i + 5], 7, nString.c_str());
+        #else
+            strncpy(excludeList[i], cString.c_str(), 7);
+            strncpy(excludeList[i + 5], nString.c_str(), 7);
+        #endif
     }
     if (fits_read_keyword(fptr, "CTYPE4", ctype4, nullptr, status) == 202) {
         *status = 0;
-        strcpy_s(excludeList[10], 7, "C????4");
-        strcpy_s(excludeList[11], 7, "NAXIS4");
+        #if _WIN32
+            strcpy_s(excludeList[10], 7, "C????4");
+            strcpy_s(excludeList[11], 7, "NAXIS4");
+        #else
+            strncpy(excludeList[10], "C????4", 7);
+            strncpy(excludeList[11], "NAXIS4", 7);
+        #endif
         //if an axis 4, check if it is spectral, in which case swap with axis 3 later
     } else {
-        strncpy_s(subtype4, 5,  ctype4 + 1, 4);
+        #if _WIN32
+            strncpy_s(subtype4, 5,  ctype4 + 1, 4);
+        #else
+            strncpy(subtype4, ctype4 + 1, 4);
+        #endif
+
         subtype4[4] = '\0';
         if (strcmp(subtype4, "FREQ") == 0 || strcmp(subtype4, "VRAD") == 0 || strcmp(subtype4, "VOPT") == 0 ||
         strcmp(subtype4, "VELO") == 0 || strcmp(subtype4, "ZOPT") == 0)
         {
             needToSwap = true;
-            strcpy_s(excludeList[10], 7, "C????3");
-            strcpy_s(excludeList[11], 7, "NAXIS3");
+            #if _WIN32
+                strcpy_s(excludeList[10], 7, "C????3");
+                strcpy_s(excludeList[11], 7, "NAXIS3");
+            #else
+                strncpy(excludeList[10], "C????3", 7);
+                strncpy(excludeList[11], "NAXIS3", 7);
+            #endif
         }
         else
         {
-            strcpy_s(excludeList[10], 7, "C????4");
-            strcpy_s(excludeList[11], 7, "NAXIS4");
+            #if _WIN32
+                strcpy_s(excludeList[10], 7, "C????4");
+                strcpy_s(excludeList[11], 7, "NAXIS4");
+            #else
+                strncpy(excludeList[10], "C????4", 7);
+                strncpy(excludeList[11], "NAXIS4", 7);
+            #endif
         }
     }
     fits_hdr2str(fptr, 1, excludeList, numberExcl, header, nkeys, status);
@@ -246,7 +293,11 @@ int FitsCreateHdrPtrForAst(fitsfile *fptr, char **header, int *nkeys, int *statu
         std::string headerString(*header);
         std::regex regPattern ("(CTYPE|CDELT|CRPIX|CRVAL|CUNIT|NAXIS|CROTA)(4)");
         std::string result = std::regex_replace(headerString, regPattern, "$013");
-        strcpy_s(*header, *nkeys * 80 + 1, result.c_str());
+        #if _WIN32
+            strcpy_s(*header, *nkeys * 80 + 1, result.c_str());
+        #else
+            strncpy(*header, result.c_str(), *nkeys * 80 + 1);
+        #endif
     }
     for (int i = 0; i < numberExcl; i++)
     {

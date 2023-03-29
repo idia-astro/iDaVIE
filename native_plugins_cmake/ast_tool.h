@@ -1,7 +1,11 @@
 #ifndef NATIVE_PLUGINS_AST_TOOL_H
 #define NATIVE_PLUGINS_AST_TOOL_H
 
-#define DllExport __declspec (dllexport)
+#if _WIN32
+    #define DllExport __declspec (dllexport)
+#else
+    #define DllExport
+#endif
 
 #include <cstring>
 #include <iostream>

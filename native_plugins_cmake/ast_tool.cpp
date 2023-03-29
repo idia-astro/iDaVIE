@@ -1,9 +1,14 @@
 #include "ast_tool.h"
 
-#include <string>
+#if !_WIN32
+    #include <cmath>
+#endif
 #include <regex>
+#include <string>
 
-const double M_PI = 3.141592653589793238463;
+#if _WIN32
+    const double M_PI = 3.141592653589793238463;
+#endif
 
 std::string GetStringFromFitsChan(const AstFitsChan *chan, const char *name) {
   char *val_ptr;
@@ -162,7 +167,13 @@ int Format(AstFrameSet* frameSetPtr, int axis, double value, char* formattedVal,
     {
         return -1;
     }
-    strcpy_s(formattedVal, formattedValLength, astFormat(frameSetPtr, axis, value));
+
+    #if _WIN32
+        strcpy_s(formattedVal, formattedValLength, astFormat(frameSetPtr, axis, value));
+    #else
+        strncpy(formattedVal, astFormat(frameSetPtr, axis, value), formattedValLength);
+    #endif
+
     if (!astOK)
     {
         astClearStatus;
@@ -216,7 +227,12 @@ int GetString(AstFrameSet* frameSetPtr, const char* attribute, char* stringToRet
     {
         return -1;
     }
-    strcpy_s(stringToReturn, stringToReturnLen, astGetC(frameSetPtr, attribute));
+
+    #if _WIN32
+        strcpy_s(stringToReturn, stringToReturnLen, astGetC(frameSetPtr, attribute));
+    #else
+        strncpy(stringToReturn, astGetC(frameSetPtr, attribute), stringToReturnLen);
+    #endif
     return 0;
 }
 
@@ -407,7 +423,13 @@ int SpectralTransform(AstFrameSet* frameSetPtr, const char* specSysTo, const cha
     *zOut = output[2];
     delete[] input;
     delete[] output;
-    strcpy_s(formatZOut, formatLength, astFormat(cvt, 3, output[2]));
+
+    #if _WIN32
+        strcpy_s(formatZOut, formatLength, astFormat(cvt, 3, output[2]));
+    #else
+        strncpy(formatZOut, astFormat(cvt, 3, output[2]), formatLength);
+    #endif
+
     if (!astOK)
     {
         astClearStatus;
@@ -415,8 +437,6 @@ int SpectralTransform(AstFrameSet* frameSetPtr, const char* specSysTo, const cha
     }
     return 0;
 }
-
-
 
 void DeleteObject(AstFrameSet* frameSetPtr)
 {
