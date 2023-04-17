@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+      # For testing the artifact creation
+      - cilliers/autoBuild
 
   # Run the automated build whenever a pull request to main is opened
   pull_request:
