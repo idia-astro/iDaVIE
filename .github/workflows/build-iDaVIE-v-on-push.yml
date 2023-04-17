@@ -57,5 +57,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: "iDaVIE_${{ github.ref_name }}_${{ github.workflow }}_${{ github.event_name }}"
-          path: "${{ github.workspace }}\iDaVIE_${{ github.sha }}_${{ github.workflow }}_${{ github.event_name }}.zip"
+          path: "${{ github.workspace }}\\iDaVIE_${{ github.sha }}_${{ github.workflow }}_${{ github.event_name }}.zip"
           if-no-files-found: error
