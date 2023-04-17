@@ -1,19 +1,19 @@
 name: build-iDaVIE-v-on-push
 run-name: ${{ github.actor }} is building to test commit on ${{ github.ref }}
-on: 
-# Run the automated build whenever there is a push to main
+on:
+  # Run the automated build whenever there is a push to main
   push:
     branches:
       - main
 
-# Run the automated build whenever a pull request to main is opened
+  # Run the automated build whenever a pull request to main is opened
   pull_request:
     branches:
       - main
 
-# Run the automated build when triggered manually from the website  
+  # Run the automated build when triggered manually from the website
   workflow_dispatch:
-  
+
 jobs:
   auto-build:
     runs-on: windows-2022
@@ -23,23 +23,23 @@ jobs:
       - name: 'Edit vcpkg triplets'
         run: Add-Content -Path C:\vcpkg\triplets\*.cmake -Value 'set(VCPKG_BUILD_TYPE release)'
         shell: pwsh
-             
+
       # Install starlink-ast and cfitsio libraries onto the runner
       - name: 'Install vcpkg libraries'
         run: C:\vcpkg\vcpkg.exe install starlink-ast:x64-windows cfitsio:x64-windows
         shell: pwsh
-               
+
       # Fetch the idia-unity-vr repository
       - name: 'Checkout'
         uses: actions/checkout@v3
-          
+
       # Install unity using another user's published github action.
       - name: 'Setup Unity'
         id: setup-unity
         uses: kuler90/setup-unity@v1.1.0
         with:
           unity-version: 2021.3.17f1
-          
+
       # Build the project using the build script
       - name: 'Run the project build script'
         run: ${{ github.workspace }}\build.ps1 -vcpkg "C:\vcpkg\scripts\buildsystems\vcpkg.cmake" -u "${{steps.setup-unity.outputs.unity-path}}" -d "${{ github.workspace }}\..\build"
@@ -55,5 +55,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: "iDaVIE_${{ github.ref_name }}_${{ github.workflow }}_${{ github.event_name }}"
-          path: "${{ github.workspace }}\..\*.zip"
+          path: "${{ github.workspace }}\\..\\*.zip"
           if-no-files-found: error
