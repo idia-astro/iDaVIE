@@ -49,7 +49,7 @@ jobs:
 
       # Make the "artifact" from the built pipeline NB! Test output, and/or fix Steam XR issues.
       - name: 'Compress the built project'
-        run: Compress-Archive -Path "${{ github.workspace }}\..\build\*" -DestinationPath "${{ github.workspace }}\..\iDaVIE_${{ github.ref_name }}_${{ github.workflow }}_${{ github.event_name }}.zip"
+        run: Compress-Archive -Path "${{ github.workspace }}\..\build\*" -DestinationPath "${{ github.workspace }}\..\iDaVIE_${{ github.sha }}_${{ github.workflow }}_${{ github.event_name }}.zip"
         shell: pwsh
 
       # Upload the compressed artifact to Github
