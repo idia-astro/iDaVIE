@@ -1,11 +1,21 @@
 name: build-iDaVIE-v-on-push
 run-name: ${{ github.actor }} is building to test commit on ${{ github.ref }}
 on: 
-#  schedule:
-#    - cron: "30 0 31 12 *"
+# Run the automated build whenever there is a push to main
   push:
     branches:
-      - cilliers/autoBuild
+	  - main
+      #- cilliers/autoBuild
+      #autobuild branch kept as a backup test for artifact builds
+# Run the automated build whenever a pull request to main is opened
+  pull_request:
+    types: [opened, reopened]
+	branches:
+	  - main
+	  
+# Run the automated build when triggered manually from the website  
+  workflow_dispatch:
+  
 jobs:
     auto-build:
         runs-on: windows-2022
@@ -23,7 +33,7 @@ jobs:
                
           # Fetch the idia-unity-vr repository
           -  name: Checkout
-             uses: actions/checkout@v3.4.0
+             uses: actions/checkout@v3
           
           # Install unity using another user's published github action.
           -  name: Setup Unity
@@ -36,3 +46,17 @@ jobs:
           -  name: Run the project build script
              run: ${{ github.workspace }}\build.ps1 -vcpkg "C:\vcpkg\scripts\buildsystems\vcpkg.cmake" -u "${{steps.setup-unity.outputs.unity-path}}" -d "${{ github.workspace }}\..\build"
              shell: pwsh
+			 
+		  # Make the "artifact" from the built pipeline
+		  # NB! Test output, and/or fix Steam XR issues.
+		  -  name: Compress the built project
+		     run: Compress-Archive -Path "${{ github.workspace }}\..\build\*" -DestinationPath "${{ github.workspace }}\..\iDaVIE_${{ github.ref_name }}_${{ github.workflow }}_${{ github.event_name }}.zip
+			 shell: pwsh
+		  
+		  #Upload the compressed artifact to Github
+          -  name: Upload the built project
+             uses: actions/upload-artifact@v3
+             with:
+               - name: "iDaVIE_${{ github.ref_name }}_${{ github.workflow }}_${{ github.event_name }}"
+               - path: "${{ github.workspace }}\..\*.zip"
+               - if-no-files-found: error
