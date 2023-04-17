@@ -1,5 +1,5 @@
 name: build-iDaVIE-v-on-push
-run-name: ${{ github.actor }} is building to test commit on ${{ github.ref }}
+run-name: ${{ github.actor }} is building to test commit on ${{ github.ref_name }}
 on:
   # Run the automated build whenever there is a push to main
   push:
