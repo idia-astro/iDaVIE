@@ -47,11 +47,8 @@ jobs:
       - name: 'Compress the built project'
         run: |
           $compress = @{
-             Path = "build/*.exe",
-                    "build/*.dll,
-                    "build/iDaVIE-v_DATA",
-                    "build/MonoBleedingEdge"
-             DestinationPath = "iDaVIE-v_${{ github.sha }}_${{ github.workflow }}_${{ github.event_name }}.zip"
+             Path = "${{ github.workspace }}\build\*.exe", "${{ github.workspace }}\build\*.dll, "${{ github.workspace }}\build\iDaVIE-v_DATA\", "${{ github.workspace }}\build\MonoBleedingEdge\"
+             DestinationPath = "${{ github.workspace }}\iDaVIE-v_${{ github.sha }}.zip"
           }
           Compress-Archive @compress
           ls -l
