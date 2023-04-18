@@ -40,18 +40,18 @@ jobs:
 
       # Build the project using the build script
       - name: 'Run the project build script'
-        run: ${{ github.workspace }}/build.ps1 -vcpkg "C:\vcpkg\scripts\buildsystems\vcpkg.cmake" -u "${{steps.setup-unity.outputs.unity-path}}" -d "${{ github.workspace }}\build"
+        run: build.ps1 -vcpkg "C:\vcpkg\scripts\buildsystems\vcpkg.cmake" -u "${{steps.setup-unity.outputs.unity-path}}" -d "build"
         shell: pwsh
 
       # Make the "artifact" from the built pipeline NB! Test output, and/or fix Steam XR issues.
       - name: 'Compress the built project'
         run: |
           $compress = @{
-             Path = "${{ github.workspace }}/build/*.exe",
-                    "${{ github.workspace }}/build/*.dll,
-                    "${{ github.workspace }}/build/iDaVIE-v_DATA",
-                    "${{ github.workspace }}/build/MonoBleedingEdge"
-             DestinationPath = "${{ github.workspace }}/iDaVIE-v_${{ github.sha }}_${{ github.workflow }}_${{ github.event_name }}.zip"
+             Path = "build/*.exe",
+                    "build/*.dll,
+                    "build/iDaVIE-v_DATA",
+                    "build/MonoBleedingEdge"
+             DestinationPath = "iDaVIE-v_${{ github.sha }}_${{ github.workflow }}_${{ github.event_name }}.zip"
           }
           Compress-Archive @compress
           ls -l
@@ -62,6 +62,6 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: "iDaVIE_${{ github.ref_name }}_${{ github.workflow }}_${{ github.event_name }}"
-          path: "${{ github.workspace }}/iDaVIE-v_${{ github.sha }}_${{ github.workflow }}_${{ github.event_name }}.zip"
+          path: "*.zip"
           if-no-files-found: error
           retention-days: 14
