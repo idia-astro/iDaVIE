@@ -47,8 +47,8 @@ jobs:
       - name: 'Compress the built project'
         run: |
           $compress = @{
-             Path = "${{ github.workspace }}\build\*.exe", "${{ github.workspace }}\build\*.dll, "${{ github.workspace }}\build\iDaVIE-v_DATA\", "${{ github.workspace }}\build\MonoBleedingEdge\"
-             DestinationPath = "${{ github.workspace }}\iDaVIE-v_${{ github.sha }}.zip"
+             Path = "${{ github.workspace }}\build\*.exe", "${{ github.workspace }}\build\*.dll", "${{ github.workspace }}\build\iDaVIE-v_DATA\", "${{ github.workspace }}\build\MonoBleedingEdge\"
+             DestinationPath = "${{ github.workspace }}\iDaVIE-${{ github.sha }}.zip"
           }
           Compress-Archive @compress
           ls -l
@@ -59,6 +59,6 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: "iDaVIE_${{ github.ref_name }}_${{ github.workflow }}_${{ github.event_name }}"
-          path: "*.zip"
+          path: "${{ github.workspace }}/*.zip"
           if-no-files-found: error
           retention-days: 14
