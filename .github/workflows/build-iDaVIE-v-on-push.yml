@@ -1,17 +1,13 @@
 name: build-iDaVIE-v-on-push
 run-name: ${{ github.actor }} is building to test commit on ${{ github.ref_name }}
 on:
-  # Run the automated build whenever there is a push to main
+  # Run the automated build whenever there is a push to main, or cilliers/autoBuild for testing
   push:
-    branches:
-      - main
-      # For testing the artifact creation
-      - cilliers/autoBuild
+    branches: [main, cilliers/autoBuild]
 
   # Run the automated build whenever a pull request to main is opened
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
   # Run the automated build when triggered manually from the website
   workflow_dispatch:
@@ -49,7 +45,16 @@ jobs:
 
       # Make the "artifact" from the built pipeline NB! Test output, and/or fix Steam XR issues.
       - name: 'Compress the built project'
-        run: Compress-Archive -Path "${{ github.workspace }}/build/*" -DestinationPath "${{ github.workspace }}/iDaVIE_${{ github.sha }}_${{ github.workflow }}_${{ github.event_name }}.zip"
+        run: |
+          $compress = @{
+             Path = "${{ github.workspace }}/build/*.exe",
+                    "${{ github.workspace }}/build/*.dll,
+                    "${{ github.workspace }}/build/iDaVIE-v_DATA",
+                    "${{ github.workspace }}/build/MonoBleedingEdge"
+             DestinationPath = "${{ github.workspace }}/iDaVIE-v_${{ github.sha }}_${{ github.workflow }}_${{ github.event_name }}.zip"
+          }
+          Compress-Archive -Path "${{ github.workspace }}/build/*" -DestinationPath "${{ github.workspace }}/iDaVIE_${{ github.sha }}_${{ github.workflow }}_${{ github.event_name }}.zip"
+          ls -l
         shell: pwsh
 
       # Upload the compressed artifact to Github
@@ -59,3 +64,4 @@ jobs:
           name: "iDaVIE_${{ github.ref_name }}_${{ github.workflow }}_${{ github.event_name }}"
           path: "${{ github.workspace }}/iDaVIE_${{ github.sha }}_${{ github.workflow }}_${{ github.event_name }}.zip"
           if-no-files-found: error
+          retention-days: 14
