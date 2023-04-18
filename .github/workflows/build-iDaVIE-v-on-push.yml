@@ -47,12 +47,12 @@ jobs:
       # NB! Test output, and/or fix Steam XR issues.
       - name: 'Compress the built project'
         run: |
+          ls -l
           $compress = @{
-             Path = "${{ github.workspace }}\build\*.exe", "${{ github.workspace }}\build\*.dll", "${{ github.workspace }}\build\iDaVIE-v_DATA\", "${{ github.workspace }}\build\MonoBleedingEdge\"
+             Path = "${{ github.workspace }}\build\*"
              DestinationPath = "${{ github.workspace }}\iDaVIE-${{ github.sha }}_${{ github.event_name }}.zip"
           }
           Compress-Archive @compress
-          ls -l
         shell: pwsh
 
       # Upload the compressed artifact to Github
