@@ -43,12 +43,13 @@ jobs:
         run: .\build.ps1 -vcpkg "C:\vcpkg\scripts\buildsystems\vcpkg.cmake" -u "${{steps.setup-unity.outputs.unity-path}}" -d "build"
         shell: pwsh
 
-      # Make the "artifact" from the built pipeline NB! Test output, and/or fix Steam XR issues.
+      # Make the "artifact" from the built pipeline
+      # NB! Test output, and/or fix Steam XR issues.
       - name: 'Compress the built project'
         run: |
           $compress = @{
              Path = "${{ github.workspace }}\build\*.exe", "${{ github.workspace }}\build\*.dll", "${{ github.workspace }}\build\iDaVIE-v_DATA\", "${{ github.workspace }}\build\MonoBleedingEdge\"
-             DestinationPath = "${{ github.workspace }}\iDaVIE-${{ github.sha }}.zip"
+             DestinationPath = "${{ github.workspace }}\iDaVIE-${{ github.sha }}_${{ github.event_name }}.zip"
           }
           Compress-Archive @compress
           ls -l
