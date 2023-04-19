@@ -48,7 +48,7 @@ jobs:
       - name: 'Compress the built project'
         run: |
           Get-ChildItem -Force -Path ./build/
-          Get-ChildItem -Force -Path ./build/ | foreach {Compress-Archive -Path $_.FullName -Update -DestinationPath "${{ github.workspace }}\iDaVIE-${{ github.sha }}_${{ github.event_name }}.zip"
+          Get-ChildItem -Force -Path ./build/ | foreach {Compress-Archive -Path $_.FullName -Update -DestinationPath "${{ github.workspace }}\iDaVIE-${{ github.sha }}_${{ github.event_name }}.zip"}
           Get-ChildItem -Force
         shell: pwsh
 
