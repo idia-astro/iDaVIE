@@ -47,9 +47,14 @@ jobs:
       # NB! Test output, and/or fix Steam XR issues.
       - name: 'Compress the built project'
         run: |
-          Get-ChildItem -Force -Path ./build/
-          Get-ChildItem -Force -Path ./build/ | foreach {Compress-Archive -Path $_.FullName -Update -DestinationPath "${{ github.workspace }}\iDaVIE-${{ github.sha }}_${{ github.event_name }}.zip"}
-          Get-ChildItem -Force
+          if (-not ((Get-ChildItem -Force -Path ./build/ | Measure-Object).Count -lt 1))
+          {
+            Get-ChildItem -Force -Path ./build/ | foreach {Compress-Archive -Path $_.FullName -Update -DestinationPath "${{ github.workspace }}\iDaVIE-${{ github.sha }}_${{ github.event_name }}.zip"}
+          }
+          else
+          {
+            Get-ChildItem -Force -Recurse -Path ../
+          }
         shell: pwsh
 
       # Upload the compressed artifact to Github
@@ -60,3 +65,13 @@ jobs:
           path: "${{ github.workspace }}/*.zip"
           if-no-files-found: error
           retention-days: 14
+          
+      # Upload the log files to Github
+      - name: 'Upload the log files'
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: "iDaVIE_${{ github.sha }}_${{ github.workflow }}_${{ github.event_name }}_Log_Files"
+          path: "${{ github.workspace }}/*.log"
+          if-no-files-found: error
+          retention-days: 7
