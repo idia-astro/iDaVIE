@@ -47,12 +47,8 @@ jobs:
       # NB! Test output, and/or fix Steam XR issues.
       - name: 'Compress the built project'
         run: |
-          Get-ChildItem -Force
-          $compress = @{
-             Path = "${{ github.workspace }}\build\*"
-             DestinationPath = "${{ github.workspace }}\iDaVIE-${{ github.sha }}_${{ github.event_name }}.zip"
-          }
-          Compress-Archive @compress
+          Get-ChildItem -Force -Path ./build/
+          Get-ChildItem -Force -Path ./build/ | foreach {Compress-Archive -Path $_.FullName -Update -DestinationPath "${{ github.workspace }}\iDaVIE-${{ github.sha }}_${{ github.event_name }}.zip"
           Get-ChildItem -Force
         shell: pwsh
 
