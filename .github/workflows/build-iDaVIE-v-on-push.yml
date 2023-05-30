@@ -41,7 +41,8 @@ jobs:
       # Activate Unity using the repository key
       - name: 'Activate Unity'
         id: activate-unity
-        run: "${{steps.setup-unity.outputs.unity-path}}" -batchmode -username "${{secrets.UNITY_USERNAME}}" -password "${{secrets.UNITY_PASSWORD}}" -serial "${{secrets.UNITY_SERIAL_KEY}}" -quit
+        run: |
+          "${{steps.setup-unity.outputs.unity-path}}" -batchmode -username "${{secrets.UNITY_USERNAME}}" -password "${{secrets.UNITY_PASSWORD}}" -serial "${{secrets.UNITY_SERIAL_KEY}}" -quit
         shell: pwsh
 
       # Build the project using the build script
@@ -75,7 +76,9 @@ jobs:
       # Release the licence
       - name: 'Release the Unity licence'
         id: release-unity
-        run: "${{steps.setup-unity.outputs.unity-path}}" -quit -batchmode -returnlicense -username "${{secrets.UNITY_USERNAME}}" -password "${{secrets.UNITY_PASSWORD}}"
+        run: |
+          "${{steps.setup-unity.outputs.unity-path}}" -quit -batchmode -returnlicense -username "${{secrets.UNITY_USERNAME}}" -password "${{secrets.UNITY_PASSWORD}}"
+        shell: pwsh
           
       # Upload the log files to Github
       - name: 'Upload the log files'
