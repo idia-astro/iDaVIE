@@ -42,7 +42,7 @@ jobs:
       - name: 'Activate Unity'
         id: activate-unity
         run: |
-          "'${{steps.setup-unity.outputs.unity-path}}' -batchmode -nographics -username '${{vars.UNITY_USERNAME}}' -password '${{secrets.UNITY_PASSWORD}}' -serial '${{secrets.UNITY_SERIAL_KEY}}' -quit"
+          "'${{steps.setup-unity.outputs.unity-path}}' -batchmode -nographics -username '${{vars.UNITY_USERNAME}}' -password '${{secrets.UNITY_PASSWORD}}' -serial ${{secrets.UNITY_SERIAL_KEY}} -quit"
         shell: pwsh
 
       # Build the project using the build script
