@@ -24,17 +24,17 @@ param (
 	[Parameter(Mandatory=$false, Position=2)]
 	[Alias("d", "destination")]
 	[System.String]
-	$DestFolder = "..\build"
+	$DestFolder = "..\build",
     
-    [Parameter(Mandatory=$false, Position=3)]
-    [Alias("un", "username")]
-    [System.String]
-    $UNITY_USERNAME = "__not_init__"
-    
-    [Parameter(Mandatory=$false, Position=4)]
-    [Alias("pw", "password")]
-    [System.String]
-    $UNITY_PASSWORD = "__not_init__"
+        [Parameter(Mandatory=$false, Position=3)]
+	[Alias("un", "username")]
+	[System.String]
+        $UNITY_USERNAME = "__not_init__",
+
+        [Parameter(Mandatory=$false, Position=4)]
+	[Alias("pw", "password")]
+	[System.String]
+        $UNITY_PASSWORD = "__not_init__"
 )
 
 #Test that vcpkg cmake exists and is a file
