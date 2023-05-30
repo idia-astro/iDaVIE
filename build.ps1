@@ -24,7 +24,17 @@ param (
 	[Parameter(Mandatory=$false, Position=2)]
 	[Alias("d", "destination")]
 	[System.String]
-	$DestFolder = "..\build"	
+	$DestFolder = "..\build"
+    
+    [Parameter(Mandatory=$false, Position=3)]
+    [Alias("un", "username")]
+    [System.String]
+    $UNITY_USERNAME = "__not_init__"
+    
+    [Parameter(Mandatory=$false, Position=4)]
+    [Alias("pw", "password")]
+    [System.String]
+    $UNITY_PASSWORD = "__not_init__"
 )
 
 #Test that vcpkg cmake exists and is a file
@@ -165,7 +175,14 @@ Copy-Item -Path ".\Assets\*" -Destination "..\Assets" -Recurse -Force
 
 Set-Location ..
 
-Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import.log -importPackage $PSScriptRoot\plugin_build\textMeshPro-3.0.6.unitypackage -quit"
+if (($UNITY_USERNAME -eq "__not_init__") -or ($UNITY_PASSWORD -eq "__not_init__"))
+{
+    Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import.log -importPackage $PSScriptRoot\plugin_build\textMeshPro-3.0.6.unitypackage -quit"
+}
+else
+{
+    Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -username $UNITY_USERNAME -password $UNITY_PASSWORD -logfile $PSScriptRoot\import.log -importPackage $PSScriptRoot\plugin_build\textMeshPro-3.0.6.unitypackage -quit"
+}
 
 Write-Host "Packages imported."
 
@@ -180,5 +197,12 @@ else
     Write-Host "build folder created successfully"
 }
 
-Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\build.log -buildWindows64Player $DestFolder\iDaVIE-v.exe -quit"
+if (($UNITY_USERNAME -eq "__not_init__") -or ($UNITY_PASSWORD -eq "__not_init__"))
+{
+    Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -username $UNITY_USERNAME -password $UNITY_PASSWORD -logfile $PSScriptRoot\build.log -buildWindows64Player $DestFolder\iDaVIE-v.exe -quit"
+}
+else
+{
+    Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\build.log -buildWindows64Player $DestFolder\iDaVIE-v.exe -quit"
+}
 Write-Host "Finished!"
