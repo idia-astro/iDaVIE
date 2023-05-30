@@ -47,7 +47,7 @@ jobs:
 
       # Build the project using the build script
       - name: 'Run the project build script'
-        run: .\build.ps1 -vcpkg "C:\vcpkg\scripts\buildsystems\vcpkg.cmake" -u "${{steps.setup-unity.outputs.unity-path}}" -d "build" -un "${{vars.UNITY_USERNAME}}" -pw "${{secrets.UNITY_PASSWORD}}"
+        run: .\build.ps1 -vcpkg "C:\vcpkg\scripts\buildsystems\vcpkg.cmake" -u "${{steps.setup-unity.outputs.unity-path}}" -d "build" -un "${{vars.UNITY_USERNAME}}" -pw "${{secrets.UNITY_PASSWORD}}" -sk "${{secrets.UNITY_SERIAL_KEY}}"
         shell: pwsh
 
       # Make the "artifact" from the built pipeline
