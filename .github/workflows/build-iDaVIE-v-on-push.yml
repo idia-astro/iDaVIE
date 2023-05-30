@@ -37,6 +37,12 @@ jobs:
         uses: kuler90/setup-unity@v1.1.0
         with:
           unity-version: 2021.3.17f1
+      
+      # Activate Unity using the repository key
+      - name: 'Activate Unity'
+        id: activate-unity
+        run: ${{steps.setup-unity.outputs.unity-path}} -batchmode -username ${{secrets.UNITY_USERNAME}} -password ${{secrets.UNITY_PASSWORD}} -serial ${{secrets.UNITY_SERIAL_KEY}} -quit
+        shell: pwsh
 
       # Build the project using the build script
       - name: 'Run the project build script'
@@ -65,6 +71,11 @@ jobs:
           path: "${{ github.workspace }}/*.zip"
           if-no-files-found: error
           retention-days: 14
+      
+      # Release the licence
+      - name: 'Release the Unity licence'
+        id: release-unity
+        run: ${{steps.setup-unity.outputs.unity-path}} -quit -batchmode -returnlicense -username ${{secrets.UNITY_USERNAME}} -password ${{secrets.UNITY_PASSWORD}}
           
       # Upload the log files to Github
       - name: 'Upload the log files'
