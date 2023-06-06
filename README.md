@@ -17,7 +17,7 @@ Compile plugins. You will need to know the path for your [vcpkg toolchain file](
 cd native_plugins_cmake
 mkdir build
 cd build
-cmake -DCMAKE_TOOLCHAIN_FILE=<path_to_vcpkg.cmake> -DCMAKE_BUILD_TYPE=Release ../
+cmake -DCMAKE_TOOLCHAIN_FILE=<path_to_vcpkg.cmake> -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_BUILD_TYPE=Release ../
 cmake --build . --config Release --target install
 ```
 
