@@ -38,13 +38,6 @@ jobs:
         with:
           unity-version: 2021.3.17f1
       
-      # Activate Unity using the repository key
-      - name: 'Activate Unity'
-        id: activate-unity
-        run: |
-          "'${{ steps.setup-unity.outputs.unity-path }}' -batchmode -nographics -username 'angus.comrie@uct.ac.za' -password '${{ secrets.UNITY_PASSWORD }}' -serial '${{ secrets.UNITY_SERIAL_KEY }}' -logfile ${{ github.workspace }}\activate.log -quit"
-        shell: pwsh
-
       # Build the project using the build script
       - name: 'Run the project build script'
         run: .\build.ps1 -vcpkg "C:\vcpkg\scripts\buildsystems\vcpkg.cmake" -u "${{ steps.setup-unity.outputs.unity-path }}" -d "build" -un 'angus.comrie@uct.ac.za' -pw "${{ secrets.UNITY_PASSWORD }}" -sk "${{ secrets.UNITY_SERIAL_KEY }}"
@@ -72,13 +65,6 @@ jobs:
           path: "${{ github.workspace }}/*.zip"
           if-no-files-found: error
           retention-days: 14
-      
-      # Release the licence
-      - name: 'Release the Unity licence'
-        id: release-unity
-        run: |
-          "'${{ steps.setup-unity.outputs.unity-path }}' -quit -batchmode -nographics -returnlicense -username '${{ vars.UNITY_USERNAME }}' -password '${{ secrets.UNITY_PASSWORD }}'"
-        shell: pwsh
           
       # Upload the log files to Github
       - name: 'Upload the log files'
