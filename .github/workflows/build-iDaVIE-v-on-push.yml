@@ -61,7 +61,7 @@ jobs:
       - name: 'Upload the built project'
         uses: actions/upload-artifact@v3
         with:
-          name: "iDaVIE_${{ github.ref_name }}_${{ github.workflow }}_${{ github.event_name }}"
+          name: "iDaVIE_${{ github.workflow }}_${{ github.event_name }}"
           path: "${{ github.workspace }}/*.zip"
           if-no-files-found: error
           retention-days: 14
