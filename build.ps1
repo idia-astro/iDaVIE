@@ -180,6 +180,18 @@ Copy-Item -Path ".\Assets\*" -Destination "..\Assets" -Recurse -Force
 
 Set-Location ..
 
+#Activate Unity
+if (($UNITY_USERNAME -eq "__not_init__") -or ($UNITY_PASSWORD -eq "__not_init__") -or ($UNITY_SERIAL -eq "__not_init__"))
+{
+    Write-Host "No login details, assuming that licence is already active."
+}
+else
+{
+    Write-Host "$UNITYPATH" -Wait -ArgumentList "-batchmode -username $UNITY_USERNAME -password $UNITY_PASSWORD -serial $UNITY_SERIAL -quit"
+    Start-Process "$UNITYPATH" -Wait -ArgumentList "-batchmode -username $UNITY_USERNAME -password $UNITY_PASSWORD -serial $UNITY_SERIAL -quit"
+}
+
+#Import packages
 if (($UNITY_USERNAME -eq "__not_init__") -or ($UNITY_PASSWORD -eq "__not_init__") -or ($UNITY_SERIAL -eq "__not_init__"))
 {
     Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import.log -importPackage $PSScriptRoot\plugin_build\textMeshPro-3.0.6.unitypackage -quit"
@@ -213,3 +225,14 @@ else
     Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -username $UNITY_USERNAME -password $UNITY_PASSWORD -logfile $PSScriptRoot\build.log -buildWindows64Player $DestFolder\iDaVIE-v.exe -quit"
 }
 Write-Host "Finished!"
+
+Write-Host "Returning licence..."
+if (($UNITY_USERNAME -eq "__not_init__") -or ($UNITY_PASSWORD -eq "__not_init__") -or ($UNITY_SERIAL -eq "__not_init__"))
+{
+
+}
+else
+{
+    Start-Process "$UNITYPATH" -Wait -ArgumentList "-batchmode -returnlicense -username $UNITY_USERNAME -password $UNITY_PASSWORD"
+}
+Write-Host "All done."
