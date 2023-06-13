@@ -42,12 +42,12 @@ jobs:
       - name: 'Activate Unity'
         id: activate-unity
         run: |
-          "'${{ steps.setup-unity.outputs.unity-path }}' -batchmode -nographics -username '${{ vars.UNITY_USERNAME }}' -password '${{ secrets.UNITY_PASSWORD }}' -serial '${{ secrets.UNITY_SERIAL_KEY }}' -logfile ${{ github.workspace }}\activate.log -quit"
+          "'${{ steps.setup-unity.outputs.unity-path }}' -batchmode -nographics -username 'angus.comrie@uct.ac.za' -password '${{ secrets.UNITY_PASSWORD }}' -serial '${{ secrets.UNITY_SERIAL_KEY }}' -logfile ${{ github.workspace }}\activate.log -quit"
         shell: pwsh
 
       # Build the project using the build script
       - name: 'Run the project build script'
-        run: .\build.ps1 -vcpkg "C:\vcpkg\scripts\buildsystems\vcpkg.cmake" -u "${{ steps.setup-unity.outputs.unity-path }}" -d "build" -un "${{ vars.UNITY_USERNAME }}" -pw "${{ secrets.UNITY_PASSWORD }}" -sk "${{ secrets.UNITY_SERIAL_KEY }}"
+        run: .\build.ps1 -vcpkg "C:\vcpkg\scripts\buildsystems\vcpkg.cmake" -u "${{ steps.setup-unity.outputs.unity-path }}" -d "build" -un 'angus.comrie@uct.ac.za' -pw "${{ secrets.UNITY_PASSWORD }}" -sk "${{ secrets.UNITY_SERIAL_KEY }}"
         shell: pwsh
 
       # Make the "artifact" from the built pipeline
