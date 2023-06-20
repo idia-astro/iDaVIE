@@ -49,6 +49,12 @@ public class CanvassDesktop : MonoBehaviour
     private double maskNAxis = 0;
     private double maskSize = 1;
 
+    private int subsetMin = 0;
+    private int subsetMax_X = 1;
+    private int subsetMax_Y = 1;
+    private int subsetMax_Z = 1;
+    private int[] subset;
+
     Dictionary<double, double> axisSize = null;
     Dictionary<double, double> maskAxisSize = null;
 
@@ -65,6 +71,13 @@ public class CanvassDesktop : MonoBehaviour
     private float restFrequency;
     private FeatureMapping featureMapping;
 
+    private Toggle subsetToggle;
+    private TMP_InputField subset_XMin_input;
+    private TMP_InputField subset_YMin_input;
+    private TMP_InputField subset_ZMin_input;
+    private TMP_InputField subset_XMax_input;
+    private TMP_InputField subset_YMax_input;
+    private TMP_InputField subset_ZMax_input;
 
     protected Coroutine loadCubeCoroutine;
     protected Coroutine showLoadDialogCoroutine;
@@ -91,6 +104,29 @@ public class CanvassDesktop : MonoBehaviour
         maxThresholdLabel = renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
             .gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max").gameObject.transform
             .Find("Max_label").GetComponent<TextMeshProUGUI>();
+
+        subsetToggle = informationPanelContent.gameObject.transform.Find("SubsetSelection_container").gameObject.transform.Find("LoadSubset_Toggle").GetComponent<Toggle>();
+        // subsetToggle.onValueChanged.AddListener(onSubsetToggleSelected);
+        subset_XMin_input = informationPanelContent.gameObject.transform.Find("SubsetMin_container").gameObject.transform.Find("SubsetX_min").GetComponent<TMP_InputField>();
+        subset_XMin_input.onEndEdit.AddListener(checkSubsetBounds);
+        subset_YMin_input = informationPanelContent.gameObject.transform.Find("SubsetMin_container").gameObject.transform.Find("SubsetY_min").GetComponent<TMP_InputField>();
+        subset_YMin_input.onEndEdit.AddListener(checkSubsetBounds);
+        subset_ZMin_input = informationPanelContent.gameObject.transform.Find("SubsetMin_container").gameObject.transform.Find("SubsetZ_min").GetComponent<TMP_InputField>();
+        subset_ZMin_input.onEndEdit.AddListener(checkSubsetBounds);
+        subset_XMax_input = informationPanelContent.gameObject.transform.Find("SubsetMax_container").gameObject.transform.Find("SubsetX_max").GetComponent<TMP_InputField>();
+        subset_XMax_input.onEndEdit.AddListener(checkSubsetBounds);
+        subset_YMax_input = informationPanelContent.gameObject.transform.Find("SubsetMax_container").gameObject.transform.Find("SubsetY_max").GetComponent<TMP_InputField>();
+        subset_YMax_input.onEndEdit.AddListener(checkSubsetBounds);
+        subset_ZMax_input = informationPanelContent.gameObject.transform.Find("SubsetMax_container").gameObject.transform.Find("SubsetZ_max").GetComponent<TMP_InputField>();
+        subset_ZMax_input.onEndEdit.AddListener(checkSubsetBounds);
+
+        subset_XMin_input.text = subsetMin.ToString();
+        subset_YMin_input.text = subsetMin.ToString();
+        subset_ZMin_input.text = subsetMin.ToString();
+        subset_XMax_input.text = subsetMax_X.ToString();
+        subset_YMax_input.text = subsetMax_Y.ToString();
+        subset_ZMax_input.text = subsetMax_Z.ToString();
+        subset = new int[6];
     }
 
     void checkCubesDataSet()
@@ -317,16 +353,40 @@ public class CanvassDesktop : MonoBehaviour
                 localMsg = "Please select a valid cube!";
             }
 
-            //if it is valid enable loading button
+            //if it is valid enable loading button and subset selector
             if (loadable)
             {
                 informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
                 informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
+                informationPanelContent.gameObject.transform.Find("SubsetSelection_container").gameObject.SetActive(true);
+
+
             }
         }
 
         if (showLoadDialogCoroutine != null)
             StopCoroutine(showLoadDialogCoroutine);
+    }
+
+    public void onSubsetToggleSelected(bool val)
+    {
+        if (subsetToggle.isOn)
+        {
+            informationPanelContent.gameObject.transform.Find("SubsetLabel_container").gameObject.SetActive(true);
+            informationPanelContent.gameObject.transform.Find("SubsetMin_container").gameObject.SetActive(true);
+            informationPanelContent.gameObject.transform.Find("SubsetMax_container").gameObject.SetActive(true);
+        }
+        else
+        {
+            informationPanelContent.gameObject.transform.Find("SubsetLabel_container").gameObject.SetActive(false);
+            informationPanelContent.gameObject.transform.Find("SubsetMin_container").gameObject.SetActive(false);
+            informationPanelContent.gameObject.transform.Find("SubsetMax_container").gameObject.SetActive(false);
+        }
+    }
+
+    public void checkSubsetBounds(string val)
+    {
+        Debug.Log("One of the subset input fields had its value changed to " + val);
     }
 
     public void BrowseMaskFile()
