@@ -679,7 +679,6 @@ namespace VolumeData
                 ComputeBuffer nullBuffer = null;
                 _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, nullBuffer);
                 _momentMapRenderer.MaskCube = _maskDataSet.DataCube;
-                DisplayMask = false;
             }
             _momentMapRenderer.DataCube = _dataSet.DataCube;
             IsCropped = false;
@@ -840,13 +839,13 @@ namespace VolumeData
 
         void OnRenderObject()
         {
-            if (DisplayMask && _maskDataSet?.ExistingMaskBuffer != null)
+            if (IsCropped && DisplayMask && _maskDataSet?.ExistingMaskBuffer != null)
             {
                 _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, _maskDataSet.ExistingMaskBuffer);
                 _maskMaterialInstance.SetPass(0);
                 Graphics.DrawProceduralNow(MeshTopology.Points, _maskDataSet.ExistingMaskBuffer.count);
             }
-            if (DisplayMask && _maskDataSet?.AddedMaskBuffer != null && _maskDataSet?.AddedMaskEntryCount > 0)
+            if (IsCropped && DisplayMask && _maskDataSet?.AddedMaskBuffer != null && _maskDataSet?.AddedMaskEntryCount > 0)
             {
                 _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, _maskDataSet.AddedMaskBuffer);
                 _maskMaterialInstance.SetPass(0);
