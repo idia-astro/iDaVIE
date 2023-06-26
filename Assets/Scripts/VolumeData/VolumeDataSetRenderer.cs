@@ -679,6 +679,7 @@ namespace VolumeData
                 ComputeBuffer nullBuffer = null;
                 _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, nullBuffer);
                 _momentMapRenderer.MaskCube = _maskDataSet.DataCube;
+                DisplayMask = false;
             }
             _momentMapRenderer.DataCube = _dataSet.DataCube;
             IsCropped = false;
