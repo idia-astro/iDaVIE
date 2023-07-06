@@ -683,12 +683,8 @@ namespace VolumeData
             {
                 if (IsFullResolution)
                 {
-                    Vector3 cornerMin = Vector3.one;
-                    Vector3 cornerMax = new Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim);
-                    Vector3Int startVoxel = new Vector3Int(Convert.ToInt32(cornerMin.x), Convert.ToInt32(cornerMin.y), Convert.ToInt32(cornerMin.z));
-                    Vector3Int endVoxel = new Vector3Int(Convert.ToInt32(cornerMax.x), Convert.ToInt32(cornerMax.y), Convert.ToInt32(cornerMax.z));
-                    _maskDataSet.GenerateCroppedVolumeTexture(TextureFilter, startVoxel, endVoxel,
-                        Vector3Int.one);
+                    _maskDataSet.GenerateCroppedVolumeTexture(TextureFilter, Vector3Int.one, 
+                        new Vector3Int((int)_dataSet.XDim, (int)_dataSet.YDim, (int)_dataSet.ZDim), Vector3Int.one);
                     _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
                     var regionMin = Vector3.Min(Vector3Int.one, new Vector3Int((int)_dataSet.XDim, (int)_dataSet.YDim, (int)_dataSet.ZDim));
                     _maskMaterialInstance.SetVector(MaterialID.RegionOffset, new Vector4(regionMin.x, regionMin.y, regionMin.z, 0));
