@@ -202,6 +202,20 @@ int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array,
     return success;
 }
 
+int FitsReadSubImageInt16(fitsfile *fptr, int dims, long *startPix, long *finalPix, int64_t nelem, float **array, int *status)
+{
+    int anynul;
+    float nulval = 0;
+    float* dataarray = new float[nelem];
+    long* increment = new long[dims];
+    for (int i = 0; i < dims; i++)
+        increment[i] = 1;
+    int success = fits_read_subset(fptr, TSHORT, startPix, finalPix, increment, &nulval, dataarray, &anynul, status);
+    delete[] increment;
+    *array = dataarray;
+    return success;
+}
+
 int FitsCreateHdrPtrForAst(fitsfile *fptr, char **header, int *nkeys, int *status)    //need to free header string with FreeFitsMemory() after use
 {
     bool needToSwap = false;

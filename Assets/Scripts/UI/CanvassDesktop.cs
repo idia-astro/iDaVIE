@@ -73,11 +73,12 @@ public class CanvassDesktop : MonoBehaviour
 
     private Toggle subsetToggle;
     private TMP_InputField subset_XMin_input;
-    private TMP_InputField subset_YMin_input;
-    private TMP_InputField subset_ZMin_input;
     private TMP_InputField subset_XMax_input;
+    private TMP_InputField subset_YMin_input;
     private TMP_InputField subset_YMax_input;
+    private TMP_InputField subset_ZMin_input;
     private TMP_InputField subset_ZMax_input;
+    private TMP_Dropdown zAxisDropdown;
 
     protected Coroutine loadCubeCoroutine;
     protected Coroutine showLoadDialogCoroutine;
@@ -106,7 +107,6 @@ public class CanvassDesktop : MonoBehaviour
             .Find("Max_label").GetComponent<TextMeshProUGUI>();
 
         subsetToggle = informationPanelContent.gameObject.transform.Find("SubsetSelection_container").gameObject.transform.Find("LoadSubset_Toggle").GetComponent<Toggle>();
-        // subsetToggle.onValueChanged.AddListener(onSubsetToggleSelected);
         subset_XMin_input = informationPanelContent.gameObject.transform.Find("SubsetMin_container").gameObject.transform.Find("SubsetX_min").GetComponent<TMP_InputField>();
         subset_XMin_input.onEndEdit.AddListener(checkSubsetBounds);
         subset_YMin_input = informationPanelContent.gameObject.transform.Find("SubsetMin_container").gameObject.transform.Find("SubsetY_min").GetComponent<TMP_InputField>();
@@ -119,14 +119,20 @@ public class CanvassDesktop : MonoBehaviour
         subset_YMax_input.onEndEdit.AddListener(checkSubsetBounds);
         subset_ZMax_input = informationPanelContent.gameObject.transform.Find("SubsetMax_container").gameObject.transform.Find("SubsetZ_max").GetComponent<TMP_InputField>();
         subset_ZMax_input.onEndEdit.AddListener(checkSubsetBounds);
+        zAxisDropdown = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>();
+        zAxisDropdown.onValueChanged.AddListener(updateSubsetZMax);
 
         subset_XMin_input.text = subsetMin.ToString();
-        subset_YMin_input.text = subsetMin.ToString();
-        subset_ZMin_input.text = subsetMin.ToString();
         subset_XMax_input.text = subsetMax_X.ToString();
+        subset_YMin_input.text = subsetMin.ToString();
         subset_YMax_input.text = subsetMax_Y.ToString();
+        subset_ZMin_input.text = subsetMin.ToString();
         subset_ZMax_input.text = subsetMax_Z.ToString();
         subset = new int[6];
+        subset[0] = subset[2] = subset[4] = subsetMin;
+        subset[1] = subsetMax_X;
+        subset[3] = subsetMax_Y;
+        subset[5] = subsetMax_Z;
     }
 
     void checkCubesDataSet()
@@ -291,6 +297,9 @@ public class CanvassDesktop : MonoBehaviour
                     if (list.Count == 3)
                     {
                         loadable = true;
+                        subsetMax_X = (int) axisSize[list[0]] - 1;
+                        subsetMax_Y = (int) axisSize[list[1]] - 1;
+                        subsetMax_Z = (int) axisSize[list[2]] - 1;
                     }
                 }
                 //more than 3 axis
@@ -311,26 +320,28 @@ public class CanvassDesktop : MonoBehaviour
                     if (list.Count == 3)
                     {
                         loadable = true;
+                        subsetMax_X = (int) axisSize[list[0]] - 1;
+                        subsetMax_Y = (int) axisSize[list[1]] - 1;
+                        subsetMax_Z = (int) axisSize[list[2]] - 1;
                     }
                     else
                         informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.SetActive(true);
                 }
 
                 //update dropdow
-                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().interactable = false;
-                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().ClearOptions();
+                zAxisDropdown.interactable = false;
+                zAxisDropdown.ClearOptions();
 
                 foreach (KeyValuePair<double, double> axes in axisSize)
                 {
                     if (axes.Value > 1 && axes.Key > 2)
                     {
-                        informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options
-                            .Add((new TMP_Dropdown.OptionData() { text = axes.Key.ToString() }));
+                        zAxisDropdown.options.Add((new TMP_Dropdown.OptionData() { text = axes.Key.ToString() }));
                     }
                 }
 
-                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().RefreshShownValue();
-                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value = 0;
+                zAxisDropdown.RefreshShownValue();
+                zAxisDropdown.value = 0;
                 //end update dropdown
 
                 //Cube is not loadable with valid axis < 3
@@ -342,9 +353,16 @@ public class CanvassDesktop : MonoBehaviour
                 //cube is not loadable with more than 3 axis with nelement
                 else if (!loadable && list.Count > 3)
                 {
-                    informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().interactable = true;
+                    zAxisDropdown.interactable = true;
 
                     loadable = true;
+                    subsetMax_X = (int) axisSize[list[0]] - 1;
+                    subsetMax_Y = (int) axisSize[list[1]] - 1;
+                    int zAxisIdx;
+                    Int32.TryParse(zAxisDropdown.options[zAxisDropdown.value].text, out zAxisIdx);
+                    zAxisIdx -= 1;
+                    Debug.Log("The list has " + list.Count + " items, and the dropdown points to index " + zAxisIdx + "!");
+                    subsetMax_Z = (int) axisSize[list[zAxisIdx]] - 1;
                 }
             }
             else
@@ -359,8 +377,7 @@ public class CanvassDesktop : MonoBehaviour
                 informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
                 informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
                 informationPanelContent.gameObject.transform.Find("SubsetSelection_container").gameObject.SetActive(true);
-
-
+                setSubsetBounds();
             }
         }
 
@@ -384,9 +401,153 @@ public class CanvassDesktop : MonoBehaviour
         }
     }
 
-    public void checkSubsetBounds(string val)
+    public void setSubsetBounds()
     {
-        Debug.Log("One of the subset input fields had its value changed to " + val);
+        subset_XMin_input.text = subsetMin.ToString();
+        subset_YMin_input.text = subsetMin.ToString();
+        subset_ZMin_input.text = subsetMin.ToString();
+        subset_XMax_input.text = subsetMax_X.ToString();
+        subset_YMax_input.text = subsetMax_Y.ToString();
+        subset_ZMax_input.text = subsetMax_Z.ToString();
+        
+        subset[0] = subset[2] = subset[4] = subsetMin;
+        subset[1] = subsetMax_X;
+        subset[3] = subsetMax_Y;
+        subset[5] = subsetMax_Z;
+    }
+
+    public void updateSubsetZMax(int val = 0)
+    {
+        int i2;
+        int.TryParse(zAxisDropdown.options[zAxisDropdown.value].text, out i2);
+        i2 -= 1;
+        int oldMaxZ = subsetMax_Z;
+        subsetMax_Z = (int) axisSize[i2 + 1] - 1;
+        string val1 = subset_ZMax_input.text;
+        int valInt = 0;
+        if (Int32.TryParse(val1, out valInt)){
+            if (valInt < subsetMin + 1)
+                subset_ZMax_input.text = (subsetMin + 1).ToString();
+            else if (valInt > subsetMax_Z || valInt == oldMaxZ)
+                subset_ZMax_input.text = subsetMax_Z.ToString();
+        }
+        
+        subset[0] = subset[2] = subset[4] = subsetMin;
+        subset[1] = subsetMax_X;
+        subset[3] = subsetMax_Y;
+        subset[5] = subsetMax_Z;
+    }
+    
+    public void checkSubsetBounds(string val1 = "")
+    {
+        string val = subset_XMax_input.text;
+        int valInt = 0;
+        if (Int32.TryParse(val, out valInt)){
+            if (valInt < subsetMin + 1){
+                Debug.Log(val + " is less than the minimum which is " + (subsetMin + 1).ToString() + "!");
+                subset_XMax_input.text = (subsetMin + 1).ToString();
+            }
+            else if (valInt > subsetMax_X){
+                Debug.Log(val + " is more than the maximum which is " + subsetMax_X.ToString() + "!");
+                subset_XMax_input.text = subsetMax_X.ToString();
+            }
+        }
+        else{
+            Debug.Log(val + " is not a number!");
+            subset_XMax_input.text = subsetMax_X.ToString();
+        }
+
+        val = subset_YMax_input.text;
+        valInt = 0;
+        if (Int32.TryParse(val, out valInt)){
+            if (valInt < subsetMin + 1){
+                Debug.Log(val + " is less than the minimum which is " + (subsetMin + 1).ToString() + "!");
+                subset_YMax_input.text = (subsetMin + 1).ToString();
+            }
+            else if (valInt > subsetMax_Y){
+                Debug.Log(val + " is more than the maximum which is " + subsetMax_Y.ToString() + "!");
+                subset_YMax_input.text = subsetMax_Y.ToString();
+            }
+        }
+        else{
+            Debug.Log(val + " is not a number!");
+            subset_YMax_input.text = subsetMax_Y.ToString();
+        }
+
+        val = subset_ZMax_input.text;
+        valInt = 0;
+        if (Int32.TryParse(val, out valInt)){
+            if (valInt < subsetMin + 1){
+                Debug.Log(val + " is less than the minimum which is " + (subsetMin + 1).ToString() + "!");
+                subset_ZMax_input.text = (subsetMin + 1).ToString();
+            }
+            else if (valInt > subsetMax_Z){
+                Debug.Log(val + " is more than the maximum which is " + subsetMax_Z.ToString() + "!");
+                subset_ZMax_input.text = subsetMax_Z.ToString();
+            }
+        }
+        else{
+            Debug.Log(val + " is not a number!");
+            subset_ZMax_input.text = subsetMax_Z.ToString();
+        }
+
+        val = subset_XMin_input.text;
+        valInt = 0;
+        if (Int32.TryParse(val, out valInt)){
+            if (valInt < subsetMin){
+                Debug.Log(val + " is less than the minimum which is " + subsetMin.ToString() + "!");
+                subset_XMin_input.text = subsetMin.ToString();
+            }
+            else if (valInt > subsetMax_X - 1){
+                Debug.Log(val + " is more than the maximum which is " + (subsetMax_X - 1).ToString() + "!");
+                subset_XMin_input.text = (subsetMax_X - 1).ToString();
+            }
+        }
+        else{
+            Debug.Log(val + " is not a number!");
+            subset_XMin_input.text = subsetMin.ToString();
+        }
+
+        val = subset_YMin_input.text;
+        valInt = 0;
+        if (Int32.TryParse(val, out valInt)){
+            if (valInt < subsetMin){
+                Debug.Log(val + " is less than the minimum which is " + subsetMin.ToString() + "!");
+                subset_YMin_input.text = subsetMin.ToString();
+            }
+            else if (valInt > subsetMax_Y - 1){
+                Debug.Log(val + " is more than the maximum which is " + (subsetMax_Y - 1).ToString() + "!");
+                subset_YMin_input.text = (subsetMax_Y - 1).ToString();
+            }
+        }
+        else{
+            Debug.Log(val + " is not a number!");
+            subset_YMin_input.text = subsetMin.ToString();
+        }
+
+        val = subset_ZMin_input.text;
+        valInt = 0;
+        if (Int32.TryParse(val, out valInt)){
+            if (valInt < subsetMin){
+                Debug.Log(val + " is less than the minimum which is " + subsetMin.ToString() + "!");
+                subset_ZMin_input.text = subsetMin.ToString();
+            }
+            else if (valInt > subsetMax_Z - 1){
+                Debug.Log(val + " is more than the maximum which is " + (subsetMax_Z - 1).ToString() + "!");
+                subset_ZMin_input.text = (subsetMax_Z - 1).ToString();
+            }
+        }
+        else{
+            Debug.Log(val + " is not a number!");
+            subset_ZMin_input.text = subsetMin.ToString();
+        }
+        
+        subset[0] = Int32.Parse(subset_XMin_input.text);
+        subset[1] = Int32.Parse(subset_XMax_input.text);
+        subset[2] = Int32.Parse(subset_YMin_input.text);
+        subset[3] = Int32.Parse(subset_YMax_input.text);
+        subset[4] = Int32.Parse(subset_ZMin_input.text);
+        subset[5] = Int32.Parse(subset_ZMax_input.text);
     }
 
     public void BrowseMaskFile()
@@ -462,15 +623,12 @@ public class CanvassDesktop : MonoBehaviour
             if (maskNAxis > 2)
             {
                 //Get Axis size from Image Cube
-                int i2 = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>()
-                             .options[
-                                 informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value]
-                             .text) -
-                         1;
+                int i2 = int.Parse(zAxisDropdown.options[zAxisDropdown.value].text) - 1;
                 if (axisSize[1] == maskAxisSize[1] && axisSize[2] == maskAxisSize[2] && axisSize[i2 + 1] == maskAxisSize[3])
                 {
                     loadable = true;
                     informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
+                    informationPanelContent.gameObject.transform.Find("SubsetSelection_container").gameObject.SetActive(true);
                 }
                 else
                     loadable = false;
@@ -495,8 +653,7 @@ public class CanvassDesktop : MonoBehaviour
         if (maskPath != "")
         {
             //Get Axis size from Image Cube
-            int i2 = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>()
-                .options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
+            int i2 = int.Parse(zAxisDropdown.options[zAxisDropdown.value].text) - 1;
 
             if (axisSize[1] != maskAxisSize[1] || axisSize[2] != maskAxisSize[2] || axisSize[i2 + 1] != maskAxisSize[3])
             {
@@ -508,6 +665,7 @@ public class CanvassDesktop : MonoBehaviour
             else
             {
                 informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
+                informationPanelContent.gameObject.transform.Find("SubsetSelection_container").gameObject.SetActive(true);
             }
         }
     }
@@ -535,7 +693,7 @@ public class CanvassDesktop : MonoBehaviour
 
     public void LoadFileFromFileSystem()
     {
-        StartCoroutine(LoadCubeCoroutine(imagePath, maskPath));
+        StartCoroutine(LoadCubeCoroutine(imagePath, maskPath, subsetToggle.isOn));
     }
 
     private void postLoadFileFileSystem()
@@ -568,7 +726,7 @@ public class CanvassDesktop : MonoBehaviour
     }
 
 
-    public IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath)
+    public IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath, bool loadSubset)
     {
         LoadingText.gameObject.SetActive(true);
         yield return new WaitForSeconds(0.001f);
@@ -577,8 +735,7 @@ public class CanvassDesktop : MonoBehaviour
         if (ratioDropdownIndex == 1)
         {
             // case X=Y, calculate z scale from NAXIS1 and NAXIS3
-            int i2 = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>()
-                .options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
+            int i2 = int.Parse(zAxisDropdown.options[zAxisDropdown.value].text) - 1;
 
             double x, z;
             if (axisSize.TryGetValue(1, out x) && axisSize.TryGetValue(i2 + 1, out z))
@@ -622,12 +779,16 @@ public class CanvassDesktop : MonoBehaviour
 
         newCube.transform.SetParent(volumeDataSetManager.transform, false);
 
-        newCube.GetComponent<VolumeDataSetRenderer>().FileName = _imagePath; //_dataSet.FileName.ToString();
-        newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _maskPath; // _maskDataSet.FileName.ToString();
-        newCube.GetComponent<VolumeDataSetRenderer>().CubeDepthAxis = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform
-            .Find("Z_Dropdown").GetComponent<TMP_Dropdown>()
-            .options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
-        informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().interactable = false;
+        // Set data to be loaded
+        var volDSRender = newCube.GetComponent<VolumeDataSetRenderer>();
+        if (loadSubset)
+        {
+            volDSRender.subsetBounds = subset;
+        }
+        volDSRender.FileName = _imagePath; //_dataSet.FileName.ToString();
+        volDSRender.MaskFileName = _maskPath; // _maskDataSet.FileName.ToString();
+        volDSRender.CubeDepthAxis = int.Parse(zAxisDropdown.options[zAxisDropdown.value].text) - 1;
+        zAxisDropdown.interactable = false;
 
         checkCubesDataSet();
 
@@ -1048,7 +1209,6 @@ public class CanvassDesktop : MonoBehaviour
         return null;
     }
 
-
     void OnGUI()
     {
         if (showPopUp)
@@ -1133,7 +1293,8 @@ public class CanvassDesktop : MonoBehaviour
         statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats")
             .gameObject.transform.Find("Line_sigma").gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value = 0;
 
-        VolumeDataSet.UpdateHistogram(GetFirstActiveDataSet().Data, GetFirstActiveDataSet().Data.MinValue, GetFirstActiveDataSet().Data.MaxValue);
+        var dataSet = GetFirstActiveDataSet().Data;
+        VolumeDataSet.UpdateHistogram(dataSet, dataSet.MinValue, dataSet.MaxValue);
         populateStatsValue();
     }
 

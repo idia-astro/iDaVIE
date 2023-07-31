@@ -82,6 +82,7 @@ namespace VolumeData
 
         [Header("File Input")] public string FileName;
         public string MaskFileName;
+        public int[] subsetBounds = {-1, -1, -1, -1, -1, -1};//Initialised to -1, if -1 then load full cube
         public Material RayMarchingMaterial;
         public Material MaskMaterial;
 
@@ -285,7 +286,9 @@ namespace VolumeData
             if (RandomVolume)
                 _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);
             else
-                _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, IntPtr.Zero, CubeDepthAxis, CubeSlice);
+                //subsetBounds guaranteed to be [-1, -1, -1, -1, -1, -1] if not selected by user
+                _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, subsetBounds, IntPtr.Zero, CubeDepthAxis, CubeSlice);
+
             _volumeInputController = FindObjectOfType<VolumeInputController>();
             _featureManager = GetComponentInChildren<FeatureSetManager>();
             if (_featureManager == null)
@@ -295,7 +298,9 @@ namespace VolumeData
             ScaleMin = _dataSet.MinValue;
             if (!String.IsNullOrEmpty(MaskFileName))
             {
-                _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, _dataSet.FitsData);
+                //subsetBounds guaranteed to be [-1, -1, -1, -1, -1, -1] if not selected by user
+                _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, subsetBounds, _dataSet.FitsData);
+             
                 // Mask data is always point-filtered
                 _maskDataSet.GenerateVolumeTexture(FilterMode.Point, XFactor, YFactor, ZFactor);
             }

@@ -104,6 +104,9 @@ public class FitsReader
     public static extern int FitsReadImageInt16(IntPtr fptr, int dims, long nelem, out IntPtr array, out int status);
 
     [DllImport("idavie_native")]
+    public static extern int FitsReadSubImageInt16(IntPtr fptr, int dims, IntPtr startPix, IntPtr finalPix, long nelem, out IntPtr array, out int status);
+
+    [DllImport("idavie_native")]
     public static extern int FitsCreateHdrPtrForAst(IntPtr fptr, out IntPtr header, out int nkeys, out int status);
 
     [DllImport("idavie_native")]
