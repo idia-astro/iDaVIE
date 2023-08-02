@@ -11,10 +11,18 @@ on:
 
   # Run the automated build when triggered manually from the website
   workflow_dispatch:
+    inputs:
+      filename:
+        type: string
+        description: 'What to call the uploaded file'
+        default: 'ManualBuild'
+        required: true
 
 jobs:
   auto-build:
     runs-on: windows-2022
+    env:
+      outputfile: ${{ github.workflow }}_${{ github.event_name }}
     steps:
       # Edit the vcpkg triplet files to only install release versions of packages
       # See https://github.com/Microsoft/vcpkg/issues/143#issuecomment-346973704 for source
@@ -61,7 +69,7 @@ jobs:
       - name: 'Upload the built project'
         uses: actions/upload-artifact@v3
         with:
-          name: "iDaVIE_${{ github.workflow }}_${{ github.event_name }}"
+          name: "iDaVIE_${{ env.outputfile }}"
           path: "${{ github.workspace }}/*.zip"
           if-no-files-found: error
           retention-days: 14
