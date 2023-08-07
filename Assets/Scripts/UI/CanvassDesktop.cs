@@ -49,10 +49,10 @@ public class CanvassDesktop : MonoBehaviour
     private double maskNAxis = 0;
     private double maskSize = 1;
 
-    private int subsetMin = 0;
-    private int subsetMax_X = 1;
-    private int subsetMax_Y = 1;
-    private int subsetMax_Z = 1;
+    private int subsetMin = 1;
+    private int subsetMax_X = 2;
+    private int subsetMax_Y = 2;
+    private int subsetMax_Z = 2;
     private int[] subset;
 
     Dictionary<double, double> axisSize = null;
@@ -297,9 +297,9 @@ public class CanvassDesktop : MonoBehaviour
                     if (list.Count == 3)
                     {
                         loadable = true;
-                        subsetMax_X = (int) axisSize[list[0]] - 1;
-                        subsetMax_Y = (int) axisSize[list[1]] - 1;
-                        subsetMax_Z = (int) axisSize[list[2]] - 1;
+                        subsetMax_X = (int) axisSize[list[0]];
+                        subsetMax_Y = (int) axisSize[list[1]];
+                        subsetMax_Z = (int) axisSize[list[2]];
                     }
                 }
                 //more than 3 axis
@@ -320,9 +320,9 @@ public class CanvassDesktop : MonoBehaviour
                     if (list.Count == 3)
                     {
                         loadable = true;
-                        subsetMax_X = (int) axisSize[list[0]] - 1;
-                        subsetMax_Y = (int) axisSize[list[1]] - 1;
-                        subsetMax_Z = (int) axisSize[list[2]] - 1;
+                        subsetMax_X = (int) axisSize[list[0]];
+                        subsetMax_Y = (int) axisSize[list[1]];
+                        subsetMax_Z = (int) axisSize[list[2]];
                     }
                     else
                         informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.SetActive(true);
@@ -356,13 +356,13 @@ public class CanvassDesktop : MonoBehaviour
                     zAxisDropdown.interactable = true;
 
                     loadable = true;
-                    subsetMax_X = (int) axisSize[list[0]] - 1;
-                    subsetMax_Y = (int) axisSize[list[1]] - 1;
+                    subsetMax_X = (int) axisSize[list[0]];
+                    subsetMax_Y = (int) axisSize[list[1]];
                     int zAxisIdx;
                     Int32.TryParse(zAxisDropdown.options[zAxisDropdown.value].text, out zAxisIdx);
                     zAxisIdx -= 1;
                     Debug.Log("The list has " + list.Count + " items, and the dropdown points to index " + zAxisIdx + "!");
-                    subsetMax_Z = (int) axisSize[list[zAxisIdx]] - 1;
+                    subsetMax_Z = (int) axisSize[list[zAxisIdx]];
                 }
             }
             else
@@ -422,12 +422,12 @@ public class CanvassDesktop : MonoBehaviour
         int.TryParse(zAxisDropdown.options[zAxisDropdown.value].text, out i2);
         i2 -= 1;
         int oldMaxZ = subsetMax_Z;
-        subsetMax_Z = (int) axisSize[i2 + 1] - 1;
+        subsetMax_Z = (int) axisSize[i2 + 1];
         string val1 = subset_ZMax_input.text;
         int valInt = 0;
         if (Int32.TryParse(val1, out valInt)){
-            if (valInt < subsetMin + 1)
-                subset_ZMax_input.text = (subsetMin + 1).ToString();
+            if (valInt < subsetMin)
+                subset_ZMax_input.text = (subsetMin).ToString();
             else if (valInt > subsetMax_Z || valInt == oldMaxZ)
                 subset_ZMax_input.text = subsetMax_Z.ToString();
         }
@@ -443,13 +443,17 @@ public class CanvassDesktop : MonoBehaviour
         string val = subset_XMax_input.text;
         int valInt = 0;
         if (Int32.TryParse(val, out valInt)){
-            if (valInt < subsetMin + 1){
-                Debug.Log(val + " is less than the minimum which is " + (subsetMin + 1).ToString() + "!");
-                subset_XMax_input.text = (subsetMin + 1).ToString();
+            if (valInt < subsetMin){
+                Debug.Log(val + " is less than the minimum which is " + (subsetMin).ToString() + "!");
+                subset_XMax_input.text = (subsetMin).ToString();
             }
             else if (valInt > subsetMax_X){
                 Debug.Log(val + " is more than the maximum which is " + subsetMax_X.ToString() + "!");
                 subset_XMax_input.text = subsetMax_X.ToString();
+            }
+            else if (valInt < subset[0]){
+                Debug.Log(val + " is less than the current chosen lower bound which is " + (subset[0]).ToString() + "!");
+                subset_XMax_input.text = (subset[0]).ToString();
             }
         }
         else{
@@ -460,13 +464,17 @@ public class CanvassDesktop : MonoBehaviour
         val = subset_YMax_input.text;
         valInt = 0;
         if (Int32.TryParse(val, out valInt)){
-            if (valInt < subsetMin + 1){
-                Debug.Log(val + " is less than the minimum which is " + (subsetMin + 1).ToString() + "!");
-                subset_YMax_input.text = (subsetMin + 1).ToString();
+            if (valInt < subsetMin){
+                Debug.Log(val + " is less than the minimum which is " + (subsetMin).ToString() + "!");
+                subset_YMax_input.text = (subsetMin).ToString();
             }
             else if (valInt > subsetMax_Y){
                 Debug.Log(val + " is more than the maximum which is " + subsetMax_Y.ToString() + "!");
                 subset_YMax_input.text = subsetMax_Y.ToString();
+            }
+            else if (valInt < subset[2]){
+                Debug.Log(val + " is less than the current chosen lower bound which is " + (subset[2]).ToString() + "!");
+                subset_YMax_input.text = (subset[2]).ToString();
             }
         }
         else{
@@ -477,13 +485,17 @@ public class CanvassDesktop : MonoBehaviour
         val = subset_ZMax_input.text;
         valInt = 0;
         if (Int32.TryParse(val, out valInt)){
-            if (valInt < subsetMin + 1){
-                Debug.Log(val + " is less than the minimum which is " + (subsetMin + 1).ToString() + "!");
-                subset_ZMax_input.text = (subsetMin + 1).ToString();
+            if (valInt < subsetMin){
+                Debug.Log(val + " is less than the minimum which is " + (subsetMin).ToString() + "!");
+                subset_ZMax_input.text = (subsetMin).ToString();
             }
             else if (valInt > subsetMax_Z){
                 Debug.Log(val + " is more than the maximum which is " + subsetMax_Z.ToString() + "!");
                 subset_ZMax_input.text = subsetMax_Z.ToString();
+            }
+            else if (valInt < subset[4]){
+                Debug.Log(val + " is less than the current chosen lower bound which is " + (subset[4]).ToString() + "!");
+                subset_ZMax_input.text = (subset[4]).ToString();
             }
         }
         else{
@@ -498,9 +510,13 @@ public class CanvassDesktop : MonoBehaviour
                 Debug.Log(val + " is less than the minimum which is " + subsetMin.ToString() + "!");
                 subset_XMin_input.text = subsetMin.ToString();
             }
-            else if (valInt > subsetMax_X - 1){
-                Debug.Log(val + " is more than the maximum which is " + (subsetMax_X - 1).ToString() + "!");
-                subset_XMin_input.text = (subsetMax_X - 1).ToString();
+            else if (valInt > subsetMax_X){
+                Debug.Log(val + " is more than the maximum which is " + (subsetMax_X).ToString() + "!");
+                subset_XMin_input.text = (subsetMax_X).ToString();
+            }
+            else if (valInt > subset[1]){
+                Debug.Log(val + " is more than the current chosen upper bound which is " + (subset[1]).ToString() + "!");
+                subset_XMin_input.text = (subset[1]).ToString();
             }
         }
         else{
@@ -515,9 +531,13 @@ public class CanvassDesktop : MonoBehaviour
                 Debug.Log(val + " is less than the minimum which is " + subsetMin.ToString() + "!");
                 subset_YMin_input.text = subsetMin.ToString();
             }
-            else if (valInt > subsetMax_Y - 1){
-                Debug.Log(val + " is more than the maximum which is " + (subsetMax_Y - 1).ToString() + "!");
-                subset_YMin_input.text = (subsetMax_Y - 1).ToString();
+            else if (valInt > subsetMax_Y){
+                Debug.Log(val + " is more than the maximum which is " + (subsetMax_Y).ToString() + "!");
+                subset_YMin_input.text = (subsetMax_Y).ToString();
+            }
+            else if (valInt > subset[3]){
+                Debug.Log(val + " is more than the current chosen upper bound which is " + (subset[3]).ToString() + "!");
+                subset_YMin_input.text = (subset[3]).ToString();
             }
         }
         else{
@@ -532,9 +552,13 @@ public class CanvassDesktop : MonoBehaviour
                 Debug.Log(val + " is less than the minimum which is " + subsetMin.ToString() + "!");
                 subset_ZMin_input.text = subsetMin.ToString();
             }
-            else if (valInt > subsetMax_Z - 1){
-                Debug.Log(val + " is more than the maximum which is " + (subsetMax_Z - 1).ToString() + "!");
-                subset_ZMin_input.text = (subsetMax_Z - 1).ToString();
+            else if (valInt > subsetMax_Z){
+                Debug.Log(val + " is more than the maximum which is " + (subsetMax_Z).ToString() + "!");
+                subset_ZMin_input.text = (subsetMax_Z).ToString();
+            }
+            else if (valInt > subset[5]){
+                Debug.Log(val + " is more than the current chosen upper bound which is " + (subset[5]).ToString() + "!");
+                subset_ZMin_input.text = (subset[5]).ToString();
             }
         }
         else{

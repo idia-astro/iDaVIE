@@ -266,7 +266,7 @@ namespace VolumeData
                     return null;
                 }
                 else
-                    volumeDataSetRes.cubeSize[0] = subsetBounds[1] - subsetBounds[0];
+                    volumeDataSetRes.cubeSize[0] = subsetBounds[1] - subsetBounds[0] + 1;
 
                 if (subsetBounds[3] > volumeDataSetRes.cubeSize[1])
                 {
@@ -275,7 +275,7 @@ namespace VolumeData
                     return null;
                 }
                 else
-                    volumeDataSetRes.cubeSize[1] = subsetBounds[3] - subsetBounds[2];
+                    volumeDataSetRes.cubeSize[1] = subsetBounds[3] - subsetBounds[2] + 1;
 
                 if (subsetBounds[5] > volumeDataSetRes.cubeSize[2])
                 {
@@ -284,7 +284,7 @@ namespace VolumeData
                     return null;
                 }
                 else
-                    volumeDataSetRes.cubeSize[2] = subsetBounds[5] - subsetBounds[4];
+                    volumeDataSetRes.cubeSize[2] = subsetBounds[5] - subsetBounds[4] + 1;
             }
 
             if (dataPtr != IntPtr.Zero)
