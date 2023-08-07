@@ -433,6 +433,7 @@ ASALocalRun/
 
 # Unity Asset packages
 Assets/SteamVR
+Assets/SteamVR.meta
 Assets/SteamVR_Input
 unityProject.vrmanifest
 Assets/TextMesh\ Pro
@@ -547,3 +548,4 @@ API
 Training
 Blog
 About
+
