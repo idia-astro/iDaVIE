@@ -91,45 +91,56 @@ Write-Host "Downloading packages..."
 Write-Progress -Activity "Downloading packages..." -Status "0% complete" -PercentComplete 0
 if (Test-Path ".\steamvr.unitypackage")
 {
-	Write-Progress "steamvr.unitypackage exists already" -Status "25% complete" -PercentComplete 25
+	Write-Progress "steamvr.unitypackage exists already" -Status "20% complete" -PercentComplete 20
 }
 else
 {
 	Write-Progress "fetching steamvr.unitypackage... " -Status "0% complete" -PercentComplete 0
 	Invoke-WebRequest https://github.com/ValveSoftware/steamvr_unity_plugin/releases/download/2.7.3/steamvr_2_7_3.unitypackage -OutFile steamvr.unitypackage
-	Write-Progress "Done." -Status "25% complete" -PercentComplete 25
+	Write-Progress "Done." -Status "20% complete" -PercentComplete 20
 }
 
 if (Test-Path ".\nuget.unitypackage")
 {
-	Write-Progress "nuget.unitypackage exists already" -Status "50% complete" -PercentComplete 50
+	Write-Progress "nuget.unitypackage exists already" -Status "40% complete" -PercentComplete 40
 }
 else
 {
-	Write-Progress "fetching nuget.unitypackage... " -Status "25% complete" -PercentComplete 25
+	Write-Progress "fetching nuget.unitypackage... " -Status "20% complete" -PercentComplete 20
 	Invoke-WebRequest https://github.com/GlitchEnzo/NuGetForUnity/releases/download/v3.0.5/NugetForUnity.3.0.5.unitypackage -OutFile nuget.unitypackage
-	Write-Progress "Done." -Status "50% complete" -PercentComplete 50
+	Write-Progress "Done." -Status "40% complete" -PercentComplete 40
 }
 
 if (Test-Path ".\scroll_rect.unitypackage")
 {
-	Write-Progress "scroll_rect.unitypackage exists already" -Status "75% complete" -PercentComplete 75
+	Write-Progress "scroll_rect.unitypackage exists already" -Status "60% complete" -PercentComplete 60
 }
 else
 {
-	Write-Progress "fetching scroll_rect.unitypackage... " -Status "50% complete" -PercentComplete 50
+	Write-Progress "fetching scroll_rect.unitypackage... " -Status "40% complete" -PercentComplete 40
 	Invoke-WebRequest https://github.com/CosmicElysium/Recyclable-Scroll-Rect/releases/download/v1.0/recyclable-scroll-rect.unitypackage -OutFile scroll_rect.unitypackage
-	Write-Progress "Done." -Status "75% complete" -PercentComplete 75
+	Write-Progress "Done." -Status "60% complete" -PercentComplete 60
 }
 
 if (Test-Path ".\file_browser.unitypackage")
 {
-	Write-Progress "file_browser.unitypackage exists already" -Status "100% complete" -PercentComplete 100
+	Write-Progress "file_browser.unitypackage exists already" -Status "80% complete" -PercentComplete 80
 }
 else
 {
-	Write-Progress "fetching file_browser.unitypackage... " -Status "75% complete" -PercentComplete 75
+	Write-Progress "fetching file_browser.unitypackage... " -Status "60% complete" -PercentComplete 60
 	Invoke-WebRequest https://github.com/gkngkc/UnityStandaloneFileBrowser/releases/download/1.2/StandaloneFileBrowser.unitypackage -OutFile file_browser.unitypackage
+	Write-Progress "Done." -Status "80% complete" -PercentComplete 80
+}
+
+if (Test-Path ".\com.unity.xr.management-4.4.0.tar.gz")
+{
+	Write-Progress "OpenXR Management plugin exists already" -Status "100% complete" -PercentComplete 100
+}
+else 
+{
+	Write-Progress "fetching com.unity.xr.management-4.4.0.tar.gz... " -Status "80% complete" -PercentComplete 80
+	Invoke-WebRequest https://github.com/needle-mirror/com.unity.xr.management/archive/refs/tags/4.4.0.tar.gz -OutFile com.unity.xr.management-4.4.0.tar.gz
 	Write-Progress "Done." -Status "100% complete" -PercentComplete 100
 }
 
@@ -194,7 +205,7 @@ else
 #Import packages
 if (($UNITY_USERNAME -eq "__not_init__") -or ($UNITY_PASSWORD -eq "__not_init__") -or ($UNITY_SERIAL -eq "__not_init__"))
 {
-    Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import.log -importPackage $PSScriptRoot\plugin_build\textMeshPro-3.0.6.unitypackage -quit"
+    Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import.log -importPackage $PSScriptRoot\plugin_build\textMeshPro-3.0.6.unitypackage -quit"\
 }
 else
 {
