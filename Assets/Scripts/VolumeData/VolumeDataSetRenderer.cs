@@ -464,7 +464,15 @@ namespace VolumeData
             Bounds objectBounds = new Bounds(Vector3.zero, Vector3.one);
             if (objectBounds.Contains(objectSpacePosition) && _dataSet != null)
             {
-                Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
+                // Check if the dataset was loaded as a subset. If so, add a suitable offset to the 
+                int xOffset, yOffset, zOffset;
+                zOffset = yOffset = xOffset = 0 ;
+                if (_dataSet.subsetBounds[0] != -1){
+                    xOffset = _dataSet.subsetBounds[0] - 1;
+                    yOffset = _dataSet.subsetBounds[2] - 1;
+                    zOffset = _dataSet.subsetBounds[4] - 1;
+                }
+                Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim + xOffset, (objectSpacePosition.y + 0.5f) * _dataSet.YDim + yOffset, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim + zOffset);
                 Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
                 Vector3 voxelCenterCubeSpace = voxelCornerCubeSpace + 0.5f * Vector3.one;
                 Vector3Int newVoxelCursor = new Vector3Int(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1);
@@ -513,7 +521,14 @@ namespace VolumeData
                 return Vector3Int.zero;
             }
             
-            Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
+            int xOffset, yOffset, zOffset;
+            zOffset = yOffset = xOffset = 0 ;
+            if (subsetBounds[0] != -1){
+                xOffset = _dataSet.subsetBounds[0] - 1;
+                yOffset = _dataSet.subsetBounds[2] - 1;
+                zOffset = _dataSet.subsetBounds[4] - 1;
+            }
+            Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim + xOffset, (objectSpacePosition.y + 0.5f) * _dataSet.YDim + yOffset, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim + zOffset);
             Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
             Vector3Int newVoxelCursor = new Vector3Int(
                 Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),

@@ -91,6 +91,7 @@ namespace VolumeData
 
         public long NumPoints => XDim * YDim * ZDim;
         public long[] Dims => new[] {XDim, YDim, ZDim};
+        public int[] subsetBounds {get; private set; }
 
         public Vector3Int RegionOffset { get; private set; }
 
@@ -190,7 +191,16 @@ namespace VolumeData
             return volumeDataSet;
         }
 
-        public static VolumeDataSet LoadDataFromFitsFile(string fileName, int[] subsetBounds, IntPtr imageDataPtr = default(IntPtr), int index2 = 2, int sliceDim = 1)
+        /// <summary>
+        /// Function that retrives and loads the data from the actual file on the hard disk.
+        /// </summary>
+        /// <param name="fileName">The path to the data file.</param>
+        /// <param name="subBounds">The bounds from which the data should be loaded (default of [-1,-1,-1,-1,-1,-1] means load the full cube).</param>
+        /// <param name="imageDataPtr"></param>
+        /// <param name="index2"></param>
+        /// <param name="sliceDim"></param>
+        /// <returns></returns>
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, int[] subBounds, IntPtr imageDataPtr = default(IntPtr), int index2 = 2, int sliceDim = 1)
         {
             VolumeDataSet volumeDataSetRes = new VolumeDataSet();
             volumeDataSetRes.IsMask =  imageDataPtr != IntPtr.Zero;
@@ -202,7 +212,9 @@ namespace VolumeData
             IntPtr dataPtr = IntPtr.Zero;
             IntPtr astFrameSet;
 
-            bool loadSubset = (subsetBounds[0] != -1);
+            bool loadSubset = (subBounds[0] != -1);
+            // Assign to object, since it is used with the cursor positioning.
+            volumeDataSetRes.subsetBounds = subBounds;
 
             if (FitsReader.FitsOpenFile(out fptr, fileName, out status, true) != 0)
             {
@@ -259,32 +271,32 @@ namespace VolumeData
             // Check if the provided subset is wholly within the given filie
             if (loadSubset)
             {
-                if (subsetBounds[1] > volumeDataSetRes.cubeSize[0])
+                if (subBounds[1] > volumeDataSetRes.cubeSize[0])
                 {
                     Debug.Log("Fits Read cube error with subset bounds not possible!");
                     FitsReader.FitsCloseFile(fptr, out status);
                     return null;
                 }
                 else
-                    volumeDataSetRes.cubeSize[0] = subsetBounds[1] - subsetBounds[0] + 1;
+                    volumeDataSetRes.cubeSize[0] = subBounds[1] - subBounds[0] + 1;
 
-                if (subsetBounds[3] > volumeDataSetRes.cubeSize[1])
+                if (subBounds[3] > volumeDataSetRes.cubeSize[1])
                 {
                     Debug.Log("Fits Read cube error with subset bounds not possible!");
                     FitsReader.FitsCloseFile(fptr, out status);
                     return null;
                 }
                 else
-                    volumeDataSetRes.cubeSize[1] = subsetBounds[3] - subsetBounds[2] + 1;
+                    volumeDataSetRes.cubeSize[1] = subBounds[3] - subBounds[2] + 1;
 
-                if (subsetBounds[5] > volumeDataSetRes.cubeSize[2])
+                if (subBounds[5] > volumeDataSetRes.cubeSize[2])
                 {
                     Debug.Log("Fits Read cube error with subset bounds not possible!");
                     FitsReader.FitsCloseFile(fptr, out status);
                     return null;
                 }
                 else
-                    volumeDataSetRes.cubeSize[2] = subsetBounds[5] - subsetBounds[4] + 1;
+                    volumeDataSetRes.cubeSize[2] = subBounds[5] - subBounds[4] + 1;
             }
 
             if (dataPtr != IntPtr.Zero)
@@ -302,8 +314,8 @@ namespace VolumeData
                     {
                         if (i < 3)
                         {
-                            startPix[i] = subsetBounds[i * 2];
-                            finalPix[i] = subsetBounds[(i * 2) + 1];
+                            startPix[i] = subBounds[i * 2];
+                            finalPix[i] = subBounds[(i * 2) + 1];
                         }
                         else
                         {
@@ -361,8 +373,8 @@ namespace VolumeData
                     {
                         if (i < 3)
                         {
-                            startPix[i] = subsetBounds[i * 2];
-                            finalPix[i] = subsetBounds[(i * 2) + 1];
+                            startPix[i] = subBounds[i * 2];
+                            finalPix[i] = subBounds[(i * 2) + 1];
                         }
                         else
                         {
