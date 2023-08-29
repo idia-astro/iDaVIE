@@ -7,6 +7,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 
+/// </summary>
 public class DebugLogging : MonoBehaviour
 {
     public TMP_InputField logOutput;
@@ -30,6 +33,12 @@ public class DebugLogging : MonoBehaviour
         Application.logMessageReceived -= HandleLog;
     }
 
+    /// <summary>
+    /// This function gets called whenever a message is sent to the log, and writes it to the debug console.
+    /// </summary>
+    /// <param name="logString">The message that is sent to the log</param>
+    /// <param name="stackTrace">The stack trace that is output when an exception occurs</param>
+    /// <param name="type">The type of the message (Message, Warning, Exception)</param>
     void HandleLog(string logString, string stackTrace, LogType type)
     {
         debugLogQueue.Enqueue("[" + type + "] : " + logString);
@@ -45,28 +54,37 @@ public class DebugLogging : MonoBehaviour
         logOutput.text = builder.ToString();
     }
 
+    /// <summary>
+    /// This function is called when the button on the debug log is clicked. It opens the native file dialog to get the destination
+    /// before writing it out.
+    /// </summary>
     void saveToFileClick()
     {
         string lastPath = PlayerPrefs.GetString("LastPath");
         if (!Directory.Exists(lastPath))
             lastPath = "";
+        
         var extensions = new[]
         {
             new ExtensionFilter("Log Files", "log"),
             new ExtensionFilter("All Files", "*"),
         };
-        StandaloneFileBrowser.OpenFilePanelAsync("Open File", lastPath, extensions, false, (string[] paths) =>
-        {
-            if (paths.Length == 1)
-            {
-                PlayerPrefs.SetString("LastPath", Path.GetDirectoryName(paths[0]));
-                PlayerPrefs.Save();
 
-                SaveToFile(paths[0]);
-            }
+        StandaloneFileBrowser.SaveFilePanelAsync("Save log file", lastPath, "i-DaVIE_Debug.log", extensions, (string dest) =>
+        {
+            if (dest.Equals(""))
+                return;
+
+            PlayerPrefs.SetString("LastPath", Path.GetDirectoryName(dest));
+            PlayerPrefs.Save();
+            SaveToFile(dest);
         });
     }
 
+    /// <summary>
+    /// A function that writes out the debug log at that time to a file.
+    /// </summary>
+    /// <param name="file">The name of the file to be written to.</param>
     void SaveToFile(string file)
     {
         var builder = new StringBuilder();
@@ -75,8 +93,9 @@ public class DebugLogging : MonoBehaviour
             builder.Append(st).Append("\n");
         }
 
-        StreamWriter writer = new StreamWriter(file, true);
+        StreamWriter writer = new StreamWriter(file, false);
         writer.Write(builder.ToString());
+        writer.Close();
     }
 
     // Update is called once per frame
