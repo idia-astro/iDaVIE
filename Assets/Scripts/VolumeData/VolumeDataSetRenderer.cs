@@ -458,15 +458,23 @@ namespace VolumeData
             ColorMap = ColorMapUtils.FromHashCode(newIndex);
         }
 
+        /// <summary>
+        /// A function that calculates the cursor position and sends it to both the cursor, and the information sent on hover. Note the information on hover
+        /// is in the data space, so needs an offset if a subset was loaded, while the cursor is in object/VR space, so real location (no offset).
+        /// </summary>
+        /// <param name="cursor"></param>
+        /// <param name="brushSize"></param>
         public void SetCursorPosition(Vector3 cursor, int brushSize)
         {
             Vector3 objectSpacePosition = transform.InverseTransformPoint(cursor);
             Bounds objectBounds = new Bounds(Vector3.zero, Vector3.one);
             if (objectBounds.Contains(objectSpacePosition) && _dataSet != null)
             {
-                // Check if the dataset was loaded as a subset. If so, add a suitable offset to the 
+                // Check if the dataset was loaded as a subset. If so, add a suitable offset to the position in data space
                 int xOffset, yOffset, zOffset;
                 zOffset = yOffset = xOffset = 0 ;
+
+                // If not a subset, the dataSet's subsetBounds will still be the initialised value of [-1, -1, -1, -1, -1, -1]
                 if (_dataSet.subsetBounds[0] != -1){
                     xOffset = _dataSet.subsetBounds[0] - 1;
                     yOffset = _dataSet.subsetBounds[2] - 1;
@@ -491,8 +499,9 @@ namespace VolumeData
                         CursorSource = 0;
                     }
 
-                    Vector3 voxelCenterObjectSpace = new Vector3(voxelCenterCubeSpace.x / _dataSet.XDim - 0.5f, voxelCenterCubeSpace.y / _dataSet.YDim - 0.5f,
-                        voxelCenterCubeSpace.z / _dataSet.ZDim - 0.5f);
+                    // Determine the actual voxelCursor's location in the VR space (not data space)
+                    Vector3 voxelCenterObjectSpace = new Vector3((voxelCenterCubeSpace.x - xOffset) / _dataSet.XDim - 0.5f, (voxelCenterCubeSpace.y - yOffset) / _dataSet.YDim - 0.5f,
+                        (voxelCenterCubeSpace.z - zOffset) / _dataSet.ZDim - 0.5f);
                     _voxelOutline.Center = voxelCenterObjectSpace;
                     _voxelOutline.Bounds = brushSize * new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
                 }

@@ -335,7 +335,7 @@ namespace VolumeData
                         finalPix[3] = sliceDim;
                     }
 
-                    Debug.Log("Loading a subcube mask with start pixel " + startPix.ToString() + " and end pixel " + finalPix.ToString());
+                    Debug.Log("Loading a subcube mask with start pixel [" + String.Join(", ", startPix) + "] and end pixel [" + String.Join(", ", finalPix) + "].");
 
                     IntPtr startPixPtr = Marshal.AllocHGlobal(sizeof(int) * startPix.Length);
                     IntPtr finalPixPtr = Marshal.AllocHGlobal(sizeof(int) * finalPix.Length);
