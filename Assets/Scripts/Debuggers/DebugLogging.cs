@@ -38,7 +38,7 @@ public class DebugLogging : MonoBehaviour
             if (File.Exists(autosavePath))
             {
                 // Move existing log to default with '_old' appended
-                File.Copy(autosavePath, Path.Combine(directoryPath, defaultFile.Substring(0, defaultFile.Length - 4) + "_old.log"), true);
+                File.Copy(autosavePath, Path.Combine(directoryPath, defaultFile.Substring(0, defaultFile.Length - 4) + "_previous.log"), true);
                 File.Delete(autosavePath);
             }
         }
