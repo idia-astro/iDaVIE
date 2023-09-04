@@ -80,6 +80,10 @@ public class CanvassDesktop : MonoBehaviour
     private TMP_InputField subset_ZMax_input;
     private TMP_Dropdown zAxisDropdown;
 
+    public List<TMP_InputField> inputFields;
+
+    private int inputIndex;
+
     protected Coroutine loadCubeCoroutine;
     protected Coroutine showLoadDialogCoroutine;
 
@@ -121,6 +125,7 @@ public class CanvassDesktop : MonoBehaviour
         subset_ZMax_input.onEndEdit.AddListener(checkSubsetBounds);
         zAxisDropdown = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>();
         zAxisDropdown.onValueChanged.AddListener(updateSubsetZMax);
+        inputIndex = 0;
 
         subset_XMin_input.text = subsetMin.ToString();
         subset_XMax_input.text = subsetMax_X.ToString();
@@ -183,6 +188,32 @@ public class CanvassDesktop : MonoBehaviour
                     .gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value = (int)dataSet.ColorMap;
             }
         }
+
+        // Check if the tab key is being pressed and if there are more than one input fields in the list
+		if (Input.GetKeyDown(KeyCode.Tab) && inputFields.Count > 1) 
+		{
+			// If there are, check if either shift key is being pressed
+			if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) 
+			{
+				// If shift is pressed, move up on the list - or, if at the top of the list, move to the bottom
+				if (inputIndex <= 0)
+				{
+					inputIndex = inputFields.Count;
+				}
+				inputIndex--;
+				inputFields[inputIndex].Select();
+			}
+			else
+			{
+    			// If shift is not pressed, move down on the list - or, if at the bottom, move to the top
+                if (inputFields.Count <= inputIndex + 1)
+                    {
+                        inputIndex = -1;
+                    }
+                inputIndex++;
+                inputFields[inputIndex].Select();
+			}
+		}
     }
 
     public void InformationTab()
@@ -392,6 +423,7 @@ public class CanvassDesktop : MonoBehaviour
             informationPanelContent.gameObject.transform.Find("SubsetLabel_container").gameObject.SetActive(true);
             informationPanelContent.gameObject.transform.Find("SubsetMin_container").gameObject.SetActive(true);
             informationPanelContent.gameObject.transform.Find("SubsetMax_container").gameObject.SetActive(true);
+            inputFields[inputIndex].Select();
         }
         else
         {
