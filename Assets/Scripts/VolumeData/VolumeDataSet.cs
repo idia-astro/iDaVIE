@@ -93,6 +93,8 @@ namespace VolumeData
         public long[] Dims => new[] {XDim, YDim, ZDim};
         public int[] subsetBounds {get; private set; }
 
+        private bool loadSubset => subsetBounds[0] != -1;
+
         public Vector3Int RegionOffset { get; private set; }
 
 
@@ -212,7 +214,6 @@ namespace VolumeData
             IntPtr dataPtr = IntPtr.Zero;
             IntPtr astFrameSet;
 
-            bool loadSubset = (subBounds[0] != -1);
             // Assign to object, since it is used with the cursor positioning.
             volumeDataSetRes.subsetBounds = subBounds;
 
@@ -269,7 +270,7 @@ namespace VolumeData
             Marshal.Copy(dataPtr, volumeDataSetRes.cubeSize, 0, cubeDimensions);
             
             // Check if the provided subset is wholly within the given filie
-            if (loadSubset)
+            if (volumeDataSetRes.loadSubset)
             {
                 if (subBounds[1] > volumeDataSetRes.cubeSize[0])
                 {
@@ -306,7 +307,7 @@ namespace VolumeData
             
             if (volumeDataSetRes.IsMask)
             {
-                if (loadSubset)
+                if (volumeDataSetRes.loadSubset)
                 {// If loading a subset, figure out start and end pixels
                     int[] startPix = new int[cubeDimensions];
                     int[] finalPix = new int[cubeDimensions];
@@ -367,7 +368,7 @@ namespace VolumeData
             {
                 int[] startPix = new int[cubeDimensions];
                 int[] finalPix = new int[cubeDimensions];
-                if (loadSubset)
+                if (volumeDataSetRes.loadSubset)
                 {
                     for (var i = 0; i < cubeDimensions; i++)
                     {
@@ -932,8 +933,15 @@ namespace VolumeData
 
         public float GetDataValue(int x, int y, int z)
         {
+            if (loadSubset)
+            {
+                x -= (subsetBounds[0] - 1);
+                y -= (subsetBounds[2] - 1);
+                z -= (subsetBounds[4] - 1);
+            }
             if (x < 1 || x > XDim || y < 1 || y > YDim || z < 1 || z > ZDim)
             {
+                Debug.LogError("Trying to load value from coordinates [" + x.ToString() + ", " + y.ToString() + ", " + z.ToString() + "], limited to bounds [1, 1, 1] and [" + XDim.ToString() + ", " + YDim.ToString() + ", " + ZDim.ToString() + "]!");
                 return float.NaN;
             }
 
@@ -944,8 +952,15 @@ namespace VolumeData
 
         public Int16 GetMaskValue(int x, int y, int z)
         {
+            if (loadSubset)
+            {
+                x -= (subsetBounds[0] - 1);
+                y -= (subsetBounds[2] - 1);
+                z -= (subsetBounds[4] - 1);
+            }
             if (x < 1 || x > XDim || y < 1 || y > YDim || z < 1 || z > ZDim)
             {
+                Debug.LogError("Trying to load value from coordinates [" + x.ToString() + ", " + y.ToString() + ", " + z.ToString() + "], limited to bounds [1, 1, 1] and [" + XDim.ToString() + ", " + YDim.ToString() + ", " + ZDim.ToString() + "]!");
                 return 0;
             }
 

@@ -494,6 +494,10 @@ namespace VolumeData
                     _previousBrushSize = brushSize;
                     CursorVoxel = newVoxelCursor;
                     CursorValue = _dataSet.GetDataValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
+                    if (Double.IsNaN(CursorValue))
+                    {
+                        Debug.Log("NAN value at CursorVoxel [" + CursorVoxel.x.ToString() + ", " + CursorVoxel.y.ToString() + ", " + CursorVoxel.z.ToString() + "]!");
+                    }
                     if (_maskDataSet != null)
                     {
                         CursorSource = _maskDataSet.GetMaskValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
