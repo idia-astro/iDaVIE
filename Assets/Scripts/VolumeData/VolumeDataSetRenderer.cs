@@ -524,6 +524,11 @@ namespace VolumeData
             }
         }
 
+        /// <summary>
+        /// This function is used to get the cursor location in data space (i.e., including subcube offsets).
+        /// </summary>
+        /// <param name="cursorPosWorldSpace">Where in the world space is the user pointing?</param>
+        /// <returns>An indexed location in data space.</returns>
         public Vector3Int GetVoxelPosition(Vector3 cursorPosWorldSpace)
         {
             Vector3 objectSpacePosition = transform.InverseTransformPoint(cursorPosWorldSpace);
@@ -555,12 +560,47 @@ namespace VolumeData
 
             return newVoxelCursor;
         }
+        
+        /// <summary>
+        /// This function is to be used to get the cursor location in world space (as compared to data space above)
+        /// </summary>
+        /// <param name="cursorPosWorldSpace">Where in the world space is the user pointing?</param>
+        /// <returns>An indexed location in world space.</returns>
+        public Vector3Int GetVoxelPositionWorldSpace(Vector3 cursorPosWorldSpace)
+        {
+            Vector3 objectSpacePosition = transform.InverseTransformPoint(cursorPosWorldSpace);
+            objectSpacePosition = new Vector3(
+                Mathf.Clamp(objectSpacePosition.x, -0.5f, 0.5f),
+                Mathf.Clamp(objectSpacePosition.y, -0.5f, 0.5f),
+                Mathf.Clamp(objectSpacePosition.z, -0.5f, 0.5f)
+            );
 
+            if (_dataSet == null)
+            {
+                return Vector3Int.zero;
+            }
+            
+            Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
+            Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
+            Vector3Int newVoxelCursor = new Vector3Int(
+                Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),
+                Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, 1, (int)_dataSet.YDim),
+                Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1, 1, (int)_dataSet.ZDim)
+            );
+
+            return newVoxelCursor;
+        }
+
+        /// <summary>
+        /// This function sets the bounds of the selected region in world space.
+        /// </summary>
+        /// <param name="cursor">Where in the world space is the user pointing?</param>
+        /// <param name="start">Is this the creation of a selection, or updating its values?</param>
         public void SetRegionPosition(Vector3 cursor, bool start)
         {
             if (_dataSet != null)
             {
-                var newVoxelCursor = GetVoxelPosition(cursor);
+                var newVoxelCursor = GetVoxelPositionWorldSpace(cursor);
                 var existingVoxel = start ? RegionStartVoxel : RegionEndVoxel;
                 if (!newVoxelCursor.Equals(existingVoxel))
                 {

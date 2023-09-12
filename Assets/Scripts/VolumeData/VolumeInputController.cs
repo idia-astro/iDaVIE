@@ -940,7 +940,7 @@ public class VolumeInputController : MonoBehaviour
         }
         else if (currentState == InteractionState.Editing && HasEditingAnchor)
         {
-            var voxelPosition = dataSet.GetVoxelPosition(cursorPosWorldSpace);
+            var voxelPosition = dataSet.GetVoxelPositionWorldSpace(cursorPosWorldSpace);
             var newCornerMin = _editingFeature.CornerMin;
             var newCornerMax = _editingFeature.CornerMax;
 
