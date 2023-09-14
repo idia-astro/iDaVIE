@@ -101,6 +101,8 @@ public class VolumeInputController : MonoBehaviour
     private float _previousControllerHeight;
     private LocomotionState _locomotionState;
     
+    private bool tunnelVignetteVisible = true;
+    
     // Interactions
     public StateMachine<InteractionState, InteractionEvents> InteractionStateMachine { get; private set; }
     private bool _isQuickMenu;
@@ -161,6 +163,8 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnEnable()
     {
+        var config = Config.Instance;
+        tunnelVignetteVisible = config.tunnellingVignette;
         _vrFamily = DetermineVRFamily();
         Vector3 pointerOffset = PointerOffsetsLeft[_vrFamily];
         if (_player == null)
@@ -648,7 +652,8 @@ public class VolumeInputController : MonoBehaviour
     private void Update()
     {
         // Common update functions
-        UpdateVignette();
+        if (tunnelVignetteVisible)
+            UpdateVignette();
         if (Camera.current)
         {
             Camera.current.depthTextureMode = DepthTextureMode.Depth;
