@@ -101,7 +101,6 @@ public class VolumeInputController : MonoBehaviour
     private float _previousControllerHeight;
     private LocomotionState _locomotionState;
     
-    private bool tunnelVignetteVisible = true;
     
     // Interactions
     public StateMachine<InteractionState, InteractionEvents> InteractionStateMachine { get; private set; }
@@ -127,8 +126,10 @@ public class VolumeInputController : MonoBehaviour
     public bool scrollDown = false;
 
     // Vignetting
+    private bool _tunnellingVignetteOn = true;
     private float _currentVignetteIntensity = 0;
     private float _targetVignetteIntensity = 0;
+    private float _maxVignetteIntensity = 1.0f;
 
     // Selecting
     private readonly Stopwatch _selectionStopwatch = new Stopwatch();
@@ -164,7 +165,8 @@ public class VolumeInputController : MonoBehaviour
     private void OnEnable()
     {
         var config = Config.Instance;
-        tunnelVignetteVisible = config.tunnellingVignette;
+        _tunnellingVignetteOn = config.tunnellingVignetteOn;
+        _maxVignetteIntensity = config.tunnellingVignetteIntensity;
         _vrFamily = DetermineVRFamily();
         Vector3 pointerOffset = PointerOffsetsLeft[_vrFamily];
         if (_player == null)
@@ -512,7 +514,7 @@ public class VolumeInputController : MonoBehaviour
     private void StateTransitionIdleToMoving()
     {
         _locomotionState = LocomotionState.Moving;
-        _targetVignetteIntensity = 1;
+        _targetVignetteIntensity = _maxVignetteIntensity;
     }
     
     public void StartThresholdEditing(bool editingMax)
@@ -652,7 +654,7 @@ public class VolumeInputController : MonoBehaviour
     private void Update()
     {
         // Common update functions
-        if (tunnelVignetteVisible)
+        if (_tunnellingVignetteOn)
             UpdateVignette();
         if (Camera.current)
         {
