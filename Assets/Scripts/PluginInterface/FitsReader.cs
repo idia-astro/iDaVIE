@@ -32,8 +32,17 @@ public class FitsReader
     public static extern int FitsFlushFile(IntPtr fptr, out int status);
 
     [DllImport("idavie_native")]
-    public static extern int FitsMovabsHdu(IntPtr fptr, int hdunum, out int hdutype, out int status);
+    public static extern int FitsGetNumHdus(IntPtr fptr, out int hdunum, out int status);
 
+    [DllImport("idavie_native")]
+    public static extern int FitsGetCurrentHdu(IntPtr fptr, out int hdunum);
+
+    [DllImport("idavie_native")]
+    public static extern int FitsMoveToHdu(IntPtr fptr, int hdunum, out int status);
+    
+    [DllImport("idavie_native")]
+    public static extern int FitsMovabsHdu(IntPtr fptr, int hdunum, out int hdutype, out int status);
+    
     [DllImport("idavie_native")]
     public static extern int FitsGetNumHeaderKeys(IntPtr fptr, out int keysexist, out int morekeys, out int status);
 

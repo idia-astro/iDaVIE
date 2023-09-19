@@ -27,6 +27,21 @@ int FitsFlushFile(fitsfile* fptr, int* status)
     return fits_flush_file(fptr, status);
 }
 
+int FitsGetNumHdus(fitsfile *fptr, int *hdunum, int *status)
+{
+    return fits_get_num_hdus(fptr, hdunum, status);
+}
+
+int FitsGetCurrentHdu(fitsfile *fptr, int *hdunum)
+{
+    return fits_get_hdu_num(fptr,  hdunum);
+}
+
+int FitsMoveToHdu(fitsfile *fptr, int hdunum, int *status)
+{
+    return fits_movabs_hdu(fptr, hdunum, NULL, status);
+}
+
 int FitsMovabsHdu(fitsfile *fptr, int hdunum, int *hdutype, int *status)
 {
     return fits_movabs_hdu(fptr, hdunum, hdutype, status);

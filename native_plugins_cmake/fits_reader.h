@@ -15,15 +15,21 @@
 
 extern "C"
 {
-DllExport int FitsOpenFileReadOnly(fitsfile**, char*,  int*);
+DllExport int FitsOpenFileReadOnly(fitsfile **, char *,  int *);
 
-DllExport int FitsOpenFileReadWrite(fitsfile** , char* , int* );
+DllExport int FitsOpenFileReadWrite(fitsfile ** , char *, int *);
 
-DllExport int FitsCreateFile(fitsfile** , char* , int* );
+DllExport int FitsCreateFile(fitsfile ** , char * , int *);
 
 DllExport int FitsCloseFile(fitsfile *, int *);
 
-DllExport int FitsFlushFile(fitsfile* , int* );
+DllExport int FitsFlushFile(fitsfile * , int *);
+
+DllExport int FitsGetNumHdus(fitsfile *, int *, int *);
+
+DllExport int FitsGetCurrentHdu(fitsfile *, int *);
+
+DllExport int FitsMoveToHdu(fitsfile *, int, int *);
 
 DllExport int FitsMovabsHdu(fitsfile *, int , int *, int *);
 
