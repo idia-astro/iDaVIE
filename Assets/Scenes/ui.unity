@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.17277257, g: 0.21589741, b: 0.29783267, a: 1}
+  m_IndirectSpecularColor: {r: 0.17277226, g: 0.21589693, b: 0.29783157, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &4
 LightmapSettings:
@@ -12282,7 +12282,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
+  m_PresetInfoIsWorld: 1
 --- !u!223 &379983804
 Canvas:
   m_ObjectHideFlags: 0
@@ -26746,19 +26746,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 751005630}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 853767926}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: SaveMask
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &751005630
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -31294,7 +31282,6 @@ GameObject:
   - component: {fileID: 853767922}
   - component: {fileID: 853767921}
   - component: {fileID: 853767920}
-  - component: {fileID: 853767926}
   m_Layer: 5
   m_Name: ExportPopup
   m_TagString: Untagged
@@ -31368,7 +31355,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
+  m_PresetInfoIsWorld: 1
 --- !u!223 &853767924
 Canvas:
   m_ObjectHideFlags: 0
@@ -31413,28 +31400,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 1.25}
   m_SizeDelta: {x: 500, y: 300}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &853767926
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 853767919}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e84a72dc261851a4b907e58c03e0dad8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  volumeDatasetRendererObj: {fileID: 379208438}
-  notificationText: {fileID: 1257161245}
-  mainMenuCanvas: {fileID: 822478519}
-  paintMenu: {fileID: 1393187942}
-  plotsMenu: {fileID: 1693248399}
-  voiceCommandsListCanvas: {fileID: 2093102594}
-  savePopup: {fileID: 426473890}
-  exitPopup: {fileID: 0}
-  exitSavePopup: {fileID: 0}
-  exportPopup: {fileID: 853767919}
 --- !u!1 &857410021
 GameObject:
   m_ObjectHideFlags: 0
@@ -49161,19 +49126,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1355112798}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 853767926}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: SaveSubCube
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1355112798
 MonoBehaviour:
   m_ObjectHideFlags: 0
