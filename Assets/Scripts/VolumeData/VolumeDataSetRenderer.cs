@@ -283,6 +283,7 @@ namespace VolumeData
             MaximumCubeSizeInMB = config.gpuMemoryLimitMb;
             ColorMap = config.defaultColorMap;
             ScalingType = config.defaultScalingType;
+            VignetteFadeEnd = config.tunnellingVignetteEnd;
             
             if (RandomVolume)
                 _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);
