@@ -379,6 +379,19 @@ namespace VolumeData
             else
                 HasWCS = false;
 
+            if (HasWCS)
+            {
+                Debug.Log("WCS loaded successfully!");
+                Debug.Log($"x-axis unit is {_dataSet.GetAxisUnit(1)}");
+                Debug.Log($"y-axis unit is {_dataSet.GetAxisUnit(2)}");
+                Debug.Log($"z-axis unit is {_dataSet.GetAxisUnit(3)}");
+                Debug.Log($"alternative z-axis unit is {_dataSet.GetAltAxisUnit(3)}");
+            }
+            else
+            {
+                Debug.Log("Problem loading WCS.");
+            }
+            
             if (_dataSet.HasFitsRestFrequency)
             {
                 RestFrequency = _dataSet.FitsRestFrequency;
