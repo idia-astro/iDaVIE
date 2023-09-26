@@ -993,8 +993,21 @@ namespace VolumeData
             return true;
         }
 
+        /// <summary>
+        /// Paint a mask value in the current cursor location
+        /// </summary>
+        /// <param name="value">The value to paint on the mask</param>
+        /// <returns>True if successful, false if not.</returns>
         public bool PaintCursor(short value)
         {
+            Vector3Int cursorLoc = new Vector3Int(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
+            if (_dataSet.subsetBounds[0] != -1)
+            {
+                Vector3Int cursorOffset = new Vector3Int(_dataSet.subsetBounds[0] - 1,
+                                                         _dataSet.subsetBounds[2] - 1,
+                                                         _dataSet.subsetBounds[4] - 1);
+                cursorLoc = cursorLoc + cursorOffset;
+            }
             var maskCursorLimit = (_previousBrushSize - 1) / 2;
             for (int i = -maskCursorLimit; i <= maskCursorLimit; i++)
             {
@@ -1002,7 +1015,7 @@ namespace VolumeData
                 {
                     for (int k = -maskCursorLimit; k <= maskCursorLimit; k++)
                     {
-                        PaintMask(new Vector3Int(CursorVoxel.x + i, CursorVoxel.y + j, CursorVoxel.z + k), value);
+                        PaintMask(new Vector3Int(cursorLoc.x + i, cursorLoc.y + j, cursorLoc.z + k), value);
                     }
                 }
             }
