@@ -137,8 +137,9 @@ PlayerSettings:
     16:10: 1
     16:9: 1
     Others: 1
-  bundleVersion: 1.0-beta.7
-  preloadedAssets: []
+  bundleVersion: 1.0-beta.10
+  preloadedAssets:
+  - {fileID: 6392131051382075614, guid: ae8292ddf7d0d84479aa2435c56e8a29, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -157,7 +158,8 @@ PlayerSettings:
   resetResolutionOnWindowResize: 0
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
-  applicationIdentifier: {}
+  applicationIdentifier:
+    Standalone: com.IDIA.iDaVIE-v
   buildNumber:
     Standalone: 0
     iPhone: 0
@@ -699,7 +701,7 @@ PlayerSettings:
   assemblyVersionValidation: 0
   gcWBarrierValidation: 0
   apiCompatibilityLevelPerPlatform:
-    Standalone: 3
+    Standalone: 6
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
   metroPackageName: idia_unity_vr

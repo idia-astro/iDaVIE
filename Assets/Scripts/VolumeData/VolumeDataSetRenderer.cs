@@ -158,6 +158,7 @@ namespace VolumeData
         private int _currentXFactor, _currentYFactor, _currentZFactor;
         public bool IsFullResolution => _currentXFactor * _currentYFactor * _currentZFactor == 1;
 
+        private int _baseXFactor, _baseYFactor, _baseZFactor;
         public bool IsCropped { get; private set; }
 
         public Vector3Int CurrentCropMin { get; private set; }
@@ -281,6 +282,7 @@ namespace VolumeData
             MaximumCubeSizeInMB = config.gpuMemoryLimitMb;
             ColorMap = config.defaultColorMap;
             ScalingType = config.defaultScalingType;
+            VignetteFadeEnd = config.tunnellingVignetteEnd;
             
             if (RandomVolume)
                 _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);
@@ -291,6 +293,9 @@ namespace VolumeData
             if (_featureManager == null)
                 Debug.Log($"No FeatureManager attached to VolumeDataSetRenderer. Attach prefab for use of Features.");
             GenerateDownsampledCube();
+            _baseXFactor = _currentXFactor;
+            _baseYFactor = _currentYFactor;
+            _baseZFactor = _currentZFactor;
             ScaleMax = _dataSet.MaxValue;
             ScaleMin = _dataSet.MinValue;
             if (!String.IsNullOrEmpty(MaskFileName))
@@ -669,11 +674,27 @@ namespace VolumeData
 
         public void ResetCrop()
         {
+            _currentXFactor = _baseXFactor;
+            _currentYFactor = _baseYFactor;
+            _currentZFactor = _baseZFactor;
             SliceMin = -0.5f * Vector3.one;
             SliceMax = +0.5f * Vector3.one;
             _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.DataCube);
             if (_maskDataSet != null)
             {
+                if (IsFullResolution)
+                {
+                    _maskDataSet.GenerateCroppedVolumeTexture(TextureFilter, Vector3Int.one, 
+                        new Vector3Int((int)_dataSet.XDim, (int)_dataSet.YDim, (int)_dataSet.ZDim), Vector3Int.one);
+                    _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
+                    var regionMin = Vector3.Min(Vector3Int.one, new Vector3Int((int)_dataSet.XDim, (int)_dataSet.YDim, (int)_dataSet.ZDim));
+                    _maskMaterialInstance.SetVector(MaterialID.RegionOffset, new Vector4(regionMin.x, regionMin.y, regionMin.z, 0));
+                    var regionDimensions = new Vector4(_maskDataSet.RegionCube.width, _maskDataSet.RegionCube.height, _maskDataSet.RegionCube.depth, 0);
+                    _maskMaterialInstance.SetVector(MaterialID.RegionDimensions, regionDimensions);
+                    var cubeDimensions = new Vector4(_maskDataSet.XDim, _maskDataSet.YDim, _maskDataSet.ZDim, 1);
+                    _maskMaterialInstance.SetVector(MaterialID.CubeDimensions, cubeDimensions);
+                    _momentMapRenderer.MaskCube = _maskDataSet.RegionCube;
+                }
                 _maskDataSet.ConsolidateDownsampledMask();
                 _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.DataCube);
                 ComputeBuffer nullBuffer = null;
@@ -681,11 +702,6 @@ namespace VolumeData
                 _momentMapRenderer.MaskCube = _maskDataSet.DataCube;
             }
             _momentMapRenderer.DataCube = _dataSet.DataCube;
-
-            if (IsFullResolution)
-            {
-                CropToRegion(Vector3.one, new Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
-            }
             IsCropped = false;
         }
 
@@ -844,13 +860,13 @@ namespace VolumeData
 
         void OnRenderObject()
         {
-            if (DisplayMask && _maskDataSet?.ExistingMaskBuffer != null)
+            if (IsFullResolution && DisplayMask && _maskDataSet?.ExistingMaskBuffer != null)
             {
                 _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, _maskDataSet.ExistingMaskBuffer);
                 _maskMaterialInstance.SetPass(0);
                 Graphics.DrawProceduralNow(MeshTopology.Points, _maskDataSet.ExistingMaskBuffer.count);
             }
-            if (DisplayMask && _maskDataSet?.AddedMaskBuffer != null && _maskDataSet?.AddedMaskEntryCount > 0)
+            if (IsFullResolution && DisplayMask && _maskDataSet?.AddedMaskBuffer != null && _maskDataSet?.AddedMaskEntryCount > 0)
             {
                 _maskMaterialInstance.SetBuffer(MaterialID.MaskEntries, _maskDataSet.AddedMaskBuffer);
                 _maskMaterialInstance.SetPass(0);

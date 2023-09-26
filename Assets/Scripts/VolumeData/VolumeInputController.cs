@@ -101,6 +101,7 @@ public class VolumeInputController : MonoBehaviour
     private float _previousControllerHeight;
     private LocomotionState _locomotionState;
     
+    
     // Interactions
     public StateMachine<InteractionState, InteractionEvents> InteractionStateMachine { get; private set; }
     private bool _isQuickMenu;
@@ -125,8 +126,10 @@ public class VolumeInputController : MonoBehaviour
     public bool scrollDown = false;
 
     // Vignetting
+    private bool _tunnellingVignetteOn = true;
     private float _currentVignetteIntensity = 0;
     private float _targetVignetteIntensity = 0;
+    private float _maxVignetteIntensity = 1.0f;
 
     // Selecting
     private readonly Stopwatch _selectionStopwatch = new Stopwatch();
@@ -161,6 +164,9 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnEnable()
     {
+        var config = Config.Instance;
+        _tunnellingVignetteOn = config.tunnellingVignetteOn;
+        _maxVignetteIntensity = config.tunnellingVignetteIntensity;
         _vrFamily = DetermineVRFamily();
         Vector3 pointerOffset = PointerOffsetsLeft[_vrFamily];
         if (_player == null)
@@ -508,7 +514,7 @@ public class VolumeInputController : MonoBehaviour
     private void StateTransitionIdleToMoving()
     {
         _locomotionState = LocomotionState.Moving;
-        _targetVignetteIntensity = 1;
+        _targetVignetteIntensity = _maxVignetteIntensity;
     }
     
     public void StartThresholdEditing(bool editingMax)
@@ -648,7 +654,8 @@ public class VolumeInputController : MonoBehaviour
     private void Update()
     {
         // Common update functions
-        UpdateVignette();
+        if (_tunnellingVignetteOn)
+            UpdateVignette();
         if (Camera.current)
         {
             Camera.current.depthTextureMode = DepthTextureMode.Depth;
