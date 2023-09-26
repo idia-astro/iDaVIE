@@ -325,6 +325,7 @@ namespace VolumeData
            
             if (volumeDataSet.HasFitsRestFrequency)
             {
+                Debug.Log("Found rest frequency in file.");
                 StringBuilder restFreqSB = new StringBuilder(70);
                 volumeDataSet.FitsRestFrequency = AstTool.GetString(astFrameSet, new StringBuilder("RestFreq"), restFreqSB, restFreqSB.Capacity);
                 if (double.TryParse(restFreqSB.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
@@ -333,6 +334,8 @@ namespace VolumeData
                     volumeDataSet.HasRestFrequency = true;
                 }
             }
+            else
+                Debug.Log("Did not find rest frequency in file. Manual setting required.");
             
             // Set wcs angle format from config file. Defaults as sexagesimal
             var config = Config.Instance;
