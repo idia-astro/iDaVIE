@@ -356,7 +356,12 @@ namespace VolumeData
             
             //Check if AstFrameSet or AltSpecSet have velocity
             string primaryFrameZUnit = volumeDataSet.GetAstAttribute("System(3)");
-            volumeDataSet.AstframeIsFreq = primaryFrameZUnit is  "FREQ" or "AWAV" or "WAVE" or "WAVELEN" or "WAVENUM" or "AIRWAVE";
+            volumeDataSet.AstframeIsFreq = primaryFrameZUnit.Equals("FREQ") 
+                                            || primaryFrameZUnit.Equals("AWAV")
+                                            || primaryFrameZUnit.Equals("WAVE")
+                                            || primaryFrameZUnit.Equals("WAVELEN")
+                                            || primaryFrameZUnit.Equals("WAVENUM")
+                                            || primaryFrameZUnit.Equals("AIRWAVE");
             var velocityUnitToSet = config.velocityUnit == VelocityUnit.Km ? "km/s" : "m/s";
             if (volumeDataSet.AstframeIsFreq)
                 volumeDataSet.SetAltAxisUnit(3, velocityUnitToSet);
