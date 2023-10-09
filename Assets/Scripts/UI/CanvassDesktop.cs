@@ -207,9 +207,9 @@ public class CanvassDesktop : MonoBehaviour
 			{
     			// If shift is not pressed, move down on the list - or, if at the bottom, move to the top
                 if (inputFields.Count <= inputIndex + 1)
-                    {
-                        inputIndex = -1;
-                    }
+                {
+                    inputIndex = -1;
+                }
                 inputIndex++;
                 inputFields[inputIndex].Select();
 			}

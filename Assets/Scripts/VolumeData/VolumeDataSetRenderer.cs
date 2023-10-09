@@ -495,12 +495,13 @@ namespace VolumeData
                     _previousBrushSize = brushSize;
                     CursorVoxel = newVoxelCursor;
                     CursorValue = _dataSet.GetDataValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
-                    if (Double.IsNaN(CursorValue))
+                    if (/*GlobalDebugIsOn &&*/Double.IsNaN(CursorValue))
                     {
-                        Debug.Log("NAN value at CursorVoxel [" + CursorVoxel.x.ToString() + ", " + CursorVoxel.y.ToString() + ", " + CursorVoxel.z.ToString() + "]!");
+                        // Debug.Log("NAN value at CursorVoxel [" + CursorVoxel.x.ToString() + ", " + CursorVoxel.y.ToString() + ", " + CursorVoxel.z.ToString() + "]!");
                     }
                     if (_maskDataSet != null)
                     {
+                        // Debug.Log("Trying to access mask value at [" + CursorVoxel.x.ToString() + ", " + CursorVoxel.y.ToString() + ", " + CursorVoxel.z.ToString() + "].");
                         CursorSource = _maskDataSet.GetMaskValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
                     }
                     else
@@ -1007,9 +1008,10 @@ namespace VolumeData
                 Vector3Int cursorOffset = new Vector3Int(_dataSet.subsetBounds[0] - 1,
                                                          _dataSet.subsetBounds[2] - 1,
                                                          _dataSet.subsetBounds[4] - 1);
-                cursorLoc = cursorLoc + cursorOffset;
+                cursorLoc = cursorLoc - cursorOffset;
             }
             var maskCursorLimit = (_previousBrushSize - 1) / 2;
+            Debug.Log("Painting at cursor value [" + cursorLoc.x + ", " + cursorLoc.y + ", " + cursorLoc.z + "].");
             for (int i = -maskCursorLimit; i <= maskCursorLimit; i++)
             {
                 for (int j = -maskCursorLimit; j <= maskCursorLimit; j++)
