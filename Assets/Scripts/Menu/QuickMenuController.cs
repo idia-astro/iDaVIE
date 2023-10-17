@@ -15,6 +15,8 @@ public class QuickMenuController : MonoBehaviour
     public GameObject paintMenu;
     public GameObject plotsMenu;
     public GameObject voiceCommandsListCanvas;
+
+    public GameObject colorMapListCanvas;
     public GameObject savePopup;
     public GameObject exitPopup;
     public GameObject exitSavePopup;
@@ -105,6 +107,14 @@ public class QuickMenuController : MonoBehaviour
     public void OpenListOfVoiceCommands()
     {
         spawnMenu(voiceCommandsListCanvas);
+    }
+
+    /// <summary>
+    /// Function that is called when user selects the colour map button on the main menu
+    /// </summary>
+    public void OpenListOfColourMaps()
+    {
+        spawnMenu(colorMapListCanvas);
     }
 
     public void spawnMenu(GameObject menu)
