@@ -639,20 +639,21 @@ namespace VolumeData
         
         public VolumeDataSet GenerateEmptyMask()
         {
-            VolumeDataSet volumeDataSet = new VolumeDataSet();
-            volumeDataSet.IsMask = true;
+            VolumeDataSet maskDataSet = new VolumeDataSet();
+            maskDataSet.IsMask = true;
             FitsReader.CreateEmptyImageInt16(XDim, YDim, ZDim, out var dataPtr);
-            volumeDataSet.FitsData = dataPtr;
-            volumeDataSet.ImageDataPtr = FitsData;
-            volumeDataSet.XDim = XDim;
-            volumeDataSet.YDim = YDim;
-            volumeDataSet.ZDim = ZDim;
-            volumeDataSet.SourceStatsDict = new Dictionary<int, DataAnalysis.SourceStats>();
-            volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
+            maskDataSet.FitsData = dataPtr;
+            maskDataSet.ImageDataPtr = FitsData;
+            maskDataSet.XDim = XDim;
+            maskDataSet.YDim = YDim;
+            maskDataSet.ZDim = ZDim;
+            maskDataSet.subsetBounds = subsetBounds;
+            maskDataSet.SourceStatsDict = new Dictionary<int, DataAnalysis.SourceStats>();
+            maskDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
-            volumeDataSet._cachedBrush = new byte[2];
+            maskDataSet._cachedBrush = new byte[2];
 
-            return volumeDataSet;
+            return maskDataSet;
         }
 
         public void GenerateVolumeTexture(FilterMode textureFilter, int xDownsample, int yDownsample, int zDownsample)
