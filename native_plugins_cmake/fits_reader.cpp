@@ -228,7 +228,10 @@ int FitsCreateHdrPtrForAst(fitsfile *fptr, char **header, int *nkeys, int *statu
         strncpy_s(subtype4, 5,  ctype4 + 1, 4);
         subtype4[4] = '\0';
         if (strcmp(subtype4, "FREQ") == 0 || strcmp(subtype4, "VRAD") == 0 || strcmp(subtype4, "VOPT") == 0 ||
-        strcmp(subtype4, "VELO") == 0 || strcmp(subtype4, "ZOPT") == 0)
+        strcmp(subtype4, "VELO") == 0 || strcmp(subtype4, "ZOPT") == 0 || strcmp(subtype4, "WAVE") == 0 ||
+        strcmp(subtype4, "AWAV") == 0 || strcmp(subtype4, "AIRW") == 0 || strcmp(subtype4, "VOPT") == 0 ||
+        strcmp(subtype4, "VREL") == 0 || strcmp(subtype4, "ENER") == 0 || strcmp(subtype4, "ENER") == 0 ||
+        strcmp(subtype4, "WAVN") == 0)
         {
             needToSwap = true;
             strcpy_s(excludeList[10], 7, "C????3");

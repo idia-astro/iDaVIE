@@ -249,6 +249,9 @@ public class QuickMenuController : MonoBehaviour
 
     public void SaveMask()
     {
+        if (exportPopup.activeSelf)
+            exportPopup.SetActive(false);
+        
         savePopup.transform.SetParent(this.transform.parent, false);
         savePopup.transform.localPosition = this.transform.localPosition;
         savePopup.transform.localRotation = this.transform.localRotation;
