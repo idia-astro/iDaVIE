@@ -474,6 +474,10 @@ config.json
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 
+# Asset files from extracted packages
+/plugin_build/Assets/
+/plugin_build/*.tar.gz
+
 # MemoryCaptures can get excessive in size.
 # They also could contain extremely sensitive data
 /[Mm]emoryCaptures/
@@ -548,4 +552,5 @@ API
 Training
 Blog
 About
+
 

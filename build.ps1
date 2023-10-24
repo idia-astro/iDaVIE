@@ -58,6 +58,12 @@ if (-not ((Test-Path $UNITYPATH) -and (Test-Path -Path $UNITYPATH -PathType Leaf
 	exit
 }
 
+<#
+Write-Host "Installing vcpkg packages..."
+Start-Process $VCPKG -Wait -ArgumentList "install starlink-ast:x64-windows cfitsio:x64-windows"
+Write-Host "vcpkg packages installed!"
+#>
+
 Write-Progress "Building native plugins..."
 Set-Location native_plugins_cmake
 $BuildFolderName = "build"
@@ -140,7 +146,7 @@ if (Test-Path ".\com.unity.xr.management-4.4.0.tar.gz")
 else 
 {
 	Write-Progress "fetching com.unity.xr.management-4.4.0.tar.gz... " -Status "80% complete" -PercentComplete 80
-	Invoke-WebRequest https://github.com/needle-mirror/com.unity.xr.management/archive/refs/tags/4.4.0.tar.gz -OutFile com.unity.xr.management-4.4.0.tar.gz
+	Invoke-WebRequest https://download.packages.unity.com/com.unity.xr.management/-/com.unity.xr.management-4.4.0.tgz -OutFile com.unity.xr.management-4.4.0.tar.gz
 	Write-Progress "Done." -Status "100% complete" -PercentComplete 100
 }
 
@@ -173,17 +179,21 @@ Write-Progress "Extracting steamvr.unitypackage... " -Status "0% complete" -Perc
 Start-Process ".\extractor.exe" -Wait -ArgumentList ".\steamvr.unitypackage ."
 Write-Progress "steamvr.unitypackage extracted"
 
-Write-Progress "Extracting nuget.unitypackage... " -Status "25% complete" -PercentComplete 25
+Write-Progress "Extracting nuget.unitypackage... " -Status "20% complete" -PercentComplete 20
 Start-Process ".\extractor.exe" -Wait -ArgumentList ".\nuget.unitypackage ."
 Write-Progress "nuget.unitypackage extracted"
 
-Write-Progress "Extracting file_browser.unitypackage... " -Status "50% complete" -PercentComplete 50
+Write-Progress "Extracting file_browser.unitypackage... " -Status "40% complete" -PercentComplete 40
 Start-Process ".\extractor.exe" -Wait -ArgumentList ".\file_browser.unitypackage ."
 Write-Progress "file_browser.unitypackage extracted"
 
-Write-Progress "Extracting scroll_rect.unitypackage... " -Status "75% complete" -PercentComplete 75
+Write-Progress "Extracting scroll_rect.unitypackage... " -Status "60% complete" -PercentComplete 60
 Start-Process ".\extractor.exe" -Wait -ArgumentList ".\scroll_rect.unitypackage ."
-Write-Progress "scroll_rect.unitypackage extracted" -Status "100% complete" -PercentComplete 100
+Write-Progress "scroll_rect.unitypackage extracted"
+
+Write-Progress "Extracting com.unity.xr.management-4.4.0.tar.gz... " -Status "80% complete" -PercentComplete 80
+Start-Process ".\extractor.exe" -Wait -ArgumentList ".\com.unity.xr.management-4.4.0.tar.gz ."
+Write-Progress "com.unity.xr.management-4.4.0.tar.gz extracted" -Status "100% complete" -PercentComplete 100
 
 Remove-Item ".\extractor.exe"
 
@@ -205,7 +215,7 @@ else
 #Import packages
 if (($UNITY_USERNAME -eq "__not_init__") -or ($UNITY_PASSWORD -eq "__not_init__") -or ($UNITY_SERIAL -eq "__not_init__"))
 {
-    Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import.log -importPackage $PSScriptRoot\plugin_build\textMeshPro-3.0.6.unitypackage -quit"\
+    Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import.log -importPackage $PSScriptRoot\plugin_build\textMeshPro-3.0.6.unitypackage -quit"
 }
 else
 {
