@@ -160,6 +160,15 @@ namespace VolumeData
 
         public string PixelUnit = "units";
 
+        /// <summary>
+        /// Function that creates a random data set of the given dimensions.
+        /// </summary>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <param name="xDim"></param>
+        /// <param name="yDim"></param>
+        /// <param name="zDim"></param>
+        /// <returns></returns>
         public static VolumeDataSet LoadRandomFitsCube(float min, float max, int xDim, int yDim, int zDim)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
@@ -392,6 +401,10 @@ namespace VolumeData
             return volumeDataSet;
         }
 
+        /// <summary>
+        /// Updates the calculated stats for the given mask value.
+        /// </summary>
+        /// <param name="maskVal"></param>
         private void UpdateStats(short maskVal)
         {
             if (!SourceStatsDict.ContainsKey(maskVal))
@@ -406,7 +419,8 @@ namespace VolumeData
             if (sourceStats.numVoxels > 0)
             {
                 SourceStatsDict[maskVal] = sourceStats;
-                PrintStats(maskVal);
+                // Uncomment for stat calculation debugging:
+                // PrintStats(maskVal);
             }
             else if (SourceStatsDict.ContainsKey(maskVal))
             {
@@ -448,6 +462,10 @@ namespace VolumeData
             }
         }
 
+        /// <summary>
+        /// Debug function to print the calculated stats for the given mask value.
+        /// </summary>
+        /// <param name="maskVal"></param>
         private void PrintStats(short maskVal)
         {
             if (!SourceStatsDict.ContainsKey(maskVal))
@@ -456,8 +474,7 @@ namespace VolumeData
                 return;
             }
             var sourceStats = SourceStatsDict[maskVal];
-            //Uncomment below to debug stats calculation:
-            //Debug.Log($"Source {maskVal}: Bounding box [{sourceStats.minX}, {sourceStats.minY}, {sourceStats.minZ}] -> [{sourceStats.maxX}, {sourceStats.maxY}, {sourceStats.maxZ}]; {sourceStats.numVoxels} voxels; {sourceStats.sum} (sum); {sourceStats.peak} (peak); centroid [{sourceStats.cX}, {sourceStats.cY}, {sourceStats.cZ}]; vsys: {sourceStats.channelVsys}; w20: {sourceStats.channelW20}");
+            Debug.Log($"Source {maskVal}: Bounding box [{sourceStats.minX}, {sourceStats.minY}, {sourceStats.minZ}] -> [{sourceStats.maxX}, {sourceStats.maxY}, {sourceStats.maxZ}]; {sourceStats.numVoxels} voxels; {sourceStats.sum} (sum); {sourceStats.peak} (peak); centroid [{sourceStats.cX}, {sourceStats.cY}, {sourceStats.cZ}]; vsys: {sourceStats.channelVsys}; w20: {sourceStats.channelW20}");
         }
 
         public void FillFeatureSet( FeatureSetRenderer featureSet)
@@ -533,7 +550,14 @@ namespace VolumeData
 
             return volumeDataSet;
         }
-
+        
+        /// <summary>
+        /// Use DataAnalysisTool to downsample the entire cube and generate a new Texture3D object for DataCube.
+        /// </summary>
+        /// <param name="textureFilter"></param>
+        /// <param name="xDownsample"></param>
+        /// <param name="yDownsample"></param>
+        /// <param name="zDownsample"></param>
         public void GenerateVolumeTexture(FilterMode textureFilter, int xDownsample, int yDownsample, int zDownsample)
         {
             TextureFormat textureFormat;
@@ -607,6 +631,13 @@ namespace VolumeData
                 DataAnalysis.FreeDataAnalysisMemory(reducedData);
         }
 
+        /// <summary>
+        /// Similar to GenerateVolumeTexture, but only generates a downsampled cropped region of the cube.
+        /// </summary>
+        /// <param name="textureFilter"></param>
+        /// <param name="cropStart"></param>
+        /// <param name="cropEnd"></param>
+        /// <param name="downsample"></param>
         public void GenerateCroppedVolumeTexture(FilterMode textureFilter, Vector3Int cropStart, Vector3Int cropEnd, Vector3Int downsample)
         {
             Stopwatch sw = new Stopwatch();

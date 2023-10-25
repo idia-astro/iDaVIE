@@ -21,7 +21,7 @@ public class VoiceCommandListCreator : MonoBehaviour
     private RectTransform content = null;
 
     private VolumeCommandController _volumeCommandController;
-
+    private float _maxYPosition = 0;    // Use to set the size of content to encapsulate all spawned items
   
     // Start is called before the first frame update
     void Start()
@@ -54,8 +54,10 @@ public class VoiceCommandListCreator : MonoBehaviour
             if (i % 2 != 0)
                 itemDetails.GetComponent<Image>().color = new Color(0.4039216f, 0.5333334f, 0.5882353f, 1f);
             i++;
+            _maxYPosition = spawnY;
         }
-       
+        content.sizeDelta = new Vector2(content.offsetMin.x, _maxYPosition);        //Encapsulate all spawned items with content size
+        
 }
 
 
