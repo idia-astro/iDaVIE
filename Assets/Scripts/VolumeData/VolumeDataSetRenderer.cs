@@ -155,6 +155,8 @@ namespace VolumeData
         public IntPtr AstFrame { get =>_dataSet.AstFrameSet; } 
         public string StdOfRest => _dataSet.GetStdOfRest();
 
+        public Vector3Int CubeDimensions => new Vector3Int((int)_dataSet.XDim, (int)_dataSet.YDim, (int)_dataSet.ZDim);
+        
         private int _currentXFactor, _currentYFactor, _currentZFactor;
         public bool IsFullResolution => _currentXFactor * _currentYFactor * _currentZFactor == 1;
 
