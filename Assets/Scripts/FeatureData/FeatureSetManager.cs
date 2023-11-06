@@ -238,10 +238,11 @@ namespace DataFeatures
         {
             ActiveFeatureSetRenderer = GeneratedFeatureSetList[0];
             ActiveFeatureSetRenderer.ClearFeatures();
+            var flag = Config.Instance.flags[0];
             if (ActiveFeatureSetRenderer)
             {
                 DeselectFeature();
-                SelectedFeature = new Feature(boundsMin, boundsMax, Color.white, featureName, -1, -1, null, ActiveFeatureSetRenderer, true) {Temporary = temporary, Selected = true};
+                SelectedFeature = new Feature(boundsMin, boundsMax, Color.white, featureName, flag, -1, -1, null, ActiveFeatureSetRenderer, true) {Temporary = temporary, Selected = true};
                 if (temporary)
                 {
                     SelectedFeature.ShowAxes(true);

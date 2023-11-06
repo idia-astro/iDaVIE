@@ -454,9 +454,10 @@ namespace VolumeData
                     // Add new feature for the newly created stats
                     var boxMin = new Vector3(sourceStats.minX, sourceStats.minY, sourceStats.minZ);
                     var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
+                    var flag = Config.Instance.flags[0];
                     var name = $"Masked Source #{maskVal}";
                     var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
-                    var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, _maskFeatureSet.FeatureList.Count, maskVal - 1, rawStrings, _maskFeatureSet, _maskFeatureSet.FeatureList[0].Visible);
+                    var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, flag, _maskFeatureSet.FeatureList.Count, maskVal - 1, rawStrings, _maskFeatureSet, _maskFeatureSet.FeatureList[0].Visible);
                     _maskFeatureSet.AddFeature(feature);
                     _maskFeatureSet.FeatureMenuScrollerDataSource.InitData();       // Reinitialize the data source to include the new feature
                     _maskFeatureSet.FeatureManager.NeedToRespawnMenuList = true;

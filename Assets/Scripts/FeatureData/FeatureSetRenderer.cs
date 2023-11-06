@@ -209,6 +209,7 @@ namespace DataFeatures
             var velocityUnit = VolumeRenderer.Data.AstframeIsFreq ? VolumeRenderer.Data.GetAstAltAttribute("Unit(3)") : VolumeRenderer.Data.GetAstAttribute("Unit(3)") ;
             RawDataKeys = new[] {"Sum", "Peak", "VSys (Channel)", "W20 (Channel)", $"VSys ({velocityUnit})", $"W20 ({velocityUnit})"};
             RawDataTypes = new[] {"float", "float", "float", "float", "float", "float"};
+            var flags = Config.Instance.flags;
             foreach (var item in sourceStatsDict)
             {
                 var sourceStats = item.Value;
@@ -216,7 +217,7 @@ namespace DataFeatures
                 var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
                 var featureName = $"Masked Source #{item.Key}";
                 var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
-                AddFeature(new Feature(boxMin, boxMax, FeatureColor, featureName, FeatureList.Count, item.Key - 1, rawStrings, this, false));
+                AddFeature(new Feature(boxMin, boxMax, FeatureColor, featureName, flags[0], FeatureList.Count, item.Key - 1, rawStrings, this, false));
             }
             FeatureMenuScrollerDataSource.InitData();
         }
@@ -418,11 +419,12 @@ namespace DataFeatures
             if (VolumeRenderer)
             {
                 Vector3 cubeMin, cubeMax;
+                var flags = Config.Instance.flags;
                 for (int i = 0; i < voTable.Rows.Count; i++)
                 {
                     cubeMin = BoxMinPositions[i];
                     cubeMax = BoxMaxPositions[i];
-                    FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, FeatureNames[i], i,i, featureRawData[i].ToArray(), this, false));
+                    FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, FeatureNames[i], flags[0], i, i, featureRawData[i].ToArray(), this, false));
                 }
             }
             FeatureMenuScrollerDataSource.InitData();
