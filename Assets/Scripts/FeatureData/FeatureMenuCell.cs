@@ -36,7 +36,7 @@ public class FeatureMenuCell : MonoBehaviour, ICell
 
 
     //This is called from the SetCell method in DataSource
-    public void ConfigureCell(FeatureMenuListItemInfo featureMenuListItemInfo ,int cellIndex)
+    public void ConfigureCell(FeatureMenuListItemInfo featureMenuListItemInfo, int cellIndex)
     {
         CellIndex = cellIndex;
         _featureMenuListItemInfo = featureMenuListItemInfo;
@@ -119,7 +119,9 @@ public class FeatureMenuCell : MonoBehaviour, ICell
     {
         var flags = Config.Instance.flags;
         var flag = feature.Flag;
-        int flagIndex = Array.IndexOf(flags, flag) + 1;
+        int flagIndex = 0;
+        if (!flag.Equals(""))
+            flagIndex = Array.IndexOf(flags, flag) + 1;
         var newFlag = (flagIndex >= flags.Length) ? " " : flags[flagIndex];
         SetFlag(newFlag);
     }
@@ -130,10 +132,15 @@ public class FeatureMenuCell : MonoBehaviour, ICell
     /// <param name="f">The new flag for the feature.</param>
     public void SetFlag(string f)
     {
+        if (f == null)
+            f = "";
         feature.Flag = f;
-        Debug.Log("Setting flag of feature " + feature.Id.ToString() + " to " + f);
         var flagLabel = this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("FlagButton")?.gameObject.transform.Find("FlagLabel").GetComponent<TMP_Text>();
-        string lbl = (f.Length > 1) ? f.Substring(0, 2) : (" " + f.Substring(0, 1));
+        string lbl;
+        if (f.Equals(""))
+            lbl = " ";
+        else
+            lbl = (f.Length > 1) ? f.Substring(0, 2) : (" " + f.Substring(0, 1));
         flagLabel.SetText(lbl);
         featureSetManager.NeedToUpdateInfo = true;
     }

@@ -237,11 +237,10 @@ public class FeatureMenuController : MonoBehaviour
                     textObject.GetComponent<TMP_Text>().text += $"{featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys[i]} : {dataToAdd}{Environment.NewLine}";
                 }
             }
-            if (!featureSetManager.SelectedFeature.Flag.Equals(""))
-            {
-                var flag = featureSetManager.SelectedFeature.Flag;
-                textObject.GetComponent<TMP_Text>().text += "Flag: " + flag + Environment.NewLine;
-            }
+            var flag = featureSetManager.SelectedFeature.Flag;
+            if (flag.Equals(" ") || flag.Equals(""))
+                flag = "No flag";
+            textObject.GetComponent<TMP_Text>().text += "Flag: " + flag + Environment.NewLine;
         }
         else
             textObject.GetComponent<TMP_Text>().text += "Please select a feature.";

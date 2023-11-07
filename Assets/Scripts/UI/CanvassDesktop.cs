@@ -810,6 +810,11 @@ public class CanvassDesktop : MonoBehaviour
                 sourceRow.CurrentMapping = SourceMappingOptions.Redshift;
                 dropdown.value = (int)SourceMappingOptions.Redshift;
             }
+            else if (sourceRow.SourceName == featureMapping.Mapping.Flag.Source)
+            {
+                sourceRow.CurrentMapping = SourceMappingOptions.Flag;
+                dropdown.value = (int)SourceMappingOptions.Flag;
+            }
         }
     }
 
@@ -866,6 +871,7 @@ public class CanvassDesktop : MonoBehaviour
             Vel = mapping.ContainsKey(SourceMappingOptions.Velo) ? mapping[SourceMappingOptions.Velo] : new MapEntry { Source = "" },
             Freq = mapping.ContainsKey(SourceMappingOptions.Freq) ? mapping[SourceMappingOptions.Freq] : new MapEntry { Source = "" },
             Redshift = mapping.ContainsKey(SourceMappingOptions.Redshift) ? mapping[SourceMappingOptions.Redshift] : new MapEntry { Source = "" },
+            Flag = mapping.ContainsKey(SourceMappingOptions.Flag) ? mapping[SourceMappingOptions.Flag] : new MapEntry { Source = "" },
             ImportedColumns = importedColumns.ToArray()
         };
         var featureMappingObject = new FeatureMapping { Mapping = mappingObject };

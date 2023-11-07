@@ -238,7 +238,7 @@ namespace DataFeatures
         {
             ActiveFeatureSetRenderer = GeneratedFeatureSetList[0];
             ActiveFeatureSetRenderer.ClearFeatures();
-            var flag = Config.Instance.flags[0];
+            var flag = "";
             if (ActiveFeatureSetRenderer)
             {
                 DeselectFeature();
