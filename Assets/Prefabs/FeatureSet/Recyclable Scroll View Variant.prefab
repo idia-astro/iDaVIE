@@ -124,7 +124,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 881031908}
         m_TargetAssemblyTypeName: CustomDragHandler, Assembly-CSharp
-        m_MethodName: MoveUp
+        m_MethodName: MoveUpClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -273,7 +273,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 881031908}
         m_TargetAssemblyTypeName: CustomDragHandler, Assembly-CSharp
-        m_MethodName: MoveDown
+        m_MethodName: MoveDownClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -469,6 +469,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   anchorPoint: {fileID: 8814787936857429663}
   scrollSpeed: 20
+  buttonClickMovement: 110
 --- !u!114 &881031910
 MonoBehaviour:
   m_ObjectHideFlags: 0

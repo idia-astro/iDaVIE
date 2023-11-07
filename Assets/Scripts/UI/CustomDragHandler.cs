@@ -13,6 +13,7 @@ public class CustomDragHandler : MonoBehaviour
                                         // Set this to Content object when using ScrollRect to allow clamps to work properly.
                                         // This requires adjusting the Content size if spawning objects at runtime.
     public int scrollSpeed;
+    public int buttonClickMovement;
     private RectTransform anchorPointPosition;
     public float Spawn_initial_y {get; private set;}
 
@@ -28,9 +29,19 @@ public class CustomDragHandler : MonoBehaviour
     {
         anchorPointPosition.localPosition += Vector3.down * scrollSpeed;
     }
-
+    
     public void MoveDown()
     {
         anchorPointPosition.localPosition += Vector3.up * scrollSpeed;
+    }
+    
+    public void MoveUpClick()
+    {
+        anchorPointPosition.localPosition += Vector3.down * buttonClickMovement;
+    }
+
+    public void MoveDownClick()
+    {
+        anchorPointPosition.localPosition += Vector3.up * buttonClickMovement;
     }
 }
