@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 using DataFeatures;
 using LineRenderer;
 using Debug = UnityEngine.Debug;
@@ -123,6 +125,9 @@ namespace VolumeData
         public Int16 HighlightedSource;
         public Vector3Int RegionStartVoxel { get; private set; }
         public Vector3Int RegionEndVoxel { get; private set; }
+
+        public TextMeshProUGUI loadText;
+        public Slider progressBar;
 
         [Range(0, 1)] public float SelectionSaturateFactor = 0.7f;
 
@@ -298,12 +303,23 @@ namespace VolumeData
             _baseZFactor = _currentZFactor;
             ScaleMax = _dataSet.MaxValue;
             ScaleMin = _dataSet.MinValue;
+            
+            loadText.text = "Loading mask...";
+            Debug.Log("Loading image data complete, loading data for the mask.");
+            progressBar.value = 4;
+
             if (!String.IsNullOrEmpty(MaskFileName))
             {
                 _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, _dataSet.FitsData);
                 // Mask data is always point-filtered
                 _maskDataSet.GenerateVolumeTexture(FilterMode.Point, XFactor, YFactor, ZFactor);
             }
+
+            
+            loadText.text = "Preparing UI...";
+            Debug.Log("Loading mask data complete.");
+            progressBar.value = 5;
+
             _renderer = GetComponent<MeshRenderer>();
             _materialInstance = Instantiate(RayMarchingMaterial);
             _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.DataCube);
