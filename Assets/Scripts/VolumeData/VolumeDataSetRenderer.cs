@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -280,6 +281,8 @@ namespace VolumeData
         {
             // Apply settings from config
             var config = Config.Instance;
+            Debug.Log("Loading data for the new cube.");
+            StartCoroutine(updateStatus("Loading new cube...", 3));
             TextureFilter = config.bilinearFiltering ? FilterMode.Bilinear : FilterMode.Point;
             FoveatedRendering = config.foveatedRendering;
             MaxSteps = config.maxRaymarchingSteps;
@@ -304,9 +307,8 @@ namespace VolumeData
             ScaleMax = _dataSet.MaxValue;
             ScaleMin = _dataSet.MinValue;
             
-            loadText.text = "Loading mask...";
             Debug.Log("Loading image data complete, loading data for the mask.");
-            progressBar.value = 4;
+            StartCoroutine(updateStatus("Loading mask...", 4));
 
             if (!String.IsNullOrEmpty(MaskFileName))
             {
@@ -315,10 +317,8 @@ namespace VolumeData
                 _maskDataSet.GenerateVolumeTexture(FilterMode.Point, XFactor, YFactor, ZFactor);
             }
 
-            
-            loadText.text = "Preparing UI...";
             Debug.Log("Loading mask data complete.");
-            progressBar.value = 5;
+            StartCoroutine(updateStatus("Preparing UI...", 5));
 
             _renderer = GetComponent<MeshRenderer>();
             _materialInstance = Instantiate(RayMarchingMaterial);
@@ -440,6 +440,12 @@ namespace VolumeData
 
         }
 
+        public IEnumerator updateStatus(string label, int progress)
+        {
+            loadText.text = label;
+            progressBar.value = progress;
+            yield return 0;
+        }
 
         private void GenerateDownsampledCube()
         {

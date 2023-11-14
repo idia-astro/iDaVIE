@@ -621,12 +621,7 @@ public class CanvassDesktop : MonoBehaviour
             featureMenu.gameObject.SetActive(true);
         }
         
-
         _volumeCommandController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
-        loadTextLabel.text = "Loading new cube...";
-        Debug.Log("Loading data for the new cube.");
-        progressBar.GetComponent<Slider>().value = 3;
-        yield return new WaitForSeconds(0.001f);
 
         while (!newCube.GetComponent<VolumeDataSetRenderer>().started)
         {
