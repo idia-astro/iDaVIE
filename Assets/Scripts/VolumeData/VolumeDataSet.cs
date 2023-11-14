@@ -494,8 +494,8 @@ namespace VolumeData
             volumeDataSetRes.CreateAltSpecFrame();
             
             //Check if AstFrameSet or AltSpecSet have velocity
-            string primaryFrameZUnit = volumeDataSet.GetAstAttribute("System(3)");
-            volumeDataSet.AstframeIsFreq = primaryFrameZUnit.Equals("FREQ") 
+            string primaryFrameZUnit = volumeDataSetRes.GetAstAttribute("System(3)");
+            volumeDataSetRes.AstframeIsFreq = primaryFrameZUnit.Equals("FREQ") 
                                             || primaryFrameZUnit.Equals("AWAV")
                                             || primaryFrameZUnit.Equals("WAVE")
                                             || primaryFrameZUnit.Equals("WAVELEN")
