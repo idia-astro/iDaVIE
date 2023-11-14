@@ -10,6 +10,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.IO;
 using DataFeatures;
+using UnityEngine;
 
 namespace VoTableReader
 {
@@ -44,6 +45,7 @@ namespace VoTableReader
 
             if (voTable == null)
             {
+                Debug.LogWarning("VOTable is null, returning without further execution.");
                 return;
             }
             int index = 0;
@@ -54,9 +56,14 @@ namespace VoTableReader
                 {
                     foreach (XmlNode node in table.ChildNodes)
                     {
+                        if (node.Attributes["name"] != null)
+                            Debug.Log("Examining node of type " + node.Name + " and called " + node.Attributes["name"].Value.ToString() + ".");
+                        else 
+                            Debug.Log("Examining node of type " + node.Name + " with no name.");
                         if (node.Name == "FIELD")
                         {
                             VoColumn col = new VoColumn(node, index++);
+                            Debug.Log("Adding new column with name \'" + col.Name + "\' to dictionary of columns.");
                             Columns.Add(col.Name, col);
                             Column.Add(col);
                         }
@@ -66,6 +73,7 @@ namespace VoTableReader
             catch
             {
                 error = true;
+                Debug.LogError("Error when loading VO Table!");
                 errorText = voTable["DESCRIPTION"].InnerText.ToString();
             }
             try
