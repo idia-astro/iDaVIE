@@ -163,6 +163,15 @@ namespace VolumeData
 
         public string PixelUnit = "units";
 
+        /// <summary>
+        /// Function that creates a random data set of the given dimensions.
+        /// </summary>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <param name="xDim"></param>
+        /// <param name="yDim"></param>
+        /// <param name="zDim"></param>
+        /// <returns></returns>
         public static VolumeDataSet LoadRandomFitsCube(float min, float max, int xDim, int yDim, int zDim)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
@@ -455,6 +464,7 @@ namespace VolumeData
            
             if (volumeDataSetRes.HasFitsRestFrequency)
             {
+                Debug.Log("Found rest frequency in file.");
                 StringBuilder restFreqSB = new StringBuilder(70);
                 volumeDataSetRes.FitsRestFrequency = AstTool.GetString(astFrameSet, new StringBuilder("RestFreq"), restFreqSB, restFreqSB.Capacity);
                 if (double.TryParse(restFreqSB.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
@@ -463,6 +473,8 @@ namespace VolumeData
                     volumeDataSetRes.HasRestFrequency = true;
                 }
             }
+            else
+                Debug.Log("Did not find rest frequency in file. Manual setting required.");
             
             // Set wcs angle format from config file. Defaults as sexagesimal
             var config = Config.Instance;
@@ -482,8 +494,13 @@ namespace VolumeData
             volumeDataSetRes.CreateAltSpecFrame();
             
             //Check if AstFrameSet or AltSpecSet have velocity
-            string primaryFrameZUnit = volumeDataSetRes.GetAstAttribute("System(3)");
-            volumeDataSetRes.AstframeIsFreq = primaryFrameZUnit == "FREQ" || primaryFrameZUnit == "AWAV";
+            string primaryFrameZUnit = volumeDataSet.GetAstAttribute("System(3)");
+            volumeDataSet.AstframeIsFreq = primaryFrameZUnit.Equals("FREQ") 
+                                            || primaryFrameZUnit.Equals("AWAV")
+                                            || primaryFrameZUnit.Equals("WAVE")
+                                            || primaryFrameZUnit.Equals("WAVELEN")
+                                            || primaryFrameZUnit.Equals("WAVENUM")
+                                            || primaryFrameZUnit.Equals("AIRWAVE");
             var velocityUnitToSet = config.velocityUnit == VelocityUnit.Km ? "km/s" : "m/s";
             if (volumeDataSetRes.AstframeIsFreq)
                 volumeDataSetRes.SetAltAxisUnit(3, velocityUnitToSet);
@@ -513,6 +530,10 @@ namespace VolumeData
             return volumeDataSetRes;
         }
 
+        /// <summary>
+        /// Updates the calculated stats for the given mask value.
+        /// </summary>
+        /// <param name="maskVal"></param>
         private void UpdateStats(short maskVal)
         {
             if (!SourceStatsDict.ContainsKey(maskVal))
@@ -527,7 +548,8 @@ namespace VolumeData
             if (sourceStats.numVoxels > 0)
             {
                 SourceStatsDict[maskVal] = sourceStats;
-                PrintStats(maskVal);
+                // Uncomment for stat calculation debugging:
+                // PrintStats(maskVal);
             }
             else if (SourceStatsDict.ContainsKey(maskVal))
             {
@@ -565,10 +587,16 @@ namespace VolumeData
                     var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
                     var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, _maskFeatureSet.FeatureList.Count, maskVal - 1, rawStrings, _maskFeatureSet, _maskFeatureSet.FeatureList[0].Visible);
                     _maskFeatureSet.AddFeature(feature);
+                    _maskFeatureSet.FeatureMenuScrollerDataSource.InitData();       // Reinitialize the data source to include the new feature
+                    _maskFeatureSet.FeatureManager.NeedToRespawnMenuList = true;
                 }
             }
         }
 
+        /// <summary>
+        /// Debug function to print the calculated stats for the given mask value.
+        /// </summary>
+        /// <param name="maskVal"></param>
         private void PrintStats(short maskVal)
         {
             if (!SourceStatsDict.ContainsKey(maskVal))
@@ -577,8 +605,7 @@ namespace VolumeData
                 return;
             }
             var sourceStats = SourceStatsDict[maskVal];
-            //Uncomment below to debug stats calculation:
-            //Debug.Log($"Source {maskVal}: Bounding box [{sourceStats.minX}, {sourceStats.minY}, {sourceStats.minZ}] -> [{sourceStats.maxX}, {sourceStats.maxY}, {sourceStats.maxZ}]; {sourceStats.numVoxels} voxels; {sourceStats.sum} (sum); {sourceStats.peak} (peak); centroid [{sourceStats.cX}, {sourceStats.cY}, {sourceStats.cZ}]; vsys: {sourceStats.channelVsys}; w20: {sourceStats.channelW20}");
+            Debug.Log($"Source {maskVal}: Bounding box [{sourceStats.minX}, {sourceStats.minY}, {sourceStats.minZ}] -> [{sourceStats.maxX}, {sourceStats.maxY}, {sourceStats.maxZ}]; {sourceStats.numVoxels} voxels; {sourceStats.sum} (sum); {sourceStats.peak} (peak); centroid [{sourceStats.cX}, {sourceStats.cY}, {sourceStats.cZ}]; vsys: {sourceStats.channelVsys}; w20: {sourceStats.channelW20}");
         }
 
         public void FillFeatureSet( FeatureSetRenderer featureSet)
@@ -655,7 +682,14 @@ namespace VolumeData
 
             return maskDataSet;
         }
-
+        
+        /// <summary>
+        /// Use DataAnalysisTool to downsample the entire cube and generate a new Texture3D object for DataCube.
+        /// </summary>
+        /// <param name="textureFilter"></param>
+        /// <param name="xDownsample"></param>
+        /// <param name="yDownsample"></param>
+        /// <param name="zDownsample"></param>
         public void GenerateVolumeTexture(FilterMode textureFilter, int xDownsample, int yDownsample, int zDownsample)
         {
             TextureFormat textureFormat;
@@ -729,6 +763,13 @@ namespace VolumeData
                 DataAnalysis.FreeDataAnalysisMemory(reducedData);
         }
 
+        /// <summary>
+        /// Similar to GenerateVolumeTexture, but only generates a downsampled cropped region of the cube.
+        /// </summary>
+        /// <param name="textureFilter"></param>
+        /// <param name="cropStart"></param>
+        /// <param name="cropEnd"></param>
+        /// <param name="downsample"></param>
         public void GenerateCroppedVolumeTexture(FilterMode textureFilter, Vector3Int cropStart, Vector3Int cropEnd, Vector3Int downsample)
         {
             Stopwatch sw = new Stopwatch();
@@ -1631,27 +1672,65 @@ namespace VolumeData
                     unit = "km/s";
                     break;
                 case "VRAD":
+                    system = "FREQ";
+                    unit = "Hz";
+                    break;
                 case "VRADIO":
+                    system = "FREQ";
+                    unit = "Hz";
+                    break;
                 case "VOPT":
+                    system = "FREQ";
+                    unit = "Hz";
+                    break;
                 case "VOPTICAL":
+                    system = "FREQ";
+                    unit = "Hz";
+                    break;
                 case "VELO":
+                    system = "FREQ";
+                    unit = "Hz";
+                    break;
                 case "VREL":
                     system = "FREQ";
                     unit = "Hz";
                     break;
                 case "ENER":
+                    Debug.Log("Unsupported spectral unit for depth!");
+                    break;
                 case "ENERGY":
+                    Debug.Log("Unsupported spectral unit for depth!");
+                    break;
                 case "WAVN":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "WAVENUM":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "WAVE":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "WAVELEN":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "AWAV":
                     system = "VRAD";
                     unit = "km/s";
                     break;
                 case "AIRWAVE":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "ZOPT":
+                    Debug.Log("Unsupported spectral unit for depth!");
+                    break;
                 case "REDSHIFT":
+                    Debug.Log("Unsupported spectral unit for depth!");
+                    break;
                 case "BETA":
                     Debug.Log("Unsupported spectral unit for depth!");
                     break;

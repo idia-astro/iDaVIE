@@ -140,7 +140,7 @@ namespace DataFeatures
             featureSetRenderer.transform.localScale = new Vector3(1 / CubeDimensions.x, 1 / CubeDimensions.y, 1 / CubeDimensions.z);
             // Shift by half a voxel (because voxel center has integer coordinates, not corner)
             featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
-            GeneratedFeatureSetList.Add(featureSetRenderer); //TODO: change to GeneratedFeatureSetList later
+            GeneratedFeatureSetList.Add(featureSetRenderer);
             return featureSetRenderer; 
         }
         // Creates new empty FeatureSetRenderer for adding Features
