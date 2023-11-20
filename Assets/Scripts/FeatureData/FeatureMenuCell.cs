@@ -45,6 +45,8 @@ public class FeatureMenuCell : MonoBehaviour, ICell
         feature = featureMenuListItemInfo.Feature;
         if (feature.Flag == null)
             SetFlag("");
+        else
+            SetFlag(feature.Flag);
         if (feature.Visible)
             SetVisibilityIconsOn();
         else
@@ -142,7 +144,8 @@ public class FeatureMenuCell : MonoBehaviour, ICell
         else
             lbl = (f.Length > 1) ? f.Substring(0, 2) : (" " + f.Substring(0, 1));
         flagLabel.SetText(lbl);
-        featureSetManager.NeedToUpdateInfo = true;
+        if (featureSetManager != null)
+            featureSetManager.NeedToUpdateInfo = true;
     }
 
    public void GoTo()
