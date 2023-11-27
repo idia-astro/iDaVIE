@@ -45675,7 +45675,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1503482744}
   m_HandleRect: {fileID: 1503482743}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -81617,6 +81617,28 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -20.38124
       objectReference: {fileID: 0}
+    - target: {fileID: 6994270281671343919, guid: f0550dbbe6249c14bae955d5013488b6,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: baa0da685b149a74d996c1f231408883,
+        type: 2}
+    - target: {fileID: 6994270281671343919, guid: f0550dbbe6249c14bae955d5013488b6,
+        type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6994270282086289703, guid: f0550dbbe6249c14bae955d5013488b6,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: baa0da685b149a74d996c1f231408883,
+        type: 2}
+    - target: {fileID: 6994270282086289703, guid: f0550dbbe6249c14bae955d5013488b6,
+        type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6994270282317599680, guid: f0550dbbe6249c14bae955d5013488b6,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -81752,6 +81774,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6994270282433634732, guid: f0550dbbe6249c14bae955d5013488b6,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: baa0da685b149a74d996c1f231408883,
+        type: 2}
+    - target: {fileID: 6994270282433634732, guid: f0550dbbe6249c14bae955d5013488b6,
+        type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6994270282620962598, guid: f0550dbbe6249c14bae955d5013488b6,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -81771,6 +81804,17 @@ PrefabInstance:
         type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -20.381233
+      objectReference: {fileID: 0}
+    - target: {fileID: 6994270283204727200, guid: f0550dbbe6249c14bae955d5013488b6,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: baa0da685b149a74d996c1f231408883,
+        type: 2}
+    - target: {fileID: 6994270283204727200, guid: f0550dbbe6249c14bae955d5013488b6,
+        type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6994270283204727215, guid: f0550dbbe6249c14bae955d5013488b6,
         type: 3}
