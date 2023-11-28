@@ -622,6 +622,7 @@ public class CanvassDesktop : MonoBehaviour
         }
         
         _volumeCommandController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
+        StartCoroutine(newCube.GetComponent<VolumeDataSetRenderer>()._startFunc());
 
         while (!newCube.GetComponent<VolumeDataSetRenderer>().started)
         {
