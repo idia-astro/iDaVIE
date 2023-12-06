@@ -33,6 +33,9 @@ public class CanvassDesktop : MonoBehaviour
 
     public GameObject WelcomeMenu;
     public GameObject LoadingText;
+    public TextMeshProUGUI loadTextLabel;
+
+    public GameObject progressBar;
 
     private HistogramHelper histogramHelper;
 
@@ -494,6 +497,7 @@ public class CanvassDesktop : MonoBehaviour
         populateStatsValue();
 
         LoadingText.gameObject.SetActive(false);
+        progressBar.gameObject.SetActive(false);
         WelcomeMenu.gameObject.SetActive(false);
 
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>()
@@ -507,10 +511,32 @@ public class CanvassDesktop : MonoBehaviour
             .onClick.Invoke();
     }
 
+    public bool CheckMemSpaceForCubes(string _imagePath, string _maskPath)
+    {
+        int ramSizeMB = SystemInfo.systemMemorySize;
+        float imgSize = new FileInfo(_imagePath).Length / 1024f / 1024f;
+        float maskSize = (String.IsNullOrEmpty(_maskPath)) ? 0 : new FileInfo(_maskPath).Length / 1024f / 1024f;
+        float sumSizeMB = imgSize + maskSize;
+        if (sumSizeMB >= ramSizeMB){
+            Debug.LogWarning("Cube and mask size (" + sumSizeMB.ToString("F2") + " MB) exceed RAM size (" + ramSizeMB.ToString("F2") + " MB)!");
+            return true;
+        }
+        Debug.Log("Loading cube and mask of size " + sumSizeMB.ToString("F2") + " MB with RAM size " + ramSizeMB.ToString("F2") + " MB.");
+        return false;
+    }
+
 
     public IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath)
     {
         LoadingText.gameObject.SetActive(true);
+        progressBar.gameObject.SetActive(true);
+        if (CheckMemSpaceForCubes(_imagePath, _maskPath)){
+            loadTextLabel.text = "Cube too large to fit into RAM! Using virtual memory!";
+            yield return new WaitForSeconds(5.0f);
+        }
+        loadTextLabel.text = "Loading...";
+        Debug.Log("Loading image " + _imagePath + " and mask " + _maskPath + ".");
+        progressBar.GetComponent<Slider>().value = 0;
         yield return new WaitForSeconds(0.001f);
 
         float zScale = 1f;
@@ -528,6 +554,9 @@ public class CanvassDesktop : MonoBehaviour
         }
 
         var activeDataSet = GetFirstActiveDataSet();
+        loadTextLabel.text = "Replacing old cube...";
+        progressBar.GetComponent<Slider>().value = 1;
+        yield return new WaitForSeconds(0.001f);
         if (activeDataSet != null)
         {
             Debug.Log("Replacing data cube...");
@@ -556,6 +585,11 @@ public class CanvassDesktop : MonoBehaviour
             Destroy(activeDataSet);
         }
 
+        loadTextLabel.text = "Building new cube...";
+        progressBar.GetComponent<Slider>().value = 2;
+        Debug.Log("Instantiating new cube prefab.");
+        yield return new WaitForSeconds(0.001f);
+
         GameObject newCube = Instantiate(cubeprefab, new Vector3(0, 0f, 0), Quaternion.identity);
         newCube.transform.localScale = new Vector3(1, 1, zScale);
         newCube.SetActive(true);
@@ -564,6 +598,8 @@ public class CanvassDesktop : MonoBehaviour
 
         newCube.GetComponent<VolumeDataSetRenderer>().FileName = _imagePath; //_dataSet.FileName.ToString();
         newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _maskPath; // _maskDataSet.FileName.ToString();
+        newCube.GetComponent<VolumeDataSetRenderer>().loadText = this.loadTextLabel;
+        newCube.GetComponent<VolumeDataSetRenderer>().progressBar = this.progressBar.GetComponent<Slider>();
         newCube.GetComponent<VolumeDataSetRenderer>().CubeDepthAxis = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform
             .Find("Z_Dropdown").GetComponent<TMP_Dropdown>()
             .options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
@@ -585,14 +621,18 @@ public class CanvassDesktop : MonoBehaviour
             featureMenu.gameObject.SetActive(true);
         }
         
-
         _volumeCommandController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
+        StartCoroutine(newCube.GetComponent<VolumeDataSetRenderer>()._startFunc());
 
         while (!newCube.GetComponent<VolumeDataSetRenderer>().started)
         {
             yield return new WaitForSeconds(.1f);
         }
 
+        loadTextLabel.text = "Loading complete!";
+        Debug.Log("Loading image " + _imagePath + " and mask " + _maskPath + " complete!");
+        progressBar.GetComponent<Slider>().value = 6;
+        yield return new WaitForSeconds(0.001f);
         postLoadFileFileSystem();
     }
 
