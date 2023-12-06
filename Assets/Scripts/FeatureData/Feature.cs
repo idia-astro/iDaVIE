@@ -12,6 +12,8 @@ namespace DataFeatures
         public int Index { get; }
         public int Id { get; }
         public string Name { get; }
+
+        public string Flag { get; set; }
         private bool _selected;
         private Color _color;
         private bool _active;
@@ -23,13 +25,14 @@ namespace DataFeatures
 
         public bool StatusChanged;
 
-        public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, string name, int index, int id, string[] rawData, FeatureSetRenderer parent, bool startVisible)
+        public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, string name, string flag, int index, int id, string[] rawData, FeatureSetRenderer parent, bool startVisible)
         {
             FeatureSetParent = parent;
             Index = index;
             Id = id;
             _color = cubeColor;
             Name = name;
+            Flag = flag;
             SetBounds(cubeMin, cubeMax);
             RawData = rawData;
             Visible = startVisible;

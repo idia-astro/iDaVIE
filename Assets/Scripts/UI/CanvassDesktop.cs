@@ -685,7 +685,11 @@ public class CanvassDesktop : MonoBehaviour
         {
             var row = Instantiate(SourceRowPrefab, sourceBody);
             row.transform.Find("Source_number").GetComponent<TextMeshProUGUI>().text = i.ToString();
-            row.transform.Find("Source_name").GetComponent<TextMeshProUGUI>().text = voTable.Column[i].Name;
+            string colName = voTable.Column[i].Name;
+            // Hard coded 17 (*shivers*) matching the length available in the UI as of coding this. Do better!
+            if (colName.Length > 17)
+                colName = colName.Substring(0, 14) + "...";
+            row.transform.Find("Source_name").GetComponent<TextMeshProUGUI>().text = colName;
             var rowScript = row.GetComponentInParent<SourceRow>();
             rowScript.SourceName = voTable.Column[i].Name;
             rowScript.SourceIndex = i;
@@ -810,6 +814,11 @@ public class CanvassDesktop : MonoBehaviour
                 sourceRow.CurrentMapping = SourceMappingOptions.Redshift;
                 dropdown.value = (int)SourceMappingOptions.Redshift;
             }
+            else if (sourceRow.SourceName == featureMapping.Mapping.Flag.Source)
+            {
+                sourceRow.CurrentMapping = SourceMappingOptions.Flag;
+                dropdown.value = (int)SourceMappingOptions.Flag;
+            }
         }
     }
 
@@ -866,6 +875,7 @@ public class CanvassDesktop : MonoBehaviour
             Vel = mapping.ContainsKey(SourceMappingOptions.Velo) ? mapping[SourceMappingOptions.Velo] : new MapEntry { Source = "" },
             Freq = mapping.ContainsKey(SourceMappingOptions.Freq) ? mapping[SourceMappingOptions.Freq] : new MapEntry { Source = "" },
             Redshift = mapping.ContainsKey(SourceMappingOptions.Redshift) ? mapping[SourceMappingOptions.Redshift] : new MapEntry { Source = "" },
+            Flag = mapping.ContainsKey(SourceMappingOptions.Flag) ? mapping[SourceMappingOptions.Flag] : new MapEntry { Source = "" },
             ImportedColumns = importedColumns.ToArray()
         };
         var featureMappingObject = new FeatureMapping { Mapping = mappingObject };

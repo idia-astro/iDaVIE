@@ -32,6 +32,8 @@ namespace DataFeatures
         public MapEntry YMax;
         public MapEntry ZMin;
         public MapEntry ZMax;
+
+        public MapEntry Flag;
         public string[] ImportedColumns;
     }
 
