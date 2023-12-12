@@ -14,6 +14,8 @@ public struct FeatureMenuListItemInfo
 {
     public string IdTextField;
     public string SourceName;
+
+    public string FlagName;
     public int ParentListIndex;
     public Feature Feature;
 }
@@ -34,6 +36,7 @@ public class FeatureMenuDataSource : MonoBehaviour, IRecyclableScrollRectDataSou
             obj.IdTextField = (i+1).ToString();
             obj.SourceName = FeatureSetRenderer.FeatureList[i].Name;
             obj.Feature = FeatureSetRenderer.FeatureList[i];
+            obj.FlagName = FeatureSetRenderer.FeatureList[i].Flag;
             _sofiaList.Add(obj);
         }
     }

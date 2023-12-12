@@ -17,6 +17,8 @@ public class QuickMenuController : MonoBehaviour
     public GameObject voiceCommandsListCanvas;
 
     public GameObject colorMapListCanvas;
+
+    public GameObject colorMapListCanvas;
     public GameObject savePopup;
     public GameObject exitPopup;
     public GameObject exitSavePopup;
@@ -70,6 +72,14 @@ public class QuickMenuController : MonoBehaviour
             }
         }
         return null;
+    }
+
+    /// <summary>
+    /// Function that gets called if a function related to the mask is called without a mask that is loaded.
+    /// </summary>
+    private void throwMissingMaskError()
+    {
+        ToastNotification.ShowError("No mask loaded for this functionality!");
     }
 
     public void Exit()
@@ -164,6 +174,12 @@ public class QuickMenuController : MonoBehaviour
 
     public void ToggleMask()
     {
+        if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+        {
+            throwMissingMaskError();
+            return;
+        }
+
         if (maskstatus == 3)
             maskstatus = -1;
         maskstatus++;
@@ -200,6 +216,12 @@ public class QuickMenuController : MonoBehaviour
 
     private void setMask(MaskMode mode)
     {
+        if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+        {
+            throwMissingMaskError();
+            return;
+        }
+
         if (_activeDataSet)
         {
             _activeDataSet.MaskMode = mode;
@@ -259,6 +281,12 @@ public class QuickMenuController : MonoBehaviour
 
     public void SaveMask()
     {
+        if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+        {
+            throwMissingMaskError();
+            return;
+        }
+
         if (exportPopup.activeSelf)
             exportPopup.SetActive(false);
         
@@ -320,6 +348,12 @@ public class QuickMenuController : MonoBehaviour
 
     public void SaveOverwriteMask()
     {
+        if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+        {
+            throwMissingMaskError();
+            return;
+        }
+
         _activeDataSet.SaveMask(true);
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
         SaveCancel();
@@ -327,6 +361,12 @@ public class QuickMenuController : MonoBehaviour
 
     public void SaveNewMask()
     {
+        if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+        {
+            throwMissingMaskError();
+            return;
+        }
+        
         _activeDataSet.SaveMask(false);
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
         SaveCancel();

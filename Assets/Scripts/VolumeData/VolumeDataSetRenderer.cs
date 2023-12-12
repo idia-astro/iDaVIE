@@ -1,8 +1,11 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 using DataFeatures;
 using LineRenderer;
 using Debug = UnityEngine.Debug;
@@ -124,6 +127,9 @@ namespace VolumeData
         public Int16 HighlightedSource;
         public Vector3Int RegionStartVoxel { get; private set; }
         public Vector3Int RegionEndVoxel { get; private set; }
+
+        public TextMeshProUGUI loadText;
+        public Slider progressBar;
 
         [Range(0, 1)] public float SelectionSaturateFactor = 0.7f;
 
@@ -274,8 +280,16 @@ namespace VolumeData
 
         public void Start()
         {
+            started = false;
+        }
+
+        public IEnumerator _startFunc()
+        {
             // Apply settings from config
             var config = Config.Instance;
+            Debug.Log("Loading data for the new cube.");
+            StartCoroutine(updateStatus("Loading new cube...", 3));
+            yield return new WaitForSeconds(0.001f);
             TextureFilter = config.bilinearFiltering ? FilterMode.Bilinear : FilterMode.Point;
             FoveatedRendering = config.foveatedRendering;
             MaxSteps = config.maxRaymarchingSteps;
@@ -301,6 +315,11 @@ namespace VolumeData
             _baseZFactor = _currentZFactor;
             ScaleMax = _dataSet.MaxValue;
             ScaleMin = _dataSet.MinValue;
+            
+            Debug.Log("Loading image data complete, loading data for the mask.");
+            StartCoroutine(updateStatus("Loading mask...", 4));
+            yield return new WaitForSeconds(0.001f);
+
             if (!String.IsNullOrEmpty(MaskFileName))
             {
                 //subsetBounds guaranteed to be [-1, -1, -1, -1, -1, -1] if not selected by user
@@ -309,6 +328,11 @@ namespace VolumeData
                 // Mask data is always point-filtered
                 _maskDataSet.GenerateVolumeTexture(FilterMode.Point, XFactor, YFactor, ZFactor);
             }
+
+            Debug.Log("Loading mask data complete.");
+            StartCoroutine(updateStatus("Preparing UI...", 5));
+            yield return new WaitForSeconds(0.001f);
+
             _renderer = GetComponent<MeshRenderer>();
             _materialInstance = Instantiate(RayMarchingMaterial);
             _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.DataCube);
@@ -426,9 +450,15 @@ namespace VolumeData
             CurrentCropMax = new Vector3Int((int)_dataSet.XDim, (int)_dataSet.YDim, (int)_dataSet.ZDim);
 
             started = true;
-
+            yield return 0;
         }
 
+        public IEnumerator updateStatus(string label, int progress)
+        {
+            loadText.text = label;
+            progressBar.value = progress;
+            yield return new WaitForSeconds(0.001f);
+        }
 
         private void GenerateDownsampledCube()
         {

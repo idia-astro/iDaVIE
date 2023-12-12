@@ -110,6 +110,14 @@ namespace VolumeData
             ExecuteVoiceCommand(args.text);
         }
 
+        /// <summary>
+        /// Function that gets called if a function related to the mask is called without a mask that is loaded.
+        /// </summary>
+        private void throwMissingMaskError()
+        {
+            ToastNotification.ShowError("No mask loaded for this functionality!");
+        }
+
         private void ExecuteVoiceCommand(string args)
         { 
             if (args == Keywords.EditThresholdMin)
@@ -431,6 +439,12 @@ namespace VolumeData
 
         public void setMask(MaskMode mode)
         {
+            if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+            {
+                throwMissingMaskError();
+                return;
+            }
+            
             if (_activeDataSet)
             {
                 _activeDataSet.MaskMode = mode;
@@ -481,6 +495,12 @@ namespace VolumeData
 
         public void ShowMaskOutline()
         {
+            if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+            {
+                throwMissingMaskError();
+                return;
+            }
+
             foreach (var dataSet in _dataSets)
             {
                 dataSet.DisplayMask = true;
@@ -489,6 +509,12 @@ namespace VolumeData
 
         public void HideMaskOutline()
         {
+            if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+            {
+                throwMissingMaskError();
+                return;
+            }
+
             foreach (var dataSet in _dataSets)
             {
                 dataSet.DisplayMask = false;
@@ -518,6 +544,12 @@ namespace VolumeData
 
         public void SetMaskValue()
         {
+            if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+            {
+                throwMissingMaskError();
+                return;
+            }
+
             _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.StartEditSource);
         }
 

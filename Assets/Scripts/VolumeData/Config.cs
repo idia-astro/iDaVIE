@@ -33,6 +33,7 @@ namespace VolumeData
         [JsonConverter(typeof(StringEnumConverter))]
         public ConfidenceLevel voiceCommandConfidenceLevel = ConfidenceLevel.Low;
 
+        public string[] flags = {"-1", "0", "1"};
         public bool tunnellingVignetteOn = true;
         public float tunnellingVignetteIntensity = 1.0f;
         public float tunnellingVignetteEnd = 0.40f;
