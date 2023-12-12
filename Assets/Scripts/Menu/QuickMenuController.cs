@@ -17,8 +17,6 @@ public class QuickMenuController : MonoBehaviour
     public GameObject voiceCommandsListCanvas;
 
     public GameObject colorMapListCanvas;
-
-    public GameObject colorMapListCanvas;
     public GameObject savePopup;
     public GameObject exitPopup;
     public GameObject exitSavePopup;
@@ -174,7 +172,7 @@ public class QuickMenuController : MonoBehaviour
 
     public void ToggleMask()
     {
-        if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+        if (_activeDataSet.Mask == null)
         {
             throwMissingMaskError();
             return;
@@ -216,7 +214,7 @@ public class QuickMenuController : MonoBehaviour
 
     private void setMask(MaskMode mode)
     {
-        if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+        if (_activeDataSet.Mask == null)
         {
             throwMissingMaskError();
             return;
@@ -281,7 +279,7 @@ public class QuickMenuController : MonoBehaviour
 
     public void SaveMask()
     {
-        if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+        if (_activeDataSet.Mask == null)
         {
             throwMissingMaskError();
             return;
@@ -348,7 +346,7 @@ public class QuickMenuController : MonoBehaviour
 
     public void SaveOverwriteMask()
     {
-        if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+        if (_activeDataSet.Mask == null)
         {
             throwMissingMaskError();
             return;
@@ -361,7 +359,7 @@ public class QuickMenuController : MonoBehaviour
 
     public void SaveNewMask()
     {
-        if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+        if (_activeDataSet.Mask == null)
         {
             throwMissingMaskError();
             return;
