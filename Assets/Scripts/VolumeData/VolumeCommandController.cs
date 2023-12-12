@@ -439,7 +439,7 @@ namespace VolumeData
 
         public void setMask(MaskMode mode)
         {
-            if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+            if (_activeDataSet.Mask == null)
             {
                 throwMissingMaskError();
                 return;
@@ -495,7 +495,7 @@ namespace VolumeData
 
         public void ShowMaskOutline()
         {
-            if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+            if (_activeDataSet.Mask == null)
             {
                 throwMissingMaskError();
                 return;
@@ -509,7 +509,7 @@ namespace VolumeData
 
         public void HideMaskOutline()
         {
-            if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+            if (_activeDataSet.Mask == null)
             {
                 throwMissingMaskError();
                 return;
@@ -544,7 +544,7 @@ namespace VolumeData
 
         public void SetMaskValue()
         {
-            if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+            if (_activeDataSet.Mask == null)
             {
                 throwMissingMaskError();
                 return;
