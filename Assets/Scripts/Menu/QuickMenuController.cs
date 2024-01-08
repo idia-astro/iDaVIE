@@ -1,4 +1,5 @@
-﻿using DataFeatures;
+﻿using System.Diagnostics;
+using DataFeatures;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
@@ -82,6 +83,7 @@ public class QuickMenuController : MonoBehaviour
 
     public void Exit()
     {
+        UnityEngine.Debug.Log("Active dataset says FileChanged is " + _activeDataSet.FileChanged);
         if (_activeDataSet.FileChanged)
         {
             exitSavePopup.GetComponent<ExitController>()._volumeInputController = _volumeInputController;
@@ -172,7 +174,7 @@ public class QuickMenuController : MonoBehaviour
 
     public void ToggleMask()
     {
-        if (_activeDataSet.Mask == null || _activeDataSet.Mask.RegionCube == null)
+        if (_activeDataSet.Mask == null)
         {
             throwMissingMaskError();
             return;

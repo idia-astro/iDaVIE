@@ -1192,6 +1192,7 @@ public class VolumeInputController : MonoBehaviour
             dataSet.DisplayMask = true;
         }
         
+        ActiveDataSet.FileChanged = true;
         // Automatically start source ID editing when entering paint mode
         SourceId = -1;
         InteractionStateMachine.Fire(InteractionEvents.StartEditSource);

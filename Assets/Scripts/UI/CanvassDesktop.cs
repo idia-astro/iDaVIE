@@ -603,6 +603,7 @@ public class CanvassDesktop : MonoBehaviour
         newCube.GetComponent<VolumeDataSetRenderer>().CubeDepthAxis = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform
             .Find("Z_Dropdown").GetComponent<TMP_Dropdown>()
             .options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
+        newCube.GetComponent<VolumeDataSetRenderer>().FileChanged = false;
         informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().interactable = false;
 
         checkCubesDataSet();
