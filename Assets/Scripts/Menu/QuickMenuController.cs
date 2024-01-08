@@ -83,7 +83,6 @@ public class QuickMenuController : MonoBehaviour
 
     public void Exit()
     {
-        UnityEngine.Debug.Log("Active dataset says FileChanged is " + _activeDataSet.FileChanged);
         if (_activeDataSet.FileChanged)
         {
             exitSavePopup.GetComponent<ExitController>()._volumeInputController = _volumeInputController;
