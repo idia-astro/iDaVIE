@@ -22,6 +22,8 @@ public class QuickMenuController : MonoBehaviour
     public GameObject exitSavePopup;
     public GameObject exportPopup;
 
+    public GameObject userConfirmPopupPrefab;
+
     int maskstatus = 0;
     int cropstatus = 0;
     int featureStatus = 0;
@@ -368,5 +370,40 @@ public class QuickMenuController : MonoBehaviour
         _activeDataSet.SaveMask(false);
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
         SaveCancel();
+    }
+
+    /// <summary>
+    /// Function to test out the generic confirmation popup
+    /// </summary>
+    public void testConfirmPopup()
+    {
+        var popup = Instantiate(userConfirmPopupPrefab, this.transform.parent);
+        popup.transform.localPosition = this.transform.localPosition;
+        popup.transform.localRotation = this.transform.localRotation;
+        popup.transform.localScale = this.transform.localScale;
+
+        var control = popup.GetComponent<UserConfirmationPopupController>();
+        control.setMessageBody("This a test case of the generic user choice/confirmation popup.");
+        control.setHeaderText("Testing user confirmation popup");
+        control.addButton("Test1", "Should show a warning toast notification", this.testFunc1);
+        control.addButton("Test2", "Should show an error toast notification", this.testFunc2);
+        control.addButton("Test3", "Should show a success toast notification", this.testFunc3);
+        gameObject.SetActive(false);
+        popup.SetActive(true);
+    }
+
+    public void testFunc1()
+    {
+        ToastNotification.ShowWarning("testFunc1 has been called!");
+    }
+
+    public void testFunc2()
+    {
+        ToastNotification.ShowError("testFunc2 has been called!");
+    }
+    
+    public void testFunc3()
+    {
+        ToastNotification.ShowSuccess("testFunc3 has been called!");
     }
 }

@@ -6,11 +6,18 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEngine.EventSystems;
+using System;
+using System.Diagnostics;
 
 public class UserConfirmationPopupController : MonoBehaviour
 {
     public GameObject Popup;
+
+    public GameObject buttonFrame;
+
+    public GameObject buttonPrefab;
     public PopUpButtonController[] buttons;
+
     public TextMeshProUGUI HeaderText;
     public TextMeshProUGUI MessageBody;
     public TextMeshProUGUI HoverText;
@@ -22,7 +29,7 @@ public class UserConfirmationPopupController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Popup.SetActive(true);
+
     }
 
     // Update is called once per frame
@@ -31,35 +38,47 @@ public class UserConfirmationPopupController : MonoBehaviour
         return;
     }
 
-    void setMessageBody(string body)
+    /// <summary>
+    /// This function sets the body of the popup
+    /// </summary>
+    /// <param name="body">Message to display</param>
+    public void setMessageBody(string body)
     {
         MessageBody.text = body;
     }
 
-    void setHeaderText(string header)
+    /// <summary>
+    /// This function sets the header of the popup
+    /// </summary>
+    /// <param name="header">The popup label</param>
+    public void setHeaderText(string header)
     {
         HeaderText.text = header;
     }
 
-    void setApplyHoverText(string applyHover)
+    /// <summary>
+    /// This function is called to add a buttonto the popup
+    /// </summary>
+    /// <param name="buttonText">The label for the new button</param>
+    /// <param name="hoverText">The text to show when hovering over the button</param>
+    /// <param name="callback">The function to call when the user clicks on the button</param>
+    public void addButton(string buttonText, string hoverText, System.Action callback)
     {
-
+        var button = Instantiate(buttonPrefab, buttonFrame.transform);
+        PopUpButtonController controller = button.GetComponent<PopUpButtonController>();
+        controller.setButtonText(buttonText);
+        controller.hoverText = hoverText;
+        controller.HoverText = this.HoverText;
+        controller.callback = callback;
+        controller.hidemenu = this.buttonClicked;
     }
 
-    void setCancelHoverText(string cancelHover)
-    {
-        
-    }
-    
-    void ApplyOnClick()
+    /// <summary>
+    /// This function is called when the user clicks on any button to hide the popup.
+    /// </summary>
+    public void buttonClicked()
     {
         Popup.SetActive(false);
-        applyCallBack();
-    }
-
-    void CancelOnClick()
-    {
-        Popup.SetActive(false);
-        cancelCallback();
+        UnityEngine.Debug.Log("Popup menu has been hidden.");
     }
 }
