@@ -119,6 +119,7 @@ public class FeatureMenuCell : MonoBehaviour, ICell
 
     public void ToggleFlagIndex()
     {
+        _activeDataSet.FileChanged = true;
         var flags = Config.Instance.flags;
         var flag = feature.Flag;
         int flagIndex = 0;
