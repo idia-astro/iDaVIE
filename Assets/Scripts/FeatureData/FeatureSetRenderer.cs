@@ -187,6 +187,7 @@ namespace DataFeatures
             foreach (var feature in FeatureList)
             {
                 feature.Visible = true;
+                feature.StatusChanged = true;
             }
         }
 
@@ -200,6 +201,7 @@ namespace DataFeatures
             foreach (var feature in FeatureList)
             {
                 feature.Visible = false;
+                feature.StatusChanged = true;
             }
         }
 
