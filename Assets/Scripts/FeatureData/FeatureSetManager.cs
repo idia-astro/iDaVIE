@@ -181,6 +181,15 @@ namespace DataFeatures
             featureSetRenderer.FeatureColor = FeatureColors[ImportedFeatureSetList.Count];
             featureSetRenderer.SpawnFeaturesFromVOTable(mapping, voTable, columnsMask, excludeExternal);
             featureSetRenderer.Index = ImportedFeatureSetList.Count;
+            var config = Config.Instance;
+            if (config.importedFeaturesStartVisible)
+            {
+                featureSetRenderer.SetVisibilityOn();
+            }
+            else
+            {
+                featureSetRenderer.SetVisibilityOff();
+            }
             ImportedFeatureSetList.Add(featureSetRenderer);
             return featureSetRenderer;
         }
