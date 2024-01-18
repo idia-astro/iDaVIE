@@ -706,8 +706,8 @@ public class CanvassDesktop : MonoBehaviour
         var featureDataSet = volumeDataSet.GetComponentInChildren<FeatureSetManager>();
         sourcesPath = path;
         featureDataSet.FeatureFileToLoad = path;
-        sourcesPanelContent.gameObject.transform.Find("MappingSave_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
-        sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
+        sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("MappingSave_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
+        sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
         //activate load features button
         sourcesPanelContent.gameObject.transform.Find("SourcesFile_container").gameObject.transform.Find("SourcesFilePath_text").GetComponent<TextMeshProUGUI>().text =
             System.IO.Path.GetFileName(path);
@@ -776,89 +776,96 @@ public class CanvassDesktop : MonoBehaviour
 
         foreach (var sourceRowObject in _sourceRowObjects)
         {
-            var sourceRow = sourceRowObject.GetComponent<SourceRow>();
-            var dropdown = sourceRowObject.transform.Find("Coord_dropdown").gameObject.GetComponent<TMP_Dropdown>();
-            if (featureMapping.Mapping.ImportedColumns.Contains(sourceRow.SourceName))
-                sourceRowObject.transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().isOn = true;
-            if (sourceRow.SourceName == featureMapping.Mapping.ID.Source)
+            try
             {
-                sourceRow.CurrentMapping = SourceMappingOptions.ID;
-                dropdown.value = (int)SourceMappingOptions.ID;
+                var sourceRow = sourceRowObject.GetComponent<SourceRow>();
+                var dropdown = sourceRowObject.transform.Find("Coord_dropdown").gameObject.GetComponent<TMP_Dropdown>();
+                if (featureMapping.Mapping.ImportedColumns.Contains(sourceRow.SourceName))
+                    sourceRowObject.transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().isOn = true;
+                if (sourceRow.SourceName == featureMapping.Mapping.ID.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.ID;
+                    dropdown.value = (int)SourceMappingOptions.ID;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.X.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.X;
+                    dropdown.value = (int)SourceMappingOptions.X;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.Y.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Y;
+                    dropdown.value = (int)SourceMappingOptions.Y;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.Z.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Z;
+                    dropdown.value = (int)SourceMappingOptions.Z;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.XMin.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Xmin;
+                    dropdown.value = (int)SourceMappingOptions.Xmin;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.XMax.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Xmax;
+                    dropdown.value = (int)SourceMappingOptions.Xmax;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.YMin.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Ymin;
+                    dropdown.value = (int)SourceMappingOptions.Ymin;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.YMax.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Ymax;
+                    dropdown.value = (int)SourceMappingOptions.Ymax;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.ZMin.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Zmin;
+                    dropdown.value = (int)SourceMappingOptions.Zmin;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.ZMax.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Zmax;
+                    dropdown.value = (int)SourceMappingOptions.Zmax;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.RA.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Ra;
+                    dropdown.value = (int)SourceMappingOptions.Ra;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.Dec.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Dec;
+                    dropdown.value = (int)SourceMappingOptions.Dec;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.Vel.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Velo;
+                    dropdown.value = (int)SourceMappingOptions.Velo;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.Freq.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Freq;
+                    dropdown.value = (int)SourceMappingOptions.Freq;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.Redshift.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Redshift;
+                    dropdown.value = (int)SourceMappingOptions.Redshift;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.Flag.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Flag;
+                    dropdown.value = (int)SourceMappingOptions.Flag;
+                }
             }
-            else if (sourceRow.SourceName == featureMapping.Mapping.X.Source)
+            catch (Exception ex)
             {
-                sourceRow.CurrentMapping = SourceMappingOptions.X;
-                dropdown.value = (int)SourceMappingOptions.X;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.Y.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Y;
-                dropdown.value = (int)SourceMappingOptions.Y;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.Z.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Z;
-                dropdown.value = (int)SourceMappingOptions.Z;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.XMin.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Xmin;
-                dropdown.value = (int)SourceMappingOptions.Xmin;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.XMax.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Xmax;
-                dropdown.value = (int)SourceMappingOptions.Xmax;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.YMin.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Ymin;
-                dropdown.value = (int)SourceMappingOptions.Ymin;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.YMax.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Ymax;
-                dropdown.value = (int)SourceMappingOptions.Ymax;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.ZMin.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Zmin;
-                dropdown.value = (int)SourceMappingOptions.Zmin;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.ZMax.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Zmax;
-                dropdown.value = (int)SourceMappingOptions.Zmax;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.RA.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Ra;
-                dropdown.value = (int)SourceMappingOptions.Ra;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.Dec.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Dec;
-                dropdown.value = (int)SourceMappingOptions.Dec;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.Vel.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Velo;
-                dropdown.value = (int)SourceMappingOptions.Velo;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.Freq.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Freq;
-                dropdown.value = (int)SourceMappingOptions.Freq;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.Redshift.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Redshift;
-                dropdown.value = (int)SourceMappingOptions.Redshift;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.Flag.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Flag;
-                dropdown.value = (int)SourceMappingOptions.Flag;
+                Debug.LogError("Error while loading mapping file. Check that all mappings are included: " + ex.Message);
             }
         }
     }
@@ -978,7 +985,9 @@ public class CanvassDesktop : MonoBehaviour
 
     public void LoadSourcesFile()
     {
-        var loadingText = sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Text").gameObject;
+        var loadingText = sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Text").gameObject;
+        var excludeExternalSources = sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("SourcesLoad_container").gameObject
+            .transform.Find("ExternalSourcesToggle").gameObject.GetComponent<Toggle>().isOn;    
         loadingText.GetComponent<TextMeshProUGUI>().color = new Color(0, 0.6f, 0.1f);
         loadingText.SetActive(true);
         bool[] columnsMask = new bool[_sourceRowObjects.Length];
@@ -1001,9 +1010,9 @@ public class CanvassDesktop : MonoBehaviour
         }
 
         if (featureSetManager.FeatureFileToLoad != "")
-            featureSetManager.ImportFeatureSet(finalMapping, FeatureMapper.GetVOTableFromFile(sourcesPath), Path.GetFileName(sourcesPath), columnsMask);
+            featureSetManager.ImportFeatureSet(finalMapping, FeatureMapper.GetVOTableFromFile(sourcesPath), Path.GetFileName(sourcesPath), columnsMask, excludeExternalSources);
         loadingText.GetComponent<TextMeshProUGUI>().text = $"Successfully loaded sources from:{Environment.NewLine}{Path.GetFileName(sourcesPath)}";
-        sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;
+        sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;
     }
 
     public void DismissFileLoad()

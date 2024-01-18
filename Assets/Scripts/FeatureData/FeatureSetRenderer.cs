@@ -242,7 +242,7 @@ namespace DataFeatures
         }
 
         // Spawn Feature objects into world from FileName
-        public void SpawnFeaturesFromVOTable(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable, bool[] columnsMask)
+        public void SpawnFeaturesFromVOTable(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable, bool[] columnsMask, bool excludeExternal)
         {
             if (VolumeRenderer == null)
             {
@@ -451,13 +451,23 @@ namespace DataFeatures
             
             if (VolumeRenderer)
             {
-                Vector3 cubeMin, cubeMax;
+                Vector3 cornerMin, cornerMax;
                 for (int i = 0; i < voTable.Rows.Count; i++)
                 {
-                    cubeMin = BoxMinPositions[i];
-                    cubeMax = BoxMaxPositions[i];
+                    cornerMin = BoxMinPositions[i];
+                    cornerMax = BoxMaxPositions[i];
                     var flag = (importFlags) ? flags[i] : "";
-                    FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, FeatureNames[i], flag, i, i, featureRawData[i].ToArray(), this, false));
+                    var featureToAdd = new Feature(cornerMin, cornerMax, FeatureColor, FeatureNames[i], flag, i, i,
+                        featureRawData[i].ToArray(), this, false);
+                    if (!(excludeExternal && (featureToAdd.Center.x < 0 ||
+                                              featureToAdd.Center.x > VolumeRenderer.Data.XDim ||
+                                              featureToAdd.Center.y < 0 ||
+                                              featureToAdd.Center.y > VolumeRenderer.Data.YDim ||
+                                              featureToAdd.Center.z < 0 ||
+                                              featureToAdd.Center.z > VolumeRenderer.Data.ZDim)))
+                    {
+                        FeatureList.Add(featureToAdd);
+                    }
                 }
             }
             FeatureMenuScrollerDataSource.InitData();
