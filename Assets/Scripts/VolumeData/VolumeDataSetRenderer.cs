@@ -9,6 +9,9 @@ using TMPro;
 using DataFeatures;
 using LineRenderer;
 using Debug = UnityEngine.Debug;
+using System.Runtime.CompilerServices;
+using System.Runtime.Versioning;
+using System.Numerics;
 
 namespace VolumeData
 {
@@ -97,8 +100,8 @@ namespace VolumeData
         public float ScaleMin;
         public float ZAxisMaxFactor = 10.0f;
         public float ZAxisMinFactor = 0.001f;
-        public Vector3 SliceMin = Vector3.zero;
-        public Vector3 SliceMax = Vector3.one;
+        public UnityEngine.Vector3 SliceMin = UnityEngine.Vector3.zero;
+        public UnityEngine.Vector3 SliceMax = UnityEngine.Vector3.one;
         public int CubeDepthAxis = 2;
         public int CubeSlice = 1;
         public bool ShowMeasuringLine = false;
@@ -114,9 +117,9 @@ namespace VolumeData
             }
         }
         private bool _restFrequencyChanged = false;
-        public Vector3 InitialPosition { get; private set; }
-        public Quaternion InitialRotation { get; private set; }
-        public Vector3 InitialScale { get; private set; }
+        public UnityEngine.Vector3 InitialPosition { get; private set; }
+        public UnityEngine.Quaternion InitialRotation { get; private set; }
+        public UnityEngine.Vector3 InitialScale { get; private set; }
 
         public float InitialThresholdMin { get; private set; }
         public float InitialThresholdMax { get; private set; }
@@ -153,6 +156,8 @@ namespace VolumeData
 
         private VolumeDataSet _dataSet = null;
         private VolumeDataSet _maskDataSet = null;
+
+        private string lastSavedMaskPath = "";
         public VolumeDataSet Mask => _maskDataSet;
         public VolumeDataSet Data => _dataSet;
         
@@ -247,8 +252,8 @@ namespace VolumeData
             }
             set
             {
-                Vector3 oldScale = gameObject.transform.localScale;
-                gameObject.transform.localScale = new Vector3(value, oldScale.y, oldScale.z);
+                UnityEngine.Vector3 oldScale = gameObject.transform.localScale;
+                gameObject.transform.localScale = new UnityEngine.Vector3(value, oldScale.y, oldScale.z);
             }
         }
         
@@ -260,8 +265,8 @@ namespace VolumeData
             }
             set
             {
-                Vector3 oldScale = gameObject.transform.localScale;
-                gameObject.transform.localScale = new Vector3(oldScale.x, value, oldScale.z);
+                UnityEngine.Vector3 oldScale = gameObject.transform.localScale;
+                gameObject.transform.localScale = new UnityEngine.Vector3(oldScale.x, value, oldScale.z);
             }
         }
         
@@ -273,8 +278,8 @@ namespace VolumeData
             }
             set
             {
-                Vector3 oldScale = gameObject.transform.localScale;
-                gameObject.transform.localScale = new Vector3(oldScale.x, oldScale.y, value);
+                UnityEngine.Vector3 oldScale = gameObject.transform.localScale;
+                gameObject.transform.localScale = new UnityEngine.Vector3(oldScale.x, oldScale.y, value);
             }
         }
 
@@ -357,8 +362,8 @@ namespace VolumeData
             _cubeOutline = new CuboidLine
             {
                 Parent = transform,
-                Center = Vector3.zero,
-                Bounds = Vector3.one
+                Center = UnityEngine.Vector3.zero,
+                Bounds = UnityEngine.Vector3.one
             };
             
             _cubeOutline.Activate();
@@ -369,18 +374,18 @@ namespace VolumeData
             _voxelOutline = new CuboidLine
             {
                 Parent = transform,
-                Center = Vector3.zero,
+                Center = UnityEngine.Vector3.zero,
                 Color = Color.green,
-                Bounds = Vector3.one
+                Bounds = UnityEngine.Vector3.one
             };
             
             // Region axes
             _regionOutline = new CuboidLine
             {
                 Parent = transform,
-                Center = Vector3.zero,
+                Center = UnityEngine.Vector3.zero,
                 Color = Color.green,
-                Bounds = Vector3.one
+                Bounds = UnityEngine.Vector3.one
             };
             
             _measuringLine = new PolyLine
@@ -441,7 +446,7 @@ namespace VolumeData
             
             if (IsFullResolution)
             {
-                CropToRegion(Vector3.one, new Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
+                CropToRegion(UnityEngine.Vector3.one, new UnityEngine.Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
             }
             
             Shader.WarmupAllShaders();
@@ -482,7 +487,7 @@ namespace VolumeData
                 CropToFeature();
             } else if (IsFullResolution)
             {
-                CropToRegion(Vector3.one, new Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
+                CropToRegion(UnityEngine.Vector3.one, new UnityEngine.Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
             }
         }
         
@@ -512,10 +517,10 @@ namespace VolumeData
         /// </summary>
         /// <param name="cursor"></param>
         /// <param name="brushSize"></param>
-        public void SetCursorPosition(Vector3 cursor, int brushSize)
+        public void SetCursorPosition(UnityEngine.Vector3 cursor, int brushSize)
         {
-            Vector3 objectSpacePosition = transform.InverseTransformPoint(cursor);
-            Bounds objectBounds = new Bounds(Vector3.zero, Vector3.one);
+            UnityEngine.Vector3 objectSpacePosition = transform.InverseTransformPoint(cursor);
+            Bounds objectBounds = new Bounds(UnityEngine.Vector3.zero, UnityEngine.Vector3.one);
             if (objectBounds.Contains(objectSpacePosition) && _dataSet != null)
             {
                 // Check if the dataset was loaded as a subset. If so, add a suitable offset to the position in data space
@@ -528,9 +533,9 @@ namespace VolumeData
                     yOffset = _dataSet.subsetBounds[2] - 1;
                     zOffset = _dataSet.subsetBounds[4] - 1;
                 }
-                Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim + xOffset, (objectSpacePosition.y + 0.5f) * _dataSet.YDim + yOffset, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim + zOffset);
-                Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
-                Vector3 voxelCenterCubeSpace = voxelCornerCubeSpace + 0.5f * Vector3.one;
+                UnityEngine.Vector3 positionCubeSpace = new UnityEngine.Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim + xOffset, (objectSpacePosition.y + 0.5f) * _dataSet.YDim + yOffset, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim + zOffset);
+                UnityEngine.Vector3 voxelCornerCubeSpace = new UnityEngine.Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
+                UnityEngine.Vector3 voxelCenterCubeSpace = voxelCornerCubeSpace + 0.5f * UnityEngine.Vector3.one;
                 Vector3Int newVoxelCursor = new Vector3Int(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1);
 
                 if (!newVoxelCursor.Equals(CursorVoxel) || brushSize != _previousBrushSize)
@@ -553,10 +558,10 @@ namespace VolumeData
                     }
 
                     // Determine the actual voxelCursor's location in the VR space (not data space)
-                    Vector3 voxelCenterObjectSpace = new Vector3((voxelCenterCubeSpace.x - xOffset) / _dataSet.XDim - 0.5f, (voxelCenterCubeSpace.y - yOffset) / _dataSet.YDim - 0.5f,
+                    UnityEngine.Vector3 voxelCenterObjectSpace = new UnityEngine.Vector3((voxelCenterCubeSpace.x - xOffset) / _dataSet.XDim - 0.5f, (voxelCenterCubeSpace.y - yOffset) / _dataSet.YDim - 0.5f,
                         (voxelCenterCubeSpace.z - zOffset) / _dataSet.ZDim - 0.5f);
                     _voxelOutline.Center = voxelCenterObjectSpace;
-                    _voxelOutline.Bounds = brushSize * new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
+                    _voxelOutline.Bounds = brushSize * new UnityEngine.Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
                 }
 
                 _voxelOutline.Activate();
@@ -574,10 +579,10 @@ namespace VolumeData
         /// </summary>
         /// <param name="cursorPosWorldSpace">Where in the world space is the user pointing?</param>
         /// <returns>An indexed location in data space.</returns>
-        public Vector3Int GetVoxelPosition(Vector3 cursorPosWorldSpace)
+        public Vector3Int GetVoxelPosition(UnityEngine.Vector3 cursorPosWorldSpace)
         {
-            Vector3 objectSpacePosition = transform.InverseTransformPoint(cursorPosWorldSpace);
-            objectSpacePosition = new Vector3(
+            UnityEngine.Vector3 objectSpacePosition = transform.InverseTransformPoint(cursorPosWorldSpace);
+            objectSpacePosition = new UnityEngine.Vector3(
                 Mathf.Clamp(objectSpacePosition.x, -0.5f, 0.5f),
                 Mathf.Clamp(objectSpacePosition.y, -0.5f, 0.5f),
                 Mathf.Clamp(objectSpacePosition.z, -0.5f, 0.5f)
@@ -595,8 +600,8 @@ namespace VolumeData
                 yOffset = _dataSet.subsetBounds[2] - 1;
                 zOffset = _dataSet.subsetBounds[4] - 1;
             }
-            Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim + xOffset, (objectSpacePosition.y + 0.5f) * _dataSet.YDim + yOffset, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim + zOffset);
-            Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
+            UnityEngine.Vector3 positionCubeSpace = new UnityEngine.Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim + xOffset, (objectSpacePosition.y + 0.5f) * _dataSet.YDim + yOffset, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim + zOffset);
+            UnityEngine.Vector3 voxelCornerCubeSpace = new UnityEngine.Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
             Vector3Int newVoxelCursor = new Vector3Int(
                 Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),
                 Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, 1, (int)_dataSet.YDim),
@@ -611,10 +616,10 @@ namespace VolumeData
         /// </summary>
         /// <param name="cursorPosWorldSpace">Where in the world space is the user pointing?</param>
         /// <returns>An indexed location in world space.</returns>
-        public Vector3Int GetVoxelPositionWorldSpace(Vector3 cursorPosWorldSpace)
+        public Vector3Int GetVoxelPositionWorldSpace(UnityEngine.Vector3 cursorPosWorldSpace)
         {
-            Vector3 objectSpacePosition = transform.InverseTransformPoint(cursorPosWorldSpace);
-            objectSpacePosition = new Vector3(
+            UnityEngine.Vector3 objectSpacePosition = transform.InverseTransformPoint(cursorPosWorldSpace);
+            objectSpacePosition = new UnityEngine.Vector3(
                 Mathf.Clamp(objectSpacePosition.x, -0.5f, 0.5f),
                 Mathf.Clamp(objectSpacePosition.y, -0.5f, 0.5f),
                 Mathf.Clamp(objectSpacePosition.z, -0.5f, 0.5f)
@@ -625,8 +630,8 @@ namespace VolumeData
                 return Vector3Int.zero;
             }
             
-            Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
-            Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
+            UnityEngine.Vector3 positionCubeSpace = new UnityEngine.Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
+            UnityEngine.Vector3 voxelCornerCubeSpace = new UnityEngine.Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
             Vector3Int newVoxelCursor = new Vector3Int(
                 Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),
                 Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, 1, (int)_dataSet.YDim),
@@ -641,7 +646,7 @@ namespace VolumeData
         /// </summary>
         /// <param name="cursor">Where in the world space is the user pointing?</param>
         /// <param name="start">Is this the creation of a selection, or updating its values?</param>
-        public void SetRegionPosition(Vector3 cursor, bool start)
+        public void SetRegionPosition(UnityEngine.Vector3 cursor, bool start)
         {
             if (_dataSet != null)
             {
@@ -682,8 +687,8 @@ namespace VolumeData
         private void UpdateRegionBounds()
         {
             // Calculate full region bounds
-            var regionMin = Vector3.Min(RegionStartVoxel, RegionEndVoxel);
-            var regionMax = Vector3.Max(RegionStartVoxel, RegionEndVoxel);
+            var regionMin = UnityEngine.Vector3.Min(RegionStartVoxel, RegionEndVoxel);
+            var regionMax = UnityEngine.Vector3.Max(RegionStartVoxel, RegionEndVoxel);
             var measureStart = RegionStartVoxel;
             var measureEnd = RegionEndVoxel;
             if (measureStart.x < measureEnd.x)
@@ -698,20 +703,20 @@ namespace VolumeData
                 measureStart.z--;
             else
                 measureEnd.z--;
-            var regionSize = regionMax - regionMin + Vector3.one;
-            Vector3 regionCenter = (regionMax + regionMin) / 2.0f - 0.5f * Vector3.one;
+            var regionSize = regionMax - regionMin + UnityEngine.Vector3.one;
+            UnityEngine.Vector3 regionCenter = (regionMax + regionMin) / 2.0f - 0.5f * UnityEngine.Vector3.one;
 
-            Vector3 regionCenterObjectSpace = new Vector3(regionCenter.x / _dataSet.XDim - 0.5f, regionCenter.y / _dataSet.YDim - 0.5f, regionCenter.z / _dataSet.ZDim - 0.5f);
+            UnityEngine.Vector3 regionCenterObjectSpace = new UnityEngine.Vector3(regionCenter.x / _dataSet.XDim - 0.5f, regionCenter.y / _dataSet.YDim - 0.5f, regionCenter.z / _dataSet.ZDim - 0.5f);
             _regionOutline.Center = regionCenterObjectSpace;
-            _regionOutline.Bounds = new Vector3(regionSize.x / _dataSet.XDim, regionSize.y / _dataSet.YDim, regionSize.z / _dataSet.ZDim);
+            _regionOutline.Bounds = new UnityEngine.Vector3(regionSize.x / _dataSet.XDim, regionSize.y / _dataSet.YDim, regionSize.z / _dataSet.ZDim);
 
             var regionSizeBytes = regionSize.x * regionSize.y * regionSize.z * sizeof(float);
             bool regionIsFullResolution = (regionSizeBytes <= MaximumCubeSizeInMB * 1e6);
             Feature.SetCubeColors(_regionOutline, regionIsFullResolution ? Color.white : Color.yellow, regionIsFullResolution);
 
-            var startPoint = new Vector3((float)measureStart.x / _dataSet.XDim - 0.5f, (float)measureStart.y / _dataSet.YDim - 0.5f, (float)measureStart.z / _dataSet.ZDim - 0.5f);
-            var endPoint = new Vector3((float)measureEnd.x / _dataSet.XDim - 0.5f, (float)measureEnd.y / _dataSet.YDim - 0.5f, (float)measureEnd.z / _dataSet.ZDim - 0.5f);
-            _measuringLine.Vertices = new List<Vector3> { startPoint, endPoint };
+            var startPoint = new UnityEngine.Vector3((float)measureStart.x / _dataSet.XDim - 0.5f, (float)measureStart.y / _dataSet.YDim - 0.5f, (float)measureStart.z / _dataSet.ZDim - 0.5f);
+            var endPoint = new UnityEngine.Vector3((float)measureEnd.x / _dataSet.XDim - 0.5f, (float)measureEnd.y / _dataSet.YDim - 0.5f, (float)measureEnd.z / _dataSet.ZDim - 0.5f);
+            _measuringLine.Vertices = new List<UnityEngine.Vector3> { startPoint, endPoint };
         }
 
         public void ClearRegion()
@@ -724,7 +729,7 @@ namespace VolumeData
             _measuringLine?.Deactivate();
         }
 
-        public void SelectFeature(Vector3 cursor)
+        public void SelectFeature(UnityEngine.Vector3 cursor)
         {
             if (_featureManager && _featureManager.SelectFeature(cursor))
             {
@@ -756,27 +761,27 @@ namespace VolumeData
             return false;
         }
 
-        public void CropToRegion(Vector3 cornerMin, Vector3 cornerMax)
+        public void CropToRegion(UnityEngine.Vector3 cornerMin, UnityEngine.Vector3 cornerMax)
         {
             Vector3Int startVoxel = new Vector3Int(Convert.ToInt32(cornerMin.x), Convert.ToInt32(cornerMin.y), Convert.ToInt32(cornerMin.z));
             Vector3Int endVoxel = new Vector3Int(Convert.ToInt32(cornerMax.x), Convert.ToInt32(cornerMax.y), Convert.ToInt32(cornerMax.z));
 
-            Vector3 regionStartObjectSpace = new Vector3(cornerMin.x / _dataSet.XDim - 0.5f, cornerMin.y / _dataSet.YDim - 0.5f, cornerMin.z / _dataSet.ZDim - 0.5f);
-            Vector3 regionEndObjectSpace = new Vector3(cornerMax.x / _dataSet.XDim - 0.5f, cornerMax.y / _dataSet.YDim - 0.5f, cornerMax.z / _dataSet.ZDim - 0.5f);
-            Vector3 padding = new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
-            SliceMin = Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
-            SliceMax = Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
+            UnityEngine.Vector3 regionStartObjectSpace = new UnityEngine.Vector3(cornerMin.x / _dataSet.XDim - 0.5f, cornerMin.y / _dataSet.YDim - 0.5f, cornerMin.z / _dataSet.ZDim - 0.5f);
+            UnityEngine.Vector3 regionEndObjectSpace = new UnityEngine.Vector3(cornerMax.x / _dataSet.XDim - 0.5f, cornerMax.y / _dataSet.YDim - 0.5f, cornerMax.z / _dataSet.ZDim - 0.5f);
+            UnityEngine.Vector3 padding = new UnityEngine.Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
+            SliceMin = UnityEngine.Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
+            SliceMax = UnityEngine.Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
             LoadRegionData(startVoxel, endVoxel);
             _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.RegionCube);
 
             if (_maskDataSet != null)
             {
                 _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
-                var regionMin = Vector3.Min(startVoxel, endVoxel);
-                _maskMaterialInstance.SetVector(MaterialID.RegionOffset, new Vector4(regionMin.x, regionMin.y, regionMin.z, 0));
-                var regionDimensions = new Vector4(_maskDataSet.RegionCube.width, _maskDataSet.RegionCube.height, _maskDataSet.RegionCube.depth, 0);
+                var regionMin = UnityEngine.Vector3.Min(startVoxel, endVoxel);
+                _maskMaterialInstance.SetVector(MaterialID.RegionOffset, new UnityEngine.Vector4(regionMin.x, regionMin.y, regionMin.z, 0));
+                var regionDimensions = new UnityEngine.Vector4(_maskDataSet.RegionCube.width, _maskDataSet.RegionCube.height, _maskDataSet.RegionCube.depth, 0);
                 _maskMaterialInstance.SetVector(MaterialID.RegionDimensions, regionDimensions);
-                var cubeDimensions = new Vector4(_maskDataSet.XDim, _maskDataSet.YDim, _maskDataSet.ZDim, 1);
+                var cubeDimensions = new UnityEngine.Vector4(_maskDataSet.XDim, _maskDataSet.YDim, _maskDataSet.ZDim, 1);
                 _maskMaterialInstance.SetVector(MaterialID.CubeDimensions, cubeDimensions);
                 _momentMapRenderer.MaskCube = _maskDataSet.RegionCube;
             }
@@ -794,8 +799,8 @@ namespace VolumeData
             _currentXFactor = _baseXFactor;
             _currentYFactor = _baseYFactor;
             _currentZFactor = _baseZFactor;
-            SliceMin = -0.5f * Vector3.one;
-            SliceMax = +0.5f * Vector3.one;
+            SliceMin = -0.5f * UnityEngine.Vector3.one;
+            SliceMax = +0.5f * UnityEngine.Vector3.one;
             _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.DataCube);
             if (_maskDataSet != null)
             {
@@ -804,11 +809,11 @@ namespace VolumeData
                     _maskDataSet.GenerateCroppedVolumeTexture(TextureFilter, Vector3Int.one, 
                         new Vector3Int((int)_dataSet.XDim, (int)_dataSet.YDim, (int)_dataSet.ZDim), Vector3Int.one);
                     _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.RegionCube);
-                    var regionMin = Vector3.Min(Vector3Int.one, new Vector3Int((int)_dataSet.XDim, (int)_dataSet.YDim, (int)_dataSet.ZDim));
-                    _maskMaterialInstance.SetVector(MaterialID.RegionOffset, new Vector4(regionMin.x, regionMin.y, regionMin.z, 0));
-                    var regionDimensions = new Vector4(_maskDataSet.RegionCube.width, _maskDataSet.RegionCube.height, _maskDataSet.RegionCube.depth, 0);
+                    var regionMin = UnityEngine.Vector3.Min(Vector3Int.one, new Vector3Int((int)_dataSet.XDim, (int)_dataSet.YDim, (int)_dataSet.ZDim));
+                    _maskMaterialInstance.SetVector(MaterialID.RegionOffset, new UnityEngine.Vector4(regionMin.x, regionMin.y, regionMin.z, 0));
+                    var regionDimensions = new UnityEngine.Vector4(_maskDataSet.RegionCube.width, _maskDataSet.RegionCube.height, _maskDataSet.RegionCube.depth, 0);
                     _maskMaterialInstance.SetVector(MaterialID.RegionDimensions, regionDimensions);
-                    var cubeDimensions = new Vector4(_maskDataSet.XDim, _maskDataSet.YDim, _maskDataSet.ZDim, 1);
+                    var cubeDimensions = new UnityEngine.Vector4(_maskDataSet.XDim, _maskDataSet.YDim, _maskDataSet.ZDim, 1);
                     _maskMaterialInstance.SetVector(MaterialID.CubeDimensions, cubeDimensions);
                     _momentMapRenderer.MaskCube = _maskDataSet.RegionCube;
                 }
@@ -864,7 +869,7 @@ namespace VolumeData
             {
                 var boundsMin = _featureManager.SelectedFeature.CornerMin;
                 var boundsMax = _featureManager.SelectedFeature.CornerMax;
-                _volumeInputController.Teleport(boundsMin - (0.5f * Vector3.one), boundsMax + (0.5f * Vector3.one));
+                _volumeInputController.Teleport(boundsMin - (0.5f * UnityEngine.Vector3.one), boundsMax + (0.5f * UnityEngine.Vector3.one));
             }
         }
 
@@ -903,11 +908,11 @@ namespace VolumeData
 
             if (_regionOutline.Active)
             {
-                Vector3 regionStartObjectSpace = new Vector3((float)(RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
-                Vector3 regionEndObjectSpace = new Vector3((float)(RegionEndVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionEndVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
-                Vector3 padding = new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
-                var highlightMin = Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
-                var highlightMax = Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
+                UnityEngine.Vector3 regionStartObjectSpace = new UnityEngine.Vector3((float)(RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
+                UnityEngine.Vector3 regionEndObjectSpace = new UnityEngine.Vector3((float)(RegionEndVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionEndVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
+                UnityEngine.Vector3 padding = new UnityEngine.Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
+                var highlightMin = UnityEngine.Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
+                var highlightMax = UnityEngine.Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
 
                 _materialInstance.SetVector(MaterialID.HighlightMin, highlightMin);
                 _materialInstance.SetVector(MaterialID.HighlightMax, highlightMax);
@@ -926,12 +931,12 @@ namespace VolumeData
                 _maskMaterialInstance.SetInt(MaterialID.HighlightedSource, HighlightedSource);
 
                 // Calculate and update voxel corner offsets
-                var offsets = new Vector4[4];
+                var offsets = new UnityEngine.Vector4[4];
                 var modelMatrix = transform.localToWorldMatrix;
-                offsets[0] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new Vector3(-1.0f / _maskDataSet.XDim, -1.0f / _maskDataSet.YDim, -1.0f / _maskDataSet.ZDim));
-                offsets[1] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new Vector3(-1.0f / _maskDataSet.XDim, -1.0f / _maskDataSet.YDim, +1.0f / _maskDataSet.ZDim));
-                offsets[2] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new Vector3(-1.0f / _maskDataSet.XDim, +1.0f / _maskDataSet.YDim, -1.0f / _maskDataSet.ZDim));
-                offsets[3] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new Vector3(-1.0f / _maskDataSet.XDim, +1.0f / _maskDataSet.YDim, +1.0f / _maskDataSet.ZDim));
+                offsets[0] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new UnityEngine.Vector3(-1.0f / _maskDataSet.XDim, -1.0f / _maskDataSet.YDim, -1.0f / _maskDataSet.ZDim));
+                offsets[1] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new UnityEngine.Vector3(-1.0f / _maskDataSet.XDim, -1.0f / _maskDataSet.YDim, +1.0f / _maskDataSet.ZDim));
+                offsets[2] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new UnityEngine.Vector3(-1.0f / _maskDataSet.XDim, +1.0f / _maskDataSet.YDim, -1.0f / _maskDataSet.ZDim));
+                offsets[3] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new UnityEngine.Vector3(-1.0f / _maskDataSet.XDim, +1.0f / _maskDataSet.YDim, +1.0f / _maskDataSet.ZDim));
                 _maskMaterialInstance.SetVectorArray(MaterialID.MaskVoxelOffsets, offsets);
                 _maskMaterialInstance.SetMatrix(MaterialID.ModelMatrix, modelMatrix);
 
@@ -1007,9 +1012,52 @@ namespace VolumeData
                 // Re-crop both datasets to ensure that they match correctly
                 if (!CropToFeature() && IsFullResolution)
                 {
-                    CropToRegion(Vector3.one, new Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
+                    CropToRegion(UnityEngine.Vector3.one, new UnityEngine.Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
+                }
+
+                if (_dataSet.isSubset())
+                {
+                    string path = "Prefabs/UserConfirmationPopup";
+                    GameObject userConfirmPopup = Resources.Load<GameObject>(path);
+                    if (userConfirmPopup != null)
+                    {
+                        UnityEngine.Vector3 playerPos = Camera.main.transform.position;
+                        UnityEngine.Vector3 playerDirection = Camera.main.transform.forward;
+                        UnityEngine.Quaternion playerRotation = Camera.main.transform.rotation;
+                        float spawnDistance = 1.1f;
+
+                        UnityEngine.Vector3 spawnPos = playerPos + playerDirection * spawnDistance;
+
+                        var confirmReloadPopup = Instantiate(userConfirmPopup);
+                        confirmReloadPopup.transform.localPosition = spawnPos;
+                        confirmReloadPopup.transform.localRotation = UnityEngine.Quaternion.LookRotation(new UnityEngine.Vector3(spawnPos.x - playerPos.x, 0, spawnPos.z - playerPos.z));
+                        // confirmReloadPopup.transform.localScale = this.transform.localScale;
+
+                        var control = confirmReloadPopup.GetComponent<UserConfirmationPopupController>();
+                        control.setMessageBody("The cube needs to be reloaded to apply the new mask properly. Go ahead?");
+                        control.setHeaderText("Confirm reload?");
+                        control.addButton("Reload", "Reload the cube with the mask newly created", this.reload);
+                        control.addButton("Cancel", "Do not reload. Any mask values will not save correctly until after a reload", this.reloadCancel);
+                    }
+                    else
+                    {
+                        ToastNotification.ShowError("User confirmation popup prefab not found!");
+                    }
                 }
             }
+        }
+
+        private void reload()
+        {
+            this.SaveMask(false);
+            var canvasScript = GameObject.FindWithTag("CanvasDesktop").GetComponent<CanvassDesktop>();
+            canvasScript.setMaskPath(this.GetMaskSavedFilePath());
+            canvasScript.reload();
+        }
+
+        private void reloadCancel()
+        {
+            return;
         }
 
         private bool PaintMask(Vector3Int position, short value)
@@ -1020,13 +1068,13 @@ namespace VolumeData
             }
 
             var regionSizeObjectSpace = SliceMax - SliceMin;
-            var regionSizeDataSpace = new Vector3(_maskDataSet.XDim * regionSizeObjectSpace.x, _maskDataSet.YDim * regionSizeObjectSpace.y, _maskDataSet.ZDim * regionSizeObjectSpace.z);
+            var regionSizeDataSpace = new UnityEngine.Vector3(_maskDataSet.XDim * regionSizeObjectSpace.x, _maskDataSet.YDim * regionSizeObjectSpace.y, _maskDataSet.ZDim * regionSizeObjectSpace.z);
             if (Math.Floor(regionSizeDataSpace.x) > _maskDataSet.RegionCube.width || Math.Floor(regionSizeDataSpace.y) > _maskDataSet.RegionCube.height || Math.Floor(regionSizeDataSpace.z) > _maskDataSet.RegionCube.depth)
             {
                 return false;
             }
 
-            Vector3Int offsetRegionSpace = Vector3Int.FloorToInt(new Vector3((0.5f + SliceMin.x) * _maskDataSet.XDim, (0.5f + SliceMin.y) * _maskDataSet.YDim, (0.5f + SliceMin.z) * _maskDataSet.ZDim));
+            Vector3Int offsetRegionSpace = Vector3Int.FloorToInt(new UnityEngine.Vector3((0.5f + SliceMin.x) * _maskDataSet.XDim, (0.5f + SliceMin.y) * _maskDataSet.YDim, (0.5f + SliceMin.z) * _maskDataSet.ZDim));
             Vector3Int coordsRegionSpace = position - Vector3Int.one - offsetRegionSpace;
             if (coordsRegionSpace != _previousPaintLocation || value != _previousPaintValue)
             {
@@ -1084,18 +1132,18 @@ namespace VolumeData
         }
 
         // Converts volume space to local space
-        public Vector3 VolumePositionToLocalPosition(Vector3 volumePosition)
+        public UnityEngine.Vector3 VolumePositionToLocalPosition(UnityEngine.Vector3 volumePosition)
         {
             Vector3Int cubeDimensions = GetCubeDimensions();
-            Vector3 localPosition = new Vector3(volumePosition.x / cubeDimensions.x - 0.5f, volumePosition.y / cubeDimensions.y - 0.5f, volumePosition.z / cubeDimensions.z - 0.5f);
+            UnityEngine.Vector3 localPosition = new UnityEngine.Vector3(volumePosition.x / cubeDimensions.x - 0.5f, volumePosition.y / cubeDimensions.y - 0.5f, volumePosition.z / cubeDimensions.z - 0.5f);
             return localPosition;
         }
 
         // Converts local space to volume space
-        public Vector3 LocalPositionToVolumePosition(Vector3 localPosition)
+        public UnityEngine.Vector3 LocalPositionToVolumePosition(UnityEngine.Vector3 localPosition)
         {
             Vector3Int cubeDimensions = GetCubeDimensions();
-            Vector3 volumePosition = new Vector3((localPosition.x + 0.5f) * cubeDimensions.x, (localPosition.y + 0.5f) * cubeDimensions.y, (localPosition.z + 0.5f) * cubeDimensions.z);
+            UnityEngine.Vector3 volumePosition = new UnityEngine.Vector3((localPosition.x + 0.5f) * cubeDimensions.x, (localPosition.y + 0.5f) * cubeDimensions.y, (localPosition.z + 0.5f) * cubeDimensions.z);
             return volumePosition;
         }
         
@@ -1125,6 +1173,8 @@ namespace VolumeData
                 {
                     ToastNotification.ShowError("Error saving new mask!");
                 }
+                
+                this.lastSavedMaskPath = _maskDataSet.FileName;
             }
             else if (!overwrite)
             {
@@ -1150,6 +1200,8 @@ namespace VolumeData
                 }
                 else
                 {
+                    
+                    this.lastSavedMaskPath = fullPath;
                     ToastNotification.ShowSuccess($"Mask saved to {fileName}");
                 }
             }
@@ -1163,11 +1215,18 @@ namespace VolumeData
                 }
                 else
                 {
+                    this.lastSavedMaskPath = _maskDataSet.FileName;
                     ToastNotification.ShowSuccess($"Mask saved to disk");
                 }
             }
             if (cubeFitsPtr != IntPtr.Zero)
                 FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+        }
+
+        public string GetMaskSavedFilePath()
+        {
+            var result = this.lastSavedMaskPath;
+            return result;
         }
 
         public void OnDestroy()

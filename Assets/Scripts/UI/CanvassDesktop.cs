@@ -750,6 +750,20 @@ public class CanvassDesktop : MonoBehaviour
         });
     */
 
+    public void setMaskPath(string mPath)
+    {
+        maskPath = mPath;
+    }
+
+    /// <summary>
+    /// This function should be called from the software if the cube needs to be reloaded for whatever reason.
+    /// For example, reloading after user confirmation when entering paint mode without a loaded mask if a subcube is loaded.
+    /// </summary>
+    public void reload()
+    {
+        LoadFileFromFileSystem();
+    }
+
     public void LoadFileFromFileSystem()
     {
         StartCoroutine(LoadCubeCoroutine(imagePath, maskPath, subsetToggle.isOn));

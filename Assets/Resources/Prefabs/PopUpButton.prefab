@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 538987730811855}
   - component: {fileID: 7533509216794684340}
   - component: {fileID: 5650094239937306659}
+  - component: {fileID: 5559434953004416846}
   m_Layer: 0
   m_Name: PopUpButton
   m_TagString: Untagged
@@ -41,7 +42,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8298072792037503255
 CanvasRenderer:
@@ -211,6 +212,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ButtonText: {fileID: 6506444320288168406}
   HoverText: {fileID: 0}
+  collider: {fileID: 5559434953004416846}
+  transform: {fileID: 6651141147005551421}
+--- !u!65 &5559434953004416846
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3151148455851330905}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 200, y: 50, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &3410648289235311289
 GameObject:
   m_ObjectHideFlags: 0
@@ -247,7 +263,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 150, y: 50}
+  m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2617553827054941540
 CanvasRenderer:

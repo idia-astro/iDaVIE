@@ -263,7 +263,8 @@ public class QuickMenuController : MonoBehaviour
         {
             ToastNotification.ShowError("Cannot paint downsampled mask!\nPlease select a smaller region");
         }
-        else {             
+        else {
+            //TODO: Make sure paint menu does not open if mask is not correctly loaded.
             paintMenu.transform.SetParent(this.transform.parent, false);
             paintMenu.transform.localPosition = this.transform.localPosition;
             paintMenu.transform.localRotation = this.transform.localRotation;
@@ -290,43 +291,68 @@ public class QuickMenuController : MonoBehaviour
         if (exportPopup.activeSelf)
             exportPopup.SetActive(false);
         
-        savePopup.transform.SetParent(this.transform.parent, false);
-        savePopup.transform.localPosition = this.transform.localPosition;
-        savePopup.transform.localRotation = this.transform.localRotation;
-        savePopup.transform.localScale = this.transform.localScale;
+        // savePopup.transform.SetParent(this.transform.parent, false);
+        // savePopup.transform.localPosition = this.transform.localPosition;
+        // savePopup.transform.localRotation = this.transform.localRotation;
+        // savePopup.transform.localScale = this.transform.localScale;
 
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.RemoveAllListeners();
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.RemoveAllListeners();
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.RemoveAllListeners();
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.RemoveAllListeners();
 
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(SaveCancel);
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(SaveCancel);
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
+
+        var newSavePopup = Instantiate(userConfirmPopupPrefab, this.transform.parent);
+        newSavePopup.transform.localPosition = this.transform.localPosition;
+        newSavePopup.transform.localRotation = this.transform.localRotation;
+        newSavePopup.transform.localScale = this.transform.localScale;
+
+        var control = newSavePopup.GetComponent<UserConfirmationPopupController>();
+        control.setMessageBody("");
+        control.setHeaderText("Save mask");
+        control.addButton("New file", "Save the current mask as a new file", this.SaveNewMask);
+        control.addButton("Overwrite", "Overwrite the existing mask file", this.SaveOverwriteMask);
+        control.addButton("Cancel", "Cancel the save and return to painting", this.SaveCancel);
 
         if (_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.Painting )
             _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
         
         this.gameObject.SetActive(false);
-        savePopup.SetActive(true);
+        newSavePopup.SetActive(true);
     }
 
     public void ExportData()
     {
-        exportPopup.transform.SetParent(this.transform.parent, false);
-        exportPopup.transform.localPosition = this.transform.localPosition;
-        exportPopup.transform.localRotation = this.transform.localRotation;
-        exportPopup.transform.localScale = this.transform.localScale;
+        // exportPopup.transform.SetParent(this.transform.parent, false);
+        // exportPopup.transform.localPosition = this.transform.localPosition;
+        // exportPopup.transform.localRotation = this.transform.localRotation;
+        // exportPopup.transform.localScale = this.transform.localScale;
 
-        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
-        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("SubCube").GetComponent<Button>().onClick.RemoveAllListeners();
-        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").GetComponent<Button>().onClick.RemoveAllListeners();
+        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
+        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("SubCube").GetComponent<Button>().onClick.RemoveAllListeners();
+        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").GetComponent<Button>().onClick.RemoveAllListeners();
 
-        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(ExportCancel);
-        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("SubCube").GetComponent<Button>().onClick.AddListener(SaveSubCube);
-        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").GetComponent<Button>().onClick.AddListener(SaveMask);
+        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(ExportCancel);
+        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("SubCube").GetComponent<Button>().onClick.AddListener(SaveSubCube);
+        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").GetComponent<Button>().onClick.AddListener(SaveMask);
+
+        var newExportPopup = Instantiate(userConfirmPopupPrefab, this.transform.parent);
+        newExportPopup.transform.localPosition = this.transform.localPosition;
+        newExportPopup.transform.localRotation = this.transform.localRotation;
+        newExportPopup.transform.localScale = this.transform.localScale;
+
+        var control = newExportPopup.GetComponent<UserConfirmationPopupController>();
+        control.setMessageBody("");
+        control.setHeaderText("Export data");
+        control.addButton("Mask", "Save mask", this.SaveMask);
+        control.addButton("Subcube", "Export selection as a subcube", this.SaveSubCube);
+        control.addButton("Cancel", "Cancel the export and return", this.ExportCancel);
 
         this.gameObject.SetActive(false);
-        exportPopup.SetActive(true);
+        // exportPopup.SetActive(true);
+        newExportPopup.SetActive(true);
     }
 
     public void ExportCancel()

@@ -1753,6 +1753,11 @@ namespace VolumeData
                 Debug.Log("Error normalizing physical coordinates!");
             }
         }
+
+        public bool isSubset()
+        {
+            return this.loadSubset;
+        }
         
         public void CleanUp(bool randomCube)
         {

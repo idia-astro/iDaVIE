@@ -789,7 +789,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c62440c5dca5c5c49820c6f67f06af4a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Popup: {fileID: 5529662323021713457}
+  messageRect: {fileID: 2593874852677291674}
+  buttonRect: {fileID: 90108825957035331}
   buttonFrame: {fileID: 123685916165928423}
   buttonPrefab: {fileID: 3151148455851330905, guid: b906c200614f1e14ba23819c05820ce9,
     type: 3}

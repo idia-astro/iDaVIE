@@ -10,6 +10,8 @@ public class PaintMenuController : MonoBehaviour
     public GameObject volumeDatasetRendererObj = null;
     public GameObject notificationText = null;
 
+    public GameObject userConfirmPopupPrefab;
+
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
 
@@ -198,29 +200,41 @@ public class PaintMenuController : MonoBehaviour
 
     public void SaveMask()
     {
-        savePopup.transform.SetParent(this.transform.parent, false);
-        savePopup.transform.localPosition = this.transform.localPosition;
-        savePopup.transform.localRotation = this.transform.localRotation;
-        savePopup.transform.localScale = this.transform.localScale;
+        // savePopup.transform.SetParent(this.transform.parent, false);
+        // savePopup.transform.localPosition = this.transform.localPosition;
+        // savePopup.transform.localRotation = this.transform.localRotation;
+        // savePopup.transform.localScale = this.transform.localScale;
 
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.RemoveAllListeners();
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.RemoveAllListeners();
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.RemoveAllListeners();
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.RemoveAllListeners();
 
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(SaveCancel);
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(SaveCancel);
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
+
+        var newSavePopup = Instantiate(userConfirmPopupPrefab, this.transform.parent);
+        newSavePopup.transform.localPosition = this.transform.localPosition;
+        newSavePopup.transform.localRotation = this.transform.localRotation;
+        newSavePopup.transform.localScale = this.transform.localScale;
+
+        var control = newSavePopup.GetComponent<UserConfirmationPopupController>();
+        control.setMessageBody("");
+        control.setHeaderText("Save mask");
+        control.addButton("New file", "Save the current mask as a new file", this.SaveNewMask);
+        control.addButton("Overwrite", "Overwrite the existing mask file", this.SaveOverwriteMask);
+        control.addButton("Cancel", "Cancel the save and return to painting", this.SaveCancel);
 
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
-         this.gameObject.SetActive(false);
-        savePopup.SetActive(true);
+        gameObject.SetActive(false);
+        newSavePopup.SetActive(true);
         
     }
 
     public void SaveCancel()
     {
         paintMenu.SetActive(true);
-        savePopup.SetActive(false);
+        // savePopup.SetActive(false);
     }
 
     public void SaveOverwriteMask()

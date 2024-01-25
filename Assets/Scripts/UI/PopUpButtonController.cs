@@ -6,12 +6,16 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEngine.EventSystems;
+using System.Numerics;
 
 public class PopUpButtonController : MonoBehaviour
 {
-    public Button thisButton;
     public TextMeshProUGUI ButtonText;
     public TextMeshProUGUI HoverText;
+
+    public BoxCollider collider;
+
+    public RectTransform transform;
 
     public System.Action hidemenu; 
     public System.Action callback;
@@ -28,6 +32,12 @@ public class PopUpButtonController : MonoBehaviour
     void Update()
     {
         return;
+    }
+
+
+    public void init()
+    {
+        collider.size = new UnityEngine.Vector3(transform.rect.width, transform.rect.height, 1);
     }
 
     /// <summary>

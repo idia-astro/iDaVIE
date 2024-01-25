@@ -11,7 +11,9 @@ using System.Diagnostics;
 
 public class UserConfirmationPopupController : MonoBehaviour
 {
-    public GameObject Popup;
+    public RectTransform messageRect;
+
+    public RectTransform buttonRect;
 
     public GameObject buttonFrame;
 
@@ -36,6 +38,21 @@ public class UserConfirmationPopupController : MonoBehaviour
     void Update()
     {
         return;
+    }
+
+    private void onEnable()
+    {
+        if (MessageBody.text == "")
+        {
+            messageRect.sizeDelta = new Vector2(messageRect.rect.width, 0f);
+            buttonRect.sizeDelta = new Vector2(buttonRect.rect.width, 200f);
+        }
+    }
+
+    private void OnDisable()
+    {
+        messageRect.sizeDelta = new Vector2(messageRect.rect.width, 100f);
+        buttonRect.sizeDelta = new Vector2(buttonRect.rect.width, 100f);
     }
 
     /// <summary>
@@ -71,6 +88,7 @@ public class UserConfirmationPopupController : MonoBehaviour
         controller.HoverText = this.HoverText;
         controller.callback = callback;
         controller.hidemenu = this.buttonClicked;
+        controller.init();
     }
 
     /// <summary>
@@ -78,7 +96,7 @@ public class UserConfirmationPopupController : MonoBehaviour
     /// </summary>
     public void buttonClicked()
     {
-        Popup.SetActive(false);
+        this.gameObject.SetActive(false);
         UnityEngine.Debug.Log("Popup menu has been hidden.");
     }
 }
