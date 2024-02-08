@@ -87,16 +87,17 @@ public class UserConfirmationPopupController : MonoBehaviour
         controller.hoverText = hoverText;
         controller.HoverText = this.HoverText;
         controller.callback = callback;
-        controller.hidemenu = this.buttonClicked;
+        controller.hidemenu = this.buttonClicked();
         controller.init();
     }
 
     /// <summary>
     /// This function is called when the user clicks on any button to hide the popup.
     /// </summary>
-    public void buttonClicked()
+    public IEnumerator buttonClicked()
     {
         this.gameObject.SetActive(false);
         UnityEngine.Debug.Log("Popup menu has been hidden.");
+        yield return null;
     }
 }

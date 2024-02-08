@@ -264,6 +264,46 @@ public class QuickMenuController : MonoBehaviour
             ToastNotification.ShowError("Cannot paint downsampled mask!\nPlease select a smaller region");
         }
         else {
+            int setsWithIssues = 0;
+            foreach (var dataSet in _dataSets)
+            {
+                // Ensure a mask is present for each dataset
+                setsWithIssues += dataSet.InitialiseMaskSubsetConfirm();
+            }
+
+            if (setsWithIssues > 0)
+            {
+                string path = "Prefabs/UserConfirmationPopup";
+                GameObject userConfirmPopup = Resources.Load<GameObject>(path);
+                if (userConfirmPopup != null)
+                {
+                    UnityEngine.Vector3 playerPos = Camera.main.transform.position;
+                    UnityEngine.Vector3 playerDirection = Camera.main.transform.forward;
+                    UnityEngine.Quaternion playerRotation = Camera.main.transform.rotation;
+                    float spawnDistance = 1.1f;
+
+                    UnityEngine.Vector3 spawnPos = playerPos + playerDirection * spawnDistance;
+
+                    var confirmReloadPopup = Instantiate(userConfirmPopup);
+                    confirmReloadPopup.transform.localPosition = spawnPos;
+                    confirmReloadPopup.transform.localRotation = UnityEngine.Quaternion.LookRotation(new UnityEngine.Vector3(spawnPos.x - playerPos.x, 0, spawnPos.z - playerPos.z));
+                    // confirmReloadPopup.transform.localScale = this.transform.localScale;
+
+                    var control = confirmReloadPopup.GetComponent<UserConfirmationPopupController>();
+                    control.setMessageBody(setsWithIssues.ToString() + " mask(s) needed to be created for a subcube. The cube needs to be reloaded to apply the new mask properly. Go ahead?");
+                    control.setHeaderText("Confirm reload?");
+                    control.addButton("Reload", "Reload the cube with the mask newly created", this.reload);
+                    control.addButton("Cancel", "Do not reload. Any mask values will not save correctly until after a reload", this.reloadCancel);
+                }
+                else
+                {
+                    ToastNotification.ShowError("User confirmation popup prefab not found!");
+                }
+
+                return;
+            }
+
+
             //TODO: Make sure paint menu does not open if mask is not correctly loaded.
             paintMenu.transform.SetParent(this.transform.parent, false);
             paintMenu.transform.localPosition = this.transform.localPosition;
@@ -271,8 +311,27 @@ public class QuickMenuController : MonoBehaviour
             paintMenu.transform.localScale = this.transform.localScale;
 
             gameObject.SetActive(false);
-            paintMenu.SetActive(true);
+            paintMenu.SetActive(true);//Fires PaintMenuController.OnEnable(), which fires VolumeInputController.EnterPaintMode(), which fires VolumeDataSetRenderer.InitialiseMask(), which presents popup
         }
+    }
+
+    private void reload()
+    {
+        string maskPath = "";
+        foreach (var dataSet in _dataSets)
+        {
+            // Ensure a mask is present for each dataset
+            dataSet.SaveMask(false);
+            maskPath = dataSet.GetMaskSavedFilePath();
+        }
+        var canvasScript = GameObject.FindWithTag("CanvasDesktop").GetComponent<CanvassDesktop>();
+        canvasScript.setMaskPath(maskPath);
+        canvasScript.reload();
+    }
+
+    private void reloadCancel()
+    {
+        return;
     }
 
     public void OpenPlotsMenu()

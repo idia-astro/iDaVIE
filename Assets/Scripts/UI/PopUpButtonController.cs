@@ -17,7 +17,7 @@ public class PopUpButtonController : MonoBehaviour
 
     public RectTransform transform;
 
-    public System.Action hidemenu; 
+    public IEnumerator hidemenu; 
     public System.Action callback;
     public string buttonText {get; set;} = "Text displayed on the button";
     public string hoverText {get; set;} = "Text displayed when user hovers over button";
@@ -83,7 +83,7 @@ public class PopUpButtonController : MonoBehaviour
     public void invokeCallback()
     {
         UnityEngine.Debug.Log("Calling callback of button labelled " + buttonText + ".");
+        StartCoroutine(hidemenu);
         callback();
-        hidemenu();
     }
 }

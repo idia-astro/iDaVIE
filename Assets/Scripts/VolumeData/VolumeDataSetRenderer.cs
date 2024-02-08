@@ -1014,50 +1014,32 @@ namespace VolumeData
                 {
                     CropToRegion(UnityEngine.Vector3.one, new UnityEngine.Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
                 }
-
-                if (_dataSet.isSubset())
-                {
-                    string path = "Prefabs/UserConfirmationPopup";
-                    GameObject userConfirmPopup = Resources.Load<GameObject>(path);
-                    if (userConfirmPopup != null)
-                    {
-                        UnityEngine.Vector3 playerPos = Camera.main.transform.position;
-                        UnityEngine.Vector3 playerDirection = Camera.main.transform.forward;
-                        UnityEngine.Quaternion playerRotation = Camera.main.transform.rotation;
-                        float spawnDistance = 1.1f;
-
-                        UnityEngine.Vector3 spawnPos = playerPos + playerDirection * spawnDistance;
-
-                        var confirmReloadPopup = Instantiate(userConfirmPopup);
-                        confirmReloadPopup.transform.localPosition = spawnPos;
-                        confirmReloadPopup.transform.localRotation = UnityEngine.Quaternion.LookRotation(new UnityEngine.Vector3(spawnPos.x - playerPos.x, 0, spawnPos.z - playerPos.z));
-                        // confirmReloadPopup.transform.localScale = this.transform.localScale;
-
-                        var control = confirmReloadPopup.GetComponent<UserConfirmationPopupController>();
-                        control.setMessageBody("The cube needs to be reloaded to apply the new mask properly. Go ahead?");
-                        control.setHeaderText("Confirm reload?");
-                        control.addButton("Reload", "Reload the cube with the mask newly created", this.reload);
-                        control.addButton("Cancel", "Do not reload. Any mask values will not save correctly until after a reload", this.reloadCancel);
-                    }
-                    else
-                    {
-                        ToastNotification.ShowError("User confirmation popup prefab not found!");
-                    }
-                }
             }
         }
 
-        private void reload()
+        public int InitialiseMaskSubsetConfirm()
         {
-            this.SaveMask(false);
-            var canvasScript = GameObject.FindWithTag("CanvasDesktop").GetComponent<CanvassDesktop>();
-            canvasScript.setMaskPath(this.GetMaskSavedFilePath());
-            canvasScript.reload();
-        }
+            if (_dataSet != null && _maskDataSet == null)
+            {
+                _maskDataSet = _dataSet.GenerateEmptyMask();
+                if (!FactorOverride)
+                {
+                    _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
+                }
 
-        private void reloadCancel()
-        {
-            return;
+                _maskDataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
+                _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.DataCube);
+                
+                // Re-crop both datasets to ensure that they match correctly
+                if (!CropToFeature() && IsFullResolution)
+                {
+                    CropToRegion(UnityEngine.Vector3.one, new UnityEngine.Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
+                }
+
+                if (_dataSet.isSubset())
+                    return 1;
+            }
+            return 0;
         }
 
         private bool PaintMask(Vector3Int position, short value)
