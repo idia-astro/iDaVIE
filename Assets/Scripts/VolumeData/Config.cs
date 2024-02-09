@@ -37,6 +37,8 @@ namespace VolumeData
         public bool tunnellingVignetteOn = true;
         public float tunnellingVignetteIntensity = 1.0f;
         public float tunnellingVignetteEnd = 0.40f;
+
+        public bool importedFeaturesStartVisible = true;
         
         public class RenderConfig
         {
