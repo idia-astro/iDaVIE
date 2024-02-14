@@ -93,10 +93,9 @@ namespace VolumeData
         public long[] Dims => new[] {XDim, YDim, ZDim};
         public int[] subsetBounds {get; private set; }
 
-        private bool loadSubset => subsetBounds[0] != -1;
+        private bool loadSubset => true;//subsetBounds[0] != -1;
 
         public Vector3Int RegionOffset { get; private set; }
-
 
         public bool IsMask { get; private set; }
         private IntPtr ImageDataPtr;
@@ -279,35 +278,32 @@ namespace VolumeData
             Marshal.Copy(dataPtr, volumeDataSetRes.cubeSize, 0, cubeDimensions);
             
             // Check if the provided subset is wholly within the given filie
-            if (volumeDataSetRes.loadSubset)
+            if (subBounds[1] > volumeDataSetRes.cubeSize[0])
             {
-                if (subBounds[1] > volumeDataSetRes.cubeSize[0])
-                {
-                    Debug.Log("Fits Read cube error with subset bounds not possible!");
-                    FitsReader.FitsCloseFile(fptr, out status);
-                    return null;
-                }
-                else
-                    volumeDataSetRes.cubeSize[0] = subBounds[1] - subBounds[0] + 1;
-
-                if (subBounds[3] > volumeDataSetRes.cubeSize[1])
-                {
-                    Debug.Log("Fits Read cube error with subset bounds not possible!");
-                    FitsReader.FitsCloseFile(fptr, out status);
-                    return null;
-                }
-                else
-                    volumeDataSetRes.cubeSize[1] = subBounds[3] - subBounds[2] + 1;
-
-                if (subBounds[5] > volumeDataSetRes.cubeSize[2])
-                {
-                    Debug.Log("Fits Read cube error with subset bounds not possible!");
-                    FitsReader.FitsCloseFile(fptr, out status);
-                    return null;
-                }
-                else
-                    volumeDataSetRes.cubeSize[2] = subBounds[5] - subBounds[4] + 1;
+                Debug.Log("Fits Read cube error with subset bounds not possible!");
+                FitsReader.FitsCloseFile(fptr, out status);
+                return null;
             }
+            else
+                volumeDataSetRes.cubeSize[0] = subBounds[1] - subBounds[0] + 1;
+
+            if (subBounds[3] > volumeDataSetRes.cubeSize[1])
+            {
+                Debug.Log("Fits Read cube error with subset bounds not possible!");
+                FitsReader.FitsCloseFile(fptr, out status);
+                return null;
+            }
+            else
+                volumeDataSetRes.cubeSize[1] = subBounds[3] - subBounds[2] + 1;
+
+            if (subBounds[5] > volumeDataSetRes.cubeSize[2])
+            {
+                Debug.Log("Fits Read cube error with subset bounds not possible!");
+                FitsReader.FitsCloseFile(fptr, out status);
+                return null;
+            }
+            else
+                volumeDataSetRes.cubeSize[2] = subBounds[5] - subBounds[4] + 1;
 
             if (dataPtr != IntPtr.Zero)
                 FitsReader.FreeFitsPtrMemory(dataPtr);
@@ -316,117 +312,80 @@ namespace VolumeData
             
             if (volumeDataSetRes.IsMask)
             {
-                if (volumeDataSetRes.loadSubset)
-                {// If loading a subset, figure out start and end pixels
-                    int[] startPix = new int[cubeDimensions];
-                    int[] finalPix = new int[cubeDimensions];
-                    for (var i = 0; i < cubeDimensions; i++)
-                    {
-                        if (i < 3)
-                        {
-                            startPix[i] = subBounds[i * 2];
-                            finalPix[i] = subBounds[(i * 2) + 1];
-                        }
-                        else
-                        {
-                            startPix[i] = 1;
-                            finalPix[i] = 1;
-                        }
-                    }
-
-                    if (index2 == 3)
-                    {
-                        startPix[2] = sliceDim;
-                        finalPix[2] = sliceDim;
-                    }
-                    else if (cubeDimensions > 3)
-                    {
-                        startPix[3] = sliceDim;
-                        finalPix[3] = sliceDim;
-                    }
-
-                    Debug.Log("Loading a subcube mask with start pixel [" + String.Join(", ", startPix) + "] and end pixel [" + String.Join(", ", finalPix) + "].");
-
-                    IntPtr startPixPtr = Marshal.AllocHGlobal(sizeof(int) * startPix.Length);
-                    IntPtr finalPixPtr = Marshal.AllocHGlobal(sizeof(int) * finalPix.Length);
-                    Marshal.Copy(startPix, 0, startPixPtr, startPix.Length);
-                    Marshal.Copy(finalPix, 0, finalPixPtr, finalPix.Length);
-                    if (FitsReader.FitsReadSubImageInt16(fptr, cubeDimensions, startPixPtr, finalPixPtr, numberDataPoints, out fitsDataPtr, out status) != 0)
-                    {
-                        Debug.Log("Fits Read mask cube data error #" + status.ToString());
-                        FitsReader.FitsCloseFile(fptr, out status);
-                        return null;
-                    }
-
-                    if (startPixPtr == IntPtr.Zero)
-                        Marshal.FreeHGlobal(startPixPtr);
-                    if (finalPixPtr == IntPtr.Zero)
-                        Marshal.FreeHGlobal(finalPixPtr);
-                }
-                else
+                int[] startPix = new int[cubeDimensions];
+                int[] finalPix = new int[cubeDimensions];
+                for (var i = 0; i < cubeDimensions; i++)
                 {
-                    if (FitsReader.FitsReadImageInt16(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
+                    if (i < 3)
                     {
-                        Debug.Log("Fits Read mask cube data error #" + status.ToString());
-                        FitsReader.FitsCloseFile(fptr, out status);
-                        return null;
+                        startPix[i] = subBounds[i * 2];
+                        finalPix[i] = subBounds[(i * 2) + 1];
+                    }
+                    else
+                    {
+                        startPix[i] = 1;
+                        finalPix[i] = 1;
                     }
                 }
+
+                if (index2 == 3)
+                {
+                    startPix[2] = sliceDim;
+                    finalPix[2] = sliceDim;
+                }
+                else if (cubeDimensions > 3)
+                {
+                    startPix[3] = sliceDim;
+                    finalPix[3] = sliceDim;
+                }
+
+                Debug.Log("Loading a subcube mask with start pixel [" + String.Join(", ", startPix) + "] and end pixel [" + String.Join(", ", finalPix) + "].");
+
+                IntPtr startPixPtr = Marshal.AllocHGlobal(sizeof(int) * startPix.Length);
+                IntPtr finalPixPtr = Marshal.AllocHGlobal(sizeof(int) * finalPix.Length);
+                Marshal.Copy(startPix, 0, startPixPtr, startPix.Length);
+                Marshal.Copy(finalPix, 0, finalPixPtr, finalPix.Length);
+                if (FitsReader.FitsReadSubImageInt16(fptr, cubeDimensions, startPixPtr, finalPixPtr, numberDataPoints, out fitsDataPtr, out status) != 0)
+                {
+                    Debug.Log("Fits Read mask cube data error #" + status.ToString());
+                    FitsReader.FitsCloseFile(fptr, out status);
+                    return null;
+                }
+
+                if (startPixPtr == IntPtr.Zero)
+                    Marshal.FreeHGlobal(startPixPtr);
+                if (finalPixPtr == IntPtr.Zero)
+                    Marshal.FreeHGlobal(finalPixPtr);
             }
             else //Is not a mask
             {
                 int[] startPix = new int[cubeDimensions];
                 int[] finalPix = new int[cubeDimensions];
-                if (volumeDataSetRes.loadSubset)
+                for (var i = 0; i < cubeDimensions; i++)
                 {
-                    for (var i = 0; i < cubeDimensions; i++)
+                    if (i < 3)
                     {
-                        if (i < 3)
-                        {
-                            startPix[i] = subBounds[i * 2];
-                            finalPix[i] = subBounds[(i * 2) + 1];
-                        }
-                        else
-                        {
-                            startPix[i] = 1;
-                            finalPix[i] = 1;
-                        }
+                        startPix[i] = subBounds[i * 2];
+                        finalPix[i] = subBounds[(i * 2) + 1];
                     }
-
-                    if (index2 == 3)
-                    {
-                        startPix[2] = sliceDim;
-                        finalPix[2] = sliceDim;
-                    }
-                    else if (cubeDimensions > 3)
-                    {
-                        startPix[3] = sliceDim;
-                        finalPix[3] = sliceDim;
-                    }
-                    Debug.Log("Loading a subcube with start pixel [" + String.Join(", ", startPix) + "] and end pixel [" + String.Join(", ", finalPix) + "].");
-                }
-                else
-                {
-                    for (var i = 0; i < cubeDimensions; i++)
+                    else
                     {
                         startPix[i] = 1;
-                        if (i < 4)
-                            finalPix[i] = (int) volumeDataSetRes.cubeSize[i];
-                        else
-                            finalPix[i] = 1;
-                    }
-
-                    if (index2 == 3)
-                    {
-                        startPix[2] = sliceDim;
-                        finalPix[2] = sliceDim;
-                    }
-                    else if (cubeDimensions > 3)
-                    {
-                        startPix[3] = sliceDim;
-                        finalPix[3] = sliceDim;
+                        finalPix[i] = 1;
                     }
                 }
+
+                if (index2 == 3)
+                {
+                    startPix[2] = sliceDim;
+                    finalPix[2] = sliceDim;
+                }
+                else if (cubeDimensions > 3)
+                {
+                    startPix[3] = sliceDim;
+                    finalPix[3] = sliceDim;
+                }
+                Debug.Log("Loading a subcube with start pixel [" + String.Join(", ", startPix) + "] and end pixel [" + String.Join(", ", finalPix) + "].");
 
                 IntPtr startPixPtr = Marshal.AllocHGlobal(sizeof(int) * startPix.Length);
                 IntPtr finalPixPtr = Marshal.AllocHGlobal(sizeof(int) * finalPix.Length);
@@ -586,7 +545,12 @@ namespace VolumeData
                     var flag = "";
                     var name = $"Masked Source #{maskVal}";
                     var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
-                    var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, flag, _maskFeatureSet.FeatureList.Count, maskVal - 1, rawStrings, _maskFeatureSet, _maskFeatureSet.FeatureList[0].Visible);
+                    bool vis;
+                    if (_maskFeatureSet.FeatureList.Count > 1)
+                        vis = _maskFeatureSet.FeatureList[0].Visible;
+                    else
+                        vis = false;
+                    var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, flag, _maskFeatureSet.FeatureList.Count, maskVal - 1, rawStrings, _maskFeatureSet, vis);
                     _maskFeatureSet.AddFeature(feature);
                     _maskFeatureSet.FeatureMenuScrollerDataSource.InitData();       // Reinitialize the data source to include the new feature
                     _maskFeatureSet.FeatureManager.NeedToRespawnMenuList = true;
@@ -1481,12 +1445,20 @@ namespace VolumeData
         }
         public int SaveMask(IntPtr cubeFitsPtr, string filename)
         {
-            int status = FitsReader.SaveMask(cubeFitsPtr, FitsData, Dims, filename);
+            long[] firstPix = new long[3];
+            long[] lastPix = new long[3];
+            for (int i = 0; i < 3; i++)
+            {
+                firstPix[i] = subsetBounds[i * 2];
+                lastPix[i] = subsetBounds[i * 2 + 1];
+            }
+            int status = FitsReader.SaveSubMask(cubeFitsPtr, FitsData, firstPix, lastPix, filename);
             if (!string.IsNullOrEmpty(filename))
             {
                 // Update filename after stripping out exclamation mark indicating overwrite flag
                 FileName = filename.Replace("!", "");
             }
+            Debug.Log("Wrote submask from first pixel [" + String.Join(", ", firstPix) + "] and end pixel [" + String.Join(", ", lastPix) + "].");
             return status;
         }
 

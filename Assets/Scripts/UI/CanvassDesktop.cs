@@ -766,7 +766,7 @@ public class CanvassDesktop : MonoBehaviour
 
     public void LoadFileFromFileSystem()
     {
-        StartCoroutine(LoadCubeCoroutine(imagePath, maskPath, subsetToggle.isOn));
+        StartCoroutine(LoadCubeCoroutine(imagePath, maskPath));
     }
 
     private void postLoadFileFileSystem()
@@ -813,7 +813,7 @@ public class CanvassDesktop : MonoBehaviour
         return false;
     }
 
-    public IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath, bool loadSubset)
+    public IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath)
     {
         LoadingText.gameObject.SetActive(true);
         progressBar.gameObject.SetActive(true);
@@ -884,10 +884,7 @@ public class CanvassDesktop : MonoBehaviour
 
         // Set data to be loaded
         var volDSRender = newCube.GetComponent<VolumeDataSetRenderer>();
-        if (loadSubset)
-        {
-            volDSRender.subsetBounds = subset;
-        }
+        volDSRender.subsetBounds = subset;
         volDSRender.FileName = _imagePath; //_dataSet.FileName.ToString();
         volDSRender.MaskFileName = _maskPath; // _maskDataSet.FileName.ToString();
         volDSRender.loadText = this.loadTextLabel;

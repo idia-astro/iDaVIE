@@ -161,7 +161,7 @@ public class FitsReader
     public static extern int FitsWriteImageInt16(IntPtr fptr, int dims, long nelements, IntPtr array, out int status);
 
     [DllImport("idavie_native")]
-    public static extern int FitsWriteSubImageInt16(IntPtr fptr, IntPtr array, IntPtr cornerMin, IntPtr cornerMax, out int status);
+    public static extern int FitsWriteSubImageInt16(IntPtr fptr, IntPtr cornerMin, IntPtr cornerMax, IntPtr array, out int status);
 
     [DllImport("idavie_native")]
     public static extern int FitsWriteHistory(IntPtr fptr, string history, out int status);
@@ -339,6 +339,107 @@ public class FitsReader
         }
         return status;
     }
+
+    public static int SaveNewInt16SubMask(IntPtr cubeFitsPtr, IntPtr maskData, IntPtr firstPix, IntPtr lastPix, string fileName)
+    {
+        IntPtr maskPtr = IntPtr.Zero;
+        IntPtr keyValue = Marshal.AllocHGlobal(sizeof(int));
+        int status = 0;
+        if (FitsCreateFile(out maskPtr, fileName, out status) != 0)
+        {
+            Debug.LogError($"Fits create file error {FitsErrorMessage(status)}");
+            return status;
+        }
+        if (FitsCopyHeader(cubeFitsPtr, maskPtr, out status) != 0)
+        {
+            Debug.LogError($"Fits copy header error {FitsErrorMessage(status)}");
+            return status;
+        }
+        Marshal.WriteInt32(keyValue, 16);
+        if (FitsUpdateKey(maskPtr, 21, "BITPIX", keyValue, null, out status) != 0)
+        {
+            Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
+            return status;
+        }
+        Marshal.WriteInt32(keyValue, 3);
+        if (FitsUpdateKey(maskPtr, 21, "NAXIS", keyValue, null, out status) != 0)   //Make sure new header has 3 dimensions
+        {
+            Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
+            return status;
+        }
+        if (FitsDeleteKey(maskPtr, "BUNIT", out status) != 0)
+        {
+            Debug.LogWarning("Could not delete fits unit key. It probably does not exist!");
+            status = 0;
+        }
+        if (FitsWriteSubImageInt16(maskPtr, firstPix, lastPix, maskData, out status) != 0)
+        {
+            Debug.LogError("Fits write subset error " + FitsErrorMessage(status));
+            FitsCloseFile(maskPtr, out status);
+            return status;
+        }
+        var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
+        if (FitsReader.FitsWriteHistory(maskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
+        {
+            Debug.LogError("Error writing history!");
+            return status;
+        }
+        if (FitsFlushFile(maskPtr, out status) != 0)
+        {
+            Debug.LogError($"Fits flush file error {FitsErrorMessage(status)}");
+            return status;
+        }
+        if (FitsCloseFile(maskPtr, out status) != 0)
+        {
+            Debug.LogError($"Fits close file error {FitsErrorMessage(status)}");
+            return status;
+        }
+        if (keyValue != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(keyValue);
+            keyValue = IntPtr.Zero;
+        }
+        return status;
+    }
+
+    public static int UpdateOldInt16SubMask(IntPtr oldMaskPtr, IntPtr maskDataToSave, IntPtr firstPix, IntPtr lastPix)
+    {
+        int status = 0;
+        IntPtr keyValue = Marshal.AllocHGlobal(sizeof(int));
+        Marshal.WriteInt32(keyValue, 3);
+        if (FitsUpdateKey(oldMaskPtr, 21, "NAXIS", keyValue, null, out status) != 0)    //Make sure new header has 3 dimensions
+        {
+            Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
+            return status;
+        }
+        if (FitsWriteSubImageInt16(oldMaskPtr, firstPix, lastPix, maskDataToSave, out status) != 0)
+        {
+            Debug.LogError($"Fits write image error {FitsErrorMessage(status)}");
+            FitsCloseFile(oldMaskPtr, out status);
+            return status;
+        }
+        var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
+        if (FitsReader.FitsWriteHistory(oldMaskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
+        {
+            Debug.LogError("Error writing history!");
+            return status;
+        }
+        if (FitsFlushFile(oldMaskPtr, out status) != 0)
+        {
+            Debug.LogError($"Fits flush file error {FitsErrorMessage(status)}");
+            return status;
+        }
+        if (FitsCloseFile(oldMaskPtr, out status) != 0)
+        {
+            Debug.LogError($"Fits close file error {FitsErrorMessage(status)}");
+            return status;
+        }
+        if (keyValue != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(keyValue);
+        }
+        return status;
+    }
     
     public static bool UpdateMaskVoxel(IntPtr maskDataPtr, long[] maskDims, Vector3Int location, short value)
     {
@@ -359,6 +460,23 @@ public class FitsReader
         else
         {
             return UpdateOldInt16Mask(fitsPtr, maskData, maskDims);
+        }
+    }
+
+    public static int SaveSubMask(IntPtr fitsPtr, IntPtr maskData, long[] firstPix, long[] lastPix, string fileName)
+    {
+        bool isNewFile = (fileName != null);
+        IntPtr fPix = Marshal.AllocHGlobal(sizeof(int) * firstPix.Length);
+        IntPtr lPix = Marshal.AllocHGlobal(sizeof(int) * lastPix.Length);
+        Marshal.Copy(firstPix, 0, fPix, firstPix.Length);
+        Marshal.Copy(lastPix, 0, lPix, lastPix.Length);
+        if (isNewFile)
+        {
+            return SaveNewInt16SubMask(fitsPtr, maskData, fPix, lPix, fileName);
+        }
+        else
+        {
+            return UpdateOldInt16SubMask(fitsPtr, maskData, fPix, lPix);
         }
     }
 

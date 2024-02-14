@@ -108,6 +108,25 @@ int FitsWriteImageInt16(fitsfile* fptr, int dims, int64_t nelements, int16_t* ar
     return success;
 }
 
+/**
+ * @brief Function writes a rectangular subset of the FITS image, which can be any size up to the full size of the image.
+ * 
+ * @param fptr The fitsfile being worked on.
+ * @param fPix An array containing the indices of the first pixel (xyz, left bottom front) to be written.
+ * @param lPix An array containing the indices of the last pixe (xyz, right top back) to be written.
+ * @param array The array containing the data to be written. This is assumed to be at least the size of lPix - fPix.
+ * @param status Value containing outcome of CFITSIO operation.
+ * @return int 
+ */
+int FitsWriteSubImageInt16(fitsfile* fptr, long* fPix, long* lPix, int16_t* array, int* status)
+{
+    long* firstPix = new long[3];
+    for (int i = 0; i < 3; i++)
+        firstPix[i] = fPix[i];
+    int success = fits_write_subset(fptr, TSHORT, fPix, lPix, array, status);
+    return success;
+}
+
 int FitsWriteHistory(fitsfile *fptr, char *history,  int *status)
 {
     int success = fits_write_history(fptr, history, status);
@@ -174,6 +193,19 @@ int FitsReadImageFloat(fitsfile *fptr, int dims, int64_t nelem, float **array, i
     return success;
 }
 
+/**
+ * @brief Function to read a rectangular subset of the FITS image, which can be any size up to the full size of the image.
+ *        This version is for floating point images.
+ * 
+ * @param fptr The fitsfile being worked on.
+ * @param dims The number of axes in the FITS image.
+ * @param startPix An array containing the indices of the first pixel (xyz, left bottom front) to be written.
+ * @param finalPix An array containing the indices of the last pixe (xyz, right top back) to be written.
+ * @param nelem The size of the final image loaded.
+ * @param array The target array to which the data will be loaded.
+ * @param status Value containing outcome of CFITSIO operation.
+ * @return int 
+ */
 int FitsReadSubImageFloat(fitsfile *fptr, int dims, long *startPix, long *finalPix, int64_t nelem, float **array, int *status)
 {
     int anynul;
@@ -202,6 +234,19 @@ int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array,
     return success;
 }
 
+/**
+ * @brief Function to read a rectangular subset of the FITS image, which can be any size up to the full size of the image.
+ *        This version is for Int16 images.
+ * 
+ * @param fptr The fitsfile being worked on.
+ * @param dims The number of axes in the FITS image.
+ * @param startPix An array containing the indices of the first pixel (xyz, left bottom front) to be written.
+ * @param finalPix An array containing the indices of the last pixe (xyz, right top back) to be written.
+ * @param nelem The size of the final image loaded.
+ * @param array The target array to which the data will be loaded.
+ * @param status Value containing outcome of CFITSIO operation.
+ * @return int 
+ */
 int FitsReadSubImageInt16(fitsfile *fptr, int dims, long *startPix, long *finalPix, int64_t nelem, float **array, int *status)
 {
     int anynul;

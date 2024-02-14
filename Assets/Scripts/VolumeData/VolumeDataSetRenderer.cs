@@ -88,7 +88,7 @@ namespace VolumeData
 
         [Header("File Input")] public string FileName;
         public string MaskFileName;
-        public int[] subsetBounds = {-1, -1, -1, -1, -1, -1};//Initialised to -1, if -1 then load full cube
+        public int[] subsetBounds = {0, 1, 0, 1, 0, 1};//All cubes loaded as sub cube
         public Material RayMarchingMaterial;
         public Material MaskMaterial;
 
@@ -307,7 +307,7 @@ namespace VolumeData
             if (RandomVolume)
                 _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);
             else
-                //subsetBounds guaranteed to be [-1, -1, -1, -1, -1, -1] if not selected by user
+                //subsetBounds guaranteed to be full cube if not selected by user
                 _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, subsetBounds, IntPtr.Zero, CubeDepthAxis, CubeSlice);
 
             _volumeInputController = FindObjectOfType<VolumeInputController>();
@@ -327,7 +327,7 @@ namespace VolumeData
 
             if (!String.IsNullOrEmpty(MaskFileName))
             {
-                //subsetBounds guaranteed to be [-1, -1, -1, -1, -1, -1] if not selected by user
+                //subsetBounds guaranteed to be full cube if not selected by user
                 _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, subsetBounds, _dataSet.FitsData);
              
                 // Mask data is always point-filtered
@@ -523,17 +523,17 @@ namespace VolumeData
             Bounds objectBounds = new Bounds(UnityEngine.Vector3.zero, UnityEngine.Vector3.one);
             if (objectBounds.Contains(objectSpacePosition) && _dataSet != null)
             {
-                // Check if the dataset was loaded as a subset. If so, add a suitable offset to the position in data space
+                // Always a subset, so apply a suitable offset to the position in data space
                 int xOffset, yOffset, zOffset;
                 zOffset = yOffset = xOffset = 0 ;
 
-                // If not a subset, the dataSet's subsetBounds will still be the initialised value of [-1, -1, -1, -1, -1, -1]
-                if (_dataSet.subsetBounds[0] != -1){
-                    xOffset = _dataSet.subsetBounds[0] - 1;
-                    yOffset = _dataSet.subsetBounds[2] - 1;
-                    zOffset = _dataSet.subsetBounds[4] - 1;
-                }
-                UnityEngine.Vector3 positionCubeSpace = new UnityEngine.Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim + xOffset, (objectSpacePosition.y + 0.5f) * _dataSet.YDim + yOffset, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim + zOffset);
+                xOffset = _dataSet.subsetBounds[0] - 1;
+                yOffset = _dataSet.subsetBounds[2] - 1;
+                zOffset = _dataSet.subsetBounds[4] - 1;
+                
+                UnityEngine.Vector3 positionCubeSpace = new UnityEngine.Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim + xOffset,
+                                                                                (objectSpacePosition.y + 0.5f) * _dataSet.YDim + yOffset,
+                                                                                (objectSpacePosition.z + 0.5f) * _dataSet.ZDim + zOffset);
                 UnityEngine.Vector3 voxelCornerCubeSpace = new UnityEngine.Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
                 UnityEngine.Vector3 voxelCenterCubeSpace = voxelCornerCubeSpace + 0.5f * UnityEngine.Vector3.one;
                 Vector3Int newVoxelCursor = new Vector3Int(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1);
@@ -558,8 +558,9 @@ namespace VolumeData
                     }
 
                     // Determine the actual voxelCursor's location in the VR space (not data space)
-                    UnityEngine.Vector3 voxelCenterObjectSpace = new UnityEngine.Vector3((voxelCenterCubeSpace.x - xOffset) / _dataSet.XDim - 0.5f, (voxelCenterCubeSpace.y - yOffset) / _dataSet.YDim - 0.5f,
-                        (voxelCenterCubeSpace.z - zOffset) / _dataSet.ZDim - 0.5f);
+                    UnityEngine.Vector3 voxelCenterObjectSpace = new UnityEngine.Vector3((voxelCenterCubeSpace.x - xOffset) / _dataSet.XDim - 0.5f,
+                                                                                         (voxelCenterCubeSpace.y - yOffset) / _dataSet.YDim - 0.5f,
+                                                                                         (voxelCenterCubeSpace.z - zOffset) / _dataSet.ZDim - 0.5f);
                     _voxelOutline.Center = voxelCenterObjectSpace;
                     _voxelOutline.Bounds = brushSize * new UnityEngine.Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
                 }
@@ -593,14 +594,16 @@ namespace VolumeData
                 return Vector3Int.zero;
             }
             
+            //Apply offset from subset bounds
             int xOffset, yOffset, zOffset;
             zOffset = yOffset = xOffset = 0 ;
-            if (subsetBounds[0] != -1){
-                xOffset = _dataSet.subsetBounds[0] - 1;
-                yOffset = _dataSet.subsetBounds[2] - 1;
-                zOffset = _dataSet.subsetBounds[4] - 1;
-            }
-            UnityEngine.Vector3 positionCubeSpace = new UnityEngine.Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim + xOffset, (objectSpacePosition.y + 0.5f) * _dataSet.YDim + yOffset, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim + zOffset);
+            xOffset = _dataSet.subsetBounds[0] - 1;
+            yOffset = _dataSet.subsetBounds[2] - 1;
+            zOffset = _dataSet.subsetBounds[4] - 1;
+            
+            UnityEngine.Vector3 positionCubeSpace = new UnityEngine.Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim + xOffset,
+                                                                            (objectSpacePosition.y + 0.5f) * _dataSet.YDim + yOffset,
+                                                                            (objectSpacePosition.z + 0.5f) * _dataSet.ZDim + zOffset);
             UnityEngine.Vector3 voxelCornerCubeSpace = new UnityEngine.Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
             Vector3Int newVoxelCursor = new Vector3Int(
                 Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),
@@ -630,7 +633,9 @@ namespace VolumeData
                 return Vector3Int.zero;
             }
             
-            UnityEngine.Vector3 positionCubeSpace = new UnityEngine.Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
+            UnityEngine.Vector3 positionCubeSpace = new UnityEngine.Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim,
+                                                                            (objectSpacePosition.y + 0.5f) * _dataSet.YDim,
+                                                                            (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
             UnityEngine.Vector3 voxelCornerCubeSpace = new UnityEngine.Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
             Vector3Int newVoxelCursor = new Vector3Int(
                 Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),
@@ -1015,31 +1020,6 @@ namespace VolumeData
                     CropToRegion(UnityEngine.Vector3.one, new UnityEngine.Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
                 }
             }
-        }
-
-        public int InitialiseMaskSubsetConfirm()
-        {
-            if (_dataSet != null && _maskDataSet == null)
-            {
-                _maskDataSet = _dataSet.GenerateEmptyMask();
-                if (!FactorOverride)
-                {
-                    _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
-                }
-
-                _maskDataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
-                _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.DataCube);
-                
-                // Re-crop both datasets to ensure that they match correctly
-                if (!CropToFeature() && IsFullResolution)
-                {
-                    CropToRegion(UnityEngine.Vector3.one, new UnityEngine.Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
-                }
-
-                if (_dataSet.isSubset())
-                    return 1;
-            }
-            return 0;
         }
 
         private bool PaintMask(Vector3Int position, short value)
