@@ -4,15 +4,13 @@
 #define DllExport __declspec (dllexport)
 
 #include <cfitsio/fitsio.h>
-#include <iostream>
 #include <cstring>
+#include <iostream>
+#include <string_view>
 
-///Insert these three lines to debug directly out to a file:
-//char* str = new char[70];
-//freopen("debug.txt", "a", stdout);
-//printf("%s\n", str);
+//Use the WriteLogFile function to output directly to a text file for debugging.
 
-
+static constexpr std::string_view defaultDebugFile = "Outputs/Logs/i-DaVIE_Plugin_Debug.log";
 extern "C"
 {
 DllExport int FitsOpenFileReadOnly(fitsfile**, char*,  int*);
@@ -87,8 +85,8 @@ DllExport int FreeFitsPtrMemory(void* );
 
 DllExport void FreeFitsMemory(char* header, int* status);
 
+DllExport int WriteLogFile(const char * fileName, const char * content, int type);
+
 }
-
-
 
 #endif //FITS_READER_FITS_READER_H

@@ -85,6 +85,8 @@ namespace VolumeData
         public long XDim { get; private set; }
         public long YDim { get; private set; }
         public long ZDim { get; private set; }
+
+        public int[] trueSize { get; set; }
         public IDictionary<string, string> HeaderDictionary { get; private set; }
 
         public int VelDecimal { get; private set; }
@@ -206,16 +208,18 @@ namespace VolumeData
         /// </summary>
         /// <param name="fileName">The path to the data file.</param>
         /// <param name="subBounds">The bounds from which the data should be loaded (default of [-1,-1,-1,-1,-1,-1] means load the full cube).</param>
+        /// <param name="trueBounds">The bounds of the full cube.</param>
         /// <param name="imageDataPtr"></param>
         /// <param name="index2"></param>
         /// <param name="sliceDim"></param>
         /// <returns></returns>
-        public static VolumeDataSet LoadDataFromFitsFile(string fileName, int[] subBounds, IntPtr imageDataPtr = default(IntPtr), int index2 = 2, int sliceDim = 1)
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, int[] subBounds, int[] trueBounds, IntPtr imageDataPtr = default(IntPtr), int index2 = 2, int sliceDim = 1)
         {
             VolumeDataSet volumeDataSetRes = new VolumeDataSet();
             volumeDataSetRes.IsMask =  imageDataPtr != IntPtr.Zero;
             volumeDataSetRes.ImageDataPtr = imageDataPtr;
             volumeDataSetRes.FileName = fileName;
+            volumeDataSetRes.trueSize = trueBounds;
             IntPtr fptr = IntPtr.Zero;
             int status = 0;
             int cubeDimensions;
@@ -633,7 +637,11 @@ namespace VolumeData
         {
             VolumeDataSet maskDataSet = new VolumeDataSet();
             maskDataSet.IsMask = true;
-            FitsReader.CreateEmptyImageInt16(XDim, YDim, ZDim, out var dataPtr);
+            int trueX, trueY, trueZ;
+            trueX = trueSize[1] - trueSize[0] + 1;
+            trueY = trueSize[3] - trueSize[2] + 1;
+            trueZ = trueSize[5] - trueSize[4] + 1;
+            FitsReader.CreateEmptyImageInt16(trueX, trueY, trueZ, out var dataPtr);
             maskDataSet.FitsData = dataPtr;
             maskDataSet.ImageDataPtr = FitsData;
             maskDataSet.XDim = XDim;
@@ -1445,8 +1453,8 @@ namespace VolumeData
         }
         public int SaveMask(IntPtr cubeFitsPtr, string filename)
         {
-            long[] firstPix = new long[3];
-            long[] lastPix = new long[3];
+            int[] firstPix = new int[3];
+            int[] lastPix = new int[3];
             for (int i = 0; i < 3; i++)
             {
                 firstPix[i] = subsetBounds[i * 2];

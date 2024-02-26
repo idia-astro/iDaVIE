@@ -1,6 +1,9 @@
-#include <string>
-#include <regex>
 #include "fits_reader.h"
+
+#include <fstream>
+#include <regex>
+#include <sstream>
+#include <string>
 
 int FitsOpenFileReadOnly(fitsfile **fptr, char* filename,  int *status)
 {
@@ -103,6 +106,11 @@ int FitsWriteImageInt16(fitsfile* fptr, int dims, int64_t nelements, int16_t* ar
     long* startPix = new long[dims];
     for (int i = 0; i < dims; i++)
         startPix[i] = 1;
+    
+    std::stringstream debug;
+    debug << "Writing mask image with " << dims << " dimensions and " << nelements << " elements, starting from [1, 1, 1].";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    
     int success = fits_write_pix(fptr, TSHORT, startPix, nelements, array, status);
     delete[] startPix;
     return success;
@@ -123,7 +131,12 @@ int FitsWriteSubImageInt16(fitsfile* fptr, long* fPix, long* lPix, int16_t* arra
     long* firstPix = new long[3];
     for (int i = 0; i < 3; i++)
         firstPix[i] = fPix[i];
-    int success = fits_write_subset(fptr, TSHORT, fPix, lPix, array, status);
+    
+    std::stringstream debug;
+    debug << "Writing mask sub image from [" << firstPix[0] << ", " << firstPix[1] << ", " << firstPix[2] << "] to [" << lPix[0] << ", " << lPix[1] << ", " << lPix[2] << "].";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    
+    int success = fits_write_subset(fptr, TSHORT, firstPix, lPix, array, status);
     return success;
 }
 
@@ -187,6 +200,11 @@ int FitsReadImageFloat(fitsfile *fptr, int dims, int64_t nelem, float **array, i
     int64_t* startPix = new int64_t[dims];
     for (int i = 0; i < dims; i++)
         startPix[i] = 1;
+    
+    std::stringstream debug;
+    debug << "Reading mask image with " << dims << " dimensions and " << nelem << " elements.";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    
     int success = fits_read_pixll(fptr, TFLOAT, startPix, nelem, &nulval, dataarray, &anynul, status);
     delete[] startPix;
     *array = dataarray;
@@ -214,6 +232,11 @@ int FitsReadSubImageFloat(fitsfile *fptr, int dims, long *startPix, long *finalP
     long* increment = new long[dims];
     for (int i = 0; i < dims; i++)
         increment[i] = 1;
+    
+    std::stringstream debug;
+    debug << "Reading data sub image from [" << startPix[0] << ", " << startPix[1] << ", " << startPix[2] << "] to [" << finalPix[0] << ", " << finalPix[1] << ", " << finalPix[2] << "].";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    
     int success = fits_read_subset(fptr, TFLOAT, startPix, finalPix, increment, &nulval, dataarray, &anynul, status);
     delete[] increment;
     *array = dataarray;
@@ -228,6 +251,9 @@ int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array,
     int64_t* startPix = new int64_t[dims];
     for (int i = 0; i < dims; i++)
         startPix[i] = 1;
+    std::stringstream debug;
+    debug << "Reading mask image with " << dims << " dimensions and " << nelem << " elements.";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     int success = fits_read_pixll(fptr, TSHORT, startPix, nelem, &nulval, dataarray, &anynul, status);
     delete[] startPix;
     *array = dataarray;
@@ -255,6 +281,11 @@ int FitsReadSubImageInt16(fitsfile *fptr, int dims, long *startPix, long *finalP
     long* increment = new long[dims];
     for (int i = 0; i < dims; i++)
         increment[i] = 1;
+    
+    std::stringstream debug;
+    debug << "Reading mask sub image from [" << startPix[0] << ", " << startPix[1] << ", " << startPix[2] << "] to [" << finalPix[0] << ", " << finalPix[1] << ", " << finalPix[2] << "].";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    
     int success = fits_read_subset(fptr, TSHORT, startPix, finalPix, increment, &nulval, dataarray, &anynul, status);
     delete[] increment;
     *array = dataarray;
@@ -321,6 +352,9 @@ int FitsCreateHdrPtrForAst(fitsfile *fptr, char **header, int *nkeys, int *statu
 int CreateEmptyImageInt16(int64_t sizeX, int64_t sizeY, int64_t sizeZ, int16_t** array)
 {
     int64_t nelem = sizeX * sizeY * sizeZ;
+    std::stringstream debug;
+    debug << "Creating empty mask file with dimensions [" << sizeX << ", " << sizeY << ", " << sizeZ << "].";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     int16_t* dataarray = new int16_t[nelem];
     std::memset(dataarray, 0, nelem * sizeof(int16_t));
     *array = dataarray;
@@ -336,4 +370,35 @@ int FreeFitsPtrMemory(void* ptrToDelete)
 void FreeFitsMemory(char* header, int* status)
 {
     fits_free_memory(header, status);
+}
+
+int WriteLogFile(const char * fileName, const char * content, int type)
+{
+    std::ofstream file;
+    std::string header;
+    switch(type){
+        case 0:
+            header = "[Debug] ";
+            break;
+        case 1:
+            header = "[Warning] ";
+            break;
+        case 2:
+            header = "[Error] ";
+            break;
+        default:
+            header = "[Message] ";
+            break;
+    }
+    try
+    {
+        file.open(fileName, std::ios_base::app);
+        file << header << content << std::endl;
+        return 0;
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Error with writing from library to debug log." << std::endl;
+        return 1;
+    }
 }

@@ -58,6 +58,8 @@ public class CanvassDesktop : MonoBehaviour
     private int subsetMax_Z = 2;
     private int[] subset;
 
+    private int[] trueBounds;
+
     Dictionary<double, double> axisSize = null;
     Dictionary<double, double> maskAxisSize = null;
 
@@ -137,6 +139,7 @@ public class CanvassDesktop : MonoBehaviour
         subset_ZMin_input.text = subsetMin.ToString();
         subset_ZMax_input.text = subsetMax_Z.ToString();
         subset = new int[6];
+        trueBounds = new int[6];
         subset[0] = subset[2] = subset[4] = subsetMin;
         subset[1] = subsetMax_X;
         subset[3] = subsetMax_Y;
@@ -445,10 +448,10 @@ public class CanvassDesktop : MonoBehaviour
         subset_YMax_input.text = subsetMax_Y.ToString();
         subset_ZMax_input.text = subsetMax_Z.ToString();
         
-        subset[0] = subset[2] = subset[4] = subsetMin;
-        subset[1] = subsetMax_X;
-        subset[3] = subsetMax_Y;
-        subset[5] = subsetMax_Z;
+        subset[0] = subset[2] = subset[4] = trueBounds[0] = trueBounds[2] = trueBounds[4] = subsetMin;
+        subset[1] = trueBounds[1] = subsetMax_X;
+        subset[3] = trueBounds[3] = subsetMax_Y;
+        subset[5] = trueBounds[5] = subsetMax_Z;
     }
 
     public void updateSubsetZMax(int val = 0)
@@ -885,6 +888,7 @@ public class CanvassDesktop : MonoBehaviour
         // Set data to be loaded
         var volDSRender = newCube.GetComponent<VolumeDataSetRenderer>();
         volDSRender.subsetBounds = subset;
+        volDSRender.trueBounds = trueBounds;
         volDSRender.FileName = _imagePath; //_dataSet.FileName.ToString();
         volDSRender.MaskFileName = _maskPath; // _maskDataSet.FileName.ToString();
         volDSRender.loadText = this.loadTextLabel;
