@@ -653,6 +653,23 @@ namespace VolumeData
             // single pixel brush: 16-bits = 2 bytes
             maskDataSet._cachedBrush = new byte[2];
 
+            // Save new mask because none exists yet
+            int status;
+            FitsReader.FitsOpenFileReadOnly(out var cubeFitsPtr, this.FileName, out status);
+            string directory = Path.GetDirectoryName(this.FileName);
+            string fileName = $"{directory}/{Path.GetFileNameWithoutExtension(this.FileName)}-mask";
+            bool exists = File.Exists(fileName + ".fits");
+            if (exists)
+            {
+                var timeStamp = DateTime.Now.ToString("yyyyMMdd_Hmmss");
+                fileName = fileName + "_" + timeStamp + ".fits";
+            }
+            else
+                fileName = fileName + ".fits";
+            long[] trueDims = {trueX, trueY, trueZ};
+            status = FitsReader.SaveMask(cubeFitsPtr, FitsData, trueDims, fileName);
+
+            maskDataSet.FileName = fileName;
             return maskDataSet;
         }
         
@@ -1466,7 +1483,7 @@ namespace VolumeData
                 // Update filename after stripping out exclamation mark indicating overwrite flag
                 FileName = filename.Replace("!", "");
             }
-            Debug.Log("Wrote submask from first pixel [" + String.Join(", ", firstPix) + "] and end pixel [" + String.Join(", ", lastPix) + "].");
+            Debug.Log("Wrote submask from first pixel [" + String.Join(", ", firstPix) + "] and end pixel [" + String.Join(", ", lastPix) + "]; VolumeDataSet::SaveMask() complete.");
             return status;
         }
 

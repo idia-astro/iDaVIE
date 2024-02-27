@@ -1182,9 +1182,13 @@ namespace VolumeData
                     this.lastSavedMaskPath = _maskDataSet.FileName;
                     ToastNotification.ShowSuccess($"Mask saved to disk");
                 }
+                UnityEngine.Debug.Log("Overwriting mask complete, VolumeDataSetRenderer::SaveMask().");
             }
             if (cubeFitsPtr != IntPtr.Zero)
+            {
+                UnityEngine.Debug.Log("cubeFitsPtr != IntPtr.Zero, closing file.");
                 FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+            }
         }
 
         public string GetMaskSavedFilePath()

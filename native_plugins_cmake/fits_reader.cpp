@@ -22,7 +22,19 @@ int FitsCreateFile(fitsfile** fptr, char* filename, int* status)
 
 int FitsCloseFile(fitsfile *fptr, int *status)
 {
-    return fits_close_file(fptr, status);
+    if (fptr == nullptr)
+    {
+        std::stringstream debug;
+        debug << "Fitsfile is already closed! Aborting.";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);    
+        return -1;
+    }
+    std::stringstream debug;
+    debug << "Closing fitsfile " << fptr->Fptr->filename << ".";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    auto val = fits_close_file(fptr, status);
+    fptr = nullptr;
+    return val;
 }
 
 int FitsFlushFile(fitsfile* fptr, int* status)

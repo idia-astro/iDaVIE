@@ -354,9 +354,9 @@ public class FitsReader
             UnityEngine.Debug.LogError($"Fits create file error {FitsErrorMessage(status)}");
             return status;
         }
-        if (FitsCopyHeader(cubeFitsPtr, maskPtr, out status) != 0)
+        if (FitsCopyFile(cubeFitsPtr, maskPtr, out status) != 0)
         {
-            UnityEngine.Debug.LogError($"Fits copy header error {FitsErrorMessage(status)}");
+            UnityEngine.Debug.LogError($"Fits copy file error {FitsErrorMessage(status)}");
             return status;
         }
         Marshal.WriteInt32(keyValue, 16);
@@ -408,6 +408,7 @@ public class FitsReader
 
     public static int UpdateOldInt16SubMask(IntPtr oldMaskPtr, IntPtr maskDataToSave, IntPtr firstPix, IntPtr lastPix)
     {
+        UnityEngine.Debug.Log("Overwriting old mask");
         int status = 0;
         IntPtr keyValue = Marshal.AllocHGlobal(sizeof(int));
         Marshal.WriteInt32(keyValue, 3);
@@ -416,32 +417,31 @@ public class FitsReader
             UnityEngine.Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
             return status;
         }
+        UnityEngine.Debug.Log("Keys updated, writing data.");
         if (FitsWriteSubImageInt16(oldMaskPtr, firstPix, lastPix, maskDataToSave, out status) != 0)
         {
             UnityEngine.Debug.LogError($"Fits write image error {FitsErrorMessage(status)}");
             FitsCloseFile(oldMaskPtr, out status);
             return status;
         }
+        UnityEngine.Debug.Log("Writing data complete, writing history.");
         var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
         if (FitsReader.FitsWriteHistory(oldMaskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
         {
             UnityEngine.Debug.LogError("Error writing history!");
             return status;
         }
+        UnityEngine.Debug.Log("Writing history complete, flushing buffer.");
         if (FitsFlushFile(oldMaskPtr, out status) != 0)
         {
             UnityEngine.Debug.LogError($"Fits flush file error {FitsErrorMessage(status)}");
-            return status;
-        }
-        if (FitsCloseFile(oldMaskPtr, out status) != 0)
-        {
-            UnityEngine.Debug.LogError($"Fits close file error {FitsErrorMessage(status)}");
             return status;
         }
         if (keyValue != IntPtr.Zero)
         {
             Marshal.FreeHGlobal(keyValue);
         }
+
         return status;
     }
     
