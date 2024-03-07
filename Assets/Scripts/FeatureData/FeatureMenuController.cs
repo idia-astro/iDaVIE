@@ -66,6 +66,7 @@ public class FeatureMenuController : MonoBehaviour
             Destroy(RecyclableScrollView.gameObject);
             RecyclableScrollView = null;
             ListTitle.text = "";
+            ListColorDisplay.color = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].FeatureColor;
             featureSetManager.NeedToResetList = false;
         }
         if (RecyclableScrollView == null && featureSetManager?.ImportedFeatureSetList?.Count > 0)
