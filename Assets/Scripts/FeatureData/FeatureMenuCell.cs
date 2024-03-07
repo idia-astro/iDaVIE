@@ -73,7 +73,7 @@ public class FeatureMenuCell : MonoBehaviour, ICell
     }
 
     /// <summary>
-    /// Function sets visibility icon to hidden
+    /// Function sets visibility icon to hidden and changes the color of the button to grey.
     /// </summary>
     public void SetVisibilityIconsOff()
     {
@@ -81,10 +81,11 @@ public class FeatureMenuCell : MonoBehaviour, ICell
         visibleButton.Find("Image_VIS")?.gameObject.SetActive(false);
         visibleButton.Find("Image_HIDE")?.gameObject.SetActive(false);
         visibleButton.Find("Image_HIDE")?.gameObject.SetActive(true);
+        visibleButton.GetComponent<Image>().color = Color.grey;
     }
 
     /// <summary>
-    /// Function sets visibility icon to visible
+    /// Function sets visibility icon to visible and sets the color to white
     /// </summary>
     public void SetVisibilityIconsOn()
     {
@@ -92,6 +93,7 @@ public class FeatureMenuCell : MonoBehaviour, ICell
         visibleButton.Find("Image_VIS")?.gameObject.SetActive(false);
         visibleButton.Find("Image_HIDE")?.gameObject.SetActive(false);
         visibleButton.Find("Image_VIS")?.gameObject.SetActive(true);
+        visibleButton.GetComponent<Image>().color = Color.white;
     }
 
     /// <summary>
@@ -102,10 +104,17 @@ public class FeatureMenuCell : MonoBehaviour, ICell
         var visibleButton = this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform;
         visibleButton.Find("Image_VIS")?.gameObject.SetActive(false);
         visibleButton.Find("Image_HIDE")?.gameObject.SetActive(false);
-        if(feature.Visible)
+        if (feature.Visible)
+        {
             visibleButton.Find("Image_VIS")?.gameObject.SetActive(true);
+            visibleButton.GetComponent<Image>().color = Color.white;
+        }
         else
+        {
             visibleButton.Find("Image_HIDE")?.gameObject.SetActive(true);
+            visibleButton.GetComponent<Image>().color = Color.grey;
+
+        }
     }
 
     /// <summary>
