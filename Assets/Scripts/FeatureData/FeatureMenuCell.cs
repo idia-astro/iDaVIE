@@ -1,4 +1,4 @@
-﻿ using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using PolyAndCode.UI;
 using DataFeatures;
@@ -36,13 +36,17 @@ public class FeatureMenuCell : MonoBehaviour, ICell
 
 
     //This is called from the SetCell method in DataSource
-    public void ConfigureCell(FeatureMenuListItemInfo featureMenuListItemInfo ,int cellIndex)
+    public void ConfigureCell(FeatureMenuListItemInfo featureMenuListItemInfo, int cellIndex)
     {
         CellIndex = cellIndex;
         _featureMenuListItemInfo = featureMenuListItemInfo;
         idTextField.text = featureMenuListItemInfo.IdTextField;
         sourceName.text = featureMenuListItemInfo.SourceName;
         feature = featureMenuListItemInfo.Feature;
+        if (feature.Flag == null)
+            SetFlag("");
+        else
+            SetFlag(feature.Flag);
         if (feature.Visible)
             SetVisibilityIconsOn();
         else
@@ -55,7 +59,7 @@ public class FeatureMenuCell : MonoBehaviour, ICell
             GetComponent<Image>().color = _darkGrey;
     }
 
-public void SetVisible()
+    public void SetVisible()
     {
         if (!feature.Visible)
         {
@@ -68,46 +72,81 @@ public void SetVisible()
         feature.Visible = !feature.Visible;
     }
 
+    /// <summary>
+    /// Function sets visibility icon to hidden
+    /// </summary>
     public void SetVisibilityIconsOff()
     {
-        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_VIS")?.gameObject.SetActive(false);
-        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_HIDE")?.gameObject.SetActive(false);
-        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_HIDE")?.gameObject.SetActive(true);
+        var visibleButton = this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform;
+        visibleButton.Find("Image_VIS")?.gameObject.SetActive(false);
+        visibleButton.Find("Image_HIDE")?.gameObject.SetActive(false);
+        visibleButton.Find("Image_HIDE")?.gameObject.SetActive(true);
     }
 
+    /// <summary>
+    /// Function sets visibility icon to visible
+    /// </summary>
     public void SetVisibilityIconsOn()
     {
-        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_VIS")?.gameObject.SetActive(false);
-        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_HIDE")?.gameObject.SetActive(false);
-        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_VIS")?.gameObject.SetActive(true);
+        var visibleButton = this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform;
+        visibleButton.Find("Image_VIS")?.gameObject.SetActive(false);
+        visibleButton.Find("Image_HIDE")?.gameObject.SetActive(false);
+        visibleButton.Find("Image_VIS")?.gameObject.SetActive(true);
     }
 
-
-
+    /// <summary>
+    /// Function toggles icon on the visibility image shown on the FeatureMenuCell.
+    /// </summary>
     public void ToggleVisibilityIcon()
     {
-        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_VIS")?.gameObject.SetActive(false);
-        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_HIDE")?.gameObject.SetActive(false);
+        var visibleButton = this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform;
+        visibleButton.Find("Image_VIS")?.gameObject.SetActive(false);
+        visibleButton.Find("Image_HIDE")?.gameObject.SetActive(false);
         if(feature.Visible)
-            this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_VIS")?.gameObject.SetActive(true);
+            visibleButton.Find("Image_VIS")?.gameObject.SetActive(true);
         else
-            this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_HIDE")?.gameObject.SetActive(true);
+            visibleButton.Find("Image_HIDE")?.gameObject.SetActive(true);
     }
 
+    /// <summary>
+    /// Function toggles the visibility of this feature in the scene.
+    /// </summary>
     public void ToggleVisibility()
     {
-        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_VIS")?.gameObject.SetActive(false);
-        this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_HIDE")?.gameObject.SetActive(false);
-        if (!feature.Visible)
-        {
-                this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_VIS")?.gameObject.SetActive(true);
-                feature.Visible = true;
-        }
+        feature.Visible = !feature.Visible;
+        ToggleVisibilityIcon();
+    }
+
+    public void ToggleFlagIndex()
+    {
+        _activeDataSet.FileChanged = true;
+        var flags = Config.Instance.flags;
+        var flag = feature.Flag;
+        int flagIndex = 0;
+        if (!flag.Equals(""))
+            flagIndex = Array.IndexOf(flags, flag) + 1;
+        var newFlag = (flagIndex >= flags.Length) ? " " : flags[flagIndex];
+        SetFlag(newFlag);
+    }
+
+    /// <summary>
+    /// Function sets the flag on the Feature and also changes the label in the menu.
+    /// </summary>
+    /// <param name="f">The new flag for the feature.</param>
+    public void SetFlag(string f)
+    {
+        if (f == null)
+            f = "";
+        feature.Flag = f;
+        var flagLabel = this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("FlagButton")?.gameObject.transform.Find("FlagLabel").GetComponent<TMP_Text>();
+        string lbl;
+        if (f.Equals(""))
+            lbl = " ";
         else
-        {
-                this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform.Find("Image_HIDE")?.gameObject.SetActive(true);
-                feature.Visible = false;
-        }
+            lbl = (f.Length > 1) ? f.Substring(0, 2) : (" " + f.Substring(0, 1));
+        flagLabel.SetText(lbl);
+        if (featureSetManager != null)
+            featureSetManager.NeedToUpdateInfo = true;
     }
 
    public void GoTo()
@@ -157,8 +196,8 @@ public void SetVisible()
         }
     }
     
-      void Start()
-      {
+    void Start()
+    {
         volumeDatasetRendererObj = GameObject.Find("VolumeDataSetManager");
         if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
@@ -174,14 +213,14 @@ public void SetVisible()
         CellHeight = GetComponent<RectTransform>().rect.height;
     }
 
-      void Update()
-      {
+    void Update()
+    {
         if (feature.StatusChanged)
         {
             feature.StatusChanged = false;
             ToggleVisibilityIcon();
         }
-      }
+    }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {

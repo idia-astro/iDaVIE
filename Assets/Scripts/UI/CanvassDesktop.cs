@@ -33,6 +33,9 @@ public class CanvassDesktop : MonoBehaviour
 
     public GameObject WelcomeMenu;
     public GameObject LoadingText;
+    public TextMeshProUGUI loadTextLabel;
+
+    public GameObject progressBar;
 
     private HistogramHelper histogramHelper;
 
@@ -48,6 +51,14 @@ public class CanvassDesktop : MonoBehaviour
     private double imageSize = 1;
     private double maskNAxis = 0;
     private double maskSize = 1;
+
+    private int subsetMin = 1;
+    private int subsetMax_X = 2;
+    private int subsetMax_Y = 2;
+    private int subsetMax_Z = 2;
+    private int[] subset;
+
+    private int[] trueBounds;
 
     Dictionary<double, double> axisSize = null;
     Dictionary<double, double> maskAxisSize = null;
@@ -65,6 +76,18 @@ public class CanvassDesktop : MonoBehaviour
     private float restFrequency;
     private FeatureMapping featureMapping;
 
+    private Toggle subsetToggle;
+    private TMP_InputField subset_XMin_input;
+    private TMP_InputField subset_XMax_input;
+    private TMP_InputField subset_YMin_input;
+    private TMP_InputField subset_YMax_input;
+    private TMP_InputField subset_ZMin_input;
+    private TMP_InputField subset_ZMax_input;
+    private TMP_Dropdown zAxisDropdown;
+
+    public List<TMP_InputField> inputFields;
+
+    private int inputIndex;
 
     protected Coroutine loadCubeCoroutine;
     protected Coroutine showLoadDialogCoroutine;
@@ -91,6 +114,36 @@ public class CanvassDesktop : MonoBehaviour
         maxThresholdLabel = renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
             .gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max").gameObject.transform
             .Find("Max_label").GetComponent<TextMeshProUGUI>();
+
+        subsetToggle = informationPanelContent.gameObject.transform.Find("SubsetSelection_container").gameObject.transform.Find("LoadSubset_Toggle").GetComponent<Toggle>();
+        subset_XMin_input = informationPanelContent.gameObject.transform.Find("SubsetMin_container").gameObject.transform.Find("SubsetX_min").GetComponent<TMP_InputField>();
+        subset_XMin_input.onEndEdit.AddListener(checkSubsetBounds);
+        subset_YMin_input = informationPanelContent.gameObject.transform.Find("SubsetMin_container").gameObject.transform.Find("SubsetY_min").GetComponent<TMP_InputField>();
+        subset_YMin_input.onEndEdit.AddListener(checkSubsetBounds);
+        subset_ZMin_input = informationPanelContent.gameObject.transform.Find("SubsetMin_container").gameObject.transform.Find("SubsetZ_min").GetComponent<TMP_InputField>();
+        subset_ZMin_input.onEndEdit.AddListener(checkSubsetBounds);
+        subset_XMax_input = informationPanelContent.gameObject.transform.Find("SubsetMax_container").gameObject.transform.Find("SubsetX_max").GetComponent<TMP_InputField>();
+        subset_XMax_input.onEndEdit.AddListener(checkSubsetBounds);
+        subset_YMax_input = informationPanelContent.gameObject.transform.Find("SubsetMax_container").gameObject.transform.Find("SubsetY_max").GetComponent<TMP_InputField>();
+        subset_YMax_input.onEndEdit.AddListener(checkSubsetBounds);
+        subset_ZMax_input = informationPanelContent.gameObject.transform.Find("SubsetMax_container").gameObject.transform.Find("SubsetZ_max").GetComponent<TMP_InputField>();
+        subset_ZMax_input.onEndEdit.AddListener(checkSubsetBounds);
+        zAxisDropdown = informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>();
+        zAxisDropdown.onValueChanged.AddListener(updateSubsetZMax);
+        inputIndex = 0;
+
+        subset_XMin_input.text = subsetMin.ToString();
+        subset_XMax_input.text = subsetMax_X.ToString();
+        subset_YMin_input.text = subsetMin.ToString();
+        subset_YMax_input.text = subsetMax_Y.ToString();
+        subset_ZMin_input.text = subsetMin.ToString();
+        subset_ZMax_input.text = subsetMax_Z.ToString();
+        subset = new int[6];
+        trueBounds = new int[6];
+        subset[0] = subset[2] = subset[4] = subsetMin;
+        subset[1] = subsetMax_X;
+        subset[3] = subsetMax_Y;
+        subset[5] = subsetMax_Z;
     }
 
     void checkCubesDataSet()
@@ -141,6 +194,32 @@ public class CanvassDesktop : MonoBehaviour
                     .gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value = (int)dataSet.ColorMap;
             }
         }
+
+        // Check if the tab key is being pressed and if there are more than one input fields in the list
+		if (Input.GetKeyDown(KeyCode.Tab) && inputFields.Count > 1) 
+		{
+			// If there are, check if either shift key is being pressed
+			if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) 
+			{
+				// If shift is pressed, move up on the list - or, if at the top of the list, move to the bottom
+				if (inputIndex <= 0)
+				{
+					inputIndex = inputFields.Count;
+				}
+				inputIndex--;
+				inputFields[inputIndex].Select();
+			}
+			else
+			{
+    			// If shift is not pressed, move down on the list - or, if at the bottom, move to the top
+                if (inputFields.Count <= inputIndex + 1)
+                {
+                    inputIndex = -1;
+                }
+                inputIndex++;
+                inputFields[inputIndex].Select();
+			}
+		}
     }
 
     public void InformationTab()
@@ -255,6 +334,9 @@ public class CanvassDesktop : MonoBehaviour
                     if (list.Count == 3)
                     {
                         loadable = true;
+                        subsetMax_X = (int) axisSize[list[0]];
+                        subsetMax_Y = (int) axisSize[list[1]];
+                        subsetMax_Z = (int) axisSize[list[2]];
                     }
                 }
                 //more than 3 axis
@@ -275,26 +357,28 @@ public class CanvassDesktop : MonoBehaviour
                     if (list.Count == 3)
                     {
                         loadable = true;
+                        subsetMax_X = (int) axisSize[list[0]];
+                        subsetMax_Y = (int) axisSize[list[1]];
+                        subsetMax_Z = (int) axisSize[list[2]];
                     }
                     else
                         informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.SetActive(true);
                 }
 
                 //update dropdow
-                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().interactable = false;
-                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().ClearOptions();
+                zAxisDropdown.interactable = false;
+                zAxisDropdown.ClearOptions();
 
                 foreach (KeyValuePair<double, double> axes in axisSize)
                 {
                     if (axes.Value > 1 && axes.Key > 2)
                     {
-                        informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().options
-                            .Add((new TMP_Dropdown.OptionData() { text = axes.Key.ToString() }));
+                        zAxisDropdown.options.Add((new TMP_Dropdown.OptionData() { text = axes.Key.ToString() }));
                     }
                 }
 
-                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().RefreshShownValue();
-                informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value = 0;
+                zAxisDropdown.RefreshShownValue();
+                zAxisDropdown.value = 0;
                 //end update dropdown
 
                 //Cube is not loadable with valid axis < 3
@@ -306,9 +390,16 @@ public class CanvassDesktop : MonoBehaviour
                 //cube is not loadable with more than 3 axis with nelement
                 else if (!loadable && list.Count > 3)
                 {
-                    informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().interactable = true;
+                    zAxisDropdown.interactable = true;
 
                     loadable = true;
+                    subsetMax_X = (int) axisSize[list[0]];
+                    subsetMax_Y = (int) axisSize[list[1]];
+                    int zAxisIdx;
+                    Int32.TryParse(zAxisDropdown.options[zAxisDropdown.value].text, out zAxisIdx);
+                    zAxisIdx -= 1;
+                    Debug.Log("The list has " + list.Count + " items, and the dropdown points to index " + zAxisIdx + "!");
+                    subsetMax_Z = (int) axisSize[list[zAxisIdx]];
                 }
             }
             else
@@ -317,16 +408,208 @@ public class CanvassDesktop : MonoBehaviour
                 localMsg = "Please select a valid cube!";
             }
 
-            //if it is valid enable loading button
+            //if it is valid enable loading button and subset selector
             if (loadable)
             {
                 informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
                 informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
+                informationPanelContent.gameObject.transform.Find("SubsetSelection_container").gameObject.SetActive(true);
+                setSubsetBounds();
             }
         }
 
         if (showLoadDialogCoroutine != null)
             StopCoroutine(showLoadDialogCoroutine);
+    }
+
+    public void onSubsetToggleSelected(bool val)
+    {
+        if (subsetToggle.isOn)
+        {
+            informationPanelContent.gameObject.transform.Find("SubsetLabel_container").gameObject.SetActive(true);
+            informationPanelContent.gameObject.transform.Find("SubsetMin_container").gameObject.SetActive(true);
+            informationPanelContent.gameObject.transform.Find("SubsetMax_container").gameObject.SetActive(true);
+            inputFields[inputIndex].Select();
+        }
+        else
+        {
+            informationPanelContent.gameObject.transform.Find("SubsetLabel_container").gameObject.SetActive(false);
+            informationPanelContent.gameObject.transform.Find("SubsetMin_container").gameObject.SetActive(false);
+            informationPanelContent.gameObject.transform.Find("SubsetMax_container").gameObject.SetActive(false);
+        }
+    }
+
+    public void setSubsetBounds()
+    {
+        subset_XMin_input.text = subsetMin.ToString();
+        subset_YMin_input.text = subsetMin.ToString();
+        subset_ZMin_input.text = subsetMin.ToString();
+        subset_XMax_input.text = subsetMax_X.ToString();
+        subset_YMax_input.text = subsetMax_Y.ToString();
+        subset_ZMax_input.text = subsetMax_Z.ToString();
+        
+        subset[0] = subset[2] = subset[4] = trueBounds[0] = trueBounds[2] = trueBounds[4] = subsetMin;
+        subset[1] = trueBounds[1] = subsetMax_X;
+        subset[3] = trueBounds[3] = subsetMax_Y;
+        subset[5] = trueBounds[5] = subsetMax_Z;
+    }
+
+    public void updateSubsetZMax(int val = 0)
+    {
+        int i2;
+        int.TryParse(zAxisDropdown.options[zAxisDropdown.value].text, out i2);
+        i2 -= 1;
+        int oldMaxZ = subsetMax_Z;
+        subsetMax_Z = (int) axisSize[i2 + 1];
+        string val1 = subset_ZMax_input.text;
+        int valInt = 0;
+        if (Int32.TryParse(val1, out valInt)){
+            if (valInt < subsetMin)
+                subset_ZMax_input.text = (subsetMin).ToString();
+            else if (valInt > subsetMax_Z || valInt == oldMaxZ)
+                subset_ZMax_input.text = subsetMax_Z.ToString();
+        }
+        
+        subset[0] = subset[2] = subset[4] = subsetMin;
+        subset[1] = subsetMax_X;
+        subset[3] = subsetMax_Y;
+        subset[5] = subsetMax_Z;
+    }
+    
+    public void checkSubsetBounds(string val1 = "")
+    {
+        string val = subset_XMax_input.text;
+        int valInt = 0;
+        if (Int32.TryParse(val, out valInt)){
+            if (valInt < subsetMin){
+                Debug.Log(val + " is less than the minimum which is " + (subsetMin).ToString() + "!");
+                subset_XMax_input.text = (subset[0]).ToString();
+            }
+            else if (valInt > subsetMax_X){
+                Debug.Log(val + " is more than the maximum which is " + subsetMax_X.ToString() + "!");
+                subset_XMax_input.text = subsetMax_X.ToString();
+            }
+            else if (valInt < subset[0]){
+                Debug.Log(val + " is less than the current chosen lower bound which is " + (subset[0]).ToString() + "!");
+                subset_XMax_input.text = (subset[0]).ToString();
+            }
+        }
+        else{
+            Debug.Log(val + " is not a number!");
+            subset_XMax_input.text = subsetMax_X.ToString();
+        }
+
+        val = subset_YMax_input.text;
+        valInt = 0;
+        if (Int32.TryParse(val, out valInt)){
+            if (valInt < subsetMin){
+                Debug.Log(val + " is less than the minimum which is " + (subsetMin).ToString() + "!");
+                subset_YMax_input.text = (subset[2]).ToString();
+            }
+            else if (valInt > subsetMax_Y){
+                Debug.Log(val + " is more than the maximum which is " + subsetMax_Y.ToString() + "!");
+                subset_YMax_input.text = subsetMax_Y.ToString();
+            }
+            else if (valInt < subset[2]){
+                Debug.Log(val + " is less than the current chosen lower bound which is " + (subset[2]).ToString() + "!");
+                subset_YMax_input.text = (subset[2]).ToString();
+            }
+        }
+        else{
+            Debug.Log(val + " is not a number!");
+            subset_YMax_input.text = subsetMax_Y.ToString();
+        }
+
+        val = subset_ZMax_input.text;
+        valInt = 0;
+        if (Int32.TryParse(val, out valInt)){
+            if (valInt < subsetMin){
+                Debug.Log(val + " is less than the minimum which is " + (subsetMin).ToString() + "!");
+                subset_ZMax_input.text = (subset[4]).ToString();
+            }
+            else if (valInt > subsetMax_Z){
+                Debug.Log(val + " is more than the maximum which is " + subsetMax_Z.ToString() + "!");
+                subset_ZMax_input.text = subsetMax_Z.ToString();
+            }
+            else if (valInt < subset[4]){
+                Debug.Log(val + " is less than the current chosen lower bound which is " + (subset[4]).ToString() + "!");
+                subset_ZMax_input.text = (subset[4]).ToString();
+            }
+        }
+        else{
+            Debug.Log(val + " is not a number!");
+            subset_ZMax_input.text = subsetMax_Z.ToString();
+        }
+
+        val = subset_XMin_input.text;
+        valInt = 0;
+        if (Int32.TryParse(val, out valInt)){
+            if (valInt < subsetMin){
+                Debug.Log(val + " is less than the minimum which is " + subsetMin.ToString() + "!");
+                subset_XMin_input.text = subsetMin.ToString();
+            }
+            else if (valInt > subsetMax_X){
+                Debug.Log(val + " is more than the maximum which is " + (subsetMax_X).ToString() + "!");
+                subset_XMin_input.text = (subset[1]).ToString();
+            }
+            else if (valInt > subset[1]){
+                Debug.Log(val + " is more than the current chosen upper bound which is " + (subset[1]).ToString() + "!");
+                subset_XMin_input.text = (subset[1]).ToString();
+            }
+        }
+        else{
+            Debug.Log(val + " is not a number!");
+            subset_XMin_input.text = subsetMin.ToString();
+        }
+
+        val = subset_YMin_input.text;
+        valInt = 0;
+        if (Int32.TryParse(val, out valInt)){
+            if (valInt < subsetMin){
+                Debug.Log(val + " is less than the minimum which is " + subsetMin.ToString() + "!");
+                subset_YMin_input.text = subsetMin.ToString();
+            }
+            else if (valInt > subsetMax_Y){
+                Debug.Log(val + " is more than the maximum which is " + (subsetMax_Y).ToString() + "!");
+                subset_YMin_input.text = (subset[3]).ToString();
+            }
+            else if (valInt > subset[3]){
+                Debug.Log(val + " is more than the current chosen upper bound which is " + (subset[3]).ToString() + "!");
+                subset_YMin_input.text = (subset[3]).ToString();
+            }
+        }
+        else{
+            Debug.Log(val + " is not a number!");
+            subset_YMin_input.text = subsetMin.ToString();
+        }
+
+        val = subset_ZMin_input.text;
+        valInt = 0;
+        if (Int32.TryParse(val, out valInt)){
+            if (valInt < subsetMin){
+                Debug.Log(val + " is less than the minimum which is " + subsetMin.ToString() + "!");
+                subset_ZMin_input.text = subsetMin.ToString();
+            }
+            else if (valInt > subsetMax_Z){
+                Debug.Log(val + " is more than the maximum which is " + (subsetMax_Z).ToString() + "!");
+                subset_ZMin_input.text = (subset[5]).ToString();
+            }
+            else if (valInt > subset[5]){
+                Debug.Log(val + " is more than the current chosen upper bound which is " + (subset[5]).ToString() + "!");
+                subset_ZMin_input.text = (subset[5]).ToString();
+            }
+        }
+        else{
+            Debug.Log(val + " is not a number!");
+            subset_ZMin_input.text = subsetMin.ToString();
+        }
+        
+        subset[0] = Int32.Parse(subset_XMin_input.text);
+        subset[1] = Int32.Parse(subset_XMax_input.text);
+        subset[2] = Int32.Parse(subset_YMin_input.text);
+        subset[3] = Int32.Parse(subset_YMax_input.text);
+        subset[4] = Int32.Parse(subset_ZMin_input.text);
+        subset[5] = Int32.Parse(subset_ZMax_input.text);
     }
 
     public void BrowseMaskFile()
@@ -402,15 +685,12 @@ public class CanvassDesktop : MonoBehaviour
             if (maskNAxis > 2)
             {
                 //Get Axis size from Image Cube
-                int i2 = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>()
-                             .options[
-                                 informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value]
-                             .text) -
-                         1;
+                int i2 = int.Parse(zAxisDropdown.options[zAxisDropdown.value].text) - 1;
                 if (axisSize[1] == maskAxisSize[1] && axisSize[2] == maskAxisSize[2] && axisSize[i2 + 1] == maskAxisSize[3])
                 {
                     loadable = true;
                     informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
+                    informationPanelContent.gameObject.transform.Find("SubsetSelection_container").gameObject.SetActive(true);
                 }
                 else
                     loadable = false;
@@ -435,8 +715,7 @@ public class CanvassDesktop : MonoBehaviour
         if (maskPath != "")
         {
             //Get Axis size from Image Cube
-            int i2 = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>()
-                .options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
+            int i2 = int.Parse(zAxisDropdown.options[zAxisDropdown.value].text) - 1;
 
             if (axisSize[1] != maskAxisSize[1] || axisSize[2] != maskAxisSize[2] || axisSize[i2 + 1] != maskAxisSize[3])
             {
@@ -448,6 +727,7 @@ public class CanvassDesktop : MonoBehaviour
             else
             {
                 informationPanelContent.gameObject.transform.Find("Loading_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
+                informationPanelContent.gameObject.transform.Find("SubsetSelection_container").gameObject.SetActive(true);
             }
         }
     }
@@ -473,6 +753,20 @@ public class CanvassDesktop : MonoBehaviour
         });
     */
 
+    public void setMaskPath(string mPath)
+    {
+        maskPath = mPath;
+    }
+
+    /// <summary>
+    /// This function should be called from the software if the cube needs to be reloaded for whatever reason.
+    /// For example, reloading after user confirmation when entering paint mode without a loaded mask if a subcube is loaded.
+    /// </summary>
+    public void reload()
+    {
+        LoadFileFromFileSystem();
+    }
+
     public void LoadFileFromFileSystem()
     {
         StartCoroutine(LoadCubeCoroutine(imagePath, maskPath));
@@ -494,6 +788,7 @@ public class CanvassDesktop : MonoBehaviour
         populateStatsValue();
 
         LoadingText.gameObject.SetActive(false);
+        progressBar.gameObject.SetActive(false);
         WelcomeMenu.gameObject.SetActive(false);
 
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Rendering_Button").GetComponent<Button>()
@@ -507,18 +802,38 @@ public class CanvassDesktop : MonoBehaviour
             .onClick.Invoke();
     }
 
+    public bool CheckMemSpaceForCubes(string _imagePath, string _maskPath)
+    {
+        int ramSizeMB = SystemInfo.systemMemorySize;
+        float imgSize = new FileInfo(_imagePath).Length / 1024f / 1024f;
+        float maskSize = (String.IsNullOrEmpty(_maskPath)) ? 0 : new FileInfo(_maskPath).Length / 1024f / 1024f;
+        float sumSizeMB = imgSize + maskSize;
+        if (sumSizeMB >= ramSizeMB){
+            Debug.LogWarning("Cube and mask size (" + sumSizeMB.ToString("F2") + " MB) exceed RAM size (" + ramSizeMB.ToString("F2") + " MB)!");
+            return true;
+        }
+        Debug.Log("Loading cube and mask of size " + sumSizeMB.ToString("F2") + " MB with RAM size " + ramSizeMB.ToString("F2") + " MB.");
+        return false;
+    }
 
     public IEnumerator LoadCubeCoroutine(string _imagePath, string _maskPath)
     {
         LoadingText.gameObject.SetActive(true);
+        progressBar.gameObject.SetActive(true);
+        if (CheckMemSpaceForCubes(_imagePath, _maskPath)){
+            loadTextLabel.text = "Cube too large to fit into RAM! Using virtual memory!";
+            yield return new WaitForSeconds(5.0f);
+        }
+        loadTextLabel.text = "Loading...";
+        Debug.Log("Loading image " + _imagePath + " and mask " + _maskPath + ".");
+        progressBar.GetComponent<Slider>().value = 0;
         yield return new WaitForSeconds(0.001f);
 
         float zScale = 1f;
         if (ratioDropdownIndex == 1)
         {
             // case X=Y, calculate z scale from NAXIS1 and NAXIS3
-            int i2 = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>()
-                .options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
+            int i2 = int.Parse(zAxisDropdown.options[zAxisDropdown.value].text) - 1;
 
             double x, z;
             if (axisSize.TryGetValue(1, out x) && axisSize.TryGetValue(i2 + 1, out z))
@@ -528,6 +843,9 @@ public class CanvassDesktop : MonoBehaviour
         }
 
         var activeDataSet = GetFirstActiveDataSet();
+        loadTextLabel.text = "Replacing old cube...";
+        progressBar.GetComponent<Slider>().value = 1;
+        yield return new WaitForSeconds(0.001f);
         if (activeDataSet != null)
         {
             Debug.Log("Replacing data cube...");
@@ -556,18 +874,28 @@ public class CanvassDesktop : MonoBehaviour
             Destroy(activeDataSet);
         }
 
+        loadTextLabel.text = "Building new cube...";
+        progressBar.GetComponent<Slider>().value = 2;
+        Debug.Log("Instantiating new cube prefab.");
+        yield return new WaitForSeconds(0.001f);
+
         GameObject newCube = Instantiate(cubeprefab, new Vector3(0, 0f, 0), Quaternion.identity);
         newCube.transform.localScale = new Vector3(1, 1, zScale);
         newCube.SetActive(true);
 
         newCube.transform.SetParent(volumeDataSetManager.transform, false);
 
-        newCube.GetComponent<VolumeDataSetRenderer>().FileName = _imagePath; //_dataSet.FileName.ToString();
-        newCube.GetComponent<VolumeDataSetRenderer>().MaskFileName = _maskPath; // _maskDataSet.FileName.ToString();
-        newCube.GetComponent<VolumeDataSetRenderer>().CubeDepthAxis = int.Parse(informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform
-            .Find("Z_Dropdown").GetComponent<TMP_Dropdown>()
-            .options[informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().value].text) - 1;
-        informationPanelContent.gameObject.transform.Find("Axes_container").gameObject.transform.Find("Z_Dropdown").GetComponent<TMP_Dropdown>().interactable = false;
+        // Set data to be loaded
+        var volDSRender = newCube.GetComponent<VolumeDataSetRenderer>();
+        volDSRender.subsetBounds = subset;
+        volDSRender.trueBounds = trueBounds;
+        volDSRender.FileName = _imagePath; //_dataSet.FileName.ToString();
+        volDSRender.MaskFileName = _maskPath; // _maskDataSet.FileName.ToString();
+        volDSRender.loadText = this.loadTextLabel;
+        volDSRender.progressBar = this.progressBar.GetComponent<Slider>();
+        volDSRender.CubeDepthAxis = int.Parse(zAxisDropdown.options[zAxisDropdown.value].text) - 1;
+        volDSRender.FileChanged = false;
+        zAxisDropdown.interactable = false;
 
         checkCubesDataSet();
 
@@ -585,14 +913,18 @@ public class CanvassDesktop : MonoBehaviour
             featureMenu.gameObject.SetActive(true);
         }
         
-
         _volumeCommandController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
+        StartCoroutine(newCube.GetComponent<VolumeDataSetRenderer>()._startFunc());
 
         while (!newCube.GetComponent<VolumeDataSetRenderer>().started)
         {
             yield return new WaitForSeconds(.1f);
         }
 
+        loadTextLabel.text = "Loading complete!";
+        Debug.Log("Loading image " + _imagePath + " and mask " + _maskPath + " complete!");
+        progressBar.GetComponent<Slider>().value = 6;
+        yield return new WaitForSeconds(0.001f);
         postLoadFileFileSystem();
     }
 
@@ -665,8 +997,8 @@ public class CanvassDesktop : MonoBehaviour
         var featureDataSet = volumeDataSet.GetComponentInChildren<FeatureSetManager>();
         sourcesPath = path;
         featureDataSet.FeatureFileToLoad = path;
-        sourcesPanelContent.gameObject.transform.Find("MappingSave_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
-        sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
+        sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("MappingSave_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
+        sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
         //activate load features button
         sourcesPanelContent.gameObject.transform.Find("SourcesFile_container").gameObject.transform.Find("SourcesFilePath_text").GetComponent<TextMeshProUGUI>().text =
             System.IO.Path.GetFileName(path);
@@ -685,7 +1017,11 @@ public class CanvassDesktop : MonoBehaviour
         {
             var row = Instantiate(SourceRowPrefab, sourceBody);
             row.transform.Find("Source_number").GetComponent<TextMeshProUGUI>().text = i.ToString();
-            row.transform.Find("Source_name").GetComponent<TextMeshProUGUI>().text = voTable.Column[i].Name;
+            string colName = voTable.Column[i].Name;
+            // Hard coded 17 (*shivers*) matching the length available in the UI as of coding this. Do better!
+            if (colName.Length > 17)
+                colName = colName.Substring(0, 14) + "...";
+            row.transform.Find("Source_name").GetComponent<TextMeshProUGUI>().text = colName;
             var rowScript = row.GetComponentInParent<SourceRow>();
             rowScript.SourceName = voTable.Column[i].Name;
             rowScript.SourceIndex = i;
@@ -731,84 +1067,96 @@ public class CanvassDesktop : MonoBehaviour
 
         foreach (var sourceRowObject in _sourceRowObjects)
         {
-            var sourceRow = sourceRowObject.GetComponent<SourceRow>();
-            var dropdown = sourceRowObject.transform.Find("Coord_dropdown").gameObject.GetComponent<TMP_Dropdown>();
-            if (featureMapping.Mapping.ImportedColumns.Contains(sourceRow.SourceName))
-                sourceRowObject.transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().isOn = true;
-            if (sourceRow.SourceName == featureMapping.Mapping.ID.Source)
+            try
             {
-                sourceRow.CurrentMapping = SourceMappingOptions.ID;
-                dropdown.value = (int)SourceMappingOptions.ID;
+                var sourceRow = sourceRowObject.GetComponent<SourceRow>();
+                var dropdown = sourceRowObject.transform.Find("Coord_dropdown").gameObject.GetComponent<TMP_Dropdown>();
+                if (featureMapping.Mapping.ImportedColumns.Contains(sourceRow.SourceName))
+                    sourceRowObject.transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().isOn = true;
+                if (sourceRow.SourceName == featureMapping.Mapping.ID.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.ID;
+                    dropdown.value = (int)SourceMappingOptions.ID;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.X.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.X;
+                    dropdown.value = (int)SourceMappingOptions.X;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.Y.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Y;
+                    dropdown.value = (int)SourceMappingOptions.Y;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.Z.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Z;
+                    dropdown.value = (int)SourceMappingOptions.Z;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.XMin.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Xmin;
+                    dropdown.value = (int)SourceMappingOptions.Xmin;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.XMax.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Xmax;
+                    dropdown.value = (int)SourceMappingOptions.Xmax;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.YMin.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Ymin;
+                    dropdown.value = (int)SourceMappingOptions.Ymin;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.YMax.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Ymax;
+                    dropdown.value = (int)SourceMappingOptions.Ymax;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.ZMin.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Zmin;
+                    dropdown.value = (int)SourceMappingOptions.Zmin;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.ZMax.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Zmax;
+                    dropdown.value = (int)SourceMappingOptions.Zmax;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.RA.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Ra;
+                    dropdown.value = (int)SourceMappingOptions.Ra;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.Dec.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Dec;
+                    dropdown.value = (int)SourceMappingOptions.Dec;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.Vel.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Velo;
+                    dropdown.value = (int)SourceMappingOptions.Velo;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.Freq.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Freq;
+                    dropdown.value = (int)SourceMappingOptions.Freq;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.Redshift.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Redshift;
+                    dropdown.value = (int)SourceMappingOptions.Redshift;
+                }
+                else if (sourceRow.SourceName == featureMapping.Mapping.Flag.Source)
+                {
+                    sourceRow.CurrentMapping = SourceMappingOptions.Flag;
+                    dropdown.value = (int)SourceMappingOptions.Flag;
+                }
             }
-            else if (sourceRow.SourceName == featureMapping.Mapping.X.Source)
+            catch (Exception ex)
             {
-                sourceRow.CurrentMapping = SourceMappingOptions.X;
-                dropdown.value = (int)SourceMappingOptions.X;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.Y.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Y;
-                dropdown.value = (int)SourceMappingOptions.Y;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.Z.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Z;
-                dropdown.value = (int)SourceMappingOptions.Z;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.XMin.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Xmin;
-                dropdown.value = (int)SourceMappingOptions.Xmin;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.XMax.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Xmax;
-                dropdown.value = (int)SourceMappingOptions.Xmax;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.YMin.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Ymin;
-                dropdown.value = (int)SourceMappingOptions.Ymin;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.YMax.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Ymax;
-                dropdown.value = (int)SourceMappingOptions.Ymax;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.ZMin.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Zmin;
-                dropdown.value = (int)SourceMappingOptions.Zmin;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.ZMax.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Zmax;
-                dropdown.value = (int)SourceMappingOptions.Zmax;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.RA.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Ra;
-                dropdown.value = (int)SourceMappingOptions.Ra;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.Dec.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Dec;
-                dropdown.value = (int)SourceMappingOptions.Dec;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.Vel.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Velo;
-                dropdown.value = (int)SourceMappingOptions.Velo;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.Freq.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Freq;
-                dropdown.value = (int)SourceMappingOptions.Freq;
-            }
-            else if (sourceRow.SourceName == featureMapping.Mapping.Redshift.Source)
-            {
-                sourceRow.CurrentMapping = SourceMappingOptions.Redshift;
-                dropdown.value = (int)SourceMappingOptions.Redshift;
+                Debug.LogError("Error while loading mapping file. Check that all mappings are included: " + ex.Message);
             }
         }
     }
@@ -866,6 +1214,7 @@ public class CanvassDesktop : MonoBehaviour
             Vel = mapping.ContainsKey(SourceMappingOptions.Velo) ? mapping[SourceMappingOptions.Velo] : new MapEntry { Source = "" },
             Freq = mapping.ContainsKey(SourceMappingOptions.Freq) ? mapping[SourceMappingOptions.Freq] : new MapEntry { Source = "" },
             Redshift = mapping.ContainsKey(SourceMappingOptions.Redshift) ? mapping[SourceMappingOptions.Redshift] : new MapEntry { Source = "" },
+            Flag = mapping.ContainsKey(SourceMappingOptions.Flag) ? mapping[SourceMappingOptions.Flag] : new MapEntry { Source = "" },
             ImportedColumns = importedColumns.ToArray()
         };
         var featureMappingObject = new FeatureMapping { Mapping = mappingObject };
@@ -927,7 +1276,9 @@ public class CanvassDesktop : MonoBehaviour
 
     public void LoadSourcesFile()
     {
-        var loadingText = sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Text").gameObject;
+        var loadingText = sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Text").gameObject;
+        var excludeExternalSources = sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("SourcesLoad_container").gameObject
+            .transform.Find("ExternalSourcesToggle").gameObject.GetComponent<Toggle>().isOn;    
         loadingText.GetComponent<TextMeshProUGUI>().color = new Color(0, 0.6f, 0.1f);
         loadingText.SetActive(true);
         bool[] columnsMask = new bool[_sourceRowObjects.Length];
@@ -950,9 +1301,9 @@ public class CanvassDesktop : MonoBehaviour
         }
 
         if (featureSetManager.FeatureFileToLoad != "")
-            featureSetManager.ImportFeatureSet(finalMapping, FeatureMapper.GetVOTableFromFile(sourcesPath), Path.GetFileName(sourcesPath), columnsMask);
+            featureSetManager.ImportFeatureSet(finalMapping, FeatureMapper.GetVOTableFromFile(sourcesPath), Path.GetFileName(sourcesPath), columnsMask, excludeExternalSources);
         loadingText.GetComponent<TextMeshProUGUI>().text = $"Successfully loaded sources from:{Environment.NewLine}{Path.GetFileName(sourcesPath)}";
-        sourcesPanelContent.gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;
+        sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;
     }
 
     public void DismissFileLoad()
@@ -987,7 +1338,6 @@ public class CanvassDesktop : MonoBehaviour
 
         return null;
     }
-
 
     void OnGUI()
     {
@@ -1073,7 +1423,8 @@ public class CanvassDesktop : MonoBehaviour
         statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats")
             .gameObject.transform.Find("Line_sigma").gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value = 0;
 
-        VolumeDataSet.UpdateHistogram(GetFirstActiveDataSet().Data, GetFirstActiveDataSet().Data.MinValue, GetFirstActiveDataSet().Data.MaxValue);
+        var dataSet = GetFirstActiveDataSet().Data;
+        VolumeDataSet.UpdateHistogram(dataSet, dataSet.MinValue, dataSet.MaxValue);
         populateStatsValue();
     }
 

@@ -947,7 +947,7 @@ public class VolumeInputController : MonoBehaviour
         }
         else if (currentState == InteractionState.Editing && HasEditingAnchor)
         {
-            var voxelPosition = dataSet.GetVoxelPosition(cursorPosWorldSpace);
+            var voxelPosition = dataSet.GetVoxelPositionWorldSpace(cursorPosWorldSpace);
             var newCornerMin = _editingFeature.CornerMin;
             var newCornerMax = _editingFeature.CornerMax;
 
@@ -1192,6 +1192,7 @@ public class VolumeInputController : MonoBehaviour
             dataSet.DisplayMask = true;
         }
         
+        ActiveDataSet.FileChanged = true;
         // Automatically start source ID editing when entering paint mode
         SourceId = -1;
         InteractionStateMachine.Fire(InteractionEvents.StartEditSource);

@@ -41,6 +41,9 @@ namespace DataFeatures
         public string[] RawDataTypes { get; set; }
         public string FileName { get; private set; }
 
+        public string[] flags { get; set; }
+
+        private bool importFlags;
         public int Index;
 
         public bool IsImported {get; private set;}
@@ -122,7 +125,10 @@ namespace DataFeatures
             }
         }
 
-        // Add feature to Renderer as container
+        /// <summary>
+        /// Add feature to Renderer as container
+        /// </summary>
+        /// <param name="featureToAdd">The feature to be added</param>
         public void AddFeature(Feature featureToAdd)
         {
             FeatureList.Add(featureToAdd);
@@ -138,6 +144,10 @@ namespace DataFeatures
             FeatureList.Clear();
             SetFeatureAsDirty();
         }
+
+        /// <summary>
+        /// Function to toggle the visibility on all features
+        /// </summary>
         public void ToggleVisibility()
         {
             foreach (var feature in FeatureList)
@@ -167,6 +177,9 @@ namespace DataFeatures
             _dirtyFeatures.Add(index);
         }
 
+        /// <summary>
+        /// Function to set all feature outlines visible
+        /// </summary>
         public void SetVisibilityOn()
         {
             featureSetVisible = true;
@@ -174,9 +187,13 @@ namespace DataFeatures
             foreach (var feature in FeatureList)
             {
                 feature.Visible = true;
+                feature.StatusChanged = true;
             }
         }
 
+        /// <summary>
+        /// Function to set all feature outlines hidden
+        /// </summary>
         public void SetVisibilityOff()
         {
             featureSetVisible = false;
@@ -184,6 +201,7 @@ namespace DataFeatures
             foreach (var feature in FeatureList)
             {
                 feature.Visible = false;
+                feature.StatusChanged = true;
             }
         }
 
@@ -196,6 +214,9 @@ namespace DataFeatures
             }
         }
 
+        /// <summary>
+        /// Function to change the colour of the outlines of the features in the cube
+        /// </summary>
         public void UpdateColor()
         {
             foreach (var feature in FeatureList)
@@ -209,6 +230,7 @@ namespace DataFeatures
             var velocityUnit = VolumeRenderer.Data.AstframeIsFreq ? VolumeRenderer.Data.GetAstAltAttribute("Unit(3)") : VolumeRenderer.Data.GetAstAttribute("Unit(3)") ;
             RawDataKeys = new[] {"Sum", "Peak", "VSys (Channel)", "W20 (Channel)", $"VSys ({velocityUnit})", $"W20 ({velocityUnit})"};
             RawDataTypes = new[] {"float", "float", "float", "float", "float", "float"};
+            var flag = "";
             foreach (var item in sourceStatsDict)
             {
                 var sourceStats = item.Value;
@@ -216,17 +238,17 @@ namespace DataFeatures
                 var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
                 var featureName = $"Masked Source #{item.Key}";
                 var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
-                AddFeature(new Feature(boxMin, boxMax, FeatureColor, featureName, FeatureList.Count, item.Key - 1, rawStrings, this, false));
+                AddFeature(new Feature(boxMin, boxMax, FeatureColor, featureName, flag, FeatureList.Count, item.Key - 1, rawStrings, this, false));
             }
             FeatureMenuScrollerDataSource.InitData();
         }
 
-        // Spawn Feature objects intro world from FileName
-        public void SpawnFeaturesFromVOTable(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable, bool[] columnsMask)
+        // Spawn Feature objects into world from FileName
+        public void SpawnFeaturesFromVOTable(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable, bool[] columnsMask, bool excludeExternal)
         {
             if (VolumeRenderer == null)
             {
-                Debug.Log("No VolumeDataSetRenderer detected for Feature import... was FeatureSetRenderer initialized properly?");
+                Debug.LogWarning("No VolumeDataSetRenderer detected for Feature import... was FeatureSetRenderer initialized properly?");
                 return;
             }
             List<string> rawDataKeysList = new List<string>();
@@ -251,7 +273,7 @@ namespace DataFeatures
             {
                 posIndices[0] = Array.IndexOf(colNames, mapping[SourceMappingOptions.X]);
                 posIndices[1] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Y]);
-                posIndices[2] =Array.IndexOf(colNames, mapping[SourceMappingOptions.Z]);
+                posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Z]);
             }
             else if (setCoordinates.Contains(SourceMappingOptions.Ra))
             {
@@ -263,7 +285,7 @@ namespace DataFeatures
                     posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Velo]);
                     if (AstTool.GetAltSpecSet(volumeAstFrame, out astFrameSet, new StringBuilder("VRAD"), new StringBuilder(colUnits[posIndices[2]]), new StringBuilder(VolumeRenderer.StdOfRest)) != 0)
                     {
-                        Debug.Log($"Error creating feature astframe!");
+                        Debug.LogError($"Error creating feature astframe!");
                         return;
                     }
                      
@@ -274,7 +296,7 @@ namespace DataFeatures
                     posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Freq]); 
                     if (AstTool.GetAltSpecSet(volumeAstFrame, out astFrameSet, new StringBuilder("FREQ"), new StringBuilder(colUnits[posIndices[2]]), new StringBuilder(VolumeRenderer.StdOfRest)) != 0)
                     {
-                        Debug.Log($"Error creating feature astframe!");
+                        Debug.LogError($"Error creating feature astframe!");
                         return;
                     }
                 }
@@ -284,20 +306,20 @@ namespace DataFeatures
                     posIndices[2] = Array.IndexOf(colNames, mapping[SourceMappingOptions.Redshift]);
                     if (AstTool.GetAltSpecSet(volumeAstFrame, out astFrameSet, new StringBuilder("REDSHIFT"), new StringBuilder(""), new StringBuilder(VolumeRenderer.StdOfRest)) != 0)
                     {
-                        Debug.Log($"Error creating feature astframe!");
+                        Debug.LogError($"Error creating feature astframe!");
                         return;
                     } 
                 }
                 if (AstTool.Invert(astFrameSet) != 0)
                 {
-                    Debug.Log("Error finding inverted frame set!");
+                    Debug.LogError("Error finding inverted frame set!");
                 }
             }
             if (setCoordinates.Contains(SourceMappingOptions.Xmin))
                 containsBoxes = true;
             if (voTable.Rows.Count == 0 || voTable.Column.Count == 0)
             {
-                Debug.Log($"Error reading VOTable! Note: Currently the VOTable may not contain xmlns declarations.");
+                Debug.LogError($"Error reading VOTable! Note: Currently the VOTable may not contain xmlns declarations.");
                 return;
             }
             bool containsPositions = !(posIndices[0] < 0 ||  posIndices[1] < 0 ||  posIndices[2] < 0);
@@ -314,6 +336,16 @@ namespace DataFeatures
             int nameIndex = -1;
             if (setCoordinates.Contains(SourceMappingOptions.ID))
                 nameIndex = Array.IndexOf(colNames, mapping[SourceMappingOptions.ID]);
+            int FlagIndex = -1;
+            if (setCoordinates.Contains(SourceMappingOptions.Flag))
+            {
+                FlagIndex = Array.IndexOf(colNames, mapping[SourceMappingOptions.Flag]);
+                importFlags = true;
+            }
+            else
+                importFlags = false;
+            if (importFlags)
+                flags = new string[voTable.Rows.Count];
             FeatureNames = new string[voTable.Rows.Count];
             FeaturePositions = new Vector3[voTable.Rows.Count];
             BoxMinPositions = new Vector3[voTable.Rows.Count];
@@ -327,6 +359,10 @@ namespace DataFeatures
                 {
                     if (columnsMask[i])
                         featureRawData[row].Add(voTable.Rows[row].ColumnData[i].ToString());
+                }
+                if (importFlags)
+                {
+                    flags[row] = (string) voTable.Rows[row].ColumnData[FlagIndex];
                 }
                 if (containsPositions && !containsBoxes)
                 {
@@ -398,7 +434,7 @@ namespace DataFeatures
                 }
                 else
                 {
-                    Debug.Log("Error: dimensionless features loaded!");
+                    Debug.LogError("Error: dimensionless features loaded!");
                     return;
                 }
                 // ...get name if exists
@@ -417,12 +453,23 @@ namespace DataFeatures
             
             if (VolumeRenderer)
             {
-                Vector3 cubeMin, cubeMax;
+                Vector3 cornerMin, cornerMax;
                 for (int i = 0; i < voTable.Rows.Count; i++)
                 {
-                    cubeMin = BoxMinPositions[i];
-                    cubeMax = BoxMaxPositions[i];
-                    FeatureList.Add(new Feature(cubeMin, cubeMax, FeatureColor, FeatureNames[i], i,i, featureRawData[i].ToArray(), this, false));
+                    cornerMin = BoxMinPositions[i];
+                    cornerMax = BoxMaxPositions[i];
+                    var flag = (importFlags) ? flags[i] : "";
+                    var featureToAdd = new Feature(cornerMin, cornerMax, FeatureColor, FeatureNames[i], flag, i, i,
+                        featureRawData[i].ToArray(), this, false);
+                    if (!(excludeExternal && (featureToAdd.Center.x < 0 ||
+                                              featureToAdd.Center.x > VolumeRenderer.Data.XDim ||
+                                              featureToAdd.Center.y < 0 ||
+                                              featureToAdd.Center.y > VolumeRenderer.Data.YDim ||
+                                              featureToAdd.Center.z < 0 ||
+                                              featureToAdd.Center.z > VolumeRenderer.Data.ZDim)))
+                    {
+                        FeatureList.Add(featureToAdd);
+                    }
                 }
             }
             FeatureMenuScrollerDataSource.InitData();

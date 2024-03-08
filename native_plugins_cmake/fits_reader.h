@@ -4,15 +4,13 @@
 #define DllExport __declspec (dllexport)
 
 #include <cfitsio/fitsio.h>
-#include <iostream>
 #include <cstring>
+#include <iostream>
+#include <string_view>
 
-///Insert these three lines to debug directly out to a file:
-//char* str = new char[70];
-//freopen("debug.txt", "a", stdout);
-//printf("%s\n", str);
+//Use the WriteLogFile function to output directly to a text file for debugging.
 
-
+static constexpr std::string_view defaultDebugFile = "Outputs/Logs/i-DaVIE_Plugin_Debug.log";
 extern "C"
 {
 DllExport int FitsOpenFileReadOnly(fitsfile **, char *,  int *);
@@ -59,6 +57,8 @@ DllExport int FitsCopyCubeSection(fitsfile *, fitsfile *, char *, int *);
 
 DllExport int FitsWriteImageInt16(fitsfile * , int , int64_t , int16_t* , int* );
 
+DllExport int FitsWriteSubImageInt16(fitsfile * , long* , long* , int16_t* , int* );
+
 DllExport int FitsWriteHistory(fitsfile *, char *,  int *);
 
 DllExport int FitsWriteKey(fitsfile * , int , char *, void *, char *, int *);
@@ -81,6 +81,8 @@ DllExport int FitsReadSubImageFloat(fitsfile *, int, long *, long *, int64_t, fl
 
 DllExport int FitsReadImageInt16(fitsfile *, int , int64_t , int16_t **, int *);
 
+DllExport int FitsReadSubImageInt16(fitsfile *, int, long *, long *, int64_t, float **, int *);
+
 DllExport int FitsCreateHdrPtrForAst(fitsfile *, char **, int *, int *);
 
 DllExport int CreateEmptyImageInt16(int64_t , int64_t , int64_t , int16_t** );
@@ -89,8 +91,8 @@ DllExport int FreeFitsPtrMemory(void* );
 
 DllExport void FreeFitsMemory(char* header, int* status);
 
+DllExport int WriteLogFile(const char * fileName, const char * content, int type);
+
 }
-
-
 
 #endif //FITS_READER_FITS_READER_H

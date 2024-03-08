@@ -140,7 +140,7 @@ namespace DataFeatures
             featureSetRenderer.transform.localScale = new Vector3(1 / CubeDimensions.x, 1 / CubeDimensions.y, 1 / CubeDimensions.z);
             // Shift by half a voxel (because voxel center has integer coordinates, not corner)
             featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
-            GeneratedFeatureSetList.Add(featureSetRenderer); //TODO: change to GeneratedFeatureSetList later
+            GeneratedFeatureSetList.Add(featureSetRenderer);
             return featureSetRenderer; 
         }
         // Creates new empty FeatureSetRenderer for adding Features
@@ -165,7 +165,7 @@ namespace DataFeatures
         }
 
         // Creates FeatureSetRenderer filled with Features from file
-        public FeatureSetRenderer ImportFeatureSet(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable, string name, bool[] columnsMask)
+        public FeatureSetRenderer ImportFeatureSet(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable, string name, bool[] columnsMask, bool excludeExternal)
         {
             FeatureSetRenderer featureSetRenderer = null;
             Vector3 CubeDimensions = VolumeRenderer.GetCubeDimensions();
@@ -179,8 +179,17 @@ namespace DataFeatures
             // Shift by half a voxel (because voxel center has integer coordinates, not corner)
             featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
             featureSetRenderer.FeatureColor = FeatureColors[ImportedFeatureSetList.Count];
-            featureSetRenderer.SpawnFeaturesFromVOTable(mapping, voTable, columnsMask);
+            featureSetRenderer.SpawnFeaturesFromVOTable(mapping, voTable, columnsMask, excludeExternal);
             featureSetRenderer.Index = ImportedFeatureSetList.Count;
+            var config = Config.Instance;
+            if (config.importedFeaturesStartVisible)
+            {
+                featureSetRenderer.SetVisibilityOn();
+            }
+            else
+            {
+                featureSetRenderer.SetVisibilityOff();
+            }
             ImportedFeatureSetList.Add(featureSetRenderer);
             return featureSetRenderer;
         }
@@ -238,10 +247,11 @@ namespace DataFeatures
         {
             ActiveFeatureSetRenderer = GeneratedFeatureSetList[0];
             ActiveFeatureSetRenderer.ClearFeatures();
+            var flag = "";
             if (ActiveFeatureSetRenderer)
             {
                 DeselectFeature();
-                SelectedFeature = new Feature(boundsMin, boundsMax, Color.white, featureName, -1, -1, null, ActiveFeatureSetRenderer, true) {Temporary = temporary, Selected = true};
+                SelectedFeature = new Feature(boundsMin, boundsMax, Color.white, featureName, flag, -1, -1, null, ActiveFeatureSetRenderer, true) {Temporary = temporary, Selected = true};
                 if (temporary)
                 {
                     SelectedFeature.ShowAxes(true);

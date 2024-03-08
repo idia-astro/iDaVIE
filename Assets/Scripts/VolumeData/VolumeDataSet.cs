@@ -85,15 +85,19 @@ namespace VolumeData
         public long XDim { get; private set; }
         public long YDim { get; private set; }
         public long ZDim { get; private set; }
+
+        public int[] trueSize { get; set; }
         public IDictionary<string, string> HeaderDictionary { get; private set; }
 
         public int VelDecimal { get; private set; }
 
         public long NumPoints => XDim * YDim * ZDim;
         public long[] Dims => new[] {XDim, YDim, ZDim};
+        public int[] subsetBounds {get; private set; }
+
+        private bool loadSubset => true;//subsetBounds[0] != -1;
 
         public Vector3Int RegionOffset { get; private set; }
-
 
         public bool IsMask { get; private set; }
         private IntPtr ImageDataPtr;
@@ -160,6 +164,15 @@ namespace VolumeData
 
         public string PixelUnit = "units";
 
+        /// <summary>
+        /// Function that creates a random data set of the given dimensions.
+        /// </summary>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <param name="xDim"></param>
+        /// <param name="yDim"></param>
+        /// <param name="zDim"></param>
+        /// <returns></returns>
         public static VolumeDataSet LoadRandomFitsCube(float min, float max, int xDim, int yDim, int zDim)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
@@ -190,35 +203,50 @@ namespace VolumeData
             return volumeDataSet;
         }
 
-        public static VolumeDataSet LoadDataFromFitsFile(string fileName, IntPtr imageDataPtr = default(IntPtr), int index2 = 2, int sliceDim = 1)
+        /// <summary>
+        /// Function that retrives and loads the data from the actual file on the hard disk.
+        /// </summary>
+        /// <param name="fileName">The path to the data file.</param>
+        /// <param name="subBounds">The bounds from which the data should be loaded (default of [-1,-1,-1,-1,-1,-1] means load the full cube).</param>
+        /// <param name="trueBounds">The bounds of the full cube.</param>
+        /// <param name="imageDataPtr"></param>
+        /// <param name="index2"></param>
+        /// <param name="sliceDim"></param>
+        /// <returns></returns>
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, int[] subBounds, int[] trueBounds, IntPtr imageDataPtr = default(IntPtr), int index2 = 2, int sliceDim = 1)
         {
-            VolumeDataSet volumeDataSet = new VolumeDataSet();
-            volumeDataSet.IsMask =  imageDataPtr != IntPtr.Zero;
-            volumeDataSet.ImageDataPtr = imageDataPtr;
-            volumeDataSet.FileName = fileName;
+            VolumeDataSet volumeDataSetRes = new VolumeDataSet();
+            volumeDataSetRes.IsMask =  imageDataPtr != IntPtr.Zero;
+            volumeDataSetRes.ImageDataPtr = imageDataPtr;
+            volumeDataSetRes.FileName = fileName;
+            volumeDataSetRes.trueSize = trueBounds;
             IntPtr fptr = IntPtr.Zero;
             int status = 0;
             int cubeDimensions;
             IntPtr dataPtr = IntPtr.Zero;
             IntPtr astFrameSet;
+
+            // Assign to object, since it is used with the cursor positioning.
+            volumeDataSetRes.subsetBounds = subBounds;
+
             if (FitsReader.FitsOpenFile(out fptr, fileName, out status, true) != 0)
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
             }
-            if (FitsReader.FitsCreateHdrPtrForAst(fptr, out volumeDataSet.FitsHeader, out volumeDataSet.NumberHeaderKeys, out status) != 0)
+            if (FitsReader.FitsCreateHdrPtrForAst(fptr, out volumeDataSetRes.FitsHeader, out volumeDataSetRes.NumberHeaderKeys, out status) != 0)
             {
                 Debug.Log("Fits create header pointer failure... code #" + status.ToString());
                 FitsReader.FitsCloseFile(fptr, out status);
                 return null;
             }
-            if (AstTool.InitAstFrameSet(out astFrameSet, volumeDataSet.FitsHeader) != 0)
+            if (AstTool.InitAstFrameSet(out astFrameSet, volumeDataSetRes.FitsHeader) != 0)
             {
                 Debug.Log("Warning... AstFrameSet Error. See Unity Editor logs");
             }
-            if (!volumeDataSet.IsMask)
+            if (!volumeDataSetRes.IsMask)
             {
-                volumeDataSet.HeaderDictionary = FitsReader.ExtractHeaders(fptr, out status);
-                volumeDataSet.ParseHeaderDict();
+                volumeDataSetRes.HeaderDictionary = FitsReader.ExtractHeaders(fptr, out status);
+                volumeDataSetRes.ParseHeaderDict();
             }
 
             if (FitsReader.FitsGetImageDims(fptr, out cubeDimensions, out status) != 0)
@@ -250,32 +278,58 @@ namespace VolumeData
                 return null;
             }
 
-            volumeDataSet.cubeSize = new long[cubeDimensions];
-            Marshal.Copy(dataPtr, volumeDataSet.cubeSize, 0, cubeDimensions);
-            if (dataPtr != IntPtr.Zero)
-                FitsReader.FreeFitsPtrMemory(dataPtr);
-            long numberDataPoints = volumeDataSet.cubeSize[0] * volumeDataSet.cubeSize[1] * volumeDataSet.cubeSize[index2];
-            IntPtr fitsDataPtr = IntPtr.Zero;
-            if (volumeDataSet.IsMask)
+            volumeDataSetRes.cubeSize = new long[cubeDimensions];
+            Marshal.Copy(dataPtr, volumeDataSetRes.cubeSize, 0, cubeDimensions);
+            
+            // Check if the provided subset is wholly within the given filie
+            if (subBounds[1] > volumeDataSetRes.cubeSize[0])
             {
-                if (FitsReader.FitsReadImageInt16(fptr, cubeDimensions, numberDataPoints, out fitsDataPtr, out status) != 0)
-                {
-                    Debug.Log("Fits Read mask cube data error #" + status.ToString());
-                    FitsReader.FitsCloseFile(fptr, out status);
-                    return null;
-                }
+                Debug.Log("Fits Read cube error with subset bounds not possible!");
+                FitsReader.FitsCloseFile(fptr, out status);
+                return null;
             }
             else
+                volumeDataSetRes.cubeSize[0] = subBounds[1] - subBounds[0] + 1;
+
+            if (subBounds[3] > volumeDataSetRes.cubeSize[1])
+            {
+                Debug.Log("Fits Read cube error with subset bounds not possible!");
+                FitsReader.FitsCloseFile(fptr, out status);
+                return null;
+            }
+            else
+                volumeDataSetRes.cubeSize[1] = subBounds[3] - subBounds[2] + 1;
+
+            if (subBounds[5] > volumeDataSetRes.cubeSize[2])
+            {
+                Debug.Log("Fits Read cube error with subset bounds not possible!");
+                FitsReader.FitsCloseFile(fptr, out status);
+                return null;
+            }
+            else
+                volumeDataSetRes.cubeSize[2] = subBounds[5] - subBounds[4] + 1;
+
+            if (dataPtr != IntPtr.Zero)
+                FitsReader.FreeFitsPtrMemory(dataPtr);
+            long numberDataPoints = volumeDataSetRes.cubeSize[0] * volumeDataSetRes.cubeSize[1] * volumeDataSetRes.cubeSize[index2];
+            IntPtr fitsDataPtr = IntPtr.Zero;
+            
+            if (volumeDataSetRes.IsMask)
             {
                 int[] startPix = new int[cubeDimensions];
                 int[] finalPix = new int[cubeDimensions];
                 for (var i = 0; i < cubeDimensions; i++)
                 {
-                    startPix[i] = 1;
-                    if (i < 4)
-                        finalPix[i] = (int) volumeDataSet.cubeSize[i];
+                    if (i < 3)
+                    {
+                        startPix[i] = subBounds[i * 2];
+                        finalPix[i] = subBounds[(i * 2) + 1];
+                    }
                     else
+                    {
+                        startPix[i] = 1;
                         finalPix[i] = 1;
+                    }
                 }
 
                 if (index2 == 3)
@@ -288,6 +342,54 @@ namespace VolumeData
                     startPix[3] = sliceDim;
                     finalPix[3] = sliceDim;
                 }
+
+                Debug.Log("Loading a subcube mask with start pixel [" + String.Join(", ", startPix) + "] and end pixel [" + String.Join(", ", finalPix) + "].");
+
+                IntPtr startPixPtr = Marshal.AllocHGlobal(sizeof(int) * startPix.Length);
+                IntPtr finalPixPtr = Marshal.AllocHGlobal(sizeof(int) * finalPix.Length);
+                Marshal.Copy(startPix, 0, startPixPtr, startPix.Length);
+                Marshal.Copy(finalPix, 0, finalPixPtr, finalPix.Length);
+                if (FitsReader.FitsReadSubImageInt16(fptr, cubeDimensions, startPixPtr, finalPixPtr, numberDataPoints, out fitsDataPtr, out status) != 0)
+                {
+                    Debug.Log("Fits Read mask cube data error #" + status.ToString());
+                    FitsReader.FitsCloseFile(fptr, out status);
+                    return null;
+                }
+
+                if (startPixPtr == IntPtr.Zero)
+                    Marshal.FreeHGlobal(startPixPtr);
+                if (finalPixPtr == IntPtr.Zero)
+                    Marshal.FreeHGlobal(finalPixPtr);
+            }
+            else //Is not a mask
+            {
+                int[] startPix = new int[cubeDimensions];
+                int[] finalPix = new int[cubeDimensions];
+                for (var i = 0; i < cubeDimensions; i++)
+                {
+                    if (i < 3)
+                    {
+                        startPix[i] = subBounds[i * 2];
+                        finalPix[i] = subBounds[(i * 2) + 1];
+                    }
+                    else
+                    {
+                        startPix[i] = 1;
+                        finalPix[i] = 1;
+                    }
+                }
+
+                if (index2 == 3)
+                {
+                    startPix[2] = sliceDim;
+                    finalPix[2] = sliceDim;
+                }
+                else if (cubeDimensions > 3)
+                {
+                    startPix[3] = sliceDim;
+                    finalPix[3] = sliceDim;
+                }
+                Debug.Log("Loading a subcube with start pixel [" + String.Join(", ", startPix) + "] and end pixel [" + String.Join(", ", finalPix) + "].");
 
                 IntPtr startPixPtr = Marshal.AllocHGlobal(sizeof(int) * startPix.Length);
                 IntPtr finalPixPtr = Marshal.AllocHGlobal(sizeof(int) * finalPix.Length);
@@ -307,32 +409,35 @@ namespace VolumeData
             }
 
             FitsReader.FitsCloseFile(fptr, out status);
-            if (!volumeDataSet.IsMask)
+            if (!volumeDataSetRes.IsMask)
             {
-                DataAnalysis.FindStats(fitsDataPtr, numberDataPoints, out volumeDataSet.MaxValue, out volumeDataSet.MinValue, out volumeDataSet.MeanValue,
-                    out volumeDataSet.StanDev);
+                DataAnalysis.FindStats(fitsDataPtr, numberDataPoints, out volumeDataSetRes.MaxValue, out volumeDataSetRes.MinValue, out volumeDataSetRes.MeanValue,
+                    out volumeDataSetRes.StanDev);
                 int histogramSize = Mathf.RoundToInt(Mathf.Sqrt(numberDataPoints));
-                volumeDataSet.Histogram = new int[histogramSize];
+                volumeDataSetRes.Histogram = new int[histogramSize];
                 IntPtr histogramPtr = IntPtr.Zero;
-                volumeDataSet.HistogramBinWidth = (volumeDataSet.MaxValue - volumeDataSet.MinValue) / histogramSize;
-                DataAnalysis.GetHistogram(fitsDataPtr, numberDataPoints, histogramSize, volumeDataSet.MinValue, volumeDataSet.MaxValue, out histogramPtr);
-                Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
+                volumeDataSetRes.HistogramBinWidth = (volumeDataSetRes.MaxValue - volumeDataSetRes.MinValue) / histogramSize;
+                DataAnalysis.GetHistogram(fitsDataPtr, numberDataPoints, histogramSize, volumeDataSetRes.MinValue, volumeDataSetRes.MaxValue, out histogramPtr);
+                Marshal.Copy(histogramPtr, volumeDataSetRes.Histogram, 0, histogramSize);
                 if (histogramPtr != IntPtr.Zero)
                     DataAnalysis.FreeDataAnalysisMemory(histogramPtr);
-                volumeDataSet.HasFitsRestFrequency =
-                    volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ") || volumeDataSet.HeaderDictionary.ContainsKey("RESTFREQ");
+                volumeDataSetRes.HasFitsRestFrequency =
+                    volumeDataSetRes.HeaderDictionary.ContainsKey("RESTFRQ") || volumeDataSetRes.HeaderDictionary.ContainsKey("RESTFREQ");
             }
            
-            if (volumeDataSet.HasFitsRestFrequency)
+            if (volumeDataSetRes.HasFitsRestFrequency)
             {
+                Debug.Log("Found rest frequency in file.");
                 StringBuilder restFreqSB = new StringBuilder(70);
-                volumeDataSet.FitsRestFrequency = AstTool.GetString(astFrameSet, new StringBuilder("RestFreq"), restFreqSB, restFreqSB.Capacity);
+                volumeDataSetRes.FitsRestFrequency = AstTool.GetString(astFrameSet, new StringBuilder("RestFreq"), restFreqSB, restFreqSB.Capacity);
                 if (double.TryParse(restFreqSB.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
                 {
-                    volumeDataSet.FitsRestFrequency = result;
-                    volumeDataSet.HasRestFrequency = true;
+                    volumeDataSetRes.FitsRestFrequency = result;
+                    volumeDataSetRes.HasRestFrequency = true;
                 }
             }
+            else
+                Debug.Log("Did not find rest frequency in file. Manual setting required.");
             
             // Set wcs angle format from config file. Defaults as sexagesimal
             var config = Config.Instance;
@@ -342,48 +447,56 @@ namespace VolumeData
                 AstTool.SetString(astFrameSet, new StringBuilder("Format(2)"), new StringBuilder("d.*"));
             }
             
-            volumeDataSet.FitsData = fitsDataPtr;
-            volumeDataSet.XDim = volumeDataSet.cubeSize[0];
-            volumeDataSet.YDim = volumeDataSet.cubeSize[1];
-            volumeDataSet.ZDim = volumeDataSet.cubeSize[index2];
-            volumeDataSet.AstFrameSet = astFrameSet;
+            volumeDataSetRes.FitsData = fitsDataPtr;
+            volumeDataSetRes.XDim = volumeDataSetRes.cubeSize[0];
+            volumeDataSetRes.YDim = volumeDataSetRes.cubeSize[1];
+            volumeDataSetRes.ZDim = volumeDataSetRes.cubeSize[index2];
+            volumeDataSetRes.AstFrameSet = astFrameSet;
             
             //Create alternate AstFrame with frequency or velocity depending on primary's unit
-            volumeDataSet.CreateAltSpecFrame();
+            volumeDataSetRes.CreateAltSpecFrame();
             
             //Check if AstFrameSet or AltSpecSet have velocity
-            string primaryFrameZUnit = volumeDataSet.GetAstAttribute("System(3)");
-            volumeDataSet.AstframeIsFreq = primaryFrameZUnit == "FREQ" || primaryFrameZUnit == "AWAV";
+            string primaryFrameZUnit = volumeDataSetRes.GetAstAttribute("System(3)");
+            volumeDataSetRes.AstframeIsFreq = primaryFrameZUnit.Equals("FREQ") 
+                                            || primaryFrameZUnit.Equals("AWAV")
+                                            || primaryFrameZUnit.Equals("WAVE")
+                                            || primaryFrameZUnit.Equals("WAVELEN")
+                                            || primaryFrameZUnit.Equals("WAVENUM")
+                                            || primaryFrameZUnit.Equals("AIRWAVE");
             var velocityUnitToSet = config.velocityUnit == VelocityUnit.Km ? "km/s" : "m/s";
-            if (volumeDataSet.AstframeIsFreq)
-                volumeDataSet.SetAltAxisUnit(3, velocityUnitToSet);
+            if (volumeDataSetRes.AstframeIsFreq)
+                volumeDataSetRes.SetAltAxisUnit(3, velocityUnitToSet);
             else
-                volumeDataSet.SetAxisUnit(3, velocityUnitToSet);
+                volumeDataSetRes.SetAxisUnit(3, velocityUnitToSet);
 
-
-            volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
+            volumeDataSetRes._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
-            volumeDataSet._cachedBrush = new byte[2];
+            volumeDataSetRes._cachedBrush = new byte[2];
 
-            if (volumeDataSet.IsMask)
+            if (volumeDataSetRes.IsMask)
             {
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
-                var sourceArray = DataAnalysis.GetMaskedSourceArray(volumeDataSet.FitsData, volumeDataSet.XDim, volumeDataSet.YDim, volumeDataSet.ZDim);
-                volumeDataSet.SourceStatsDict = new Dictionary<int, DataAnalysis.SourceStats>();
+                var sourceArray = DataAnalysis.GetMaskedSourceArray(volumeDataSetRes.FitsData, volumeDataSetRes.XDim, volumeDataSetRes.YDim, volumeDataSetRes.ZDim);
+                volumeDataSetRes.SourceStatsDict = new Dictionary<int, DataAnalysis.SourceStats>();
                 foreach (var source in sourceArray)
                 {
-                    volumeDataSet.SourceStatsDict[source.maskVal] = DataAnalysis.SourceStats.FromSourceInfo(source);
-                    volumeDataSet.UpdateStats(source.maskVal);
-                    volumeDataSet.NewSourceId = Math.Max(volumeDataSet.NewSourceId, (short)(source.maskVal + 1));
+                    volumeDataSetRes.SourceStatsDict[source.maskVal] = DataAnalysis.SourceStats.FromSourceInfo(source);
+                    volumeDataSetRes.UpdateStats(source.maskVal);
+                    volumeDataSetRes.NewSourceId = Math.Max(volumeDataSetRes.NewSourceId, (short)(source.maskVal + 1));
                 }
                 sw.Stop();
-                Debug.Log($"Calculated stats for {volumeDataSet.SourceStatsDict?.Count} sources in {sw.Elapsed.TotalMilliseconds} ms");
+                Debug.Log($"Calculated stats for {volumeDataSetRes.SourceStatsDict?.Count} sources in {sw.Elapsed.TotalMilliseconds} ms");
             }
 
-            return volumeDataSet;
+            return volumeDataSetRes;
         }
 
+        /// <summary>
+        /// Updates the calculated stats for the given mask value.
+        /// </summary>
+        /// <param name="maskVal"></param>
         private void UpdateStats(short maskVal)
         {
             if (!SourceStatsDict.ContainsKey(maskVal))
@@ -398,7 +511,8 @@ namespace VolumeData
             if (sourceStats.numVoxels > 0)
             {
                 SourceStatsDict[maskVal] = sourceStats;
-                PrintStats(maskVal);
+                // Uncomment for stat calculation debugging:
+                // PrintStats(maskVal);
             }
             else if (SourceStatsDict.ContainsKey(maskVal))
             {
@@ -432,14 +546,26 @@ namespace VolumeData
                     // Add new feature for the newly created stats
                     var boxMin = new Vector3(sourceStats.minX, sourceStats.minY, sourceStats.minZ);
                     var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
+                    var flag = "";
                     var name = $"Masked Source #{maskVal}";
                     var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
-                    var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, _maskFeatureSet.FeatureList.Count, maskVal - 1, rawStrings, _maskFeatureSet, _maskFeatureSet.FeatureList[0].Visible);
+                    bool vis;
+                    if (_maskFeatureSet.FeatureList.Count > 1)
+                        vis = _maskFeatureSet.FeatureList[0].Visible;
+                    else
+                        vis = false;
+                    var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, flag, _maskFeatureSet.FeatureList.Count, maskVal - 1, rawStrings, _maskFeatureSet, vis);
                     _maskFeatureSet.AddFeature(feature);
+                    _maskFeatureSet.FeatureMenuScrollerDataSource.InitData();       // Reinitialize the data source to include the new feature
+                    _maskFeatureSet.FeatureManager.NeedToRespawnMenuList = true;
                 }
             }
         }
 
+        /// <summary>
+        /// Debug function to print the calculated stats for the given mask value.
+        /// </summary>
+        /// <param name="maskVal"></param>
         private void PrintStats(short maskVal)
         {
             if (!SourceStatsDict.ContainsKey(maskVal))
@@ -448,8 +574,7 @@ namespace VolumeData
                 return;
             }
             var sourceStats = SourceStatsDict[maskVal];
-            //Uncomment below to debug stats calculation:
-            //Debug.Log($"Source {maskVal}: Bounding box [{sourceStats.minX}, {sourceStats.minY}, {sourceStats.minZ}] -> [{sourceStats.maxX}, {sourceStats.maxY}, {sourceStats.maxZ}]; {sourceStats.numVoxels} voxels; {sourceStats.sum} (sum); {sourceStats.peak} (peak); centroid [{sourceStats.cX}, {sourceStats.cY}, {sourceStats.cZ}]; vsys: {sourceStats.channelVsys}; w20: {sourceStats.channelW20}");
+            Debug.Log($"Source {maskVal}: Bounding box [{sourceStats.minX}, {sourceStats.minY}, {sourceStats.minZ}] -> [{sourceStats.maxX}, {sourceStats.maxY}, {sourceStats.maxZ}]; {sourceStats.numVoxels} voxels; {sourceStats.sum} (sum); {sourceStats.peak} (peak); centroid [{sourceStats.cX}, {sourceStats.cY}, {sourceStats.cZ}]; vsys: {sourceStats.channelVsys}; w20: {sourceStats.channelW20}");
         }
 
         public void FillFeatureSet( FeatureSetRenderer featureSet)
@@ -510,22 +635,51 @@ namespace VolumeData
         
         public VolumeDataSet GenerateEmptyMask()
         {
-            VolumeDataSet volumeDataSet = new VolumeDataSet();
-            volumeDataSet.IsMask = true;
-            FitsReader.CreateEmptyImageInt16(XDim, YDim, ZDim, out var dataPtr);
-            volumeDataSet.FitsData = dataPtr;
-            volumeDataSet.ImageDataPtr = FitsData;
-            volumeDataSet.XDim = XDim;
-            volumeDataSet.YDim = YDim;
-            volumeDataSet.ZDim = ZDim;
-            volumeDataSet.SourceStatsDict = new Dictionary<int, DataAnalysis.SourceStats>();
-            volumeDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
+            VolumeDataSet maskDataSet = new VolumeDataSet();
+            maskDataSet.IsMask = true;
+            int trueX, trueY, trueZ;
+            trueX = trueSize[1] - trueSize[0] + 1;
+            trueY = trueSize[3] - trueSize[2] + 1;
+            trueZ = trueSize[5] - trueSize[4] + 1;
+            FitsReader.CreateEmptyImageInt16(trueX, trueY, trueZ, out var dataPtr);
+            maskDataSet.FitsData = dataPtr;
+            maskDataSet.ImageDataPtr = FitsData;
+            maskDataSet.XDim = XDim;
+            maskDataSet.YDim = YDim;
+            maskDataSet.ZDim = ZDim;
+            maskDataSet.subsetBounds = subsetBounds;
+            maskDataSet.SourceStatsDict = new Dictionary<int, DataAnalysis.SourceStats>();
+            maskDataSet._updateTexture = new Texture2D(1, 1, TextureFormat.R16, false);
             // single pixel brush: 16-bits = 2 bytes
-            volumeDataSet._cachedBrush = new byte[2];
+            maskDataSet._cachedBrush = new byte[2];
 
-            return volumeDataSet;
+            // Save new mask because none exists yet
+            int status;
+            FitsReader.FitsOpenFileReadOnly(out var cubeFitsPtr, this.FileName, out status);
+            string directory = Path.GetDirectoryName(this.FileName);
+            string fileName = $"{directory}/{Path.GetFileNameWithoutExtension(this.FileName)}-mask";
+            bool exists = File.Exists(fileName + ".fits");
+            if (exists)
+            {
+                var timeStamp = DateTime.Now.ToString("yyyyMMdd_Hmmss");
+                fileName = fileName + "_" + timeStamp + ".fits";
+            }
+            else
+                fileName = fileName + ".fits";
+            long[] trueDims = {trueX, trueY, trueZ};
+            status = FitsReader.SaveMask(cubeFitsPtr, FitsData, trueDims, fileName);
+
+            maskDataSet.FileName = fileName;
+            return maskDataSet;
         }
-
+        
+        /// <summary>
+        /// Use DataAnalysisTool to downsample the entire cube and generate a new Texture3D object for DataCube.
+        /// </summary>
+        /// <param name="textureFilter"></param>
+        /// <param name="xDownsample"></param>
+        /// <param name="yDownsample"></param>
+        /// <param name="zDownsample"></param>
         public void GenerateVolumeTexture(FilterMode textureFilter, int xDownsample, int yDownsample, int zDownsample)
         {
             TextureFormat textureFormat;
@@ -599,6 +753,13 @@ namespace VolumeData
                 DataAnalysis.FreeDataAnalysisMemory(reducedData);
         }
 
+        /// <summary>
+        /// Similar to GenerateVolumeTexture, but only generates a downsampled cropped region of the cube.
+        /// </summary>
+        /// <param name="textureFilter"></param>
+        /// <param name="cropStart"></param>
+        /// <param name="cropEnd"></param>
+        /// <param name="downsample"></param>
         public void GenerateCroppedVolumeTexture(FilterMode textureFilter, Vector3Int cropStart, Vector3Int cropEnd, Vector3Int downsample)
         {
             Stopwatch sw = new Stopwatch();
@@ -804,8 +965,15 @@ namespace VolumeData
 
         public float GetDataValue(int x, int y, int z)
         {
+            if (loadSubset)
+            {
+                x -= (subsetBounds[0] - 1);
+                y -= (subsetBounds[2] - 1);
+                z -= (subsetBounds[4] - 1);
+            }
             if (x < 1 || x > XDim || y < 1 || y > YDim || z < 1 || z > ZDim)
             {
+                Debug.LogError("Trying to load value from coordinates [" + x.ToString() + ", " + y.ToString() + ", " + z.ToString() + "], limited to bounds [1, 1, 1] and [" + XDim.ToString() + ", " + YDim.ToString() + ", " + ZDim.ToString() + "]!");
                 return float.NaN;
             }
 
@@ -816,8 +984,15 @@ namespace VolumeData
 
         public Int16 GetMaskValue(int x, int y, int z)
         {
+            if (loadSubset)
+            {
+                x -= (subsetBounds[0] - 1);
+                y -= (subsetBounds[2] - 1);
+                z -= (subsetBounds[4] - 1);
+            }
             if (x < 1 || x > XDim || y < 1 || y > YDim || z < 1 || z > ZDim)
             {
+                Debug.LogError("Trying to load value from coordinates [" + x.ToString() + ", " + y.ToString() + ", " + z.ToString() + "], limited to bounds [1, 1, 1] and [" + XDim.ToString() + ", " + YDim.ToString() + ", " + ZDim.ToString() + "]!");
                 return 0;
             }
 
@@ -1295,12 +1470,20 @@ namespace VolumeData
         }
         public int SaveMask(IntPtr cubeFitsPtr, string filename)
         {
-            int status = FitsReader.SaveMask(cubeFitsPtr, FitsData, Dims, filename);
+            int[] firstPix = new int[3];
+            int[] lastPix = new int[3];
+            for (int i = 0; i < 3; i++)
+            {
+                firstPix[i] = subsetBounds[i * 2];
+                lastPix[i] = subsetBounds[i * 2 + 1];
+            }
+            int status = FitsReader.SaveSubMask(cubeFitsPtr, FitsData, firstPix, lastPix, filename);
             if (!string.IsNullOrEmpty(filename))
             {
                 // Update filename after stripping out exclamation mark indicating overwrite flag
                 FileName = filename.Replace("!", "");
             }
+            Debug.Log("Wrote submask from first pixel [" + String.Join(", ", firstPix) + "] and end pixel [" + String.Join(", ", lastPix) + "]; VolumeDataSet::SaveMask() complete.");
             return status;
         }
 
@@ -1487,27 +1670,65 @@ namespace VolumeData
                     unit = "km/s";
                     break;
                 case "VRAD":
+                    system = "FREQ";
+                    unit = "Hz";
+                    break;
                 case "VRADIO":
+                    system = "FREQ";
+                    unit = "Hz";
+                    break;
                 case "VOPT":
+                    system = "FREQ";
+                    unit = "Hz";
+                    break;
                 case "VOPTICAL":
+                    system = "FREQ";
+                    unit = "Hz";
+                    break;
                 case "VELO":
+                    system = "FREQ";
+                    unit = "Hz";
+                    break;
                 case "VREL":
                     system = "FREQ";
                     unit = "Hz";
                     break;
                 case "ENER":
+                    Debug.Log("Unsupported spectral unit for depth!");
+                    break;
                 case "ENERGY":
+                    Debug.Log("Unsupported spectral unit for depth!");
+                    break;
                 case "WAVN":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "WAVENUM":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "WAVE":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "WAVELEN":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "AWAV":
                     system = "VRAD";
                     unit = "km/s";
                     break;
                 case "AIRWAVE":
+                    system = "VRAD";
+                    unit = "km/s";
+                    break;
                 case "ZOPT":
+                    Debug.Log("Unsupported spectral unit for depth!");
+                    break;
                 case "REDSHIFT":
+                    Debug.Log("Unsupported spectral unit for depth!");
+                    break;
                 case "BETA":
                     Debug.Log("Unsupported spectral unit for depth!");
                     break;
@@ -1528,6 +1749,11 @@ namespace VolumeData
             {
                 Debug.Log("Error normalizing physical coordinates!");
             }
+        }
+
+        public bool isSubset()
+        {
+            return this.loadSubset;
         }
         
         public void CleanUp(bool randomCube)
