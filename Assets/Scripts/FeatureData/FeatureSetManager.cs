@@ -54,16 +54,17 @@ namespace DataFeatures
 
         // List containing the different FeatureSets (example: SofiaSet, CustomSet, VRSet, etc.)
         // UI will have tab for each Renderer containing the lists of Features
-        public List<FeatureSetRenderer> ImportedFeatureSetList {get; private set;}
-        public List<FeatureSetRenderer> GeneratedFeatureSetList {get; private set;}
+        public FeatureSetRenderer SelectionFeaureSet {get; private set;}    // Feature set for making selections
+        public FeatureSetRenderer MaskFeatureSet {get; private set;}        // Feature set generated from mask
+        public FeatureSetRenderer NewFeatureSet {get; private set;}         // Feature set created by user
+        public List<FeatureSetRenderer> ImportedFeatureSetList {get; private set;}  // Feature sets imported from catalogs
 
-        // Active Renderer will be "container" to add Features to if saving is desired.
+        // Active Renderer is what will be displayed in the sources menu UI
         public FeatureSetRenderer ActiveFeatureSetRenderer {get; set;}
 
         void Awake()
         {
             ImportedFeatureSetList = new List<FeatureSetRenderer>();
-            GeneratedFeatureSetList = new List<FeatureSetRenderer>();
             _timeStamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             OutputFile = _timeStamp + ".ascii";
 
@@ -126,7 +127,7 @@ namespace DataFeatures
             }
         }
 
-        public FeatureSetRenderer CreateSelectionFeatureSet()
+        public void CreateSelectionFeatureSet()
         {
             Vector3 CubeDimensions = VolumeRenderer.GetCubeDimensions();
             FeatureSetRenderer featureSetRenderer;
@@ -140,8 +141,7 @@ namespace DataFeatures
             featureSetRenderer.transform.localScale = new Vector3(1 / CubeDimensions.x, 1 / CubeDimensions.y, 1 / CubeDimensions.z);
             // Shift by half a voxel (because voxel center has integer coordinates, not corner)
             featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
-            GeneratedFeatureSetList.Add(featureSetRenderer);
-            return featureSetRenderer; 
+            SelectionFeaureSet = featureSetRenderer;
         }
         // Creates new empty FeatureSetRenderer for adding Features
         public FeatureSetRenderer CreateNewFeatureSet()
@@ -245,7 +245,7 @@ namespace DataFeatures
         
         public bool CreateCustomFeature(Vector3 boundsMin, Vector3 boundsMax, string featureName, bool temporary = true)
         {
-            ActiveFeatureSetRenderer = GeneratedFeatureSetList[0];
+            ActiveFeatureSetRenderer = SelectionFeaureSet;
             ActiveFeatureSetRenderer.ClearFeatures();
             var flag = "";
             if (ActiveFeatureSetRenderer)
