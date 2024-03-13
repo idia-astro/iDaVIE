@@ -66,6 +66,7 @@ public class FeatureMenuController : MonoBehaviour
             Destroy(RecyclableScrollView.gameObject);
             RecyclableScrollView = null;
             ListTitle.text = "";
+            RefreshListColor();
             featureSetManager.NeedToResetList = false;
         }
         if (RecyclableScrollView == null && featureSetManager?.ImportedFeatureSetList?.Count > 0)
@@ -142,8 +143,14 @@ public class FeatureMenuController : MonoBehaviour
             RecyclableScrollView.DataSource = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].FeatureMenuScrollerDataSource;
             RecyclableScrollView.ReloadData();
         }
+        RefreshListColor();
     }
 
+    public void RefreshListColor()
+    {
+        ListColorDisplay.color = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].FeatureColor;
+    }
+    
     public void ChangeColor()
         {
             int nextIndex = System.Array.IndexOf(FeatureSetManager.FeatureColors, featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].FeatureColor) + 1;
@@ -151,7 +158,7 @@ public class FeatureMenuController : MonoBehaviour
                 nextIndex = 0;
             featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].FeatureColor = FeatureSetManager.FeatureColors[nextIndex];
             featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].UpdateColor();
-            ListColorDisplay.color = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].FeatureColor;
+            RefreshListColor();
         }
 
 
