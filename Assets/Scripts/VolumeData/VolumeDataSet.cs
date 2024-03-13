@@ -82,6 +82,7 @@ namespace VolumeData
         public Dictionary<int, DataAnalysis.SourceStats> SourceStatsDict { get; private set; }
 
         public string FileName { get; set; }
+        public int SelectedHdu { get; set; }
         public long XDim { get; private set; }
         public long YDim { get; private set; }
         public long ZDim { get; private set; }
@@ -213,12 +214,13 @@ namespace VolumeData
         /// <param name="index2"></param>
         /// <param name="sliceDim"></param>
         /// <returns></returns>
-        public static VolumeDataSet LoadDataFromFitsFile(string fileName, int[] subBounds, int[] trueBounds, IntPtr imageDataPtr = default(IntPtr), int index2 = 2, int sliceDim = 1)
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, int[] subBounds, int[] trueBounds, IntPtr imageDataPtr = default(IntPtr), int index2 = 2, int sliceDim = 1, int selectedHdu = 1)
         {
             VolumeDataSet volumeDataSetRes = new VolumeDataSet();
             volumeDataSetRes.IsMask =  imageDataPtr != IntPtr.Zero;
             volumeDataSetRes.ImageDataPtr = imageDataPtr;
             volumeDataSetRes.FileName = fileName;
+            volumeDataSetRes.SelectedHdu = selectedHdu;
             volumeDataSetRes.trueSize = trueBounds;
             IntPtr fptr = IntPtr.Zero;
             int status = 0;
@@ -232,6 +234,15 @@ namespace VolumeData
             if (FitsReader.FitsOpenFile(out fptr, fileName, out status, true) != 0)
             {
                 Debug.Log("Fits open failure... code #" + status.ToString());
+            }
+            if (selectedHdu != 1)
+            {
+                if (FitsReader.FitsMovabsHdu(fptr, selectedHdu, out int hdutype, out status) != 0)
+                {
+                    Debug.Log("Fits move to HDU failure... code #" + status.ToString());
+                    FitsReader.FitsCloseFile(fptr, out status);
+                    return null;
+                }
             }
             if (FitsReader.FitsCreateHdrPtrForAst(fptr, out volumeDataSetRes.FitsHeader, out volumeDataSetRes.NumberHeaderKeys, out status) != 0)
             {

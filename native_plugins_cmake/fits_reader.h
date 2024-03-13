@@ -23,11 +23,9 @@ DllExport int FitsCloseFile(fitsfile *, int *);
 
 DllExport int FitsFlushFile(fitsfile * , int *);
 
-DllExport int FitsGetNumHdus(fitsfile *, int *, int *);
+DllExport int FitsGetHduCount(fitsfile *, int *, int *);
 
 DllExport int FitsGetCurrentHdu(fitsfile *, int *);
-
-DllExport int FitsMoveToHdu(fitsfile *, int, int *);
 
 DllExport int FitsMovabsHdu(fitsfile *, int , int *, int *);
 
