@@ -192,7 +192,7 @@ public class FeatureMenuController : MonoBehaviour
 
     public void RefreshListColor()
     {
-        ListColorDisplay.color = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].FeatureColor;
+        ListColorDisplay.color = _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor;
     }
         
     /// <summary>
