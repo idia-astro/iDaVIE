@@ -83,7 +83,6 @@ public class FeatureMenuController : MonoBehaviour
             }
 
             ListTitle.text = "";
-            RefreshListColor();
             
             switch (_featureSetType)
             {
@@ -104,6 +103,7 @@ public class FeatureMenuController : MonoBehaviour
             RecyclableScrollView =  Instantiate(RecyclableScrollViewPrefab, this.transform).GetComponent<RecyclableScrollRect>();
             RecyclableScrollView.Initialize(_featureSetRendererList[0].FeatureMenuScrollerDataSource);
             ListTitle.text = _featureSetRendererList[CurrentFeatureSetIndex].name;
+            RefreshListColor();
             _featureSetManager.NeedToRespawnMenuList = true;
         }
         if (_featureSetManager?.NeedToRespawnMenuList == true && RecyclableScrollView != null)

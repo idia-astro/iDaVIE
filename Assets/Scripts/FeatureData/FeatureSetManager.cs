@@ -181,7 +181,7 @@ namespace DataFeatures
         /// <returns>FeatureSetRenderer</returns>
         public FeatureSetRenderer CreateMaskFeatureSet()
         {
-            var maskFeatureSet = CreateEmptyFeatureSet("Mask Source Set", "customSet", 0, FeatureColors[0]); //TODO: make color assignment smarter (based on previous sets)
+            var maskFeatureSet = CreateEmptyFeatureSet("Mask Source Set", "customSet", 0, Color.magenta); //TODO: make color assignment smarter (based on previous sets)
             MaskFeatureSetList.Add(maskFeatureSet);
             return maskFeatureSet;
         }
@@ -319,18 +319,9 @@ namespace DataFeatures
             }
             if (SelectedFeature != null)
             {
-                if (SelectedFeature.FeatureSetParent == SelectionFeatureSet)
-                {
-                    SelectedFeature.Temporary = false;
-                    SelectedFeature.Index = NewFeatureSetList[0].FeatureList.Count;
-                    NewFeatureSetList[0].AddFeature(SelectedFeature);
-                }
-                else
-                {
-                    //make a duplicate of the feature and add it to the new set
-                    var duplicateFeature = new Feature(SelectedFeature.CornerMin, SelectedFeature.CornerMax, SelectedFeature.CubeColor, SelectedFeature.Name, SelectedFeature.Flag, NewFeatureSetList[0].FeatureList.Count, SelectedFeature.Id, new string[]{""}, true);
-                    NewFeatureSetList[0].AddFeature(duplicateFeature);
-                }
+                //make a duplicate of the feature and add it to the new set
+                var duplicateFeature = new Feature(SelectedFeature.CornerMin, SelectedFeature.CornerMax, NewFeatureSetList[0].FeatureColor, SelectedFeature.Name, SelectedFeature.Flag, NewFeatureSetList[0].FeatureList.Count, SelectedFeature.Id, new string[]{""}, true) {Temporary = false};
+                NewFeatureSetList[0].AddFeature(duplicateFeature);
                 NewFeatureSetList[0].FeatureMenuScrollerDataSource.InitData();
                 NeedToRespawnMenuList = true;
                 return true;
