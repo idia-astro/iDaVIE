@@ -389,8 +389,8 @@ namespace VolumeData
                 _featureManager.CreateSelectionFeatureSet();
                 if (_maskDataSet != null)
                 {
-                    var featureSet = _featureManager.CreateNewFeatureSet();
-                    _maskDataSet?.FillFeatureSet(featureSet);
+                    var maskFeatureSet = _featureManager.CreateMaskFeatureSet();
+                    _maskDataSet?.FillFeatureSet(maskFeatureSet);
                 }
             }
 
@@ -1080,6 +1080,11 @@ namespace VolumeData
             }
             if (cubeFitsPtr != IntPtr.Zero)
                 FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+        }
+
+        public void AddSelectionToList()
+        {
+            _featureManager.AddSelectedFeatureToNewSet();
         }
 
         public void OnDestroy()

@@ -37,6 +37,9 @@ namespace DataFeatures
         public Vector3[] FeaturePositions { get; private set; }
         public Vector3[] BoxMinPositions { get; private set; }
         public Vector3[] BoxMaxPositions { get; private set; }
+        
+        //TODO: Need to find a better "host" for RawData and RawDataKeys. Right now it is split between
+        //Features and FeatureSetRenderer which causes problems when moving features between sets.
         public string[] RawDataKeys { get; set; }
         public string[] RawDataTypes { get; set; }
         public string FileName { get; private set; }
@@ -45,9 +48,7 @@ namespace DataFeatures
 
         private bool importFlags;
         public int Index;
-
-        public bool IsImported {get; private set;}
-
+        
         public Color FeatureColor;
 
         public bool featureSetVisible = false;
@@ -62,6 +63,7 @@ namespace DataFeatures
         private Material _materialInstance;
         private List<int> _dirtyFeatures;
 
+        // For the recycled scrolling list
         public FeatureMenuDataSource FeatureMenuScrollerDataSource;
 
 
@@ -77,9 +79,8 @@ namespace DataFeatures
             _materialInstance = Material.Instantiate(LineRenderingMaterial);
         }
 
-        public void Initialize(bool isImported)
+        public void Initialize()
         {
-            IsImported = isImported;
             FeatureManager = GetComponentInParent<FeatureSetManager>();
             VolumeRenderer = FeatureManager.VolumeRenderer;
         }
@@ -136,6 +137,7 @@ namespace DataFeatures
             obj.IdTextField = (FeatureList.Count).ToString();
             obj.SourceName = featureToAdd.Name;
             obj.Feature = featureToAdd;
+            featureToAdd.FeatureSetParent = this;
             SetFeatureAsDirty(featureToAdd.Index);
         }
 
@@ -238,7 +240,7 @@ namespace DataFeatures
                 var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
                 var featureName = $"Masked Source #{item.Key}";
                 var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
-                AddFeature(new Feature(boxMin, boxMax, FeatureColor, featureName, flag, FeatureList.Count, item.Key - 1, rawStrings, this, false));
+                AddFeature(new Feature(boxMin, boxMax, FeatureColor, featureName, flag, FeatureList.Count, item.Key - 1, rawStrings, false));
             }
             FeatureMenuScrollerDataSource.InitData();
         }
@@ -460,7 +462,8 @@ namespace DataFeatures
                     cornerMax = BoxMaxPositions[i];
                     var flag = (importFlags) ? flags[i] : "";
                     var featureToAdd = new Feature(cornerMin, cornerMax, FeatureColor, FeatureNames[i], flag, i, i,
-                        featureRawData[i].ToArray(), this, false);
+                        featureRawData[i].ToArray(), false);
+                    featureToAdd.FeatureSetParent = this;
                     if (!(excludeExternal && (featureToAdd.Center.x < 0 ||
                                               featureToAdd.Center.x > VolumeRenderer.Data.XDim ||
                                               featureToAdd.Center.y < 0 ||
@@ -468,7 +471,7 @@ namespace DataFeatures
                                               featureToAdd.Center.z < 0 ||
                                               featureToAdd.Center.z > VolumeRenderer.Data.ZDim)))
                     {
-                        FeatureList.Add(featureToAdd);
+                        FeatureList.Add(featureToAdd);          //TODO: why isn't this AddFeature()?
                     }
                 }
             }
@@ -536,29 +539,5 @@ namespace DataFeatures
         {
             VoTableSaver.SaveFeatureSetAsVoTable(this, filePath);
         }
-
-        /*
-        // Output the features to File
-        public void OutputFeaturesToFile(string FileName)
-        {
-            VolumeDataSet parentVolume = GetComponentInParent<VolumeDataSet>();
-            var volumeDataSetRenderer = GetComponentInParent<VolumeDataSetRenderer>();
-            if (parentVolume != null && volumeDataSetRenderer != null)
-            {
-                string volumeName = Path.GetFileName(parentVolume.FileName);
-                string[] featureData = new string[2 + _featureList.Count];
-                featureData[0] = "#VR Features from Cube: " + volumeName;
-                featureData[1] = "    x    y    z";
-                for (int i = 0; i < _featureList.Count; i++)
-                {
-                    Vector3 featurePosition = _featureList[i].transform.position;
-                    Vector3 featureVolPosition = volumeDataSetRenderer.LocalPositionToVolumePosition(featurePosition);
-                    featureData[i + 2] = $"    {featureVolPosition.x}    {featureVolPosition.y}    {featureVolPosition.z}";
-                }
-
-                File.WriteAllLines(FileName, featureData);
-            }
-        }
-        */
     }
 }
