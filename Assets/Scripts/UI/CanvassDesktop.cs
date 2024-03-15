@@ -315,7 +315,7 @@ public class CanvassDesktop : MonoBehaviour
             }
 
             _hduSelectionIndex = 0;
-            FitsReader.FitsMovabsHdu(fptr, _hduSelectionIndex, out hdutype, out status);
+            FitsReader.FitsMovabsHdu(fptr, _hduImageIndexes[_hduSelectionIndex], out hdutype, out status);
             
             
             var hduContainer = informationPanelContent.gameObject.transform.Find("HeaderTitle_container").transform
