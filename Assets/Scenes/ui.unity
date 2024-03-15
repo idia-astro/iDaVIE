@@ -562,7 +562,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: Exit
+            m_StringArgument: Settings
             m_BoolArgument: 0
           m_CallState: 2
   - eventID: 10
@@ -87110,7 +87110,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: Main Menu
+            m_StringArgument: Source Lists
             m_BoolArgument: 0
           m_CallState: 2
   - eventID: 10
