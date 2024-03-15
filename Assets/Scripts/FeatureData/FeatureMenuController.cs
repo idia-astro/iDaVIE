@@ -83,6 +83,7 @@ public class FeatureMenuController : MonoBehaviour
             }
 
             ListTitle.text = "";
+            RefreshListColor();
             
             switch (_featureSetType)
             {
@@ -186,8 +187,14 @@ public class FeatureMenuController : MonoBehaviour
             RecyclableScrollView.DataSource = _featureSetRendererList[CurrentFeatureSetIndex].FeatureMenuScrollerDataSource;
             RecyclableScrollView.ReloadData();
         }
+        RefreshListColor();
     }
 
+    public void RefreshListColor()
+    {
+        ListColorDisplay.color = featureSetManager.ImportedFeatureSetList[CurrentFeatureSetIndex].FeatureColor;
+    }
+        
     /// <summary>
     /// Change the color of the current feature set to the next color in the list of feature colors
     /// </summary>
@@ -195,10 +202,14 @@ public class FeatureMenuController : MonoBehaviour
         {
             int nextIndex = System.Array.IndexOf(FeatureSetManager.FeatureColors, _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor) + 1;
             if (nextIndex >= FeatureSetManager.FeatureColors.Length)
+            {
                 nextIndex = 0;
+            }
             _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor = FeatureSetManager.FeatureColors[nextIndex];
             _featureSetRendererList[CurrentFeatureSetIndex].UpdateColor();
             ListColorDisplay.color = _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor;
+            RefreshListColor();
+
         }
 
 

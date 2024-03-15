@@ -19,7 +19,7 @@ namespace DataFeatures
     
     public class FeatureSetManager : MonoBehaviour
     {
-        public static Color[] FeatureColors = {Color.cyan, Color.yellow, Color.magenta, Color.green, Color.red, Color.grey};
+        public static Color[] FeatureColors = {Color.cyan, new Color(1f, 0f, 0.5f), Color.yellow, Color.blue, Color.magenta, Color.green, Color.red, new Color(0.8f, 0.8f, 0.8f), new Color(1f, 0.5f, 0f)};
         public FeatureSetRenderer FeatureSetRendererPrefab;
         public GameObject FeatureAnchorPrefab;
         public string FeatureFileToLoad;
