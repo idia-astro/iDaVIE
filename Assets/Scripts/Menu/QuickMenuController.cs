@@ -152,6 +152,7 @@ public class QuickMenuController : MonoBehaviour
         }
     }
 
+    //TODO: Make this compatible with the new feature list system. Might be best to remove.
     public void ToggleFeatures()
     {
         if (featureStatus == 1)
