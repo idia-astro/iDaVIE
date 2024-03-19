@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using UnityEngine.Serialization;
 using VolumeData;
 
 //Cell class corresponding to data features for Recyclable Scroll Rect
@@ -13,41 +14,71 @@ public class FeatureMenuCell : MonoBehaviour, ICell
 {
     //UI
     
-    public Text idTextField = null;
-    public Text sourceName = null;
-    public GameObject checkboxImg = null;
-    public int ParentListIndex {get; set;}
-    public Feature feature;
-    private VolumeDataSetRenderer _activeDataSet;
-    private VolumeDataSetRenderer[] _dataSets;
-    public GameObject volumeDatasetRendererObj = null;
-    private FeatureSetManager featureSetManager;
+    [FormerlySerializedAs("idTextField")] public Text IDTextField = null;
+    [FormerlySerializedAs("sourceName")] public Text SourceName = null;
+    [FormerlySerializedAs("checkboxImg")] public GameObject CheckboxImg = null;
 
-    private static Color _lightGrey = new Color(0.4039216f, 0.5333334f, 0.5882353f, 1f);
-    private static Color _darkGrey = new Color(0.2384301f, 0.3231786f, 0.3584906f, 1f);
-
-
-    //Model
-    private FeatureMenuListItemInfo _featureMenuListItemInfo;
-
+    public GameObject AddButton;
+    public GameObject RemoveButton;
+    
+    public Feature Feature;
+    [FormerlySerializedAs("volumeDatasetRendererObj")]
+    public GameObject VolumeDatasetRendererObj;
+    
     public int CellIndex {get; private set;} 
-
     public float CellHeight {get; private set;}
 
+    private VolumeDataSetRenderer _activeDataSet;
+    private VolumeDataSetRenderer[] _dataSets;
+    private FeatureSetManager _featureSetManager;
+    
 
+    private static readonly Color _lightGrey = new Color(0.4039216f, 0.5333334f, 0.5882353f, 1f);
+    private static readonly Color _darkGrey = new Color(0.2384301f, 0.3231786f, 0.3584906f, 1f);
+    
+    //Model
+    private FeatureMenuListItemInfo _featureMenuListItemInfo;
+    
+
+    void Start()
+    {
+        VolumeDatasetRendererObj = GameObject.Find("VolumeDataSetManager");
+        if (VolumeDatasetRendererObj != null)
+            _dataSets = VolumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
+        var firstActive = getFirstActiveDataSet();
+        if (firstActive && _activeDataSet != firstActive)
+        {
+            _activeDataSet = firstActive;
+        }
+        if (_activeDataSet != null)
+        {
+            _featureSetManager = _activeDataSet.GetComponentInChildren<FeatureSetManager>();
+        }
+        CellHeight = GetComponent<RectTransform>().rect.height;
+    }
+
+    void Update()
+    {
+        if (Feature.StatusChanged)
+        {
+            Feature.StatusChanged = false;
+            ToggleVisibilityIcon();
+        }
+    }
+    
     //This is called from the SetCell method in DataSource
     public void ConfigureCell(FeatureMenuListItemInfo featureMenuListItemInfo, int cellIndex)
     {
         CellIndex = cellIndex;
         _featureMenuListItemInfo = featureMenuListItemInfo;
-        idTextField.text = featureMenuListItemInfo.IdTextField;
-        sourceName.text = featureMenuListItemInfo.SourceName;
-        feature = featureMenuListItemInfo.Feature;
-        if (feature.Flag == null)
+        IDTextField.text = featureMenuListItemInfo.IdTextField;
+        SourceName.text = featureMenuListItemInfo.SourceName;
+        Feature = featureMenuListItemInfo.Feature;
+        if (Feature.Flag == null)
             SetFlag("");
         else
-            SetFlag(feature.Flag);
-        if (feature.Visible)
+            SetFlag(Feature.Flag);
+        if (Feature.Visible)
             SetVisibilityIconsOn();
         else
             SetVisibilityIconsOff();
@@ -57,19 +88,30 @@ public class FeatureMenuCell : MonoBehaviour, ICell
             GetComponent<Image>().color = _lightGrey;
         else if (cellIndex%2!=1)
             GetComponent<Image>().color = _darkGrey;
+        // If feature menu cell corresponds to a NewList feature, replace Add button with Remove button
+        if (Feature.FeatureSetParent.FeatureSetType == FeatureSetType.New)
+        {
+            AddButton.SetActive(false);
+            RemoveButton.SetActive(true);
+        }
+        else
+        {
+            AddButton.SetActive(true);
+            RemoveButton.SetActive(false);
+        }
     }
 
     public void SetVisible()
     {
-        if (!feature.Visible)
+        if (!Feature.Visible)
         {
-            checkboxImg.SetActive(true);
+            CheckboxImg.SetActive(true);
         }
         else
         {
-            checkboxImg.SetActive(false);
+            CheckboxImg.SetActive(false);
         }
-        feature.Visible = !feature.Visible;
+        Feature.Visible = !Feature.Visible;
     }
 
     /// <summary>
@@ -104,7 +146,7 @@ public class FeatureMenuCell : MonoBehaviour, ICell
         var visibleButton = this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("Mask")?.gameObject.transform;
         visibleButton.Find("Image_VIS")?.gameObject.SetActive(false);
         visibleButton.Find("Image_HIDE")?.gameObject.SetActive(false);
-        if (feature.Visible)
+        if (Feature.Visible)
         {
             visibleButton.Find("Image_VIS")?.gameObject.SetActive(true);
             visibleButton.GetComponent<Image>().color = Color.white;
@@ -122,7 +164,7 @@ public class FeatureMenuCell : MonoBehaviour, ICell
     /// </summary>
     public void ToggleVisibility()
     {
-        feature.Visible = !feature.Visible;
+        Feature.Visible = !Feature.Visible;
         ToggleVisibilityIcon();
     }
 
@@ -130,7 +172,7 @@ public class FeatureMenuCell : MonoBehaviour, ICell
     {
         _activeDataSet.FileChanged = true;
         var flags = Config.Instance.flags;
-        var flag = feature.Flag;
+        var flag = Feature.Flag;
         int flagIndex = 0;
         if (!flag.Equals(""))
             flagIndex = Array.IndexOf(flags, flag) + 1;
@@ -146,7 +188,7 @@ public class FeatureMenuCell : MonoBehaviour, ICell
     {
         if (f == null)
             f = "";
-        feature.Flag = f;
+        Feature.Flag = f;
         var flagLabel = this.gameObject.transform.Find("GameObject")?.gameObject.transform.Find("FlagButton")?.gameObject.transform.Find("FlagLabel").GetComponent<TMP_Text>();
         string lbl;
         if (f.Equals(""))
@@ -154,30 +196,30 @@ public class FeatureMenuCell : MonoBehaviour, ICell
         else
             lbl = (f.Length > 1) ? f.Substring(0, 2) : (" " + f.Substring(0, 1));
         flagLabel.SetText(lbl);
-        if (featureSetManager != null)
-            featureSetManager.NeedToUpdateInfo = true;
+        if (_featureSetManager != null)
+            _featureSetManager.NeedToUpdateInfo = true;
     }
 
    public void GoTo()
     {
-        Teleport(feature.CornerMin, feature.CornerMax);
+        Teleport(Feature.CornerMin, Feature.CornerMax);
     }
 
     public void Select()
     {
-        featureSetManager.SelectFeature(feature);
+        _featureSetManager.SelectFeature(Feature);
         int siblingCount = this.gameObject.transform.parent.childCount;
         for (int i = 0; i < siblingCount; i++)
         {
             var cell = this.gameObject.transform.parent.GetChild(i).GetComponent<FeatureMenuCell>();
-            if (cell.feature.Selected)
+            if (cell.Feature.Selected)
                 cell.GetComponent<Image>().color = Color.red;
             else if (cell.CellIndex%2!=0)
                 cell.GetComponent<Image>().color = _lightGrey;
             else if (cell.CellIndex%2!=1)
                 cell.GetComponent<Image>().color = _darkGrey;
         }
-        featureSetManager.NeedToUpdateInfo = true;
+        _featureSetManager.NeedToUpdateInfo = true;
     }
     
     public void Teleport(Vector3 boundsMin, Vector3 boundsMax)
@@ -204,33 +246,22 @@ public class FeatureMenuCell : MonoBehaviour, ICell
             dataSetTransform.position += deltaPosition;
         }
     }
+
+    public void AddToNewList()
+    {
+        _featureSetManager.AddFeatureToNewSet(Feature);
+    }
+
+    public void RemoveFromList()
+    {
+        if (Feature.Selected)
+        {
+            _featureSetManager.DeselectFeature();
+        }
+        Feature.FeatureSetParent.RemoveFeature(Feature);
+        _featureSetManager.NeedToRespawnMenuList = true;
+    }
     
-    void Start()
-    {
-        volumeDatasetRendererObj = GameObject.Find("VolumeDataSetManager");
-        if (volumeDatasetRendererObj != null)
-            _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
-        var firstActive = getFirstActiveDataSet();
-        if (firstActive && _activeDataSet != firstActive)
-        {
-            _activeDataSet = firstActive;
-        }
-        if (_activeDataSet != null)
-        {
-            featureSetManager = _activeDataSet.GetComponentInChildren<FeatureSetManager>();
-        }
-        CellHeight = GetComponent<RectTransform>().rect.height;
-    }
-
-    void Update()
-    {
-        if (feature.StatusChanged)
-        {
-            feature.StatusChanged = false;
-            ToggleVisibilityIcon();
-        }
-    }
-
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
         foreach (var dataSet in _dataSets)

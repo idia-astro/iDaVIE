@@ -31,6 +31,7 @@ namespace DataFeatures
 
         public List<Feature> FeatureList { get; private set; }
 
+        public FeatureSetType FeatureSetType = FeatureSetType.Unassigned;
         public VolumeDataSetRenderer VolumeRenderer { get; private set; }
         public FeatureSetManager FeatureManager { get; private set; }
         public string[] FeatureNames { get; private set; }
@@ -139,6 +140,12 @@ namespace DataFeatures
             obj.Feature = featureToAdd;
             featureToAdd.FeatureSetParent = this;
             SetFeatureAsDirty(featureToAdd.Index);
+        }
+
+        public void RemoveFeature(Feature featureToRemove)
+        {
+            FeatureList.Remove(featureToRemove);
+            FeatureMenuScrollerDataSource.InitData();
         }
 
         public void ClearFeatures()

@@ -11,10 +11,11 @@ namespace DataFeatures
 
     public enum FeatureSetType
     {
-        Selection,
+        Unassigned,
         Mask,
         New,
-        Imported
+        Imported,
+        Selection
     }
     
     public class FeatureSetManager : MonoBehaviour
@@ -144,7 +145,7 @@ namespace DataFeatures
         /// <param name="index"></param>
         /// <param name="color"></param>
         /// <returns>FeatureSetRenderer</returns>
-        public FeatureSetRenderer CreateEmptyFeatureSet(string name, string tag, int index, Color color)
+        public FeatureSetRenderer CreateEmptyFeatureSet(string name, string tag, int index, Color color, FeatureSetType featureSetType)
         {
             Vector3 CubeDimensions = VolumeRenderer.GetCubeDimensions();
             FeatureSetRenderer featureSetRenderer;
@@ -153,6 +154,7 @@ namespace DataFeatures
             featureSetRenderer.Initialize();
             featureSetRenderer.name = name;
             featureSetRenderer.tag = tag;
+            featureSetRenderer.FeatureSetType = featureSetType;
             // Move BLC to (0,0,0)
             featureSetRenderer.transform.localPosition -= 0.5f * Vector3.one;
             featureSetRenderer.transform.localScale = new Vector3(1 / CubeDimensions.x, 1 / CubeDimensions.y, 1 / CubeDimensions.z);
@@ -168,9 +170,10 @@ namespace DataFeatures
         /// </summary>
         public FeatureSetRenderer CreateSelectionFeatureSet()
         {
-            var selectionFeatureSet = CreateEmptyFeatureSet("Selection Set", "customSet", 0, Color.white);
+            var selectionFeatureSet = CreateEmptyFeatureSet("Selection Set", "customSet", 0, Color.white, FeatureSetType.Selection);
             selectionFeatureSet.RawDataKeys = new string[] { "RawData" };
             selectionFeatureSet.RawDataTypes = new string[] { "string" };
+            selectionFeatureSet.FeatureSetType = FeatureSetType.Selection;
             SelectionFeatureSet = selectionFeatureSet;
             return selectionFeatureSet;
         }
@@ -181,11 +184,22 @@ namespace DataFeatures
         /// <returns>FeatureSetRenderer</returns>
         public FeatureSetRenderer CreateMaskFeatureSet()
         {
-            var maskFeatureSet = CreateEmptyFeatureSet("Mask Source Set", "customSet", 0, Color.magenta); //TODO: make color assignment smarter (based on previous sets)
+            var maskFeatureSet = CreateEmptyFeatureSet("Mask Source Set", "customSet", 0, Color.magenta, FeatureSetType.Mask); //TODO: make color assignment smarter (based on previous sets)
+            maskFeatureSet.FeatureSetType = FeatureSetType.Mask;
             MaskFeatureSetList.Add(maskFeatureSet);
             return maskFeatureSet;
         }
 
+        private void InitializeNewList()
+        {
+            FeatureSetRenderer newFeatureSet = CreateEmptyFeatureSet("New Feature Set", "customSet", 0, Color.green, FeatureSetType.New);   //consider different tag names
+                // Need to fix how exporting VOTables works, but this is necessary in meantime
+            newFeatureSet.RawDataKeys = new[] { "RawData" };
+            newFeatureSet.RawDataTypes = new[] { "char" };
+            NewFeatureSetList.Add(newFeatureSet);
+
+        }
+        
         /// <summary>
         /// Creates FeatureSetRenderer filled with Features from voTable file
         /// </summary>
@@ -197,7 +211,7 @@ namespace DataFeatures
         /// <returns>FeatureSetRenderer</returns>
         public FeatureSetRenderer ImportFeatureSet(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable, string name, bool[] columnsMask, bool excludeExternal)
         {
-            var importedFeatureSetRenderer = CreateEmptyFeatureSet(name, "customSet", ImportedFeatureSetList.Count, FeatureColors[ImportedFeatureSetList.Count]);
+            var importedFeatureSetRenderer = CreateEmptyFeatureSet(name, "customSet", ImportedFeatureSetList.Count, FeatureColors[ImportedFeatureSetList.Count], FeatureSetType.Imported);
             importedFeatureSetRenderer.SpawnFeaturesFromVOTable(mapping, voTable, columnsMask, excludeExternal);
             var config = Config.Instance;
             if (config.importedFeaturesStartVisible)
@@ -208,7 +222,7 @@ namespace DataFeatures
             {
                 importedFeatureSetRenderer.SetVisibilityOff();
             }
-
+            importedFeatureSetRenderer.FeatureSetType = FeatureSetType.Imported;
             ImportedFeatureSetList.Add(importedFeatureSetRenderer);
             return importedFeatureSetRenderer;
         }
@@ -217,7 +231,6 @@ namespace DataFeatures
         {
             DeselectFeature();
             Feature foundFeature = null;
-            //if (ImportedFeatureSetList[0].
             foundFeature = FindFeatureAtCursor(cursorWorldSpace, ImportedFeatureSetList);
             if (foundFeature == null)
             {
@@ -308,27 +321,30 @@ namespace DataFeatures
             return false;
         }
 
-        public bool AddSelectedFeatureToNewSet()
+        public void AddFeatureToNewSet(Feature feature)
         {
             if (NewFeatureSetList.Count == 0)
             {
-                NewFeatureSetList.Add(CreateEmptyFeatureSet("New Feature Set", "customSet", 0, Color.green));   //consider different tag names
-                // Need to fix how exporting VOTables works, but this is necessary in meantime
-                NewFeatureSetList[0].RawDataKeys = new[] { "RawData" };
-                NewFeatureSetList[0].RawDataTypes = new[] { "char" };
+                InitializeNewList();
             }
+            //make a duplicate of the feature and add it to the new set
+            var duplicateFeature = new Feature(feature.CornerMin, feature.CornerMax, NewFeatureSetList[0].FeatureColor, feature.Name, feature.Flag, NewFeatureSetList[0].FeatureList.Count, feature.Id, new string[]{""}, feature.Visible) {Temporary = false};
+            NewFeatureSetList[0].AddFeature(duplicateFeature);
+            NewFeatureSetList[0].FeatureMenuScrollerDataSource.InitData();
+            NeedToRespawnMenuList = true;
+        }
+        
+        public bool AddSelectedFeatureToNewSet()
+        {
             if (SelectedFeature != null)
             {
-                //make a duplicate of the feature and add it to the new set
-                var duplicateFeature = new Feature(SelectedFeature.CornerMin, SelectedFeature.CornerMax, NewFeatureSetList[0].FeatureColor, SelectedFeature.Name, SelectedFeature.Flag, NewFeatureSetList[0].FeatureList.Count, SelectedFeature.Id, new string[]{""}, true) {Temporary = false};
-                NewFeatureSetList[0].AddFeature(duplicateFeature);
-                NewFeatureSetList[0].FeatureMenuScrollerDataSource.InitData();
-                NeedToRespawnMenuList = true;
+                AddFeatureToNewSet(SelectedFeature);
                 return true;
             }
             return false;
         }
         
+        // This add method is just for debugging purposes
         public bool AddToList(Feature feature, float metric, string comment)
         {
             if (NewFeatureSetList[0])
