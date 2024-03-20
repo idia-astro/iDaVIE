@@ -50,7 +50,6 @@ public class CanvassDesktop : MonoBehaviour
     
     
     private int _hduSelectionIndex = 0;     //This is the index of the HDU selected in the dropdown. 0 often means HDU 1
-    private List<int> _hduImageIndexes;
 
     private double _imageNAxis = 0;
     private double _imageSize = 1;
@@ -280,54 +279,40 @@ public class CanvassDesktop : MonoBehaviour
 
             //if there are more than 1 HDUs in the fits file, enable the dropdown and populate it with names
             FitsReader.FitsGetHduCount(fptr, out int hduNum, out status);
-            var hduImageNames = new List<string>();
-            _hduImageIndexes = new List<int>();
-            int hdutype;
+            var hduNames = new List<string>();
+            var hduName = new StringBuilder(80);
             for (var i = 0; i < hduNum; i++)
             {
-                hdutype = 4;    // stays 4 if the HDU type is not indicated
-                FitsReader.FitsMovabsHdu(fptr, i + 1, out hdutype, out status);
-                if (hdutype == (int)FitsReader.HDUType.IMAGE_HDU)
+                FitsReader.FitsMovabsHdu(fptr, i + 1, out _, out status);
+                hduName.Clear();
+                if (FitsReader.FitsReadKey(fptr, (int)FitsReader.DataType.TSTRING, "EXTNAME", hduName,
+                        IntPtr.Zero, out status) != 0)
                 {
-                    _hduImageIndexes.Add(i + 1);
-                    StringBuilder hduName = new StringBuilder(80);
-                    if (FitsReader.FitsReadKey(fptr, (int)FitsReader.DataType.TSTRING, "EXTNAME", hduName,
+                    status = 0;
+                    if (FitsReader.FitsReadKey(fptr, (int)FitsReader.DataType.TSTRING, "HDUNAME", hduName,
                             IntPtr.Zero, out status) != 0)
                     {
-                        if (FitsReader.FitsReadKey(fptr, (int)FitsReader.DataType.TSTRING, "HDUNAME", hduName,
-                                IntPtr.Zero, out status) != 0)
-                        {
-                            Debug.Log("Could not find EXTNAME or HDUNAME in HDU " + (i + 1) +
-                                              "! Using default name.");
-                            hduName = new StringBuilder("HDU " + (i + 1));
-                            status = 0;
-                        }
+                        Debug.Log("Could not find EXTNAME or HDUNAME in HDU " + (i + 1) +
+                                  "! Using default name.");
+                        hduName.Append("HDU " + (i + 1));
+                        status = 0;
                     }
-                    hduImageNames.Add(hduName.ToString());
                 }
+                hduNames.Add(hduName.ToString());
             }
-            // if no image HDU is found, assume the first HDU is the image
-            if (_hduImageIndexes.Count == 0)
-            {
-                Debug.Log("No image HDU found! Assuming the first HDU is the image.");
-                _hduImageIndexes.Append(1);
-                hduImageNames.Append("Primary HDU");
-            }
-
             _hduSelectionIndex = 0;
-            FitsReader.FitsMovabsHdu(fptr, _hduImageIndexes[_hduSelectionIndex], out hdutype, out status);
-            
-            
+            FitsReader.FitsMovabsHdu(fptr, _hduSelectionIndex + 1, out _, out status);
             var hduContainer = informationPanelContent.gameObject.transform.Find("HeaderTitle_container").transform
                 .Find("Hdu_container").gameObject;
             hduContainer.transform.Find("Hdu_dropdown").GetComponent<TMP_Dropdown>().ClearOptions();   
             hduContainer.transform.Find("Hdu_dropdown").GetComponent<TMP_Dropdown>().value = 0;
-            if (_hduImageIndexes.Count > 1)
+            if (hduNames.Count > 1)
             {
                 hduContainer.SetActive(true);
-                for (int i = 0; i < _hduImageIndexes.Count; i++)
+                for (int i = 0; i < hduNames.Count; i++)
                 {
-                    hduContainer.transform.Find("Hdu_dropdown").GetComponent<TMP_Dropdown>().options.Add(new TMP_Dropdown.OptionData() { text = _hduImageIndexes[i] + ": " + hduImageNames[i] });
+                    hduContainer.transform.Find("Hdu_dropdown").GetComponent<TMP_Dropdown>().options.Add(
+                        new TMP_Dropdown.OptionData() { text = (i + 1) + ": " + hduNames[i] });
                 }
                 hduContainer.transform.Find("Hdu_dropdown").GetComponent<TMP_Dropdown>().RefreshShownValue();
             }
@@ -831,7 +816,7 @@ public class CanvassDesktop : MonoBehaviour
 
     public void LoadFileFromFileSystem()
     {
-        StartCoroutine(LoadCubeCoroutine(_imagePath, _maskPath, _hduImageIndexes[_hduSelectionIndex]));
+        StartCoroutine(LoadCubeCoroutine(_imagePath, _maskPath, _hduSelectionIndex + 1));
     }
 
     private void postLoadFileFileSystem()
@@ -1229,12 +1214,12 @@ public class CanvassDesktop : MonoBehaviour
         LoadingText.SetActive(false);
         IntPtr fptr;
         int status = 0;
-        _hduSelectionIndex = dropdown.value; //this is wrong... not the value of the dropdown but the value of the hdu should go here, which not the same always
+        _hduSelectionIndex = dropdown.value;
         if (FitsReader.FitsOpenFile(out fptr, _imagePath, out status, true) != 0)
         {
             Debug.Log("Fits open failure... code #" + status.ToString());
         }
-        FitsReader.FitsMovabsHdu(fptr, _hduImageIndexes[_hduSelectionIndex], out int hdutype, out status);
+        FitsReader.FitsMovabsHdu(fptr, _hduSelectionIndex + 1, out int hdutype, out status);
         UpdateHeaderFromFits(fptr);
         FitsReader.FitsCloseFile(fptr, out status);
         //if it is valid enable loading button and subset selector
