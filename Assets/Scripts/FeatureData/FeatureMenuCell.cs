@@ -249,7 +249,7 @@ public class FeatureMenuCell : MonoBehaviour, ICell
 
     public void AddToNewList()
     {
-        _featureSetManager.AddFeatureToNewSet(Feature);
+        _featureSetManager.AddFeatureToNewSet(Feature, false);
     }
 
     public void RemoveFromList()

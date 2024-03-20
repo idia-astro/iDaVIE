@@ -117,9 +117,12 @@ namespace DataFeatures
                 {
                     foreach (var i in _dirtyFeatures)
                     {
-                        var feature = FeatureList[i];
-                        FeatureVisibility visibility = feature.Visible ? (feature.Selected ? FeatureVisibility.Selected: FeatureVisibility.Visible) : FeatureVisibility.Hidden;
-                        MakeAxisAlignedCube(feature.Center, feature.Size, feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
+                        if (FeatureList[i] != null)
+                        {
+                            var feature = FeatureList[i];
+                            FeatureVisibility visibility = feature.Visible ? (feature.Selected ? FeatureVisibility.Selected: FeatureVisibility.Visible) : FeatureVisibility.Hidden;
+                            MakeAxisAlignedCube(feature.Center, feature.Size, feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
+                        }
                     }
                 }
                 _computeBufferVertices.SetData(_vertices);

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 using VolumeData;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -231,25 +232,51 @@ namespace DataFeatures
         {
             DeselectFeature();
             Feature foundFeature = null;
-            foundFeature = FindFeatureAtCursor(cursorWorldSpace, ImportedFeatureSetList);
-            if (foundFeature == null)
+            FeatureSetType listToCheckFirst = FeatureSetType.Unassigned;
+            var sourcesMenu  = GameObject.Find("SourcesMenu");
+            if (sourcesMenu)
+            {
+                var activeFeatureMenuController = sourcesMenu.gameObject.transform.Find("PanelContents").gameObject.GetComponentInChildren<FeatureMenuController>(false);
+                if (activeFeatureMenuController)
+                {
+                    listToCheckFirst = activeFeatureMenuController.FeatureSetType;
+                    switch (listToCheckFirst)
+                    {
+                        case FeatureSetType.Unassigned:
+                            break;
+                        case (FeatureSetType.Imported):
+                            foundFeature = FindFeatureAtCursor(cursorWorldSpace, ImportedFeatureSetList);
+                            break;
+                        case (FeatureSetType.Mask):
+                            foundFeature = FindFeatureAtCursor(cursorWorldSpace, MaskFeatureSetList);
+                            break;
+                        case (FeatureSetType.New):
+                            foundFeature = FindFeatureAtCursor(cursorWorldSpace, NewFeatureSetList);
+                            break;
+                    }
+                }
+            }
+            if (foundFeature == null && listToCheckFirst != FeatureSetType.Imported)
+            {
+                foundFeature = FindFeatureAtCursor(cursorWorldSpace, ImportedFeatureSetList);
+            }
+            if (foundFeature == null && listToCheckFirst != FeatureSetType.Mask)
             {
                 foundFeature = FindFeatureAtCursor(cursorWorldSpace, MaskFeatureSetList);
             }
-            if (foundFeature == null)
+            if (foundFeature == null && listToCheckFirst != FeatureSetType.New)
             {
                 foundFeature = FindFeatureAtCursor(cursorWorldSpace, NewFeatureSetList);
             }
             if (foundFeature != null)
             {
                 SelectedFeature = foundFeature;
-                SelectedFeature.Selected = true;
                 NeedToRespawnMenuList = true;
                 return true;
             }
             return false;
         }
-//TODO: This is not working as intended!
+        
         private Feature FindFeatureAtCursor(Vector3 cursorWorldSpace, List<FeatureSetRenderer> featureSetList)
         {
             Feature foundFeature = null;
@@ -321,7 +348,7 @@ namespace DataFeatures
             return false;
         }
 
-        public void AddFeatureToNewSet(Feature feature)
+        public void AddFeatureToNewSet(Feature feature, bool needMenuRespawn)
         {
             if (NewFeatureSetList.Count == 0)
             {
@@ -331,14 +358,14 @@ namespace DataFeatures
             var duplicateFeature = new Feature(feature.CornerMin, feature.CornerMax, NewFeatureSetList[0].FeatureColor, feature.Name, feature.Flag, NewFeatureSetList[0].FeatureList.Count, feature.Id, new string[]{""}, feature.Visible) {Temporary = false};
             NewFeatureSetList[0].AddFeature(duplicateFeature);
             NewFeatureSetList[0].FeatureMenuScrollerDataSource.InitData();
-            NeedToRespawnMenuList = true;
+            NeedToRespawnMenuList = needMenuRespawn;
         }
         
         public bool AddSelectedFeatureToNewSet()
         {
             if (SelectedFeature != null)
             {
-                AddFeatureToNewSet(SelectedFeature);
+                AddFeatureToNewSet(SelectedFeature, true);
                 return true;
             }
             return false;

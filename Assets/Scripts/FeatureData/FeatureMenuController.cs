@@ -6,6 +6,7 @@ using TMPro;
 using VolumeData;
 using System.IO;
 using System;
+using System.Linq;
 using PolyAndCode.UI;
 using UnityEngine.Serialization;
 
@@ -30,9 +31,8 @@ public class FeatureMenuController : MonoBehaviour
     private bool _isListInitialized = false;
     
     //The type of feature list that this menu controller will display. Set from inspector.
-    [FormerlySerializedAs("featureSetType")] [SerializeField]
-    private FeatureSetType _featureSetType;
-    
+    public FeatureSetType FeatureSetType;
+
     /// <summary>
     /// When enabled, get the active VolumeDataSet and find its attached FeatureSetManager
     /// </summary>
@@ -84,7 +84,7 @@ public class FeatureMenuController : MonoBehaviour
 
             ListTitle.text = "";
             
-            switch (_featureSetType)
+            switch (FeatureSetType)
             {
                 case FeatureSetType.Mask:
                     _featureSetRendererList = _featureSetManager.MaskFeatureSetList;
@@ -106,13 +106,22 @@ public class FeatureMenuController : MonoBehaviour
             RefreshListColor();
             _featureSetManager.NeedToRespawnMenuList = true;
         }
+        //TODO: clean up this a bit
         if (_featureSetManager?.NeedToRespawnMenuList == true && RecyclableScrollView != null)
         {
             if (_featureSetManager.SelectedFeature?.Index != null && _featureSetManager.SelectedFeature.Index != -1)
             {
                 UpdateInfo();
-                DisplaySet(_featureSetManager.SelectedFeature.FeatureSetParent.Index);
-                RecyclableScrollView.JumpToCell(_featureSetManager.SelectedFeature.Index);
+                //if the selected feature is in the displayed feature set list, display the set and jump to the selected feature
+                if (_featureSetRendererList.Contains(_featureSetManager.SelectedFeature.FeatureSetParent))
+                {
+                    DisplaySet(_featureSetManager.SelectedFeature.FeatureSetParent.Index);
+                    RecyclableScrollView.JumpToCell(_featureSetManager.SelectedFeature.Index);
+                }
+                else if (FeatureSetType == FeatureSetType.New)
+                {
+                    RecyclableScrollView.ReloadData();
+                }
             }
             else
                 RecyclableScrollView.ReloadData();
@@ -199,17 +208,47 @@ public class FeatureMenuController : MonoBehaviour
     /// Change the color of the current feature set to the next color in the list of feature colors
     /// </summary>
     public void ChangeColor()
+    {
+        if (!FeatureSetManager.FeatureColors.Contains(_featureSetRendererList[CurrentFeatureSetIndex].FeatureColor))
         {
-            int nextIndex = System.Array.IndexOf(FeatureSetManager.FeatureColors, _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor) + 1;
-            if (nextIndex >= FeatureSetManager.FeatureColors.Length)
+            _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor = FeatureSetManager.FeatureColors[0];
+        }
+        Color nextColor;
+        List<Color> forbiddenColors = new List<Color>();
+        foreach (var featureSetRenderer in _featureSetManager.ImportedFeatureSetList)
+        {
+            forbiddenColors.Add(featureSetRenderer.FeatureColor);
+        }
+        foreach (var featureSetRenderer in _featureSetManager.MaskFeatureSetList)
+        {
+            forbiddenColors.Add(featureSetRenderer.FeatureColor);
+        }
+        foreach (var featureSetRenderer in _featureSetManager.NewFeatureSetList)
+        {
+            forbiddenColors.Add(featureSetRenderer.FeatureColor);
+        }
+        
+        if (forbiddenColors.Count > FeatureSetManager.FeatureColors.Length)
+        {
+            Debug.Log("All colors are used! Assigning new random color.");
+            nextColor = new Color(UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f));
+        }
+        else
+        {
+            int nextColorIndex = System.Array.IndexOf(FeatureSetManager.FeatureColors, _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor) + 1;
+            do
             {
-                nextIndex = 0;
-            }
-            _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor = FeatureSetManager.FeatureColors[nextIndex];
-            _featureSetRendererList[CurrentFeatureSetIndex].UpdateColor();
-            ListColorDisplay.color = _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor;
-            RefreshListColor();
-
+                if (nextColorIndex >= FeatureSetManager.FeatureColors.Length)
+                {
+                    nextColorIndex  = 0;
+                }
+                nextColor = FeatureSetManager.FeatureColors[nextColorIndex];
+            } while (forbiddenColors.Contains(nextColor));
+        }
+        _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor = nextColor;
+        _featureSetRendererList[CurrentFeatureSetIndex].UpdateColor();
+        ListColorDisplay.color = _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor;
+        RefreshListColor();
         }
 
 

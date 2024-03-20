@@ -4356,7 +4356,7 @@ MonoBehaviour:
   ListTitle: {fileID: 1362372177}
   ListColorDisplay: {fileID: 1661621842}
   SaveConfirmation: {fileID: 231308638}
-  _featureSetType: 3
+  FeatureSetType: 3
 --- !u!114 &97846533
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7570,7 +7570,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1798270351}
   m_HandleRect: {fileID: 1798270350}
   m_Direction: 0
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -26283,7 +26283,7 @@ MonoBehaviour:
   ListTitle: {fileID: 0}
   ListColorDisplay: {fileID: 0}
   SaveConfirmation: {fileID: 0}
-  _featureSetType: 0
+  FeatureSetType: 0
 --- !u!114 &659602731
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69616,7 +69616,7 @@ MonoBehaviour:
   ListTitle: {fileID: 607504452}
   ListColorDisplay: {fileID: 1112553802}
   SaveConfirmation: {fileID: 1700754201}
-  _featureSetType: 1
+  FeatureSetType: 1
 --- !u!114 &1696286064
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -70431,7 +70431,7 @@ MonoBehaviour:
   ListTitle: {fileID: 1368023506}
   ListColorDisplay: {fileID: 2097033059}
   SaveConfirmation: {fileID: 369688111}
-  _featureSetType: 2
+  FeatureSetType: 2
 --- !u!114 &1716148366
 MonoBehaviour:
   m_ObjectHideFlags: 0
