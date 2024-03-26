@@ -185,32 +185,39 @@ public class QuickMenuController : MonoBehaviour
             maskstatus = -1;
         maskstatus++;
 
-        this.gameObject.transform.Find("Image_nf").gameObject.SetActive(false);
-        this.gameObject.transform.Find("Image_f1").gameObject.SetActive(false);
-        this.gameObject.transform.Find("Image_f2").gameObject.SetActive(false);
-        this.gameObject.transform.Find("Image_f3").gameObject.SetActive(false);
+        var Image_nf = gameObject.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_nf").gameObject;
+        var Image_f1 = gameObject.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f1").gameObject;
+        var Image_f2 = gameObject.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f2").gameObject;
+        var Image_f3 = gameObject.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f3").gameObject;
+
+        Image_nf.SetActive(false);
+        Image_f1.SetActive(false);
+        Image_f2.SetActive(false);
+        Image_f3.SetActive(false);
+
+        UnityEngine.Debug.Log("Toggling mask to maskstatus of " + maskstatus + ".");
 
         switch (maskstatus)
         {
             case 0:
                 setMask(MaskMode.Disabled);
                 notificationText.GetComponent<Text>().text = "Mask disabled";
-                this.gameObject.transform.Find("Image_nf").gameObject.SetActive(true);
+                Image_nf.SetActive(true);
                 break;
             case 1:
                 setMask(MaskMode.Enabled);
                 notificationText.GetComponent<Text>().text = "Mask enabled";
-                this.gameObject.transform.Find("Image_f1").gameObject.SetActive(true);
+                Image_f1.SetActive(true);
                 break;
             case 2:
                 setMask(MaskMode.Inverted);
                 notificationText.GetComponent<Text>().text = "Mask inverted";
-                this.gameObject.transform.Find("Image_f2").gameObject.SetActive(true);
+                Image_f2.SetActive(true);
                 break;
             case 3:
                 setMask(MaskMode.Isolated);
                 notificationText.GetComponent<Text>().text = "Mask Isolated";
-                this.gameObject.transform.Find("Image_f3").gameObject.SetActive(true);
+                Image_f3.SetActive(true);
                 break;
         }
     }
@@ -231,20 +238,21 @@ public class QuickMenuController : MonoBehaviour
 
     public void cropDataSet()
     {
-        this.gameObject.transform.Find("Image_dis").gameObject.SetActive(false);
-        this.gameObject.transform.Find("Image_en").gameObject.SetActive(false);
-
+        var imageDis = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Crop").gameObject.transform.Find("Image_dis").gameObject;
+        var imageEn = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Crop").gameObject.transform.Find("Image_en").gameObject;
+        imageDis.SetActive(false);
+        imageEn.SetActive(false);
         if (_activeDataSet)
         {
             if (_activeDataSet.IsCropped)
             {
-                this.gameObject.transform.Find("Image_dis").gameObject.SetActive(true);
+                imageDis.SetActive(true);
                 notificationText.GetComponent<Text>().text = "Crop disabled";
                 _activeDataSet.ResetCrop();
             }
             else
             {
-                this.gameObject.transform.Find("Image_en").gameObject.SetActive(true);
+                imageEn.SetActive(true);
                 notificationText.GetComponent<Text>().text = "Crop enabled";
                 _activeDataSet.CropToFeature();
             }
