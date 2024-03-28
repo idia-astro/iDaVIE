@@ -667,6 +667,15 @@ namespace VolumeData
             // Save new mask because none exists yet
             int status;
             FitsReader.FitsOpenFileReadOnly(out var cubeFitsPtr, this.FileName, out status);
+            if (SelectedHdu != 1)
+            {
+                if (FitsReader.FitsMovabsHdu(cubeFitsPtr, SelectedHdu, out var hdutype, out status) != 0)
+                {
+                    Debug.Log("Fits move to HDU failure... code #" + status.ToString());
+                    FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+                    return null;
+                }
+            }
             string directory = Path.GetDirectoryName(this.FileName);
             string fileName = $"{directory}/{Path.GetFileNameWithoutExtension(this.FileName)}-mask";
             bool exists = File.Exists(fileName + ".fits");
