@@ -1,5 +1,6 @@
 #include "fits_reader.h"
 
+// #include <chrono>
 #include <fstream>
 #include <regex>
 #include <sstream>
@@ -240,19 +241,44 @@ int FitsReadSubImageFloat(fitsfile *fptr, int dims, long *startPix, long *finalP
 {
     int anynul;
     float nulval = 0;
-    float* dataarray = new float[nelem];
     long* increment = new long[dims];
     for (int i = 0; i < dims; i++)
         increment[i] = 1;
     
-    std::stringstream debug;
-    debug << "Reading data sub image from [" << startPix[0] << ", " << startPix[1] << ", " << startPix[2] << "] to [" << finalPix[0] << ", " << finalPix[1] << ", " << finalPix[2] << "].";
-    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
-    
-    int success = fits_read_subset(fptr, TFLOAT, startPix, finalPix, increment, &nulval, dataarray, &anynul, status);
+    // Calculate the size of a 2D slice
+    int64_t sliceSize = (finalPix[0] - startPix[0] + 1) * (finalPix[1] - startPix[1] + 1);
+    float* dataarray = new float[nelem];
+
+    // auto start = std::chrono::high_resolution_clock::now();
+    // Loop over the third dimension
+    for (long z = startPix[2]; z <= finalPix[2]; z++)
+    {
+        // Set the start and end pixels for the current slice
+        long sliceStartPix[3] = {startPix[0], startPix[1], z};
+        long sliceFinalPix[3] = {finalPix[0], finalPix[1], z};
+
+        // Read the current slice into a temporary array
+        float* sliceData = new float[sliceSize];
+        std::stringstream debug;
+        debug << "Reading mask sub image from [" << sliceStartPix[0] << ", " << sliceStartPix[1] << ", " << sliceStartPix[2] << "] to [" << sliceFinalPix[0] << ", " << sliceFinalPix[1] << ", " << sliceFinalPix[2] << "].";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        int success = fits_read_subset(fptr, TFLOAT, sliceStartPix, sliceFinalPix, increment, &nulval, sliceData, &anynul, status);
+
+        // Copy the temporary array into the final data array
+        std::copy(sliceData, sliceData + sliceSize, dataarray + sliceSize * (z - startPix[2]));
+
+        delete[] sliceData;
+    }
+
+    // auto end = std::chrono::high_resolution_clock::now();
+    // auto microsecs = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    // std::stringstream time;
+    // time << "Time taken for loading entire file through fits_read_subset(): " << microsecs.count() << " µs.";
+    // WriteLogFile(defaultDebugFile.data(), time.str().c_str(), 0);
+
     delete[] increment;
     *array = dataarray;
-    return success;
+    return 0;
 }
 
 int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array, int *status)
@@ -289,19 +315,44 @@ int FitsReadSubImageInt16(fitsfile *fptr, int dims, long *startPix, long *finalP
 {
     int anynul;
     float nulval = 0;
-    float* dataarray = new float[nelem];
     long* increment = new long[dims];
     for (int i = 0; i < dims; i++)
         increment[i] = 1;
     
-    std::stringstream debug;
-    debug << "Reading mask sub image from [" << startPix[0] << ", " << startPix[1] << ", " << startPix[2] << "] to [" << finalPix[0] << ", " << finalPix[1] << ", " << finalPix[2] << "].";
-    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
-    
-    int success = fits_read_subset(fptr, TSHORT, startPix, finalPix, increment, &nulval, dataarray, &anynul, status);
+    // Calculate the size of a 2D slice
+    int64_t sliceSize = (finalPix[0] - startPix[0] + 1) * (finalPix[1] - startPix[1] + 1);
+    float* dataarray = new float[nelem];
+
+    // auto start = std::chrono::high_resolution_clock::now();
+    // Loop over the third dimension
+    for (long z = startPix[2]; z <= finalPix[2]; z++)
+    {
+        // Set the start and end pixels for the current slice
+        long sliceStartPix[3] = {startPix[0], startPix[1], z};
+        long sliceFinalPix[3] = {finalPix[0], finalPix[1], z};
+
+        // Read the current slice into a temporary array
+        float* sliceData = new float[sliceSize];
+        std::stringstream debug;
+        debug << "Reading mask sub image from [" << sliceStartPix[0] << ", " << sliceStartPix[1] << ", " << sliceStartPix[2] << "] to [" << sliceFinalPix[0] << ", " << sliceFinalPix[1] << ", " << sliceFinalPix[2] << "].";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        int success = fits_read_subset(fptr, TSHORT, sliceStartPix, sliceFinalPix, increment, &nulval, sliceData, &anynul, status);
+
+        // Copy the temporary array into the final data array
+        std::copy(sliceData, sliceData + sliceSize, dataarray + sliceSize * (z - startPix[2]));
+
+        delete[] sliceData;
+    }
+
+    // auto end = std::chrono::high_resolution_clock::now();
+    // auto microsecs = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    // std::stringstream time;
+    // time << "Time taken for loading entire file through fits_read_subset(): " << microsecs.count() << " µs.";
+    // WriteLogFile(defaultDebugFile.data(), time.str().c_str(), 0);
+
     delete[] increment;
     *array = dataarray;
-    return success;
+    return 0;
 }
 
 int FitsCreateHdrPtrForAst(fitsfile *fptr, char **header, int *nkeys, int *status)    //need to free header string with FreeFitsMemory() after use
