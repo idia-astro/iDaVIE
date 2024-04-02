@@ -404,7 +404,10 @@ namespace VoTableReader
             List<string> sourceDataHeaders = new List<string> {"id", "x", "y", "z", "x_min", "x_max", "y_min", "y_max", "z_min", "z_max", "ra", "dec", zType};
             int initialHeaderCount = sourceDataHeaders.Count;
             sourceDataHeaders.Add("Flag (" + DateTime.Now.ToString("dd/MM/yy HH:mm") + ")");
-            sourceDataHeaders.AddRange(featureSet.RawDataKeys);
+            if (featureSet.RawDataKeys != null)
+            {
+                sourceDataHeaders.AddRange(featureSet.RawDataKeys);
+            }
             XDocument doc = new XDocument(new XElement( "VOTABLE", 
                                             new XElement( "RESOURCE", new XAttribute("name", "iDaVIE catalogue"),
                                                 new XElement("DESCRIPTION", "Source data exported from iDaVIE"),
