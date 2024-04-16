@@ -85,6 +85,8 @@ public class VolumeInputController : MonoBehaviour
     public bool AdditiveBrush { get; private set; } = true;
     public int BrushSize = 1;
     public short SourceId = -1;
+
+    public Camera SpectatorCamera;
     
     private Player _player;
     private VRHand[] _hands;
@@ -659,6 +661,10 @@ public class VolumeInputController : MonoBehaviour
         if (Camera.current)
         {
             Camera.current.depthTextureMode = DepthTextureMode.Depth;
+        }
+        if (SpectatorCamera)
+        {
+            SpectatorCamera.depthTextureMode = DepthTextureMode.Depth;
         }
 
         switch (_locomotionState)
