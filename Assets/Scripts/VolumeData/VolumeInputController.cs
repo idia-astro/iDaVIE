@@ -597,7 +597,7 @@ public class VolumeInputController : MonoBehaviour
         {
             if (featureSetManager)
             {
-                featureSetManager.CreateCustomFeature(activeDataSet.RegionStartVoxel, activeDataSet.RegionEndVoxel, "selection", true);
+                featureSetManager.CreateSelectionFeature(activeDataSet.RegionStartVoxel, activeDataSet.RegionEndVoxel);
             }
         }
     }

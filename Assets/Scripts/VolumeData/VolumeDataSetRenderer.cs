@@ -401,8 +401,8 @@ namespace VolumeData
                 _featureManager.CreateSelectionFeatureSet();
                 if (_maskDataSet != null)
                 {
-                    var featureSet = _featureManager.CreateNewFeatureSet();
-                    _maskDataSet?.FillFeatureSet(featureSet);
+                    var maskFeatureSet = _featureManager.CreateMaskFeatureSet();
+                    _maskDataSet?.FillFeatureSet(maskFeatureSet);
                 }
             }
 
@@ -883,59 +883,62 @@ namespace VolumeData
         // Update is called once per frame
         public void Update()
         {
-            _materialInstance.SetVector(MaterialID.SliceMin, SliceMin);
-            _materialInstance.SetVector(MaterialID.SliceMax, SliceMax);
-            _materialInstance.SetFloat(MaterialID.ThresholdMin, ThresholdMin);
-            _materialInstance.SetFloat(MaterialID.ThresholdMax, ThresholdMax);
-            _materialInstance.SetFloat(MaterialID.Jitter, Jitter);
-            _materialInstance.SetFloat(MaterialID.MaxSteps, MaxSteps);
-            _materialInstance.SetFloat(MaterialID.ColorMapIndex, ColorMap.GetHashCode());
-            _materialInstance.SetFloat(MaterialID.ScaleMax, ScaleMax);
-            _materialInstance.SetFloat(MaterialID.ScaleMin, ScaleMin);
-
-            _materialInstance.SetInt(MaterialID.ScaleType, ScalingType.GetHashCode());
-            _materialInstance.SetFloat(MaterialID.ScaleBias, ScalingBias);
-            _materialInstance.SetFloat(MaterialID.ScaleContrast, ScalingContrast);
-            _materialInstance.SetFloat(MaterialID.ScaleAlpha, ScalingAlpha);
-            _materialInstance.SetFloat(MaterialID.ScaleGamma, ScalingGamma);
-
-            _materialInstance.SetFloat(MaterialID.FoveationStart, FoveationStart);
-            _materialInstance.SetFloat(MaterialID.FoveationEnd, FoveationEnd);
-            if (FoveatedRendering)
+            if (started)
             {
-                _materialInstance.SetFloat(MaterialID.FoveationJitter, FoveationJitter);
-                _materialInstance.SetInt(MaterialID.FoveatedStepsLow, FoveatedStepsLow);
-                _materialInstance.SetInt(MaterialID.FoveatedStepsHigh, FoveatedStepsHigh);
-            }
-            else
-            {
-                _materialInstance.SetInt(MaterialID.FoveatedStepsLow, MaxSteps);
-                _materialInstance.SetInt(MaterialID.FoveatedStepsHigh, MaxSteps);
-            }
+                _materialInstance.SetVector(MaterialID.SliceMin, SliceMin);
+                _materialInstance.SetVector(MaterialID.SliceMax, SliceMax);
+                _materialInstance.SetFloat(MaterialID.ThresholdMin, ThresholdMin);
+                _materialInstance.SetFloat(MaterialID.ThresholdMax, ThresholdMax);
+                _materialInstance.SetFloat(MaterialID.Jitter, Jitter);
+                _materialInstance.SetFloat(MaterialID.MaxSteps, MaxSteps);
+                _materialInstance.SetFloat(MaterialID.ColorMapIndex, ColorMap.GetHashCode());
+                _materialInstance.SetFloat(MaterialID.ScaleMax, ScaleMax);
+                _materialInstance.SetFloat(MaterialID.ScaleMin, ScaleMin);
 
-            if (_regionOutline.Active)
-            {
-                UnityEngine.Vector3 regionStartObjectSpace = new UnityEngine.Vector3((float)(RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
-                UnityEngine.Vector3 regionEndObjectSpace = new UnityEngine.Vector3((float)(RegionEndVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionEndVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
-                UnityEngine.Vector3 padding = new UnityEngine.Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
-                var highlightMin = UnityEngine.Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
-                var highlightMax = UnityEngine.Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
+                _materialInstance.SetInt(MaterialID.ScaleType, ScalingType.GetHashCode());
+                _materialInstance.SetFloat(MaterialID.ScaleBias, ScalingBias);
+                _materialInstance.SetFloat(MaterialID.ScaleContrast, ScalingContrast);
+                _materialInstance.SetFloat(MaterialID.ScaleAlpha, ScalingAlpha);
+                _materialInstance.SetFloat(MaterialID.ScaleGamma, ScalingGamma);
 
-                _materialInstance.SetVector(MaterialID.HighlightMin, highlightMin);
-                _materialInstance.SetVector(MaterialID.HighlightMax, highlightMax);
-                _materialInstance.SetFloat(MaterialID.HighlightSaturateFactor, SelectionSaturateFactor);
-            }
-            else
-            {
-                _materialInstance.SetFloat(MaterialID.HighlightSaturateFactor, 1f);
-            }
+                _materialInstance.SetFloat(MaterialID.FoveationStart, FoveationStart);
+                _materialInstance.SetFloat(MaterialID.FoveationEnd, FoveationEnd);
+                if (FoveatedRendering)
+                {
+                    _materialInstance.SetFloat(MaterialID.FoveationJitter, FoveationJitter);
+                    _materialInstance.SetInt(MaterialID.FoveatedStepsLow, FoveatedStepsLow);
+                    _materialInstance.SetInt(MaterialID.FoveatedStepsHigh, FoveatedStepsHigh);
+                }
+                else
+                {
+                    _materialInstance.SetInt(MaterialID.FoveatedStepsLow, MaxSteps);
+                    _materialInstance.SetInt(MaterialID.FoveatedStepsHigh, MaxSteps);
+                }
 
-            if (_maskDataSet != null)
-            {
-                _materialInstance.SetInt(MaterialID.MaskMode, MaskMode.GetHashCode());
-                _maskMaterialInstance.SetFloat(MaterialID.MaskVoxelSize, MaskVoxelSize);
-                _maskMaterialInstance.SetColor(MaterialID.MaskVoxelColor, MaskVoxelColor);
-                _maskMaterialInstance.SetInt(MaterialID.HighlightedSource, HighlightedSource);
+                if (_regionOutline.Active)
+                {
+                    UnityEngine.Vector3 regionStartObjectSpace = new UnityEngine.Vector3((float)(RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
+                    UnityEngine.Vector3 regionEndObjectSpace = new UnityEngine.Vector3((float)(RegionEndVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionEndVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
+                    UnityEngine.Vector3 padding = new UnityEngine.Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
+                    var highlightMin = UnityEngine.Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
+                    var highlightMax = UnityEngine.Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
+
+                    _materialInstance.SetVector(MaterialID.HighlightMin, highlightMin);
+                    _materialInstance.SetVector(MaterialID.HighlightMax, highlightMax);
+                    _materialInstance.SetFloat(MaterialID.HighlightSaturateFactor, SelectionSaturateFactor);
+                }
+                else
+                {
+                    _materialInstance.SetFloat(MaterialID.HighlightSaturateFactor, 1f);
+                }
+
+
+                if (_maskDataSet != null)
+                {
+                    _materialInstance.SetInt(MaterialID.MaskMode, MaskMode.GetHashCode());
+                    _maskMaterialInstance.SetFloat(MaterialID.MaskVoxelSize, MaskVoxelSize);
+                    _maskMaterialInstance.SetColor(MaterialID.MaskVoxelColor, MaskVoxelColor);
+                    _maskMaterialInstance.SetInt(MaterialID.HighlightedSource, HighlightedSource);
 
                 // Calculate and update voxel corner offsets
                 var offsets = new UnityEngine.Vector4[4];
@@ -947,32 +950,33 @@ namespace VolumeData
                 _maskMaterialInstance.SetVectorArray(MaterialID.MaskVoxelOffsets, offsets);
                 _maskMaterialInstance.SetMatrix(MaterialID.ModelMatrix, modelMatrix);
 
-            }
-            else
-            {
-                _materialInstance.SetInt(MaterialID.MaskMode, MaskMode.Disabled.GetHashCode());
-            }
+                }
+                else
+                {
+                    _materialInstance.SetInt(MaterialID.MaskMode, MaskMode.Disabled.GetHashCode());
+                }
 
-            if (ProjectionMode == ProjectionMode.AverageIntensityProjection)
-            {
-                Shader.EnableKeyword("SHADER_AIP");
-            }
-            else
-            {
-                Shader.DisableKeyword("SHADER_AIP");
-            }
+                if (ProjectionMode == ProjectionMode.AverageIntensityProjection)
+                {
+                    Shader.EnableKeyword("SHADER_AIP");
+                }
+                else
+                {
+                    Shader.DisableKeyword("SHADER_AIP");
+                }
 
-            _materialInstance.SetFloat(MaterialID.VignetteFadeStart, VignetteFadeStart);
-            _materialInstance.SetFloat(MaterialID.VignetteFadeEnd, VignetteFadeEnd);
-            _materialInstance.SetFloat(MaterialID.VignetteIntensity, VignetteIntensity);
-            _materialInstance.SetColor(MaterialID.VignetteColor, VignetteColor);
+                _materialInstance.SetFloat(MaterialID.VignetteFadeStart, VignetteFadeStart);
+                _materialInstance.SetFloat(MaterialID.VignetteFadeEnd, VignetteFadeEnd);
+                _materialInstance.SetFloat(MaterialID.VignetteIntensity, VignetteIntensity);
+                _materialInstance.SetColor(MaterialID.VignetteColor, VignetteColor);
 
-            if (_restFrequencyChanged && HasWCS)
-            {
-                _dataSet.RecreateFrameSet(RestFrequency);
-                _dataSet.CreateAltSpecFrame();
-                _dataSet.HasRestFrequency = true;
-                _restFrequencyChanged = false;
+                if (_restFrequencyChanged && HasWCS)
+                {
+                    _dataSet.RecreateFrameSet(RestFrequency);
+                    _dataSet.CreateAltSpecFrame();
+                    _dataSet.HasRestFrequency = true;
+                    _restFrequencyChanged = false;
+                }
             }
         }
 
@@ -1195,6 +1199,11 @@ namespace VolumeData
         {
             var result = this.lastSavedMaskPath;
             return result;
+        }
+
+        public void AddSelectionToList()
+        {
+            _featureManager.AddSelectedFeatureToNewSet();
         }
 
         public void OnDestroy()

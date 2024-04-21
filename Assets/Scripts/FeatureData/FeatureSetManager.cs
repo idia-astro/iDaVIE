@@ -1,15 +1,27 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 using VolumeData;
 using UnityEngine;
+using UnityEngine.Serialization;
 using VoTableReader;
 
 namespace DataFeatures
 {
+
+    public enum FeatureSetType
+    {
+        Unassigned,
+        Mask,
+        New,
+        Imported,
+        Selection
+    }
+    
     public class FeatureSetManager : MonoBehaviour
     {
-        public static Color[] FeatureColors = {Color.cyan, Color.yellow, Color.magenta, Color.green, Color.red, Color.grey};
+        public static Color[] FeatureColors = {Color.cyan, new Color(1f, 0f, 0.5f), Color.yellow, Color.blue, Color.magenta, Color.green, Color.red, new Color(0.8f, 0.8f, 0.8f), new Color(1f, 0.5f, 0f)};
         public FeatureSetRenderer FeatureSetRendererPrefab;
         public GameObject FeatureAnchorPrefab;
         public string FeatureFileToLoad;
@@ -18,13 +30,10 @@ namespace DataFeatures
         private string _timeStamp;
         private StreamWriter _streamWriter;
         private Feature _selectedFeature;
-
-        public bool NeedToResetList = true;
-
+        
         public bool NeedToRespawnMenuList = true;
-        public bool NeedToUpdateInfo = false;
+        public bool NeedToUpdateInfo;
 
-        public FeatureMenuController SourceListController = null;
         private readonly GameObject[] _anchorColliders = new GameObject[8];
         public Feature SelectedFeature
         {
@@ -36,7 +45,7 @@ namespace DataFeatures
                     DeselectFeature();
                     _selectedFeature = value;
                     _selectedFeature.Selected = true;
-                    if (ActiveFeatureSetRenderer)
+                    if (_selectedFeature.FeatureSetParent)
                     {
                         UpdateAnchors();
                     }
@@ -50,22 +59,24 @@ namespace DataFeatures
             t.localScale = new Vector3 (globalScale.x/t.lossyScale.x, globalScale.y/t.lossyScale.y, globalScale.z/t.lossyScale.z);
         }
 
-        public string OutputFile;
+        [FormerlySerializedAs("OutputFile")] public string OutputFileName;
 
-        // List containing the different FeatureSets (example: SofiaSet, CustomSet, VRSet, etc.)
+        // Lists containing the different FeatureSets (example: SofiaSet, CustomSet, VRSet, etc.)
         // UI will have tab for each Renderer containing the lists of Features
-        public List<FeatureSetRenderer> ImportedFeatureSetList {get; private set;}
-        public List<FeatureSetRenderer> GeneratedFeatureSetList {get; private set;}
+        public FeatureSetRenderer SelectionFeatureSet {get; private set;}    // Feature set for making selections
+        public List<FeatureSetRenderer> MaskFeatureSetList {get; private set;}        // Feature sets generated from mask
+        public List<FeatureSetRenderer> NewFeatureSetList {get; private set;}         // Feature sets created by user
+        public List<FeatureSetRenderer> ImportedFeatureSetList {get; private set;}  // Feature sets imported from catalogs
 
-        // Active Renderer will be "container" to add Features to if saving is desired.
-        public FeatureSetRenderer ActiveFeatureSetRenderer {get; set;}
 
         void Awake()
         {
+            MaskFeatureSetList = new List<FeatureSetRenderer>();
             ImportedFeatureSetList = new List<FeatureSetRenderer>();
-            GeneratedFeatureSetList = new List<FeatureSetRenderer>();
+            NewFeatureSetList = new List<FeatureSetRenderer>();
+            
             _timeStamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            OutputFile = _timeStamp + ".ascii";
+            OutputFileName = _timeStamp + ".ascii";
 
             int anchorIndex = 0;
             for (int i = 0; i < 2; i++)
@@ -87,7 +98,7 @@ namespace DataFeatures
         
         public void Update()
         {
-            if (ActiveFeatureSetRenderer && _selectedFeature != null && _selectedFeature.Selected)
+            if (_selectedFeature != null && _selectedFeature.FeatureSetParent && _selectedFeature.Selected)
             {
                 UpdateAnchors();
             }
@@ -107,7 +118,7 @@ namespace DataFeatures
                     for (int k = 0; k < 2; k++)
                     {
                         var anchor = _anchorColliders[anchorIndex];
-                        anchor.transform.SetParent(ActiveFeatureSetRenderer.transform, false);
+                        anchor.transform.SetParent(_selectedFeature.FeatureSetParent.transform, false);
                         Vector3 weighting = new Vector3(i, j, k);
                         anchor.transform.localPosition = Vector3.Scale(_selectedFeature.CornerMax + Vector3.one * 0.5f, weighting)
                                                          + Vector3.Scale(_selectedFeature.CornerMin - Vector3.one * 0.5f, Vector3.one - weighting);
@@ -126,78 +137,150 @@ namespace DataFeatures
             }
         }
 
-        public FeatureSetRenderer CreateSelectionFeatureSet()
+
+        /// <summary>
+        /// Creates new empty FeatureSetRenderer for adding Features
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="tag"></param>
+        /// <param name="index"></param>
+        /// <param name="color"></param>
+        /// <returns>FeatureSetRenderer</returns>
+        public FeatureSetRenderer CreateEmptyFeatureSet(string name, string tag, int index, Color color, FeatureSetType featureSetType)
         {
             Vector3 CubeDimensions = VolumeRenderer.GetCubeDimensions();
             FeatureSetRenderer featureSetRenderer;
             featureSetRenderer = Instantiate(FeatureSetRendererPrefab, new Vector3(0, 0, 0), Quaternion.identity);
             featureSetRenderer.transform.SetParent(transform, false);
-            featureSetRenderer.Initialize(false);
-            featureSetRenderer.name = "Selection Set";
-            featureSetRenderer.tag = "customSet";
+            featureSetRenderer.Initialize();
+            featureSetRenderer.name = name;
+            featureSetRenderer.tag = tag;
+            featureSetRenderer.FeatureSetType = featureSetType;
             // Move BLC to (0,0,0)
             featureSetRenderer.transform.localPosition -= 0.5f * Vector3.one;
             featureSetRenderer.transform.localScale = new Vector3(1 / CubeDimensions.x, 1 / CubeDimensions.y, 1 / CubeDimensions.z);
             // Shift by half a voxel (because voxel center has integer coordinates, not corner)
             featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
-            GeneratedFeatureSetList.Add(featureSetRenderer);
-            return featureSetRenderer; 
-        }
-        // Creates new empty FeatureSetRenderer for adding Features
-        public FeatureSetRenderer CreateNewFeatureSet()
-        {
-            Vector3 CubeDimensions = VolumeRenderer.GetCubeDimensions();
-            FeatureSetRenderer featureSetRenderer;
-            featureSetRenderer = Instantiate(FeatureSetRendererPrefab, new Vector3(0, 0, 0), Quaternion.identity);
-            featureSetRenderer.transform.SetParent(transform, false);
-            featureSetRenderer.Initialize(false);
-            featureSetRenderer.name = "Mask Source Set";
-            featureSetRenderer.tag = "customSet";
-            // Move BLC to (0,0,0)
-            featureSetRenderer.transform.localPosition -= 0.5f * Vector3.one;
-            featureSetRenderer.transform.localScale = new Vector3(1 / CubeDimensions.x, 1 / CubeDimensions.y, 1 / CubeDimensions.z);
-            // Shift by half a voxel (because voxel center has integer coordinates, not corner)
-            featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
-            featureSetRenderer.FeatureColor = FeatureColors[ImportedFeatureSetList.Count];
-            featureSetRenderer.Index = ImportedFeatureSetList.Count;
-            ImportedFeatureSetList.Add(featureSetRenderer); //TODO: change to GeneratedFeatureSetList later
+            featureSetRenderer.FeatureColor = color;
+            featureSetRenderer.Index = index;
             return featureSetRenderer;
         }
+        
+        /// <summary>
+        /// Creates a new FeatureSetRenderer for the single selection feature
+        /// </summary>
+        public FeatureSetRenderer CreateSelectionFeatureSet()
+        {
+            var selectionFeatureSet = CreateEmptyFeatureSet("Selection Set", "customSet", 0, Color.white, FeatureSetType.Selection);
+            selectionFeatureSet.RawDataKeys = new string[] { "RawData" };
+            selectionFeatureSet.RawDataTypes = new string[] { "string" };
+            selectionFeatureSet.FeatureSetType = FeatureSetType.Selection;
+            SelectionFeatureSet = selectionFeatureSet;
+            return selectionFeatureSet;
+        }
+        
+        /// <summary>
+        /// Creates a new FeatureSetRenderer for the mask stats to populate
+        /// </summary>
+        /// <returns>FeatureSetRenderer</returns>
+        public FeatureSetRenderer CreateMaskFeatureSet()
+        {
+            var maskFeatureSet = CreateEmptyFeatureSet("Mask Source Set", "customSet", 0, Color.magenta, FeatureSetType.Mask); //TODO: make color assignment smarter (based on previous sets)
+            maskFeatureSet.FeatureSetType = FeatureSetType.Mask;
+            MaskFeatureSetList.Add(maskFeatureSet);
+            return maskFeatureSet;
+        }
 
-        // Creates FeatureSetRenderer filled with Features from file
+        private void InitializeNewList()
+        {
+            FeatureSetRenderer newFeatureSet = CreateEmptyFeatureSet("New Feature Set", "customSet", 0, Color.green, FeatureSetType.New);   //consider different tag names
+                // Need to fix how exporting VOTables works, but this is necessary in meantime
+            newFeatureSet.RawDataKeys = new[] { "RawData" };
+            newFeatureSet.RawDataTypes = new[] { "char" };
+            NewFeatureSetList.Add(newFeatureSet);
+
+        }
+        
+        /// <summary>
+        /// Creates FeatureSetRenderer filled with Features from voTable file
+        /// </summary>
+        /// <param name="mapping"></param>
+        /// <param name="voTable"></param>
+        /// <param name="name"></param>
+        /// <param name="columnsMask"></param>
+        /// <param name="excludeExternal"></param>
+        /// <returns>FeatureSetRenderer</returns>
         public FeatureSetRenderer ImportFeatureSet(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable, string name, bool[] columnsMask, bool excludeExternal)
         {
-            FeatureSetRenderer featureSetRenderer = null;
-            Vector3 CubeDimensions = VolumeRenderer.GetCubeDimensions();
-            featureSetRenderer = Instantiate(FeatureSetRendererPrefab, new Vector3(0, 0, 0), Quaternion.identity);
-            featureSetRenderer.transform.SetParent(transform, false);
-            featureSetRenderer.Initialize(true);
-            featureSetRenderer.name = name;
-            // Move BLC to (0,0,0)
-            featureSetRenderer.transform.localPosition -= 0.5f * Vector3.one;
-            featureSetRenderer.transform.localScale = new Vector3(1 / CubeDimensions.x, 1 / CubeDimensions.y, 1 / CubeDimensions.z);
-            // Shift by half a voxel (because voxel center has integer coordinates, not corner)
-            featureSetRenderer.transform.localPosition -= featureSetRenderer.transform.localScale * 0.5f;
-            featureSetRenderer.FeatureColor = FeatureColors[ImportedFeatureSetList.Count];
-            featureSetRenderer.SpawnFeaturesFromVOTable(mapping, voTable, columnsMask, excludeExternal);
-            featureSetRenderer.Index = ImportedFeatureSetList.Count;
+            var importedFeatureSetRenderer = CreateEmptyFeatureSet(name, "customSet", ImportedFeatureSetList.Count, FeatureColors[ImportedFeatureSetList.Count], FeatureSetType.Imported);
+            importedFeatureSetRenderer.SpawnFeaturesFromVOTable(mapping, voTable, columnsMask, excludeExternal);
             var config = Config.Instance;
             if (config.importedFeaturesStartVisible)
             {
-                featureSetRenderer.SetVisibilityOn();
+                importedFeatureSetRenderer.SetVisibilityOn();
             }
             else
             {
-                featureSetRenderer.SetVisibilityOff();
+                importedFeatureSetRenderer.SetVisibilityOff();
             }
-            ImportedFeatureSetList.Add(featureSetRenderer);
-            return featureSetRenderer;
+            importedFeatureSetRenderer.FeatureSetType = FeatureSetType.Imported;
+            ImportedFeatureSetList.Add(importedFeatureSetRenderer);
+            return importedFeatureSetRenderer;
         }
 
         public bool SelectFeature(Vector3 cursorWorldSpace)
         {
             DeselectFeature();
-            foreach (var featureSetRenderer in ImportedFeatureSetList)
+            Feature foundFeature = null;
+            FeatureSetType listToCheckFirst = FeatureSetType.Unassigned;
+            var sourcesMenu  = GameObject.Find("SourcesMenu");
+            if (sourcesMenu)
+            {
+                var activeFeatureMenuController = sourcesMenu.gameObject.transform.Find("PanelContents").gameObject.GetComponentInChildren<FeatureMenuController>(false);
+                if (activeFeatureMenuController)
+                {
+                    listToCheckFirst = activeFeatureMenuController.FeatureSetType;
+                    switch (listToCheckFirst)
+                    {
+                        case FeatureSetType.Unassigned:
+                            break;
+                        case (FeatureSetType.Imported):
+                            foundFeature = FindFeatureAtCursor(cursorWorldSpace, ImportedFeatureSetList);
+                            break;
+                        case (FeatureSetType.Mask):
+                            foundFeature = FindFeatureAtCursor(cursorWorldSpace, MaskFeatureSetList);
+                            break;
+                        case (FeatureSetType.New):
+                            foundFeature = FindFeatureAtCursor(cursorWorldSpace, NewFeatureSetList);
+                            break;
+                    }
+                }
+            }
+            if (foundFeature == null && listToCheckFirst != FeatureSetType.Imported)
+            {
+                foundFeature = FindFeatureAtCursor(cursorWorldSpace, ImportedFeatureSetList);
+            }
+            if (foundFeature == null && listToCheckFirst != FeatureSetType.Mask)
+            {
+                foundFeature = FindFeatureAtCursor(cursorWorldSpace, MaskFeatureSetList);
+            }
+            if (foundFeature == null && listToCheckFirst != FeatureSetType.New)
+            {
+                foundFeature = FindFeatureAtCursor(cursorWorldSpace, NewFeatureSetList);
+            }
+            if (foundFeature != null)
+            {
+                SelectedFeature = foundFeature;
+                NeedToRespawnMenuList = true;
+                return true;
+            }
+            return false;
+        }
+        
+        private Feature FindFeatureAtCursor(Vector3 cursorWorldSpace, List<FeatureSetRenderer> featureSetList)
+        {
+            Feature foundFeature = null;
+            foreach (var featureSetRenderer in featureSetList)
             {
                 Vector3 volumeSpacePosition = featureSetRenderer.transform.InverseTransformPoint(cursorWorldSpace);
                 float prevVolume = float.NaN;
@@ -205,23 +288,21 @@ namespace DataFeatures
                 {
                     if (feature.Visible && feature.UnityBounds.Contains(volumeSpacePosition))
                     {
-                        if (prevVolume != float.NaN)
+                        if (!float.IsNaN(prevVolume))
                         {
                             float currentVolume = feature.UnityBounds.size.x * feature.UnityBounds.size.y * feature.UnityBounds.size.z;
-                            if (currentVolume > prevVolume || currentVolume == prevVolume && ActiveFeatureSetRenderer != feature.FeatureSetParent)
+                            if (currentVolume > prevVolume || currentVolume == prevVolume && SelectionFeatureSet != feature.FeatureSetParent)
                                 continue;
                         }
-                        SelectedFeature = feature;
-                        SelectedFeature.Selected = true;
-                        NeedToRespawnMenuList = true;
-                        ActiveFeatureSetRenderer = feature.FeatureSetParent;
-                        prevVolume = SelectedFeature.UnityBounds.size.x * SelectedFeature.UnityBounds.size.y * SelectedFeature.UnityBounds.size.z;
+                        foundFeature = feature;
+                        prevVolume = foundFeature.UnityBounds.size.x * foundFeature.UnityBounds.size.y * foundFeature.UnityBounds.size.z;
                     }
                 }
             }
-            return SelectedFeature != null;
+
+            return foundFeature;
         }
-        
+
         public bool SelectFeature(Feature feature)
         {
             DeselectFeature();
@@ -243,37 +324,64 @@ namespace DataFeatures
             }
         }
         
-        public bool CreateCustomFeature(Vector3 boundsMin, Vector3 boundsMax, string featureName, bool temporary = true)
+        /// <summary>
+        /// Create a temporary feature to function as the selection box
+        /// </summary>
+        /// <param name="boundsMin"></param>
+        /// <param name="boundsMax"></param>
+        /// <param name="featureName"></param>
+        /// <param name="temporary"></param>
+        /// <returns>boolean indicating success</returns>
+        public bool CreateSelectionFeature(Vector3 boundsMin, Vector3 boundsMax)
         {
-            ActiveFeatureSetRenderer = GeneratedFeatureSetList[0];
-            ActiveFeatureSetRenderer.ClearFeatures();
+            SelectionFeatureSet.ClearFeatures();
             var flag = "";
-            if (ActiveFeatureSetRenderer)
+            if (SelectionFeatureSet)
             {
                 DeselectFeature();
-                SelectedFeature = new Feature(boundsMin, boundsMax, Color.white, featureName, flag, -1, -1, null, ActiveFeatureSetRenderer, true) {Temporary = temporary, Selected = true};
-                if (temporary)
-                {
-                    SelectedFeature.ShowAxes(true);
-                }
-
-                ActiveFeatureSetRenderer.AddFeature(SelectedFeature);
+                var selectionFeature = new Feature(boundsMin, boundsMax, Color.white, "selection", flag, -1, -1, new string[] { "" }, true) {Temporary = true};
+                SelectionFeatureSet.AddFeature(selectionFeature);
+                SelectedFeature = selectionFeature;
+                selectionFeature.ShowAxes(true);
                 return true;
             }
-
             return false;
         }
 
+        public void AddFeatureToNewSet(Feature feature, bool needMenuRespawn)
+        {
+            if (NewFeatureSetList.Count == 0)
+            {
+                InitializeNewList();
+            }
+            //make a duplicate of the feature and add it to the new set
+            var duplicateFeature = new Feature(feature.CornerMin, feature.CornerMax, NewFeatureSetList[0].FeatureColor, feature.Name, feature.Flag, NewFeatureSetList[0].FeatureList.Count, feature.Id, new string[]{""}, feature.Visible) {Temporary = false};
+            NewFeatureSetList[0].AddFeature(duplicateFeature);
+            NewFeatureSetList[0].FeatureMenuScrollerDataSource.InitData();
+            NeedToRespawnMenuList = needMenuRespawn;
+        }
+        
+        public bool AddSelectedFeatureToNewSet()
+        {
+            if (SelectedFeature != null)
+            {
+                AddFeatureToNewSet(SelectedFeature, true);
+                return true;
+            }
+            return false;
+        }
+        
+        // This add method is just for debugging purposes
         public bool AddToList(Feature feature, float metric, string comment)
         {
-            if (ActiveFeatureSetRenderer)
+            if (NewFeatureSetList[0])
             {
                 feature.Temporary = false;
                 feature.Comment = comment;
                 feature.Metric = metric;
-                if (!ActiveFeatureSetRenderer.FeatureList.Contains(feature))
+                if (!NewFeatureSetList[0].FeatureList.Contains(feature))
                 {
-                    ActiveFeatureSetRenderer.FeatureList.Add(feature);
+                    NewFeatureSetList[0].FeatureList.Add(feature);
                     return true;
                 }
             }
@@ -282,9 +390,9 @@ namespace DataFeatures
 
         public bool AppendFeatureToFile(Feature feature)
         {
-            if (_streamWriter == null || !File.Exists($"Data/DataFeatures/{OutputFile}"))
+            if (_streamWriter == null || !File.Exists($"Data/DataFeatures/{OutputFileName}"))
             {
-                string outFilePath = "Data/DataFeatures/" + OutputFile;
+                string outFilePath = "Data/DataFeatures/" + OutputFileName;
                 _streamWriter = new StreamWriter(outFilePath, true);
                 _streamWriter.WriteLine("# Custom List");
                 _streamWriter.WriteLine("# " + "x".PadLeft(10, ' ') + "y".PadLeft(10, ' ') + "z".PadLeft(10, ' ') +

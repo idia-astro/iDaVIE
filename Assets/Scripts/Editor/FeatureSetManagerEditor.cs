@@ -60,7 +60,7 @@ public class FeatureSetManagerEditor : Editor
                 {
                     if (featureSetManager.SelectedFeature != null && featureSetManager.AppendFeatureToFile(featureSetManager.SelectedFeature))
                     {
-                        Debug.Log($"Appeneded feature to file {featureSetManager.OutputFile}");
+                        Debug.Log($"Appeneded feature to file {featureSetManager.OutputFileName}");
                     }
                 }
             }

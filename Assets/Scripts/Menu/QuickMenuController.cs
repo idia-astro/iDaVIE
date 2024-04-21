@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using DataFeatures;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using VolumeData;
 
@@ -12,10 +13,12 @@ public class QuickMenuController : MonoBehaviour
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
 
-    public GameObject mainMenuCanvas;
+    public GameObject sourcesMenu;
     public GameObject paintMenu;
     public GameObject plotsMenu;
     public GameObject voiceCommandsListCanvas;
+    public GameObject settingsMenu;
+
 
     public GameObject colorMapListCanvas;
     public GameObject savePopup;
@@ -110,11 +113,16 @@ public class QuickMenuController : MonoBehaviour
         }
     }
 
-    public void OpenMainMenu()
+    public void OpenSourcesMenu()
     {
-        spawnMenu(mainMenuCanvas);
+        spawnMenu(sourcesMenu);
     }
 
+    public void OpenSettingsMenu()
+    {
+        spawnMenu(settingsMenu);
+    }
+    
     public void OpenListOfVoiceCommands()
     {
         spawnMenu(voiceCommandsListCanvas);
@@ -146,6 +154,7 @@ public class QuickMenuController : MonoBehaviour
         }
     }
 
+    //TODO: Make this compatible with the new feature list system. Might be best to remove.
     public void ToggleFeatures()
     {
         if (featureStatus == 1)

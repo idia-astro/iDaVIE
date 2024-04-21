@@ -9,7 +9,7 @@ namespace DataFeatures
         public bool Temporary;
         public string Comment;
         public float Metric;
-        public int Index { get; }
+        public int Index { get; set; }
         public int Id { get; }
         public string Name { get; }
 
@@ -21,13 +21,13 @@ namespace DataFeatures
         private Vector3 _position;
         private Vector3[] _corners = new Vector3[2];
         public string[] RawData { get; set; }
-        public FeatureSetRenderer FeatureSetParent { get; private set; }
+        public FeatureSetRenderer FeatureSetParent { get; set; }
 
         public bool StatusChanged;
 
-        public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, string name, string flag, int index, int id, string[] rawData, FeatureSetRenderer parent, bool startVisible)
+        public Feature(Vector3 cubeMin, Vector3 cubeMax, Color cubeColor, string name, string flag, int index, int id, string[] rawData, bool startVisible)
         {
-            FeatureSetParent = parent;
+            FeatureSetParent = null;
             Index = index;
             Id = id;
             _color = cubeColor;
@@ -36,7 +36,6 @@ namespace DataFeatures
             SetBounds(cubeMin, cubeMax);
             RawData = rawData;
             Visible = startVisible;
-            FeatureSetParent.SetFeatureAsDirty(Index);
         }
 
         public void ShowAxes(bool show)
@@ -84,7 +83,10 @@ namespace DataFeatures
             {
                 if (_color != value)
                 {
-                    FeatureSetParent.SetFeatureAsDirty(Index);
+                    if (FeatureSetParent)
+                    {
+                        FeatureSetParent.SetFeatureAsDirty(Index);
+                    }
                 }
 
                 _color = value;
@@ -98,7 +100,10 @@ namespace DataFeatures
             {
                 if (_active != value)
                 {
-                    FeatureSetParent.SetFeatureAsDirty(Index);
+                    if (FeatureSetParent)
+                    {
+                        FeatureSetParent.SetFeatureAsDirty(Index);
+                    }
                 }
 
                 _active = value;
@@ -113,7 +118,10 @@ namespace DataFeatures
             {
                 if (_selected != value)
                 {
-                    FeatureSetParent.SetFeatureAsDirty(Index);
+                    if (FeatureSetParent)
+                    {
+                        FeatureSetParent.SetFeatureAsDirty(Index);
+                    }
                 }
 
                 _selected = value;
@@ -149,7 +157,10 @@ namespace DataFeatures
             var boundingBoxSize = Size;
             var center = Center;
             _unityBounds = new Bounds(center, boundingBoxSize);
-            FeatureSetParent.SetFeatureAsDirty(Index);
+            if (FeatureSetParent)
+            {
+                FeatureSetParent.SetFeatureAsDirty(Index);
+            }
         }
         
         public static void SetCubeColors(CuboidLine cube, Color baseColor, bool colorAxes)
