@@ -296,36 +296,57 @@ public class FeatureMenuController : MonoBehaviour
         {
             textObject.GetComponent<TMP_Text>().text +=
                 $"Source # : {_featureSetManager.SelectedFeature.Id + 1}{Environment.NewLine}";
-            if (_activeDataSet.HasWCS)
-            {
+            
                 double centerX, centerY, centerZ, ra, dec, physz, normR, normD, normZ;
-                if (_featureSetManager.VolumeRenderer.SourceStatsDict == null)
+                var sourceStats = _featureSetManager.VolumeRenderer.SourceStatsDict;
+                
+                // if the selected feature is from a mask, get the centroid from the sourceStats dictionary
+                if (_featureSetManager.SelectedFeature.FeatureSetParent.FeatureSetType == FeatureSetType.Mask && sourceStats != null)
+                {
+                    centerX = sourceStats[_featureSetManager.SelectedFeature.Index + 1].cX;
+                    centerY = sourceStats[_featureSetManager.SelectedFeature.Index + 1].cY;
+                    centerZ = sourceStats[_featureSetManager.SelectedFeature.Index + 1].cZ;
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"Centroid : {Environment.NewLine}";
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"  x : {centerX:F5}{Environment.NewLine}";
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"  y : {centerY:F5}{Environment.NewLine}";
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"  z : {centerZ:F5}{Environment.NewLine}";
+                }
+                // otherwise, use the center of the feature cuboid
+                else
                 {
                     centerX = _featureSetManager.SelectedFeature.Center.x;
                     centerY = _featureSetManager.SelectedFeature.Center.y;
                     centerZ = _featureSetManager.SelectedFeature.Center.z;
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"Center : {Environment.NewLine}";
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"  x : {centerX}{Environment.NewLine}";
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"  y : {centerY}{Environment.NewLine}";
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"  z : {centerZ}{Environment.NewLine}";
                 }
-                else
-                {
-                    centerX = _featureSetManager.VolumeRenderer
-                        .SourceStatsDict[_featureSetManager.SelectedFeature.Index].cX;
-                    centerY = _featureSetManager.VolumeRenderer
-                        .SourceStatsDict[_featureSetManager.SelectedFeature.Index].cY;
-                    centerZ = _featureSetManager.VolumeRenderer
-                        .SourceStatsDict[_featureSetManager.SelectedFeature.Index].cZ;
-                }
-
+                
+            // if there is an associated WCS, transform the designated center to RA, Dec, and physical z coords
+            if (_activeDataSet.HasWCS)
+            {
                 AstTool.Transform3D(_activeDataSet.AstFrame, centerX, centerY, centerZ, 1, out ra, out dec,
                     out physz);
                 AstTool.Norm(_activeDataSet.AstFrame, ra, dec, physz, out normR, out normD, out normZ);
 
                 textObject.GetComponent<TMP_Text>().text +=
-                    $"RA : {dataSet.GetFormattedCoord(normR, 1)}{Environment.NewLine}";
+                    $"  RA : {dataSet.GetFormattedCoord(normR, 1)}{Environment.NewLine}";
                 textObject.GetComponent<TMP_Text>().text +=
-                    $"Dec : {dataSet.GetFormattedCoord(normD, 2)}{Environment.NewLine}";
+                    $"  Dec : {dataSet.GetFormattedCoord(normD, 2)}{Environment.NewLine}";
                 textObject.GetComponent<TMP_Text>().text +=
-                    FormattableString.Invariant($"{_activeDataSet.Data.GetAstAttribute("System(3)")} ({_activeDataSet.Data.GetAxisUnit(3)}) : {normZ:F3}{Environment.NewLine}");
+                    FormattableString.Invariant($"  {_activeDataSet.Data.GetAstAttribute("System(3)")} ({_activeDataSet.Data.GetAxisUnit(3)}) : {normZ:F3}{Environment.NewLine}");
             }
+            
+            // if there are raw data associated with the feature, add to the info window
             if (_featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys != null)
             {
                 for (var i = 0; i < _featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys.Length; i++)
