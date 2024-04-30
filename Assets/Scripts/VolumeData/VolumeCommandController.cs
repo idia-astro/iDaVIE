@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using DataFeatures;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -66,6 +67,7 @@ namespace VolumeData
             public static readonly string SqrtScale = "square root scale";
             public static readonly string AddNewSource = "add new source";
             public static readonly string SetSourceId = "set source ID";
+            public static readonly string AddToList = "add to list";
             public static readonly string Undo = "undo";
             public static readonly string Redo = "redo";
             public static readonly string SaveSubCube = "export sub cube";
@@ -283,6 +285,10 @@ namespace VolumeData
             else if (args == Keywords.SetSourceId)
             {
                 SetMaskValue();
+            }
+            else if (args == Keywords.AddToList)
+            {
+                AddToList();
             }
             else if (args == Keywords.Undo)
             {
@@ -553,6 +559,11 @@ namespace VolumeData
             _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.StartEditSource);
         }
 
+        private void AddToList()
+        {
+            _activeDataSet.AddSelectionToList();
+        }
+        
         public void Undo()
         {
             _activeDataSet?.Mask?.UndoBrushStroke();

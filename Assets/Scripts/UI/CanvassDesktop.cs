@@ -92,6 +92,14 @@ public class CanvassDesktop : MonoBehaviour
     protected Coroutine loadCubeCoroutine;
     protected Coroutine showLoadDialogCoroutine;
 
+
+    private void Awake()
+    {
+        // Change the culture to invariant to avoid issues with parsing floats
+        System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+        System.Threading.Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+    }
+
     // Start is called before the first frame update
     void Start()
     {

@@ -554,7 +554,7 @@ namespace VolumeData
                         vis = _maskFeatureSet.FeatureList[0].Visible;
                     else
                         vis = false;
-                    var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, flag, _maskFeatureSet.FeatureList.Count, maskVal - 1, rawStrings, _maskFeatureSet, vis);
+                    var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, flag, _maskFeatureSet.FeatureList.Count, maskVal - 1, rawStrings, vis);
                     _maskFeatureSet.AddFeature(feature);
                     _maskFeatureSet.FeatureMenuScrollerDataSource.InitData();       // Reinitialize the data source to include the new feature
                     _maskFeatureSet.FeatureManager.NeedToRespawnMenuList = true;
