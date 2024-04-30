@@ -174,7 +174,7 @@ namespace VolumeData
         { 
             get 
             {
-                return _dataSet.SourceStatsDict;
+                return _maskDataSet.SourceStatsDict;
             }
         }
 
