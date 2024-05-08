@@ -217,7 +217,7 @@ int FitsReadImageFloat(fitsfile *fptr, int dims, int64_t nelem, float **array, i
         startPix[i] = 1;
     
     std::stringstream debug;
-    debug << "Reading mask image with " << dims << " dimensions and " << nelem << " elements.";
+    debug << "Reading cube image with " << dims << " dimensions and " << nelem << " elements.";
     WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     
     int success = fits_read_pixll(fptr, TFLOAT, startPix, nelem, &nulval, dataarray, &anynul, status);
@@ -232,6 +232,7 @@ int FitsReadImageFloat(fitsfile *fptr, int dims, int64_t nelem, float **array, i
  * 
  * @param fptr The fitsfile being worked on.
  * @param dims The number of axes in the FITS image.
+ * @param zAxis The index of the z Axis in the FITS image.
  * @param startPix An array containing the indices of the first pixel (xyz, left bottom front) to be written.
  * @param finalPix An array containing the indices of the last pixe (xyz, right top back) to be written.
  * @param nelem The size of the final image loaded.
@@ -239,7 +240,7 @@ int FitsReadImageFloat(fitsfile *fptr, int dims, int64_t nelem, float **array, i
  * @param status Value containing outcome of CFITSIO operation.
  * @return int 
  */
-int FitsReadSubImageFloat(fitsfile *fptr, int dims, long *startPix, long *finalPix, int64_t nelem, float **array, int *status)
+int FitsReadSubImageFloat(fitsfile *fptr, int dims, int zAxis, long *startPix, long *finalPix, int64_t nelem, float **array, int *status)
 {
     int anynul;
     float nulval = 0;
@@ -254,26 +255,35 @@ int FitsReadSubImageFloat(fitsfile *fptr, int dims, long *startPix, long *finalP
      * @brief slicesInChunk specifies the number of slices to read at a time.
      */
     long slicesInChunk = std::max((long) 1, (long) std::floor(std::numeric_limits<long>::max() / sliceSize));
-    long finalZ = finalPix[2];
+    long finalZ = finalPix[zAxis];
 
     // auto start = std::chrono::high_resolution_clock::now();
     // Loop over the third dimension
     int64_t offset = 0;
-    for (long z = startPix[2]; z <= finalPix[2]; z+=slicesInChunk)
+    for (long z = startPix[zAxis]; z <= finalPix[zAxis]; z+=slicesInChunk)
     {
         // Set the start and end pixels for the current slice
-        long sliceStartPix[3] = {startPix[0], startPix[1], z};
-        long sliceFinalPix[3] = {finalPix[0], finalPix[1], std::min(z + slicesInChunk, finalZ)};
+        long* sliceStartPix = new long[dims];
+        long* sliceFinalPix = new long[dims];
+        for (int i = 0; i < dims; i++)
+        {
+            sliceStartPix[i] = startPix[i];
+            sliceFinalPix[i] = finalPix[i];
+        }
+        sliceStartPix[zAxis] = z;
+        sliceFinalPix[zAxis] = std::min(z + slicesInChunk, finalZ);
 
         // Read the current slice directly into the final dataarray
         std::stringstream debug;
-        debug << "Reading mask sub image from [" << sliceStartPix[0] << ", " << sliceStartPix[1] << ", " << sliceStartPix[2] << "] to [" << sliceFinalPix[0] << ", " << sliceFinalPix[1] << ", " << sliceFinalPix[2] << "].";
+        debug << "Reading cube sub image from [" << sliceStartPix[0] << ", " << sliceStartPix[1] << ", " << sliceStartPix[2] << "] to [" << sliceFinalPix[0] << ", " << sliceFinalPix[1] << ", " << sliceFinalPix[2] << "].";
         WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
         int success = fits_read_subset(fptr, TFLOAT, sliceStartPix, sliceFinalPix, increment, &nulval, dataarray + offset, &anynul, status);
         
         if (success != 0)
         {
             delete[] increment;
+            delete[] sliceStartPix;
+            delete[] sliceFinalPix;
             return success;
         }
 
@@ -281,6 +291,8 @@ int FitsReadSubImageFloat(fitsfile *fptr, int dims, long *startPix, long *finalP
         // int64_t offset = sliceSize * (z - startPix[2]);
         int64_t nelem = (sliceFinalPix[0] - sliceStartPix[0] + 1) * (sliceFinalPix[1] - sliceStartPix[1] + 1) * (sliceFinalPix[2] - sliceStartPix[2] + 1);
         offset += nelem;
+        delete[] sliceStartPix;
+        delete[] sliceFinalPix;
     }
 
     // auto end = std::chrono::high_resolution_clock::now();
@@ -317,6 +329,7 @@ int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array,
  * 
  * @param fptr The fitsfile being worked on.
  * @param dims The number of axes in the FITS image.
+ * @param zAxis The index of the z Axis in the FITS image.
  * @param startPix An array containing the indices of the first pixel (xyz, left bottom front) to be written.
  * @param finalPix An array containing the indices of the last pixe (xyz, right top back) to be written.
  * @param nelem The size of the final image loaded.
@@ -324,7 +337,7 @@ int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array,
  * @param status Value containing outcome of CFITSIO operation.
  * @return int 
  */
-int FitsReadSubImageInt16(fitsfile *fptr, int dims, long *startPix, long *finalPix, int64_t nelem, float **array, int *status)
+int FitsReadSubImageInt16(fitsfile *fptr, int dims, int zAxis, long *startPix, long *finalPix, int64_t nelem, float **array, int *status)
 {
     int anynul;
     float nulval = 0;
@@ -348,8 +361,15 @@ int FitsReadSubImageInt16(fitsfile *fptr, int dims, long *startPix, long *finalP
     for (long z = startPix[2]; z <= finalPix[2]; z+=slicesInChunk)
     {
         // Set the start and end pixels for the current slice
-        long sliceStartPix[3] = {startPix[0], startPix[1], z};
-        long sliceFinalPix[3] = {finalPix[0], finalPix[1], std::min(z + slicesInChunk, finalZ)};
+        long* sliceStartPix = new long[dims];
+        long* sliceFinalPix = new long[dims];
+        for (int i = 0; i < dims; i++)
+        {
+            sliceStartPix[i] = startPix[i];
+            sliceFinalPix[i] = finalPix[i];
+        }
+        sliceStartPix[zAxis] = z;
+        sliceFinalPix[zAxis] = std::min(z + slicesInChunk, finalZ);
 
         // Read the current slice directly into the final dataarray
         std::stringstream debug;
@@ -360,6 +380,8 @@ int FitsReadSubImageInt16(fitsfile *fptr, int dims, long *startPix, long *finalP
         if (success != 0)
         {
             delete[] increment;
+            delete[] sliceStartPix;
+            delete[] sliceFinalPix;
             return success;
         }
 
@@ -367,6 +389,8 @@ int FitsReadSubImageInt16(fitsfile *fptr, int dims, long *startPix, long *finalP
         // int64_t offset = sliceSize * (z - startPix[2]);
         int64_t nelem = (sliceFinalPix[0] - sliceStartPix[0] + 1) * (sliceFinalPix[1] - sliceStartPix[1] + 1) * (sliceFinalPix[2] - sliceStartPix[2] + 1);
         offset += nelem;
+        delete[] sliceStartPix;
+        delete[] sliceFinalPix;
     }
 
     // auto end = std::chrono::high_resolution_clock::now();

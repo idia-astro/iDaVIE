@@ -71,11 +71,11 @@ DllExport int FitsReadColString(fitsfile *, int , long ,
 
 DllExport int FitsReadImageFloat(fitsfile *, int , int64_t , float **, int *);
 
-DllExport int FitsReadSubImageFloat(fitsfile *, int, long *, long *, int64_t, float **, int *);
+DllExport int FitsReadSubImageFloat(fitsfile *, int, int, long *, long *, int64_t, float **, int *);
 
 DllExport int FitsReadImageInt16(fitsfile *, int , int64_t , int16_t **, int *);
 
-DllExport int FitsReadSubImageInt16(fitsfile *, int, long *, long *, int64_t, float **, int *);
+DllExport int FitsReadSubImageInt16(fitsfile *, int, int, long *, long *, int64_t, float **, int *);
 
 DllExport int FitsCreateHdrPtrForAst(fitsfile *, char **, int *, int *);
 

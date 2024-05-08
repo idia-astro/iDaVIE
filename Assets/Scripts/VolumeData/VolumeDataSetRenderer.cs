@@ -1117,9 +1117,18 @@ namespace VolumeData
         
         public void SaveSubCube()
         {
-            IntPtr subCubeHeader = IntPtr.Zero;
-            var cornerMin = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMin);
-            var cornerMax = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMax);
+            Vector3Int cornerMin, cornerMax;
+            if (_featureManager.SelectedFeature != null)
+            {
+                cornerMin = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMin);
+                cornerMax = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMax);
+            }
+            else
+            {
+                ToastNotification.ShowWarning("No feature selected, saving entire loaded cube as subcube.");
+                cornerMin = new Vector3Int(0, 0, 0);
+                cornerMax = GetCubeDimensions() - new Vector3Int(1, 1, 1);
+            }
              _dataSet.SaveSubCubeFromOriginal(cornerMin, cornerMax, _maskDataSet);
         }
         public void SaveMask(bool overwrite)

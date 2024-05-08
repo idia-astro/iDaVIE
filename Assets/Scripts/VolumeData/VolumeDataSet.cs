@@ -349,7 +349,7 @@ namespace VolumeData
                 IntPtr finalPixPtr = Marshal.AllocHGlobal(sizeof(int) * finalPix.Length);
                 Marshal.Copy(startPix, 0, startPixPtr, startPix.Length);
                 Marshal.Copy(finalPix, 0, finalPixPtr, finalPix.Length);
-                if (FitsReader.FitsReadSubImageInt16(fptr, cubeDimensions, startPixPtr, finalPixPtr, numberDataPoints, out fitsDataPtr, out status) != 0)
+                if (FitsReader.FitsReadSubImageInt16(fptr, cubeDimensions, index2, startPixPtr, finalPixPtr, numberDataPoints, out fitsDataPtr, out status) != 0)
                 {
                     Debug.Log("Fits Read mask cube data error #" + status.ToString());
                     FitsReader.FitsCloseFile(fptr, out status);
@@ -395,7 +395,7 @@ namespace VolumeData
                 IntPtr finalPixPtr = Marshal.AllocHGlobal(sizeof(int) * finalPix.Length);
                 Marshal.Copy(startPix, 0, startPixPtr, startPix.Length);
                 Marshal.Copy(finalPix, 0, finalPixPtr, finalPix.Length);
-                if (FitsReader.FitsReadSubImageFloat(fptr, cubeDimensions, startPixPtr, finalPixPtr, numberDataPoints, out fitsDataPtr, out status) != 0)
+                if (FitsReader.FitsReadSubImageFloat(fptr, cubeDimensions, index2, startPixPtr, finalPixPtr, numberDataPoints, out fitsDataPtr, out status) != 0)
                 {
                     Debug.Log("Fits Read cube data error #" + status.ToString());
                     FitsReader.FitsCloseFile(fptr, out status);
@@ -1402,12 +1402,18 @@ namespace VolumeData
             var newFilename = $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}.fits";
             var filePath = Path.Combine(directoryPath, newFilename);
             var maskFilePath = Path.Combine(directoryPath, $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}_mask.fits");
+            Vector3Int offset = new Vector3Int(this.subsetBounds[0], this.subsetBounds[2], this.subsetBounds[4]);
             // Works only with 3D cubes for now... need 4D askap capability
-            if (FitsReader.FitsOpenFile(out oldFitsPtr, FileName + $"[{cornerMin.x}:{cornerMax.x},{cornerMin.y}:{cornerMax.y},{cornerMin.z}:{cornerMax.z}]", out status, true) == 0)
+            // Fits_open_file can take a subset specified in the filename, e.g., myimage.fits[101:200,301:400]
+            UnityEngine.Debug.Log("Attempting to load file:" + FileName + $"[{cornerMin.x + offset.x}:{cornerMax.x + offset.x}, {cornerMin.y + offset.y}:{cornerMax.y + offset.y}, {cornerMin.z + offset.z}:{cornerMax.z + offset.z}]");
+            if (FitsReader.FitsOpenFile(out oldFitsPtr, FileName + $"[{cornerMin.x + offset.x}:{cornerMax.x + offset.x}, {cornerMin.y + offset.y}:{cornerMax.y + offset.y}, {cornerMin.z + offset.z}:{cornerMax.z + offset.z}]", out status, true) == 0)
             {
+                UnityEngine.Debug.Log("Old file opened successfully.");
                 if (FitsReader.FitsCreateFile(out newFitsPtr, filePath, out status) == 0)
                 {
+                    UnityEngine.Debug.Log("New file created successfully.");
                     FitsReader.FitsCopyFile(oldFitsPtr, newFitsPtr, out status);
+                    UnityEngine.Debug.Log("File copy attempted.");
                     if (maskDataSet != null)
                     {
                         SaveSubMask(maskFilePath, cornerMin, cornerMax, newFitsPtr, maskDataSet);
@@ -1416,6 +1422,8 @@ namespace VolumeData
                 }
                 FitsReader.FitsCloseFile(oldFitsPtr, out status);
             }
+            else
+                UnityEngine.Debug.LogWarning("Could not open old file!");
 
             if (status != 0)
             {
