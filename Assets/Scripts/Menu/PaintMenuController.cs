@@ -89,14 +89,14 @@ public class PaintMenuController : MonoBehaviour
         {
             getFirstActiveDataSet().DisplayMask = false;
             notificationText.GetComponent<Text>().text = "Outline disabled";
-            this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Outline").gameObject.transform.Find("Image_out_on").gameObject.SetActive(true);
+            this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Outline").gameObject.transform.Find("Image_out_off").gameObject.SetActive(true);
 
         }
         else
         {
             getFirstActiveDataSet().DisplayMask = true;
             notificationText.GetComponent<Text>().text = "Outline enabled";
-            this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Outline").gameObject.transform.Find("Image_out_off").gameObject.SetActive(true);
+            this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Outline").gameObject.transform.Find("Image_out_on").gameObject.SetActive(true);
         }
     }
 
