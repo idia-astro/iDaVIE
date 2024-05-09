@@ -667,9 +667,8 @@ namespace VolumeData
             else
                 fileName = fileName + ".fits";
             long[] trueDims = {trueX, trueY, trueZ};
-            status = FitsReader.SaveMask(cubeFitsPtr, FitsData, trueDims, fileName);
 
-            maskDataSet.FileName = fileName;
+            maskDataSet.FileName = null;
             return maskDataSet;
         }
         

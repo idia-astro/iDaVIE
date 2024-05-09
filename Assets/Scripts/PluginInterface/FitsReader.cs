@@ -354,7 +354,7 @@ public class FitsReader
             UnityEngine.Debug.LogError($"Fits create file error {FitsErrorMessage(status)}");
             return status;
         }
-        if (FitsCopyFile(cubeFitsPtr, maskPtr, out status) != 0)
+        if (FitsCopyHeader(cubeFitsPtr, maskPtr, out status) != 0)
         {
             UnityEngine.Debug.LogError($"Fits copy file error {FitsErrorMessage(status)}");
             return status;
