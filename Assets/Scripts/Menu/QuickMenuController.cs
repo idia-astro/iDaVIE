@@ -194,10 +194,10 @@ public class QuickMenuController : MonoBehaviour
             maskstatus = -1;
         maskstatus++;
 
-        var Image_nf = gameObject.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_nf").gameObject;
-        var Image_f1 = gameObject.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f1").gameObject;
-        var Image_f2 = gameObject.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f2").gameObject;
-        var Image_f3 = gameObject.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f3").gameObject;
+        var Image_nf = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_nf").gameObject;
+        var Image_f1 = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f1").gameObject;
+        var Image_f2 = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f2").gameObject;
+        var Image_f3 = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f3").gameObject;
 
         Image_nf.SetActive(false);
         Image_f1.SetActive(false);
