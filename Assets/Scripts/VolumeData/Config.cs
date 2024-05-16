@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Windows.Speech;
@@ -34,6 +36,16 @@ namespace VolumeData
         public ConfidenceLevel voiceCommandConfidenceLevel = ConfidenceLevel.Low;
 
         public string[] flags = {"-1", "0", "1"};
+        
+        public Dictionary<String,double> restFrequenciesGHz = new Dictionary<string, double>
+        {
+            {"HI", 1.420406},
+            {"12CO(1-0)", 115.271},
+            {"12CO(2-1)", 230.538},
+            {"12CO(3-2)", 345.796},
+            {"Halpha", 456806}
+        };
+        
         public bool tunnellingVignetteOn = true;
         public float tunnellingVignetteIntensity = 1.0f;
         public float tunnellingVignetteEnd = 0.40f;

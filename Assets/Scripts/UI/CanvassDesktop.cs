@@ -65,7 +65,8 @@ public class CanvassDesktop : MonoBehaviour
     private Slider maxThreshold;
     private TextMeshProUGUI maxThresholdLabel;
 
-    private float restFrequency;
+    private Dictionary<string, double> restFrequenciesGHz;
+    private double restFrequencyGHz;
     private FeatureMapping featureMapping;
 
 
@@ -102,6 +103,19 @@ public class CanvassDesktop : MonoBehaviour
         maxThresholdLabel = renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
             .gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max").gameObject.transform
             .Find("Max_label").GetComponent<TextMeshProUGUI>();
+    }
+
+    private void PopulateRestfreqencyDropdown()
+    {
+        restFrequenciesGHz = Config.Instance.restFrequenciesGHz;
+        var renderingFreqsDropdown = renderingPanelContent.transform.Find("Rendering_container/Viewport/Content/Settings/RestFreq_container/RestFreq_dropdown").GetComponent<TMP_Dropdown>();
+        renderingFreqsDropdown.ClearOptions();
+        renderingFreqsDropdown.options.Add(new TMP_Dropdown.OptionData() { text = "Default" });
+        foreach (var emissionLine in restFrequenciesGHz.Keys)
+        {
+            renderingFreqsDropdown.options.Add(new TMP_Dropdown.OptionData() { text = emissionLine });
+        }
+        renderingFreqsDropdown.options.Add(new TMP_Dropdown.OptionData() { text = "Custom" });
     }
 
     void checkCubesDataSet()
@@ -503,6 +517,11 @@ public class CanvassDesktop : MonoBehaviour
 
         populateColorMapDropdown();
         populateStatsValue();
+        
+        // Populate the rest frequency dropdown in the Rendering tab from config file
+        PopulateRestfreqencyDropdown();
+        SetRestFrequencyInputInteractable(false);
+        SetRestFrequencyInput((float)GetFirstActiveDataSet().RestFrequency);
 
         LoadingText.gameObject.SetActive(false);
         progressBar.gameObject.SetActive(false);
@@ -664,26 +683,55 @@ public class CanvassDesktop : MonoBehaviour
         }
     }
 
-    public void OnRestFrequencyOverrideValueChanged(bool option)
+    public void OnRestFrequencyDropdownValueChanged(int optionIndex)
     {
         var activeDataSet = GetFirstActiveDataSet();
-        activeDataSet.OverrideRestFrequency = option;
-        if (option)
+        //if Default is selected, disable the input field and use the cube's default rest frequency
+        if (optionIndex == 0)
         {
-            activeDataSet.RestFrequency = restFrequency;
+            SetRestFrequencyInputInteractable(false);
+            activeDataSet.OverrideRestFrequency = false;
+            activeDataSet.ResetRestFrequency();
+            restFrequencyGHz = activeDataSet.RestFrequency;
+            SetRestFrequencyInput(restFrequencyGHz);
         }
+        //if "Custom" is selected, enable the input field
+        else if (optionIndex == restFrequenciesGHz.Count + 1)
+        {
+            activeDataSet.OverrideRestFrequency = true;
+            SetRestFrequencyInputInteractable(true);
+        }
+        //otherwise, use the selected rest frequency from the config file
         else
         {
-            activeDataSet.ResetRestFrequency();
+            SetRestFrequencyInputInteractable(false);
+            activeDataSet.OverrideRestFrequency = true;
+            restFrequencyGHz = restFrequenciesGHz.Values.ElementAt(optionIndex - 1);
+            SetRestFrequencyInput(restFrequencyGHz);
+            activeDataSet.RestFrequency = restFrequencyGHz;
+
+
         }
+    }
+
+    private void SetRestFrequencyInputInteractable(bool isInteractable)
+    {
+        renderingPanelContent.transform.Find("Rendering_container/Viewport/Content/Settings/RestFreq_container/RestFreq_input")
+            .GetComponent<TMP_InputField>().interactable = isInteractable;
+    }
+    
+    private void SetRestFrequencyInput(double restFrequency)
+    {
+        renderingPanelContent.transform.Find("Rendering_container/Viewport/Content/Settings/RestFreq_container/RestFreq_input")
+            .GetComponent<TMP_InputField>().text = restFrequency.ToString();
     }
 
     public void OnRestFrequencyValueChanged(String val)
     {
-        restFrequency = float.Parse(val);
+        restFrequencyGHz = double.Parse(val);
         var activeDataSet = GetFirstActiveDataSet();
         if (activeDataSet.OverrideRestFrequency)
-            activeDataSet.RestFrequency = restFrequency;
+            activeDataSet.RestFrequency = restFrequencyGHz;
     }
 
     public void BrowseSourcesFile()
