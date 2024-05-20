@@ -67,8 +67,13 @@ public class HistogramMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Opens a keypad in VR space. Once the user is satisfied with the number, it sends the value back to target.
+    /// </summary>
+    /// <param name="target">The text field that the keypad number will be sent to.</param>
     public void OpenKeypad(TextMeshProUGUI target)
     {
+        // If any keypads are open, destroy them first.
         if (GameObject.FindGameObjectWithTag("keypad") != null)
         {
             GameObject[] keypads = GameObject.FindGameObjectsWithTag("keypad");

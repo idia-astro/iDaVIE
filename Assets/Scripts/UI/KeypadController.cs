@@ -26,6 +26,10 @@ public class KeypadController : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// This function runs when the user clicks the confirm button.
+    /// It sends the input value to the target and closes the keypad.
+    /// </summary>
     public void Confirm()
     {
         float value = float.Parse(previewText.text, System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
@@ -35,6 +39,11 @@ public class KeypadController : MonoBehaviour
         gameObject.SetActive(false);
     }
 
+    /// <summary>
+    /// Runs when the user presses one of the keypad buttons and adds the
+    /// value of the key to the preview number.
+    /// </summary>
+    /// <param name="key_id">The id of the key that was pressed.</param>
     public void KeyPressed(int key_id)
     {
 
