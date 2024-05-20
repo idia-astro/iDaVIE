@@ -2,13 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
+using System;
+using System.Diagnostics;
 
 public class KeypadController : MonoBehaviour
 {
 
 
-    public Text previewText;
-    public Text targetText = null;
+    public TextMeshProUGUI previewText;
+    public TextMeshProUGUI targetText = null;
     public GameObject targetObj = null;
 
     // Start is called before the first frame update
@@ -27,6 +30,9 @@ public class KeypadController : MonoBehaviour
     {
         float value = float.Parse(previewText.text, System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         targetText.text = previewText.text;
+        UnityEngine.Debug.Log("Setting keypad value to " + previewText.text);
+        previewText.text = "";
+        gameObject.SetActive(false);
     }
 
     public void KeyPressed(int key_id)
