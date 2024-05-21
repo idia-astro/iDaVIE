@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using System;
 using System.Diagnostics;
+using System.Linq;
 
 public class KeypadController : MonoBehaviour
 {
@@ -13,6 +14,8 @@ public class KeypadController : MonoBehaviour
     public TextMeshProUGUI previewText;
     public TextMeshProUGUI targetText = null;
     public GameObject targetObj = null;
+
+    private bool isNegative = false;
 
     // Start is called before the first frame update
     void Start()
@@ -48,10 +51,26 @@ public class KeypadController : MonoBehaviour
     {
 
         string text = previewText.text;
+        //Backspace
         if (key_id == -1)
             text = text.Remove(text.Length - 1);
+        //Dot
         else if (key_id == -2)
             text = text + ".";
+        //Toggle negative
+        else if (key_id == -10)
+        {
+            if (this.isNegative)
+            {
+                text = text.Remove(0, 1);
+                isNegative = false;
+            }
+            else
+            {
+                text = text.Insert(0, "-");
+                isNegative = true;
+            }
+        }
         else
             text = text + key_id.ToString();
         
