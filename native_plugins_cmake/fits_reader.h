@@ -83,6 +83,11 @@ DllExport int FreeFitsPtrMemory(void* );
 
 DllExport void FreeFitsMemory(char* header, int* status);
 
+DllExport int writeMomentMap(char*, float*);
+
+int writeFITSHeader(fitsfile *);
+
+
 }
 
 

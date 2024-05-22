@@ -278,3 +278,129 @@ void FreeFitsMemory(char* header, int* status)
 {
     fits_free_memory(header, status);
 }
+
+/**
+ * @brief 
+ * Function to write header values for the fits file, called when writing moment maps.
+ * Consider adding RA and DEC values, and x/y axis units as well.
+ * @param FITSFile The fitsfile to be written to.
+ * @return int Returns the status. 0 if successful, see the usual table if not 0.
+ */
+int writeFITSHeader(fitsfile *FITSFile)
+{
+    int status = 0;
+
+    std::string comment = "The software that processed this data";
+    std::string val = "i-DaVIE-v";
+    auto refVal = val.data();
+    fits_write_key(FITSFile, TSTRING, "SOFTNAME", refVal, comment.c_str(), &status);
+    if (status)
+    {
+        writeDebugMessageError("Error " + std::to_string(status) + " when writing SOFTNAME to FITS header in writeFITSHeader()!");
+    }
+
+    //Consider changing the version value to instead be pulled from a config file (not known to user), instead of being hard coded like this.
+    comment = "Version of the software";
+    val = "1.0";
+    refVal = val.data();
+    fits_write_key(FITSFile, TSTRING, "SOFTVERS", refVal, comment.c_str(), &status);
+    if (status)
+    {
+        writeDebugMessageError("Error " + std::to_string(status) + " when writing SOFTVERS to FITS header in writeFITSHeader()!");
+    }
+
+    //Consider changing the release date value to instead be pulled from a config file (not known to user), instead of being hard coded like this.
+    comment = "Release date of the software";
+    val = "2024-08-06";
+    refVal = val.data();
+    fits_write_key(FITSFile, TSTRING, "SOFTDATE", refVal, comment.c_str(), &status);
+    if (status)
+    {
+        writeDebugMessageError("Error " + std::to_string(status) + " when writing SOFTDATE to FITS header in writeFITSHeader()!");
+    }
+
+    comment = "Maintainer of the software";
+    val = "IDIA Visualisation Lab <vislab@idia.ac.za>";
+    refVal = val.data();
+    fits_write_key(FITSFile, TSTRING, "SOFTAUTH", refVal, comment.c_str(), &status);
+    if (status)
+    {
+        writeDebugMessageError("Error " + std::to_string(status) + " when writing SOFTAUTH to FITS header in writeFITSHeader()!");
+    }
+
+    comment = "Institute responsible for the software";
+    val = "IDIA https://www.idia.ac.za/";
+    refVal = val.data();
+    fits_write_key(FITSFile, TSTRING, "SOFTINST", refVal, comment.c_str(), &status);
+    if (status)
+    {
+        writeDebugMessageError("Error " + std::to_string(status) + " when writing SOFTINST to FITS header in writeFITSHeader()!");
+    }
+
+    return status;
+}
+
+/**
+ * @brief 
+ * Writes out an image as supplied by the pixels in imgPixs to filename in FITS format.
+ * @param filename The destination file name.
+ * @param imgPixs The data to be written out to the file. This data is expected to be in row-major form, same as FITS.
+ * @return int Returns the status. 0 if successful, see the usual table if not 0.
+ */
+int writeMomentMap(char* filename, void* imgPixs)
+{
+    fitsfile* newFitsFile;
+    int status = 0;
+    fits_create_file(&newFitsFile, filename, &status);
+    if (status)
+    {
+        writeDebugMessageError("Error " + std::to_string(status) + " opening FITS file for FitsWriter::Write()!");
+        return;
+    }
+
+    // Set the axes... somehow. Function arguments work.
+    int naxis = imgData->GetDataDimension();
+    long naxes[naxis];
+    for (int i = 0; i < naxis; ++i)
+        naxes[i] = imgData->GetDimensions()[i];
+
+    fits_create_img(newFitsFile, FLOAT_IMG, naxis, naxes, &status);
+    if (status)
+    {
+        writeDebugMessageError("Error " + std::to_string(status) + " creating FITS file for FitsWriter::Write()!");
+        return;
+    }
+
+    writeFITSHeader(newFitsFile);
+
+    // write image data
+    long* fpixel = new long[naxis];
+    for (int i = 0; i < naxis; ++i)
+        fpixel[i] = 1;
+    long nelements = (extent[1] - extent[0] + 1) * (extent[3] - extent[2] + 1);
+
+    //the array of pixel values
+    //Can be sent in as a function argument
+    //Note that it must be a void pointer for FITSIO to be happy.
+    imgPixs = imgData->GetPointData()->GetScalars()->GetVoidPointer(0);
+
+//    auto PixData = static_cast<unsigned short *>(imgPixs);
+//    for (int i = 0; i < nelements; ++i){
+//        writeDebugMessageError("Pixel value from copied values at index " + std::to_string(i) + " is " + std::to_string(PixData[i]));
+//    }
+
+    fits_write_pix(newFitsFile, TFLOAT, fpixel, nelements, imgPixs, &status);
+    if (status)
+    {
+        writeDebugMessageError("Error " + std::to_string(status) + " when writing FITS file via CFITSIO, datatype = " + std::to_string(dataType) + "!");
+    }
+
+    fits_close_file(newFitsFile, &status);
+    if (status)
+    {
+        writeDebugMessageError("Error " + std::to_string(status) + " when closing new FITS file for FitsWriter::Write()!");
+    }
+    delete[] fpixel;
+
+    return status;
+}
