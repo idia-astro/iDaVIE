@@ -64,9 +64,8 @@ public class CanvassDesktop : MonoBehaviour
 
     private Slider maxThreshold;
     private TextMeshProUGUI maxThresholdLabel;
-
-    private Dictionary<string, double> restFrequenciesGHz;
-    private double restFrequencyGHz;
+    
+    
     private FeatureMapping featureMapping;
 
 
@@ -79,6 +78,21 @@ public class CanvassDesktop : MonoBehaviour
         // Change the culture to invariant to avoid issues with parsing floats
         System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
         System.Threading.Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+        
+        if (GetFirstActiveDataSet() != null)
+        {
+            GetFirstActiveDataSet().RestFrequencyGHzListIndexChanged += OnRestFrequencyIndexOfDatasetChanged;
+            GetFirstActiveDataSet().RestFrequencyGHzChanged += OnRestFrequencyOfDatasetChanged;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (GetFirstActiveDataSet() != null)
+        {
+            GetFirstActiveDataSet().RestFrequencyGHzListIndexChanged -= OnRestFrequencyIndexOfDatasetChanged;
+            GetFirstActiveDataSet().RestFrequencyGHzChanged -= OnRestFrequencyOfDatasetChanged;
+        }
     }
 
     // Start is called before the first frame update
@@ -104,18 +118,16 @@ public class CanvassDesktop : MonoBehaviour
             .gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max").gameObject.transform
             .Find("Max_label").GetComponent<TextMeshProUGUI>();
     }
-
+    
     private void PopulateRestfreqencyDropdown()
     {
-        restFrequenciesGHz = Config.Instance.restFrequenciesGHz;
         var renderingFreqsDropdown = renderingPanelContent.transform.Find("Rendering_container/Viewport/Content/Settings/RestFreq_container/RestFreq_dropdown").GetComponent<TMP_Dropdown>();
         renderingFreqsDropdown.ClearOptions();
-        renderingFreqsDropdown.options.Add(new TMP_Dropdown.OptionData() { text = "Default" });
-        foreach (var emissionLine in restFrequenciesGHz.Keys)
+        foreach (var freq in GetFirstActiveDataSet().RestFrequencyGHzList.Keys)
         {
-            renderingFreqsDropdown.options.Add(new TMP_Dropdown.OptionData() { text = emissionLine });
+            renderingFreqsDropdown.options.Add(new TMP_Dropdown.OptionData(freq));
         }
-        renderingFreqsDropdown.options.Add(new TMP_Dropdown.OptionData() { text = "Custom" });
+        
     }
 
     void checkCubesDataSet()
@@ -521,8 +533,12 @@ public class CanvassDesktop : MonoBehaviour
         // Populate the rest frequency dropdown in the Rendering tab from config file
         PopulateRestfreqencyDropdown();
         SetRestFrequencyInputInteractable(false);
-        SetRestFrequencyInput((float)GetFirstActiveDataSet().RestFrequency);
+        SetRestFrequencyInputField((float)GetFirstActiveDataSet().RestFrequencyGHz);
 
+        //subscribe rest frequency change behanvior to changes in new loaded cube
+        GetFirstActiveDataSet().RestFrequencyGHzListIndexChanged += OnRestFrequencyIndexOfDatasetChanged;
+        GetFirstActiveDataSet().RestFrequencyGHzChanged += OnRestFrequencyOfDatasetChanged;
+        
         LoadingText.gameObject.SetActive(false);
         progressBar.gameObject.SetActive(false);
         WelcomeMenu.gameObject.SetActive(false);
@@ -683,55 +699,88 @@ public class CanvassDesktop : MonoBehaviour
         }
     }
 
-    public void OnRestFrequencyDropdownValueChanged(int optionIndex)
+    /// <summary>
+    /// When the rest frequency index of the dataset changes, update the dropdown selection
+    /// </summary>
+    private void OnRestFrequencyIndexOfDatasetChanged()
     {
-        var activeDataSet = GetFirstActiveDataSet();
-        //if Default is selected, disable the input field and use the cube's default rest frequency
-        if (optionIndex == 0)
-        {
-            SetRestFrequencyInputInteractable(false);
-            activeDataSet.OverrideRestFrequency = false;
-            activeDataSet.ResetRestFrequency();
-            restFrequencyGHz = activeDataSet.RestFrequency;
-            SetRestFrequencyInput(restFrequencyGHz);
-        }
-        //if "Custom" is selected, enable the input field
-        else if (optionIndex == restFrequenciesGHz.Count + 1)
-        {
-            activeDataSet.OverrideRestFrequency = true;
-            SetRestFrequencyInputInteractable(true);
-        }
-        //otherwise, use the selected rest frequency from the config file
-        else
-        {
-            SetRestFrequencyInputInteractable(false);
-            activeDataSet.OverrideRestFrequency = true;
-            restFrequencyGHz = restFrequenciesGHz.Values.ElementAt(optionIndex - 1);
-            SetRestFrequencyInput(restFrequencyGHz);
-            activeDataSet.RestFrequency = restFrequencyGHz;
-
-
-        }
+        SetRestFrequencyDropdown(GetFirstActiveDataSet().RestFrequencyGHzListIndex);
     }
 
+    /// <summary>
+    /// When the rest frequency of the dataset changes, update the input field
+    /// </summary>
+    private void OnRestFrequencyOfDatasetChanged()
+    {
+        SetRestFrequencyInputField(GetFirstActiveDataSet().RestFrequencyGHz);
+    }
+    
+    /// <summary>
+    /// When the dropdown value changes, update the rest frequency of the dataset
+    /// </summary>
+    /// <param name="optionIndex"></param>
+    public void OnRestFrequencyDropdownValueChanged(int optionIndex)
+    {
+        GetFirstActiveDataSet().RestFrequencyGHzListIndex = optionIndex;
+    }
+
+    /// <summary>
+    /// When the rest frequency input field changes, update the rest frequency of the dataset
+    /// </summary>
+    /// <param name="val"></param>
+    public void OnRestFrequencyValueChanged(String val)
+    {
+        var newRestFrequencyGHz = double.Parse(val);
+        var activeDataSet = GetFirstActiveDataSet();
+        activeDataSet.RestFrequencyGHzList["Custom"] = newRestFrequencyGHz;
+        if (activeDataSet.OverrideRestFrequency)
+            activeDataSet.RestFrequencyGHz = newRestFrequencyGHz;
+    }
+    
+    /// <summary>
+    /// Sets the rest frequency input field to be interactable or not
+    /// </summary>
+    /// <param name="isInteractable"></param>
     private void SetRestFrequencyInputInteractable(bool isInteractable)
     {
         renderingPanelContent.transform.Find("Rendering_container/Viewport/Content/Settings/RestFreq_container/RestFreq_input")
             .GetComponent<TMP_InputField>().interactable = isInteractable;
     }
     
-    private void SetRestFrequencyInput(double restFrequency)
+    /// <summary>
+    /// Sets the rest frequency input field to the given value
+    /// </summary>
+    /// <param name="restFrequency"></param>
+    private void SetRestFrequencyInputField(double restFrequency)
     {
         renderingPanelContent.transform.Find("Rendering_container/Viewport/Content/Settings/RestFreq_container/RestFreq_input")
             .GetComponent<TMP_InputField>().text = restFrequency.ToString();
     }
-
-    public void OnRestFrequencyValueChanged(String val)
+    
+    /// <summary>
+    /// Sets the rest frequency dropdown to the given index
+    /// </summary>
+    /// <param name="index"></param>
+    private void SetRestFrequencyDropdown(int index)
     {
-        restFrequencyGHz = double.Parse(val);
-        var activeDataSet = GetFirstActiveDataSet();
-        if (activeDataSet.OverrideRestFrequency)
-            activeDataSet.RestFrequency = restFrequencyGHz;
+        renderingPanelContent.transform.Find("Rendering_container/Viewport/Content/Settings/RestFreq_container/RestFreq_dropdown")
+            .GetComponent<TMP_Dropdown>().value = index;
+        //if Default is selected, disable the input field and use the cube's default rest frequency
+        if (index == 0)
+        {
+            SetRestFrequencyInputInteractable(false);
+            //SetRestFrequencyInputField(RestFrequencyGHz);
+        }
+        //if "Custom" is selected, enable the input field
+        else if (index == GetFirstActiveDataSet().RestFrequencyGHzList.Count - 1)
+        {
+            SetRestFrequencyInputInteractable(true);
+        }
+        //otherwise, use the selected rest frequency from the config file
+        else
+        {
+            SetRestFrequencyInputInteractable(false);
+        }
     }
 
     public void BrowseSourcesFile()
@@ -1094,7 +1143,7 @@ public class CanvassDesktop : MonoBehaviour
         {
             foreach (var dataSet in _volumeDataSets)
             {
-                if (dataSet.isActiveAndEnabled)
+                if (dataSet != null && dataSet.isActiveAndEnabled)
                 {
                     return dataSet;
                 }

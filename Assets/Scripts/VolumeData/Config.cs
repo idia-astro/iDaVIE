@@ -37,6 +37,7 @@ namespace VolumeData
 
         public string[] flags = {"-1", "0", "1"};
         
+        // Default rest frequencies in GHz. These are used for frequency <-> velocity conversions
         public Dictionary<String,double> restFrequenciesGHz = new Dictionary<string, double>
         {
             {"HI", 1.420406},
