@@ -171,7 +171,7 @@ public class HistogramMenuController : MonoBehaviour
     }
 
     /// <summary>
-    /// Function executed when clicking the rest button.
+    /// Function executed when clicking the reset button.
     /// Updates the colour mapping bounds and the desktop UI values back to the default values.
     /// </summary>
     public void ResetButtonHandler()
