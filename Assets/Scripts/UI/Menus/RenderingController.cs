@@ -8,6 +8,8 @@ using VolumeData;
 
 using Valve.VR.InteractionSystem;
 using System;
+using System.Globalization;
+using System.Linq;
 
 public class RenderingController : MonoBehaviour
 {
@@ -24,6 +26,10 @@ public class RenderingController : MonoBehaviour
     public Button ButtonPrevScalingType;
     public Button ButtonNextScalingType;
     public Text LabelScalingType;
+    
+    //Rest Frequency
+    public Text LabelRestFrequencyIndex;
+    public Text LabelRestFrequencyValue;
 
     public GameObject volumeDatasetRendererObj = null;
 
@@ -33,6 +39,15 @@ public class RenderingController : MonoBehaviour
     int scalingIndex = -1;
     private VolumeCommandController _volumeCommandController;
 
+    void Awake()
+    {
+        if (getFirstActiveDataSet() != null)
+        {
+            getFirstActiveDataSet().RestFrequencyGHzListIndexChanged += OnRestFrequencyIndexOfDatasetChanged;
+            getFirstActiveDataSet().RestFrequencyGHzChanged += OnRestFrequencyOfDatasetChanged;
+        }
+    }
+    
     void Start()
     {
         colorIndex = defaultColorIndex;
@@ -53,6 +68,7 @@ public class RenderingController : MonoBehaviour
         if (firstActive && _activeDataSet != firstActive)
         {
             _activeDataSet = firstActive;
+            UpdateRestFrequencyDisplay();
         }
         if (_activeDataSet.ColorMap != ColorMapUtils.FromHashCode(colorIndex))
         {
@@ -234,6 +250,43 @@ public class RenderingController : MonoBehaviour
     {
         _activeDataSet.ThresholdMax = _activeDataSet.InitialThresholdMax;
         this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Max_thresholdObject").gameObject.transform.Find("maxThresholdValue").gameObject.GetComponent<Text>().text = _activeDataSet.ThresholdMax.ToString();
+    }
+
+    public void NextRestFrequency()
+    {
+        _activeDataSet.RestFrequencyGHzListIndex = (_activeDataSet.RestFrequencyGHzListIndex + 1) % _activeDataSet.RestFrequencyGHzList.Count;
+        
+    }
+
+    public void PreviousRestFrequency()
+    {
+        _activeDataSet.RestFrequencyGHzListIndex = (_activeDataSet.RestFrequencyGHzListIndex - 1 + _activeDataSet.RestFrequencyGHzList.Count) % _activeDataSet.RestFrequencyGHzList.Count;
+    }
+
+    /// <summary>
+    /// Refresh the rest frequency name (from index) and value in the display
+    /// </summary>
+    public void UpdateRestFrequencyDisplay()
+    {
+        LabelRestFrequencyIndex.GetComponent<Text>().text = _activeDataSet.RestFrequencyGHzList
+            .ElementAt(_activeDataSet.RestFrequencyGHzListIndex).Key;
+        LabelRestFrequencyValue.GetComponent<Text>().text = _activeDataSet.RestFrequencyGHz.ToString("F5", CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>
+    /// When the rest frequency index of the dataset changes, update the display.
+    /// </summary>
+    private void OnRestFrequencyIndexOfDatasetChanged()
+    {
+        UpdateRestFrequencyDisplay();
+    }
+
+    /// <summary>
+    /// When the rest frequency of the dataset changes, update the display.
+    /// </summary>
+    private void OnRestFrequencyOfDatasetChanged()
+    {
+        UpdateRestFrequencyDisplay();
     }
 
     /*
