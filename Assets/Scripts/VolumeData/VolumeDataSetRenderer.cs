@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
@@ -102,17 +103,56 @@ namespace VolumeData
         public int CubeSlice = 1;
         public bool ShowMeasuringLine = false;
         public bool OverrideRestFrequency {get; set;} = false;
-        private double _restFrequency;
-        public double RestFrequency
+
+        private double _restFrequencyGHz;
+        private int _restFrequencyGHzListListIndex;
+
+        public event Action RestFrequencyGHzChanged;
+        public event Action RestFrequencyGHzListIndexChanged;
+        
+        public Dictionary<string, double> RestFrequencyGHzList { get; private set; }
+        public int RestFrequencyGHzListIndex
         {
-            get => _restFrequency;
+            get => _restFrequencyGHzListListIndex;
             set
             {
-                _restFrequencyChanged = true;
-                _restFrequency = value;
+                _restFrequencyGHzListListIndex = value;
+                
+                //if "Default" is selected, use the rest frequency from the fits file
+                if (value == 0)
+                {
+                    
+                    OverrideRestFrequency = false;
+                    ResetRestFrequency();
+                }
+                //if "Custom" is selected, use the input field in the CanvassDesktop
+                else if (value == RestFrequencyGHzList.Count)
+                {
+                    OverrideRestFrequency = true;
+                }
+                //otherwise, use the selected rest frequency from the config file
+                else
+                {
+                    OverrideRestFrequency = true;
+                    var newRestFrequencyGHz = RestFrequencyGHzList.Values.ElementAt(value);
+                    RestFrequencyGHz = newRestFrequencyGHz;
+                }
+                RestFrequencyGHzListIndexChanged?.Invoke();
             }
         }
-        private bool _restFrequencyChanged = false;
+        
+        public double RestFrequencyGHz
+        {
+            get => _restFrequencyGHz;
+            set
+            {
+                _restFrequencyGHzChanged = true;
+                _restFrequencyGHz = value;
+                RestFrequencyGHzChanged?.Invoke();
+            }
+        }
+        
+        private bool _restFrequencyGHzChanged = false;
         public Vector3 InitialPosition { get; private set; }
         public Quaternion InitialRotation { get; private set; }
         public Vector3 InitialScale { get; private set; }
@@ -418,8 +458,14 @@ namespace VolumeData
             
             if (_dataSet.HasFitsRestFrequency)
             {
-                RestFrequency = _dataSet.FitsRestFrequency;
+                RestFrequencyGHz = _dataSet.FitsRestFrequency;
             }
+            else
+            {
+                RestFrequencyGHz = 0.0;
+            }
+            
+            PopulateRestFrequenyList();
             
             _momentMapRenderer = gameObject.AddComponent(typeof(MomentMapRenderer)) as MomentMapRenderer;
             if (_momentMapRenderer)
@@ -446,6 +492,21 @@ namespace VolumeData
 
             started = true;
             yield return 0;
+        }
+
+        /// <summary>
+        /// Add the rest frequencies from the config file to the rest frequency dictionary.
+        /// These are used to convert between frequency and velocity coordinates.
+        /// </summary>
+        private void PopulateRestFrequenyList()
+        {
+            RestFrequencyGHzList = new Dictionary<string, double>();
+            RestFrequencyGHzList.Add("Default", RestFrequencyGHz);
+            foreach (var emissionLine in Config.Instance.restFrequenciesGHz)
+            {
+                RestFrequencyGHzList.Add(emissionLine.Key, emissionLine.Value);
+            }
+            RestFrequencyGHzList.Add("Custom", 0.0);
         }
 
         public IEnumerator updateStatus(string label, int progress)
@@ -896,12 +957,12 @@ namespace VolumeData
                 _materialInstance.SetFloat(MaterialID.VignetteIntensity, VignetteIntensity);
                 _materialInstance.SetColor(MaterialID.VignetteColor, VignetteColor);
 
-                if (_restFrequencyChanged && HasWCS)
+                if (_restFrequencyGHzChanged && HasWCS)
                 {
-                    _dataSet.RecreateFrameSet(RestFrequency);
+                    _dataSet.RecreateFrameSet(RestFrequencyGHz);
                     _dataSet.CreateAltSpecFrame();
                     _dataSet.HasRestFrequency = true;
-                    _restFrequencyChanged = false;
+                    _restFrequencyGHzChanged = false;
                 }
             }
         }
@@ -910,7 +971,7 @@ namespace VolumeData
         {
             if (_dataSet.HasFitsRestFrequency)
             {
-                RestFrequency = _dataSet.FitsRestFrequency;
+                RestFrequencyGHz = _dataSet.FitsRestFrequency;
 
             }
             else
