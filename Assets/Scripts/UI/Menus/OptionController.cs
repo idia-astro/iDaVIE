@@ -1,6 +1,7 @@
 ﻿using DataFeatures;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Valve.VR;
@@ -12,8 +13,8 @@ public class OptionController : MonoBehaviour
     private VolumeDataSetRenderer[] _dataSets;
 
     // Color Map
-    public Text LabelHand;
-    public Text LabelStep;
+    public TextMeshProUGUI LabelHand;
+    public TextMeshProUGUI LabelStep;
     public GameObject volumeDatasetRendererObj = null;
     int defaultColorIndex = 33;
     int colorIndex = -1;
@@ -33,8 +34,8 @@ public class OptionController : MonoBehaviour
         if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
 
-        LabelHand.gameObject.GetComponent<Text>().text = (Hand)0 + "";
-        LabelStep.gameObject.GetComponent<Text>().text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
+        LabelHand.text = (Hand)0 + "";
+        LabelStep.text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
     }
 
     // Update is called once per frame
@@ -46,9 +47,9 @@ public class OptionController : MonoBehaviour
             _activeDataSet = firstActive;
         }
 
-        if (LabelStep.gameObject.GetComponent<Text>().text != getFirstActiveDataSet().GetMomentMapRenderer().momstep.ToString())
+        if (LabelStep.text != getFirstActiveDataSet().GetMomentMapRenderer().momstep.ToString())
         {
-            getFirstActiveDataSet().GetMomentMapRenderer().momstep = float.Parse(LabelStep.gameObject.GetComponent<Text>().text, System.Globalization.CultureInfo.InvariantCulture.NumberFormat); 
+            getFirstActiveDataSet().GetMomentMapRenderer().momstep = float.Parse(LabelStep.text, System.Globalization.CultureInfo.InvariantCulture.NumberFormat); 
         }
     }
 
@@ -77,19 +78,19 @@ public class OptionController : MonoBehaviour
             hand = 0;
             _activeDataSet._volumeInputController.PrimaryHand = SteamVR_Input_Sources.RightHand;
         }
-        LabelHand.gameObject.GetComponent<Text>().text = (Hand)hand + "";
+        LabelHand.text = (Hand)hand + "";
     }
 
     public void decreaseMomThresholdStep()
     {
         getFirstActiveDataSet().GetMomentMapRenderer().momstep -= default_threadshold_step;
-        LabelStep.gameObject.GetComponent<Text>().text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
+        LabelStep.text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
     }
 
     public void increaseMomThresholdStep()
     {
         getFirstActiveDataSet().GetMomentMapRenderer().momstep += default_threadshold_step;
-        LabelStep.gameObject.GetComponent<Text>().text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
+        LabelStep.text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
     }
 
     public void OpenKeypad()

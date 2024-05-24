@@ -35,7 +35,21 @@ namespace VolumeData
         [JsonConverter(typeof(StringEnumConverter))]
         public ConfidenceLevel voiceCommandConfidenceLevel = ConfidenceLevel.Low;
 
+        /// <summary>
+        /// The different flags that can be applied to sources in a source list, and exported with them.
+        /// </summary>
+        /// <value>Default values are [-1, 0, 1].</value>
         public string[] flags = {"-1", "0", "1"};
+
+        /// <summary>
+        /// The number of steps for a full range when incrementing the histogram min/max.
+        /// </summary>
+        public int histogramIncrementSteps = 40;
+
+        /// <summary>
+        /// The number of steps per second when incrementing the histogram min/max.
+        /// </summary>
+        public int histogramStepsPerSecond = 10;
         
         // Default rest frequencies in GHz. These are used for frequency <-> velocity conversions
         public Dictionary<String,double> restFrequenciesGHz = new Dictionary<string, double>
