@@ -566,7 +566,7 @@ namespace VolumeData
         {
             Vector3 objectSpacePosition = transform.InverseTransformPoint(cursor);
             Bounds objectBounds = new Bounds(Vector3.zero, Vector3.one);
-            if (objectBounds.Contains(objectSpacePosition) && _dataSet != null)
+            if ((objectBounds.Contains(objectSpacePosition) || Config.Instance.displayCursorInfoOutsideCube) && _dataSet != null)
             {
                 Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
                 Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));

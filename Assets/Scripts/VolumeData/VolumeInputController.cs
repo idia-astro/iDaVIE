@@ -1005,7 +1005,7 @@ public class VolumeInputController : MonoBehaviour
         }
         else
         {
-            cursorString = GetFormattedCursorString(dataSet);
+            cursorString = GetFormattedCursorString(dataSet, Config.Instance.displayCursorInfoOutsideCube);
         }
         
         if (_handInfoComponents != null)
@@ -1040,13 +1040,13 @@ public class VolumeInputController : MonoBehaviour
         return stringToReturn;
     }
 
-    private static string GetFormattedCursorString(VolumeDataSetRenderer dataSetRenderer)
+    private static string GetFormattedCursorString(VolumeDataSetRenderer dataSetRenderer, bool displayOutsideCube = false)
     {
         VolumeDataSet dataSet = dataSetRenderer.Data;
 
         var voxelCoordinate = dataSetRenderer.CursorVoxel;
 
-        if (voxelCoordinate.x < 0 || voxelCoordinate.y < 0 || voxelCoordinate.z < 0)
+        if (!displayOutsideCube && (voxelCoordinate.x < 0 || voxelCoordinate.y < 0 || voxelCoordinate.z < 0))
         {
             return "";
         }
