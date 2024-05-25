@@ -384,14 +384,16 @@ int writeFITSHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile)
             status = 0;
         }
     }
+    delete[] value;
+    double* valueDbl = new double;
     // do the same for the double keys
     for (int i = 0; i < REQUIRED_MOMENT_MAP_DBL_KEYS.size(); i++)
     {
         char* key = const_cast<char*>(REQUIRED_MOMENT_MAP_DBL_KEYS[i].c_str());
         //check if the key exists in the main fits file
-        if (!fits_read_key(mainFitsFile, TDOUBLE, key, value, nullptr, &status))
+        if (!fits_read_key(mainFitsFile, TDOUBLE, key, valueDbl, nullptr, &status))
         {
-            fits_write_key(newFitsFile, TDOUBLE, key, value, "", &status);
+            fits_write_key(newFitsFile, TDOUBLE, key, valueDbl, "", &status);
             if (status)
             {
                 std::cerr << ("Error " + std::to_string(status) + " when writing " + key + " to FITS header in writeFITSHeader()!");
@@ -403,7 +405,7 @@ int writeFITSHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile)
             status = 0;
         }
     }
-    delete[] value;
+    delete valueDbl;
 
     return status;
 }
@@ -426,8 +428,6 @@ int WriteMomentMap(fitsfile* mainFitsFile, char* filename, float* imagePixelArra
         return status;
     }
 
-    // Set the axes... somehow. Function arguments work.
-   // int naxis = imgData->GetDataDimension();
     long naxes[2];
     naxes[0] = xDims;
     naxes[1] = yDims;
