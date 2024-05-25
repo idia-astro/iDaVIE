@@ -9,6 +9,7 @@ using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using System.IO;
+using System.Linq;
 using DataFeatures;
 using UnityEngine;
 
@@ -437,9 +438,9 @@ namespace VoTableReader
                 }
                 else
                 {
-                    centerX = featureSet.VolumeRenderer.SourceStatsDict[currentFeature.Index].cX;
-                    centerY = featureSet.VolumeRenderer.SourceStatsDict[currentFeature.Index].cY;
-                    centerZ = featureSet.VolumeRenderer.SourceStatsDict[currentFeature.Index].cZ;
+                    centerX = featureSet.VolumeRenderer.SourceStatsDict.ElementAt(currentFeature.Index).Value.cX;
+                    centerY = featureSet.VolumeRenderer.SourceStatsDict.ElementAt(currentFeature.Index).Value.cY;
+                    centerZ = featureSet.VolumeRenderer.SourceStatsDict.ElementAt(currentFeature.Index).Value.cZ;
                 }
                 AstTool.Transform3D(featureSet.VolumeRenderer.AstFrame, centerX, centerY, centerZ, 1, out ra, out dec, out zPhys);
                 AstTool.Norm(featureSet.VolumeRenderer.AstFrame, ra, dec, zPhys, out normR, out normD, out normZ);

@@ -298,14 +298,14 @@ public class FeatureMenuController : MonoBehaviour
                 $"Source # : {_featureSetManager.SelectedFeature.Id + 1}{Environment.NewLine}";
             
                 double centerX, centerY, centerZ, ra, dec, physz, normR, normD, normZ;
-                var sourceStats = _featureSetManager.VolumeRenderer.SourceStatsDict;
                 
                 // if the selected feature is from a mask, get the centroid from the sourceStats dictionary
-                if (_featureSetManager.SelectedFeature.FeatureSetParent.FeatureSetType == FeatureSetType.Mask && sourceStats != null)
+                if (_featureSetManager.SelectedFeature.FeatureSetParent.FeatureSetType == FeatureSetType.Mask 
+                    && _featureSetManager.VolumeRenderer.SourceStatsDict != null)
                 {
-                    centerX = sourceStats[_featureSetManager.SelectedFeature.Index + 1].cX;
-                    centerY = sourceStats[_featureSetManager.SelectedFeature.Index + 1].cY;
-                    centerZ = sourceStats[_featureSetManager.SelectedFeature.Index + 1].cZ;
+                    centerX = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cX;
+                    centerY = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cY;
+                    centerZ = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cZ;
                     textObject.GetComponent<TMP_Text>().text +=
                         $"Centroid : {Environment.NewLine}";
                     textObject.GetComponent<TMP_Text>().text +=
