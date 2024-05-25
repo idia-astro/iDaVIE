@@ -93,6 +93,8 @@ public static class DataAnalysis
         public double veloVsys;
         public double veloW20;
 
+        public IntPtr spectralProfile;
+
         public bool IsEmpty => numVoxels == 0;
         public void AddPointToBoundingBox(long x, long y, long z)
         {

@@ -545,7 +545,8 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
                 stats->veloVsys = NAN;
                 stats->veloW20 = NAN;
             }
-
+            stats->spectralProfilePtr = spectralProfile.data();
+            stats->spectralProfileSize = numChannels;
             return EXIT_SUCCESS;
         }
         else
