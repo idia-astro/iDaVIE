@@ -303,9 +303,9 @@ public class FeatureMenuController : MonoBehaviour
                 // if the selected feature is from a mask, get the centroid from the sourceStats dictionary
                 if (_featureSetManager.SelectedFeature.FeatureSetParent.FeatureSetType == FeatureSetType.Mask && sourceStats != null)
                 {
-                    centerX = sourceStats[_featureSetManager.SelectedFeature.Index + 1].cX;
-                    centerY = sourceStats[_featureSetManager.SelectedFeature.Index + 1].cY;
-                    centerZ = sourceStats[_featureSetManager.SelectedFeature.Index + 1].cZ;
+                    centerX = sourceStats.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cX;
+                    centerY = sourceStats.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cY;
+                    centerZ = sourceStats.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cZ;
                     textObject.GetComponent<TMP_Text>().text +=
                         $"Centroid : {Environment.NewLine}";
                     textObject.GetComponent<TMP_Text>().text +=
