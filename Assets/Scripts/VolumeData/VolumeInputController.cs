@@ -945,7 +945,8 @@ public class VolumeInputController : MonoBehaviour
         {
             dataSet.SetRegionPosition(cursorPosWorldSpace, false);
         }
-        else if (currentState == InteractionState.Editing && HasEditingAnchor)
+        // Edit the region bounds in Editing state, but not for mask feature sets
+        else if (currentState == InteractionState.Editing && HasEditingAnchor && _editingFeature.FeatureSetParent.FeatureSetType != FeatureSetType.Mask)
         {
             var voxelPosition = dataSet.GetVoxelPosition(cursorPosWorldSpace);
             var newCornerMin = _editingFeature.CornerMin;
