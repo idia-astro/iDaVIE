@@ -415,6 +415,8 @@ namespace VolumeData
             var sourceStats = SourceStatsDict[maskVal];
             //Check if AstFrameSet or AltSpecSet have velocity
             var frameWithVelocity = AstframeIsFreq ?  AstAltSpecSet : AstFrameSet;
+            if (sourceStats.spectralProfilePtr != IntPtr.Zero)
+                DataAnalysis.FreeDataAnalysisMemory(sourceStats.spectralProfilePtr);
             DataAnalysis.GetSourceStats(ImageDataPtr, FitsData, XDim, YDim, ZDim, DataAnalysis.SourceInfo.FromSourceStats(sourceStats, maskVal), ref sourceStats, frameWithVelocity);
             if (sourceStats.numVoxels > 0)
             {
