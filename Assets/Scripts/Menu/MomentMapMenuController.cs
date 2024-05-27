@@ -140,6 +140,7 @@ public class MomentMapMenuController : MonoBehaviour
         File.WriteAllBytes(path, bytes_mom);
         
         Debug.Log($"Moment maps saved to {path} as single PNG.");
+        ToastNotification.ShowSuccess($"Moment maps saved to {path} as single PNG.");
     }
     
     public IntPtr RenderTextureToArray(RenderTexture renderTexture)
@@ -196,6 +197,8 @@ public class MomentMapMenuController : MonoBehaviour
         FitsReader.FitsCloseFile(mainFitsFilePtr, out status);
         
         Debug.Log($"Moment maps saved to {path0} and {path1}");
+        ToastNotification.ShowSuccess($"Moment map 0 saved to {path0}");
+        ToastNotification.ShowSuccess($"Moment map 1 saved to {path1}");
     }
     
     public void ChangeLimitType()
