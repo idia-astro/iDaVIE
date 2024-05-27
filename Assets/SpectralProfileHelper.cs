@@ -61,7 +61,7 @@ public class SpectralProfileHelper : MonoBehaviour
 
     /// <summary>
     /// Function to update the spectral profile image when the cropped region is changed.
-    /// TODO: Implement later
+    /// TODO: Implement later when the DataAnalysis library is updated to allow non-mask sources.
     /// </summary>
     public void OnCroppedRegionChanged()
     {
