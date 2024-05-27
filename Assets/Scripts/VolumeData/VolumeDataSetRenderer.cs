@@ -9,6 +9,7 @@ using UnityEngine.UI;
 using TMPro;
 using DataFeatures;
 using LineRenderer;
+using Unity.VisualScripting;
 using Debug = UnityEngine.Debug;
 
 namespace VolumeData
@@ -566,7 +567,7 @@ namespace VolumeData
         {
             Vector3 objectSpacePosition = transform.InverseTransformPoint(cursor);
             Bounds objectBounds = new Bounds(Vector3.zero, Vector3.one);
-            if (objectBounds.Contains(objectSpacePosition) && _dataSet != null)
+            if ((objectBounds.Contains(objectSpacePosition) || Config.Instance.displayCursorInfoOutsideCube) && _dataSet != null)
             {
                 Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
                 Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
@@ -589,11 +590,16 @@ namespace VolumeData
 
                     Vector3 voxelCenterObjectSpace = new Vector3(voxelCenterCubeSpace.x / _dataSet.XDim - 0.5f, voxelCenterCubeSpace.y / _dataSet.YDim - 0.5f,
                         voxelCenterCubeSpace.z / _dataSet.ZDim - 0.5f);
-                    _voxelOutline.Center = voxelCenterObjectSpace;
-                    _voxelOutline.Bounds = brushSize * new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
+                    // Check is needed if the cursor information display is allowed outside the cube 
+                    if (_voxelOutline != null)
+                    {
+                        _voxelOutline.Center = voxelCenterObjectSpace;
+                        _voxelOutline.Bounds = brushSize * new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim,
+                            1.0f / _dataSet.ZDim);
+                    }
                 }
 
-                _voxelOutline.Activate();
+                _voxelOutline?.Activate();
             }
             else
             {
