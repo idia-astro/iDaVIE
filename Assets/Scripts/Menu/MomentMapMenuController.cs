@@ -209,62 +209,6 @@ public class MomentMapMenuController : MonoBehaviour
         ToastNotification.ShowSuccess($"Moment map 1 saved to {path1}");
     }
     
-    public IntPtr RenderTextureToArray(RenderTexture renderTexture)
-    {
-        IntPtr arrayToReturn = Marshal.AllocHGlobal(renderTexture.width * renderTexture.height * sizeof(float));
-        
-        // Create a new Texture2D and set its pixel values
-        Texture2D tex = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RFloat, false);
-        RenderTexture.active = renderTexture;
-        tex.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
-        tex.Apply();
-        RenderTexture.active = null;
-
-        // Get the raw texture data
-        var data = tex.GetRawTextureData<float>();
-
-        Marshal.Copy(data.ToArray(), 0, arrayToReturn, data.Length);
-        
-        // Return the array
-        return arrayToReturn;
-    }
-    
-    public void SaveToFits()
-    {
-        var directory = new DirectoryInfo(Application.dataPath);
-        var directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/MomentMaps");
-        try
-        {
-            if (!Directory.Exists(directoryPath))
-            {
-                Directory.CreateDirectory(directoryPath);
-            }
-        }
-        catch (IOException ex)
-        {
-            Console.WriteLine(ex.Message);
-        }
-        var path0 = Path.Combine(directoryPath, string.Format("Moment_map_0_{0}.fits", DateTime.Now.ToString("yyyyMMdd_Hmmss")));
-        var path1 = Path.Combine(directoryPath, string.Format("Moment_map_1_{0}.fits", DateTime.Now.ToString("yyyyMMdd_Hmmss")));
-
-        var moment0Array = RenderTextureToArray(getFirstActiveDataSet().GetMomentMapRenderer().Moment0Map);
-        var moment1Array = RenderTextureToArray(getFirstActiveDataSet().GetMomentMapRenderer().Moment1Map);
-
-        IntPtr mainFitsFilePtr = IntPtr.Zero;
-        FitsReader.FitsOpenFile(out mainFitsFilePtr, getFirstActiveDataSet().FileName, out int status, true);
-
-        FitsReader.WriteMomentMap(mainFitsFilePtr, path0, moment0Array,
-            getFirstActiveDataSet().GetMomentMapRenderer().Moment0Map.width,
-            getFirstActiveDataSet().GetMomentMapRenderer().Moment0Map.height);
-        FitsReader.WriteMomentMap(mainFitsFilePtr, path1, moment1Array,
-            getFirstActiveDataSet().GetMomentMapRenderer().Moment1Map.width,
-            getFirstActiveDataSet().GetMomentMapRenderer().Moment1Map.height);
-        
-        FitsReader.FitsCloseFile(mainFitsFilePtr, out status);
-        
-        Debug.Log($"Moment maps saved to {path0} and {path1}");
-    }
-    
     public void ChangeLimitType()
     {
         _limitType = _limitType == LimitType.MinMax ? LimitType.ZScale : LimitType.MinMax;
