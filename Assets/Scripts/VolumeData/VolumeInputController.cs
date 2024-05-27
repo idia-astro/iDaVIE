@@ -1013,6 +1013,14 @@ public class VolumeInputController : MonoBehaviour
             _handInfoComponents[PrimaryHandIndex].enabled = true;
             _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
             _handInfoComponents[PrimaryHandIndex].text = (_showCursorInfo || currentState == InteractionState.EditingSourceId) ? cursorString : "";
+            if (IsCursorOutsideCube(dataSet))
+            {
+                _handInfoComponents[PrimaryHandIndex].color = new Color(0.86f, 0.078f, 0.235f); //This is crimson rgb(220,20,60)
+            }
+            else
+            {
+                _handInfoComponents[PrimaryHandIndex].color = Color.white;
+            }
         }
     }
 
@@ -1040,13 +1048,34 @@ public class VolumeInputController : MonoBehaviour
         return stringToReturn;
     }
 
+    /// <summary>
+    /// Checks if the cursor is outside the volume cube
+    /// </summary>
+    /// <param name="dataSetRenderer"></param>
+    /// <returns></returns>
+    public static bool IsCursorOutsideCube(VolumeDataSetRenderer dataSetRenderer)
+    {
+        return (dataSetRenderer.CursorVoxel.x < 0 || dataSetRenderer.CursorVoxel.y < 0 || dataSetRenderer.CursorVoxel.z < 0 || dataSetRenderer.CursorVoxel.x >= dataSetRenderer.Data.XDim || dataSetRenderer.CursorVoxel.y >= dataSetRenderer.Data.YDim || dataSetRenderer.CursorVoxel.z >= dataSetRenderer.Data.ZDim);
+    }
+    
+    /// <summary>
+    /// Get the string of information to display on the VR controller
+    /// </summary>
+    /// <param name="dataSetRenderer">The volume renderer object which the cursor information will reference</param>
+    /// <param name="displayOutsideCube">Enable information to display when the cursor is outside the cube. Blank otherwise.</param>
+    /// <returns>String in the correct format to display on the controller</returns>
     private static string GetFormattedCursorString(VolumeDataSetRenderer dataSetRenderer, bool displayOutsideCube = false)
     {
         VolumeDataSet dataSet = dataSetRenderer.Data;
 
+        if (dataSet == null)
+        {
+            return "";
+        }
+
         var voxelCoordinate = dataSetRenderer.CursorVoxel;
 
-        if (!displayOutsideCube && (voxelCoordinate.x < 0 || voxelCoordinate.y < 0 || voxelCoordinate.z < 0))
+        if (!displayOutsideCube && IsCursorOutsideCube(dataSetRenderer))
         {
             return "";
         }

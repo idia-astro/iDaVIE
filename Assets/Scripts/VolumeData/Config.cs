@@ -65,6 +65,7 @@ namespace VolumeData
         public float tunnellingVignetteIntensity = 1.0f;
         public float tunnellingVignetteEnd = 0.40f;
         
+        // Allow the controller to display information outside the volume cube
         public bool displayCursorInfoOutsideCube = false;
 
         public bool importedFeaturesStartVisible = true;
