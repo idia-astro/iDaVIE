@@ -122,11 +122,14 @@ namespace VolumeData
             if (!File.Exists(filepath))
             {
                 var defaultConfig = new Config();
-                
+
+                // Tell debug log that new config file was created
+                PlayerPrefs.SetInt("NewConfigFileCreated", 1);
+                PlayerPrefs.SetString("ConfigFilePath", filepath);
+                PlayerPrefs.Save();
                 defaultConfig.WriteToFile();
                 return defaultConfig;
             }
-
 
             Config result;
             try
@@ -146,6 +149,8 @@ namespace VolumeData
                 return new Config();
             }
             
+            PlayerPrefs.SetString("ConfigFilePath", filepath);
+            PlayerPrefs.Save();
             return result;
         }
 
