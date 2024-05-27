@@ -138,6 +138,75 @@ public class MomentMapMenuController : MonoBehaviour
         RenderTexture.active = null;
         byte[] bytes_mom = renderedTexture.EncodeToPNG();
         File.WriteAllBytes(path, bytes_mom);
+        
+        Debug.Log($"Moment maps saved to {path} as single PNG.");
+        ToastNotification.ShowSuccess($"Moment maps saved to {path} as single PNG.");
+    }
+    
+    /// <summary>
+    /// Converts a RenderTexture to a float array and returns an IntPtr to the array
+    /// </summary>
+    /// <param name="renderTexture">RenderTexture that will be converted</param>
+    /// <returns>IntPtr that points the float array</returns>
+    public IntPtr RenderTextureToArray(RenderTexture renderTexture)
+    {
+        IntPtr arrayToReturn = Marshal.AllocHGlobal(renderTexture.width * renderTexture.height * sizeof(float));
+        
+        // Create a new Texture2D and set its pixel values
+        Texture2D tex = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RFloat, false);
+        RenderTexture.active = renderTexture;
+        tex.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
+        tex.Apply();
+        RenderTexture.active = null;
+
+        // Get the raw texture data
+        var data = tex.GetRawTextureData<float>();
+
+        Marshal.Copy(data.ToArray(), 0, arrayToReturn, data.Length);
+        
+        // Return the array
+        return arrayToReturn;
+    }
+    
+    /// <summary>
+    /// Exports the two moment maps to FITS files
+    /// </summary>
+    public void SaveToFits()
+    {
+        var directory = new DirectoryInfo(Application.dataPath);
+        var directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/MomentMaps");
+        try
+        {
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        var path0 = Path.Combine(directoryPath, string.Format("Moment_map_0_{0}.fits", DateTime.Now.ToString("yyyyMMdd_Hmmss")));
+        var path1 = Path.Combine(directoryPath, string.Format("Moment_map_1_{0}.fits", DateTime.Now.ToString("yyyyMMdd_Hmmss")));
+
+        var moment0Array = RenderTextureToArray(getFirstActiveDataSet().GetMomentMapRenderer().Moment0Map);
+        var moment1Array = RenderTextureToArray(getFirstActiveDataSet().GetMomentMapRenderer().Moment1Map);
+
+        IntPtr mainFitsFilePtr = IntPtr.Zero;
+        FitsReader.FitsOpenFile(out mainFitsFilePtr, getFirstActiveDataSet().FileName, out int status, true);
+
+        FitsReader.WriteMomentMap(mainFitsFilePtr, path0, moment0Array,
+            getFirstActiveDataSet().GetMomentMapRenderer().Moment0Map.width,
+            getFirstActiveDataSet().GetMomentMapRenderer().Moment0Map.height, 0);
+        FitsReader.WriteMomentMap(mainFitsFilePtr, path1, moment1Array,
+            getFirstActiveDataSet().GetMomentMapRenderer().Moment1Map.width,
+            getFirstActiveDataSet().GetMomentMapRenderer().Moment1Map.height, 1);
+        
+        FitsReader.FitsCloseFile(mainFitsFilePtr, out status);
+        
+        Debug.Log($"Moment maps saved to {path0} and {path1}");
+        ToastNotification.ShowSuccess($"Moment map 0 saved to {path0}");
+        ToastNotification.ShowSuccess($"Moment map 1 saved to {path1}");
     }
     
     public IntPtr RenderTextureToArray(RenderTexture renderTexture)

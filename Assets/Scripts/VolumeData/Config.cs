@@ -64,6 +64,9 @@ namespace VolumeData
         public bool tunnellingVignetteOn = true;
         public float tunnellingVignetteIntensity = 1.0f;
         public float tunnellingVignetteEnd = 0.40f;
+        
+        // Allow the controller to display information outside the volume cube
+        public bool displayCursorInfoOutsideCube = false;
 
         public bool importedFeaturesStartVisible = true;
         
@@ -119,11 +122,14 @@ namespace VolumeData
             if (!File.Exists(filepath))
             {
                 var defaultConfig = new Config();
-                
+
+                // Tell debug log that new config file was created
+                PlayerPrefs.SetInt("NewConfigFileCreated", 1);
+                PlayerPrefs.SetString("ConfigFilePath", filepath);
+                PlayerPrefs.Save();
                 defaultConfig.WriteToFile();
                 return defaultConfig;
             }
-
 
             Config result;
             try
@@ -143,6 +149,8 @@ namespace VolumeData
                 return new Config();
             }
             
+            PlayerPrefs.SetString("ConfigFilePath", filepath);
+            PlayerPrefs.Save();
             return result;
         }
 

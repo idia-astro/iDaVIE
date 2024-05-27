@@ -8,6 +8,7 @@ using Unity.Collections;
 
 public class FitsReader
 {
+    // Data types of fits images can be used when reading and writing images
     public enum BitpixDataType
     {
         BYTE_IMG = 8,      // 8-bit unsigned integers
@@ -18,6 +19,7 @@ public class FitsReader
         DOUBLE_IMG = -64   // 64-bit double precision floating point
     }
     
+    // Data types of fits header keys can be used when reading and writing header keys
     public enum HeaderDataType
     {
         TBIT = 1,         // 'X'
@@ -246,7 +248,7 @@ public class FitsReader
     public static extern int InsertSubArrayInt16(IntPtr mainArray, long mainArraySize, IntPtr subArray, long subArraySize, long startIndex);
 
     [DllImport("idavie_native")]
-    public static extern int WriteMomentMap(IntPtr mainFitsFile, string fileName, IntPtr imagePixelArray, long xDims, long yDims);
+    public static extern int WriteMomentMap(IntPtr mainFitsFile, string fileName, IntPtr imagePixelArray, long xDims, long yDims, int mapNumber);
     
     public static IDictionary<string, string> ExtractHeaders(IntPtr fptr, out int status)
     {
