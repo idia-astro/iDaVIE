@@ -94,7 +94,7 @@ DllExport int WriteLogFile(const char * fileName, const char * content, int type
 
 DllExport int WriteMomentMap(fitsfile *, char*, float*, long, long);
 
-int writeFITSHeader(fitsfile *);
+int writeFITSHeader(fitsfile *, fitsfile *);
 
 
 }

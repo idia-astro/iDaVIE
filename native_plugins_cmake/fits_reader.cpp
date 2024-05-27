@@ -323,7 +323,9 @@ int writeFITSHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile)
     fits_write_key(newFitsFile, TSTRING, "SOFTNAME", refVal, comment.c_str(), &status);
     if (status)
     {
-        std::cerr << ("Error " + std::to_string(status) + " when writing SOFTNAME to FITS header in writeFITSHeader()!");
+        std::stringstream debug;
+        debug << "Error " << std::to_string(status) << " when writing SOFTNAME to FITS header in writeFITSHeader()!";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
     }
 
     //Consider changing the version value to instead be pulled from a config file (not known to user), instead of being hard coded like this.
@@ -333,7 +335,9 @@ int writeFITSHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile)
     fits_write_key(newFitsFile, TSTRING, "SOFTVERS", refVal, comment.c_str(), &status);
     if (status)
     {
-        std::cerr << ("Error " + std::to_string(status) + " when writing SOFTVERS to FITS header in writeFITSHeader()!");
+        std::stringstream debug;
+        debug << "Error " << std::to_string(status) << " when writing SOFTVERS to FITS header in writeFITSHeader()!";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
     }
 
     //Consider changing the release date value to instead be pulled from a config file (not known to user), instead of being hard coded like this.
@@ -343,26 +347,33 @@ int writeFITSHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile)
     fits_write_key(newFitsFile, TSTRING, "SOFTDATE", refVal, comment.c_str(), &status);
     if (status)
     {
-        std::cerr << ("Error " + std::to_string(status) + " when writing SOFTDATE to FITS header in writeFITSHeader()!");
+        std::stringstream debug;
+        debug << "Error " << std::to_string(status) << " when writing SOFTDATE to FITS header in writeFITSHeader()!";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
     }
 
-    comment = "Maintainer of the software";
+    comment = "Software maintainer";
     val = "IDIA Visualisation Lab <vislab@idia.ac.za>";
     refVal = val.data();
     fits_write_key(newFitsFile, TSTRING, "SOFTAUTH", refVal, comment.c_str(), &status);
     if (status)
     {
-        std::cerr << ("Error " + std::to_string(status) + " when writing SOFTAUTH to FITS header in writeFITSHeader()!");
+        std::stringstream debug;
+        debug << "Error " << std::to_string(status) << " when writing SOFTAUTH to FITS header in writeFITSHeader()!";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
     }
 
-    comment = "Institute responsible for the software";
+    comment = "Institute responsible for software";
     val = "IDIA https://www.idia.ac.za/";
     refVal = val.data();
     fits_write_key(newFitsFile, TSTRING, "SOFTINST", refVal, comment.c_str(), &status);
     if (status)
     {
-        std::cerr << ("Error " + std::to_string(status) + " when writing SOFTINST to FITS header in writeFITSHeader()!");
+        std::stringstream debug;
+        debug << "Error " << std::to_string(status) << " when writing SOFTINST to FITS header in writeFITSHeader()!";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
     }
+
     char* value = new char[FLEN_VALUE];
 
     // Write the required string keys to the new fits file
@@ -375,12 +386,16 @@ int writeFITSHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile)
             fits_write_key(newFitsFile, TSTRING, key, value, "", &status);
             if (status)
             {
-                std::cerr << ("Error " + std::to_string(status) + " when writing " + key + " to FITS header in writeFITSHeader()!");
+                std::stringstream debug;
+                debug << "Error " << std::to_string(status) << " when writing " << key << " to FITS header in writeFITSHeader()!";
+                WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
             }
         }
         else
         {
-            std::cout << "Cannot find  " + std::string(key) + " from FITS header in writeFITSHeader(). Status is " + std::to_string(status) + "!\n";
+            std::stringstream debug;
+            debug << "Cannot find  " << std::string(key) << " from FITS header in writeFITSHeader(). Status is " << std::to_string(status) << "!\n";
+            WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
             status = 0;
         }
     }
@@ -396,12 +411,16 @@ int writeFITSHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile)
             fits_write_key(newFitsFile, TDOUBLE, key, valueDbl, "", &status);
             if (status)
             {
-                std::cerr << ("Error " + std::to_string(status) + " when writing " + key + " to FITS header in writeFITSHeader()!");
+                std::stringstream debug;
+                debug << "Error " << std::to_string(status) << " when writing " << key << " to FITS header in writeFITSHeader()!";
+                WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
             }
         }
         else
         {
-            std::cout << "Cannot find  " + std::string(key) + " from FITS header in writeFITSHeader() Status is " + std::to_string(status) + "!\n";
+            std::stringstream debug;
+            debug << "Cannot find  " << std::string(key) << " from FITS header in writeFITSHeader(). Status is " << std::to_string(status) << "!\n";
+            WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
             status = 0;
         }
     }
@@ -415,6 +434,8 @@ int writeFITSHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile)
  * Writes out an image as supplied by the pixels in imgPixs to filename in FITS format.
  * @param filename The destination file name.
  * @param imgPixs The data to be written out to the file. This data is expected to be in row-major form, same as FITS.
+ * @param xDims The dimensions of the final file in the x axis (NAXIS1).
+ * @param yDims The dimensions of the final file in the y axis (NAXIS2).
  * @return int Returns the status. 0 if successful, see the usual table if not 0.
  */
 int WriteMomentMap(fitsfile* mainFitsFile, char* filename, float* imagePixelArray, long xDims, long yDims)
@@ -424,7 +445,9 @@ int WriteMomentMap(fitsfile* mainFitsFile, char* filename, float* imagePixelArra
     fits_create_file(&newFitsFile, filename, &status);
     if (status)
     {
-        std::cerr << ("Error " + std::to_string(status) + " opening FITS file for FitsWriter::Write()!");
+        std::stringstream debug;
+        debug << "Error " + std::to_string(status) + " opening FITS file for FitsWriter::Write()!";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
         return status;
     }
 
@@ -435,7 +458,9 @@ int WriteMomentMap(fitsfile* mainFitsFile, char* filename, float* imagePixelArra
     fits_create_img(newFitsFile, FLOAT_IMG, 2, naxes, &status);
     if (status)
     {
-        std::cerr << ("Error " + std::to_string(status) + " creating FITS file for FitsWriter::Write()!");
+        std::stringstream debug;
+        debug << "Error " + std::to_string(status) + " creating FITS file for FitsWriter::Write()!";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
         return status;
     }
 
@@ -451,6 +476,9 @@ int WriteMomentMap(fitsfile* mainFitsFile, char* filename, float* imagePixelArra
     if (status)
     {
         std::cerr << ("Error " + std::to_string(status) + " when writing FITS file via CFITSIO, datatype = TFLOAT!");
+        std::stringstream debug;
+        debug << "Error " + std::to_string(status) + " opening FITS file for FitsWriter::Write()!";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
     }
 
     fits_close_file(newFitsFile, &status);

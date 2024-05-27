@@ -138,6 +138,8 @@ public class MomentMapMenuController : MonoBehaviour
         RenderTexture.active = null;
         byte[] bytes_mom = renderedTexture.EncodeToPNG();
         File.WriteAllBytes(path, bytes_mom);
+        
+        Debug.Log($"Moment maps saved to {path} as single PNG.");
     }
     
     public IntPtr RenderTextureToArray(RenderTexture renderTexture)
