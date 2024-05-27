@@ -143,6 +143,11 @@ public class MomentMapMenuController : MonoBehaviour
         ToastNotification.ShowSuccess($"Moment maps saved to {path} as single PNG.");
     }
     
+    /// <summary>
+    /// Converts a RenderTexture to a float array and returns an IntPtr to the array
+    /// </summary>
+    /// <param name="renderTexture">RenderTexture that will be converted</param>
+    /// <returns>IntPtr that points the float array</returns>
     public IntPtr RenderTextureToArray(RenderTexture renderTexture)
     {
         IntPtr arrayToReturn = Marshal.AllocHGlobal(renderTexture.width * renderTexture.height * sizeof(float));
@@ -163,6 +168,9 @@ public class MomentMapMenuController : MonoBehaviour
         return arrayToReturn;
     }
     
+    /// <summary>
+    /// Exports the two moment maps to FITS files
+    /// </summary>
     public void SaveToFits()
     {
         var directory = new DirectoryInfo(Application.dataPath);
@@ -189,10 +197,10 @@ public class MomentMapMenuController : MonoBehaviour
 
         FitsReader.WriteMomentMap(mainFitsFilePtr, path0, moment0Array,
             getFirstActiveDataSet().GetMomentMapRenderer().Moment0Map.width,
-            getFirstActiveDataSet().GetMomentMapRenderer().Moment0Map.height);
+            getFirstActiveDataSet().GetMomentMapRenderer().Moment0Map.height, 0);
         FitsReader.WriteMomentMap(mainFitsFilePtr, path1, moment1Array,
             getFirstActiveDataSet().GetMomentMapRenderer().Moment1Map.width,
-            getFirstActiveDataSet().GetMomentMapRenderer().Moment1Map.height);
+            getFirstActiveDataSet().GetMomentMapRenderer().Moment1Map.height, 1);
         
         FitsReader.FitsCloseFile(mainFitsFilePtr, out status);
         

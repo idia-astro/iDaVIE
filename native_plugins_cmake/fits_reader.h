@@ -16,8 +16,9 @@
 
 static constexpr std::string_view defaultDebugFile = "Outputs/Logs/i-DaVIE_Plugin_Debug.log";
 
-const std::vector<std::string> REQUIRED_MOMENT_MAP_DBL_KEYS = {"CRVAL1", "CDELT1", "CRPIX1", "CRVAL2", "CDELT2", "CRPIX2"};
-const std::vector<std::string> REQUIRED_MOMENT_MAP_STR_KEYS = {"CTYPE1", "CTYPE2", "BUNIT"};
+// These are the keys that will be copied over from the main fits cube to the moment maps if they are exported as fits files
+const std::vector<std::string> REQUIRED_MOMENT_MAP_DBL_KEYS = {"CRVAL1", "CDELT1", "CRPIX1", "CRVAL2", "CDELT2", "CRPIX2", "BMAJ", "BMIN", "BPA"};
+const std::vector<std::string> REQUIRED_MOMENT_MAP_STR_KEYS = {"CTYPE1", "CTYPE2"};
 
 
 extern "C"
@@ -92,9 +93,9 @@ DllExport void FreeFitsMemory(char* header, int* status);
 
 DllExport int WriteLogFile(const char * fileName, const char * content, int type);
 
-DllExport int WriteMomentMap(fitsfile *, char*, float*, long, long);
+DllExport int WriteMomentMap(fitsfile *, char*, float*, long, long, int);
 
-int writeFITSHeader(fitsfile *, fitsfile *);
+int writeFitsHeader(fitsfile *, fitsfile *, int);
 
 
 }

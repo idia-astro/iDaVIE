@@ -313,7 +313,7 @@ int WriteLogFile(const char * fileName, const char * content, int type) {
  * @param newFitsFile The fitsfile to be written to.
  * @return int Returns the status. 0 if successful, see the usual table if not 0.
  */
-int writeFITSHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile)
+int writeMomMapFitsHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile, int mapNumber)
 {
     int status = 0;
 
@@ -374,16 +374,16 @@ int writeFITSHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile)
         WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
     }
 
-    char* value = new char[FLEN_VALUE];
+    char* valueString = new char[FLEN_VALUE];
 
     // Write the required string keys to the new fits file
     for (int i = 0; i < REQUIRED_MOMENT_MAP_STR_KEYS.size(); i++)
     {
         char* key = const_cast<char*>(REQUIRED_MOMENT_MAP_STR_KEYS[i].c_str());
         //check if the key exists in the main fits file
-        if (!fits_read_key(mainFitsFile, TSTRING, key, value, nullptr, &status))
+        if (!fits_read_key(mainFitsFile, TSTRING, key, valueString, nullptr, &status))
         {
-            fits_write_key(newFitsFile, TSTRING, key, value, "", &status);
+            fits_write_key(newFitsFile, TSTRING, key, valueString, "", &status);
             if (status)
             {
                 std::stringstream debug;
@@ -399,7 +399,68 @@ int writeFITSHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile)
             status = 0;
         }
     }
-    delete[] value;
+
+    // Write the derived BUNIT depending on the map number
+    // If the map is a moment 0 map, the units are CUNIT3 * BUNIT of the original cube
+    char* valueString2 = new char[FLEN_VALUE];
+    char* cunit3Key = const_cast<char*>("CUNIT3");
+    char* bunitKey = const_cast<char*>("BUNIT");
+    if (mapNumber == 0)
+    {
+        if (!fits_read_key(mainFitsFile, TSTRING, cunit3Key, valueString, nullptr, &status))
+        {
+            if (!fits_read_key(mainFitsFile, TSTRING, bunitKey, valueString2, nullptr, &status))
+            {
+                std::string bunit = std::string(valueString2) + " " + std::string(valueString);
+                fits_write_key(newFitsFile, TSTRING, "BUNIT", const_cast<char*>(bunit.c_str()), "", &status);
+                if (status)
+                {
+                    std::stringstream debug;
+                    debug << "Error " << std::to_string(status) << " when writing BUNIT + CUNIT3 to FITS header in writeFITSHeader()!";
+                    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+                }
+            }
+            else
+            {
+                std::stringstream debug;
+                debug << "Cannot find  " << std::string(bunitKey) << " from FITS header in writeFITSHeader(). Status is " << std::to_string(status) << "!\n";
+                WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+                status = 0;
+            }
+        }
+        else
+        {
+            std::stringstream debug;
+            debug << "Cannot find  " << std::string(cunit3Key) << " from FITS header in writeFITSHeader(). Status is " << std::to_string(status) << "!\n";
+            WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+            status = 0;
+        }
+    }
+    // Moment 1 map BUNIT is just CUNIT3
+    else if (mapNumber == 1)
+    {
+        if (!fits_read_key(mainFitsFile, TSTRING, cunit3Key, valueString, nullptr, &status))
+        {
+            fits_write_key(newFitsFile, TSTRING, "BUNIT", valueString, "", &status);
+            if (status)
+            {
+                std::stringstream debug;
+                debug << "Error " << std::to_string(status) << " when writing CUNIT3 to BUNIT FITS header in writeFITSHeader()!";
+                WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+            }
+        }
+        else
+        {
+            std::stringstream debug;
+            debug << "Cannot find  " << std::string(cunit3Key) << " from FITS header in writeFITSHeader(). Status is " << std::to_string(status) << "!\n";
+            WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+            status = 0;
+        }
+    }
+
+
+    delete[] valueString;
+    delete[] valueString2;
     double* valueDbl = new double;
     // do the same for the double keys
     for (int i = 0; i < REQUIRED_MOMENT_MAP_DBL_KEYS.size(); i++)
@@ -438,7 +499,7 @@ int writeFITSHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile)
  * @param yDims The dimensions of the final file in the y axis (NAXIS2).
  * @return int Returns the status. 0 if successful, see the usual table if not 0.
  */
-int WriteMomentMap(fitsfile* mainFitsFile, char* filename, float* imagePixelArray, long xDims, long yDims)
+int WriteMomentMap(fitsfile* mainFitsFile, char* filename, float* imagePixelArray, long xDims, long yDims, int mapNumber)
 {
     fitsfile* newFitsFile;
     int status = 0;
@@ -464,7 +525,7 @@ int WriteMomentMap(fitsfile* mainFitsFile, char* filename, float* imagePixelArra
         return status;
     }
 
-    writeFITSHeader(mainFitsFile, newFitsFile);
+    writeMomMapFitsHeader(mainFitsFile, newFitsFile, mapNumber);
 
     // write image data
     long* fpixel = new long[2];
