@@ -2,6 +2,7 @@ using SFB;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using TMPro;
@@ -44,13 +45,30 @@ public class DebugLogging : MonoBehaviour
         }
         catch (Exception ex)
         {
-            Debug.Log("Error moving autosave logs!");
-            Debug.Log(ex);
+            UnityEngine.Debug.Log("Error moving autosave logs!");
+            UnityEngine.Debug.Log(ex);
         }
 
         // Initializing the event handler
-        Debug.Log("Start debug logging.");
+        UnityEngine.Debug.Log("Start debug logging.");
         saveButton.onClick.AddListener(saveToFileClick);
+
+        // Check if default config file was created.
+        int newConfig = PlayerPrefs.GetInt("NewConfigFileCreated");
+        string configPath = PlayerPrefs.GetString("ConfigFilePath");
+        
+        // If new default config, inform user and set new to false.
+        if (newConfig != 0)
+        {
+            UnityEngine.Debug.Log($"Default configuration file created at {configPath}");
+            PlayerPrefs.SetInt("NewConfigFileCreated", 0);
+            PlayerPrefs.Save();
+        }
+        // Else, inform user of current location of config file in use.
+        else
+        {
+            UnityEngine.Debug.Log($"Using configuration file at {configPath}");
+        }
     }
 
     void OnEnable()
