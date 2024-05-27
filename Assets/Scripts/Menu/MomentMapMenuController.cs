@@ -82,11 +82,13 @@ public class MomentMapMenuController : MonoBehaviour
     public void IncreaseMomentMapThreshold()
     {
         _threshold += getFirstActiveDataSet().GetMomentMapRenderer().momstep;
+        ThresholdValueText.text = _threshold.ToString();
     }
 
     public void DecreaseMomentMapThreshold()
     {
         _threshold -= getFirstActiveDataSet().GetMomentMapRenderer().momstep;
+        ThresholdValueText.text = _threshold.ToString();
     }
 
     public void SetMomentMapThreshold()
