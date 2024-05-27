@@ -484,6 +484,7 @@ namespace VolumeData
             if (IsFullResolution)
             {
                 CropToRegion(Vector3.one, new Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
+                IsCropped = false;
             }
             
             Shader.WarmupAllShaders();

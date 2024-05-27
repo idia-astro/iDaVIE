@@ -6,11 +6,19 @@
 #include <cfitsio/fitsio.h>
 #include <iostream>
 #include <cstring>
+#include <string_view>
+#include <cmath>
+#include <fstream>
+#include <limits>
+#include <regex>
+#include <sstream>
+#include <string>
 
-///Insert these three lines to debug directly out to a file:
-//char* str = new char[70];
-//freopen("debug.txt", "a", stdout);
-//printf("%s\n", str);
+static constexpr std::string_view defaultDebugFile = "Outputs/Logs/i-DaVIE_Plugin_Debug.log";
+
+// These are the keys that will be copied over from the main fits cube to the moment maps if they are exported as fits files
+const std::vector<std::string> REQUIRED_MOMENT_MAP_DBL_KEYS = {"CRVAL1", "CDELT1", "CRPIX1", "CRVAL2", "CDELT2", "CRPIX2", "BMAJ", "BMIN", "BPA"};
+const std::vector<std::string> REQUIRED_MOMENT_MAP_STR_KEYS = {"CTYPE1", "CTYPE2"};
 
 
 extern "C"
@@ -82,6 +90,13 @@ DllExport int CreateEmptyImageInt16(int64_t , int64_t , int64_t , int16_t** );
 DllExport int FreeFitsPtrMemory(void* );
 
 DllExport void FreeFitsMemory(char* header, int* status);
+
+DllExport int WriteLogFile(const char * fileName, const char * content, int type);
+
+DllExport int WriteMomentMap(fitsfile *, char*, float*, long, long, int);
+
+int writeFitsHeader(fitsfile *, fitsfile *, int);
+
 
 }
 

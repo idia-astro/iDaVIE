@@ -8,7 +8,40 @@ using Unity.Collections;
 
 public class FitsReader
 {
-    public static Dictionary<int, string> ErrorCodes = new Dictionary<int, string>
+    // Data types of fits images can be used when reading and writing images
+    public enum BitpixDataType
+    {
+        BYTE_IMG = 8,      // 8-bit unsigned integers
+        SHORT_IMG = 16,    // 16-bit signed integers
+        LONG_IMG = 32,     // 32-bit signed integers
+        LONGLONG_IMG = 64, // 64-bit signed integers
+        FLOAT_IMG = -32,   // 32-bit single precision floating point
+        DOUBLE_IMG = -64   // 64-bit double precision floating point
+    }
+    
+    // Data types of fits header keys can be used when reading and writing header keys
+    public enum HeaderDataType
+    {
+        TBIT = 1,         // 'X'
+        TBYTE = 11,       // 8-bit unsigned byte, 'B'
+        TLOGICAL = 14,    // logicals (int for keywords and char for table cols) 'L'
+        TSTRING = 16,     // ASCII string, 'A'
+        TSHORT = 21,      // signed short, 'I'
+        TLONG = 41,       // signed long
+        TLONGLONG = 81,   // 64-bit long signed integer 'K'
+        TFLOAT = 42,      // single precision float, 'E'
+        TDOUBLE = 82,     // double precision float, 'D'
+        TCOMPLEX = 83,    // complex (pair of floats) 'C'
+        TDBLCOMPLEX = 163,// double complex (2 doubles) 'M'
+        TINT = 31,        // int
+        TSBYTE = 12,      // 8-bit signed byte, 'S'
+        TUINT = 30,       // unsigned int 'V'
+        TUSHORT = 20,     // unsigned short 'U'
+        TULONG = 40,      // unsigned long
+        TULONGLONG = 80   // unsigned long long 'W'
+    }
+    
+    public static Dictionary<int, string> ErrorCodes = new()
     {
         { 101, "input and output files are the same" },
         { 103, "tried to open too many FITS files at once" },
@@ -214,6 +247,9 @@ public class FitsReader
     [DllImport("idavie_native")]
     public static extern int InsertSubArrayInt16(IntPtr mainArray, long mainArraySize, IntPtr subArray, long subArraySize, long startIndex);
 
+    [DllImport("idavie_native")]
+    public static extern int WriteMomentMap(IntPtr mainFitsFile, string fileName, IntPtr imagePixelArray, long xDims, long yDims, int mapNumber);
+    
     public static IDictionary<string, string> ExtractHeaders(IntPtr fptr, out int status)
     {
         int numberKeys, keysLeft;
