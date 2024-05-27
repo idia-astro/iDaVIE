@@ -1006,6 +1006,8 @@ namespace VolumeData
             if (_dataSet != null && _maskDataSet == null)
             {
                 _maskDataSet = _dataSet.GenerateEmptyMask();
+                var maskFeatureSet = _featureManager.CreateMaskFeatureSet();
+                _maskDataSet?.FillFeatureSet(maskFeatureSet);
                 if (!FactorOverride)
                 {
                     _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);

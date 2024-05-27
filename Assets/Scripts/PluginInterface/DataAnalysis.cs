@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using fts;
+using Unity.Collections;
 using UnityEngine;
 
 [PluginAttr("idavie_native")]
@@ -92,6 +93,9 @@ public static class DataAnalysis
         public double channelW20;
         public double veloVsys;
         public double veloW20;
+
+        public IntPtr spectralProfilePtr;
+        public int spectralProfileSize;
 
         public bool IsEmpty => numVoxels == 0;
         public void AddPointToBoundingBox(long x, long y, long z)

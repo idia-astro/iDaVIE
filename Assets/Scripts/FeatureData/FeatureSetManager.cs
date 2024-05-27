@@ -30,6 +30,8 @@ namespace DataFeatures
         private string _timeStamp;
         private StreamWriter _streamWriter;
         private Feature _selectedFeature;
+
+        public event Action MaskFeatureSelected;
         
         public bool NeedToRespawnMenuList = true;
         public bool NeedToUpdateInfo;
@@ -48,6 +50,10 @@ namespace DataFeatures
                     if (_selectedFeature.FeatureSetParent)
                     {
                         UpdateAnchors();
+                    }
+                    if (value.FeatureSetParent.FeatureSetType == FeatureSetType.Mask)
+                    {
+                        MaskFeatureSelected?.Invoke();
                     }
                 }
             }

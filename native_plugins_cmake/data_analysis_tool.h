@@ -39,6 +39,9 @@ struct SourceStats
     double channelW20;
     double veloVsys;
     double veloW20;
+
+    double* spectralProfilePtr;
+    int64_t spectralProfileSize;
 };
 
 template<bool maxMode> int DataCropAndDownsample(const float *, float **, int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int64_t , int , int , int);

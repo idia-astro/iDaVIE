@@ -414,7 +414,7 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
         int64_t numVoxels = 0;
 
         int64_t numChannels = source.maxZ - source.minZ + 1;
-        std::vector<double> spectralProfile(numChannels);
+        stats->spectralProfilePtr = new double[numChannels];
 
         stats->minX = source.maxX;
         stats->minY = source.maxY;
@@ -462,7 +462,7 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
                     }
                 }
             }
-            spectralProfile[k - source.minZ] = spectralSum;
+            stats->spectralProfilePtr[k - source.minZ] = spectralSum;
         }
 
         if (numVoxels)
@@ -479,7 +479,7 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
 
             for (auto i = 0; i < numChannels; i++)
             {
-                auto val = spectralProfile[i];
+                auto val = stats->spectralProfilePtr[i];
                 if (isfinite(val) && val > spectralPeak)
                 {
                     spectralPeak = val;
@@ -494,8 +494,8 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
 
             for (auto i = 0; i < numChannels - 1; i++)
             {
-                auto y0 = spectralProfile[i];
-                auto y1 = spectralProfile[i+1];
+                auto y0 = stats->spectralProfilePtr[i];
+                auto y1 = stats->spectralProfilePtr[i+1];
                 if (y0 < w20Threshold && y1 >= w20Threshold) {
                     //leftChannel = source.minZ + i + 0.5;
                     leftChannel = source.minZ + i + (w20Threshold - y0) / (y1 - y0);
@@ -506,8 +506,8 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
 
             for (auto i = numChannels - 2; i >= 0; i--)
             {
-                auto y0 = spectralProfile[i];
-                auto y1 = spectralProfile[i+1];
+                auto y0 = stats->spectralProfilePtr[i];
+                auto y1 = stats->spectralProfilePtr[i+1];
                 if (y0 >= w20Threshold && y1 < w20Threshold) {
                     rightChannel = source.minZ + i + (w20Threshold - y0) / (y1 - y0);
                     rightChannelFound = true;
@@ -545,7 +545,7 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
                 stats->veloVsys = NAN;
                 stats->veloW20 = NAN;
             }
-
+            stats->spectralProfileSize = numChannels;
             return EXIT_SUCCESS;
         }
         else
