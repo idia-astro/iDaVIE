@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using DataFeatures;
 using UnityEngine;
+using System.Diagnostics;
 
 namespace VoTableReader
 {
@@ -40,8 +41,15 @@ namespace VoTableReader
         }
         public bool error = false;
         public string errorText = "";
-        public void LoadFromXML(XmlDocument xml)
+
+        /// <summary>
+        /// A function that loads a VOTable from an XML file.
+        /// </summary>
+        /// <param name="filename">The path to the file to be loaded.</param>
+        public void LoadFromXML(string filename)
         {
+            XmlDocument xml = new XmlDocument();
+            xml.Load(filename);
             XmlNode voTable = xml["VOTABLE"];
 
             if (voTable == null)
@@ -103,6 +111,67 @@ namespace VoTableReader
             }
         }
 
+        /// <summary>
+        /// A function that loads a VOTable from a FITS file.
+        /// </summary>
+        /// <param name="filename">The path to the file to be loaded.</param>
+        public void LoadFromFITS(string filename)
+        {
+            IntPtr fitsfileptr = IntPtr.Zero;
+            int status = 0;
+            if (FitsReader.FitsOpenFile(out fitsfileptr, fileName, out status, true) != 0)
+            {
+                Debug.LogError("Fits table open failure... code #" + status.ToString());
+            }
+            long nCols, nRows;
+            if (FitsReader.FitsGetNumRows(fitsfileptr, out nRows, out status) != 0)
+            {
+                Debug.LogError("Fits table GetNumRows failure... code #" + status.ToString());
+            }
+            if (FitsReader.FitsGetNumCols(fitsfileptr, out nCols, out status) != 0)
+            {
+                Debug.LogError("Fits table GetNumCols failure... code #" + status.ToString());
+            }
+            string[] columns;
+            FitsReader.HeaderDataType[] columnTypes;
+            for (int i = 1; i <= nCols; i++)
+            {
+                string val;
+                if (FitsReader.FitsGetColName(fitsfileptr, 0, i, out val, i, out status) != 0)
+                {
+                    Debug.LogError("Fits table GetColName failure with colnum = " + i.ToString() + ", error code #" + status.ToString());
+                    continue;
+                }
+                columns.Append(val);
+
+                FitsReader.HeaderDataType dataType;
+                int width;
+                if (FitsReader.GetColType(fitsfileptr, i, out dataType, 0, out width, out status) != 0)
+                {
+                    Debug.LogError("Fits table GetColType failure with colnum = " + i.ToString() + ", error code #" + status.ToString());
+                    continue;
+                }
+                columnTypes.Append(dataType);
+                IntPtr colData = IntPtr.Zero;
+                if (dataType == TSTRING)
+                {
+                    if (FitsReader.FitsReadColString(fitsfileptr, i, 1, 1, nRows, out colData, out "Eh?", out status))
+                    {
+                        Debug.LogError("Fits table ReadColString failure with colnum = " + i.ToString() + ", error code #" + status.ToString());
+                        continue;
+                    }
+                }
+                else if (dataType == TFLOAT)
+                {
+                    if (FitsReader.FitsReadColFloat(fitsfileptr, i, 1, 1, nRows, out colData, out "Eh?", out status))
+                    {
+                        Debug.LogError("Fits table ReadColString failure with colnum = " + i.ToString() + ", error code #" + status.ToString());
+                        continue;
+                    }
+                }
+            }
+        }
+        
         public bool Save(string filename)
         {
             if (String.IsNullOrEmpty(filename) || String.IsNullOrEmpty(LoadFilename))
