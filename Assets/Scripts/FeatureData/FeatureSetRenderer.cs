@@ -488,6 +488,75 @@ namespace DataFeatures
             FeatureMenuScrollerDataSource.InitData();
         }
         
+        /// <summary>
+        /// Spawn Feature objects into VR and dataspace from FITS file fileName.
+        /// </summary>
+        /// <param name="mapping"></param>
+        /// <param name="fileName">The file path to the FITS file.</param>
+        /// <param name="columnsMask">Which columns to exclude?</param>
+        /// <param name="excludeExternal"></param>
+        public void SpawnFeaturesFromFITSTable(Dictionary<SourceMappingOptions, string> mapping, string fileName, bool[] columnsMask, bool excludeExternal)
+        {
+            IntPtr fitsfileptr = IntPtr.Zero;
+            int status = 0;
+            if (FitsReader.FitsOpenFile(out fitsfileptr, fileName, out status, true) != 0)
+            {
+                Debug.LogError("Fits table open failure... code #" + status.ToString());
+            }
+            long nCols, nRows;
+            if (FitsReader.FitsGetNumRows(fitsfileptr, out nRows, out status) != 0)
+            {
+                Debug.LogError("Fits table GetNumRows failure... code #" + status.ToString());
+            }
+            if (FitsReader.FitsGetNumCols(fitsfileptr, out nCols, out status) != 0)
+            {
+                Debug.LogError("Fits table GetNumCols failure... code #" + status.ToString());
+            }
+            string[] columns;
+            FitsReader.HeaderDataType[] columnTypes;
+            for (int i = 1; i <= nCols; i++)
+            {
+                string colName;
+                if (FitsReader.FitsGetColName(fitsfileptr, 0, i, out colName, i, out status) != 0)
+                {
+                    Debug.LogError("Fits table GetColName failure with colnum = " + i.ToString() + ", error code #" + status.ToString());
+                    continue;
+                }
+                columns.Append(colName);
+
+                FitsReader.HeaderDataType dataType;
+                int width;
+                if (FitsReader.GetColType(fitsfileptr, i, out dataType, 0, out width, out status) != 0)
+                {
+                    Debug.LogError("Fits table GetColType failure with colnum = " + i.ToString() + ", error code #" + status.ToString());
+                    continue;
+                }
+                columnTypes.Append(dataType);
+                IntPtr colData = IntPtr.Zero;
+                if (dataType == TSTRING)
+                {
+                    if (FitsReader.FitsReadColString(fitsfileptr, i, 1, 1, nRows, out colData, out "Eh?", out status))
+                    {
+                        Debug.LogError("Fits table ReadColString failure with colnum = " + i.ToString() + ", error code #" + status.ToString());
+                        continue;
+                    }
+                }
+                else if (dataType == TFLOAT)
+                {
+                    if (FitsReader.FitsReadColFloat(fitsfileptr, i, 1, 1, nRows, out colData, out "Eh?", out status))
+                    {
+                        Debug.LogError("Fits table ReadColString failure with colnum = " + i.ToString() + ", error code #" + status.ToString());
+                        continue;
+                    }
+                }
+                // TODO:
+                // Convert data into features for rendering.
+                // Each column is read to @colData.
+                // Each column is read in sequence from left to right
+                // Likely will need to read all columns before reading one row at a time.
+            }
+        }
+
         void OnRenderObject()
         {
             // TODO: how does this work with VR?
