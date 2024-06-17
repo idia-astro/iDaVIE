@@ -13,14 +13,19 @@ using VolumeData;
 public class MomentMapMenuController : MonoBehaviour
 {
 
-    public Text ThresholdTypeText;
-    public Text LimitTypeText;
+    public TMP_Text ThresholdTypeText;
+    public TMP_Text LimitTypeText;
+
+    public TMP_Text ThresholdValueText;
     public TMP_Text MomentMap0Title;
     public TMP_Text MomentMap1Title;
     public GameObject volumeDataSetManager;
     private VolumeDataSetRenderer[] dataSets;
+    private float _threshold;
+    private float _cached_threshold;
     public Camera MomentMapCamera;
     int thresholdType = 0;
+    [SerializeField] private GameObject keypadPrefab = null;
     public enum ThresholdType
     {
         Mask, Threshold
@@ -44,16 +49,16 @@ public class MomentMapMenuController : MonoBehaviour
                 VolumeDataSet dataSet = getFirstActiveDataSet().GetDataSet();
                 getFirstActiveDataSet().GetMomentMapRenderer().UpdatePlotWindow();
 
-                LimitTypeText.gameObject.GetComponent<Text>().text = $"{_limitType}";
+                LimitTypeText.text = $"{_limitType}";
 
                 if (getFirstActiveDataSet().Mask != null)
                 {
-                    ThresholdTypeText.gameObject.GetComponent<Text>().text = (ThresholdType)0 + "";
+                    ThresholdTypeText.text = (ThresholdType)0 + "";
                     this.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_Threshold").gameObject.SetActive(false);
                 }
                 else
                 {
-                    ThresholdTypeText.gameObject.GetComponent<Text>().text = (ThresholdType)1 + "";
+                    ThresholdTypeText.text = (ThresholdType)1 + "";
                     this.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_Threshold").gameObject.SetActive(true);
                 }
                 MomentMap0Title.text += $" ({dataSet.GetPixelUnit()})";
@@ -65,18 +70,34 @@ public class MomentMapMenuController : MonoBehaviour
         }
     }
 
+    void Update()
+    {
+        _threshold = float.Parse(ThresholdValueText.text, System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+        if (_cached_threshold != _threshold)
+        {
+            SetMomentMapThreshold();
+        }
+    }
+
     public void IncreaseMomentMapThreshold()
     {
-        if (getFirstActiveDataSet().GetMomentMapRenderer().MomentMapThreshold <= 0.1)
-        {
-            getFirstActiveDataSet().GetMomentMapRenderer().MomentMapThreshold += getFirstActiveDataSet().GetMomentMapRenderer().momstep;
-        }
+        _threshold += getFirstActiveDataSet().GetMomentMapRenderer().momstep;
+        ThresholdValueText.text = _threshold.ToString();
     }
 
     public void DecreaseMomentMapThreshold()
     {
-        if (getFirstActiveDataSet().GetMomentMapRenderer().MomentMapThreshold >= -0.1)
-            getFirstActiveDataSet().GetMomentMapRenderer().MomentMapThreshold -= getFirstActiveDataSet().GetMomentMapRenderer().momstep;
+        _threshold -= getFirstActiveDataSet().GetMomentMapRenderer().momstep;
+        ThresholdValueText.text = _threshold.ToString();
+    }
+
+    public void SetMomentMapThreshold()
+    {
+        _cached_threshold = _threshold;
+        if (getFirstActiveDataSet().GetMomentMapRenderer() != null)
+        {
+            getFirstActiveDataSet().GetMomentMapRenderer().MomentMapThreshold = _threshold;
+        }
     }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
@@ -108,7 +129,7 @@ public class MomentMapMenuController : MonoBehaviour
 
         }
         getFirstActiveDataSet().GetMomentMapRenderer().CalculateMomentMaps();
-        ThresholdTypeText.gameObject.GetComponent<Text>().text = (ThresholdType)thresholdType + "";
+        ThresholdTypeText.text = (ThresholdType)thresholdType + "";
     }  
 
     public void SaveToImage()
@@ -208,12 +229,32 @@ public class MomentMapMenuController : MonoBehaviour
         ToastNotification.ShowSuccess($"Moment map 0 saved to {path0}");
         ToastNotification.ShowSuccess($"Moment map 1 saved to {path1}");
     }
+
+    /// <summary>
+    /// Opens a keypad in VR space. Once the user is satisfied with the number, it sends the value back to target.
+    /// </summary>
+    /// <param name="target">The text field that the keypad number will be sent to.</param>
+    public void OpenKeypad(TextMeshProUGUI target)
+    {
+        // If any keypads are open, destroy them first.
+        if (GameObject.FindGameObjectWithTag("keypad") != null)
+        {
+            GameObject[] keypads = GameObject.FindGameObjectsWithTag("keypad");
+            foreach(GameObject kp in keypads)
+                Destroy(kp);
+        }
+        Vector3 pos = new Vector3(this.transform.parent.position.x, this.transform.parent.position.y - 0.4f, this.transform.parent.position.z);
+        //instantiate item
+        GameObject SpawnedItem = Instantiate(keypadPrefab, pos, this.transform.parent.rotation);
+        SpawnedItem.transform.localRotation = this.transform.parent.rotation;
+        SpawnedItem.GetComponent<KeypadController>().targetText = target;
+    }
     
     public void ChangeLimitType()
     {
         _limitType = _limitType == LimitType.MinMax ? LimitType.ZScale : LimitType.MinMax;
         getFirstActiveDataSet().GetMomentMapRenderer().UseZScale = _limitType == LimitType.ZScale;
-        LimitTypeText.gameObject.GetComponent<Text>().text = $"{_limitType}";
+        LimitTypeText.text = $"{_limitType}";
     }
 
 }
