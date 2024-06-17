@@ -1241,39 +1241,71 @@ public class CanvassDesktop : MonoBehaviour
         VolumeDataSet.UpdateHistogram(GetFirstActiveDataSet().Data, GetFirstActiveDataSet().Data.MinValue, GetFirstActiveDataSet().Data.MaxValue);
         populateStatsValue();
     }
-
-    public void UpdateScaleMin(String min)
+    
+    /// <summary>
+    /// Function to update the minimum and maximum scale data values of the histogram
+    /// essentially where the colormap begins and ends on the data
+    /// </summary>
+    /// <param name="min"></param>
+    /// <param name="max"></param>
+    public void UpdateScale(float min, float max)
     {
         VolumeDataSetRenderer volumeDataSetRenderer = GetFirstActiveDataSet();
         VolumeDataSet volumeDataSet = volumeDataSetRenderer.Data;
-        float newMin = float.Parse(min);
-        float histMin = newMin;
-        float histMax = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
+        float sigma = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
+            .Find("Stats").gameObject.transform.Find("Line_sigma")
+            .gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value + 1f;
+        volumeDataSetRenderer.ScaleMin = min;
+        volumeDataSetRenderer.ScaleMax = max;
+        VolumeDataSet.UpdateHistogram(volumeDataSet, min, max);
+        histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, min, max, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
+    }
+    
+    /// <summary>
+    /// Function to set the minimum and maximum scale data values of the histogram to the given percentiles
+    /// </summary>
+    /// <param name="maxPercentile"></param>
+    public void SetMaxMinPercentile(float maxPercentile)
+    {
+        float minPercentileValue, maxPercentileValue;
+        var minPercentile = 100 - maxPercentile;
+        if (maxPercentile == 100)
+        {
+            minPercentileValue = GetFirstActiveDataSet().Data.MinValue;
+            maxPercentileValue = GetFirstActiveDataSet().Data.MaxValue;
+        }
+        else
+        {
+            DataAnalysis.GetPercentileValues(GetFirstActiveDataSet().Data.FitsData, GetFirstActiveDataSet().Data.NumPoints,
+                minPercentile, maxPercentile, out minPercentileValue, out maxPercentileValue);
+        }
+        
+        Debug.Log("Setting histogram scale min to percentiles: " + minPercentile + "% and " + maxPercentile + "% with values: " + minPercentileValue + " and " + maxPercentileValue + ".");
+        UpdateScale(minPercentileValue, maxPercentileValue);
+    }
+    
+    /// <summary>
+    /// Function to expose setting the minimum histogram scale value to the UI
+    /// </summary>
+    /// <param name="minString"></param>
+    public void UpdateScaleMin(string minString)
+    {
+        float max = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
             .gameObject.transform.Find("Stats").gameObject.transform.Find("Line_max")
             .gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text);
-        float sigma = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
-            .Find("Stats").gameObject.transform.Find("Line_sigma")
-            .gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value + 1f;
-        volumeDataSetRenderer.ScaleMin = newMin;
-        VolumeDataSet.UpdateHistogram(volumeDataSet, histMin, histMax);
-        histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, histMin, histMax, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
+        UpdateScale(float.Parse(minString), max); 
     }
 
-    public void UpdateScaleMax(String max)
+    /// <summary>
+    /// Function to expose setting the maximum histogram scale value to the UI
+    /// </summary>
+    /// <param name="maxString"></param>
+    public void UpdateScaleMax(string maxString)
     {
-        VolumeDataSetRenderer volumeDataSetRenderer = GetFirstActiveDataSet();
-        VolumeDataSet volumeDataSet = volumeDataSetRenderer.Data;
-        float newMax = float.Parse(max);
-        float histMin = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
+        float min = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
             .gameObject.transform.Find("Stats").gameObject.transform.Find("Line_min")
             .gameObject.transform.Find("InputField_min").GetComponent<TMP_InputField>().text);
-        float histMax = newMax;
-        float sigma = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
-            .Find("Stats").gameObject.transform.Find("Line_sigma")
-            .gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value + 1f;
-        volumeDataSetRenderer.ScaleMax = newMax;
-        VolumeDataSet.UpdateHistogram(volumeDataSet, histMin, histMax);
-        histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, histMin, histMax, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
+        UpdateScale(min, float.Parse(maxString));
     }
 
     public void UpdateThresholdMin(float value)

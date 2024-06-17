@@ -317,6 +317,26 @@ int MaskCropAndDownsample(const int16_t *dataPtr, int16_t **newDataPtr, int64_t 
     return EXIT_SUCCESS;
 }
 
+//Function to get values of given percentiles in the float array of data
+int GetPercentileValues(const float* data, int64_t size, float minPercentile, float maxPercentile, float* minPercentileValue, float* maxPercentileValue) {
+    std::vector<float> sortedData(data, data + size);
+
+#pragma omp parallel
+    {
+#pragma omp single nowait
+        {
+            std::sort(sortedData.begin(), sortedData.end());
+        }
+    }
+
+    int minIndex = static_cast<int>(minPercentile * (sortedData.size() - 1) / 100.0);
+    int maxIndex = static_cast<int>(maxPercentile * (sortedData.size() - 1) / 100.0);
+
+    *minPercentileValue = sortedData[minIndex];
+    *maxPercentileValue = sortedData[maxIndex];
+    return EXIT_SUCCESS;
+}
+
 int GetHistogram(const float* dataPtr, int64_t numElements, int numBins, float minVal, float maxVal, int** histogram)
 {
     int* histogramArray = new int[numBins]();
