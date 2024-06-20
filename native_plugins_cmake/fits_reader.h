@@ -35,6 +35,10 @@ DllExport int FitsFlushFile(fitsfile* , int* );
 
 DllExport int FitsMovabsHdu(fitsfile *, int , int *, int *);
 
+DllExport int FitsGetHduType(fitsfile *, int *, int *);
+
+DllExport int FitsGetNumHdus(fitsfile *, int *, int *);
+
 DllExport int FitsGetNumHeaderKeys(fitsfile *, int *, int *, int *);
 
 DllExport int FitsGetNumRows(fitsfile *, long *, int *);

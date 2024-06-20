@@ -256,7 +256,7 @@ namespace DataFeatures
         }
 
         // Spawn Feature objects into world from FileName
-        public void SpawnFeaturesFromVOTable(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable, bool[] columnsMask, bool excludeExternal)
+        public void SpawnFeaturesFromTable(Dictionary<SourceMappingOptions, string> mapping, FeatureTable table, bool[] columnsMask, bool excludeExternal)
         {
             if (VolumeRenderer == null)
             {
@@ -267,15 +267,15 @@ namespace DataFeatures
             IntPtr volumeAstFrame = VolumeRenderer.AstFrame;
             var setCoordinates = mapping.Keys;
             bool containsBoxes = false;
-            List<string>[] featureRawData = new List<string>[voTable.Rows.Count];            ZType = CoordTypes.cartesian;
+            List<string>[] featureRawData = new List<string>[table.Rows.Count];            ZType = CoordTypes.cartesian;
             int[] posIndices = new int[3];
             IntPtr astFrameSet = IntPtr.Zero;
-            string[] colNames = new string[voTable.Column.Count];
-            string[] colUnits = new string[voTable.Column.Count];
-            for (int i = 0; i < voTable.Column.Count; i++)
+            string[] colNames = new string[table.Column.Count];
+            string[] colUnits = new string[table.Column.Count];
+            for (int i = 0; i < table.Column.Count; i++)
             {
-                colNames[i] = voTable.Column[i].Name;
-                colUnits[i] = voTable.Column[i].Unit;
+                colNames[i] = table.Column[i].Name;
+                colUnits[i] = table.Column[i].Unit;
                 if (columnsMask[i])
                     rawDataKeysList.Add(colNames[i]);
             }
@@ -329,9 +329,9 @@ namespace DataFeatures
             }
             if (setCoordinates.Contains(SourceMappingOptions.Xmin))
                 containsBoxes = true;
-            if (voTable.Rows.Count == 0 || voTable.Column.Count == 0)
+            if (table.Rows.Count == 0 || table.Column.Count == 0)
             {
-                Debug.LogError($"Error reading VOTable! Note: Currently the VOTable may not contain xmlns declarations.");
+                Debug.LogError($"Error reading Source Table! Note: Currently the VOTable may not contain xmlns declarations.");
                 return;
             }
             bool containsPositions = !(posIndices[0] < 0 ||  posIndices[1] < 0 ||  posIndices[2] < 0);
@@ -357,30 +357,30 @@ namespace DataFeatures
             else
                 importFlags = false;
             if (importFlags)
-                flags = new string[voTable.Rows.Count];
-            FeatureNames = new string[voTable.Rows.Count];
-            FeaturePositions = new Vector3[voTable.Rows.Count];
-            BoxMinPositions = new Vector3[voTable.Rows.Count];
-            BoxMaxPositions = new Vector3[voTable.Rows.Count];
+                flags = new string[table.Rows.Count];
+            FeatureNames = new string[table.Rows.Count];
+            FeaturePositions = new Vector3[table.Rows.Count];
+            BoxMinPositions = new Vector3[table.Rows.Count];
+            BoxMaxPositions = new Vector3[table.Rows.Count];
             double xPhys, yPhys, zPhys;
             xPhys = yPhys = zPhys = double.NaN;
-            for (int row = 0; row < voTable.Rows.Count; row++)   // For each row (feature)...
+            for (int row = 0; row < table.Rows.Count; row++)   // For each row (feature)...
             {
                 featureRawData[row] = new List<string>();
-                for (int i = 0; i < voTable.Columns.Count; i++)
+                for (int i = 0; i < table.Columns.Count; i++)
                 {
                     if (columnsMask[i])
-                        featureRawData[row].Add(voTable.Rows[row].ColumnData[i].ToString());
+                        featureRawData[row].Add(table.Rows[row].ColumnData[i].ToString());
                 }
                 if (importFlags)
                 {
-                    flags[row] = (string) voTable.Rows[row].ColumnData[FlagIndex];
+                    flags[row] = (string) table.Rows[row].ColumnData[FlagIndex];
                 }
                 if (containsPositions && !containsBoxes)
                 {
                     for (int i = 0; i < posIndices.Length; i++)
                     {
-                        string stringToParse = (string)voTable.Rows[row].ColumnData[posIndices[i]];
+                        string stringToParse = (string)table.Rows[row].ColumnData[posIndices[i]];
                         double value;
                         if (double.TryParse(stringToParse, NumberStyles.Any, CultureInfo.InvariantCulture, out value))
                         {
@@ -420,7 +420,7 @@ namespace DataFeatures
                 {
                     for (int i = 0; i < boxIndices.Length; i++)
                     {
-                        float value = float.Parse((string)voTable.Rows[row].ColumnData[boxIndices[i]], CultureInfo.InvariantCulture); //change to tryparse
+                        float value = float.Parse((string)table.Rows[row].ColumnData[boxIndices[i]], CultureInfo.InvariantCulture); //change to tryparse
                         switch (i)
                         {
                             case 0:
@@ -452,7 +452,7 @@ namespace DataFeatures
                 // ...get name if exists
                 if (nameIndex >= 0)
                 {
-                    string value = (string)voTable.Rows[row].ColumnData[nameIndex];
+                    string value = (string)table.Rows[row].ColumnData[nameIndex];
                     FeatureNames[row] = value;
                 }
                 else
@@ -466,7 +466,7 @@ namespace DataFeatures
             if (VolumeRenderer)
             {
                 Vector3 cornerMin, cornerMax;
-                for (int i = 0; i < voTable.Rows.Count; i++)
+                for (int i = 0; i < table.Rows.Count; i++)
                 {
                     cornerMin = BoxMinPositions[i];
                     cornerMax = BoxMaxPositions[i];

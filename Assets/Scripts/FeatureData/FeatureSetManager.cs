@@ -216,10 +216,10 @@ namespace DataFeatures
         /// <param name="columnsMask"></param>
         /// <param name="excludeExternal"></param>
         /// <returns>FeatureSetRenderer</returns>
-        public FeatureSetRenderer ImportFeatureSet(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable, string name, bool[] columnsMask, bool excludeExternal)
+        public FeatureSetRenderer ImportFeatureSetFromTable(Dictionary<SourceMappingOptions, string> mapping, FeatureTable table, string name, bool[] columnsMask, bool excludeExternal)
         {
             var importedFeatureSetRenderer = CreateEmptyFeatureSet(name, "customSet", ImportedFeatureSetList.Count, FeatureColors[ImportedFeatureSetList.Count], FeatureSetType.Imported);
-            importedFeatureSetRenderer.SpawnFeaturesFromVOTable(mapping, voTable, columnsMask, excludeExternal);
+            importedFeatureSetRenderer.SpawnFeaturesFromTable(mapping, table, columnsMask, excludeExternal);
             var config = Config.Instance;
             if (config.importedFeaturesStartVisible)
             {
