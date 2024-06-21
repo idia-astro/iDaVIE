@@ -2,7 +2,6 @@
 #include "cdl_zscale.h"
 
 #include <unordered_map>
-#include <iostream>
 #include <limits>
 
 using namespace std;
@@ -321,13 +320,7 @@ int MaskCropAndDownsample(const int16_t *dataPtr, int16_t **newDataPtr, int64_t 
 int GetPercentileValues(const float* data, int64_t size, float minPercentile, float maxPercentile, float* minPercentileValue, float* maxPercentileValue) {
     std::vector<float> sortedData(data, data + size);
 
-#pragma omp parallel
-    {
-#pragma omp single nowait
-        {
             std::sort(sortedData.begin(), sortedData.end());
-        }
-    }
 
     int minIndex = static_cast<int>(minPercentile * (sortedData.size() - 1) / 100.0);
     int maxIndex = static_cast<int>(maxPercentile * (sortedData.size() - 1) / 100.0);
