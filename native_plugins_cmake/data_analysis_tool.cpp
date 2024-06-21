@@ -2,7 +2,6 @@
 #include "cdl_zscale.h"
 
 #include <unordered_map>
-#include <iostream>
 #include <limits>
 
 using namespace std;
@@ -314,6 +313,20 @@ int MaskCropAndDownsample(const int16_t *dataPtr, int16_t **newDataPtr, int64_t 
         }
     }
     *newDataPtr = reducedCube;
+    return EXIT_SUCCESS;
+}
+
+//Function to get values of given percentiles in the float array of data
+int GetPercentileValues(const float* data, int64_t size, float minPercentile, float maxPercentile, float* minPercentileValue, float* maxPercentileValue) {
+    std::vector<float> sortedData(data, data + size);
+
+            std::sort(sortedData.begin(), sortedData.end());
+
+    int minIndex = static_cast<int>(minPercentile * (sortedData.size() - 1) / 100.0);
+    int maxIndex = static_cast<int>(maxPercentile * (sortedData.size() - 1) / 100.0);
+
+    *minPercentileValue = sortedData[minIndex];
+    *maxPercentileValue = sortedData[maxIndex];
     return EXIT_SUCCESS;
 }
 
