@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using TMPro;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.UI;
@@ -335,7 +336,7 @@ namespace VolumeData
                 var imageM1 = momentMapMenuController.gameObject.transform.Find("Map_container").gameObject.transform.Find("MomentMap1").GetComponent<Image>();
                 imageM1.sprite = spriteM1;
                 imageM1.preserveAspect = true;
-                momentMapMenuController.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_Threshold").gameObject.transform.Find("ThresholdValue").GetComponent<Text>().text = MomentMapThreshold.ToString();
+                // momentMapMenuController.gameObject.transform.Find("Main_container").gameObject.transform.Find("Line_Threshold").gameObject.transform.Find("ThresholdValue").GetComponent<TMP_Text>().text = MomentMapThreshold.ToString();
                 RenderTexture.active = currentActiveRT;
             }
         }
