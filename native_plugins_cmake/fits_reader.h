@@ -47,6 +47,8 @@ DllExport int FitsGetNumCols(fitsfile *, int  *, int *);
 
 DllExport int FitsMakeKeyN(const char *, int , char *, int *);
 
+DllExport int FitsReadKeyString(fitsfile * , const char *, char *, char *, int *);
+
 DllExport int FitsReadKey(fitsfile *, int , const char *, void *,
                           char *, int *);
 

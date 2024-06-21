@@ -215,6 +215,10 @@ namespace VolumeData
         { 
             get 
             {
+                if (_maskDataSet == null)
+                {
+                    return null;
+                }
                 return _maskDataSet.SourceStatsDict;
             }
         }

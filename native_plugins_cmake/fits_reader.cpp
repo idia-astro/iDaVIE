@@ -65,6 +65,12 @@ int FitsReadKey(fitsfile *fptr, int datatype, const char *keyname, void *value,
     return fits_read_key(fptr, datatype, keyname, value, comm, status);
 }
 
+int FitsReadKeyString(fitsfile *fptr, const char *keyname, char *value,
+                char *comm, int *status)
+{
+    return fits_read_key_str(fptr, keyname, value, comm, status);
+}
+
 int FitsReadKeyN(fitsfile *fptr, int keynum, char *keyname, char *value,
                  char *comment, int *status)
 {

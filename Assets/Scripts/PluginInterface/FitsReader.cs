@@ -229,6 +229,9 @@ public class FitsReader
     public static extern int FitsMakeKeyN(string keyroot, int value, StringBuilder keyname, out int status);
 
     [DllImport("idavie_native")]
+    public static extern int FitsReadKeyString(IntPtr fptr, string keyname, StringBuilder colname, IntPtr comm, out int status);
+    
+    [DllImport("idavie_native")]
     public static extern int FitsReadKey(IntPtr fptr, int datatype, string keyname, StringBuilder colname, IntPtr comm, out int status);
 
     [DllImport("idavie_native")]
@@ -423,7 +426,7 @@ public class FitsReader
         StringBuilder keyword = new StringBuilder(75);
         StringBuilder colName = new StringBuilder(71);
         FitsMakeKeyN("TTYPE", col + 1, keyword, out status);
-        if (FitsReadKey(fitsPtr, 16, keyword.ToString(), colName, IntPtr.Zero, out status) != 0)
+        if (FitsReadKeyString(fitsPtr, keyword.ToString(), colName, IntPtr.Zero, out status) != 0)
         {
             Debug.Log("Fits Read column name error #" + status.ToString());
             FitsReader.FitsCloseFile(fitsPtr, out status);
@@ -438,11 +441,19 @@ public class FitsReader
         StringBuilder keyword = new StringBuilder(75);
         StringBuilder colUnit = new StringBuilder(71);
         FitsMakeKeyN("TUNIT", col + 1, keyword, out status);
-        if (FitsReadKey(fitsPtr, 16, keyword.ToString(), colUnit, IntPtr.Zero, out status) != 0)
+        if (FitsReadKeyString(fitsPtr, keyword.ToString(), colUnit, IntPtr.Zero, out status) != 0)
         {
-            Debug.Log("Fits Read column unit error #" + status.ToString());
-            FitsReader.FitsCloseFile(fitsPtr, out status);
-            return "";
+            if (status == 202)
+            {
+                Debug.Log("No unit in column #" + col);
+                status = 0;
+            }
+            else
+            {
+                Debug.Log("Fits Read unit error #" + status.ToString());
+                FitsReader.FitsCloseFile(fitsPtr, out status);
+                return null;
+            }
         }
         return colUnit.ToString();
     }
@@ -453,7 +464,7 @@ public class FitsReader
         StringBuilder keyword = new StringBuilder(75);
         StringBuilder colFormat = new StringBuilder(71);
         FitsMakeKeyN("TFORM", col + 1, keyword, out status);
-        if (FitsReadKey(fitsPtr, 16, keyword.ToString(), colFormat, IntPtr.Zero, out status) != 0)
+        if (FitsReadKeyString(fitsPtr, keyword.ToString(), colFormat, IntPtr.Zero, out status) != 0)
         {
             Debug.Log("Fits Read column unit error #" + status.ToString());
             FitsReader.FitsCloseFile(fitsPtr, out status);
