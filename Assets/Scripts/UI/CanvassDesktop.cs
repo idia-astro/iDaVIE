@@ -791,8 +791,7 @@ public class CanvassDesktop : MonoBehaviour
             lastPath = "";
         var extensions = new[]
         {
-            new ExtensionFilter("VOTables", "xml"),
-            new ExtensionFilter("FitsTables", new string[] {"fits", "fit" }),
+            new ExtensionFilter("Source Tables", "xml", "fits", "fit"),
             new ExtensionFilter("All Files", "*"),
         };
         StandaloneFileBrowser.OpenFilePanelAsync("Open File", lastPath, extensions, false, (string[] paths) =>
