@@ -40,6 +40,13 @@ namespace VoTableReader
         }
         public bool error = false;
         public string errorText = "";
+        
+        public static VoTable GetVOTableFromFile(string fileName)
+        {
+            VoTable voTable = new VoTable(fileName);
+            return voTable;
+        }
+        
         public void LoadFromXML(XmlDocument xml)
         {
             XmlNode voTable = xml["VOTABLE"];

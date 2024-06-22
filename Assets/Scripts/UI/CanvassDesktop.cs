@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Globalization;
 using System.IO;
 using TMPro;
@@ -791,6 +792,7 @@ public class CanvassDesktop : MonoBehaviour
         var extensions = new[]
         {
             new ExtensionFilter("VOTables", "xml"),
+            new ExtensionFilter("FitsTables", new string[] {"fits", "fit" }),
             new ExtensionFilter("All Files", "*"),
         };
         StandaloneFileBrowser.OpenFilePanelAsync("Open File", lastPath, extensions, false, (string[] paths) =>
@@ -816,7 +818,9 @@ public class CanvassDesktop : MonoBehaviour
         //activate load features button
         sourcesPanelContent.gameObject.transform.Find("SourcesFile_container").gameObject.transform.Find("SourcesFilePath_text").GetComponent<TextMeshProUGUI>().text =
             System.IO.Path.GetFileName(path);
-        VoTable voTable = FeatureMapper.GetVOTableFromFile(path); //be more flexible with file input (ascii)
+
+        var featureTable = FeatureTable.GetFeatureTableFromFile(path);
+        
         Transform sourceBody = sourcesPanelContent.gameObject.transform.Find("SourcesInfo_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport")
             .gameObject.transform.Find("Content").gameObject.transform;
         if (_sourceRowObjects != null)
@@ -826,18 +830,18 @@ public class CanvassDesktop : MonoBehaviour
             _sourceRowObjects = null;
         }
 
-        _sourceRowObjects = new GameObject[voTable.Column.Count];
-        for (var i = 0; i < voTable.Column.Count; i++)
+        _sourceRowObjects = new GameObject[featureTable.Columns.Count];
+        for (var i = 0; i < featureTable.Columns.Count; i++)
         {
             var row = Instantiate(SourceRowPrefab, sourceBody);
             row.transform.Find("Source_number").GetComponent<TextMeshProUGUI>().text = i.ToString();
-            string colName = voTable.Column[i].Name;
+            string colName = featureTable.Columns.ElementAt(i).Key;
             // Hard coded 17 (*shivers*) matching the length available in the UI as of coding this. Do better!
             if (colName.Length > 17)
                 colName = colName.Substring(0, 14) + "...";
             row.transform.Find("Source_name").GetComponent<TextMeshProUGUI>().text = colName;
             var rowScript = row.GetComponentInParent<SourceRow>();
-            rowScript.SourceName = voTable.Column[i].Name;
+            rowScript.SourceName = featureTable.Columns.ElementAt(i).Key;
             rowScript.SourceIndex = i;
             _sourceRowObjects[i] = row;
         }
@@ -1115,7 +1119,9 @@ public class CanvassDesktop : MonoBehaviour
         }
 
         if (featureSetManager.FeatureFileToLoad != "")
-            featureSetManager.ImportFeatureSet(finalMapping, FeatureMapper.GetVOTableFromFile(sourcesPath), Path.GetFileName(sourcesPath), columnsMask, excludeExternalSources);
+        {
+            featureSetManager.ImportFeatureSetFromTable(finalMapping, FeatureTable.GetFeatureTableFromFile(sourcesPath), Path.GetFileName(sourcesPath), columnsMask, excludeExternalSources);
+        }
         loadingText.GetComponent<TextMeshProUGUI>().text = $"Successfully loaded sources from:{Environment.NewLine}{Path.GetFileName(sourcesPath)}";
         sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;
     }

@@ -8,6 +8,16 @@ using Unity.Collections;
 
 public class FitsReader
 {
+    
+    // HDU types of fits files can be used to identify the type of HDU
+    public enum HduType
+    {
+        ImageHdu = 0,  // Primary Array or IMAGE HDU
+        AsciiTbl = 1,  // ASCII table HDU
+        BinaryTbl = 2, // Binary table HDU
+        AnyHdu = -1    // matches any HDU type
+    }
+    
     // Data types of fits images can be used when reading and writing images
     public enum BitpixDataType
     {
@@ -41,7 +51,7 @@ public class FitsReader
         TULONGLONG = 80   // unsigned long long 'W'
     }
     
-    public static Dictionary<int, string> ErrorCodes = new()
+    public static readonly Dictionary<int, string> ErrorCodes = new()
     {
         { 101, "input and output files are the same" },
         { 103, "tried to open too many FITS files at once" },
@@ -164,6 +174,13 @@ public class FitsReader
     public static extern int FitsMovabsHdu(IntPtr fptr, int hdunum, out int hdutype, out int status);
 
     [DllImport("idavie_native")]
+    public static extern int FitsGetHduType(IntPtr fptr, out int hdutype, out int status);
+    
+    [DllImport("idavie_native")]
+    public static extern int FitsGetNumHdus(IntPtr fptr, out int numhdus, out int status);
+
+    
+    [DllImport("idavie_native")]
     public static extern int FitsGetNumHeaderKeys(IntPtr fptr, out int keysexist, out int morekeys, out int status);
 
     [DllImport("idavie_native")]
@@ -211,6 +228,9 @@ public class FitsReader
     [DllImport("idavie_native")]
     public static extern int FitsMakeKeyN(string keyroot, int value, StringBuilder keyname, out int status);
 
+    [DllImport("idavie_native")]
+    public static extern int FitsReadKeyString(IntPtr fptr, string keyname, StringBuilder colname, IntPtr comm, out int status);
+    
     [DllImport("idavie_native")]
     public static extern int FitsReadKey(IntPtr fptr, int datatype, string keyname, StringBuilder colname, IntPtr comm, out int status);
 
@@ -399,5 +419,57 @@ public class FitsReader
     {
         return $"#{status} {ErrorCodes[status]}";
     }
+
+    public static string FitsTableGetColName(IntPtr fitsPtr, int col)
+    {
+        int status = 0;
+        StringBuilder keyword = new StringBuilder(75);
+        StringBuilder colName = new StringBuilder(71);
+        FitsMakeKeyN("TTYPE", col + 1, keyword, out status);
+        if (FitsReadKeyString(fitsPtr, keyword.ToString(), colName, IntPtr.Zero, out status) != 0)
+        {
+            Debug.Log("Fits Read column name error #" + status.ToString());
+            FitsReader.FitsCloseFile(fitsPtr, out status);
+            return "";
+        }
+        return colName.ToString();
+    }
     
+    public static string FitsTableGetColUnit(IntPtr fitsPtr, int col)
+    {
+        int status = 0;
+        StringBuilder keyword = new StringBuilder(75);
+        StringBuilder colUnit = new StringBuilder(71);
+        FitsMakeKeyN("TUNIT", col + 1, keyword, out status);
+        if (FitsReadKeyString(fitsPtr, keyword.ToString(), colUnit, IntPtr.Zero, out status) != 0)
+        {
+            if (status == 202)
+            {
+                Debug.Log("No unit in column #" + col);
+                status = 0;
+            }
+            else
+            {
+                Debug.Log("Fits Read unit error #" + status.ToString());
+                FitsReader.FitsCloseFile(fitsPtr, out status);
+                return null;
+            }
+        }
+        return colUnit.ToString();
+    }
+    
+    public static string FitsTableGetColFormat(IntPtr fitsPtr, int col)
+    {
+        int status = 0;
+        StringBuilder keyword = new StringBuilder(75);
+        StringBuilder colFormat = new StringBuilder(71);
+        FitsMakeKeyN("TFORM", col + 1, keyword, out status);
+        if (FitsReadKeyString(fitsPtr, keyword.ToString(), colFormat, IntPtr.Zero, out status) != 0)
+        {
+            Debug.Log("Fits Read column unit error #" + status.ToString());
+            FitsReader.FitsCloseFile(fitsPtr, out status);
+            return "";
+        }
+        return colFormat.ToString();
+    }
 }

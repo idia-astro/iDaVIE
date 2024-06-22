@@ -31,6 +31,14 @@ int FitsMovabsHdu(fitsfile *fptr, int hdunum, int *hdutype, int *status)
     return fits_movabs_hdu(fptr, hdunum, hdutype, status);
 }
 
+int FitsGetHduType(fitsfile *fptr, int *hdutype, int *status) {
+    return fits_get_hdu_type(fptr, hdutype, status);
+}
+
+int FitsGetNumHdus(fitsfile *fptr, int *numhdus, int *status) {
+    return fits_get_num_hdus(fptr, numhdus, status);
+}
+
 int FitsGetNumHeaderKeys(fitsfile *fptr, int *keysexist, int *morekeys, int *status)
 {
     return fits_get_hdrspace(fptr, keysexist, morekeys, status);
@@ -55,6 +63,12 @@ int FitsReadKey(fitsfile *fptr, int datatype, const char *keyname, void *value,
                 char *comm, int *status)
 {
     return fits_read_key(fptr, datatype, keyname, value, comm, status);
+}
+
+int FitsReadKeyString(fitsfile *fptr, const char *keyname, char *value,
+                char *comm, int *status)
+{
+    return fits_read_key_str(fptr, keyname, value, comm, status);
 }
 
 int FitsReadKeyN(fitsfile *fptr, int keynum, char *keyname, char *value,

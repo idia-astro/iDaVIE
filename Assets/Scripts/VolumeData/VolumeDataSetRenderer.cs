@@ -215,6 +215,11 @@ namespace VolumeData
         { 
             get 
             {
+                // Return null if mask data is not loaded because the mask data is used to generate the source stats
+                if (_maskDataSet == null)
+                {
+                    return null;
+                }
                 return _maskDataSet.SourceStatsDict;
             }
         }

@@ -64,10 +64,6 @@ namespace DataFeatures
 
     public static class FeatureMapper
     {
-        public static VoTable GetVOTableFromFile(string fileName)
-        {
-            VoTable voTable = new VoTable(fileName);
-            return voTable;
-        }
+
     }    
 }
