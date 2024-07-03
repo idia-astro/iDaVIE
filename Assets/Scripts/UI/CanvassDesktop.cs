@@ -540,6 +540,8 @@ public class CanvassDesktop : MonoBehaviour
         GetFirstActiveDataSet().RestFrequencyGHzListIndexChanged += OnRestFrequencyIndexOfDatasetChanged;
         GetFirstActiveDataSet().RestFrequencyGHzChanged += OnRestFrequencyOfDatasetChanged;
         
+        //SetRestFrequencyInputField(GetFirstActiveDataSet().RestFrequencyGHz);
+        
         LoadingText.gameObject.SetActive(false);
         progressBar.gameObject.SetActive(false);
         WelcomeMenu.gameObject.SetActive(false);
@@ -770,7 +772,6 @@ public class CanvassDesktop : MonoBehaviour
         if (index == 0)
         {
             SetRestFrequencyInputInteractable(false);
-            //SetRestFrequencyInputField(RestFrequencyGHz);
         }
         //if "Custom" is selected, enable the input field
         else if (index == GetFirstActiveDataSet().RestFrequencyGHzList.Count - 1)

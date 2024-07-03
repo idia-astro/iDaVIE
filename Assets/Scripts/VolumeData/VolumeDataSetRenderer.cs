@@ -471,7 +471,7 @@ namespace VolumeData
             }
             else
             {
-                RestFrequencyGHz = 0.0;
+                _restFrequencyGHz = 0.0;
             }
             
             PopulateRestFrequenyList();
@@ -990,7 +990,11 @@ namespace VolumeData
 
             }
             else
+            {
+                _restFrequencyGHz = 0.0;
                 _dataSet.HasRestFrequency = false;
+                RestFrequencyGHzChanged?.Invoke();
+            }
         }
 
         void OnRenderObject()
