@@ -540,7 +540,6 @@ public class CanvassDesktop : MonoBehaviour
         GetFirstActiveDataSet().RestFrequencyGHzListIndexChanged += OnRestFrequencyIndexOfDatasetChanged;
         GetFirstActiveDataSet().RestFrequencyGHzChanged += OnRestFrequencyOfDatasetChanged;
         
-        //SetRestFrequencyInputField(GetFirstActiveDataSet().RestFrequencyGHz);
         
         LoadingText.gameObject.SetActive(false);
         progressBar.gameObject.SetActive(false);
