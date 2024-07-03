@@ -193,6 +193,9 @@ namespace VolumeData
 
         private VolumeDataSet _dataSet = null;
         private VolumeDataSet _maskDataSet = null;
+
+        public bool IsMaskNew { get; private set; } = false;
+        
         public VolumeDataSet Mask => _maskDataSet;
         public VolumeDataSet Data => _dataSet;
         
@@ -468,7 +471,7 @@ namespace VolumeData
             }
             else
             {
-                RestFrequencyGHz = 0.0;
+                _restFrequencyGHz = 0.0;
             }
             
             PopulateRestFrequenyList();
@@ -987,7 +990,11 @@ namespace VolumeData
 
             }
             else
+            {
+                _restFrequencyGHz = 0.0;
                 _dataSet.HasRestFrequency = false;
+                RestFrequencyGHzChanged?.Invoke();
+            }
         }
 
         void OnRenderObject()
@@ -1010,7 +1017,9 @@ namespace VolumeData
         {
             if (_dataSet != null && _maskDataSet == null)
             {
+                // Create a new mask dataset
                 _maskDataSet = _dataSet.GenerateEmptyMask();
+                IsMaskNew = true;
                 var maskFeatureSet = _featureManager.CreateMaskFeatureSet();
                 _maskDataSet?.FillFeatureSet(maskFeatureSet);
                 if (!FactorOverride)
@@ -1118,7 +1127,7 @@ namespace VolumeData
             }
             IntPtr cubeFitsPtr = IntPtr.Zero;
             int status = 0;
-            if (string.IsNullOrEmpty(_maskDataSet.FileName))
+            if (IsMaskNew)
             {
                 // Save new mask because none exists yet
                 FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _dataSet.FileName, out status);
@@ -1128,6 +1137,11 @@ namespace VolumeData
                 {
                     ToastNotification.ShowError("Error saving new mask!");
                 }
+                else
+                {
+                    ToastNotification.ShowSuccess($"New mask saved to {Path.GetFileName(_maskDataSet.FileName)}");
+                }
+                IsMaskNew = false;
             }
             else if (!overwrite)
             {
@@ -1153,7 +1167,7 @@ namespace VolumeData
                 }
                 else
                 {
-                    ToastNotification.ShowSuccess($"Mask saved to {fileName}");
+                    ToastNotification.ShowSuccess($"New mask saved to {fileName}");
                 }
             }
             else

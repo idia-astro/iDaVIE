@@ -13,7 +13,8 @@ public class PaintMenuController : MonoBehaviour
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
 
-    public GameObject mainMenuCanvas;
+    public GameObject sourcesMenu;
+    public GameObject plotsMenu;
     public GameObject paintMenu;
     public GameObject savePopup;
     int maskstatus = 0;
@@ -191,30 +192,67 @@ public class PaintMenuController : MonoBehaviour
         _volumeInputController.SetBrushSubtractive();
     }
 
-    public void OpenMainMenu()
+    public void OpenSourcesMenu()
     {
-        mainMenuCanvas.SetActive(!mainMenuCanvas.activeSelf);
+        spawnMenu(sourcesMenu);
+    }
+    
+    public void OpenPlotsWindow()
+    {
+        spawnMenu(plotsMenu);
+    }
+    
+    public void spawnMenu(GameObject menu)
+    {
+        Vector3 playerPos = Camera.main.transform.position;
+        Vector3 playerDirection = Camera.main.transform.forward;
+        Quaternion playerRotation = Camera.main.transform.rotation;
+        float spawnDistance = 1.5f;
+
+        Vector3 spawnPos = playerPos + playerDirection * spawnDistance;
+
+        menu.transform.position = spawnPos;
+        menu.transform.rotation = Quaternion.LookRotation(new Vector3(spawnPos.x - playerPos.x, 0, spawnPos.z - playerPos.z));
+
+        if (!menu.activeSelf)
+        {
+            menu.SetActive(true);
+        }
     }
 
     public void SaveMask()
     {
-        savePopup.transform.SetParent(this.transform.parent, false);
-        savePopup.transform.localPosition = this.transform.localPosition;
-        savePopup.transform.localRotation = this.transform.localRotation;
-        savePopup.transform.localScale = this.transform.localScale;
+        if (_activeDataSet.IsMaskNew)
+        {
+            SaveNewMask();
+        }
+        else
+        {
+            savePopup.transform.SetParent(this.transform.parent, false);
+            savePopup.transform.localPosition = this.transform.localPosition;
+            savePopup.transform.localRotation = this.transform.localRotation;
+            savePopup.transform.localScale = this.transform.localScale;
 
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.RemoveAllListeners();
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.RemoveAllListeners();
+            savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform
+                .Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
+            savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform
+                .Find("Overwrite").GetComponent<Button>().onClick.RemoveAllListeners();
+            savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform
+                .Find("NewFile").GetComponent<Button>().onClick.RemoveAllListeners();
 
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(SaveCancel);
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
+            savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform
+                .Find("Cancel").GetComponent<Button>().onClick.AddListener(SaveCancel);
+            savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform
+                .Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
+            savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform
+                .Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
 
-        _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
-         this.gameObject.SetActive(false);
-        savePopup.SetActive(true);
-        
+            _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents
+                .PaintModeDisabled);
+            this.gameObject.SetActive(false);
+            savePopup.SetActive(true);
+        }
+
     }
 
     public void SaveCancel()
