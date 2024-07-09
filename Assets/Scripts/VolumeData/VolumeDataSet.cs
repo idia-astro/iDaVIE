@@ -151,7 +151,12 @@ namespace VolumeData
 
         public long[] cubeSize;
 
+        // Full histogram of the data that does not change
+        public int[] FullHistogram;
+        
+        // Histogram of the data that can be scaled
         public int[] Histogram;
+        
         public float HistogramBinWidth;
         public float MaxValue;
         public float MinValue;
@@ -322,10 +327,12 @@ namespace VolumeData
                     out volumeDataSet.StanDev);
                 int histogramSize = Mathf.RoundToInt(Mathf.Sqrt(numberDataPoints));
                 volumeDataSet.Histogram = new int[histogramSize];
+                volumeDataSet.FullHistogram = new int[histogramSize];
                 IntPtr histogramPtr = IntPtr.Zero;
                 volumeDataSet.HistogramBinWidth = (volumeDataSet.MaxValue - volumeDataSet.MinValue) / histogramSize;
                 DataAnalysis.GetHistogram(fitsDataPtr, numberDataPoints, histogramSize, volumeDataSet.MinValue, volumeDataSet.MaxValue, out histogramPtr);
                 Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
+                Marshal.Copy(histogramPtr, volumeDataSet.FullHistogram, 0, histogramSize);
                 if (histogramPtr != IntPtr.Zero)
                     DataAnalysis.FreeDataAnalysisMemory(histogramPtr);
                 volumeDataSet.HasFitsRestFrequency =
