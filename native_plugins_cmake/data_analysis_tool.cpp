@@ -467,6 +467,11 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
         int64_t numVoxels = 0;
 
         int64_t numChannels = source.maxZ - source.minZ + 1;
+        
+        if (stats->spectralProfilePtr != nullptr) {
+            // Clear memory from previous spectral profile calculations
+            delete[] stats->spectralProfilePtr;
+        }
         stats->spectralProfilePtr = new double[numChannels];
 
         stats->minX = source.maxX;
