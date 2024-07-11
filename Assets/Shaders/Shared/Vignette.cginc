@@ -5,7 +5,7 @@ uniform float4 VignetteColor;
 
 float GetVignetteWeight(float2 position)
 {
-    bool leftEye = position.x < _ScreenParams.x;
+    bool leftEye = position.x < _ScreenParams.x / 2.0;
     position = float2(position.x % _ScreenParams.x, position.y);       
     float2 center = _ScreenParams.xy / 2.0;
     float2 delta = center - position;
