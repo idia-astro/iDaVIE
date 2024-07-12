@@ -41,8 +41,6 @@ namespace VolumeData
             public static readonly string ColormapViridis = "color map viridis";
             public static readonly string ColormapCubeHelix = "color map cube helix";
             public static readonly string ColormapTurbo = "color map turbo";
-            public static readonly string NextDataSet = "next data set";
-            public static readonly string PreviousDataSet = "previous data set";
             public static readonly string CropSelection = "crop selection";
             public static readonly string Teleport = "teleport";
             public static readonly string ResetCropSelection = "reset crop";
@@ -75,9 +73,10 @@ namespace VolumeData
             public static readonly string[] All =
             {
                 EditThresholdMin, EditThresholdMax, EditZAxis, EditZAxisAlt, SaveThreshold, ResetThreshold, ResetTransform, ColormapPlasma, ColormapRainbow, 
-                ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ColormapTurbo, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
-                PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
-                ProjectionAverage, SamplingModeAverage, SamplingModeMaximum, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline, TakePicture, CursorInfo, LinearScale,
+                ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ColormapTurbo, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt,
+                CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
+                ProjectionAverage, SamplingModeAverage, SamplingModeMaximum, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, 
+                HideMaskOutline, TakePicture, CursorInfo, LinearScale,
                 LogScale, SqrtScale, AddNewSource, SetSourceId, Undo, Redo, SaveSubCube
             };
         }
@@ -153,14 +152,6 @@ namespace VolumeData
             else if (args == Keywords.ResetTransform)
             {
                 resetTransform();
-            }
-            else if (args == Keywords.NextDataSet)
-            {
-                stepDataSet(true);
-            }
-            else if (args == Keywords.PreviousDataSet)
-            {
-                stepDataSet(false);
             }
             else if (args == Keywords.ColormapPlasma)
             {
