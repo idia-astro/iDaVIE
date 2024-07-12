@@ -117,7 +117,7 @@ namespace DataFeatures
                 {
                     foreach (var i in _dirtyFeatures)
                     {
-                        if (FeatureList[i] != null)
+                        if (i < FeatureList.Count && FeatureList[i] != null)
                         {
                             var feature = FeatureList[i];
                             FeatureVisibility visibility = feature.Visible ? (feature.Selected ? FeatureVisibility.Selected: FeatureVisibility.Visible) : FeatureVisibility.Hidden;

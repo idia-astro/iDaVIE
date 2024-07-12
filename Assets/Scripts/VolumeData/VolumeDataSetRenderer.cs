@@ -199,8 +199,6 @@ namespace VolumeData
         public VolumeDataSet Mask => _maskDataSet;
         public VolumeDataSet Data => _dataSet;
         
-        private bool _dirtyMask = false;
-
         public bool HasWCS { get; private set; }
         public IntPtr AstFrame { get =>_dataSet.AstFrameSet; } 
         public string StdOfRest => _dataSet.GetStdOfRest();
@@ -1058,7 +1056,6 @@ namespace VolumeData
             {
                 _previousPaintLocation = coordsRegionSpace;
                 _previousPaintValue = value;
-                _dirtyMask = true;
                 return _maskDataSet.PaintMaskVoxel(coordsRegionSpace, value);
             }
             return true;

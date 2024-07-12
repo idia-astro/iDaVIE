@@ -3,8 +3,6 @@ using UnityEngine.UI;
 using PolyAndCode.UI;
 using DataFeatures;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine.Serialization;
 using VolumeData;
@@ -257,6 +255,8 @@ public class FeatureMenuCell : MonoBehaviour, ICell
         if (Feature.Selected)
         {
             _featureSetManager.DeselectFeature();
+            _featureSetManager.NeedToUpdateInfo = true;
+            _featureSetManager.SelectNullFeature();
         }
         Feature.FeatureSetParent.RemoveFeature(Feature);
         _featureSetManager.NeedToRespawnMenuList = true;
