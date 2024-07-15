@@ -14,6 +14,7 @@ using Valve.VR;
 using DataFeatures;
 using VoTableReader;
 using System.Linq;
+using System.Runtime.InteropServices;
 using SFB;
 
 public class CanvassDesktop : MonoBehaviour
@@ -1272,6 +1273,7 @@ public class CanvassDesktop : MonoBehaviour
     /// <param name="maxPercentile"></param>
     public void SetMaxMinPercentile(float maxPercentile)
     {
+        var config = Config.Instance;
         float minPercentileValue, maxPercentileValue;
         var minPercentile = 100 - maxPercentile;
         if (maxPercentile == 100)
@@ -1279,10 +1281,32 @@ public class CanvassDesktop : MonoBehaviour
             minPercentileValue = GetFirstActiveDataSet().Data.MinValue;
             maxPercentileValue = GetFirstActiveDataSet().Data.MaxValue;
         }
-        else
+        // Use the quick percentile calculation if the option is enabled
+        else if (config.useQuickModeForPercentiles)
         {
-            DataAnalysis.GetPercentileValues(GetFirstActiveDataSet().Data.FitsData, GetFirstActiveDataSet().Data.NumPoints,
-                minPercentile, maxPercentile, out minPercentileValue, out maxPercentileValue);
+            IntPtr histogramPtr = IntPtr.Zero;
+            if (GetFirstActiveDataSet().Data.FullHistogram != null)
+            {
+                histogramPtr = Marshal.AllocHGlobal(GetFirstActiveDataSet().Data.FullHistogram.Length * sizeof(int));
+                Marshal.Copy(GetFirstActiveDataSet().Data.FullHistogram, 0, histogramPtr, GetFirstActiveDataSet().Data.FullHistogram.Length);
+            }
+
+            if (DataAnalysis.GetPercentileValuesFromHistogram(histogramPtr, GetFirstActiveDataSet().Data.FullHistogram.Length,
+                    GetFirstActiveDataSet().Data.MinValue, GetFirstActiveDataSet().Data.MaxValue, minPercentile,
+                    maxPercentile, out minPercentileValue, out maxPercentileValue) != 0)
+            {
+                Debug.LogError("Error calculating percentiles from histogram.");
+            }
+            Marshal.FreeHGlobal(histogramPtr);
+        }
+        // otherwise, use the more precise method of calculating percentiles from the data
+        else 
+        {
+            if (DataAnalysis.GetPercentileValuesFromData(GetFirstActiveDataSet().Data.FitsData, GetFirstActiveDataSet().Data.NumPoints,
+                    minPercentile, maxPercentile, out minPercentileValue, out maxPercentileValue) != 0)
+            {
+                Debug.LogError("Error calculating percentiles from data.");
+            }
         }
         
         Debug.Log("Setting histogram scale min to percentiles: " + minPercentile + "% and " + maxPercentile + "% with values: " + minPercentileValue + " and " + maxPercentileValue + ".");

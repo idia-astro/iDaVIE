@@ -47,9 +47,14 @@ public static class DataAnalysis
     public static readonly GetZProfileDelegate GetZProfile = null;
     public delegate int GetZProfileDelegate(IntPtr dataPtr, out IntPtr profile, long dimX, long dimY, long dimZ, long x, long y);
 
-    [PluginFunctionAttr("GetPercentileValues")] 
-    public static readonly GetPercentileValuesDelegate GetPercentileValues = null;
-    public delegate int GetPercentileValuesDelegate(IntPtr dataPtr, long numElements, float minPercentile, float maxPercentile, out float minPercentileValue, out float maxPercentileValue);
+    [PluginFunctionAttr("GetPercentileValuesFromHistogram")] 
+    public static readonly GetPercentileValuesFromHistogramDelegate GetPercentileValuesFromHistogram = null;
+    public delegate int GetPercentileValuesFromHistogramDelegate(IntPtr histogram, int numBins, float minValue, float maxValue, float minPercentile, float maxPercentile, out float minPercentileValue, out float maxPercentileValue);
+    
+    [PluginFunctionAttr("GetPercentileValuesFromData")] 
+    public static readonly GetPercentileValuesFromDataDelegate GetPercentileValuesFromData = null;
+    public delegate int GetPercentileValuesFromDataDelegate(IntPtr dataPtr, long numElements, float minPercentile, float maxPercentile, out float minPercentileValue, out float maxPercentileValue);
+
     
     [PluginFunctionAttr("GetHistogram")] 
     public static readonly GetHistogramDelegate GetHistogram = null;

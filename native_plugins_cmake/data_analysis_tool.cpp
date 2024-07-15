@@ -316,8 +316,48 @@ int MaskCropAndDownsample(const int16_t *dataPtr, int16_t **newDataPtr, int64_t 
     return EXIT_SUCCESS;
 }
 
+//Function to more quickly get estimated values of given percentiles in the data from the histogram
+int GetPercentileValuesFromHistogram(const int* histogram, int numBins, float minVal, float maxVal, float minPercentile, float maxPercentile, float* minPercentileValue, float* maxPercentileValue)
+{
+        const float binWidth = (maxVal - minVal) / numBins;
+        std::vector<float> remainingRanks = {minPercentile, maxPercentile};
+        int cumulativeSum = 0;
+
+        int totalSum = 0;
+        for (int i = 0; i < numBins; i++) {
+            totalSum += histogram[i];
+        }
+
+        if (totalSum == 0) {
+            return EXIT_FAILURE;
+        }
+
+        std::vector<float> calculatedPercentiles;
+        for (int i = 0; i < numBins && !remainingRanks.empty(); i++) {
+            float currentFraction = static_cast<float>(cumulativeSum) / totalSum;
+            float nextFraction = static_cast<float>(cumulativeSum + histogram[i]) / totalSum;
+            float nextRank = remainingRanks[0] / 100.0f;
+
+            while (nextFraction >= nextRank && !remainingRanks.empty()) {
+                float portion = (nextRank - currentFraction) / (nextFraction - currentFraction);
+                calculatedPercentiles.push_back(minVal + binWidth * (i + portion));
+                remainingRanks.erase(remainingRanks.begin());
+                if (!remainingRanks.empty()) {
+                    nextRank = remainingRanks[0] / 100.0f;
+                }
+            }
+            cumulativeSum += histogram[i];
+        }
+        if (calculatedPercentiles.size() != 2) {
+            return EXIT_FAILURE;
+        }
+        *minPercentileValue = calculatedPercentiles[0];
+        *maxPercentileValue = calculatedPercentiles[1];
+        return EXIT_SUCCESS;
+    }
+
 //Function to get values of given percentiles in the float array of data
-int GetPercentileValues(const float* data, int64_t size, float minPercentile, float maxPercentile, float* minPercentileValue, float* maxPercentileValue) {
+int GetPercentileValuesFromData(const float* data, int64_t size, float minPercentile, float maxPercentile, float* minPercentileValue, float* maxPercentileValue) {
     std::vector<float> sortedData(data, data + size);
 
             std::sort(sortedData.begin(), sortedData.end());
@@ -427,6 +467,11 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
         int64_t numVoxels = 0;
 
         int64_t numChannels = source.maxZ - source.minZ + 1;
+        
+        if (stats->spectralProfilePtr != nullptr) {
+            // Clear memory from previous spectral profile calculations
+            delete[] stats->spectralProfilePtr;
+        }
         stats->spectralProfilePtr = new double[numChannels];
 
         stats->minX = source.maxX;

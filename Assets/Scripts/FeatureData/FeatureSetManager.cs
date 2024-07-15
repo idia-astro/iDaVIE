@@ -42,19 +42,28 @@ namespace DataFeatures
             get => _selectedFeature;
             set
             {
-                if (_selectedFeature == null || _selectedFeature != value)
+                if (value != null)
                 {
-                    DeselectFeature();
+                    if (_selectedFeature == null || _selectedFeature != value)
+                    {
+                        DeselectFeature();
+                        _selectedFeature = value;
+                        _selectedFeature.Selected = true;
+                        if (_selectedFeature.FeatureSetParent)
+                        {
+                            UpdateAnchors();
+                        }
+
+                        if (value.FeatureSetParent.FeatureSetType == FeatureSetType.Mask)
+                        {
+                            MaskFeatureSelected?.Invoke();
+                        }
+                        NeedToUpdateInfo = true;
+                    }
+                }
+                else
+                {
                     _selectedFeature = value;
-                    _selectedFeature.Selected = true;
-                    if (_selectedFeature.FeatureSetParent)
-                    {
-                        UpdateAnchors();
-                    }
-                    if (value.FeatureSetParent.FeatureSetType == FeatureSetType.Mask)
-                    {
-                        MaskFeatureSelected?.Invoke();
-                    }
                 }
             }
         }
@@ -328,6 +337,12 @@ namespace DataFeatures
                     SelectedFeature.Visible = false;
                 }
             }
+        }
+        
+        public void SelectNullFeature()
+        {
+            DeselectFeature();
+            SelectedFeature = null;
         }
         
         /// <summary>

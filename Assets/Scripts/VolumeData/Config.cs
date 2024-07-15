@@ -50,6 +50,12 @@ namespace VolumeData
         /// The number of steps per second when incrementing the histogram min/max.
         /// </summary>
         public int histogramStepsPerSecond = 10;
+
+        /// <summary>
+        /// Use the quick, less precise percentile calculation for the scale min/max
+        /// that uses the histogram instead of the full data set.
+        /// </summary>
+        public bool useQuickModeForPercentiles = true;
         
         // Default rest frequencies in GHz. These are used for frequency <-> velocity conversions
         public Dictionary<String,double> restFrequenciesGHz = new Dictionary<string, double>

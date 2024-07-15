@@ -151,7 +151,12 @@ namespace VolumeData
 
         public long[] cubeSize;
 
+        // Full histogram of the data that does not change
+        public int[] FullHistogram;
+        
+        // Histogram of the data that can be scaled
         public int[] Histogram;
+        
         public float HistogramBinWidth;
         public float MaxValue;
         public float MinValue;
@@ -322,10 +327,12 @@ namespace VolumeData
                     out volumeDataSet.StanDev);
                 int histogramSize = Mathf.RoundToInt(Mathf.Sqrt(numberDataPoints));
                 volumeDataSet.Histogram = new int[histogramSize];
+                volumeDataSet.FullHistogram = new int[histogramSize];
                 IntPtr histogramPtr = IntPtr.Zero;
                 volumeDataSet.HistogramBinWidth = (volumeDataSet.MaxValue - volumeDataSet.MinValue) / histogramSize;
                 DataAnalysis.GetHistogram(fitsDataPtr, numberDataPoints, histogramSize, volumeDataSet.MinValue, volumeDataSet.MaxValue, out histogramPtr);
                 Marshal.Copy(histogramPtr, volumeDataSet.Histogram, 0, histogramSize);
+                Marshal.Copy(histogramPtr, volumeDataSet.FullHistogram, 0, histogramSize);
                 if (histogramPtr != IntPtr.Zero)
                     DataAnalysis.FreeDataAnalysisMemory(histogramPtr);
                 volumeDataSet.HasFitsRestFrequency =
@@ -415,8 +422,6 @@ namespace VolumeData
             var sourceStats = SourceStatsDict[maskVal];
             //Check if AstFrameSet or AltSpecSet have velocity
             var frameWithVelocity = AstframeIsFreq ?  AstAltSpecSet : AstFrameSet;
-            if (sourceStats.spectralProfilePtr != IntPtr.Zero)
-                DataAnalysis.FreeDataAnalysisMemory(sourceStats.spectralProfilePtr);
             DataAnalysis.GetSourceStats(ImageDataPtr, FitsData, XDim, YDim, ZDim, DataAnalysis.SourceInfo.FromSourceStats(sourceStats, maskVal), ref sourceStats, frameWithVelocity);
             if (sourceStats.numVoxels > 0)
             {
@@ -438,8 +443,8 @@ namespace VolumeData
                     {
                         // Update existing feature's bounds
                         var feature = _maskFeatureSet.FeatureList[index];
-                        var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
-                        var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
+                        var boxMin = new Vector3(Math.Max(sourceStats.minX, 0) , Math.Max(sourceStats.minY, 0), Math.Max(sourceStats.minZ, 0));
+                        var boxMax = new Vector3(Math.Min(sourceStats.maxX + 1, XDim), Math.Min(sourceStats.maxY + 1, YDim), Math.Min(sourceStats.maxZ + 1, ZDim));
                         feature.SetBounds(boxMin, boxMax);
                         feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
                         _maskFeatureSet.FeatureManager.NeedToRespawnMenuList = true;
