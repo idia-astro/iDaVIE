@@ -1245,6 +1245,7 @@ public class CanvassDesktop : MonoBehaviour
             .gameObject.transform.Find("Line_sigma").gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value = 0;
 
         VolumeDataSet.UpdateHistogram(GetFirstActiveDataSet().Data, GetFirstActiveDataSet().Data.MinValue, GetFirstActiveDataSet().Data.MaxValue);
+        GetFirstActiveDataSet().ResetThresholds();
         populateStatsValue();
     }
     
@@ -1256,15 +1257,15 @@ public class CanvassDesktop : MonoBehaviour
     /// <param name="max"></param>
     public void UpdateScale(float min, float max)
     {
-        VolumeDataSetRenderer volumeDataSetRenderer = GetFirstActiveDataSet();
-        VolumeDataSet volumeDataSet = volumeDataSetRenderer.Data;
+        VolumeDataSet volumeDataSet = GetFirstActiveDataSet().Data;
         float sigma = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
             .Find("Stats").gameObject.transform.Find("Line_sigma")
             .gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value + 1f;
-        volumeDataSetRenderer.ScaleMin = min;
-        volumeDataSetRenderer.ScaleMax = max;
+        GetFirstActiveDataSet().ScaleMin = min;
+        GetFirstActiveDataSet().ScaleMax = max;
         VolumeDataSet.UpdateHistogram(volumeDataSet, min, max);
         histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, min, max, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
+        GetFirstActiveDataSet().ResetThresholds();
     }
     
     /// <summary>
