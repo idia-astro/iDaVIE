@@ -995,6 +995,12 @@ namespace VolumeData
             }
         }
 
+        public void ResetThresholds()
+        {
+            ThresholdMin = InitialThresholdMin;
+            ThresholdMax = InitialThresholdMax;
+        }
+
         void OnRenderObject()
         {
             if (IsFullResolution && DisplayMask && _maskDataSet?.ExistingMaskBuffer != null)

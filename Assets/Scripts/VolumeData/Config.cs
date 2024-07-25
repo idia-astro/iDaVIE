@@ -74,6 +74,12 @@ namespace VolumeData
         // Allow the controller to display information outside the volume cube
         public bool displayCursorInfoOutsideCube = false;
 
+        // Display the voice command status in the cursor information
+        public bool displayVoiceCommandStatus = true;
+
+        // Use the simple voice command status indicator
+        public bool useSimpleVoiceCommandStatus = false;
+        
         public bool importedFeaturesStartVisible = true;
         
         public class RenderConfig
