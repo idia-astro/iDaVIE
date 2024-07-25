@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
-using TMPro;
 using UnityEngine;
 using VolumeData;
 
@@ -19,21 +15,28 @@ public class VoiceCommandIndicator : MonoBehaviour
 
     private Config _config;
 
-    // Start is called before the first frame update
-    void Start()
+   void Start()
     {
         _config = Config.Instance;
+        UpdateFocusIndicator(Application.isFocused);
     }
 
+    void OnApplicationFocus(bool hasFocus)
+    {
+        UpdateFocusIndicator(hasFocus);
+    }
+    
     /// <summary>
-    /// Update looks at the config and cursor info status to set whether the voice command
-    /// indicator is displayed and whether to use the simple icon or text version
+    /// Method looks at the config and cursor info status to set whether the voice command
+    /// indicator is displayed (based on hasFocus) and whether to use the simple icon or text version
     /// </summary>
-    void Update()
+    /// <param name="hasFocus">variable determines whether indicator should show that voice commands
+    /// work or not</param>
+    void UpdateFocusIndicator(bool hasFocus)
     {
         if (_config.displayVoiceCommandStatus && VolumeInputController.ShowCursorInfo)
         {
-            if (Application.isFocused)
+            if (hasFocus)
             {
                 if (_config.useSimpleVoiceCommandStatus)
                 {
