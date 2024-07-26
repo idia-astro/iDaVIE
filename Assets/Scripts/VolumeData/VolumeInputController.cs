@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Linq;
 using DataFeatures;
 using LineRenderer;
+using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
 using VRHand = Valve.VR.InteractionSystem.Hand;
 
@@ -107,7 +108,7 @@ public class VolumeInputController : MonoBehaviour
     private bool _isQuickMenu;
     private Feature _hoveredFeature, _editingFeature;
     private FeatureAnchor _hoveredAnchor, _editingAnchor;
-    private bool _showCursorInfo = true;
+    public bool ShowCursorInfo { get; private set; } = true;
 
     private PolyLine _lineAxisSeparation, _lineRotationAxes;
 
@@ -1013,7 +1014,7 @@ public class VolumeInputController : MonoBehaviour
         {
             _handInfoComponents[PrimaryHandIndex].enabled = true;
             _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
-            _handInfoComponents[PrimaryHandIndex].text = (_showCursorInfo || currentState == InteractionState.EditingSourceId) ? cursorString : "";
+            _handInfoComponents[PrimaryHandIndex].text = (ShowCursorInfo || currentState == InteractionState.EditingSourceId) ? cursorString : "";
             if (IsCursorOutsideCube(dataSet))
             {
                 _handInfoComponents[PrimaryHandIndex].color = new Color(0.86f, 0.078f, 0.235f); //This is crimson rgb(220,20,60)
@@ -1238,7 +1239,7 @@ public class VolumeInputController : MonoBehaviour
 
     public void ToggleCursorInfoVisibility()
     {
-        _showCursorInfo = !_showCursorInfo;
+        ShowCursorInfo = !ShowCursorInfo;
     }
 
     public void AddNewSource()

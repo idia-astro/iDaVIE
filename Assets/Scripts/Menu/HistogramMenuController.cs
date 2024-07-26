@@ -168,6 +168,7 @@ public class HistogramMenuController : MonoBehaviour
         getFirstActiveDataSet().ScaleMax = float.Parse(maxText.text);
         VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().Data, float.Parse(minText.text), float.Parse(maxText.text));
         histogramHelper.CreateHistogramImg(getFirstActiveDataSet().Data.Histogram, getFirstActiveDataSet().Data.HistogramBinWidth, float.Parse(minText.text), float.Parse(maxText.text), getFirstActiveDataSet().Data.MeanValue, getFirstActiveDataSet().Data.StanDev);
+        getFirstActiveDataSet().ResetThresholds();
     }
 
     /// <summary>
@@ -180,6 +181,7 @@ public class HistogramMenuController : MonoBehaviour
         getFirstActiveDataSet().ScaleMax = getFirstActiveDataSet().Data.MaxValue;
         VolumeDataSet.UpdateHistogram(getFirstActiveDataSet().Data, getFirstActiveDataSet().Data.MinValue, getFirstActiveDataSet().Data.MaxValue);
         histogramHelper.CreateHistogramImg(getFirstActiveDataSet().Data.Histogram, getFirstActiveDataSet().Data.HistogramBinWidth, getFirstActiveDataSet().Data.MinValue, getFirstActiveDataSet().Data.MaxValue, getFirstActiveDataSet().Data.MeanValue, getFirstActiveDataSet().Data.StanDev);
+        getFirstActiveDataSet().ResetThresholds();
     }
 
     public void UpdateUI(float min, float max, Sprite img)
