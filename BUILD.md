@@ -27,7 +27,7 @@ Unfortunately, due to the limitations on VR headset drivers on Unix operating sy
     * For example: `.\configure.ps1 "C:\vcpkg" "C:\Program Files\Unity\2021.3.xf1\Editor\Unity.exe"`
     * (Optional) You can specify the vcpkg root with the `-v` or `-vcpkg` flags.
     * (Optional) You can specify the Unity executable with `-u` or `-unity` flags.
-    * (Optional) For example: `.\configure.ps1 "C:\vcpkg" "C:\Program Files\Unity\2021.3.xf1\Editor\Unity.exe"`
+    * (Optional) For example: `.\configure.ps1 -v "C:\vcpkg" -u "C:\Program Files\Unity\2021.3.xf1\Editor\Unity.exe"`
   
 7. Generate SteamVR actions
     * Open i-DaVIE-v in the Unity Editor.
