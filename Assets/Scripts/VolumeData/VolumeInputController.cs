@@ -101,6 +101,10 @@ public class VolumeInputController : MonoBehaviour
     private Vector3 _starGripForwardAxis;
     private float _previousControllerHeight;
     private LocomotionState _locomotionState;
+    private Config _config;
+
+    public event Action PushToTalkButtonPressed;
+    public event Action PushToTalkButtonReleased;
     
     
     // Interactions
@@ -165,9 +169,9 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnEnable()
     {
-        var config = Config.Instance;
-        _tunnellingVignetteOn = config.tunnellingVignetteOn;
-        _maxVignetteIntensity = config.tunnellingVignetteIntensity;
+        _config = Config.Instance;
+        _tunnellingVignetteOn = _config.tunnellingVignetteOn;
+        _maxVignetteIntensity = _config.tunnellingVignetteIntensity;
         _vrFamily = DetermineVRFamily();
         Vector3 pointerOffset = PointerOffsetsLeft[_vrFamily];
         if (_player == null)
@@ -437,9 +441,20 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnQuickMenuChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
-        // Menu is only available on the second hand
+        // Use primary hand for voice command activation (push-to-talk)
         if (fromSource == PrimaryHand)
         {
+            if (_config.usePushToTalk)
+            {
+                if (newState)
+                {
+                    PushToTalkButtonPressed?.Invoke();
+                }
+                else
+                {
+                    PushToTalkButtonReleased?.Invoke();
+                }
+            }
             return;
         }
 

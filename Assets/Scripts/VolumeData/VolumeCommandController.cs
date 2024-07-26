@@ -17,6 +17,8 @@ namespace VolumeData
         public QuickMenuController QuickMenuController;
         public PaintMenuController PaintMenuController;
         public MomentMapMenuController momentMapMenuController;
+        
+        public bool IsVoiceRecognitionActive => _speechKeywordRecognizer.IsRunning;
 
         private List<VolumeDataSetRenderer> _dataSets;
 
@@ -86,17 +88,45 @@ namespace VolumeData
 
         private VolumeDataSetRenderer _activeDataSet;
 
+        private Config _config;
 
         void OnEnable()
         {
-            var config = Config.Instance;
+            _config = Config.Instance;
             _dataSets = new List<VolumeDataSetRenderer>();
             _dataSets.AddRange(GetComponentsInChildren<VolumeDataSetRenderer>(true));            
-            _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, config.voiceCommandConfidenceLevel);
+            _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, _config.voiceCommandConfidenceLevel);
             _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
-
-            _speechKeywordRecognizer.Start();
             _volumeInputController = FindObjectOfType<VolumeInputController>();
+
+            if (!_config.usePushToTalk)
+            {
+                _speechKeywordRecognizer.Start();
+            }
+            else
+            {
+                _volumeInputController.PushToTalkButtonPressed += OnPushToTalkPressed;
+                _volumeInputController.PushToTalkButtonReleased += OnPushToTalkReleased;
+            }
+        }
+        
+        private void OnDestroy()
+        {
+            if (_config.usePushToTalk)
+            {
+                _volumeInputController.PushToTalkButtonPressed -= OnPushToTalkPressed;
+                _volumeInputController.PushToTalkButtonReleased -= OnPushToTalkReleased;
+            }
+        }
+        
+        public void OnPushToTalkPressed()
+        {
+            _speechKeywordRecognizer.Start();
+        }
+        
+        public void OnPushToTalkReleased()
+        {
+            _speechKeywordRecognizer.Stop();
         }
 
         private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
