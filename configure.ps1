@@ -11,9 +11,9 @@
 
 param (
 	[Parameter(Mandatory, Position=0)]
-	[Alias("vcpkg")]
+	[Alias("vcpkg", "v")]
 	[System.String]
-	$VCPKG,
+	$VCPKGROOT,
 	
 	[Parameter(Mandatory, Position=1)]
 	[Alias("unity", "u")]
@@ -21,8 +21,8 @@ param (
 	$UNITYPATH
 )
 
-Set-Variable -Name VCPKGCMAKE -Value "$VCPKG\scripts\buildsystems\vcpkg.cmake" -Scope Script
-Set-Variable -Name VCPKGEXE -Value "$VCPKG\vcpkg.exe" -Scope Script
+Set-Variable -Name VCPKGCMAKE -Value "$VCPKGROOT\scripts\buildsystems\vcpkg.cmake" -Scope Script
+Set-Variable -Name VCPKGEXE -Value "$VCPKGROOT\vcpkg.exe" -Scope Script
 #Test that vcpkg cmake exists and is a file
 if (-not ((Test-Path $VCPKGCMAKE) -and (Test-Path -Path $VCPKGCMAKE -PathType Leaf)))
 {
@@ -47,12 +47,11 @@ if (-not ((Test-Path $UNITYPATH) -and (Test-Path -Path $UNITYPATH -PathType Leaf
 	exit
 }
 
-Write-Progress "Setting vcpkg to release values..."
-Add-Content -Path C:\vcpkg\triplets\*.cmake -Value 'set(VCPKG_BUILD_TYPE release)'
+Write-Host "Setting vcpkg to release values..."
+Add-Content -Path $VCPKGROOT\triplets\*.cmake -Value 'set(VCPKG_BUILD_TYPE release)'
 
 Write-Progress "Installing starlink and cfitsio..."
-Write-Host "$VCPKGEXE install starlink-ast:x64-windows cfitsio:x64-windows"
-"$VCPKGEXE" install starlink-ast:x64-windows cfitsio:x64-windows
+Start-Process "$VCPKGEXE" -Wait -ArgumentList "install starlink-ast:x64-windows cfitsio:x64-windows" 
 
 Write-Progress "Building native plugins..."
 Set-Location native_plugins_cmake
@@ -158,25 +157,28 @@ Write-Progress "Extracting steamvr.unitypackage... " -Status "0% complete" -Perc
 Start-Process ".\extractor.exe" -Wait -ArgumentList ".\steamvr.unitypackage ."
 Write-Progress "steamvr.unitypackage extracted"
 
-Write-Progress "Extracting nuget.unitypackage... " -Status "25% complete" -PercentComplete 25
+Write-Progress "Extracting nuget.unitypackage... " -Status "20% complete" -PercentComplete 20
 Start-Process ".\extractor.exe" -Wait -ArgumentList ".\nuget.unitypackage ."
 Write-Progress "nuget.unitypackage extracted"
 
-Write-Progress "Extracting file_browser.unitypackage... " -Status "50% complete" -PercentComplete 50
+Write-Progress "Extracting file_browser.unitypackage... " -Status "40% complete" -PercentComplete 40
 Start-Process ".\extractor.exe" -Wait -ArgumentList ".\file_browser.unitypackage ."
 Write-Progress "file_browser.unitypackage extracted"
 
-Write-Progress "Extracting scroll_rect.unitypackage... " -Status "75% complete" -PercentComplete 75
+Write-Progress "Extracting scroll_rect.unitypackage... " -Status "60% complete" -PercentComplete 60
 Start-Process ".\extractor.exe" -Wait -ArgumentList ".\scroll_rect.unitypackage ."
-Write-Progress "scroll_rect.unitypackage extracted" -Status "100% complete" -PercentComplete 100
+Write-Progress "scroll_rect.unitypackage extracted" -Status "80% complete" -PercentComplete 80
 
 Remove-Item ".\extractor.exe"
 
 Copy-Item -Path ".\Assets\*" -Destination "..\Assets" -Recurse -Force
+Remove-Item ".\Assets\*" -Recurse -Force
 
 Set-Location ..
 
+Write-Progress "Importing TextMeshPro package... " -Status "80% complete" -PercentComplete 80
 Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import.log -importPackage $PSScriptRoot\plugin_build\textMeshPro-3.0.6.unitypackage -quit"
+Write-Progress "TextMeshPro package imported" -Status "100% complete" -PercentComplete 100
 
 Write-Host "Packages imported."
 Write-Host "Configuration complete!"

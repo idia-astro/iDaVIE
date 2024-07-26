@@ -15,7 +15,7 @@ Unfortunately, due to the limitations on VR headset drivers on Unix operating sy
 
 3. Install vcpkg
     * Download [vcpkg](https://github.com/microsoft/vcpkg) and install it.
-    * Make sure to note the path to the [vcpkg toolchain file](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake), found at `C:\vcpkg\scripts\buildsystems\vcpkg.cmake` for default installations.
+    * Make sure to note the path to the vcpkg root folder, found at `C:\vcpkg` for default installations.
 
 5. Download i-DaVIE-v source code
     * Download the i-DaVIE-v source code from the [GitHub repository](https://github.com/idia-astro/idia_unity_vr).
