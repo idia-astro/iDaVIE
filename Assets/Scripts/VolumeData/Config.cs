@@ -77,8 +77,12 @@ namespace VolumeData
         // Display the voice command status in the cursor information
         public bool displayVoiceCommandStatus = true;
 
+        // Enable the requirement that the secondary button on the primary controller
+        // must be held down to use voice commands
+        public bool usePushToTalk = false;
+        
         // Use the simple voice command status indicator
-        public bool useSimpleVoiceCommandStatus = false;
+        public bool useSimpleVoiceCommandStatus = true;
         
         public bool importedFeaturesStartVisible = true;
         

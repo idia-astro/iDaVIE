@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using VolumeData;
 
@@ -10,17 +11,45 @@ public class VoiceCommandIndicator : MonoBehaviour
     public GameObject VoiceCommandOffText;
     public GameObject VoiceCommandOnIcon;
     public GameObject VoiceCommandOffIcon;
+    public GameObject WindowUnfocusedText;
+    public GameObject WindowUnfocusedIcon;
 
-    public VolumeInputController VolumeInputController;
+    [SerializeField]
+    private VolumeInputController volumeInputController;
+    [SerializeField]
+    private VolumeCommandController volumeCommandController;
 
     private Config _config;
 
-   void Start()
+    private void Awake()
     {
         _config = Config.Instance;
-        UpdateFocusIndicator(Application.isFocused);
     }
 
+    void Start()
+    {
+        UpdateFocusIndicator(Application.isFocused);
+        if (_config.usePushToTalk)
+        {
+            volumeInputController.PushToTalkButtonPressed += OnPushToTalkButtonChanged;
+            volumeInputController.PushToTalkButtonReleased += OnPushToTalkButtonChanged;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (_config.usePushToTalk)
+        {
+            volumeInputController.PushToTalkButtonPressed -= OnPushToTalkButtonChanged;
+            volumeInputController.PushToTalkButtonReleased -= OnPushToTalkButtonChanged;
+        }
+    }
+
+    void OnPushToTalkButtonChanged()
+    {
+        UpdateFocusIndicator(Application.isFocused);
+    }
+    
     void OnApplicationFocus(bool hasFocus)
     {
         UpdateFocusIndicator(hasFocus);
@@ -32,21 +61,23 @@ public class VoiceCommandIndicator : MonoBehaviour
     /// </summary>
     /// <param name="hasFocus">variable determines whether indicator should show that voice commands
     /// work or not</param>
-    void UpdateFocusIndicator(bool hasFocus)
+    private void UpdateFocusIndicator(bool hasFocus)
     {
-        if (_config.displayVoiceCommandStatus && VolumeInputController.ShowCursorInfo)
+        if (_config.displayVoiceCommandStatus && volumeInputController.ShowCursorInfo)
         {
-            if (hasFocus)
+            if (hasFocus && volumeCommandController.IsVoiceRecognitionActive)
             {
                 if (_config.useSimpleVoiceCommandStatus)
                 {
                     VoiceCommandOnIcon.SetActive(true);
                     VoiceCommandOffIcon.SetActive(false);
+                    WindowUnfocusedIcon.SetActive(false);
                 }
                 else
                 {
                     VoiceCommandOnText.SetActive(true);
                     VoiceCommandOffText.SetActive(false);
+                    WindowUnfocusedText.SetActive(false);
                 }
             }
             else
@@ -55,11 +86,27 @@ public class VoiceCommandIndicator : MonoBehaviour
                 {
                     VoiceCommandOnIcon.SetActive(false);
                     VoiceCommandOffIcon.SetActive(true);
+                    if (!hasFocus)
+                    {
+                        WindowUnfocusedIcon.SetActive(true);
+                    }
+                    else
+                    {
+                        WindowUnfocusedIcon.SetActive(false);
+                    }
                 }
                 else
                 {
                     VoiceCommandOnText.SetActive(false);
                     VoiceCommandOffText.SetActive(true);
+                    if (!hasFocus)
+                    {
+                        WindowUnfocusedText.SetActive(true);
+                    }
+                    else
+                    {
+                        WindowUnfocusedText.SetActive(false);
+                    }
                 }
             }
         }
