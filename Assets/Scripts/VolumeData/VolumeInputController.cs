@@ -667,15 +667,20 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        var cameras = Camera.allCameras;
+        foreach (var camera in cameras)
+        { 
+            camera.depthTextureMode = DepthTextureMode.Depth;
+        }
+    }
+    
     private void Update()
     {
         // Common update functions
         if (_tunnellingVignetteOn)
             UpdateVignette();
-        if (Camera.current)
-        {
-            Camera.current.depthTextureMode = DepthTextureMode.Depth;
-        }
 
         switch (_locomotionState)
         {
