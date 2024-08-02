@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest a new feature for iDaVIE-v
+about: Suggest a new feature for iDaVIE
 title: '[FR] "New Feature Request"'
 labels: enhancement
 assignees: ''
