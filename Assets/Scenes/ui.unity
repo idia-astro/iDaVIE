@@ -49956,6 +49956,7 @@ MonoBehaviour:
   LoadingText: {fileID: 499592097}
   loadTextLabel: {fileID: 499592099}
   progressBar: {fileID: 2053111952}
+  MenuBarBehaviour: {fileID: 811511531}
 --- !u!114 &1173555222
 MonoBehaviour:
   m_ObjectHideFlags: 0
