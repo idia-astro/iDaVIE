@@ -45,7 +45,7 @@ namespace DataFeatures
         public string[] RawDataTypes { get; set; }
         public string FileName { get; private set; }
 
-        public string[] flags { get; set; }
+        public string[] Flags { get; set; }
 
         private bool importFlags;
         public int Index;
@@ -356,12 +356,12 @@ namespace DataFeatures
             }
             else
                 importFlags = false;
-            if (importFlags)
-                flags = new string[table.Rows.Count];
-            FeatureNames = new string[table.Rows.Count];
-            FeaturePositions = new Vector3[table.Rows.Count];
-            BoxMinPositions = new Vector3[table.Rows.Count];
-            BoxMaxPositions = new Vector3[table.Rows.Count];
+
+            var flags = new string[table.Rows.Count];
+            var featureNames = new string[table.Rows.Count];
+            var featurePositions = new Vector3[table.Rows.Count];
+            var boxMinPositions = new Vector3[table.Rows.Count];
+            var boxMaxPositions = new Vector3[table.Rows.Count];
             double xPhys, yPhys, zPhys;
             xPhys = yPhys = zPhys = double.NaN;
             for (int row = 0; row < table.Rows.Count; row++)   // For each row (feature)...
@@ -408,12 +408,12 @@ namespace DataFeatures
                     {
                         double x,y,z;
                         AstTool.Transform3D(astFrameSet, xPhys, yPhys, zPhys, 1, out x, out y, out z);
-                        FeaturePositions[row].Set((float)x, (float)y, (float)z);
+                        featurePositions[row].Set((float)x, (float)y, (float)z);
                     }
                     else
-                        FeaturePositions[row].Set((float)xPhys, (float)yPhys, (float)zPhys);
-                    BoxMinPositions[row].Set(FeaturePositions[row].x - 1, FeaturePositions[row].y - 1, FeaturePositions[row].z - 1);
-                    BoxMaxPositions[row].Set(FeaturePositions[row].x + 1, FeaturePositions[row].y + 1, FeaturePositions[row].z + 1);
+                        featurePositions[row].Set((float)xPhys, (float)yPhys, (float)zPhys);
+                    boxMinPositions[row].Set(featurePositions[row].x - 1, featurePositions[row].y - 1, featurePositions[row].z - 1);
+                    boxMaxPositions[row].Set(featurePositions[row].x + 1, featurePositions[row].y + 1, featurePositions[row].z + 1);
                 }
                 // ...get box bounds if they exist
                 else if (containsBoxes)
@@ -424,22 +424,22 @@ namespace DataFeatures
                         switch (i)
                         {
                             case 0:
-                                BoxMinPositions[row].x = value;
+                                boxMinPositions[row].x = value;
                                 break;
                             case 1:
-                                BoxMaxPositions[row].x = value;
+                                boxMaxPositions[row].x = value;
                                 break;
                             case 2:
-                                BoxMinPositions[row].y = value;
+                                boxMinPositions[row].y = value;
                                 break;
                             case 3:
-                                BoxMaxPositions[row].y = value;
+                                boxMaxPositions[row].y = value;
                                 break;
                             case 4:
-                                BoxMinPositions[row].z = value;
+                                boxMinPositions[row].z = value;
                                 break;
                             case 5:
-                                BoxMaxPositions[row].z = value;
+                                boxMaxPositions[row].z = value;
                                 break;
                         }
                     }
@@ -453,11 +453,11 @@ namespace DataFeatures
                 if (nameIndex >= 0)
                 {
                     string value = (string)table.Rows[row].ColumnData[nameIndex];
-                    FeatureNames[row] = value;
+                    featureNames[row] = value;
                 }
                 else
                 {
-                    FeatureNames[row] = $"Source #{row + 1}";
+                    featureNames[row] = $"Source #{row + 1}";
                 }
             }
             
@@ -468,24 +468,63 @@ namespace DataFeatures
                 Vector3 cornerMin, cornerMax;
                 for (int i = 0; i < table.Rows.Count; i++)
                 {
-                    cornerMin = BoxMinPositions[i];
-                    cornerMax = BoxMaxPositions[i];
+                    cornerMin = boxMinPositions[i];
+                    cornerMax = boxMaxPositions[i];
                     var flag = (importFlags) ? flags[i] : "";
-                    var featureToAdd = new Feature(cornerMin, cornerMax, FeatureColor, FeatureNames[i], flag, i, i,
+                    var featureToAdd = new Feature(cornerMin, cornerMax, FeatureColor, featureNames[i], flag, i, i,
                         featureRawData[i].ToArray(), false);
                     featureToAdd.FeatureSetParent = this;
-                    if (!(excludeExternal && (featureToAdd.Center.x < 0 ||
-                                              featureToAdd.Center.x > VolumeRenderer.Data.XDim ||
-                                              featureToAdd.Center.y < 0 ||
-                                              featureToAdd.Center.y > VolumeRenderer.Data.YDim ||
-                                              featureToAdd.Center.z < 0 ||
-                                              featureToAdd.Center.z > VolumeRenderer.Data.ZDim)))
+                    if (!(excludeExternal && FeatureIsWithinVolume(featureToAdd, VolumeRenderer)))
                     {
-                        FeatureList.Add(featureToAdd);          //TODO: why isn't this AddFeature()?
+                        FeatureList.Add(featureToAdd);
                     }
+                }
+
+                if (excludeExternal)
+                {
+                    FeatureNames = new string[FeatureList.Count];
+                    FeaturePositions = new Vector3[FeatureList.Count];
+                    BoxMinPositions = new Vector3[FeatureList.Count];
+                    BoxMaxPositions = new Vector3[FeatureList.Count];
+                    if (importFlags)
+                    {
+                        Flags = new string[FeatureList.Count];
+                    }
+                    for (int i = 0; i < FeatureList.Count; i++)
+                    {
+                        FeatureNames[i] = featureNames[FeatureList[i].Index];
+                        FeaturePositions[i] = featurePositions[FeatureList[i].Index];
+                        BoxMinPositions[i] = boxMinPositions[FeatureList[i].Index];
+                        BoxMaxPositions[i] = boxMaxPositions[FeatureList[i].Index];
+                        if (importFlags)
+                        {
+                            Flags[i] = flags[FeatureList[i].Index];
+                        }
+                        FeatureList[i].Index = i;   // set the feature's index to the new index
+                    }
+                }
+                else
+                {
+                    FeatureNames = featureNames;
+                    FeaturePositions = featurePositions;
+                    BoxMinPositions = boxMinPositions;
+                    BoxMaxPositions = boxMaxPositions;
                 }
             }
             FeatureMenuScrollerDataSource.InitData();
+        }
+        
+        /// <summary>
+        /// Method checks if the given feature's center point is within the given volume's bounds
+        /// </summary>
+        /// <param name="feature"></param>
+        /// <param name="volume"></param>
+        /// <returns></returns>
+        public static bool FeatureIsWithinVolume(Feature feature, VolumeDataSetRenderer volume)
+        {
+            return (feature.Center.x < 0 || feature.Center.x > volume.Data.XDim ||
+                feature.Center.y < 0 || feature.Center.y > volume.Data.YDim || 
+                feature.Center.z < 0 || feature.Center.z > volume.Data.ZDim);
         }
         
         void OnRenderObject()
