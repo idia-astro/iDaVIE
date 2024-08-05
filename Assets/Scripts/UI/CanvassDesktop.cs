@@ -74,6 +74,7 @@ public class CanvassDesktop : MonoBehaviour
     protected Coroutine loadCubeCoroutine;
     protected Coroutine showLoadDialogCoroutine;
 
+    public MenuBarBehaviour MenuBarBehaviour;
 
     private void Awake()
     {
@@ -519,6 +520,9 @@ public class CanvassDesktop : MonoBehaviour
         StartCoroutine(LoadCubeCoroutine(imagePath, maskPath));
     }
 
+    /// <summary>
+    /// Method for all the necessary post loading actions after loading a cube from the file system
+    /// </summary>
     private void postLoadFileFileSystem()
     {
         if (loadCubeCoroutine != null)
@@ -559,6 +563,16 @@ public class CanvassDesktop : MonoBehaviour
 
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Stats_Button").GetComponent<Button>()
             .onClick.Invoke();
+        
+        // Enable the desktop GUI VR View as default left panel content to display
+        if (MenuBarBehaviour.AboutSection.activeSelf)
+        {
+            MenuBarBehaviour.ToggleAboutSection();
+        }
+        if (!MenuBarBehaviour.VRViewDisplay.activeSelf)
+        {
+            MenuBarBehaviour.ToggleVRViewDisplay();
+        }
     }
 
     public bool CheckMemSpaceForCubes(string _imagePath, string _maskPath)
