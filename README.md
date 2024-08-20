@@ -52,7 +52,7 @@ The development of the iDaVIE project is a joint effort from the following insti
 ![INAF logo](https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/INAF_logo.png)
 #### Citing iDaVIE
 Please use the following DOI as a citation when using iDaVIE for publications:
-[<img src="https://zenodo.org/badge/DOI/10.5281/zenodo.4614116.svg"](https://doi.org/10.5281/zenodo.4614116)
+[<img src="https://zenodo.org/badge/DOI/10.5281/zenodo.4614116.svg">](https://doi.org/10.5281/zenodo.4614116)
 #### Other references
 Other relevant references are:
 
