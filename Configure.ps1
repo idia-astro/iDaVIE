@@ -113,7 +113,7 @@ if (Test-Path ".\scroll_rect.unitypackage")
 else
 {
 	Write-Progress "fetching scroll_rect.unitypackage... " -Status "50% complete" -PercentComplete 50
-	Invoke-WebRequest https://github.com/CosmicElysium/Recyclable-Scroll-Rect/releases/download/v1.0/recyclable-scroll-rect.unitypackage -OutFile scroll_rect.unitypackage
+	Invoke-WebRequest https://github.com/idia-astro/Recyclable-Scroll-Rect/releases/download/v1.0/recyclable-scroll-rect.unitypackage -OutFile scroll_rect.unitypackage
 	Write-Progress "Done." -Status "75% complete" -PercentComplete 75
 }
 
@@ -124,7 +124,7 @@ if (Test-Path ".\file_browser.unitypackage")
 else
 {
 	Write-Progress "fetching file_browser.unitypackage... " -Status "75% complete" -PercentComplete 75
-	Invoke-WebRequest https://github.com/gkngkc/UnityStandaloneFileBrowser/releases/download/1.2/StandaloneFileBrowser.unitypackage -OutFile file_browser.unitypackage
+	Invoke-WebRequest https://github.com/idia-astro/UnityStandaloneFileBrowser/releases/download/1.2/StandaloneFileBrowser.unitypackage -OutFile file_browser.unitypackage
 	Write-Progress "Done." -Status "100% complete" -PercentComplete 100
 }
 
