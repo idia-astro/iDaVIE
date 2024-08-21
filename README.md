@@ -61,7 +61,6 @@ Other relevant references are:
 * "Virtual Reality and Immersive Collaborative Environments: the New Frontier for Big Data Visualisation", [Sivitilli et al. 2021 (in press.)](https://ui.adsabs.harvard.edu/abs/2021arXiv210314397S/abstract)
 
 #### Acknowledgements
-----------------
 * The Inter-University Institute for Data Intensive Astronomy is a partnership of the University of Cape Town, the University of Pretoria, and the University of the Western Cape. 
 * This project received support from the National Research Foundation under the Research Career Advancement and South African Research Chair Initiative programs (SARChI).
 * This project received support from the Italian Ministry of Foreign Affairs and International Cooperation (MAECI Grant Number ZA18GR02) and the South African NRF (Grant Number 113121) as part of the ISARP RADIOSKY2020 Joint Research Scheme.
