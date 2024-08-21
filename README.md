@@ -29,13 +29,17 @@ Note: All of these headsets should work, but you might have to change the contro
 In the IDIA Visualisation Lab we use the Meta Quest 2 and the Meta Rift S headsets, with a dedicated machine in the lab and GPU-powered laptops while on the road.
 
 **Software:**
-In order to run iDaVIE-v the following software needs to be installed:
+In order to run iDaVIE, the following software needs to be installed:
 
-Windows 10 (version 1903 or newer) is required.
-The SteamVR runtime is required. Note that in order to start SteamVR, some headsets (e.g., Meta headsets) require additional software to be installed. Instructions should be provided with the headset's manual.
-The latest 64-bit (X64) [Visual C++ redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe) needs to be installed.
+* Windows 10 (version 1903 or newer) is required.
+* The SteamVR runtime is required. Note that in order to start SteamVR, some headsets (e.g., Meta headsets) require additional software to be installed. Instructions should be provided with the headset's manual.
+* The latest 64-bit (X64) [Visual C++ redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe) needs to be installed.
 
 ### Contributing
+Full documentation is available in our [contribution document](https://github.com/idia-astro/iDaVIE/blob/main/CONTRIBUTE.md). To summarise, we welcome contributions in the form of:
+1. Reporting bugs or requesting new features by [creating an issue](https://github.com/idia-astro/idia_unity_vr/issues).
+2. Adding your own contributions through a [pull request](https://github.com/idia-astro/iDaVIE/compare).
+3. Assisting other users by participating in the [iDaVIE discussions](https://github.com/idia-astro/iDaVIE/discussions).
 
 ### Future Plans
 
