@@ -1,7 +1,6 @@
 <#
-	Automated build script for i-DaVIE-v Unity project. Currently, assumes vcpkg is installed, and that starlink-ast:x64-windows and cfitsio:x64-windows
-	packages are installed via vcpkg.
-	Run this script to download the various Unity packages needed, configure the project, and build the final executable.
+	Automated build script to configure iDaVIE for building.
+	Run this script to download starlink-ast and cfitsio packages, the various Unity packages needed, install and configure the project before the manual build.
 	Usage: 
 		.\build.ps1 <path/to/vcpkg_toolchain> <path/to/unityEXE> [path/to/buildFolder]
 		.\build.ps1 -vcpkg|vcpkgcmake <path/to/vcpkg_toolchain> -u|unity <path/to/unityEXE> -d|destination [path/to/buildFolder]
