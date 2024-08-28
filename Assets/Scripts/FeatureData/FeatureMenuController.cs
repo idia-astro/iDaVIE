@@ -264,6 +264,7 @@ public class FeatureMenuController : MonoBehaviour
                     nextColorIndex  = 0;
                 }
                 nextColor = FeatureSetManager.FeatureColors[nextColorIndex];
+                nextColorIndex++;
             } while (forbiddenColors.Contains(nextColor));
         }
         _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor = nextColor;
