@@ -464,8 +464,8 @@ namespace VolumeData
                     {
                         // Update existing feature's bounds
                         var feature = _maskFeatureSet.FeatureList[index];
-                        var boxMin = new Vector3(Math.Max(sourceStats.minX, 0) , Math.Max(sourceStats.minY, 0), Math.Max(sourceStats.minZ, 0));
-                        var boxMax = new Vector3(Math.Min(sourceStats.maxX + 1, XDim), Math.Min(sourceStats.maxY + 1, YDim), Math.Min(sourceStats.maxZ + 1, ZDim));
+                        var boxMin = new Vector3(Math.Max(sourceStats.minX, 1) , Math.Max(sourceStats.minY, 1), Math.Max(sourceStats.minZ, 1));
+                        var boxMax = new Vector3(Math.Min(sourceStats.maxX, XDim), Math.Min(sourceStats.maxY, YDim), Math.Min(sourceStats.maxZ, ZDim));
                         feature.SetBounds(boxMin, boxMax);
                         feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
                         _maskFeatureSet.FeatureManager.NeedToRespawnMenuList = true;

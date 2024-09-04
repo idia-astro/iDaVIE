@@ -107,9 +107,9 @@ namespace DataFeatures
             VolumeRenderer = FeatureManager.VolumeRenderer;
         }
 
-
-        
-
+        /// <summary>
+        /// On every frame, rerender all features marked as dirty. If feature is changed, it is supposed to be marked as dirty.
+        /// </summary>
         public void Update()
         {
             if (_dirtyFeatures.Count > 0)
@@ -190,6 +190,10 @@ namespace DataFeatures
             }
         }
 
+        /// <summary>
+        /// Marks a feature as changed and needing to be rerendered on the next frame update.
+        /// </summary>
+        /// <param name="index">Index of the feature to be marked as dirty.</param>
         public void SetFeatureAsDirty(int index = -1)
         {
             // All Sources are dirty if the first element is -1

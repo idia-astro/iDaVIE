@@ -129,55 +129,28 @@ else
 
 Write-Host "Packages downloaded!"
 Write-Host "Importing packages into project..."
-if (Test-Path ".\unitypackage_extractor-x64.zip")
-{
-	Write-Progress "unitypackage_extractor-x64.zip exists already" -Status "100% complete" -PercentComplete 100
-}
-else
-{
-	Write-Progress "fetching unitypackage_extractor-x64.zip... "
-	Invoke-WebRequest https://github.com/Cobertos/unitypackage_extractor/releases/download/v1.1.0/unitypackage_extractor-x64.zip -OutFile unitypackage_extractor-x64.zip
-	Write-Progress "Done." -Status "100% complete" -PercentComplete 100
-}
-
-Expand-Archive ".\unitypackage_extractor-x64.zip" -DestinationPath .
-Remove-Item ".\unitypackage_extractor-x64.zip"
-if (Test-Path "Assets")
-{
-    Write-Host "extract target folder Exists"
-}
-else
-{
-    New-Item "Assets" -ItemType Directory
-    Write-Host "extract target folder created successfully"
-}
-
-Write-Progress "Extracting steamvr.unitypackage... " -Status "0% complete" -PercentComplete 0
-Start-Process ".\extractor.exe" -Wait -ArgumentList ".\steamvr.unitypackage ."
-Write-Progress "steamvr.unitypackage extracted"
-
-Write-Progress "Extracting nuget.unitypackage... " -Status "20% complete" -PercentComplete 20
-Start-Process ".\extractor.exe" -Wait -ArgumentList ".\nuget.unitypackage ."
-Write-Progress "nuget.unitypackage extracted"
-
-Write-Progress "Extracting file_browser.unitypackage... " -Status "40% complete" -PercentComplete 40
-Start-Process ".\extractor.exe" -Wait -ArgumentList ".\file_browser.unitypackage ."
-Write-Progress "file_browser.unitypackage extracted"
-
-Write-Progress "Extracting scroll_rect.unitypackage... " -Status "60% complete" -PercentComplete 60
-Start-Process ".\extractor.exe" -Wait -ArgumentList ".\scroll_rect.unitypackage ."
-Write-Progress "scroll_rect.unitypackage extracted" -Status "80% complete" -PercentComplete 80
-
-Remove-Item ".\extractor.exe"
-
-Copy-Item -Path ".\Assets\*" -Destination "..\Assets" -Recurse -Force
-Remove-Item ".\Assets\*" -Recurse -Force
 
 Set-Location ..
 
-Write-Progress "Importing TextMeshPro package... " -Status "80% complete" -PercentComplete 80
-Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import.log -importPackage $PSScriptRoot\plugin_build\textMeshPro-3.0.6.unitypackage -quit"
-Write-Progress "TextMeshPro package imported" -Status "100% complete" -PercentComplete 100
+Write-Progress "Importing TextMeshPro package... " -Status "0% complete" -PercentComplete 0
+Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import0.log -importPackage $PSScriptRoot\plugin_build\textMeshPro-3.0.6.unitypackage -quit"
+Write-Progress "TextMeshPro package imported" -Status "20% complete" -PercentComplete 20
+
+Write-Progress "Importing SteamVR package... " -Status "20% complete" -PercentComplete 20
+Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import1.log -importPackage $PSScriptRoot\plugin_build\steamvr.unitypackage -quit"
+Write-Progress "SteamVR package imported" -Status "40% complete" -PercentComplete 40
+
+Write-Progress "Extracting nuget.unitypackage... " -Status "40% complete" -PercentComplete 40
+Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import2.log -importPackage $PSScriptRoot\plugin_build\nuget.unitypackage -quit"
+Write-Progress "NuGet package imported" -Status "60% complete" -PercentComplete 60
+
+Write-Progress "Extracting file_browser.unitypackage... " -Status "60% complete" -PercentComplete 60
+Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import3.log -importPackage $PSScriptRoot\plugin_build\file_browser.unitypackage -quit"
+Write-Progress "File_browser package imported" -Status "80% complete" -PercentComplete 80
+
+Write-Progress "Extracting scroll_rect.unitypackage... " -Status "80% complete" -PercentComplete 80
+Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import4.log -importPackage $PSScriptRoot\plugin_build\scroll_rect.unitypackage -quit"
+Write-Progress "scroll_rect.unitypackage imported" -Status "100% complete" -PercentComplete 100
 
 Write-Host "Packages imported."
 Write-Host "Configuration complete!"
