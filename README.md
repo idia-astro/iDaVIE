@@ -1,5 +1,6 @@
 # iDaVIE
-<p style="text-align:center;">![iDaVIE Logo](https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/iDaVIE_logo.png)</p>
+<p style="text-align:center;"><img src="https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/iDaVIE_logo.png"></p>
+
 ## The immersive Data Visualisation Interactive Explorer
 iDaVIE is a data visualisation tool for 3D volumetric data, with analysis tools aimed at astronomical data in particular.
 
