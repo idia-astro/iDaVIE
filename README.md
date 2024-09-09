@@ -1,5 +1,5 @@
 # iDaVIE
-![iDaVIE Logo](https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/iDaVIE_logo.png)
+<p style="text-align:center;">![iDaVIE Logo](https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/iDaVIE_logo.png)</p>
 ## The immersive Data Visualisation Interactive Explorer
 iDaVIE is a data visualisation tool for 3D volumetric data, with analysis tools aimed at astronomical data in particular.
 
@@ -52,17 +52,19 @@ The development of the iDaVIE project is a joint effort from the following insti
  * [The IDIA Visualisation Laboratory](https://vislab.idia.ac.za)
  * [Osservatorio Astrofisico di Catania, Istituto Nazionale di Astrofisica (INAF-OACT)](https://www.oact.inaf.it)
  * [Osservatorio Astronomico di Cagliari, Istituto Nazionale di Astrofisica (INAF-OACA)](http://www.oa-cagliari.inaf.it/) – testing
+![IDIA logo](https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/IDIA_logo.png)
 ![IDIA Vislab logo](https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/Vislab_logo.png)
 ![INAF logo](https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/INAF_logo.png)
+
 #### Citing iDaVIE
 Please use the following DOI as a citation when using iDaVIE for publications:
-[<img src="https://zenodo.org/badge/DOI/10.5281/zenodo.4614116.svg">](https://doi.org/10.5281/zenodo.4614116)
+[<img src="https://zenodo.org/badge/DOI/10.5281/zenodo.4614116.svg">](https://zenodo.org/doi/10.5281/zenodo.4614115)
 #### Other references
 Other relevant references are:
 
 * "Exploring and Interrogating Astrophysical Data in Virtual Reality", [Jarrett et al. 2021](https://www.sciencedirect.com/science/article/pii/S2213133721000561?via%3Dihub>)
 * "iDaVIE: immersive Data Visualisation Interactive Explorer for volumetric rendering", [Marchetti et al. 2021](https://ui.adsabs.harvard.edu/abs/2020arXiv201211553M/abstract)
-* "Virtual Reality and Immersive Collaborative Environments: the New Frontier for Big Data Visualisation", [Sivitilli et al. 2021 (in press.)](https://ui.adsabs.harvard.edu/abs/2021arXiv210314397S/abstract)
+* "Virtual Reality and Immersive Collaborative Environments: the New Frontier for Big Data Visualisation", [Sivitilli et al. 2021](https://ui.adsabs.harvard.edu/abs/2021arXiv210314397S/abstract)
 
 #### Acknowledgements
 * The Inter-University Institute for Data Intensive Astronomy is a partnership of the University of Cape Town, the University of Pretoria, and the University of the Western Cape. 
