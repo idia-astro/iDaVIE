@@ -18397,8 +18397,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -14.915, y: -1025.9}
-  m_SizeDelta: {x: 816.36, y: 2051.843}
+  m_AnchoredPosition: {x: -14.915009, y: -1700.4235}
+  m_SizeDelta: {x: 816.36, y: 3400.8894}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &462594867
 MonoBehaviour:
@@ -18420,36 +18420,45 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "The mission of iDaVIE:\n\niDaVIE-v is part of the iDaVIE (immersive Data
-    Visualisation Interactive Explorer) software suite which is under development
-    at the Inter-University Institute for Data Intensive Astronomy (IDIA). The iDaVIE-v
-    application has been developed in collaboration with INAF-OACT. The specific
-    goal of iDaVIE-v is to enable the interrogation of data cubes using Virtual Reality
-    Technology. For more details about the iDaVIE software suite development and
-    all its aspects please refer to Jarrett et al. 2021 or visit our website at:\n\nhttps://vislab.idia.ac.za/\n\n\nLicense:\n\niDaVIE
-    is licensed under the GNU Lesser General Public License (LGPL) version 3. This
-    means that you are free to use, modify, and distribute the software, provided
-    that any modifications to the iDaVIE code are also shared under the LGPL license.
-    \n\nThis software also incorporates code from third-party open-source projects.\n\nFor
-    more details, including acknowledgments and license details, please refer to
-    the LICENSE and NOTICE files included on our GitHub repository.\n\n\nDisclaimer:\n\niDaVIE
-    is provided \"as is\", without warranty of any kind, express or implied, including
-    but not limited to the warranties of merchantability, fitness for a particular
-    purpose, and non-infringement. In no event shall the authors or copyright holders
-    be liable for any claim, damages, or other liability, whether in an action of
-    contract, tort, or otherwise, arising from, out of, or in connection with the
-    software or the use or other dealings in the software.\r\n\r\nImportant Safety
-    Information: iDaVIE is a virtual reality (VR) application. Users should be aware
-    that using VR applications can involve risks, including but not limited to disorientation,
-    dizziness, nausea, motion sickness, seizures, eye strain, and other physical,
-    mental, or emotional discomfort. Users should use iDaVIE in a safe environment
-    and take regular breaks to avoid discomfort or injury.\r\n\r\nLiability: The
-    authors and copyright holders of iDaVIE shall not be liable for any injury, bodily
-    harm, or other physical, mental, or emotional damages arising from the use of
-    the software. Users assume all risks associated with the use of VR applications
-    and are advised to follow all safety guidelines and recommendations provided
-    by VR hardware manufacturers.\n\nFor further information, visit our GitHub repository:
-    https://github.com/idia-astro/idia_unity_vr"
+  m_text: "<b>About iDaVIE</b>\r\n\r\niDaVIE (the immersive Data Visualisation Interactive
+    Explorer) was conceived by and is being developed under the custody of the IDIA
+    Visualisation Laboratory. It provides a Virtual Reality experience for data cube
+    exploration. It visualises 3D data in an interaction \u2018box\u2019, a 3D block
+    (or elongated cube) in VR space which allows the user to extract vital feedback
+    information about the enclosed data (including cumulative statistics and historical
+    data).\r\n\r\n\r\n<b>Contributors</b>\r\n\r\nThe development of the iDaVIE project
+    is a joint effort from:\r\n\r\nThe Inter-university Institute for Data Intensive
+    Astronomy (IDIA)\r\nThe IDIA Visualisation Lab\r\nOsservatorio Astrofisico di
+    Catania, Istituto Nazionale di Astrofisica (INAF-OACT)\r\nOsservatorio Astronomico
+    di Cagliari, Istituto Nazionale di Astrofisica (INAF-OACA) \u2013 testing\r\n\r\n\r\n<b>Software
+    citation</b>\r\n\r\nPlease use the following DOI as a citation when using iDaVIE
+    for publications:\r\n\r\nhttps://zenodo.org/records/4614116\r\n\r\n\r\nOther
+    relevant references are:\r\n\r\n\u201CExploring and Interrogating Astrophysical
+    Data in Virtual Reality\u201D, Jarrett et al. 2021\r\n\r\n\u201CiDaVIE: immersive
+    Data Visualisation Interactive Explorer for volumetric rendering\u201D, Marchetti
+    et al. 2021\r\n\r\n\u201CVirtual Reality and Immersive Collaborative Environments:
+    the New Frontier for Big Data Visualisation\u201D, Sivitilli et al. 2021\r\n\r\n\r\n<b>Acknowledgements</b>\r\n\r\nThe
+    Inter-University Institute for Data Intensive Astronomy is a partnership of the
+    University of Cape Town, the University of Pretoria, and the University of the
+    Western Cape.\r\n\r\nThis project received support from the National Research
+    Foundation under the Research Career Advancement and South African Research Chair
+    Initiative programs (SARChI).\r\n\r\nThis project received support from the Italian
+    Ministry of Foreign Affairs and International Cooperation (MAECI Grant Number
+    ZA18GR02) and the South African NRF (Grant Number 113121) as part of the ISARP
+    RADIOSKY2020 Joint Research Scheme.\r\n\r\nThis project received support from
+    the South African Department of Science and Innovation\u2019s National Research
+    Foundation under the ISARP RADIOMAP Joint Research Scheme (DSI-NRF Grant Number
+    150551).\r\n\r\nThe team acknowledges the support from the broad astronomical
+    community for testing the software and providing feedback.\r\n\r\n\r\n<b>Notice</b>\r\n\r\niDaVIE
+    is mainly built using the Unity game engine and with the following third-party
+    libraries or adaptations of third-party libraries:\r\n\r\nSteamVR plug-in\r\n\r\nNVIDIA
+    OpenGL SDK Render to 3D Texture\r\n\r\nNuGet for Unity plug-in\r\n\r\nUnityStandaloneFileBrowser\r\n\r\nRecyclable-Scroll-Rect
+    plug-in\r\n\r\nCFITSIO\r\n\r\nStarlink AST Library\r\n\r\nWorld-wide Telescope
+    VOTable\r\n\r\n\r\nSee our NOTICE file in the source code for full licence information
+    of the third-party libraries we use.\r\n\r\n\r\n<b>Copyright and Licence</b>\r\n\r\nCopyright
+    (C) 2024 IDIA, INAF. This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public License (LGPL) version
+    3 as published by the Free Software Foundation."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -18476,7 +18485,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 29.65
+  m_fontSize: 28.7
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -28804,8 +28813,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 938285848}
   m_HandleRect: {fileID: 938285847}
   m_Direction: 2
-  m_Value: 0.99998415
-  m_Size: 0.3393003
+  m_Value: 0.99999213
+  m_Size: 0.20470849
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -39127,8 +39136,8 @@ RectTransform:
   m_Father: {fileID: 1966172012}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0.66068923}
-  m_AnchorMax: {x: 1, y: 0.9999895}
+  m_AnchorMin: {x: 0, y: 0.79528517}
+  m_AnchorMax: {x: 1, y: 0.9999938}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 20, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -72685,7 +72694,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 845581046}
   m_HandleRect: {fileID: 845581045}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
