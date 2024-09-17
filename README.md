@@ -2,7 +2,7 @@
 <p style="text-align:center;"><img src="https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/iDaVIE_logo.png"></p>
 
 ## The immersive Data Visualisation Interactive Explorer
-iDaVIE is a data visualisation tool for 3D volumetric data, with analysis tools aimed at astronomical data in particular.
+iDaVIE is a data visualisation tool for 3D volumetric data, with analysis tools aimed at astronomical data in particular. It renders 3D volumetric data as a cube within VR space. This provides profound insight for a multitude of scientific disciplines. While our focus has been on astronomical data and the included analysis tools are tailored to that domain, the visualisation on its own provides substantial benefit to other disciplines. This includes 3D models of neurological systems constructed from MRI images and 3D models of ice cores constructed from microscope images. See our [documentation](https://idavie.readthedocs.io/en/latest/multidisciplinary.html) for showcase videos of iDaVIE in use.
 
 ### Installing
 The compiled executable can be downloaded from the GitHub [releases](https://github.com/idia-astro/iDaVIE/releases/latest). Unzip the download and run the executable. The prerequisites to run this tool are described below. Alternatively, the program can be compiled from source, with instructions described in the [BUILD](https://github.com/idia-astro/iDaVIE/blob/main/BUILD.md) file.
@@ -45,7 +45,7 @@ Full documentation is available in our [contribution document](https://github.co
 ### Future Plans
 
 ### About iDaVIE
-iDaVIE (the immersive Data Visualisation Interactive Explorer) was conceived by and is being developed by the IDIA Visualisation Laboratory, who serves as the custodian for this open-source project.
+iDaVIE (the immersive Data Visualisation Interactive Explorer) was conceived by and is being developed by the IDIA Visualisation Laboratory, who serves as the custodian for this open-source project. The documentation for iDaVIE and tutorials can be found on [Read the Docs](https://idavie.readthedocs.io/en/latest/).
 
 #### Contributors
 The development of the iDaVIE project is a joint effort from the following institutes:
@@ -59,13 +59,15 @@ The development of the iDaVIE project is a joint effort from the following insti
 
 #### Citing iDaVIE
 Please use the following DOI as a citation when using iDaVIE for publications:
-[<img src="https://zenodo.org/badge/DOI/10.5281/zenodo.4614116.svg">](https://zenodo.org/doi/10.5281/zenodo.4614115)
+[<img src="https://zenodo.org/badge/DOI/10.5281/zenodo.4614115.svg">](https://zenodo.org/doi/10.5281/zenodo.4614115)
 #### Other references
 Other relevant references are:
 
 * "Exploring and Interrogating Astrophysical Data in Virtual Reality", [Jarrett et al. 2021](https://www.sciencedirect.com/science/article/pii/S2213133721000561?via%3Dihub>)
 * "iDaVIE: immersive Data Visualisation Interactive Explorer for volumetric rendering", [Marchetti et al. 2021](https://ui.adsabs.harvard.edu/abs/2020arXiv201211553M/abstract)
 * "Virtual Reality and Immersive Collaborative Environments: the New Frontier for Big Data Visualisation", [Sivitilli et al. 2021](https://ui.adsabs.harvard.edu/abs/2021arXiv210314397S/abstract)
+
+A library of publications that utilised iDaVIE can be found on the SAO Astrophysics Data System at [this link](https://ui.adsabs.harvard.edu/user/libraries/4GkpXb-OQD2v79CvQuNxRw).
 
 #### Acknowledgements
 * The Inter-University Institute for Data Intensive Astronomy is a partnership of the University of Cape Town, the University of Pretoria, and the University of the Western Cape. 
