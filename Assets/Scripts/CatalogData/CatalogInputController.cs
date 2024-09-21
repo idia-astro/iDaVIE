@@ -456,14 +456,15 @@ public class CatalogInputController : MonoBehaviour
         }
     }
 
-    private VRFamily DetermineVRFamily()
+    private static VRFamily DetermineVRFamily()
     {
-        string vrModel = InputDevices.GetDeviceAtXRNode(XRNode.Head).name.ToLower();
+        string vrModel = SteamVR.instance.hmd_ModelNumber.ToLower();
         if (vrModel.Contains("oculus"))
         {
             return VRFamily.Oculus;
         }
-        if (vrModel.Contains("vive"))
+
+        if (vrModel.Contains("vive") || vrModel.Contains("index"))
         {
             return VRFamily.Vive;
         }
@@ -472,7 +473,7 @@ public class CatalogInputController : MonoBehaviour
         {
             return VRFamily.WindowsMixedReality;
         }
-        
+
         Debug.Log($"Unknown VR model {vrModel}!");
         return VRFamily.Unknown;
     }

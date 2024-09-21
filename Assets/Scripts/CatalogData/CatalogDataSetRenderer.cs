@@ -99,7 +99,7 @@ namespace CatalogData
             _idVignetteFadeStart = Shader.PropertyToID("VignetteFadeStart");
             _idVignetteFadeEnd = Shader.PropertyToID("VignetteFadeEnd");
             _idVignetteIntensity = Shader.PropertyToID("VignetteIntensity");
-            _idVignetteColor = Shader.PropertyToID("VignetteIntensity");
+            _idVignetteColor = Shader.PropertyToID("VignetteColor");
         }
 
         #endregion
