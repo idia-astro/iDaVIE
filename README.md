@@ -45,7 +45,7 @@ Full documentation is available in our [contribution document](https://github.co
 ### Future Plans
 While iDaVIE has many useful features already, there are still many features that would be of significant use to scientists. We have a roadmap that we will continue to direct iDaVIE's development along, and provide an overview of our future plans.
 
-In the **short** term, we list features that we are actively working on and will be included in the next major release. **Medium**-term goals are major feature additions that will require several weeks of dedicated development, with an initial idea or prototype already available. **Long**-term plans are major features that are dreams still, with no concrete plans on how to implement them yet.
+In the **short** term, we list features that we are actively working on and will be included in the next major release. This is not an exhaustive list and will be added to as development progresses. **Medium**-term goals are major feature additions that will require several weeks to months of dedicated development, with an initial idea or prototype already available. **Long**-term plans are major features that are dreams still, with no concrete plans on how to implement them yet.
 #### Short-term
 * Addressing bugs that arise after the release of 1.0.
 * Adding the ability to load a subcube. That is, load a contiguous portion of the cube, specified by the user by providing the bounds of the subcube. This includes a major rework of all file operations. See the relevant [pull request](https://github.com/idia-astro/iDaVIE/pull/320), [branch](https://github.com/idia-astro/iDaVIE/tree/cilliers/fix-issue-307), and [discussion](https://github.com/idia-astro/iDaVIE/discussions/402) for more information.
