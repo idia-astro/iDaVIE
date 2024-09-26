@@ -147,7 +147,7 @@ public class DebugLogging : MonoBehaviour
             new ExtensionFilter("All Files", "*"),
         };
 
-        StandaloneFileBrowser.SaveFilePanelAsync("Save log file", lastPath, "i-DaVIE_Debug.log", extensions, (string dest) =>
+        StandaloneFileBrowser.SaveFilePanelAsync("Save log file", lastPath, "iDaVIE_Debug.log", extensions, (string dest) =>
         {
             if (dest.Equals(""))
                 return;
