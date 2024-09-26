@@ -12,7 +12,7 @@ namespace VolumeData
     public class Config
     {
         [JsonProperty("$schema")]
-        private readonly string _schemaUri = "https://idavie.readthedocs.io/en/latest/_static/idavie_config_1.json";
+        private readonly string _schemaUri = "https://idavie.readthedocs.io/en/latest/_static/idavie_config_2.json";
         
         public bool maxModeDownsampling = true;
         public bool foveatedRendering = true;
