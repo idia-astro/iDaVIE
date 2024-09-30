@@ -1,6 +1,6 @@
 # Contributing to the iDaVIE project
 
-Thank you for your interest in helping iDaVIE become better. We gladly accept contributions from anyone, whether it is a bug fix or a new feature. Please note that the existing issues on the repository are, except for those noted otherwise, considered minor issues or minor feature requests.
+Thank you for your interest in helping iDaVIE improve. We gladly accept contributions from anyone, whether it is a bug fix or a new feature. Please note that the existing issues on the repository are, except for those noted otherwise, considered minor issues or minor feature requests.
 
 ## Getting started
 There are several ways to contribute to the development of iDaVIE.
