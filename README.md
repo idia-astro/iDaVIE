@@ -25,7 +25,7 @@ As a VR application, iDaVIE requires a VR headset to operate. Any VR headset com
  - Valve Index
  - Samsung Odyssey
 
-Note: All of these headsets should work, but you might have to change the control bindings in the SteamVR interface.
+Note: All of these headsets should work, but you might have to [change the control bindings](https://steamcommunity.com/sharedfiles/filedetails/?id=2029205314) in the SteamVR interface.
 
 In the IDIA Visualisation Lab we use the Meta Quest 2 and the Meta Rift S headsets, with a dedicated machine in the lab and GPU-powered laptops while on the road.
 
@@ -43,13 +43,13 @@ Full documentation is available in our [contribution document](https://github.co
 3. Assisting other users by participating in the [iDaVIE discussions](https://github.com/idia-astro/iDaVIE/discussions).
 
 ### Future Plans
-While iDaVIE has many useful features already, there are still many features that would be of significant use to scientists. We have a roadmap that we will continue to direct iDaVIE's development along, and provide an overview of our future plans.
+While iDaVIE has many useful features already, there are still many features that would be of significant use to researchers, both in astronomy as well as the broader scientific community. We therefore have a roadmap that will continue to direct iDaVIE's development along, and provide an overview of our future plans.
 
 In the **short** term, we list features that we are actively working on and will be included in the next major release. This is not an exhaustive list and will be added to as development progresses. **Medium**-term goals are major feature additions that will require several weeks to months of dedicated development, with an initial idea or prototype already available. **Long**-term plans are major features that are dreams still, with no concrete plans on how to implement them yet.
 #### Short-term
-* Addressing bugs that arise after the release of 1.0.
-* Adding the ability to load a subcube. That is, load a contiguous portion of the cube, specified by the user by providing the bounds of the subcube. This includes a major rework of all file operations. This will allow users to use less memory when viewing large cubes, and could result in faster load times. See the relevant [pull request](https://github.com/idia-astro/iDaVIE/pull/320), [branch](https://github.com/idia-astro/iDaVIE/tree/cilliers/fix-issue-307), and [discussion](https://github.com/idia-astro/iDaVIE/discussions/402) for more information.
-* Adding the ability to select a different HDU (rather than the first). Some instruments, noticeably integral field spectrographs (IFUs) such as MUSE, NIRSpec, or MIRI, produce cubes where the data is stored in the second HDU. To load this, the rework mentioned for adding subcubes is required. Therefore it will be added along with that feature. See the relevant [issue](https://github.com/idia-astro/iDaVIE/issues/290) and [branch](https://github.com/idia-astro/iDaVIE/tree/alex/hdu_selection) for more information.
+* Address bugs that arise after the release of 1.0.
+* Add the ability to load a subcube. That is, load a contiguous portion of the cube, specified by the user by providing the bounds of the subcube. This includes a major rework of all file operations. This will allow users to use less memory when viewing large cubes, and could result in faster load times. See the relevant [pull request](https://github.com/idia-astro/iDaVIE/pull/320), [branch](https://github.com/idia-astro/iDaVIE/tree/cilliers/fix-issue-307), and [discussion](https://github.com/idia-astro/iDaVIE/discussions/402) for more information.
+* Add the ability to select a different HDU (rather than the default first). Some instruments, noticeably integral field spectrographs (IFUs) such as MUSE, NIRSpec, or MIRI, produce cubes where the data is stored in the second HDU. To load this, the rework mentioned for adding subcubes is required. Therefore it will be added along with that feature. See the relevant [issue](https://github.com/idia-astro/iDaVIE/issues/290) and [branch](https://github.com/idia-astro/iDaVIE/tree/alex/hdu_selection) for more information.
 
 #### Medium-term
 * Allow users to switch between rendering for emission or absorption. At the moment, the rendering shader (a ray-marching algorithm) samples values along the ray and returns either the maximum or the average value. To account for absorption in the foreground, a new shader will have to be developed, possibly based on [radiative transfer](https://en.wikipedia.org/wiki/Radiative_transfer) equations. See the relevant [issue](https://github.com/idia-astro/iDaVIE/issues/256) and [discussion](https://github.com/idia-astro/iDaVIE/discussions/403) for more information.
@@ -59,11 +59,11 @@ In the **short** term, we list features that we are actively working on and will
 * Separate the visualisation from the analysis tools. At the moment, much of the radio astronomy analysis tools and the visualisation are hardcoded together, such as the menus. The actual analysis code is contained within a `.dll` plugin. Unity allows for dynamically created menus (see the generic popups in the subcube [pull request](https://github.com/idia-astro/iDaVIE/pull/320)), which opens the possibility of moving all analysis tools into a separate plugin, while the visualisation code remains as is. Creators of the analysis tools can then potentially specify their menus through a script or API file, while iDaVIE (the visualisation tool) creates the menus dynamically from prefabs. More work will be required to look at how Unity deals with dynamic code, as well as a major refactor once the framework is made possible. This will be of significacnt use in the multidisciplinary domain, allowing the end user to download iDaVIE the visualisation tool and the analysis plugin relevant to their field. See the related [issue](https://github.com/idia-astro/iDaVIE/issues/405) and [discussion](https://github.com/idia-astro/iDaVIE/discussions/408) for more information.
 
 #### Long-term
-* Integrating a Python console into the application.
-* Adding additional visualisation modes, such as isocontours, for example.
-* Creating a multiplayer or spectator mode. For spectator mode, one user will be the controller, and any subsequent user will only see the cube as the controller sees it, though they can move around separately.
-* Integrating a VO system, allowing for a dynamic retrieval of images from data catalogues in other wavelengths for the patch of sky corresponding to the currently loaded cube. This will require sending cutout requests to the servers hosting said catalogues, which might require authentication.
-* Visualising multiple cubes simultaneously, or visualising a time-series. This will require significant work to be performant, given the size of existing cubes and the bottleneck provided by limited memory.
+* Integrate a Python console into the application. The idea will be to have a PYTHON tab in the desktop GUI where the user could interact with the console. The Python interpreter will have access to different states of the iDaVIE session through an API that will allow both reading states (e.g. user location, source information, and the loaded cube data) and executing actions (e.g. transporting user, drawing adding new ROI as sources, or reloading the cube with a filter applied). There will also be the ability run custom Python scripts either in the GUI or by voice command.
+* Add additional visualisation techniques, (e.g. isocontours, blinking between cubes).
+* Create an online VR multiplayer or desktop spectator mode. For spectator mode, one user will be the director, and any subsequent user will only see the cube as the director sees it, though they can move around separately. This would also expand to our iDaVIE:VR2Dome digital planetarium spectator mode that we have recently prototyped. 
+* Integrate a VO system, allowing for a dynamic retrieval of images from data catalogues in other wavelengths for the patch of sky corresponding to the currently loaded cube. This will require sending cutout requests to the servers hosting said catalogues, which might require authentication.
+* Visualise multiple cubes simultaneously, or visualising a time-series. This will require significant work to be performant, given the size of existing cubes and the bottleneck provided by limited memory.
 * Allow for state or workspace saving. This is a fairly standard feature in many visualisation software (such as [CARTA](https://cartavis.org/)), and would be good to have for iDaVIE. This will require a careful design to take care of what is saved, and how to call the relevant functions when loading the saved state.
 
 ### About iDaVIE
