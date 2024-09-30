@@ -32,15 +32,15 @@ Unfortunately, due to the limitations on VR headset drivers on Unix operating sy
 6. Generate SteamVR actions
     * Open iDaVIE in the Unity Editor.
     * Under **Window->SteamVR Input**, click the **Save and generate** button.
-    ![Window->SteamVR Input](https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/build/Build_SteamVRInput_1.png)
+    ![Window->SteamVR Input](https://github.com/idia-astro/iDaVIE/blob/main/.github/static/build/Build_SteamVRInput_1.png)
     ![Save and generate SteamVR actions](https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/build/Build_SteamVRInput_2.png)
   
 7. Build iDaVIE
     * Open iDaVIE in the Unity Editor.
     * Open the build settings menu under **File->Build Settings**.
-    ![Open build settings](https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/build/Build_Build_1.png)
+    ![Open build settings](https://github.com/idia-astro/iDaVIE/blob/main/.github/static/build/Build_Build_1.png)
     * Click on the Player Settings button on the bottom left.
-    ![Open Player settings](https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/build/Build_Build_2.png)
+    ![Open Player settings](https://github.com/idia-astro/iDaVIE/blob/main/.github/static/build/Build_Build_2.png)
     * Under XR Plug-in Management (scroll down on the left), make sure that OpenVR Loader is selected in the list of Plug-in Providers.
-    ![Select OpenVR Loader](https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/build/Build_Build_3.png)
+    ![Select OpenVR Loader](https://github.com/idia-astro/iDaVIE/blob/main/.github/static/build/Build_Build_3.png)
     * Click the **Build** button and select your destination folder.
