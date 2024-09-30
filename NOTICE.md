@@ -1,7 +1,10 @@
 NOTICE
 ======
 
-This project, immersive Data Visualisation Interactive Explorer (iDaVIE), includes code from the following third-party projects:
+immersive Data Visualisation Interactive Explorer (iDaVIE)
+Copyright (C) 2024 IDIA, INAF-OACT.
+
+This project, iDaVIE, includes code from the following third-party projects:
 
 1) Ray marching fragment shader:
 
