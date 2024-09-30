@@ -1,5 +1,5 @@
 # iDaVIE
-<p style="text-align:center;"><img src="https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/iDaVIE_logo.png"></p>
+<p style="text-align:center;"><img src="https://github.com/idia-astro/iDaVIE/blob/main/.github/static/iDaVIE_logo.png"></p>
 
 ## The immersive Data Visualisation Interactive Explorer
 iDaVIE is a data visualisation tool for 3D volumetric data, with analysis tools aimed at astronomical data in particular. It renders 3D volumetric data as a cube within VR space. This provides profound insight for a multitude of scientific disciplines. While our focus has been on astronomical data and the included analysis tools are tailored to that domain, the visualisation on its own provides substantial benefit to other disciplines. This includes 3D models of neurological systems constructed from MRI images and 3D models of ice cores constructed from microscope images. See our [documentation](https://idavie.readthedocs.io/en/latest/multidisciplinary.html) for showcase videos of iDaVIE in use.
