@@ -2,7 +2,7 @@
 // http://developer.download.nvidia.com/SDK/10/opengl/samples.html
 //
 // iDaVIE (immersive Data Visualisation Interactive Explorer)
-// Copyright (C) 2024 Inter-University Institute for Data Intensive Astronomy
+// Copyright (C) 2024 IDIA, INAF-OACT
 //
 // This file is part of the iDaVIE project.
 //
