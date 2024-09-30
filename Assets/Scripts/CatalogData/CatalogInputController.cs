@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.XR;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
+using VolumeData;
 using VRHand = Valve.VR.InteractionSystem.Hand;
 
 [RequireComponent(typeof(Player))]
@@ -65,6 +66,7 @@ public class CatalogInputController : MonoBehaviour
     // Vignetting
     private float _currentVignetteIntensity = 0;
     private float _targetVignetteIntensity = 0;
+    private bool _vignetteEnabled = true;
 
     // VR-family dependent values
     private VRFamily _vrFamily;
@@ -145,6 +147,10 @@ public class CatalogInputController : MonoBehaviour
         _startGripCenter = Vector3.zero;
 
         _inputState = InputState.Idle;
+        
+        // Set whether the vignette is enabled
+        // TODO: remove the dependency on VolumeData namespace
+        _vignetteEnabled = Config.Instance.tunnellingVignetteOn;
     }
 
     private void OnDisable()
@@ -250,7 +256,12 @@ public class CatalogInputController : MonoBehaviour
     private void Update()
     {
         // Common update functions
-        UpdateVignette();
+
+        if (_vignetteEnabled)
+        {
+            UpdateVignette();
+        }
+
         if (Camera.current)
         {
             Camera.current.depthTextureMode = DepthTextureMode.Depth;
