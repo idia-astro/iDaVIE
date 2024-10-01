@@ -1,4 +1,25 @@
-﻿using System;
+﻿/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
+using System;
 using System.Collections.Generic;
 using VolumeData;
 using VoTableReader;
@@ -86,9 +107,9 @@ namespace DataFeatures
             VolumeRenderer = FeatureManager.VolumeRenderer;
         }
 
-
-        
-
+        /// <summary>
+        /// On every frame, rerender all features marked as dirty. If feature is changed, it is supposed to be marked as dirty.
+        /// </summary>
         public void Update()
         {
             if (_dirtyFeatures.Count > 0)
@@ -169,6 +190,10 @@ namespace DataFeatures
             }
         }
 
+        /// <summary>
+        /// Marks a feature as changed and needing to be rerendered on the next frame update.
+        /// </summary>
+        /// <param name="index">Index of the feature to be marked as dirty.</param>
         public void SetFeatureAsDirty(int index = -1)
         {
             // All Sources are dirty if the first element is -1

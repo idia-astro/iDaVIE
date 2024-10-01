@@ -1,3 +1,24 @@
+/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -443,8 +464,8 @@ namespace VolumeData
                     {
                         // Update existing feature's bounds
                         var feature = _maskFeatureSet.FeatureList[index];
-                        var boxMin = new Vector3(Math.Max(sourceStats.minX, 0) , Math.Max(sourceStats.minY, 0), Math.Max(sourceStats.minZ, 0));
-                        var boxMax = new Vector3(Math.Min(sourceStats.maxX + 1, XDim), Math.Min(sourceStats.maxY + 1, YDim), Math.Min(sourceStats.maxZ + 1, ZDim));
+                        var boxMin = new Vector3(Math.Max(sourceStats.minX, 1) , Math.Max(sourceStats.minY, 1), Math.Max(sourceStats.minZ, 1));
+                        var boxMax = new Vector3(Math.Min(sourceStats.maxX, XDim), Math.Min(sourceStats.maxY, YDim), Math.Min(sourceStats.maxZ, ZDim));
                         feature.SetBounds(boxMin, boxMax);
                         feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
                         _maskFeatureSet.FeatureManager.NeedToRespawnMenuList = true;
