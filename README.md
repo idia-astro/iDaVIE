@@ -37,7 +37,7 @@ In order to run iDaVIE, the following software needs to be installed:
 * The latest 64-bit (X64) [Visual C++ redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe) needs to be installed.
 
 ### Contributing
-Full documentation is available in our [contribution document](https://github.com/idia-astro/iDaVIE/blob/main/CONTRIBUTE.md). To summarise, we welcome contributions in the form of:
+Full documentation is available in our [contribution document](https://github.com/idia-astro/iDaVIE/blob/main/CONTRIBUTING.md). To summarise, we welcome contributions in the form of:
 1. Reporting bugs or requesting new features by [creating an issue](https://github.com/idia-astro/idia_unity_vr/issues).
 2. Adding your own contributions through a [pull request](https://github.com/idia-astro/iDaVIE/compare).
 3. Assisting other users by participating in the [iDaVIE discussions](https://github.com/idia-astro/iDaVIE/discussions).
@@ -75,9 +75,9 @@ The development of the iDaVIE project is a joint effort from the following insti
  * [The IDIA Visualisation Laboratory](https://vislab.idia.ac.za)
  * [Osservatorio Astrofisico di Catania, Istituto Nazionale di Astrofisica (INAF-OACT)](https://www.oact.inaf.it)
  * [Osservatorio Astronomico di Cagliari, Istituto Nazionale di Astrofisica (INAF-OACA)](http://www.oa-cagliari.inaf.it/) – testing
-![IDIA logo](https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/IDIA_logo.png)
-![IDIA Vislab logo](https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/Vislab_logo.png)
-![INAF logo](https://github.com/idia-astro/iDaVIE/blob/main/.github/samples/INAF_logo.png)
+![IDIA logo](https://github.com/idia-astro/iDaVIE/blob/main/.github/static/IDIA_logo.png)
+![IDIA Vislab logo](https://github.com/idia-astro/iDaVIE/blob/main/.github/static/Vislab_logo.png)
+![INAF logo](https://github.com/idia-astro/iDaVIE/blob/main/.github/static/INAF_logo.png)
 
 #### Citing iDaVIE
 Please use the following DOI as a citation when using iDaVIE for publications:
