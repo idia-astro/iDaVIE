@@ -14,6 +14,7 @@ TagManager:
   - ScrollView
   - keypad
   - ToastNotification
+  - CanvasDesktop
   layers:
   - Default
   - TransparentFX
