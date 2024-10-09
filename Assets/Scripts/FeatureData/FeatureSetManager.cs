@@ -1,3 +1,24 @@
+/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -30,6 +51,8 @@ namespace DataFeatures
         private string _timeStamp;
         private StreamWriter _streamWriter;
         private Feature _selectedFeature;
+
+        public event Action MaskFeatureSelected;
         
         public bool NeedToRespawnMenuList = true;
         public bool NeedToUpdateInfo;
@@ -40,15 +63,28 @@ namespace DataFeatures
             get => _selectedFeature;
             set
             {
-                if (_selectedFeature == null || _selectedFeature != value)
+                if (value != null)
                 {
-                    DeselectFeature();
-                    _selectedFeature = value;
-                    _selectedFeature.Selected = true;
-                    if (_selectedFeature.FeatureSetParent)
+                    if (_selectedFeature == null || _selectedFeature != value)
                     {
-                        UpdateAnchors();
+                        DeselectFeature();
+                        _selectedFeature = value;
+                        _selectedFeature.Selected = true;
+                        if (_selectedFeature.FeatureSetParent)
+                        {
+                            UpdateAnchors();
+                        }
+
+                        if (value.FeatureSetParent.FeatureSetType == FeatureSetType.Mask)
+                        {
+                            MaskFeatureSelected?.Invoke();
+                        }
+                        NeedToUpdateInfo = true;
                     }
+                }
+                else
+                {
+                    _selectedFeature = value;
                 }
             }
         }
@@ -210,10 +246,10 @@ namespace DataFeatures
         /// <param name="columnsMask"></param>
         /// <param name="excludeExternal"></param>
         /// <returns>FeatureSetRenderer</returns>
-        public FeatureSetRenderer ImportFeatureSet(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable, string name, bool[] columnsMask, bool excludeExternal)
+        public FeatureSetRenderer ImportFeatureSetFromTable(Dictionary<SourceMappingOptions, string> mapping, FeatureTable table, string name, bool[] columnsMask, bool excludeExternal)
         {
             var importedFeatureSetRenderer = CreateEmptyFeatureSet(name, "customSet", ImportedFeatureSetList.Count, FeatureColors[ImportedFeatureSetList.Count], FeatureSetType.Imported);
-            importedFeatureSetRenderer.SpawnFeaturesFromVOTable(mapping, voTable, columnsMask, excludeExternal);
+            importedFeatureSetRenderer.SpawnFeaturesFromTable(mapping, table, columnsMask, excludeExternal);
             var config = Config.Instance;
             if (config.importedFeaturesStartVisible)
             {
@@ -322,6 +358,12 @@ namespace DataFeatures
                     SelectedFeature.Visible = false;
                 }
             }
+        }
+        
+        public void SelectNullFeature()
+        {
+            DeselectFeature();
+            SelectedFeature = null;
         }
         
         /// <summary>

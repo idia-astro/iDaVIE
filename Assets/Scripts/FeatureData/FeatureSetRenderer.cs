@@ -1,4 +1,25 @@
-﻿using System;
+﻿/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
+using System;
 using System.Collections.Generic;
 using VolumeData;
 using VoTableReader;
@@ -45,7 +66,7 @@ namespace DataFeatures
         public string[] RawDataTypes { get; set; }
         public string FileName { get; private set; }
 
-        public string[] flags { get; set; }
+        public string[] Flags { get; set; }
 
         private bool importFlags;
         public int Index;
@@ -86,9 +107,9 @@ namespace DataFeatures
             VolumeRenderer = FeatureManager.VolumeRenderer;
         }
 
-
-        
-
+        /// <summary>
+        /// On every frame, rerender all features marked as dirty. If feature is changed, it is supposed to be marked as dirty.
+        /// </summary>
         public void Update()
         {
             if (_dirtyFeatures.Count > 0)
@@ -117,7 +138,7 @@ namespace DataFeatures
                 {
                     foreach (var i in _dirtyFeatures)
                     {
-                        if (FeatureList[i] != null)
+                        if (i < FeatureList.Count && FeatureList[i] != null)
                         {
                             var feature = FeatureList[i];
                             FeatureVisibility visibility = feature.Visible ? (feature.Selected ? FeatureVisibility.Selected: FeatureVisibility.Visible) : FeatureVisibility.Hidden;
@@ -169,6 +190,10 @@ namespace DataFeatures
             }
         }
 
+        /// <summary>
+        /// Marks a feature as changed and needing to be rerendered on the next frame update.
+        /// </summary>
+        /// <param name="index">Index of the feature to be marked as dirty.</param>
         public void SetFeatureAsDirty(int index = -1)
         {
             // All Sources are dirty if the first element is -1
@@ -256,7 +281,7 @@ namespace DataFeatures
         }
 
         // Spawn Feature objects into world from FileName
-        public void SpawnFeaturesFromVOTable(Dictionary<SourceMappingOptions, string> mapping, VoTable voTable, bool[] columnsMask, bool excludeExternal)
+        public void SpawnFeaturesFromTable(Dictionary<SourceMappingOptions, string> mapping, FeatureTable table, bool[] columnsMask, bool excludeExternal)
         {
             if (VolumeRenderer == null)
             {
@@ -267,15 +292,15 @@ namespace DataFeatures
             IntPtr volumeAstFrame = VolumeRenderer.AstFrame;
             var setCoordinates = mapping.Keys;
             bool containsBoxes = false;
-            List<string>[] featureRawData = new List<string>[voTable.Rows.Count];            ZType = CoordTypes.cartesian;
+            List<string>[] featureRawData = new List<string>[table.Rows.Count];            ZType = CoordTypes.cartesian;
             int[] posIndices = new int[3];
             IntPtr astFrameSet = IntPtr.Zero;
-            string[] colNames = new string[voTable.Column.Count];
-            string[] colUnits = new string[voTable.Column.Count];
-            for (int i = 0; i < voTable.Column.Count; i++)
+            string[] colNames = new string[table.Column.Count];
+            string[] colUnits = new string[table.Column.Count];
+            for (int i = 0; i < table.Column.Count; i++)
             {
-                colNames[i] = voTable.Column[i].Name;
-                colUnits[i] = voTable.Column[i].Unit;
+                colNames[i] = table.Column[i].Name;
+                colUnits[i] = table.Column[i].Unit;
                 if (columnsMask[i])
                     rawDataKeysList.Add(colNames[i]);
             }
@@ -329,9 +354,9 @@ namespace DataFeatures
             }
             if (setCoordinates.Contains(SourceMappingOptions.Xmin))
                 containsBoxes = true;
-            if (voTable.Rows.Count == 0 || voTable.Column.Count == 0)
+            if (table.Rows.Count == 0 || table.Column.Count == 0)
             {
-                Debug.LogError($"Error reading VOTable! Note: Currently the VOTable may not contain xmlns declarations.");
+                Debug.LogError($"Error reading Source Table! Note: Currently the VOTable may not contain xmlns declarations.");
                 return;
             }
             bool containsPositions = !(posIndices[0] < 0 ||  posIndices[1] < 0 ||  posIndices[2] < 0);
@@ -356,31 +381,31 @@ namespace DataFeatures
             }
             else
                 importFlags = false;
-            if (importFlags)
-                flags = new string[voTable.Rows.Count];
-            FeatureNames = new string[voTable.Rows.Count];
-            FeaturePositions = new Vector3[voTable.Rows.Count];
-            BoxMinPositions = new Vector3[voTable.Rows.Count];
-            BoxMaxPositions = new Vector3[voTable.Rows.Count];
+
+            var flags = new string[table.Rows.Count];
+            var featureNames = new string[table.Rows.Count];
+            var featurePositions = new Vector3[table.Rows.Count];
+            var boxMinPositions = new Vector3[table.Rows.Count];
+            var boxMaxPositions = new Vector3[table.Rows.Count];
             double xPhys, yPhys, zPhys;
             xPhys = yPhys = zPhys = double.NaN;
-            for (int row = 0; row < voTable.Rows.Count; row++)   // For each row (feature)...
+            for (int row = 0; row < table.Rows.Count; row++)   // For each row (feature)...
             {
                 featureRawData[row] = new List<string>();
-                for (int i = 0; i < voTable.Columns.Count; i++)
+                for (int i = 0; i < table.Columns.Count; i++)
                 {
                     if (columnsMask[i])
-                        featureRawData[row].Add(voTable.Rows[row].ColumnData[i].ToString());
+                        featureRawData[row].Add(table.Rows[row].ColumnData[i].ToString());
                 }
                 if (importFlags)
                 {
-                    flags[row] = (string) voTable.Rows[row].ColumnData[FlagIndex];
+                    flags[row] = (string) table.Rows[row].ColumnData[FlagIndex];
                 }
                 if (containsPositions && !containsBoxes)
                 {
                     for (int i = 0; i < posIndices.Length; i++)
                     {
-                        string stringToParse = (string)voTable.Rows[row].ColumnData[posIndices[i]];
+                        string stringToParse = (string)table.Rows[row].ColumnData[posIndices[i]];
                         double value;
                         if (double.TryParse(stringToParse, NumberStyles.Any, CultureInfo.InvariantCulture, out value))
                         {
@@ -408,38 +433,38 @@ namespace DataFeatures
                     {
                         double x,y,z;
                         AstTool.Transform3D(astFrameSet, xPhys, yPhys, zPhys, 1, out x, out y, out z);
-                        FeaturePositions[row].Set((float)x, (float)y, (float)z);
+                        featurePositions[row].Set((float)x, (float)y, (float)z);
                     }
                     else
-                        FeaturePositions[row].Set((float)xPhys, (float)yPhys, (float)zPhys);
-                    BoxMinPositions[row].Set(FeaturePositions[row].x - 1, FeaturePositions[row].y - 1, FeaturePositions[row].z - 1);
-                    BoxMaxPositions[row].Set(FeaturePositions[row].x + 1, FeaturePositions[row].y + 1, FeaturePositions[row].z + 1);
+                        featurePositions[row].Set((float)xPhys, (float)yPhys, (float)zPhys);
+                    boxMinPositions[row].Set(featurePositions[row].x - 1, featurePositions[row].y - 1, featurePositions[row].z - 1);
+                    boxMaxPositions[row].Set(featurePositions[row].x + 1, featurePositions[row].y + 1, featurePositions[row].z + 1);
                 }
                 // ...get box bounds if they exist
                 else if (containsBoxes)
                 {
                     for (int i = 0; i < boxIndices.Length; i++)
                     {
-                        float value = float.Parse((string)voTable.Rows[row].ColumnData[boxIndices[i]], CultureInfo.InvariantCulture); //change to tryparse
+                        float value = float.Parse((string)table.Rows[row].ColumnData[boxIndices[i]], CultureInfo.InvariantCulture); //change to tryparse
                         switch (i)
                         {
                             case 0:
-                                BoxMinPositions[row].x = value;
+                                boxMinPositions[row].x = value;
                                 break;
                             case 1:
-                                BoxMaxPositions[row].x = value;
+                                boxMaxPositions[row].x = value;
                                 break;
                             case 2:
-                                BoxMinPositions[row].y = value;
+                                boxMinPositions[row].y = value;
                                 break;
                             case 3:
-                                BoxMaxPositions[row].y = value;
+                                boxMaxPositions[row].y = value;
                                 break;
                             case 4:
-                                BoxMinPositions[row].z = value;
+                                boxMinPositions[row].z = value;
                                 break;
                             case 5:
-                                BoxMaxPositions[row].z = value;
+                                boxMaxPositions[row].z = value;
                                 break;
                         }
                     }
@@ -452,12 +477,12 @@ namespace DataFeatures
                 // ...get name if exists
                 if (nameIndex >= 0)
                 {
-                    string value = (string)voTable.Rows[row].ColumnData[nameIndex];
-                    FeatureNames[row] = value;
+                    string value = (string)table.Rows[row].ColumnData[nameIndex];
+                    featureNames[row] = value;
                 }
                 else
                 {
-                    FeatureNames[row] = $"Source #{row + 1}";
+                    featureNames[row] = $"Source #{row + 1}";
                 }
             }
             
@@ -466,26 +491,65 @@ namespace DataFeatures
             if (VolumeRenderer)
             {
                 Vector3 cornerMin, cornerMax;
-                for (int i = 0; i < voTable.Rows.Count; i++)
+                for (int i = 0; i < table.Rows.Count; i++)
                 {
-                    cornerMin = BoxMinPositions[i];
-                    cornerMax = BoxMaxPositions[i];
+                    cornerMin = boxMinPositions[i];
+                    cornerMax = boxMaxPositions[i];
                     var flag = (importFlags) ? flags[i] : "";
-                    var featureToAdd = new Feature(cornerMin, cornerMax, FeatureColor, FeatureNames[i], flag, i, i,
+                    var featureToAdd = new Feature(cornerMin, cornerMax, FeatureColor, featureNames[i], flag, i, i,
                         featureRawData[i].ToArray(), false);
                     featureToAdd.FeatureSetParent = this;
-                    if (!(excludeExternal && (featureToAdd.Center.x < 0 ||
-                                              featureToAdd.Center.x > VolumeRenderer.Data.XDim ||
-                                              featureToAdd.Center.y < 0 ||
-                                              featureToAdd.Center.y > VolumeRenderer.Data.YDim ||
-                                              featureToAdd.Center.z < 0 ||
-                                              featureToAdd.Center.z > VolumeRenderer.Data.ZDim)))
+                    if (!(excludeExternal && FeatureIsWithinVolume(featureToAdd, VolumeRenderer)))
                     {
-                        FeatureList.Add(featureToAdd);          //TODO: why isn't this AddFeature()?
+                        FeatureList.Add(featureToAdd);
                     }
+                }
+
+                if (excludeExternal)
+                {
+                    FeatureNames = new string[FeatureList.Count];
+                    FeaturePositions = new Vector3[FeatureList.Count];
+                    BoxMinPositions = new Vector3[FeatureList.Count];
+                    BoxMaxPositions = new Vector3[FeatureList.Count];
+                    if (importFlags)
+                    {
+                        Flags = new string[FeatureList.Count];
+                    }
+                    for (int i = 0; i < FeatureList.Count; i++)
+                    {
+                        FeatureNames[i] = featureNames[FeatureList[i].Index];
+                        FeaturePositions[i] = featurePositions[FeatureList[i].Index];
+                        BoxMinPositions[i] = boxMinPositions[FeatureList[i].Index];
+                        BoxMaxPositions[i] = boxMaxPositions[FeatureList[i].Index];
+                        if (importFlags)
+                        {
+                            Flags[i] = flags[FeatureList[i].Index];
+                        }
+                        FeatureList[i].Index = i;   // set the feature's index to the new index
+                    }
+                }
+                else
+                {
+                    FeatureNames = featureNames;
+                    FeaturePositions = featurePositions;
+                    BoxMinPositions = boxMinPositions;
+                    BoxMaxPositions = boxMaxPositions;
                 }
             }
             FeatureMenuScrollerDataSource.InitData();
+        }
+        
+        /// <summary>
+        /// Method checks if the given feature's center point is within the given volume's bounds
+        /// </summary>
+        /// <param name="feature"></param>
+        /// <param name="volume"></param>
+        /// <returns></returns>
+        public static bool FeatureIsWithinVolume(Feature feature, VolumeDataSetRenderer volume)
+        {
+            return (feature.Center.x < 0 || feature.Center.x > volume.Data.XDim ||
+                feature.Center.y < 0 || feature.Center.y > volume.Data.YDim || 
+                feature.Center.z < 0 || feature.Center.z > volume.Data.ZDim);
         }
         
         void OnRenderObject()

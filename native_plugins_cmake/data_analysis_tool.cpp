@@ -1,8 +1,28 @@
+/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 Inter-University Institute for Data Intensive Astronomy
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
 #include "data_analysis_tool.h"
 #include "cdl_zscale.h"
 
 #include <unordered_map>
-#include <iostream>
 #include <limits>
 
 using namespace std;
@@ -317,6 +337,60 @@ int MaskCropAndDownsample(const int16_t *dataPtr, int16_t **newDataPtr, int64_t 
     return EXIT_SUCCESS;
 }
 
+//Function to more quickly get estimated values of given percentiles in the data from the histogram
+int GetPercentileValuesFromHistogram(const int* histogram, int numBins, float minVal, float maxVal, float minPercentile, float maxPercentile, float* minPercentileValue, float* maxPercentileValue)
+{
+        const float binWidth = (maxVal - minVal) / numBins;
+        std::vector<float> remainingRanks = {minPercentile, maxPercentile};
+        int cumulativeSum = 0;
+
+        int totalSum = 0;
+        for (int i = 0; i < numBins; i++) {
+            totalSum += histogram[i];
+        }
+
+        if (totalSum == 0) {
+            return EXIT_FAILURE;
+        }
+
+        std::vector<float> calculatedPercentiles;
+        for (int i = 0; i < numBins && !remainingRanks.empty(); i++) {
+            float currentFraction = static_cast<float>(cumulativeSum) / totalSum;
+            float nextFraction = static_cast<float>(cumulativeSum + histogram[i]) / totalSum;
+            float nextRank = remainingRanks[0] / 100.0f;
+
+            while (nextFraction >= nextRank && !remainingRanks.empty()) {
+                float portion = (nextRank - currentFraction) / (nextFraction - currentFraction);
+                calculatedPercentiles.push_back(minVal + binWidth * (i + portion));
+                remainingRanks.erase(remainingRanks.begin());
+                if (!remainingRanks.empty()) {
+                    nextRank = remainingRanks[0] / 100.0f;
+                }
+            }
+            cumulativeSum += histogram[i];
+        }
+        if (calculatedPercentiles.size() != 2) {
+            return EXIT_FAILURE;
+        }
+        *minPercentileValue = calculatedPercentiles[0];
+        *maxPercentileValue = calculatedPercentiles[1];
+        return EXIT_SUCCESS;
+    }
+
+//Function to get values of given percentiles in the float array of data
+int GetPercentileValuesFromData(const float* data, int64_t size, float minPercentile, float maxPercentile, float* minPercentileValue, float* maxPercentileValue) {
+    std::vector<float> sortedData(data, data + size);
+
+            std::sort(sortedData.begin(), sortedData.end());
+
+    int minIndex = static_cast<int>(minPercentile * (sortedData.size() - 1) / 100.0);
+    int maxIndex = static_cast<int>(maxPercentile * (sortedData.size() - 1) / 100.0);
+
+    *minPercentileValue = sortedData[minIndex];
+    *maxPercentileValue = sortedData[maxIndex];
+    return EXIT_SUCCESS;
+}
+
 int GetHistogram(const float* dataPtr, int64_t numElements, int numBins, float minVal, float maxVal, int** histogram)
 {
     int* histogramArray = new int[numBins]();
@@ -414,7 +488,12 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
         int64_t numVoxels = 0;
 
         int64_t numChannels = source.maxZ - source.minZ + 1;
-        std::vector<double> spectralProfile(numChannels);
+        
+        if (stats->spectralProfilePtr != nullptr) {
+            // Clear memory from previous spectral profile calculations
+            delete[] stats->spectralProfilePtr;
+        }
+        stats->spectralProfilePtr = new double[numChannels];
 
         stats->minX = source.maxX;
         stats->minY = source.maxY;
@@ -462,7 +541,7 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
                     }
                 }
             }
-            spectralProfile[k - source.minZ] = spectralSum;
+            stats->spectralProfilePtr[k - source.minZ] = spectralSum;
         }
 
         if (numVoxels)
@@ -479,7 +558,7 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
 
             for (auto i = 0; i < numChannels; i++)
             {
-                auto val = spectralProfile[i];
+                auto val = stats->spectralProfilePtr[i];
                 if (isfinite(val) && val > spectralPeak)
                 {
                     spectralPeak = val;
@@ -494,8 +573,8 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
 
             for (auto i = 0; i < numChannels - 1; i++)
             {
-                auto y0 = spectralProfile[i];
-                auto y1 = spectralProfile[i+1];
+                auto y0 = stats->spectralProfilePtr[i];
+                auto y1 = stats->spectralProfilePtr[i+1];
                 if (y0 < w20Threshold && y1 >= w20Threshold) {
                     //leftChannel = source.minZ + i + 0.5;
                     leftChannel = source.minZ + i + (w20Threshold - y0) / (y1 - y0);
@@ -506,8 +585,8 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
 
             for (auto i = numChannels - 2; i >= 0; i--)
             {
-                auto y0 = spectralProfile[i];
-                auto y1 = spectralProfile[i+1];
+                auto y0 = stats->spectralProfilePtr[i];
+                auto y1 = stats->spectralProfilePtr[i+1];
                 if (y0 >= w20Threshold && y1 < w20Threshold) {
                     rightChannel = source.minZ + i + (w20Threshold - y0) / (y1 - y0);
                     rightChannelFound = true;
@@ -545,7 +624,7 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
                 stats->veloVsys = NAN;
                 stats->veloW20 = NAN;
             }
-
+            stats->spectralProfileSize = numChannels;
             return EXIT_SUCCESS;
         }
         else

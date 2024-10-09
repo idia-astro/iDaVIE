@@ -1,4 +1,25 @@
-﻿using System;
+﻿/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,7 +33,50 @@ using System.Diagnostics;
 
 public class FitsReader
 {
-    public static Dictionary<int, string> ErrorCodes = new Dictionary<int, string>
+    
+    // HDU types of fits files can be used to identify the type of HDU
+    public enum HduType
+    {
+        ImageHdu = 0,  // Primary Array or IMAGE HDU
+        AsciiTbl = 1,  // ASCII table HDU
+        BinaryTbl = 2, // Binary table HDU
+        AnyHdu = -1    // matches any HDU type
+    }
+    
+    // Data types of fits images can be used when reading and writing images
+    public enum BitpixDataType
+    {
+        BYTE_IMG = 8,      // 8-bit unsigned integers
+        SHORT_IMG = 16,    // 16-bit signed integers
+        LONG_IMG = 32,     // 32-bit signed integers
+        LONGLONG_IMG = 64, // 64-bit signed integers
+        FLOAT_IMG = -32,   // 32-bit single precision floating point
+        DOUBLE_IMG = -64   // 64-bit double precision floating point
+    }
+    
+    // Data types of fits header keys can be used when reading and writing header keys
+    public enum HeaderDataType
+    {
+        TBIT = 1,         // 'X'
+        TBYTE = 11,       // 8-bit unsigned byte, 'B'
+        TLOGICAL = 14,    // logicals (int for keywords and char for table cols) 'L'
+        TSTRING = 16,     // ASCII string, 'A'
+        TSHORT = 21,      // signed short, 'I'
+        TLONG = 41,       // signed long
+        TLONGLONG = 81,   // 64-bit long signed integer 'K'
+        TFLOAT = 42,      // single precision float, 'E'
+        TDOUBLE = 82,     // double precision float, 'D'
+        TCOMPLEX = 83,    // complex (pair of floats) 'C'
+        TDBLCOMPLEX = 163,// double complex (2 doubles) 'M'
+        TINT = 31,        // int
+        TSBYTE = 12,      // 8-bit signed byte, 'S'
+        TUINT = 30,       // unsigned int 'V'
+        TUSHORT = 20,     // unsigned short 'U'
+        TULONG = 40,      // unsigned long
+        TULONGLONG = 80   // unsigned long long 'W'
+    }
+    
+    public static readonly Dictionary<int, string> ErrorCodes = new()
     {
         { 101, "input and output files are the same" },
         { 103, "tried to open too many FITS files at once" },
@@ -172,7 +236,13 @@ public class FitsReader
     
     [DllImport("idavie_native")]
     public static extern int FitsMovabsHdu(IntPtr fptr, int hdunum, out int hdutype, out int status);
+
+    [DllImport("idavie_native")]
+    public static extern int FitsGetHduType(IntPtr fptr, out int hdutype, out int status);
     
+    [DllImport("idavie_native")]
+    public static extern int FitsGetNumHdus(IntPtr fptr, out int numhdus, out int status);
+
     [DllImport("idavie_native")]
     public static extern int FitsGetNumHeaderKeys(IntPtr fptr, out int keysexist, out int morekeys, out int status);
 
@@ -222,6 +292,9 @@ public class FitsReader
     public static extern int FitsMakeKeyN(string keyroot, int value, StringBuilder keyname, out int status);
 
     [DllImport("idavie_native")]
+    public static extern int FitsReadKeyString(IntPtr fptr, string keyname, StringBuilder colname, IntPtr comm, out int status);
+    
+    [DllImport("idavie_native")]
     public static extern int FitsReadKey(IntPtr fptr, int datatype, string keyname, StringBuilder colname, IntPtr comm, out int status);
 
     [DllImport("idavie_native")]
@@ -263,6 +336,9 @@ public class FitsReader
     [DllImport("idavie_native")]
     public static extern int InsertSubArrayInt16(IntPtr mainArray, long mainArraySize, IntPtr subArray, long subArraySize, long startIndex);
 
+    [DllImport("idavie_native")]
+    public static extern int WriteMomentMap(IntPtr mainFitsFile, string fileName, IntPtr imagePixelArray, long xDims, long yDims, int mapNumber);
+    
     public static IDictionary<string, string> ExtractHeaders(IntPtr fptr, out int status)
     {
         int numberKeys, keysLeft;
@@ -531,5 +607,57 @@ public class FitsReader
     {
         return $"#{status} {ErrorCodes[status]}";
     }
+
+    public static string FitsTableGetColName(IntPtr fitsPtr, int col)
+    {
+        int status = 0;
+        StringBuilder keyword = new StringBuilder(75);
+        StringBuilder colName = new StringBuilder(71);
+        FitsMakeKeyN("TTYPE", col + 1, keyword, out status);
+        if (FitsReadKeyString(fitsPtr, keyword.ToString(), colName, IntPtr.Zero, out status) != 0)
+        {
+            Debug.Log("Fits Read column name error #" + status.ToString());
+            FitsReader.FitsCloseFile(fitsPtr, out status);
+            return "";
+        }
+        return colName.ToString();
+    }
     
+    public static string FitsTableGetColUnit(IntPtr fitsPtr, int col)
+    {
+        int status = 0;
+        StringBuilder keyword = new StringBuilder(75);
+        StringBuilder colUnit = new StringBuilder(71);
+        FitsMakeKeyN("TUNIT", col + 1, keyword, out status);
+        if (FitsReadKeyString(fitsPtr, keyword.ToString(), colUnit, IntPtr.Zero, out status) != 0)
+        {
+            if (status == 202)
+            {
+                Debug.Log("No unit in column #" + col);
+                status = 0;
+            }
+            else
+            {
+                Debug.Log("Fits Read unit error #" + status.ToString());
+                FitsReader.FitsCloseFile(fitsPtr, out status);
+                return null;
+            }
+        }
+        return colUnit.ToString();
+    }
+    
+    public static string FitsTableGetColFormat(IntPtr fitsPtr, int col)
+    {
+        int status = 0;
+        StringBuilder keyword = new StringBuilder(75);
+        StringBuilder colFormat = new StringBuilder(71);
+        FitsMakeKeyN("TFORM", col + 1, keyword, out status);
+        if (FitsReadKeyString(fitsPtr, keyword.ToString(), colFormat, IntPtr.Zero, out status) != 0)
+        {
+            Debug.Log("Fits Read column unit error #" + status.ToString());
+            FitsReader.FitsCloseFile(fitsPtr, out status);
+            return "";
+        }
+        return colFormat.ToString();
+    }
 }

@@ -1,6 +1,28 @@
-﻿using DataFeatures;
+﻿/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
+using DataFeatures;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Valve.VR;
@@ -12,8 +34,8 @@ public class OptionController : MonoBehaviour
     private VolumeDataSetRenderer[] _dataSets;
 
     // Color Map
-    public Text LabelHand;
-    public Text LabelStep;
+    public TextMeshProUGUI LabelHand;
+    public TextMeshProUGUI LabelStep;
     public GameObject volumeDatasetRendererObj = null;
     int defaultColorIndex = 33;
     int colorIndex = -1;
@@ -33,8 +55,8 @@ public class OptionController : MonoBehaviour
         if (volumeDatasetRendererObj != null)
             _dataSets = volumeDatasetRendererObj.GetComponentsInChildren<VolumeDataSetRenderer>(true);
 
-        LabelHand.gameObject.GetComponent<Text>().text = (Hand)0 + "";
-        LabelStep.gameObject.GetComponent<Text>().text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
+        LabelHand.text = (Hand)0 + "";
+        LabelStep.text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
     }
 
     // Update is called once per frame
@@ -46,9 +68,9 @@ public class OptionController : MonoBehaviour
             _activeDataSet = firstActive;
         }
 
-        if (LabelStep.gameObject.GetComponent<Text>().text != getFirstActiveDataSet().GetMomentMapRenderer().momstep.ToString())
+        if (LabelStep.text != getFirstActiveDataSet().GetMomentMapRenderer().momstep.ToString())
         {
-            getFirstActiveDataSet().GetMomentMapRenderer().momstep = float.Parse(LabelStep.gameObject.GetComponent<Text>().text, System.Globalization.CultureInfo.InvariantCulture.NumberFormat); 
+            getFirstActiveDataSet().GetMomentMapRenderer().momstep = float.Parse(LabelStep.text, System.Globalization.CultureInfo.InvariantCulture.NumberFormat); 
         }
     }
 
@@ -77,19 +99,19 @@ public class OptionController : MonoBehaviour
             hand = 0;
             _activeDataSet._volumeInputController.PrimaryHand = SteamVR_Input_Sources.RightHand;
         }
-        LabelHand.gameObject.GetComponent<Text>().text = (Hand)hand + "";
+        LabelHand.text = (Hand)hand + "";
     }
 
     public void decreaseMomThresholdStep()
     {
         getFirstActiveDataSet().GetMomentMapRenderer().momstep -= default_threadshold_step;
-        LabelStep.gameObject.GetComponent<Text>().text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
+        LabelStep.text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
     }
 
     public void increaseMomThresholdStep()
     {
         getFirstActiveDataSet().GetMomentMapRenderer().momstep += default_threadshold_step;
-        LabelStep.gameObject.GetComponent<Text>().text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
+        LabelStep.text = (float)getFirstActiveDataSet().GetMomentMapRenderer().momstep + "";
     }
 
     public void OpenKeypad()

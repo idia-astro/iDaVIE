@@ -1,6 +1,28 @@
+/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Globalization;
 using System.IO;
 using TMPro;
@@ -13,12 +35,13 @@ using Valve.VR;
 using DataFeatures;
 using VoTableReader;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using SFB;
 
 public class CanvassDesktop : MonoBehaviour
 {
-    private VolumeDataSetRenderer[] _volumeDataSets;
+    private VolumeDataSetRenderer[] _volumeDataSetRenderers;
     private GameObject _volumeDataSetManager;
     private GameObject[] _sourceRowObjects;
 
@@ -96,12 +119,29 @@ public class CanvassDesktop : MonoBehaviour
     protected Coroutine _loadCubeCoroutine;
     protected Coroutine _showLoadDialogCoroutine;
 
+    public MenuBarBehaviour MenuBarBehaviour;
 
     private void Awake()
     {
         // Change the culture to invariant to avoid issues with parsing floats
         System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
         System.Threading.Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+        var firstActiveRenderer = GetFirstActiveRenderer();
+        if (firstActiveRenderer != null)
+        {
+            firstActiveRenderer.RestFrequencyGHzListIndexChanged += OnRestFrequencyIndexOfDatasetChanged;
+            firstActiveRenderer.RestFrequencyGHzChanged += OnRestFrequencyOfDatasetChanged;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        var firstActiveRenderer = GetFirstActiveRenderer();
+        if (firstActiveRenderer != null)
+        {
+            firstActiveRenderer.RestFrequencyGHzListIndexChanged -= OnRestFrequencyIndexOfDatasetChanged;
+            firstActiveRenderer.RestFrequencyGHzChanged -= OnRestFrequencyOfDatasetChanged;
+        }
     }
 
     // Start is called before the first frame update
@@ -158,23 +198,35 @@ public class CanvassDesktop : MonoBehaviour
         _subset[5] = _subsetMax_Z;
     }
 
+    private void PopulateRestfreqencyDropdown()
+    {
+        var renderingFreqsDropdown = renderingPanelContent.transform.Find("Rendering_container/Viewport/Content/Settings/RestFreq_container/RestFreq_dropdown").GetComponent<TMP_Dropdown>();
+        renderingFreqsDropdown.ClearOptions();
+        foreach (var freq in GetFirstActiveRenderer().RestFrequencyGHzList.Keys)
+        {
+            renderingFreqsDropdown.options.Add(new TMP_Dropdown.OptionData(freq));
+        }
+        
+    }
+
     private void CheckCubesDataSet()
     {
         _volumeDataSetManager = GameObject.Find("VolumeDataSetManager");
         if (_volumeDataSetManager)
         {
-            _volumeDataSets = _volumeDataSetManager.GetComponentsInChildren<VolumeDataSetRenderer>(true);
+            _volumeDataSetRenderers = _volumeDataSetManager.GetComponentsInChildren<VolumeDataSetRenderer>(true);
         }
         else
         {
-            _volumeDataSets = new VolumeDataSetRenderer[0];
+            _volumeDataSetRenderers = new VolumeDataSetRenderer[0];
         }
     }
 
     // Update is called once per frame
     private void Update()
     {
-        if (GetFirstActiveDataSet() != null)
+        var firstActiveRenderer = GetFirstActiveRenderer();
+        if (firstActiveRenderer != null)
         {
             VolumeDataSetRenderer dataSet = GetFirstActiveDataSet();
 
@@ -183,27 +235,29 @@ public class CanvassDesktop : MonoBehaviour
                 _minThreshold.value = _maxThreshold.value;
             }
 
-            var effectiveMin = dataSet.ScaleMin + dataSet.ThresholdMin * (dataSet.ScaleMax - dataSet.ScaleMin);
-            var effectiveMax = dataSet.ScaleMin + dataSet.ThresholdMax * (dataSet.ScaleMax - dataSet.ScaleMin);
+            var effectiveMin = firstActiveRenderer.ScaleMin + firstActiveRenderer.ThresholdMin 
+                * (firstActiveRenderer.ScaleMax - firstActiveRenderer.ScaleMin);
+            var effectiveMax = firstActiveRenderer.ScaleMin + firstActiveRenderer.ThresholdMax 
+                * (firstActiveRenderer.ScaleMax - firstActiveRenderer.ScaleMin);
             _minThresholdLabel.text = effectiveMin.ToString();
             _maxThresholdLabel.text = effectiveMax.ToString();
 
-            if (dataSet.ThresholdMin != _minThreshold.value)
+            if (firstActiveRenderer.ThresholdMin != _minThreshold.value)
             {
-                _minThreshold.value = dataSet.ThresholdMin;
+                _minThreshold.value = firstActiveRenderer.ThresholdMin;
             }
 
-            if (dataSet.ThresholdMax != _maxThreshold.value)
+            if (firstActiveRenderer.ThresholdMax != _maxThreshold.value)
             {
-                _maxThreshold.value = dataSet.ThresholdMax;
+                _maxThreshold.value = firstActiveRenderer.ThresholdMax;
             }
 
 
-            if (dataSet.ColorMap != _activeColorMap)
+            if (firstActiveRenderer.ColorMap != _activeColorMap)
             {
                 renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
                     .gameObject.transform.Find("Settings").gameObject.transform.Find("Colormap_container")
-                    .gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value = (int)dataSet.ColorMap;
+                    .gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().value = (int)firstActiveRenderer.ColorMap;
             }
         }
 
@@ -827,6 +881,9 @@ public class CanvassDesktop : MonoBehaviour
         StartCoroutine(LoadCubeCoroutine(_imagePath, _maskPath, _hduSelectionIndex + 1));
     }
 
+    /// <summary>
+    /// Method for all the necessary post loading actions after loading a cube from the file system
+    /// </summary>
     private void postLoadFileFileSystem()
     {
         if (_loadCubeCoroutine != null)
@@ -835,13 +892,25 @@ public class CanvassDesktop : MonoBehaviour
         VolumePlayer.SetActive(false);
         VolumePlayer.SetActive(true);
 
+        var firstActiveRenderer = GetFirstActiveRenderer();
+        
         renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
                 .Find("Settings").gameObject.transform.Find("Mask_container").gameObject.transform.Find("Dropdown_mask").GetComponent<TMP_Dropdown>().interactable =
-            GetFirstActiveDataSet().MaskFileName != "";
+            firstActiveRenderer.MaskFileName != "";
 
         populateColorMapDropdown();
         populateStatsValue();
+        
+        // Populate the rest frequency dropdown in the Rendering tab from config file
+        PopulateRestfreqencyDropdown();
+        SetRestFrequencyInputInteractable(false);
+        SetRestFrequencyInputField((float)firstActiveRenderer.RestFrequencyGHz);
 
+        //subscribe rest frequency change behanvior to changes in new loaded cube
+        firstActiveRenderer.RestFrequencyGHzListIndexChanged += OnRestFrequencyIndexOfDatasetChanged;
+        firstActiveRenderer.RestFrequencyGHzChanged += OnRestFrequencyOfDatasetChanged;
+        
+        
         LoadingText.gameObject.SetActive(false);
         progressBar.gameObject.SetActive(false);
         WelcomeMenu.gameObject.SetActive(false);
@@ -855,6 +924,16 @@ public class CanvassDesktop : MonoBehaviour
 
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Stats_Button").GetComponent<Button>()
             .onClick.Invoke();
+        
+        // Enable the desktop GUI VR View as default left panel content to display
+        if (MenuBarBehaviour.AboutSection.activeSelf)
+        {
+            MenuBarBehaviour.ToggleAboutSection();
+        }
+        if (!MenuBarBehaviour.VRViewDisplay.activeSelf)
+        {
+            MenuBarBehaviour.ToggleVRViewDisplay();
+        }
     }
 
     public bool CheckMemSpaceForCubes(string _imagePath, string _maskPath)
@@ -897,16 +976,16 @@ public class CanvassDesktop : MonoBehaviour
             }
         }
 
-        var activeDataSet = GetFirstActiveDataSet();
+        var firstActiveRenderer = GetFirstActiveRenderer();
         loadTextLabel.text = "Replacing old cube...";
         progressBar.GetComponent<Slider>().value = 1;
         yield return new WaitForSeconds(0.001f);
-        if (activeDataSet != null)
+        if (firstActiveRenderer != null)
         {
             Debug.Log("Replacing data cube...");
 
-            activeDataSet.transform.gameObject.SetActive(false);
-            _volumeCommandController.RemoveDataSet(activeDataSet);
+            firstActiveRenderer.transform.gameObject.SetActive(false);
+            _volumeCommandController.RemoveDataSet(firstActiveRenderer);
             // Reset UI to default
             try
             {
@@ -924,9 +1003,9 @@ public class CanvassDesktop : MonoBehaviour
             }
 
             // Manually clean up
-            activeDataSet.Data.CleanUp(activeDataSet.RandomVolume);
-            activeDataSet.Mask?.CleanUp(false);
-            Destroy(activeDataSet);
+            firstActiveRenderer.Data.CleanUp(firstActiveRenderer.RandomVolume);
+            firstActiveRenderer.Mask?.CleanUp(false);
+            Destroy(firstActiveRenderer);
         }
 
         loadTextLabel.text = "Building new cube...";
@@ -987,42 +1066,103 @@ public class CanvassDesktop : MonoBehaviour
     public void OnRatioDropdownValueChanged(int optionIndex)
     {
         _ratioDropdownIndex = optionIndex;
-        var activeDataSet = GetFirstActiveDataSet();
-        if (activeDataSet != null)
+        var firstActiveRenderer = GetFirstActiveRenderer();
+        if (firstActiveRenderer != null)
         {
             if (optionIndex == 0)
             {
                 // X=Y=Z
-                activeDataSet.ZScale = activeDataSet.XScale;
+                firstActiveRenderer.ZScale = firstActiveRenderer.XScale;
             }
             else
             {
                 // X=Y
-                activeDataSet.ZScale = activeDataSet.XScale * activeDataSet.GetCubeDimensions().z / activeDataSet.GetCubeDimensions().x;
+                firstActiveRenderer.ZScale = firstActiveRenderer.XScale * firstActiveRenderer.GetCubeDimensions().z / firstActiveRenderer.GetCubeDimensions().x;
             }
         }
     }
 
-    public void OnRestFrequencyOverrideValueChanged(bool option)
+    /// <summary>
+    /// When the rest frequency index of the dataset changes, update the dropdown selection
+    /// </summary>
+    private void OnRestFrequencyIndexOfDatasetChanged()
     {
-        var activeDataSet = GetFirstActiveDataSet();
-        activeDataSet.OverrideRestFrequency = option;
-        if (option)
-        {
-            activeDataSet.RestFrequency = _restFrequency;
-        }
-        else
-        {
-            activeDataSet.ResetRestFrequency();
-        }
+        SetRestFrequencyDropdown(GetFirstActiveRenderer().RestFrequencyGHzListIndex);
     }
 
+    /// <summary>
+    /// When the rest frequency of the dataset changes, update the input field
+    /// </summary>
+    private void OnRestFrequencyOfDatasetChanged()
+    {
+        SetRestFrequencyInputField(GetFirstActiveRenderer().RestFrequencyGHz);
+    }
+    
+    /// <summary>
+    /// When the dropdown value changes, update the rest frequency of the dataset
+    /// </summary>
+    /// <param name="optionIndex"></param>
+    public void OnRestFrequencyDropdownValueChanged(int optionIndex)
+    {
+        GetFirstActiveRenderer().RestFrequencyGHzListIndex = optionIndex;
+    }
+
+    /// <summary>
+    /// When the rest frequency input field changes, update the rest frequency of the dataset
+    /// </summary>
+    /// <param name="val"></param>
     public void OnRestFrequencyValueChanged(String val)
     {
-        _restFrequency = float.Parse(val);
-        var activeDataSet = GetFirstActiveDataSet();
-        if (activeDataSet.OverrideRestFrequency)
-            activeDataSet.RestFrequency = _restFrequency;
+        var newRestFrequencyGHz = double.Parse(val);
+        var firstActiveRenderer = GetFirstActiveRenderer();
+        firstActiveRenderer.RestFrequencyGHzList["Custom"] = newRestFrequencyGHz;
+        if (firstActiveRenderer.OverrideRestFrequency)
+            firstActiveRenderer.RestFrequencyGHz = newRestFrequencyGHz;
+    }
+    
+    /// <summary>
+    /// Sets the rest frequency input field to be interactable or not
+    /// </summary>
+    /// <param name="isInteractable"></param>
+    private void SetRestFrequencyInputInteractable(bool isInteractable)
+    {
+        renderingPanelContent.transform.Find("Rendering_container/Viewport/Content/Settings/RestFreq_container/RestFreq_input")
+            .GetComponent<TMP_InputField>().interactable = isInteractable;
+    }
+    
+    /// <summary>
+    /// Sets the rest frequency input field to the given value
+    /// </summary>
+    /// <param name="restFrequency"></param>
+    private void SetRestFrequencyInputField(double restFrequency)
+    {
+        renderingPanelContent.transform.Find("Rendering_container/Viewport/Content/Settings/RestFreq_container/RestFreq_input")
+            .GetComponent<TMP_InputField>().text = restFrequency.ToString();
+    }
+    
+    /// <summary>
+    /// Sets the rest frequency dropdown to the given index
+    /// </summary>
+    /// <param name="index"></param>
+    private void SetRestFrequencyDropdown(int index)
+    {
+        renderingPanelContent.transform.Find("Rendering_container/Viewport/Content/Settings/RestFreq_container/RestFreq_dropdown")
+            .GetComponent<TMP_Dropdown>().value = index;
+        //if Default is selected, disable the input field and use the cube's default rest frequency
+        if (index == 0)
+        {
+            SetRestFrequencyInputInteractable(false);
+        }
+        //if "Custom" is selected, enable the input field
+        else if (index == GetFirstActiveRenderer().RestFrequencyGHzList.Count - 1)
+        {
+            SetRestFrequencyInputInteractable(true);
+        }
+        //otherwise, use the selected rest frequency from the config file
+        else
+        {
+            SetRestFrequencyInputInteractable(false);
+        }
     }
 
     public void BrowseSourcesFile()
@@ -1032,7 +1172,7 @@ public class CanvassDesktop : MonoBehaviour
             lastPath = "";
         var extensions = new[]
         {
-            new ExtensionFilter("VOTables", "xml"),
+            new ExtensionFilter("Source Tables", "xml", "fits", "fit"),
             new ExtensionFilter("All Files", "*"),
         };
         StandaloneFileBrowser.OpenFilePanelAsync("Open File", lastPath, extensions, false, (string[] paths) =>
@@ -1049,8 +1189,8 @@ public class CanvassDesktop : MonoBehaviour
 
     private void _browseSourcesFile(string path)
     {
-        var volumeDataSet = GetFirstActiveDataSet();
-        var featureDataSet = volumeDataSet.GetComponentInChildren<FeatureSetManager>();
+        var firstActiveRenderer = GetFirstActiveRenderer();
+        var featureDataSet = firstActiveRenderer.GetComponentInChildren<FeatureSetManager>();
         _sourcesPath = path;
         featureDataSet.FeatureFileToLoad = path;
         sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("MappingSave_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
@@ -1058,7 +1198,9 @@ public class CanvassDesktop : MonoBehaviour
         //activate load features button
         sourcesPanelContent.gameObject.transform.Find("SourcesFile_container").gameObject.transform.Find("SourcesFilePath_text").GetComponent<TextMeshProUGUI>().text =
             System.IO.Path.GetFileName(path);
-        VoTable voTable = FeatureMapper.GetVOTableFromFile(path); //be more flexible with file input (ascii)
+
+        var featureTable = FeatureTable.GetFeatureTableFromFile(path);
+        
         Transform sourceBody = sourcesPanelContent.gameObject.transform.Find("SourcesInfo_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport")
             .gameObject.transform.Find("Content").gameObject.transform;
         if (_sourceRowObjects != null)
@@ -1068,18 +1210,18 @@ public class CanvassDesktop : MonoBehaviour
             _sourceRowObjects = null;
         }
 
-        _sourceRowObjects = new GameObject[voTable.Column.Count];
-        for (var i = 0; i < voTable.Column.Count; i++)
+        _sourceRowObjects = new GameObject[featureTable.Columns.Count];
+        for (var i = 0; i < featureTable.Columns.Count; i++)
         {
             var row = Instantiate(SourceRowPrefab, sourceBody);
             row.transform.Find("Source_number").GetComponent<TextMeshProUGUI>().text = i.ToString();
-            string colName = voTable.Column[i].Name;
+            string colName = featureTable.Columns.ElementAt(i).Key;
             // Hard coded 17 (*shivers*) matching the length available in the UI as of coding this. Do better!
             if (colName.Length > 17)
                 colName = colName.Substring(0, 14) + "...";
             row.transform.Find("Source_name").GetComponent<TextMeshProUGUI>().text = colName;
             var rowScript = row.GetComponentInParent<SourceRow>();
-            rowScript.SourceName = voTable.Column[i].Name;
+            rowScript.SourceName = featureTable.Columns.ElementAt(i).Key;
             rowScript.SourceIndex = i;
             _sourceRowObjects[i] = row;
         }
@@ -1377,7 +1519,7 @@ public class CanvassDesktop : MonoBehaviour
             return;
         }
 
-        var featureSetManager = GetFirstActiveDataSet().GetComponentInChildren<FeatureSetManager>();
+        var featureSetManager = GetFirstActiveRenderer().GetComponentInChildren<FeatureSetManager>();
         Dictionary<SourceMappingOptions, string> finalMapping = new Dictionary<SourceMappingOptions, string>();
         for (int i = 0; i < _sourceRowObjects.Length; i++)
         {
@@ -1388,7 +1530,9 @@ public class CanvassDesktop : MonoBehaviour
         }
 
         if (featureSetManager.FeatureFileToLoad != "")
-            featureSetManager.ImportFeatureSet(finalMapping, FeatureMapper.GetVOTableFromFile(_sourcesPath), Path.GetFileName(_sourcesPath), columnsMask, excludeExternalSources);
+        {
+            featureSetManager.ImportFeatureSetFromTable(finalMapping, FeatureTable.GetFeatureTableFromFile(_sourcesPath), Path.GetFileName(_sourcesPath), columnsMask, excludeExternalSources);
+        }
         loadingText.GetComponent<TextMeshProUGUI>().text = $"Successfully loaded sources from:{Environment.NewLine}{Path.GetFileName(_sourcesPath)}";
         sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;
     }
@@ -1410,13 +1554,13 @@ public class CanvassDesktop : MonoBehaviour
         Application.Quit();
     }
 
-    private VolumeDataSetRenderer GetFirstActiveDataSet()
+    private VolumeDataSetRenderer GetFirstActiveRenderer()
     {
-        if (_volumeDataSets != null)
+        if (_volumeDataSetRenderers != null)
         {
-            foreach (var dataSet in _volumeDataSets)
+            foreach (var dataSet in _volumeDataSetRenderers)
             {
-                if (dataSet.isActiveAndEnabled)
+                if (dataSet != null && dataSet.isActiveAndEnabled)
                 {
                     return dataSet;
                 }
@@ -1451,7 +1595,7 @@ public class CanvassDesktop : MonoBehaviour
 
     private void populateStatsValue()
     {
-        VolumeDataSet volumeDataSet = GetFirstActiveDataSet().Data;
+        var volumeDataSet = GetFirstActiveRenderer().Data;
 
         Transform stats = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject
             .transform.Find("Stats");
@@ -1482,13 +1626,13 @@ public class CanvassDesktop : MonoBehaviour
 
     public void ChangeColorMap()
     {
-        var activeDataSet = GetFirstActiveDataSet();
-        if (activeDataSet != null)
+        var firstActiveRenderer = GetFirstActiveRenderer();
+        if (firstActiveRenderer != null)
         {
             _activeColorMap = ColorMapUtils.FromHashCode(renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject
                 .transform.Find("Content").gameObject.transform.Find("Settings").gameObject.transform.Find("Colormap_container").gameObject.transform.Find("Dropdown_colormap")
                 .GetComponent<TMP_Dropdown>().value);
-            activeDataSet.ColorMap = _activeColorMap;
+            firstActiveRenderer.ColorMap = _activeColorMap;
         }
     }
 
@@ -1501,7 +1645,7 @@ public class CanvassDesktop : MonoBehaviour
         float histMax = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
             .gameObject.transform.Find("Stats").gameObject.transform.Find("Line_max")
             .gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text);
-        VolumeDataSet volumeDataSet = GetFirstActiveDataSet().Data;
+        var volumeDataSet = GetFirstActiveRenderer().Data;
         _histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, histMin, histMax, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
     }
 
@@ -1510,73 +1654,131 @@ public class CanvassDesktop : MonoBehaviour
         statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("Stats")
             .gameObject.transform.Find("Line_sigma").gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value = 0;
 
-        var dataSet = GetFirstActiveDataSet().Data;
-        VolumeDataSet.UpdateHistogram(dataSet, dataSet.MinValue, dataSet.MaxValue);
+        var firstActiveRenderer = GetFirstActiveRenderer();
+        VolumeDataSet.UpdateHistogram(firstActiveRenderer.Data, firstActiveRenderer.Data.MinValue, firstActiveRenderer.Data.MaxValue);
+        firstActiveRenderer.ResetThresholds();
         populateStatsValue();
     }
-
-    public void UpdateScaleMin(String min)
+    
+    /// <summary>
+    /// Function to update the minimum and maximum scale data values of the histogram
+    /// essentially where the colormap begins and ends on the data
+    /// </summary>
+    /// <param name="min"></param>
+    /// <param name="max"></param>
+    public void UpdateScale(float min, float max)
     {
-        VolumeDataSetRenderer volumeDataSetRenderer = GetFirstActiveDataSet();
-        VolumeDataSet volumeDataSet = volumeDataSetRenderer.Data;
-        float newMin = float.Parse(min);
-        float histMin = newMin;
-        float histMax = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
+        var firstActiveRenderer = GetFirstActiveRenderer();
+        VolumeDataSet volumeDataSet = firstActiveRenderer.Data;
+        float sigma = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
+            .Find("Stats").gameObject.transform.Find("Line_sigma")
+            .gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value + 1f;
+        firstActiveRenderer.ScaleMin = min;
+        firstActiveRenderer.ScaleMax = max;
+        VolumeDataSet.UpdateHistogram(volumeDataSet, min, max);
+        _histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, min, max, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
+        firstActiveRenderer.ResetThresholds();
+    }
+    
+    /// <summary>
+    /// Function to set the minimum and maximum scale data values of the histogram to the given percentiles
+    /// </summary>
+    /// <param name="maxPercentile"></param>
+    public void SetMaxMinPercentile(float maxPercentile)
+    {
+        var config = Config.Instance;
+        float minPercentileValue, maxPercentileValue;
+        var minPercentile = 100 - maxPercentile;
+        var dataSet = GetFirstActiveRenderer().Data;
+        if (maxPercentile == 100)
+        {
+            minPercentileValue = dataSet.MinValue;
+            maxPercentileValue = dataSet.MaxValue;
+        }
+        // Use the quick percentile calculation if the option is enabled
+        else if (config.useQuickModeForPercentiles)
+        {
+            IntPtr histogramPtr = IntPtr.Zero;
+            if (dataSet.FullHistogram != null)
+            {
+                histogramPtr = Marshal.AllocHGlobal(dataSet.FullHistogram.Length * sizeof(int));
+                Marshal.Copy(dataSet.FullHistogram, 0, histogramPtr, dataSet.FullHistogram.Length);
+            }
+
+            if (DataAnalysis.GetPercentileValuesFromHistogram(histogramPtr, dataSet.FullHistogram.Length,
+                    dataSet.MinValue, dataSet.MaxValue, minPercentile,
+                    maxPercentile, out minPercentileValue, out maxPercentileValue) != 0)
+            {
+                Debug.LogError("Error calculating percentiles from histogram.");
+            }
+            Marshal.FreeHGlobal(histogramPtr);
+        }
+        // otherwise, use the more precise method of calculating percentiles from the data
+        else 
+        {
+            if (DataAnalysis.GetPercentileValuesFromData(dataSet.FitsData, dataSet.NumPoints,
+                    minPercentile, maxPercentile, out minPercentileValue, out maxPercentileValue) != 0)
+            {
+                Debug.LogError("Error calculating percentiles from data.");
+            }
+        }
+        
+        Debug.Log("Setting histogram scale min to percentiles: " + minPercentile + "% and " + maxPercentile + "% with values: " + minPercentileValue + " and " + maxPercentileValue + ".");
+        UpdateScale(minPercentileValue, maxPercentileValue);
+    }
+    
+    /// <summary>
+    /// Function to expose setting the minimum histogram scale value to the UI
+    /// </summary>
+    /// <param name="minString"></param>
+    public void UpdateScaleMin(string minString)
+    {
+        float max = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
             .gameObject.transform.Find("Stats").gameObject.transform.Find("Line_max")
             .gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text);
-        float sigma = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
-            .Find("Stats").gameObject.transform.Find("Line_sigma")
-            .gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value + 1f;
-        volumeDataSetRenderer.ScaleMin = newMin;
-        VolumeDataSet.UpdateHistogram(volumeDataSet, histMin, histMax);
-        _histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, histMin, histMax, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
+        UpdateScale(float.Parse(minString), max); 
     }
 
-    public void UpdateScaleMax(String max)
+    /// <summary>
+    /// Function to expose setting the maximum histogram scale value to the UI
+    /// </summary>
+    /// <param name="maxString"></param>
+    public void UpdateScaleMax(string maxString)
     {
-        VolumeDataSetRenderer volumeDataSetRenderer = GetFirstActiveDataSet();
-        VolumeDataSet volumeDataSet = volumeDataSetRenderer.Data;
-        float newMax = float.Parse(max);
-        float histMin = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
+        float min = float.Parse(statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
             .gameObject.transform.Find("Stats").gameObject.transform.Find("Line_min")
             .gameObject.transform.Find("InputField_min").GetComponent<TMP_InputField>().text);
-        float histMax = newMax;
-        float sigma = statsPanelContent.gameObject.transform.Find("Stats_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
-            .Find("Stats").gameObject.transform.Find("Line_sigma")
-            .gameObject.transform.Find("Dropdown").GetComponent<TMP_Dropdown>().value + 1f;
-        volumeDataSetRenderer.ScaleMax = newMax;
-        VolumeDataSet.UpdateHistogram(volumeDataSet, histMin, histMax);
-        _histogramHelper.CreateHistogramImg(volumeDataSet.Histogram, volumeDataSet.HistogramBinWidth, histMin, histMax, volumeDataSet.MeanValue, volumeDataSet.StanDev, sigma);
+        UpdateScale(min, float.Parse(maxString));
     }
 
     public void UpdateThresholdMin(float value)
     {
-        var activeDataSet = GetFirstActiveDataSet();
-        if (activeDataSet != null)
+        var firstActiveRenderer = GetFirstActiveRenderer();
+        if (firstActiveRenderer != null)
         {
-            activeDataSet.ThresholdMin = Mathf.Clamp(value, 0, activeDataSet.ThresholdMax);
+            firstActiveRenderer.ThresholdMin = Mathf.Clamp(value, 0, firstActiveRenderer.ThresholdMax);
         }
     }
 
     public void UpdateThresholdMax(float value)
     {
-        var activeDataSet = GetFirstActiveDataSet();
-        if (activeDataSet != null)
+        var firstActiveRenderer = GetFirstActiveRenderer();
+        if (firstActiveRenderer != null)
         {
-            activeDataSet.ThresholdMax = Mathf.Clamp(value, activeDataSet.ThresholdMin, 1);
+            firstActiveRenderer.ThresholdMax = Mathf.Clamp(value, firstActiveRenderer.ThresholdMin, 1);
         }
     }
 
     public void ResetThresholds()
     {
-        var activeDataSet = GetFirstActiveDataSet();
-        if (activeDataSet != null)
+        var firstActiveRenderer = GetFirstActiveRenderer();
+        if (firstActiveRenderer != null)
         {
-            activeDataSet.ThresholdMin = activeDataSet.InitialThresholdMin;
-            _minThreshold.value = activeDataSet.ThresholdMin;
+            firstActiveRenderer.ThresholdMin = firstActiveRenderer.InitialThresholdMin;
+            _minThreshold.value = firstActiveRenderer.ThresholdMin;
 
-            activeDataSet.ThresholdMax = activeDataSet.InitialThresholdMax;
-            _maxThreshold.value = activeDataSet.ThresholdMax;
+            firstActiveRenderer.ThresholdMax = firstActiveRenderer.InitialThresholdMax;
+            _maxThreshold.value = firstActiveRenderer.ThresholdMax;
         }
     }
 

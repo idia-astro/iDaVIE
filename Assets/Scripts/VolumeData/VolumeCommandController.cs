@@ -1,4 +1,25 @@
-﻿using System;
+﻿/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
+using System;
 using System.Collections.Generic;
 using System.Text;
 using DataFeatures;
@@ -17,6 +38,8 @@ namespace VolumeData
         public QuickMenuController QuickMenuController;
         public PaintMenuController PaintMenuController;
         public MomentMapMenuController momentMapMenuController;
+        
+        public bool IsVoiceRecognitionActive => _speechKeywordRecognizer.IsRunning;
 
         private List<VolumeDataSetRenderer> _dataSets;
 
@@ -41,8 +64,6 @@ namespace VolumeData
             public static readonly string ColormapViridis = "color map viridis";
             public static readonly string ColormapCubeHelix = "color map cube helix";
             public static readonly string ColormapTurbo = "color map turbo";
-            public static readonly string NextDataSet = "next data set";
-            public static readonly string PreviousDataSet = "previous data set";
             public static readonly string CropSelection = "crop selection";
             public static readonly string Teleport = "teleport";
             public static readonly string ResetCropSelection = "reset crop";
@@ -75,9 +96,10 @@ namespace VolumeData
             public static readonly string[] All =
             {
                 EditThresholdMin, EditThresholdMax, EditZAxis, EditZAxisAlt, SaveThreshold, ResetThreshold, ResetTransform, ColormapPlasma, ColormapRainbow, 
-                ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ColormapTurbo, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt, NextDataSet, 
-                PreviousDataSet, CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
-                ProjectionAverage, SamplingModeAverage, SamplingModeMaximum, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, HideMaskOutline, TakePicture, CursorInfo, LinearScale,
+                ColormapMagma, ColormapInferno, ColormapViridis, ColormapCubeHelix, ColormapTurbo, ResetZAxis, ResetZAxisAlt, SaveZAxis, SaveZAxisAlt,
+                CropSelection, Teleport, ResetCropSelection, MaskDisabled, MaskEnabled, MaskInverted, MaskIsolated, ProjectionMaximum, 
+                ProjectionAverage, SamplingModeAverage, SamplingModeMaximum, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline, 
+                HideMaskOutline, TakePicture, CursorInfo, LinearScale,
                 LogScale, SqrtScale, AddNewSource, SetSourceId, Undo, Redo, SaveSubCube
             };
         }
@@ -87,17 +109,45 @@ namespace VolumeData
 
         private VolumeDataSetRenderer _activeDataSet;
 
+        private Config _config;
 
         void OnEnable()
         {
-            var config = Config.Instance;
+            _config = Config.Instance;
             _dataSets = new List<VolumeDataSetRenderer>();
             _dataSets.AddRange(GetComponentsInChildren<VolumeDataSetRenderer>(true));            
-            _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, config.voiceCommandConfidenceLevel);
+            _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, _config.voiceCommandConfidenceLevel);
             _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
-
-            _speechKeywordRecognizer.Start();
             _volumeInputController = FindObjectOfType<VolumeInputController>();
+
+            if (!_config.usePushToTalk)
+            {
+                _speechKeywordRecognizer.Start();
+            }
+            else
+            {
+                _volumeInputController.PushToTalkButtonPressed += OnPushToTalkPressed;
+                _volumeInputController.PushToTalkButtonReleased += OnPushToTalkReleased;
+            }
+        }
+        
+        private void OnDestroy()
+        {
+            if (_config.usePushToTalk)
+            {
+                _volumeInputController.PushToTalkButtonPressed -= OnPushToTalkPressed;
+                _volumeInputController.PushToTalkButtonReleased -= OnPushToTalkReleased;
+            }
+        }
+        
+        public void OnPushToTalkPressed()
+        {
+            _speechKeywordRecognizer.Start();
+        }
+        
+        public void OnPushToTalkReleased()
+        {
+            _speechKeywordRecognizer.Stop();
         }
 
         private void OnPhraseRecognized(PhraseRecognizedEventArgs args)
@@ -153,14 +203,6 @@ namespace VolumeData
             else if (args == Keywords.ResetTransform)
             {
                 resetTransform();
-            }
-            else if (args == Keywords.NextDataSet)
-            {
-                stepDataSet(true);
-            }
-            else if (args == Keywords.PreviousDataSet)
-            {
-                stepDataSet(false);
             }
             else if (args == Keywords.ColormapPlasma)
             {

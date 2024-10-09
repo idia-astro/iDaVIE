@@ -1,3 +1,24 @@
+/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -156,7 +177,12 @@ namespace VolumeData
 
         public long[] cubeSize;
 
+        // Full histogram of the data that does not change
+        public int[] FullHistogram;
+        
+        // Histogram of the data that can be scaled
         public int[] Histogram;
+        
         public float HistogramBinWidth;
         public float MaxValue;
         public float MinValue;
@@ -426,10 +452,12 @@ namespace VolumeData
                     out volumeDataSetRes.StanDev);
                 int histogramSize = Mathf.RoundToInt(Mathf.Sqrt(numberDataPoints));
                 volumeDataSetRes.Histogram = new int[histogramSize];
+                volumeDataSetRes.FullHistogram = new int[histogramSize];
                 IntPtr histogramPtr = IntPtr.Zero;
                 volumeDataSetRes.HistogramBinWidth = (volumeDataSetRes.MaxValue - volumeDataSetRes.MinValue) / histogramSize;
                 DataAnalysis.GetHistogram(fitsDataPtr, numberDataPoints, histogramSize, volumeDataSetRes.MinValue, volumeDataSetRes.MaxValue, out histogramPtr);
                 Marshal.Copy(histogramPtr, volumeDataSetRes.Histogram, 0, histogramSize);
+                Marshal.Copy(histogramPtr, volumeDataSetRes.FullHistogram, 0, histogramSize);
                 if (histogramPtr != IntPtr.Zero)
                     DataAnalysis.FreeDataAnalysisMemory(histogramPtr);
                 volumeDataSetRes.HasFitsRestFrequency =
@@ -539,8 +567,8 @@ namespace VolumeData
                     {
                         // Update existing feature's bounds
                         var feature = _maskFeatureSet.FeatureList[index];
-                        var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
-                        var boxMax = new Vector3(sourceStats.maxX, sourceStats.maxY, sourceStats.maxZ);
+                        var boxMin = new Vector3(Math.Max(sourceStats.minX, 1) , Math.Max(sourceStats.minY, 1), Math.Max(sourceStats.minZ, 1));
+                        var boxMax = new Vector3(Math.Min(sourceStats.maxX, XDim), Math.Min(sourceStats.maxY, YDim), Math.Min(sourceStats.maxZ, ZDim));
                         feature.SetBounds(boxMin, boxMax);
                         feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
                         _maskFeatureSet.FeatureManager.NeedToRespawnMenuList = true;
@@ -560,12 +588,8 @@ namespace VolumeData
                     var flag = "";
                     var name = $"Masked Source #{maskVal}";
                     var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
-                    bool vis;
-                    if (_maskFeatureSet.FeatureList.Count > 1)
-                        vis = _maskFeatureSet.FeatureList[0].Visible;
-                    else
-                        vis = false;
-                    var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, flag, _maskFeatureSet.FeatureList.Count, maskVal - 1, rawStrings, vis);
+                    bool startVisible = _maskFeatureSet.FeatureList.Count != 0 && _maskFeatureSet.FeatureList[0].Visible; // Match visibility of first feature or start invisible if empty
+                    var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, flag, _maskFeatureSet.FeatureList.Count, maskVal - 1, rawStrings, startVisible);
                     _maskFeatureSet.AddFeature(feature);
                     _maskFeatureSet.FeatureMenuScrollerDataSource.InitData();       // Reinitialize the data source to include the new feature
                     _maskFeatureSet.FeatureManager.NeedToRespawnMenuList = true;

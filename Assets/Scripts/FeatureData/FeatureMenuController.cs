@@ -1,3 +1,24 @@
+/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
 using DataFeatures;
 using System.Collections.Generic;
 using UnityEngine;
@@ -243,6 +264,7 @@ public class FeatureMenuController : MonoBehaviour
                     nextColorIndex  = 0;
                 }
                 nextColor = FeatureSetManager.FeatureColors[nextColorIndex];
+                nextColorIndex++;
             } while (forbiddenColors.Contains(nextColor));
         }
         _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor = nextColor;
@@ -296,36 +318,57 @@ public class FeatureMenuController : MonoBehaviour
         {
             textObject.GetComponent<TMP_Text>().text +=
                 $"Source # : {_featureSetManager.SelectedFeature.Id + 1}{Environment.NewLine}";
-            if (_activeDataSet.HasWCS)
-            {
+            
                 double centerX, centerY, centerZ, ra, dec, physz, normR, normD, normZ;
-                if (_featureSetManager.VolumeRenderer.SourceStatsDict == null)
+                
+                // if the selected feature is from a mask, get the centroid from the sourceStats dictionary
+                if (_featureSetManager.SelectedFeature.FeatureSetParent.FeatureSetType == FeatureSetType.Mask 
+                    && _featureSetManager.VolumeRenderer.SourceStatsDict != null)
+                {
+                    centerX = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cX;
+                    centerY = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cY;
+                    centerZ = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cZ;
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"Centroid : {Environment.NewLine}";
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"  x : {centerX:F5}{Environment.NewLine}";
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"  y : {centerY:F5}{Environment.NewLine}";
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"  z : {centerZ:F5}{Environment.NewLine}";
+                }
+                // otherwise, use the center of the feature cuboid
+                else
                 {
                     centerX = _featureSetManager.SelectedFeature.Center.x;
                     centerY = _featureSetManager.SelectedFeature.Center.y;
                     centerZ = _featureSetManager.SelectedFeature.Center.z;
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"Center : {Environment.NewLine}";
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"  x : {centerX}{Environment.NewLine}";
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"  y : {centerY}{Environment.NewLine}";
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"  z : {centerZ}{Environment.NewLine}";
                 }
-                else
-                {
-                    centerX = _featureSetManager.VolumeRenderer
-                        .SourceStatsDict[_featureSetManager.SelectedFeature.Index].cX;
-                    centerY = _featureSetManager.VolumeRenderer
-                        .SourceStatsDict[_featureSetManager.SelectedFeature.Index].cY;
-                    centerZ = _featureSetManager.VolumeRenderer
-                        .SourceStatsDict[_featureSetManager.SelectedFeature.Index].cZ;
-                }
-
+                
+            // if there is an associated WCS, transform the designated center to RA, Dec, and physical z coords
+            if (_activeDataSet.HasWCS)
+            {
                 AstTool.Transform3D(_activeDataSet.AstFrame, centerX, centerY, centerZ, 1, out ra, out dec,
                     out physz);
                 AstTool.Norm(_activeDataSet.AstFrame, ra, dec, physz, out normR, out normD, out normZ);
 
                 textObject.GetComponent<TMP_Text>().text +=
-                    $"RA : {dataSet.GetFormattedCoord(normR, 1)}{Environment.NewLine}";
+                    $"  RA : {dataSet.GetFormattedCoord(normR, 1)}{Environment.NewLine}";
                 textObject.GetComponent<TMP_Text>().text +=
-                    $"Dec : {dataSet.GetFormattedCoord(normD, 2)}{Environment.NewLine}";
+                    $"  Dec : {dataSet.GetFormattedCoord(normD, 2)}{Environment.NewLine}";
                 textObject.GetComponent<TMP_Text>().text +=
-                    FormattableString.Invariant($"{_activeDataSet.Data.GetAstAttribute("System(3)")} ({_activeDataSet.Data.GetAxisUnit(3)}) : {normZ:F3}{Environment.NewLine}");
+                    FormattableString.Invariant($"  {_activeDataSet.Data.GetAstAttribute("System(3)")} ({_activeDataSet.Data.GetAxisUnit(3)}) : {normZ:F3}{Environment.NewLine}");
             }
+            
+            // if there are raw data associated with the feature, add to the info window
             if (_featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys != null)
             {
                 for (var i = 0; i < _featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys.Length; i++)

@@ -1,3 +1,26 @@
+/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
+using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Windows.Speech;
@@ -10,7 +33,7 @@ namespace VolumeData
     public class Config
     {
         [JsonProperty("$schema")]
-        private readonly string _schemaUri = "https://idavie.readthedocs.io/en/latest/_static/idavie_config_1.json";
+        private readonly string _schemaUri = "https://idavie.readthedocs.io/en/latest/_static/idavie_config_2.json";
         
         public bool maxModeDownsampling = true;
         public bool foveatedRendering = true;
@@ -33,11 +56,55 @@ namespace VolumeData
         [JsonConverter(typeof(StringEnumConverter))]
         public ConfidenceLevel voiceCommandConfidenceLevel = ConfidenceLevel.Low;
 
+        /// <summary>
+        /// The different flags that can be applied to sources in a source list, and exported with them.
+        /// </summary>
+        /// <value>Default values are [-1, 0, 1].</value>
         public string[] flags = {"-1", "0", "1"};
+
+        /// <summary>
+        /// The number of steps for a full range when incrementing the histogram min/max.
+        /// </summary>
+        public int histogramIncrementSteps = 40;
+
+        /// <summary>
+        /// The number of steps per second when incrementing the histogram min/max.
+        /// </summary>
+        public int histogramStepsPerSecond = 10;
+
+        /// <summary>
+        /// Use the quick, less precise percentile calculation for the scale min/max
+        /// that uses the histogram instead of the full data set.
+        /// </summary>
+        public bool useQuickModeForPercentiles = true;
+        
+        // Default rest frequencies in GHz. These are used for frequency <-> velocity conversions
+        public Dictionary<String,double> restFrequenciesGHz = new Dictionary<string, double>
+        {
+            {"HI", 1.420406},
+            {"12CO(1-0)", 115.271},
+            {"12CO(2-1)", 230.538},
+            {"12CO(3-2)", 345.796},
+            {"Halpha", 456806}
+        };
+        
         public bool tunnellingVignetteOn = true;
         public float tunnellingVignetteIntensity = 1.0f;
         public float tunnellingVignetteEnd = 0.40f;
+        
+        // Allow the controller to display information outside the volume cube
+        public bool displayCursorInfoOutsideCube = false;
 
+        // Display the voice command status in the cursor information
+        public bool displayVoiceCommandStatus = true;
+
+        // Enable the requirement that the secondary button on the primary controller
+        // must be held down to use voice commands
+        public bool usePushToTalk = false;
+        
+        // Use the simple voice command status indicator
+        public bool useSimpleVoiceCommandStatus = true;
+        
         public bool importedFeaturesStartVisible = true;
         
         public class RenderConfig
@@ -92,11 +159,14 @@ namespace VolumeData
             if (!File.Exists(filepath))
             {
                 var defaultConfig = new Config();
-                
+
+                // Tell debug log that new config file was created
+                PlayerPrefs.SetInt("NewConfigFileCreated", 1);
+                PlayerPrefs.SetString("ConfigFilePath", filepath);
+                PlayerPrefs.Save();
                 defaultConfig.WriteToFile();
                 return defaultConfig;
             }
-
 
             Config result;
             try
@@ -116,6 +186,8 @@ namespace VolumeData
                 return new Config();
             }
             
+            PlayerPrefs.SetString("ConfigFilePath", filepath);
+            PlayerPrefs.Save();
             return result;
         }
 

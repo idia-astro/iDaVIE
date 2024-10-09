@@ -1,3 +1,24 @@
+/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
 using System;
 using System.Collections.Generic;
 using Stateless;
@@ -11,6 +32,7 @@ using System.Diagnostics;
 using System.Linq;
 using DataFeatures;
 using LineRenderer;
+using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
 using VRHand = Valve.VR.InteractionSystem.Hand;
 
@@ -100,6 +122,10 @@ public class VolumeInputController : MonoBehaviour
     private Vector3 _starGripForwardAxis;
     private float _previousControllerHeight;
     private LocomotionState _locomotionState;
+    private Config _config;
+
+    public event Action PushToTalkButtonPressed;
+    public event Action PushToTalkButtonReleased;
     
     
     // Interactions
@@ -107,7 +133,7 @@ public class VolumeInputController : MonoBehaviour
     private bool _isQuickMenu;
     private Feature _hoveredFeature, _editingFeature;
     private FeatureAnchor _hoveredAnchor, _editingAnchor;
-    private bool _showCursorInfo = true;
+    public bool ShowCursorInfo { get; private set; } = true;
 
     private PolyLine _lineAxisSeparation, _lineRotationAxes;
 
@@ -164,9 +190,9 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnEnable()
     {
-        var config = Config.Instance;
-        _tunnellingVignetteOn = config.tunnellingVignetteOn;
-        _maxVignetteIntensity = config.tunnellingVignetteIntensity;
+        _config = Config.Instance;
+        _tunnellingVignetteOn = _config.tunnellingVignetteOn;
+        _maxVignetteIntensity = _config.tunnellingVignetteIntensity;
         _vrFamily = DetermineVRFamily();
         Vector3 pointerOffset = PointerOffsetsLeft[_vrFamily];
         if (_player == null)
@@ -436,9 +462,20 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnQuickMenuChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
-        // Menu is only available on the second hand
+        // Use primary hand for voice command activation (push-to-talk)
         if (fromSource == PrimaryHand)
         {
+            if (_config.usePushToTalk)
+            {
+                if (newState)
+                {
+                    PushToTalkButtonPressed?.Invoke();
+                }
+                else
+                {
+                    PushToTalkButtonReleased?.Invoke();
+                }
+            }
             return;
         }
 
@@ -651,15 +688,20 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        var cameras = Camera.allCameras;
+        foreach (var camera in cameras)
+        { 
+            camera.depthTextureMode = DepthTextureMode.Depth;
+        }
+    }
+    
     private void Update()
     {
         // Common update functions
         if (_tunnellingVignetteOn)
             UpdateVignette();
-        if (Camera.current)
-        {
-            Camera.current.depthTextureMode = DepthTextureMode.Depth;
-        }
 
         switch (_locomotionState)
         {
@@ -945,7 +987,8 @@ public class VolumeInputController : MonoBehaviour
         {
             dataSet.SetRegionPosition(cursorPosWorldSpace, false);
         }
-        else if (currentState == InteractionState.Editing && HasEditingAnchor)
+        // Edit the region bounds in Editing state, but not for mask feature sets
+        else if (currentState == InteractionState.Editing && HasEditingAnchor && _editingFeature.FeatureSetParent.FeatureSetType != FeatureSetType.Mask)
         {
             var voxelPosition = dataSet.GetVoxelPositionWorldSpace(cursorPosWorldSpace);
             var newCornerMin = _editingFeature.CornerMin;
@@ -1005,14 +1048,22 @@ public class VolumeInputController : MonoBehaviour
         }
         else
         {
-            cursorString = GetFormattedCursorString(dataSet);
+            cursorString = GetFormattedCursorString(dataSet, Config.Instance.displayCursorInfoOutsideCube);
         }
         
         if (_handInfoComponents != null)
         {
             _handInfoComponents[PrimaryHandIndex].enabled = true;
             _handInfoComponents[1 - PrimaryHandIndex].enabled = false;
-            _handInfoComponents[PrimaryHandIndex].text = (_showCursorInfo || currentState == InteractionState.EditingSourceId) ? cursorString : "";
+            _handInfoComponents[PrimaryHandIndex].text = (ShowCursorInfo || currentState == InteractionState.EditingSourceId) ? cursorString : "";
+            if (IsCursorOutsideCube(dataSet))
+            {
+                _handInfoComponents[PrimaryHandIndex].color = new Color(0.86f, 0.078f, 0.235f); //This is crimson rgb(220,20,60)
+            }
+            else
+            {
+                _handInfoComponents[PrimaryHandIndex].color = Color.white;
+            }
         }
     }
 
@@ -1040,13 +1091,34 @@ public class VolumeInputController : MonoBehaviour
         return stringToReturn;
     }
 
-    private static string GetFormattedCursorString(VolumeDataSetRenderer dataSetRenderer)
+    /// <summary>
+    /// Checks if the cursor is outside the volume cube
+    /// </summary>
+    /// <param name="dataSetRenderer"></param>
+    /// <returns></returns>
+    public static bool IsCursorOutsideCube(VolumeDataSetRenderer dataSetRenderer)
+    {
+        return (dataSetRenderer.CursorVoxel.x < 0 || dataSetRenderer.CursorVoxel.y < 0 || dataSetRenderer.CursorVoxel.z < 0 || dataSetRenderer.CursorVoxel.x >= dataSetRenderer.Data.XDim || dataSetRenderer.CursorVoxel.y >= dataSetRenderer.Data.YDim || dataSetRenderer.CursorVoxel.z >= dataSetRenderer.Data.ZDim);
+    }
+    
+    /// <summary>
+    /// Get the string of information to display on the VR controller
+    /// </summary>
+    /// <param name="dataSetRenderer">The volume renderer object which the cursor information will reference</param>
+    /// <param name="displayOutsideCube">Enable information to display when the cursor is outside the cube. Blank otherwise.</param>
+    /// <returns>String in the correct format to display on the controller</returns>
+    private static string GetFormattedCursorString(VolumeDataSetRenderer dataSetRenderer, bool displayOutsideCube = false)
     {
         VolumeDataSet dataSet = dataSetRenderer.Data;
 
+        if (dataSet == null)
+        {
+            return "";
+        }
+
         var voxelCoordinate = dataSetRenderer.CursorVoxel;
 
-        if (voxelCoordinate.x < 0 || voxelCoordinate.y < 0 || voxelCoordinate.z < 0)
+        if (!displayOutsideCube && IsCursorOutsideCube(dataSetRenderer))
         {
             return "";
         }
@@ -1208,7 +1280,7 @@ public class VolumeInputController : MonoBehaviour
 
     public void ToggleCursorInfoVisibility()
     {
-        _showCursorInfo = !_showCursorInfo;
+        ShowCursorInfo = !ShowCursorInfo;
     }
 
     public void AddNewSource()

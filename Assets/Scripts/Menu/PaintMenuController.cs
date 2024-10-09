@@ -1,4 +1,25 @@
-﻿using DataFeatures;
+﻿/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
+using DataFeatures;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,7 +36,8 @@ public class PaintMenuController : MonoBehaviour
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
 
-    public GameObject mainMenuCanvas;
+    public GameObject sourcesMenu;
+    public GameObject plotsMenu;
     public GameObject paintMenu;
     public GameObject savePopup;
     int maskstatus = 0;
@@ -193,17 +215,46 @@ public class PaintMenuController : MonoBehaviour
         _volumeInputController.SetBrushSubtractive();
     }
 
-    public void OpenMainMenu()
+    public void OpenSourcesMenu()
     {
-        mainMenuCanvas.SetActive(!mainMenuCanvas.activeSelf);
+        spawnMenu(sourcesMenu);
+    }
+    
+    public void OpenPlotsWindow()
+    {
+        spawnMenu(plotsMenu);
+    }
+    
+    public void spawnMenu(GameObject menu)
+    {
+        Vector3 playerPos = Camera.main.transform.position;
+        Vector3 playerDirection = Camera.main.transform.forward;
+        Quaternion playerRotation = Camera.main.transform.rotation;
+        float spawnDistance = 1.5f;
+
+        Vector3 spawnPos = playerPos + playerDirection * spawnDistance;
+
+        menu.transform.position = spawnPos;
+        menu.transform.rotation = Quaternion.LookRotation(new Vector3(spawnPos.x - playerPos.x, 0, spawnPos.z - playerPos.z));
+
+        if (!menu.activeSelf)
+        {
+            menu.SetActive(true);
+        }
     }
 
     public void SaveMask()
     {
-        // savePopup.transform.SetParent(this.transform.parent, false);
-        // savePopup.transform.localPosition = this.transform.localPosition;
-        // savePopup.transform.localRotation = this.transform.localRotation;
-        // savePopup.transform.localScale = this.transform.localScale;
+        if (_activeDataSet.IsMaskNew)
+        {
+            SaveNewMask();
+        }
+        else
+        {
+            // savePopup.transform.SetParent(this.transform.parent, false);
+            // savePopup.transform.localPosition = this.transform.localPosition;
+            // savePopup.transform.localRotation = this.transform.localRotation;
+            // savePopup.transform.localScale = this.transform.localScale;
 
         // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
         // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.RemoveAllListeners();

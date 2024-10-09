@@ -1,8 +1,30 @@
-﻿using System;
+﻿/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using fts;
+using Unity.Collections;
 using UnityEngine;
 
 [PluginAttr("idavie_native")]
@@ -46,6 +68,15 @@ public static class DataAnalysis
     public static readonly GetZProfileDelegate GetZProfile = null;
     public delegate int GetZProfileDelegate(IntPtr dataPtr, out IntPtr profile, long dimX, long dimY, long dimZ, long x, long y);
 
+    [PluginFunctionAttr("GetPercentileValuesFromHistogram")] 
+    public static readonly GetPercentileValuesFromHistogramDelegate GetPercentileValuesFromHistogram = null;
+    public delegate int GetPercentileValuesFromHistogramDelegate(IntPtr histogram, int numBins, float minValue, float maxValue, float minPercentile, float maxPercentile, out float minPercentileValue, out float maxPercentileValue);
+    
+    [PluginFunctionAttr("GetPercentileValuesFromData")] 
+    public static readonly GetPercentileValuesFromDataDelegate GetPercentileValuesFromData = null;
+    public delegate int GetPercentileValuesFromDataDelegate(IntPtr dataPtr, long numElements, float minPercentile, float maxPercentile, out float minPercentileValue, out float maxPercentileValue);
+
+    
     [PluginFunctionAttr("GetHistogram")] 
     public static readonly GetHistogramDelegate GetHistogram = null;
     public delegate int GetHistogramDelegate(IntPtr dataPtr, long numElements, int numBins, float minVal, float maxVal, out IntPtr histogram);
@@ -92,6 +123,9 @@ public static class DataAnalysis
         public double channelW20;
         public double veloVsys;
         public double veloW20;
+
+        public IntPtr spectralProfilePtr;
+        public int spectralProfileSize;
 
         public bool IsEmpty => numVoxels == 0;
         public void AddPointToBoundingBox(long x, long y, long z)

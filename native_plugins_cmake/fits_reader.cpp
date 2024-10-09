@@ -1,3 +1,25 @@
+/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 Inter-University Institute for Data Intensive Astronomy
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
+
 #include "fits_reader.h"
 
 // #include <chrono>
@@ -60,6 +82,14 @@ int FitsMovabsHdu(fitsfile *fptr, int hdunum, int *hdutype, int *status)
     return fits_movabs_hdu(fptr, hdunum, hdutype, status);
 }
 
+int FitsGetHduType(fitsfile *fptr, int *hdutype, int *status) {
+    return fits_get_hdu_type(fptr, hdutype, status);
+}
+
+int FitsGetNumHdus(fitsfile *fptr, int *numhdus, int *status) {
+    return fits_get_num_hdus(fptr, numhdus, status);
+}
+
 int FitsGetNumHeaderKeys(fitsfile *fptr, int *keysexist, int *morekeys, int *status)
 {
     return fits_get_hdrspace(fptr, keysexist, morekeys, status);
@@ -84,6 +114,12 @@ int FitsReadKey(fitsfile *fptr, int datatype, const char *keyname, void *value,
                 char *comm, int *status)
 {
     return fits_read_key(fptr, datatype, keyname, value, comm, status);
+}
+
+int FitsReadKeyString(fitsfile *fptr, const char *keyname, char *value,
+                char *comm, int *status)
+{
+    return fits_read_key_str(fptr, keyname, value, comm, status);
 }
 
 int FitsReadKeyN(fitsfile *fptr, int keynum, char *keyname, char *value,
@@ -494,11 +530,10 @@ void FreeFitsMemory(char* header, int* status)
     fits_free_memory(header, status);
 }
 
-int WriteLogFile(const char * fileName, const char * content, int type)
-{
+int WriteLogFile(const char * fileName, const char * content, int type) {
     std::ofstream file;
     std::string header;
-    switch(type){
+    switch (type) {
         case 0:
             header = "[Debug] ";
             break;
@@ -512,15 +547,259 @@ int WriteLogFile(const char * fileName, const char * content, int type)
             header = "[Message] ";
             break;
     }
-    try
-    {
+    try {
         file.open(fileName, std::ios_base::app);
         file << header << content << std::endl;
         return 0;
     }
-    catch (std::exception& e)
-    {
+    catch (std::exception &e) {
         std::cerr << "Error with writing from library to debug log." << std::endl;
         return 1;
     }
+}
+
+/**
+ * @brief 
+ * Function to write header values for the fits file, called when writing moment maps.
+ * Consider adding RA and DEC values, and x/y axis units as well.
+ * @param newFitsFile The fitsfile to be written to.
+ * @return int Returns the status. 0 if successful, see the usual table if not 0.
+ */
+int writeMomMapFitsHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile, int mapNumber)
+{
+    int status = 0;
+
+    std::string comment = "The software that processed this data";
+    std::string val = "i-DaVIE-v";
+    auto refVal = val.data();
+    fits_write_key(newFitsFile, TSTRING, "SOFTNAME", refVal, comment.c_str(), &status);
+    if (status)
+    {
+        std::stringstream debug;
+        debug << "Error " << std::to_string(status) << " when writing SOFTNAME to FITS header in writeFITSHeader()!";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+    }
+
+    //Consider changing the version value to instead be pulled from a config file (not known to user), instead of being hard coded like this.
+    comment = "Version of the software";
+    val = "1.0";
+    refVal = val.data();
+    fits_write_key(newFitsFile, TSTRING, "SOFTVERS", refVal, comment.c_str(), &status);
+    if (status)
+    {
+        std::stringstream debug;
+        debug << "Error " << std::to_string(status) << " when writing SOFTVERS to FITS header in writeFITSHeader()!";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+    }
+
+    //Consider changing the release date value to instead be pulled from a config file (not known to user), instead of being hard coded like this.
+    comment = "Release date of the software";
+    val = "2024-08-06";
+    refVal = val.data();
+    fits_write_key(newFitsFile, TSTRING, "SOFTDATE", refVal, comment.c_str(), &status);
+    if (status)
+    {
+        std::stringstream debug;
+        debug << "Error " << std::to_string(status) << " when writing SOFTDATE to FITS header in writeFITSHeader()!";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+    }
+
+    comment = "Software maintainer";
+    val = "IDIA Visualisation Lab <vislab@idia.ac.za>";
+    refVal = val.data();
+    fits_write_key(newFitsFile, TSTRING, "SOFTAUTH", refVal, comment.c_str(), &status);
+    if (status)
+    {
+        std::stringstream debug;
+        debug << "Error " << std::to_string(status) << " when writing SOFTAUTH to FITS header in writeFITSHeader()!";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+    }
+
+    comment = "Institute responsible for software";
+    val = "IDIA https://www.idia.ac.za/";
+    refVal = val.data();
+    fits_write_key(newFitsFile, TSTRING, "SOFTINST", refVal, comment.c_str(), &status);
+    if (status)
+    {
+        std::stringstream debug;
+        debug << "Error " << std::to_string(status) << " when writing SOFTINST to FITS header in writeFITSHeader()!";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+    }
+
+    char* valueString = new char[FLEN_VALUE];
+
+    // Write the required string keys to the new fits file
+    for (int i = 0; i < REQUIRED_MOMENT_MAP_STR_KEYS.size(); i++)
+    {
+        char* key = const_cast<char*>(REQUIRED_MOMENT_MAP_STR_KEYS[i].c_str());
+        //check if the key exists in the main fits file
+        if (!fits_read_key(mainFitsFile, TSTRING, key, valueString, nullptr, &status))
+        {
+            fits_write_key(newFitsFile, TSTRING, key, valueString, "", &status);
+            if (status)
+            {
+                std::stringstream debug;
+                debug << "Error " << std::to_string(status) << " when writing " << key << " to FITS header in writeFITSHeader()!";
+                WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+            }
+        }
+        else
+        {
+            std::stringstream debug;
+            debug << "Cannot find  " << std::string(key) << " from FITS header in writeFITSHeader(). Status is " << std::to_string(status) << "!\n";
+            WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+            status = 0;
+        }
+    }
+
+    // Write the derived BUNIT depending on the map number
+    // If the map is a moment 0 map, the units are CUNIT3 * BUNIT of the original cube
+    char* valueString2 = new char[FLEN_VALUE];
+    char* cunit3Key = const_cast<char*>("CUNIT3");
+    char* bunitKey = const_cast<char*>("BUNIT");
+    if (mapNumber == 0)
+    {
+        if (!fits_read_key(mainFitsFile, TSTRING, cunit3Key, valueString, nullptr, &status))
+        {
+            if (!fits_read_key(mainFitsFile, TSTRING, bunitKey, valueString2, nullptr, &status))
+            {
+                std::string bunit = std::string(valueString2) + " " + std::string(valueString);
+                fits_write_key(newFitsFile, TSTRING, "BUNIT", const_cast<char*>(bunit.c_str()), "", &status);
+                if (status)
+                {
+                    std::stringstream debug;
+                    debug << "Error " << std::to_string(status) << " when writing BUNIT + CUNIT3 to FITS header in writeFITSHeader()!";
+                    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+                }
+            }
+            else
+            {
+                std::stringstream debug;
+                debug << "Cannot find  " << std::string(bunitKey) << " from FITS header in writeFITSHeader(). Status is " << std::to_string(status) << "!\n";
+                WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+                status = 0;
+            }
+        }
+        else
+        {
+            std::stringstream debug;
+            debug << "Cannot find  " << std::string(cunit3Key) << " from FITS header in writeFITSHeader(). Status is " << std::to_string(status) << "!\n";
+            WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+            status = 0;
+        }
+    }
+    // Moment 1 map BUNIT is just CUNIT3
+    else if (mapNumber == 1)
+    {
+        if (!fits_read_key(mainFitsFile, TSTRING, cunit3Key, valueString, nullptr, &status))
+        {
+            fits_write_key(newFitsFile, TSTRING, "BUNIT", valueString, "", &status);
+            if (status)
+            {
+                std::stringstream debug;
+                debug << "Error " << std::to_string(status) << " when writing CUNIT3 to BUNIT FITS header in writeFITSHeader()!";
+                WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+            }
+        }
+        else
+        {
+            std::stringstream debug;
+            debug << "Cannot find  " << std::string(cunit3Key) << " from FITS header in writeFITSHeader(). Status is " << std::to_string(status) << "!\n";
+            WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+            status = 0;
+        }
+    }
+
+
+    delete[] valueString;
+    delete[] valueString2;
+    double* valueDbl = new double;
+    // do the same for the double keys
+    for (int i = 0; i < REQUIRED_MOMENT_MAP_DBL_KEYS.size(); i++)
+    {
+        char* key = const_cast<char*>(REQUIRED_MOMENT_MAP_DBL_KEYS[i].c_str());
+        //check if the key exists in the main fits file
+        if (!fits_read_key(mainFitsFile, TDOUBLE, key, valueDbl, nullptr, &status))
+        {
+            fits_write_key(newFitsFile, TDOUBLE, key, valueDbl, "", &status);
+            if (status)
+            {
+                std::stringstream debug;
+                debug << "Error " << std::to_string(status) << " when writing " << key << " to FITS header in writeFITSHeader()!";
+                WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+            }
+        }
+        else
+        {
+            std::stringstream debug;
+            debug << "Cannot find  " << std::string(key) << " from FITS header in writeFITSHeader(). Status is " << std::to_string(status) << "!\n";
+            WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+            status = 0;
+        }
+    }
+    delete valueDbl;
+
+    return status;
+}
+
+/**
+ * @brief 
+ * Writes out an image as supplied by the pixels in imgPixs to filename in FITS format.
+ * @param filename The destination file name.
+ * @param imgPixs The data to be written out to the file. This data is expected to be in row-major form, same as FITS.
+ * @param xDims The dimensions of the final file in the x axis (NAXIS1).
+ * @param yDims The dimensions of the final file in the y axis (NAXIS2).
+ * @return int Returns the status. 0 if successful, see the usual table if not 0.
+ */
+int WriteMomentMap(fitsfile* mainFitsFile, char* filename, float* imagePixelArray, long xDims, long yDims, int mapNumber)
+{
+    fitsfile* newFitsFile;
+    int status = 0;
+    fits_create_file(&newFitsFile, filename, &status);
+    if (status)
+    {
+        std::stringstream debug;
+        debug << "Error " + std::to_string(status) + " opening FITS file for FitsWriter::Write()!";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+        return status;
+    }
+
+    long naxes[2];
+    naxes[0] = xDims;
+    naxes[1] = yDims;
+
+    fits_create_img(newFitsFile, FLOAT_IMG, 2, naxes, &status);
+    if (status)
+    {
+        std::stringstream debug;
+        debug << "Error " + std::to_string(status) + " creating FITS file for FitsWriter::Write()!";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+        return status;
+    }
+
+    writeMomMapFitsHeader(mainFitsFile, newFitsFile, mapNumber);
+
+    // write image data
+    long* fpixel = new long[2];
+    for (int i = 0; i < 2; ++i)
+        fpixel[i] = 1;
+    long nelements = naxes[0] * naxes[1];
+
+    fits_write_pix(newFitsFile, TFLOAT, fpixel, nelements, imagePixelArray, &status);
+    if (status)
+    {
+        std::cerr << ("Error " + std::to_string(status) + " when writing FITS file via CFITSIO, datatype = TFLOAT!");
+        std::stringstream debug;
+        debug << "Error " + std::to_string(status) + " opening FITS file for FitsWriter::Write()!";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 2);
+    }
+
+    fits_close_file(newFitsFile, &status);
+    if (status)
+    {
+        std::cerr << ("Error " + std::to_string(status) + " when closing new FITS file for FitsWriter::Write()!");
+    }
+    delete[] fpixel;
+
+    return status;
 }

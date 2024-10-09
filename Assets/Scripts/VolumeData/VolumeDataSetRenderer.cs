@@ -1,13 +1,36 @@
+/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using DataFeatures;
 using LineRenderer;
+using Unity.VisualScripting;
 using Debug = UnityEngine.Debug;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
@@ -109,17 +132,56 @@ namespace VolumeData
         public int CubeSlice = 1;
         public bool ShowMeasuringLine = false;
         public bool OverrideRestFrequency {get; set;} = false;
-        private double _restFrequency;
-        public double RestFrequency
+
+        private double _restFrequencyGHz;
+        private int _restFrequencyGHzListListIndex;
+
+        public event Action RestFrequencyGHzChanged;
+        public event Action RestFrequencyGHzListIndexChanged;
+        
+        public Dictionary<string, double> RestFrequencyGHzList { get; private set; }
+        public int RestFrequencyGHzListIndex
         {
-            get => _restFrequency;
+            get => _restFrequencyGHzListListIndex;
             set
             {
-                _restFrequencyChanged = true;
-                _restFrequency = value;
+                _restFrequencyGHzListListIndex = value;
+                
+                //if "Default" is selected, use the rest frequency from the fits file
+                if (value == 0)
+                {
+                    
+                    OverrideRestFrequency = false;
+                    ResetRestFrequency();
+                }
+                //if "Custom" is selected, use the input field in the CanvassDesktop
+                else if (value == RestFrequencyGHzList.Count)
+                {
+                    OverrideRestFrequency = true;
+                }
+                //otherwise, use the selected rest frequency from the config file
+                else
+                {
+                    OverrideRestFrequency = true;
+                    var newRestFrequencyGHz = RestFrequencyGHzList.Values.ElementAt(value);
+                    RestFrequencyGHz = newRestFrequencyGHz;
+                }
+                RestFrequencyGHzListIndexChanged?.Invoke();
             }
         }
-        private bool _restFrequencyChanged = false;
+        
+        public double RestFrequencyGHz
+        {
+            get => _restFrequencyGHz;
+            set
+            {
+                _restFrequencyGHzChanged = true;
+                _restFrequencyGHz = value;
+                RestFrequencyGHzChanged?.Invoke();
+            }
+        }
+        
+        private bool _restFrequencyGHzChanged = false;
         public UnityEngine.Vector3 InitialPosition { get; private set; }
         public UnityEngine.Quaternion InitialRotation { get; private set; }
         public UnityEngine.Vector3 InitialScale { get; private set; }
@@ -160,12 +222,11 @@ namespace VolumeData
         private VolumeDataSet _dataSet = null;
         private VolumeDataSet _maskDataSet = null;
 
+        public bool IsMaskNew { get; private set; } = false;
         private string lastSavedMaskPath = "";
         public VolumeDataSet Mask => _maskDataSet;
         public VolumeDataSet Data => _dataSet;
         
-        private bool _dirtyMask = false;
-
         public bool HasWCS { get; private set; }
         public IntPtr AstFrame { get =>_dataSet.AstFrameSet; } 
         public string StdOfRest => _dataSet.GetStdOfRest();
@@ -183,7 +244,12 @@ namespace VolumeData
         { 
             get 
             {
-                return _dataSet.SourceStatsDict;
+                // Return null if mask data is not loaded because the mask data is used to generate the source stats
+                if (_maskDataSet == null)
+                {
+                    return null;
+                }
+                return _maskDataSet.SourceStatsDict;
             }
         }
 
@@ -431,8 +497,14 @@ namespace VolumeData
             
             if (_dataSet.HasFitsRestFrequency)
             {
-                RestFrequency = _dataSet.FitsRestFrequency;
+                RestFrequencyGHz = _dataSet.FitsRestFrequency;
             }
+            else
+            {
+                _restFrequencyGHz = 0.0;
+            }
+            
+            PopulateRestFrequenyList();
             
             _momentMapRenderer = gameObject.AddComponent(typeof(MomentMapRenderer)) as MomentMapRenderer;
             if (_momentMapRenderer)
@@ -450,6 +522,7 @@ namespace VolumeData
             if (IsFullResolution)
             {
                 CropToRegion(UnityEngine.Vector3.one, new UnityEngine.Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
+                IsCropped = false;
             }
             
             Shader.WarmupAllShaders();
@@ -459,6 +532,21 @@ namespace VolumeData
 
             started = true;
             yield return 0;
+        }
+
+        /// <summary>
+        /// Add the rest frequencies from the config file to the rest frequency dictionary.
+        /// These are used to convert between frequency and velocity coordinates.
+        /// </summary>
+        private void PopulateRestFrequenyList()
+        {
+            RestFrequencyGHzList = new Dictionary<string, double>();
+            RestFrequencyGHzList.Add("Default", RestFrequencyGHz);
+            foreach (var emissionLine in Config.Instance.restFrequenciesGHz)
+            {
+                RestFrequencyGHzList.Add(emissionLine.Key, emissionLine.Value);
+            }
+            RestFrequencyGHzList.Add("Custom", 0.0);
         }
 
         public IEnumerator updateStatus(string label, int progress)
@@ -524,7 +612,7 @@ namespace VolumeData
         {
             UnityEngine.Vector3 objectSpacePosition = transform.InverseTransformPoint(cursor);
             Bounds objectBounds = new Bounds(UnityEngine.Vector3.zero, UnityEngine.Vector3.one);
-            if (objectBounds.Contains(objectSpacePosition) && _dataSet != null)
+            if ((objectBounds.Contains(objectSpacePosition) || Config.Instance.displayCursorInfoOutsideCube) && _dataSet != null)
             {
                 // Always a subset, so apply a suitable offset to the position in data space
                 int xOffset, yOffset, zOffset;
@@ -564,11 +652,16 @@ namespace VolumeData
                     UnityEngine.Vector3 voxelCenterObjectSpace = new UnityEngine.Vector3((voxelCenterCubeSpace.x - xOffset) / _dataSet.XDim - 0.5f,
                                                                                          (voxelCenterCubeSpace.y - yOffset) / _dataSet.YDim - 0.5f,
                                                                                          (voxelCenterCubeSpace.z - zOffset) / _dataSet.ZDim - 0.5f);
-                    _voxelOutline.Center = voxelCenterObjectSpace;
-                    _voxelOutline.Bounds = brushSize * new UnityEngine.Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
+                    // Check is needed if the cursor information display is allowed outside the cube 
+                    if (_voxelOutline != null)
+                    {
+                        _voxelOutline.Center = voxelCenterObjectSpace;
+                        _voxelOutline.Bounds = brushSize * new UnityEngine.Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim,
+                            1.0f / _dataSet.ZDim);
+                    }
                 }
 
-                _voxelOutline.Activate();
+                _voxelOutline?.Activate();
             }
             else
             {
@@ -971,12 +1064,12 @@ namespace VolumeData
                 _materialInstance.SetFloat(MaterialID.VignetteIntensity, VignetteIntensity);
                 _materialInstance.SetColor(MaterialID.VignetteColor, VignetteColor);
 
-                if (_restFrequencyChanged && HasWCS)
+                if (_restFrequencyGHzChanged && HasWCS)
                 {
-                    _dataSet.RecreateFrameSet(RestFrequency);
+                    _dataSet.RecreateFrameSet(RestFrequencyGHz);
                     _dataSet.CreateAltSpecFrame();
                     _dataSet.HasRestFrequency = true;
-                    _restFrequencyChanged = false;
+                    _restFrequencyGHzChanged = false;
                 }
             }
         }
@@ -985,11 +1078,21 @@ namespace VolumeData
         {
             if (_dataSet.HasFitsRestFrequency)
             {
-                RestFrequency = _dataSet.FitsRestFrequency;
+                RestFrequencyGHz = _dataSet.FitsRestFrequency;
 
             }
             else
+            {
+                _restFrequencyGHz = 0.0;
                 _dataSet.HasRestFrequency = false;
+                RestFrequencyGHzChanged?.Invoke();
+            }
+        }
+
+        public void ResetThresholds()
+        {
+            ThresholdMin = InitialThresholdMin;
+            ThresholdMax = InitialThresholdMax;
         }
 
         void OnRenderObject()
@@ -1012,7 +1115,11 @@ namespace VolumeData
         {
             if (_dataSet != null && _maskDataSet == null)
             {
+                // Create a new mask dataset
                 _maskDataSet = _dataSet.GenerateEmptyMask();
+                IsMaskNew = true;
+                var maskFeatureSet = _featureManager.CreateMaskFeatureSet();
+                _maskDataSet?.FillFeatureSet(maskFeatureSet);
                 if (!FactorOverride)
                 {
                     _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
@@ -1049,7 +1156,6 @@ namespace VolumeData
             {
                 _previousPaintLocation = coordsRegionSpace;
                 _previousPaintValue = value;
-                _dirtyMask = true;
                 return _maskDataSet.PaintMaskVoxel(coordsRegionSpace, value);
             }
             return true;
@@ -1141,7 +1247,7 @@ namespace VolumeData
             }
             IntPtr cubeFitsPtr = IntPtr.Zero;
             int status = 0;
-            if (string.IsNullOrEmpty(_maskDataSet.FileName))
+            if (IsMaskNew)
             {
                 // Save new mask because none exists yet
                 FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _dataSet.FileName, out status);
@@ -1151,7 +1257,11 @@ namespace VolumeData
                 {
                     ToastNotification.ShowError("Error saving new mask!");
                 }
-                
+                else
+                {
+                    ToastNotification.ShowSuccess($"New mask saved to {Path.GetFileName(_maskDataSet.FileName)}");
+                }
+                IsMaskNew = false;
                 this.lastSavedMaskPath = _maskDataSet.FileName;
             }
             else if (!overwrite)
@@ -1178,9 +1288,8 @@ namespace VolumeData
                 }
                 else
                 {
-                    
                     this.lastSavedMaskPath = fullPath;
-                    ToastNotification.ShowSuccess($"Mask saved to {fileName}");
+                    ToastNotification.ShowSuccess($"New mask saved to {fileName}");
                 }
             }
             else

@@ -1,4 +1,25 @@
-﻿using DataFeatures;
+﻿/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
+using DataFeatures;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,6 +29,8 @@ using VolumeData;
 
 using Valve.VR.InteractionSystem;
 using System;
+using System.Globalization;
+using System.Linq;
 
 public class RenderingController : MonoBehaviour
 {
@@ -24,6 +47,10 @@ public class RenderingController : MonoBehaviour
     public Button ButtonPrevScalingType;
     public Button ButtonNextScalingType;
     public Text LabelScalingType;
+    
+    //Rest Frequency
+    public Text LabelRestFrequencyIndex;
+    public Text LabelRestFrequencyValue;
 
     public GameObject volumeDatasetRendererObj = null;
 
@@ -33,6 +60,15 @@ public class RenderingController : MonoBehaviour
     int scalingIndex = -1;
     private VolumeCommandController _volumeCommandController;
 
+    void Awake()
+    {
+        if (getFirstActiveDataSet() != null)
+        {
+            getFirstActiveDataSet().RestFrequencyGHzListIndexChanged += OnRestFrequencyIndexOfDatasetChanged;
+            getFirstActiveDataSet().RestFrequencyGHzChanged += OnRestFrequencyOfDatasetChanged;
+        }
+    }
+    
     void Start()
     {
         colorIndex = defaultColorIndex;
@@ -53,6 +89,7 @@ public class RenderingController : MonoBehaviour
         if (firstActive && _activeDataSet != firstActive)
         {
             _activeDataSet = firstActive;
+            UpdateRestFrequencyDisplay();
         }
         if (_activeDataSet.ColorMap != ColorMapUtils.FromHashCode(colorIndex))
         {
@@ -234,6 +271,43 @@ public class RenderingController : MonoBehaviour
     {
         _activeDataSet.ThresholdMax = _activeDataSet.InitialThresholdMax;
         this.gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform.Find("SpawnPoint").gameObject.transform.Find("Max_thresholdObject").gameObject.transform.Find("maxThresholdValue").gameObject.GetComponent<Text>().text = _activeDataSet.ThresholdMax.ToString();
+    }
+
+    public void NextRestFrequency()
+    {
+        _activeDataSet.RestFrequencyGHzListIndex = (_activeDataSet.RestFrequencyGHzListIndex + 1) % _activeDataSet.RestFrequencyGHzList.Count;
+        
+    }
+
+    public void PreviousRestFrequency()
+    {
+        _activeDataSet.RestFrequencyGHzListIndex = (_activeDataSet.RestFrequencyGHzListIndex - 1 + _activeDataSet.RestFrequencyGHzList.Count) % _activeDataSet.RestFrequencyGHzList.Count;
+    }
+
+    /// <summary>
+    /// Refresh the rest frequency name (from index) and value in the display
+    /// </summary>
+    public void UpdateRestFrequencyDisplay()
+    {
+        LabelRestFrequencyIndex.GetComponent<Text>().text = _activeDataSet.RestFrequencyGHzList
+            .ElementAt(_activeDataSet.RestFrequencyGHzListIndex).Key;
+        LabelRestFrequencyValue.GetComponent<Text>().text = _activeDataSet.RestFrequencyGHz.ToString("F5", CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>
+    /// When the rest frequency index of the dataset changes, update the display.
+    /// </summary>
+    private void OnRestFrequencyIndexOfDatasetChanged()
+    {
+        UpdateRestFrequencyDisplay();
+    }
+
+    /// <summary>
+    /// When the rest frequency of the dataset changes, update the display.
+    /// </summary>
+    private void OnRestFrequencyOfDatasetChanged()
+    {
+        UpdateRestFrequencyDisplay();
     }
 
     /*
