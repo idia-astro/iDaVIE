@@ -13,15 +13,19 @@
 static constexpr std::string_view defaultDebugFile = "Outputs/Logs/i-DaVIE_Plugin_Debug.log";
 extern "C"
 {
-DllExport int FitsOpenFileReadOnly(fitsfile**, char*,  int*);
+DllExport int FitsOpenFileReadOnly(fitsfile **, char *,  int *);
 
-DllExport int FitsOpenFileReadWrite(fitsfile** , char* , int* );
+DllExport int FitsOpenFileReadWrite(fitsfile ** , char *, int *);
 
-DllExport int FitsCreateFile(fitsfile** , char* , int* );
+DllExport int FitsCreateFile(fitsfile ** , char * , int *);
 
 DllExport int FitsCloseFile(fitsfile *, int *);
 
-DllExport int FitsFlushFile(fitsfile* , int* );
+DllExport int FitsFlushFile(fitsfile * , int *);
+
+DllExport int FitsGetHduCount(fitsfile *, int *, int *);
+
+DllExport int FitsGetCurrentHdu(fitsfile *, int *);
 
 DllExport int FitsMovabsHdu(fitsfile *, int , int *, int *);
 

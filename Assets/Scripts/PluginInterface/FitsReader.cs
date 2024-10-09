@@ -7,6 +7,9 @@ using System.Text;
 using Unity.Collections;
 using System.Diagnostics;
 
+//TODO: consider lower level error handling for the fits interface here. Maybe have higher level
+// wrapper functions that handle the error and report to Debug.LogError
+
 public class FitsReader
 {
     public static Dictionary<int, string> ErrorCodes = new Dictionary<int, string>
@@ -102,9 +105,36 @@ public class FitsReader
         { 322, "illegal BSCALE or TSCALn keyword = 0" },
         { 323, "illegal axis length < 1" }
     };
-
-
-
+    
+    public enum HDUType
+    {
+        IMAGE_HDU = 0,
+        ASCII_TBL = 1,
+        BINARY_TBL = 2
+    }
+    
+    public enum DataType
+    {
+        TBIT = 1,
+        TBYTE = 11,
+        TSBYTE = 12,
+        TLOGICAL = 14,
+        TSTRING = 16,
+        TUSHORT = 20,
+        TSHORT = 21,
+        TUINT = 30,
+        TINT = 31,
+        TULONG = 40,
+        TLONG = 41,
+        TINT32BIT = 41,
+        TFLOAT = 42,
+        TULONGLONG = 80,
+        TLONGLONG = 81,
+        TDOUBLE = 82,
+        TCOMPLEX = 83,
+        TDBLCOMPLEX = 163
+    }
+    
     public static int FitsOpenFile(out IntPtr fptr, string filename, out int status, bool isReadOnly)
     {
         if (isReadOnly)
@@ -129,8 +159,20 @@ public class FitsReader
     public static extern int FitsFlushFile(IntPtr fptr, out int status);
 
     [DllImport("idavie_native")]
-    public static extern int FitsMovabsHdu(IntPtr fptr, int hdunum, out int hdutype, out int status);
+    public static extern int FitsGetHduCount(IntPtr fptr, out int hdunum, out int status);
 
+    [DllImport("idavie_native")]
+    public static extern int FitsGetHduType(IntPtr fptr, out int hdutype, out int status);
+    
+    [DllImport("idavie_native")]
+    public static extern int FitsGetCurrentHdu(IntPtr fptr, out int hdunum);
+
+    [DllImport("idavie_native")]
+    public static extern int FitsMoveToHdu(IntPtr fptr, int hdunum, out int status);
+    
+    [DllImport("idavie_native")]
+    public static extern int FitsMovabsHdu(IntPtr fptr, int hdunum, out int hdutype, out int status);
+    
     [DllImport("idavie_native")]
     public static extern int FitsGetNumHeaderKeys(IntPtr fptr, out int keysexist, out int morekeys, out int status);
 

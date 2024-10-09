@@ -45,6 +45,16 @@ int FitsFlushFile(fitsfile* fptr, int* status)
     return fits_flush_file(fptr, status);
 }
 
+int FitsGetHduCount(fitsfile *fptr, int *hdunum, int *status)
+{
+    return fits_get_num_hdus(fptr, hdunum, status);
+}
+
+int FitsGetCurrentHdu(fitsfile *fptr, int *hdunum)
+{
+    return fits_get_hdu_num(fptr,  hdunum);
+}
+
 int FitsMovabsHdu(fitsfile *fptr, int hdunum, int *hdutype, int *status)
 {
     return fits_movabs_hdu(fptr, hdunum, hdutype, status);
