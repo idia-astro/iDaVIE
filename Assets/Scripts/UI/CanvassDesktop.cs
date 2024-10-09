@@ -22,7 +22,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
 using System.Globalization;
 using System.IO;
 using TMPro;
@@ -228,8 +227,6 @@ public class CanvassDesktop : MonoBehaviour
         var firstActiveRenderer = GetFirstActiveRenderer();
         if (firstActiveRenderer != null)
         {
-            VolumeDataSetRenderer dataSet = GetFirstActiveDataSet();
-
             if (_minThreshold.value > _maxThreshold.value)
             {
                 _minThreshold.value = _maxThreshold.value;

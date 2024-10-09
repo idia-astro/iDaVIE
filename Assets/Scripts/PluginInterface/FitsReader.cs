@@ -238,9 +238,6 @@ public class FitsReader
     public static extern int FitsMovabsHdu(IntPtr fptr, int hdunum, out int hdutype, out int status);
 
     [DllImport("idavie_native")]
-    public static extern int FitsGetHduType(IntPtr fptr, out int hdutype, out int status);
-    
-    [DllImport("idavie_native")]
     public static extern int FitsGetNumHdus(IntPtr fptr, out int numhdus, out int status);
 
     [DllImport("idavie_native")]
@@ -616,7 +613,7 @@ public class FitsReader
         FitsMakeKeyN("TTYPE", col + 1, keyword, out status);
         if (FitsReadKeyString(fitsPtr, keyword.ToString(), colName, IntPtr.Zero, out status) != 0)
         {
-            Debug.Log("Fits Read column name error #" + status.ToString());
+            UnityEngine.Debug.Log("Fits Read column name error #" + status.ToString());
             FitsReader.FitsCloseFile(fitsPtr, out status);
             return "";
         }
@@ -633,12 +630,12 @@ public class FitsReader
         {
             if (status == 202)
             {
-                Debug.Log("No unit in column #" + col);
+                UnityEngine.Debug.Log("No unit in column #" + col);
                 status = 0;
             }
             else
             {
-                Debug.Log("Fits Read unit error #" + status.ToString());
+                UnityEngine.Debug.Log("Fits Read unit error #" + status.ToString());
                 FitsReader.FitsCloseFile(fitsPtr, out status);
                 return null;
             }
@@ -654,7 +651,7 @@ public class FitsReader
         FitsMakeKeyN("TFORM", col + 1, keyword, out status);
         if (FitsReadKeyString(fitsPtr, keyword.ToString(), colFormat, IntPtr.Zero, out status) != 0)
         {
-            Debug.Log("Fits Read column unit error #" + status.ToString());
+            UnityEngine.Debug.Log("Fits Read column unit error #" + status.ToString());
             FitsReader.FitsCloseFile(fitsPtr, out status);
             return "";
         }
