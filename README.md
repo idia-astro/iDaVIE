@@ -38,7 +38,7 @@ In order to run iDaVIE, the following software needs to be installed:
 
 ### Contributing
 Full documentation is available in our [contribution document](https://github.com/idia-astro/iDaVIE/blob/main/CONTRIBUTING.md). To summarise, we welcome contributions in the form of:
-1. Reporting bugs or requesting new features by [creating an issue](https://github.com/idia-astro/idia_unity_vr/issues).
+1. Reporting bugs or requesting new features by [creating an issue](https://github.com/idia-astro/iDaVIE/issues).
 2. Adding your own contributions through a [pull request](https://github.com/idia-astro/iDaVIE/compare).
 3. Assisting other users by participating in the [iDaVIE discussions](https://github.com/idia-astro/iDaVIE/discussions).
 
