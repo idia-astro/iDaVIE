@@ -32,6 +32,6 @@ Merging two branches of a Unity project can be problematic and very time consumi
   4. Once all script file conflicts are resolved, resolve scene file conflicts (if any exist) using UnityYamlMerge.
   5. Run `git mergetool` to run UnityYaml with the settings set up earlier.
   6. If a temporary file conflicts, select the `current` option and complete the merge.
-  7. Test the final merged result using the testing regime [checklist](https://forms.gle/ezLXLHeWR4ZeLmfz7).
+  7. Test the final merged result using the testing protocol [checklist](https://forms.gle/ezLXLHeWR4ZeLmfz7).
 ## Testing regime
-We provide a testing regime [checklist](https://forms.gle/ezLXLHeWR4ZeLmfz7) that must be completed without issues before a change can be merged into the main branch. If a new feature is added, similar testing for that feature should be developed as well (i.e., how to test that feature, and what other features might be affected by it).
+We provide a testing protocol [checklist](https://forms.gle/ezLXLHeWR4ZeLmfz7) that must be completed without issues before a change can be merged into the main branch. If a new feature is added, similar testing for that feature should be developed as well (i.e., how to test that feature, and what other features might be affected by it).
