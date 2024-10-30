@@ -24,11 +24,13 @@
 
 // #include <chrono>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
 #include <limits>
 #include <regex>
 #include <sstream>
 #include <string>
+#include <thread>
 
 int FitsOpenFileReadOnly(fitsfile **fptr, char* filename,  int *status)
 {
@@ -199,6 +201,57 @@ int FitsWriteSubImageInt16(fitsfile* fptr, long* fPix, long* lPix, int16_t* arra
     
     int success = fits_write_subset(fptr, TSHORT, firstPix, lPix, array, status);
     return success;
+}
+
+/*
+ * @brief Function that writes a new copy of a mask that was loaded as a rectangular subset. This requires loading in
+ * the entire old mask file, done in a separate thread to prevent very long hangtimes while the user is in the VR.
+ *
+ * @param oldFileName The filepath of the new/destination mask.
+ * @param fptr The fitsfile being worked on.
+ * @param fPix An array containing the indices of the first pixel (xyz, left bottom front) to be written.
+ * @param lPix An array containing the indices of the last pixe (xyz, right top back) to be written.
+ * @param array The array containing the data to be written. This is assumed to be at least the size of lPix - fPix.
+ * @param status Value containing outcome of CFITSIO operation.
+ * @return int 
+ */
+int FitsWriteNewCopySubImageInt16(char* newFileName, fitsfile* fptr, long* fPix, long* lPix, int16_t* array, int* status)
+{
+    auto f = [&]()
+    {
+        // Use system calls to copy oldFileName to the new file location.
+        auto oldFileName = fptr->Fptr->filename;
+        try{
+            std::filesystem::copy_file(oldFileName, newFileName);
+        }
+        catch (std::exception& e){
+            std::stringstream debug;
+            debug << "Failed to copy mask file from " << oldFileName << " to " << newFileName << ".";
+            WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        }
+        // Open the now new file with CFITSIO.
+        fitsfile* fptr2;
+        fits_open_file(fptr2, filename, READWRITE, status);
+        // Write as subset.
+        long* firstPix = new long[3];
+        for (int i = 0; i < 3; i++)
+            firstPix[i] = fPix[i];
+        
+        std::stringstream debug;
+        debug << "Writing mask sub image from [" << firstPix[0] << ", " << firstPix[1] << ", " << firstPix[2] << "] to [" << lPix[0] << ", " << lPix[1] << ", " << lPix[2] << "].";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        
+        int success = fits_write_subset(fptr2, TSHORT, firstPix, lPix, array, status);
+
+        fits_close_file(fptr2, status);
+        return success;
+    }
+    //Call the lambda above to execute in a separate thread.
+    std::thread t1(f);
+
+    //Uncomment to test delay
+    //t1.join();
+    return 0;
 }
 
 int FitsWriteHistory(fitsfile *fptr, char *history,  int *status)
@@ -570,7 +623,7 @@ int writeMomMapFitsHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile, int map
     int status = 0;
 
     std::string comment = "The software that processed this data";
-    std::string val = "i-DaVIE-v";
+    std::string val = "iDaVIE";
     auto refVal = val.data();
     fits_write_key(newFitsFile, TSTRING, "SOFTNAME", refVal, comment.c_str(), &status);
     if (status)
