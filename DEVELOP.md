@@ -10,7 +10,7 @@ They are both fully functional, and considerably more lightweight than Visual St
   * [Debugging Unity Applications with Jetbrains](https://www.jetbrains.com/help/rider/Debugging_Unity_Applications.html)
   * [VSCode Tools for Unity](https://marketplace.visualstudio.com/items?itemName=visualstudiotoolsforunity.vstuc)
 ### Set up UnityYamlMerge
-To facilitate the merging of separate branches in iDaVIE, Unity provides a mergetool called UnityYamlMerge. This requires a few set up steps before it can be used.
+To facilitate the merging of separate branches that include merge conflicts in scene (`*.unity`) files in iDaVIE, Unity provides a mergetool called UnityYamlMerge. This requires a few set up steps before it can be used.
   1. First, the iDaVIE repo should be told to use UnityYamlMerge as the mergetool. Add the following lines to the `.git/commit` file. Note the escaped slash `\\` for folder divisors -- it will not work otherwise.
 ```
 [mergetool "UnityYamlMerge"]
