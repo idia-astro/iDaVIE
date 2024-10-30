@@ -47,6 +47,8 @@ public class QuickMenuController : MonoBehaviour
     public GameObject exitSavePopup;
     public GameObject exportPopup;
 
+    public GameObject userConfirmPopupPrefab;
+
     int maskstatus = 0;
     int cropstatus = 0;
     int featureStatus = 0;
@@ -213,32 +215,39 @@ public class QuickMenuController : MonoBehaviour
             maskstatus = -1;
         maskstatus++;
 
-        this.gameObject.transform.Find("Image_nf").gameObject.SetActive(false);
-        this.gameObject.transform.Find("Image_f1").gameObject.SetActive(false);
-        this.gameObject.transform.Find("Image_f2").gameObject.SetActive(false);
-        this.gameObject.transform.Find("Image_f3").gameObject.SetActive(false);
+        var Image_nf = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_nf").gameObject;
+        var Image_f1 = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f1").gameObject;
+        var Image_f2 = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f2").gameObject;
+        var Image_f3 = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f3").gameObject;
+
+        Image_nf.SetActive(false);
+        Image_f1.SetActive(false);
+        Image_f2.SetActive(false);
+        Image_f3.SetActive(false);
+
+        UnityEngine.Debug.Log("Toggling mask to maskstatus of " + maskstatus + ".");
 
         switch (maskstatus)
         {
             case 0:
                 setMask(MaskMode.Disabled);
                 notificationText.GetComponent<Text>().text = "Mask disabled";
-                this.gameObject.transform.Find("Image_nf").gameObject.SetActive(true);
+                Image_nf.SetActive(true);
                 break;
             case 1:
                 setMask(MaskMode.Enabled);
                 notificationText.GetComponent<Text>().text = "Mask enabled";
-                this.gameObject.transform.Find("Image_f1").gameObject.SetActive(true);
+                Image_f1.SetActive(true);
                 break;
             case 2:
                 setMask(MaskMode.Inverted);
                 notificationText.GetComponent<Text>().text = "Mask inverted";
-                this.gameObject.transform.Find("Image_f2").gameObject.SetActive(true);
+                Image_f2.SetActive(true);
                 break;
             case 3:
                 setMask(MaskMode.Isolated);
                 notificationText.GetComponent<Text>().text = "Mask Isolated";
-                this.gameObject.transform.Find("Image_f3").gameObject.SetActive(true);
+                Image_f3.SetActive(true);
                 break;
         }
     }
@@ -259,20 +268,21 @@ public class QuickMenuController : MonoBehaviour
 
     public void cropDataSet()
     {
-        this.gameObject.transform.Find("Image_dis").gameObject.SetActive(false);
-        this.gameObject.transform.Find("Image_en").gameObject.SetActive(false);
-
+        var imageDis = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Crop").gameObject.transform.Find("Image_dis").gameObject;
+        var imageEn = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Crop").gameObject.transform.Find("Image_en").gameObject;
+        imageDis.SetActive(false);
+        imageEn.SetActive(false);
         if (_activeDataSet)
         {
             if (_activeDataSet.IsCropped)
             {
-                this.gameObject.transform.Find("Image_dis").gameObject.SetActive(true);
+                imageDis.SetActive(true);
                 notificationText.GetComponent<Text>().text = "Crop disabled";
                 _activeDataSet.ResetCrop();
             }
             else
             {
-                this.gameObject.transform.Find("Image_en").gameObject.SetActive(true);
+                imageEn.SetActive(true);
                 notificationText.GetComponent<Text>().text = "Crop enabled";
                 _activeDataSet.CropToFeature();
             }
@@ -292,7 +302,8 @@ public class QuickMenuController : MonoBehaviour
         {
             ToastNotification.ShowError("Cannot paint downsampled mask!\nPlease select a smaller region");
         }
-        else {             
+        else {
+            
             paintMenu.transform.SetParent(this.transform.parent, false);
             paintMenu.transform.localPosition = this.transform.localPosition;
             paintMenu.transform.localRotation = this.transform.localRotation;
@@ -319,43 +330,68 @@ public class QuickMenuController : MonoBehaviour
         if (exportPopup.activeSelf)
             exportPopup.SetActive(false);
         
-        savePopup.transform.SetParent(this.transform.parent, false);
-        savePopup.transform.localPosition = this.transform.localPosition;
-        savePopup.transform.localRotation = this.transform.localRotation;
-        savePopup.transform.localScale = this.transform.localScale;
+        // savePopup.transform.SetParent(this.transform.parent, false);
+        // savePopup.transform.localPosition = this.transform.localPosition;
+        // savePopup.transform.localRotation = this.transform.localRotation;
+        // savePopup.transform.localScale = this.transform.localScale;
 
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.RemoveAllListeners();
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.RemoveAllListeners();
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.RemoveAllListeners();
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.RemoveAllListeners();
 
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(SaveCancel);
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
-        savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(SaveCancel);
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
+        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
+
+        var newSavePopup = Instantiate(userConfirmPopupPrefab, this.transform.parent);
+        newSavePopup.transform.localPosition = this.transform.localPosition;
+        newSavePopup.transform.localRotation = this.transform.localRotation;
+        newSavePopup.transform.localScale = this.transform.localScale;
+
+        var control = newSavePopup.GetComponent<UserConfirmationPopupController>();
+        control.setMessageBody("");
+        control.setHeaderText("Save mask");
+        control.addButton("New file", "Save the current mask as a new file", this.SaveNewMask);
+        control.addButton("Overwrite", "Overwrite the existing mask file", this.SaveOverwriteMask);
+        control.addButton("Cancel", "Cancel the save and return to painting", this.SaveCancel);
 
         if (_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.Painting )
             _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
         
         this.gameObject.SetActive(false);
-        savePopup.SetActive(true);
+        newSavePopup.SetActive(true);
     }
 
     public void ExportData()
     {
-        exportPopup.transform.SetParent(this.transform.parent, false);
-        exportPopup.transform.localPosition = this.transform.localPosition;
-        exportPopup.transform.localRotation = this.transform.localRotation;
-        exportPopup.transform.localScale = this.transform.localScale;
+        // exportPopup.transform.SetParent(this.transform.parent, false);
+        // exportPopup.transform.localPosition = this.transform.localPosition;
+        // exportPopup.transform.localRotation = this.transform.localRotation;
+        // exportPopup.transform.localScale = this.transform.localScale;
 
-        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
-        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("SubCube").GetComponent<Button>().onClick.RemoveAllListeners();
-        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").GetComponent<Button>().onClick.RemoveAllListeners();
+        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
+        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("SubCube").GetComponent<Button>().onClick.RemoveAllListeners();
+        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").GetComponent<Button>().onClick.RemoveAllListeners();
 
-        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(ExportCancel);
-        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("SubCube").GetComponent<Button>().onClick.AddListener(SaveSubCube);
-        exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").GetComponent<Button>().onClick.AddListener(SaveMask);
+        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(ExportCancel);
+        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("SubCube").GetComponent<Button>().onClick.AddListener(SaveSubCube);
+        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").GetComponent<Button>().onClick.AddListener(SaveMask);
+
+        var newExportPopup = Instantiate(userConfirmPopupPrefab, this.transform.parent);
+        newExportPopup.transform.localPosition = this.transform.localPosition;
+        newExportPopup.transform.localRotation = this.transform.localRotation;
+        newExportPopup.transform.localScale = this.transform.localScale;
+
+        var control = newExportPopup.GetComponent<UserConfirmationPopupController>();
+        control.setMessageBody("");
+        control.setHeaderText("Export data");
+        control.addButton("Mask", "Save mask", this.SaveMask);
+        control.addButton("Subcube", "Export selection as a subcube", this.SaveSubCube);
+        control.addButton("Cancel", "Cancel the export and return", this.ExportCancel);
 
         this.gameObject.SetActive(false);
-        exportPopup.SetActive(true);
+        // exportPopup.SetActive(true);
+        newExportPopup.SetActive(true);
     }
 
     public void ExportCancel()
@@ -399,5 +435,40 @@ public class QuickMenuController : MonoBehaviour
         _activeDataSet.SaveMask(false);
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
         SaveCancel();
+    }
+
+    /// <summary>
+    /// Function to test out the generic confirmation popup
+    /// </summary>
+    public void testConfirmPopup()
+    {
+        var popup = Instantiate(userConfirmPopupPrefab, this.transform.parent);
+        popup.transform.localPosition = this.transform.localPosition;
+        popup.transform.localRotation = this.transform.localRotation;
+        popup.transform.localScale = this.transform.localScale;
+
+        var control = popup.GetComponent<UserConfirmationPopupController>();
+        control.setMessageBody("This a test case of the generic user choice/confirmation popup.");
+        control.setHeaderText("Testing user confirmation popup");
+        control.addButton("Test1", "Should show a warning toast notification", this.testFunc1);
+        control.addButton("Test2", "Should show an error toast notification", this.testFunc2);
+        control.addButton("Test3", "Should show a success toast notification", this.testFunc3);
+        gameObject.SetActive(false);
+        popup.SetActive(true);
+    }
+
+    public void testFunc1()
+    {
+        ToastNotification.ShowWarning("testFunc1 has been called!");
+    }
+
+    public void testFunc2()
+    {
+        ToastNotification.ShowError("testFunc2 has been called!");
+    }
+    
+    public void testFunc3()
+    {
+        ToastNotification.ShowSuccess("testFunc3 has been called!");
     }
 }
