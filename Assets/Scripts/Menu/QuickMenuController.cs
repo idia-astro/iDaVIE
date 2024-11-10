@@ -364,19 +364,6 @@ public class QuickMenuController : MonoBehaviour
 
     public void ExportData()
     {
-        // exportPopup.transform.SetParent(this.transform.parent, false);
-        // exportPopup.transform.localPosition = this.transform.localPosition;
-        // exportPopup.transform.localRotation = this.transform.localRotation;
-        // exportPopup.transform.localScale = this.transform.localScale;
-
-        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
-        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("SubCube").GetComponent<Button>().onClick.RemoveAllListeners();
-        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").GetComponent<Button>().onClick.RemoveAllListeners();
-
-        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(ExportCancel);
-        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("SubCube").GetComponent<Button>().onClick.AddListener(SaveSubCube);
-        // exportPopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Mask").GetComponent<Button>().onClick.AddListener(SaveMask);
-
         var newExportPopup = Instantiate(userConfirmPopupPrefab, this.transform.parent);
         newExportPopup.transform.localPosition = this.transform.localPosition;
         newExportPopup.transform.localRotation = this.transform.localRotation;
@@ -390,7 +377,6 @@ public class QuickMenuController : MonoBehaviour
         control.addButton("Cancel", "Cancel the export and return", this.ExportCancel);
 
         this.gameObject.SetActive(false);
-        // exportPopup.SetActive(true);
         newExportPopup.SetActive(true);
     }
 
