@@ -117,7 +117,7 @@ namespace VolumeData
         public long[] Dims => new[] {XDim, YDim, ZDim};
         public int[] subsetBounds {get; private set; }
 
-        private bool loadSubset => true;//subsetBounds[0] != -1;
+        private bool loadSubset => subsetBounds[0] != -1;
 
         public Vector3Int RegionOffset { get; private set; }
 
@@ -234,7 +234,7 @@ namespace VolumeData
         /// Function that retrives and loads the data from the actual file on the hard disk.
         /// </summary>
         /// <param name="fileName">The path to the data file.</param>
-        /// <param name="subBounds">The bounds from which the data should be loaded (default of [-1,-1,-1,-1,-1,-1] means load the full cube).</param>
+        /// <param name="subBounds">The bounds from which the data should be loaded, corresponding to [xmin,xmax,ymin,ymax,zmin,zmax] (default of [-1,-1,-1,-1,-1,-1] means load the full cube).</param>
         /// <param name="trueBounds">The bounds of the full cube.</param>
         /// <param name="imageDataPtr"></param>
         /// <param name="index2"></param>
@@ -256,23 +256,23 @@ namespace VolumeData
 
             // Assign to object, since it is used with the cursor positioning.
             volumeDataSetRes.subsetBounds = subBounds;
-
-            if (FitsReader.FitsOpenFile(out fptr, fileName, out status, true) != 0)
-            {
-                Debug.Log("Fits open failure... code #" + status.ToString());
-            }
+            string fileNameExtension = "";
             if (selectedHdu != 1)
             {
-                if (FitsReader.FitsMovabsHdu(fptr, selectedHdu, out int hdutype, out status) != 0)
-                {
-                    Debug.Log("Fits move to HDU failure... code #" + status.ToString());
-                    FitsReader.FitsCloseFile(fptr, out status);
-                    return null;
-                }
+                fileNameExtension += $"[{selectedHdu}]";
+            }
+            if (subBounds[0] != -1)
+            {
+                fileNameExtension += $"[{subBounds[0]}:{subBounds[1]},{subBounds[2]}:{subBounds[3]},{subBounds[4]}:{subBounds[5]}]";
+            }
+            Debug.Log("Loading file: " + fileName + fileNameExtension);
+            if (FitsReader.FitsOpenFile(out fptr, fileName + fileNameExtension, out status, true) != 0)
+            {
+                Debug.Log($"Fits open failure... code #{status.ToString()}: {FitsReader.ErrorCodes[status]}") ;
             }
             if (FitsReader.FitsCreateHdrPtrForAst(fptr, out volumeDataSetRes.FitsHeader, out volumeDataSetRes.NumberHeaderKeys, out status) != 0)
             {
-                Debug.Log("Fits create header pointer failure... code #" + status.ToString());
+                Debug.Log($"Fits create header pointer failure... code #{status.ToString()}: {FitsReader.ErrorCodes[status]}");
                 FitsReader.FitsCloseFile(fptr, out status);
                 return null;
             }
@@ -288,7 +288,7 @@ namespace VolumeData
 
             if (FitsReader.FitsGetImageDims(fptr, out cubeDimensions, out status) != 0)
             {
-                Debug.Log("Fits read image dimensions failed... code #" + status.ToString());
+                Debug.Log($"Fits read image dimensions failed... code #{status.ToString()}: {FitsReader.ErrorCodes[status]}");
                 FitsReader.FitsCloseFile(fptr, out status);
                 return null;
             }
@@ -310,7 +310,7 @@ namespace VolumeData
 
             if (FitsReader.FitsGetImageSize(fptr, cubeDimensions, out dataPtr, out status) != 0)
             {
-                Debug.Log("Fits Read cube size error #" + status.ToString());
+                Debug.Log($"Fits Read cube size error code #{status.ToString()}: {FitsReader.ErrorCodes[status]}");
                 FitsReader.FitsCloseFile(fptr, out status);
                 return null;
             }
@@ -318,34 +318,13 @@ namespace VolumeData
             volumeDataSetRes.cubeSize = new long[cubeDimensions];
             Marshal.Copy(dataPtr, volumeDataSetRes.cubeSize, 0, cubeDimensions);
             
-            // Check if the provided subset is wholly within the given filie
-            if (subBounds[1] > volumeDataSetRes.cubeSize[0])
+            // Check if the provided subset is wholly within the given file
+            if (subBounds[1] > volumeDataSetRes.trueSize[1] || subBounds[3] > volumeDataSetRes.trueSize[3] || subBounds[5] > volumeDataSetRes.trueSize[5])
             {
                 Debug.Log("Fits Read cube error with subset bounds not possible!");
                 FitsReader.FitsCloseFile(fptr, out status);
                 return null;
             }
-            else
-                volumeDataSetRes.cubeSize[0] = subBounds[1] - subBounds[0] + 1;
-
-            if (subBounds[3] > volumeDataSetRes.cubeSize[1])
-            {
-                Debug.Log("Fits Read cube error with subset bounds not possible!");
-                FitsReader.FitsCloseFile(fptr, out status);
-                return null;
-            }
-            else
-                volumeDataSetRes.cubeSize[1] = subBounds[3] - subBounds[2] + 1;
-
-            if (subBounds[5] > volumeDataSetRes.cubeSize[2])
-            {
-                Debug.Log("Fits Read cube error with subset bounds not possible!");
-                FitsReader.FitsCloseFile(fptr, out status);
-                return null;
-            }
-            else
-                volumeDataSetRes.cubeSize[2] = subBounds[5] - subBounds[4] + 1;
-
             if (dataPtr != IntPtr.Zero)
                 FitsReader.FreeFitsPtrMemory(dataPtr);
             long numberDataPoints = volumeDataSetRes.cubeSize[0] * volumeDataSetRes.cubeSize[1] * volumeDataSetRes.cubeSize[index2];
@@ -359,8 +338,8 @@ namespace VolumeData
                 {
                     if (i < 3)
                     {
-                        startPix[i] = subBounds[i * 2];
-                        finalPix[i] = subBounds[(i * 2) + 1];
+                        startPix[i] = 1;
+                        finalPix[i] = (int) volumeDataSetRes.cubeSize[i];
                     }
                     else
                     {
@@ -406,8 +385,8 @@ namespace VolumeData
                 {
                     if (i < 3)
                     {
-                        startPix[i] = subBounds[i * 2];
-                        finalPix[i] = subBounds[(i * 2) + 1];
+                        startPix[i] = 1;
+                        finalPix[i] = (int)volumeDataSetRes.cubeSize[i];
                     }
                     else
                     {
@@ -434,7 +413,7 @@ namespace VolumeData
                 Marshal.Copy(finalPix, 0, finalPixPtr, finalPix.Length);
                 if (FitsReader.FitsReadSubImageFloat(fptr, cubeDimensions, index2, startPixPtr, finalPixPtr, numberDataPoints, out fitsDataPtr, out status) != 0)
                 {
-                    Debug.Log("Fits Read cube data error #" + status.ToString());
+                    Debug.Log($"Fits Read cube data error code #{status.ToString()}: {FitsReader.ErrorCodes[status]}");
                     FitsReader.FitsCloseFile(fptr, out status);
                     return null;
                 }
@@ -1008,12 +987,6 @@ namespace VolumeData
 
         public float GetDataValue(int x, int y, int z)
         {
-            if (loadSubset)
-            {
-                x -= (subsetBounds[0] - 1);
-                y -= (subsetBounds[2] - 1);
-                z -= (subsetBounds[4] - 1);
-            }
             if (x < 1 || x > XDim || y < 1 || y > YDim || z < 1 || z > ZDim)
             {
                 Debug.LogError("Trying to load value from coordinates [" + x.ToString() + ", " + y.ToString() + ", " + z.ToString() + "], limited to bounds [1, 1, 1] and [" + XDim.ToString() + ", " + YDim.ToString() + ", " + ZDim.ToString() + "]!");
@@ -1027,12 +1000,6 @@ namespace VolumeData
 
         public Int16 GetMaskValue(int x, int y, int z)
         {
-            if (loadSubset)
-            {
-                x -= (subsetBounds[0] - 1);
-                y -= (subsetBounds[2] - 1);
-                z -= (subsetBounds[4] - 1);
-            }
             if (x < 1 || x > XDim || y < 1 || y > YDim || z < 1 || z > ZDim)
             {
                 Debug.LogError("Trying to load value from coordinates [" + x.ToString() + ", " + y.ToString() + ", " + z.ToString() + "], limited to bounds [1, 1, 1] and [" + XDim.ToString() + ", " + YDim.ToString() + ", " + ZDim.ToString() + "]!");

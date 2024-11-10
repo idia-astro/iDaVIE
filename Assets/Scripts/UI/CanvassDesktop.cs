@@ -1054,7 +1054,13 @@ public class CanvassDesktop : MonoBehaviour
         }
 
         loadTextLabel.text = "Loading complete!";
-        Debug.Log("Loading image " + _imagePath + " and mask " + _maskPath + " complete!");
+        string completeMessage = "";
+        completeMessage += "Loading image " + _imagePath;
+        if (_maskPath != "")
+            completeMessage += " and mask " + _maskPath;
+        completeMessage += " complete!";
+        
+        Debug.Log(completeMessage);
         progressBar.GetComponent<Slider>().value = 6;
         yield return new WaitForSeconds(0.001f);
         postLoadFileFileSystem();

@@ -111,7 +111,7 @@ namespace VolumeData
 
         [Header("File Input")] public string FileName;
         public string MaskFileName;
-        public int[] subsetBounds = {0, 1, 0, 1, 0, 1};//All cubes loaded as sub cube
+        public int[] subsetBounds = {-1, -1, -1, -1, -1, -1};
         public int SelectedHdu = 1;
         
         public int[] trueBounds;
@@ -614,17 +614,9 @@ namespace VolumeData
             Bounds objectBounds = new Bounds(UnityEngine.Vector3.zero, UnityEngine.Vector3.one);
             if ((objectBounds.Contains(objectSpacePosition) || Config.Instance.displayCursorInfoOutsideCube) && _dataSet != null)
             {
-                // Always a subset, so apply a suitable offset to the position in data space
-                int xOffset, yOffset, zOffset;
-                zOffset = yOffset = xOffset = 0 ;
-
-                xOffset = _dataSet.subsetBounds[0] - 1;
-                yOffset = _dataSet.subsetBounds[2] - 1;
-                zOffset = _dataSet.subsetBounds[4] - 1;
-                
-                UnityEngine.Vector3 positionCubeSpace = new UnityEngine.Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim + xOffset,
-                                                                                (objectSpacePosition.y + 0.5f) * _dataSet.YDim + yOffset,
-                                                                                (objectSpacePosition.z + 0.5f) * _dataSet.ZDim + zOffset);
+                UnityEngine.Vector3 positionCubeSpace = new UnityEngine.Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim,
+                                                                                (objectSpacePosition.y + 0.5f) * _dataSet.YDim,
+                                                                                (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
                 UnityEngine.Vector3 voxelCornerCubeSpace = new UnityEngine.Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
                 UnityEngine.Vector3 voxelCenterCubeSpace = voxelCornerCubeSpace + 0.5f * UnityEngine.Vector3.one;
                 Vector3Int newVoxelCursor = new Vector3Int(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1);
@@ -649,9 +641,9 @@ namespace VolumeData
                     }
 
                     // Determine the actual voxelCursor's location in the VR space (not data space)
-                    UnityEngine.Vector3 voxelCenterObjectSpace = new UnityEngine.Vector3((voxelCenterCubeSpace.x - xOffset) / _dataSet.XDim - 0.5f,
-                                                                                         (voxelCenterCubeSpace.y - yOffset) / _dataSet.YDim - 0.5f,
-                                                                                         (voxelCenterCubeSpace.z - zOffset) / _dataSet.ZDim - 0.5f);
+                    UnityEngine.Vector3 voxelCenterObjectSpace = new UnityEngine.Vector3(voxelCenterCubeSpace.x / _dataSet.XDim - 0.5f,
+                                                                                         voxelCenterCubeSpace.y / _dataSet.YDim - 0.5f,
+                                                                                         voxelCenterCubeSpace.z / _dataSet.ZDim - 0.5f);
                     // Check is needed if the cursor information display is allowed outside the cube 
                     if (_voxelOutline != null)
                     {
@@ -690,16 +682,9 @@ namespace VolumeData
                 return Vector3Int.zero;
             }
             
-            //Apply offset from subset bounds
-            int xOffset, yOffset, zOffset;
-            zOffset = yOffset = xOffset = 0 ;
-            xOffset = _dataSet.subsetBounds[0] - 1;
-            yOffset = _dataSet.subsetBounds[2] - 1;
-            zOffset = _dataSet.subsetBounds[4] - 1;
-            
-            UnityEngine.Vector3 positionCubeSpace = new UnityEngine.Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim + xOffset,
-                                                                            (objectSpacePosition.y + 0.5f) * _dataSet.YDim + yOffset,
-                                                                            (objectSpacePosition.z + 0.5f) * _dataSet.ZDim + zOffset);
+            UnityEngine.Vector3 positionCubeSpace = new UnityEngine.Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim,
+                                                                            (objectSpacePosition.y + 0.5f) * _dataSet.YDim,
+                                                                            (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
             UnityEngine.Vector3 voxelCornerCubeSpace = new UnityEngine.Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
             Vector3Int newVoxelCursor = new Vector3Int(
                 Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),
@@ -1168,23 +1153,15 @@ namespace VolumeData
         /// <returns>True if successful, false if not.</returns>
         public bool PaintCursor(short value)
         {
-            Vector3Int cursorLoc = new Vector3Int(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
-            if (_dataSet.subsetBounds[0] != -1)
-            {
-                Vector3Int cursorOffset = new Vector3Int(_dataSet.subsetBounds[0] - 1,
-                                                         _dataSet.subsetBounds[2] - 1,
-                                                         _dataSet.subsetBounds[4] - 1);
-                cursorLoc = cursorLoc - cursorOffset;
-            }
             var maskCursorLimit = (_previousBrushSize - 1) / 2;
-            Debug.Log("Painting at cursor value [" + cursorLoc.x + ", " + cursorLoc.y + ", " + cursorLoc.z + "].");
+            Debug.Log("Painting at cursor value [" + CursorVoxel.x + ", " + CursorVoxel.y + ", " + CursorVoxel.z + "].");
             for (int i = -maskCursorLimit; i <= maskCursorLimit; i++)
             {
                 for (int j = -maskCursorLimit; j <= maskCursorLimit; j++)
                 {
                     for (int k = -maskCursorLimit; k <= maskCursorLimit; k++)
                     {
-                        PaintMask(new Vector3Int(cursorLoc.x + i, cursorLoc.y + j, cursorLoc.z + k), value);
+                        PaintMask(new Vector3Int(CursorVoxel.x + i, CursorVoxel.y + j, CursorVoxel.z + k), value);
                     }
                 }
             }
