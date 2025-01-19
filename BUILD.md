@@ -44,3 +44,6 @@ Unfortunately, due to the limitations on VR headset drivers on Unix operating sy
     * Under XR Plug-in Management (scroll down on the left), make sure that OpenVR Loader is selected in the list of Plug-in Providers.
     ![Select OpenVR Loader](https://github.com/idia-astro/iDaVIE/blob/main/.github/static/build.md/Build_Build_3.png)
     * Click the **Build** button and select your destination folder.
+
+## Troubleshooting
+   * If you get errors regarding `nmake` not being found when running the configuration script, make sure that you installed the relevant C++ Build components when you install Visual Studio as required by the Unity install.
