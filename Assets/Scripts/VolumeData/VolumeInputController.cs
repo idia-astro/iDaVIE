@@ -87,6 +87,7 @@ public class VolumeInputController : MonoBehaviour
     }
     //reference to quick menu canvass
     public GameObject CanvassQuickMenu;
+    public GameObject CanvassPaintMenu;
 
     // Choice of left/right primary hand
     public SteamVR_Input_Sources PrimaryHand = SteamVR_Input_Sources.RightHand;
@@ -164,6 +165,7 @@ public class VolumeInputController : MonoBehaviour
     private VRFamily _vrFamily;
 
     private bool _paintMenuOn = false;
+    private bool _shapeMenuOn = false;
     private bool _savePopupOn = false;
     private bool _exportPopupOn = false;
 
@@ -480,10 +482,11 @@ public class VolumeInputController : MonoBehaviour
         }
 
         _paintMenuOn = CanvassQuickMenu.GetComponent<QuickMenuController>().paintMenu.activeSelf;
+        _shapeMenuOn = CanvassPaintMenu.GetComponent<PaintMenuController>().shapeMenu.activeSelf;
         _savePopupOn = CanvassQuickMenu.GetComponent<QuickMenuController>().savePopup.activeSelf;
         _exportPopupOn = CanvassQuickMenu.GetComponent<QuickMenuController>().exportPopup.activeSelf;
 
-        if (newState && !_paintMenuOn && !_savePopupOn && !_exportPopupOn)
+        if (newState && !_paintMenuOn && !_shapeMenuOn && !_savePopupOn && !_exportPopupOn)
         {
             StartRequestQuickMenu(fromSource == SteamVR_Input_Sources.LeftHand ? 0 : 1);
         }

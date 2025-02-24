@@ -37,6 +37,7 @@ public class PaintMenuController : MonoBehaviour
     public GameObject sourcesMenu;
     public GameObject plotsMenu;
     public GameObject paintMenu;
+    public GameObject shapeMenu; // Menu for shape selection
     public GameObject savePopup;
     int maskstatus = 0;
     int cropstatus = 0;
@@ -304,6 +305,25 @@ public class PaintMenuController : MonoBehaviour
     public void EditSourceId()
     {
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.StartEditSource);
+    }
+
+     public void OpenShapeMenu()
+    {
+        shapeMenu.transform.SetParent(this.transform.parent, false);
+        shapeMenu.transform.localPosition = this.transform.localPosition;
+        shapeMenu.transform.localRotation = this.transform.localRotation;
+        shapeMenu.transform.localScale = this.transform.localScale;
+
+           // _volumeInputController.isShapeSelection = true;  //In shape selection method
+        
+
+        if(_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.EditingSourceId)
+            _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.CancelEditSource);
+        
+        _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
+        gameObject.SetActive(false);
+        shapeMenu.SetActive(true);
+        
     }
 
 }
