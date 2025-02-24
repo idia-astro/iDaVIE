@@ -314,9 +314,6 @@ public class PaintMenuController : MonoBehaviour
         shapeMenu.transform.localRotation = this.transform.localRotation;
         shapeMenu.transform.localScale = this.transform.localScale;
 
-           // _volumeInputController.isShapeSelection = true;  //In shape selection method
-        
-
         if(_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.EditingSourceId)
             _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.CancelEditSource);
         

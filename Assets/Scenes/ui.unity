@@ -96340,7 +96340,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: Delete Shape
+            m_StringArgument: Change Shape Mode
             m_BoolArgument: 0
           m_CallState: 2
   - eventID: 10
@@ -96477,7 +96477,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: Open Paint Mode
+            m_StringArgument: Confirm Selection
             m_BoolArgument: 0
           m_CallState: 2
   - eventID: 10
@@ -96813,7 +96813,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: Clear Selection
+            m_StringArgument: Add Shapes
             m_BoolArgument: 0
           m_CallState: 2
   - eventID: 10
@@ -97414,7 +97414,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: New Layer
+            m_StringArgument: Copy Shape
             m_BoolArgument: 0
           m_CallState: 2
   - eventID: 10
@@ -97710,9 +97710,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 5926290297137715607}
         m_TargetAssemblyTypeName: ShapeMenuController, Assembly-CSharp
-        m_MethodName: ExitShapeMode
+        m_MethodName: ExitPaintMode
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -98046,7 +98046,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: Open Main Menu
+            m_StringArgument: Open Paint Menu
             m_BoolArgument: 0
           m_CallState: 2
   - eventID: 10
@@ -98109,9 +98109,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 5926290297137715607}
         m_TargetAssemblyTypeName: ShapeMenuController, Assembly-CSharp
-        m_MethodName: OpenMainMenu
+        m_MethodName: OpenPaintMenu
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -98243,7 +98243,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: -6, y: 102.76187}
+  m_AnchoredPosition: {x: -393, y: 102.76187}
   m_SizeDelta: {x: 376.3997, y: 760.8456}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &5926290297137715604
@@ -98259,6 +98259,7 @@ GameObject:
   - component: {fileID: 5926290297137715601}
   - component: {fileID: 5926290297137715600}
   - component: {fileID: 5926290297137715606}
+  - component: {fileID: 5926290297137715607}
   m_Layer: 5
   m_Name: ShapeMenu
   m_TagString: Untagged
@@ -98278,6 +98279,20 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &5926290297137715607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5926290297137715604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 433d18163108c3d4dbf484d822c8661b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  volumeDatasetRendererObj: {fileID: 379208438}
+  paintMenu: {fileID: 1393187942}
 --- !u!224 &5926290297367423032
 RectTransform:
   m_ObjectHideFlags: 0
