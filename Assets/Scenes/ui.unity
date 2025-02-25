@@ -69970,6 +69970,11 @@ PrefabInstance:
       objectReference: {fileID: 379983798}
     - target: {fileID: 4928587070514594467, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
         type: 3}
+      propertyPath: volumeDatasetManager
+      value: 
+      objectReference: {fileID: 379208438}
+    - target: {fileID: 4928587070514594467, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+        type: 3}
       propertyPath: toastNotificationPrefab
       value: 
       objectReference: {fileID: 4096339361418599399, guid: 4a6b82b3b6515df4fa193cccc67ac6db,
@@ -98260,6 +98265,7 @@ GameObject:
   - component: {fileID: 5926290297137715600}
   - component: {fileID: 5926290297137715606}
   - component: {fileID: 5926290297137715607}
+  - component: {fileID: 5926290297137715608}
   m_Layer: 5
   m_Name: ShapeMenu
   m_TagString: Untagged
@@ -98293,6 +98299,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   volumeDatasetRendererObj: {fileID: 379208438}
   paintMenu: {fileID: 1393187942}
+  shapesManager: {fileID: 5926290297137715608}
+--- !u!114 &5926290297137715608
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5926290297137715604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1ca38286bb890343ae5301cacbee62d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cube: {fileID: 6328064290919473691, guid: 9b292f9019823814190a10acd416c8b0, type: 3}
+  cuboid: {fileID: 6328064290919473691, guid: 520f2b35f88d89c44a5a6e4fb53db4d6, type: 3}
+  sphere: {fileID: 6295815927880627, guid: 9533edd294df70b4e9064e6709f808ee, type: 3}
+  cylinder: {fileID: 6460891525136116125, guid: d5bf4a2e9f8b76b468e46ecf35055b1b,
+    type: 3}
+  state: 0
 --- !u!224 &5926290297367423032
 RectTransform:
   m_ObjectHideFlags: 0

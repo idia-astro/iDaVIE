@@ -36,6 +36,7 @@ public class ShapeMenuController : MonoBehaviour
 
     private VolumeInputController _volumeInputController = null;
     public VolumeInputController VolumeInputController => _volumeInputController;
+    public ShapesManager shapesManager;
 
     void OnEnable()
     {
@@ -74,7 +75,7 @@ public class ShapeMenuController : MonoBehaviour
     {
         if(_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.EditingSourceId)
             _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.CancelEditSource);
-        
+        _volumeInputController.ChangeShapeSelection();
         this.gameObject.SetActive(false);
     }
 
@@ -90,6 +91,11 @@ public class ShapeMenuController : MonoBehaviour
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeEnabled);
         gameObject.SetActive(false);
         paintMenu.SetActive(true);
+    }
+
+    public void StartShapeSelection() {
+        shapesManager.StartShapes();
+        _volumeInputController.StartShapeSelection(shapesManager.GetCurrentShape());
     }
 
 

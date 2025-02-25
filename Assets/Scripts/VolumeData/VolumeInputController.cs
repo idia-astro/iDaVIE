@@ -116,6 +116,7 @@ public class VolumeInputController : MonoBehaviour
     private SteamVR_Action_Boolean _grabPinchAction;
     private SteamVR_Action_Boolean _quickMenuAction;
     public VolumeDataSetRenderer[] _volumeDataSets;
+    public GameObject volumeDatasetManager;
     private float[] _startDataSetScales;
     private Vector3[] _currentGripPositions;
     private Vector3 _startGripSeparation;
@@ -168,6 +169,7 @@ public class VolumeInputController : MonoBehaviour
     private bool _shapeMenuOn = false;
     private bool _savePopupOn = false;
     private bool _exportPopupOn = false;
+    private bool _shapeSelection = false;
 
     [SerializeField]
     public GameObject toastNotificationPrefab = null;
@@ -1332,5 +1334,16 @@ public class VolumeInputController : MonoBehaviour
     {
         _lineAxisSeparation?.Destroy();
         _lineRotationAxes?.Destroy();
+    }
+
+    public void ChangeShapeSelection() {
+        _shapeSelection = !_shapeSelection;
+    }
+
+    public void StartShapeSelection(GameObject currentShape) {
+        Vector3 position = _handTransforms[PrimaryHandIndex].position;
+        GameObject shape = Instantiate(currentShape, position, Quaternion.identity);
+        shape.transform.localScale = new Vector3(0.1f,0.1f,0.1f);
+        shape.transform.SetParent(_handTransforms[PrimaryHandIndex]);
     }
 }
