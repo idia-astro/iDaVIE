@@ -19,7 +19,7 @@ public class ShapesManager : MonoBehaviour {
 
     public void StartShapes() {
         state = ShapeState.selecting;
-        currentShape = cube;
+        currentShape = cuboid;
     }
 
     public GameObject GetCurrentShape() {
@@ -35,5 +35,6 @@ public class ShapesManager : MonoBehaviour {
             Shape shapeScript = shape.GetComponent<Shape>();
             shapeScript.DestroyShape();
         }
+        shapes = new List<GameObject>();
     }
 }

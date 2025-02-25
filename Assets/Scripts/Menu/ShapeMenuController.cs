@@ -78,6 +78,7 @@ public class ShapeMenuController : MonoBehaviour
             _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.CancelEditSource);
         _volumeInputController.ChangeShapeSelection();
         shapesManager.DestroyShapes();
+        shapeSelectionStarted = false;
         this.gameObject.SetActive(false);
     }
 

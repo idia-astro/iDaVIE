@@ -1343,11 +1343,12 @@ public class VolumeInputController : MonoBehaviour
 
     public void StartShapeSelection(GameObject currentShape) {
         Vector3 position = _handTransforms[PrimaryHandIndex].position;
-        GameObject shape = Instantiate(currentShape, position, Quaternion.identity);
-        shape.transform.localScale = new Vector3(0.1f,0.1f,0.1f);
+        Quaternion rotation = _handTransforms[PrimaryHandIndex].rotation;
+        GameObject shape = Instantiate(currentShape, position, rotation);
+        shape.transform.localScale = new Vector3(shape.transform.localScale.x/1000f,shape.transform.localScale.y/1000f,shape.transform.localScale.z/1000f);
         shape.transform.SetParent(_handTransforms[PrimaryHandIndex]);
         position = shape.transform.position;
-        position.x+=0.05f;
+        position.x+=0.07f;
         shape.transform.position = position;
         shapesManager.AddShape(shape);
     }
