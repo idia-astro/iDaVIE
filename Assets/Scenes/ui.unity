@@ -23650,6 +23650,56 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 579667142}
   m_CullTransparentMesh: 0
+--- !u!1 &581074821
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 581074823}
+  - component: {fileID: 581074822}
+  m_Layer: 0
+  m_Name: ShapeManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &581074822
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 581074821}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1ca38286bb890343ae5301cacbee62d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cube: {fileID: 6328064290919473691, guid: 9b292f9019823814190a10acd416c8b0, type: 3}
+  cuboid: {fileID: 6328064290919473691, guid: 520f2b35f88d89c44a5a6e4fb53db4d6, type: 3}
+  sphere: {fileID: 6295815927880627, guid: 9533edd294df70b4e9064e6709f808ee, type: 3}
+  cylinder: {fileID: 6460891525136116125, guid: d5bf4a2e9f8b76b468e46ecf35055b1b,
+    type: 3}
+  state: 0
+--- !u!4 &581074823
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 581074821}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.05183029, y: 0.9357643, z: 0.93043137}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 21
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &581104875
 GameObject:
   m_ObjectHideFlags: 0
@@ -69960,6 +70010,11 @@ PrefabInstance:
       objectReference: {fileID: 843138653}
     - target: {fileID: 4928587070514594467, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
         type: 3}
+      propertyPath: shapesManager
+      value: 
+      objectReference: {fileID: 581074822}
+    - target: {fileID: 4928587070514594467, guid: c2e4286f4db4a2f4e8c310a78ae178f2,
+        type: 3}
       propertyPath: CanvassPaintMenu
       value: 
       objectReference: {fileID: 1393187942}
@@ -96881,9 +96936,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 5926290297137715607}
         m_TargetAssemblyTypeName: ShapeMenuController, Assembly-CSharp
-        m_MethodName: clearButtonClick
+        m_MethodName: StartShapeSelection
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -98265,7 +98320,6 @@ GameObject:
   - component: {fileID: 5926290297137715600}
   - component: {fileID: 5926290297137715606}
   - component: {fileID: 5926290297137715607}
-  - component: {fileID: 5926290297137715608}
   m_Layer: 5
   m_Name: ShapeMenu
   m_TagString: Untagged
@@ -98299,25 +98353,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   volumeDatasetRendererObj: {fileID: 379208438}
   paintMenu: {fileID: 1393187942}
-  shapesManager: {fileID: 5926290297137715608}
---- !u!114 &5926290297137715608
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5926290297137715604}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d1ca38286bb890343ae5301cacbee62d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  cube: {fileID: 6328064290919473691, guid: 9b292f9019823814190a10acd416c8b0, type: 3}
-  cuboid: {fileID: 6328064290919473691, guid: 520f2b35f88d89c44a5a6e4fb53db4d6, type: 3}
-  sphere: {fileID: 6295815927880627, guid: 9533edd294df70b4e9064e6709f808ee, type: 3}
-  cylinder: {fileID: 6460891525136116125, guid: d5bf4a2e9f8b76b468e46ecf35055b1b,
-    type: 3}
-  state: 0
+  shapesManager: {fileID: 581074822}
 --- !u!224 &5926290297367423032
 RectTransform:
   m_ObjectHideFlags: 0

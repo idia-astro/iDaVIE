@@ -12,6 +12,7 @@ public class ShapesManager : MonoBehaviour {
     public GameObject cylinder;
     private bool additive = true;
     private GameObject currentShape; 
+    private List<GameObject> shapes = new List<GameObject>();
 
     public enum ShapeState {selecting, selected};
     public ShapeState state;
@@ -23,5 +24,16 @@ public class ShapesManager : MonoBehaviour {
 
     public GameObject GetCurrentShape() {
         return currentShape;
+    }
+
+    public void AddShape(GameObject shape) {
+         shapes.Add(shape);
+    }
+
+    public void DestroyShapes() {
+        foreach(GameObject shape in shapes) {
+            Shape shapeScript = shape.GetComponent<Shape>();
+            shapeScript.DestroyShape();
+        }
     }
 }

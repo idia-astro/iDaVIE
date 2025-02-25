@@ -117,6 +117,7 @@ public class VolumeInputController : MonoBehaviour
     private SteamVR_Action_Boolean _quickMenuAction;
     public VolumeDataSetRenderer[] _volumeDataSets;
     public GameObject volumeDatasetManager;
+    public ShapesManager shapesManager;
     private float[] _startDataSetScales;
     private Vector3[] _currentGripPositions;
     private Vector3 _startGripSeparation;
@@ -1345,5 +1346,9 @@ public class VolumeInputController : MonoBehaviour
         GameObject shape = Instantiate(currentShape, position, Quaternion.identity);
         shape.transform.localScale = new Vector3(0.1f,0.1f,0.1f);
         shape.transform.SetParent(_handTransforms[PrimaryHandIndex]);
+        position = shape.transform.position;
+        position.x+=0.05f;
+        shape.transform.position = position;
+        shapesManager.AddShape(shape);
     }
 }
