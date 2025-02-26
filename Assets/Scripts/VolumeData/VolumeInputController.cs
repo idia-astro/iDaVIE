@@ -549,9 +549,13 @@ public class VolumeInputController : MonoBehaviour
         {
             return;
         }
-
+        
         if(_shapeSelection) {
-            shapesManager.SelectShape();
+            if(newState)
+            {
+                shapesManager.SelectShape();
+                PlaceShape();
+            }
             return;
         }
 
@@ -1367,5 +1371,13 @@ public class VolumeInputController : MonoBehaviour
         position.z+=0.07f;
         shape.transform.localPosition = position;
         shapesManager.SetSelectableShape(shape);
+    }
+
+    public void PlaceShape() {
+        GameObject shape = shapesManager.GetSelectedShape();
+        if(shape == null) return;
+        GameObject shapeCopy = Instantiate(shape,shape.transform.position,shape.transform.rotation);
+        shapeCopy.transform.SetParent(volumeDatasetManager.transform.GetChild(0));
+        shapesManager.AddShape(shapeCopy);
     }
 }

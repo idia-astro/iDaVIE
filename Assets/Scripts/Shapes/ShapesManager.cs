@@ -75,6 +75,11 @@ public class ShapesManager : MonoBehaviour {
         currentShape = shape;
     }
 
+    public GameObject GetSelectedShape() {
+        if(state == ShapeState.selecting) return null;
+        return currentShape;
+    }
+
     public void DestroyCurrentShape() {
         Shape shapeScript = currentShape.GetComponent<Shape>();
         shapeScript.DestroyShape();
