@@ -365,7 +365,10 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnMenuUpPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
-        if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
+        if(_shapeSelection && fromSource == PrimaryHand) {
+            ShowSelectableShape(shapesManager.GetNextShape());
+        }
+        else if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
             IncreaseBrushSize();
         }
@@ -387,7 +390,10 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
-        if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
+        if(_shapeSelection && fromSource == PrimaryHand) {
+            ShowSelectableShape(shapesManager.GetPreviousShape());
+        }
+        else if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
             DecreaseBrushSize();
         }
@@ -537,6 +543,11 @@ public class VolumeInputController : MonoBehaviour
         // Skip input from secondary hand
         if (fromSource != PrimaryHand)
         {
+            return;
+        }
+
+        if(_shapeSelection) {
+            shapesManager.SelectShape();
             return;
         }
 
@@ -1341,15 +1352,16 @@ public class VolumeInputController : MonoBehaviour
         _shapeSelection = !_shapeSelection;
     }
 
-    public void StartShapeSelection(GameObject currentShape) {
+    public void ShowSelectableShape(GameObject currentShape) {
+        if(currentShape == null) return;
         Vector3 position = _handTransforms[PrimaryHandIndex].position;
         Quaternion rotation = _handTransforms[PrimaryHandIndex].rotation;
         GameObject shape = Instantiate(currentShape, position, rotation);
         shape.transform.localScale = new Vector3(shape.transform.localScale.x/1000f,shape.transform.localScale.y/1000f,shape.transform.localScale.z/1000f);
         shape.transform.SetParent(_handTransforms[PrimaryHandIndex]);
-        position = shape.transform.position;
-        position.x+=0.07f;
-        shape.transform.position = position;
-        shapesManager.AddShape(shape);
+        position = shape.transform.localPosition;
+        position.z+=0.07f;
+        shape.transform.localPosition = position;
+        shapesManager.SetSelectableShape(shape);
     }
 }

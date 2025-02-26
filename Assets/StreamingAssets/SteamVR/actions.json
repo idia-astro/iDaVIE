@@ -75,6 +75,10 @@
       "requirement": "mandatory"
     },
     {
+      "name": "/actions/default/in/AButtonPressed",
+      "type": "boolean"
+    },
+    {
       "name": "/actions/default/out/Haptic",
       "type": "vibration"
     },

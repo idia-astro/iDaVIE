@@ -78,6 +78,7 @@ public class ShapeMenuController : MonoBehaviour
             _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.CancelEditSource);
         _volumeInputController.ChangeShapeSelection();
         shapesManager.DestroyShapes();
+        shapesManager.DestroyCurrentShape();
         shapeSelectionStarted = false;
         this.gameObject.SetActive(false);
     }
@@ -99,7 +100,7 @@ public class ShapeMenuController : MonoBehaviour
     public void StartShapeSelection() {
         if(shapeSelectionStarted) return; 
         shapesManager.StartShapes();
-        _volumeInputController.StartShapeSelection(shapesManager.GetCurrentShape());
+        _volumeInputController.ShowSelectableShape(shapesManager.GetCurrentShape());
         shapeSelectionStarted = true;
     }
 
