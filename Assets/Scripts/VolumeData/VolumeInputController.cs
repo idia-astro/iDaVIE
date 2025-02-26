@@ -476,6 +476,10 @@ public class VolumeInputController : MonoBehaviour
         // Use primary hand for voice command activation (push-to-talk)
         if (fromSource == PrimaryHand)
         {
+            if(_shapeSelection) {
+                shapesManager.DeselectShape();
+                return;
+            }
             if (_config.usePushToTalk)
             {
                 if (newState)

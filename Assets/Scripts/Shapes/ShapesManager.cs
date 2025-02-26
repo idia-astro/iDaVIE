@@ -18,6 +18,8 @@ public class ShapesManager : MonoBehaviour {
     private Color additiveColour;
     private Color subtractiveColour;
 
+    private Color32 baseColour;
+
     public enum ShapeState {selecting, selected};
     public ShapeState state;
 
@@ -25,6 +27,7 @@ public class ShapesManager : MonoBehaviour {
         state = ShapeState.selecting;
         additiveColour = Color.green;
         subtractiveColour = Color.red;
+        baseColour = new Color32(42,46,40,255);
         currentShape = cube;
         currentShapeIndex = 0;
         shapes = new GameObject[] {cube, cuboid, sphere, cylinder};
@@ -39,6 +42,13 @@ public class ShapesManager : MonoBehaviour {
         state = ShapeState.selected;
         var renderer = currentShape.GetComponent<Renderer>();
         renderer.material.color = additiveColour;
+    }
+
+    public void DeselectShape() {
+        if(state == ShapeState.selecting) return;
+        state = ShapeState.selecting;
+        var renderer = currentShape.GetComponent<Renderer>();
+        renderer.material.color = baseColour;
     }
 
     public GameObject GetNextShape() {
