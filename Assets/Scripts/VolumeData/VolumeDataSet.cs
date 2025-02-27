@@ -1165,7 +1165,7 @@ namespace VolumeData
             _dirtyMaskBounds = new Bounds();
         }
 
-        private void ConsolidateMaskEntries()
+        public void ConsolidateMaskEntries()
         {
             Vector3Int cubeSize = new Vector3Int(RegionCube.width, RegionCube.height, RegionCube.depth);
             if (_existingRegionMaskEntries == null || _existingRegionMaskEntries.Count == 0)

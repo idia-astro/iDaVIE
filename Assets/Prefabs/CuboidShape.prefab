@@ -59,6 +59,7 @@ GameObject:
   - component: {fileID: 7422659850078683964}
   - component: {fileID: 4964424006082113943}
   - component: {fileID: 3426628132015614219}
+  - component: {fileID: 2152252222124064396}
   m_Layer: 0
   m_Name: CuboidShape
   m_TagString: Untagged
@@ -213,3 +214,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c98ec1e6b2b7c9943815be5f4ba5a466, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &2152252222124064396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6328064290919473691}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6711bf26c30a2804ebccc2ab4761ea57, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  boundingBox: {fileID: 1460629405815393278}

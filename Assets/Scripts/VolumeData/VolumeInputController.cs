@@ -561,8 +561,8 @@ public class VolumeInputController : MonoBehaviour
         if(_shapeSelection) {
             if(newState)
             {
+                if(shapesManager.isShapeSelected()) PlaceShape();
                 shapesManager.SelectShape();
-                PlaceShape();
             }
             return;
         }
@@ -1387,6 +1387,19 @@ public class VolumeInputController : MonoBehaviour
         if(selectedShape == null) return;
 
         GameObject shapeCopy = Instantiate(shape,selectedShape.transform.position,selectedShape.transform.rotation);
+
+        if(shapeCopy.name.Contains("Cylinder")) {
+            var collider = shapeCopy.GetComponent<CapsuleCollider>();
+            collider.enabled = true;
+        }
+        else if (shapeCopy.name.Contains("Sphere")) {
+            var collider = shapeCopy.GetComponent<SphereCollider>();
+            collider.enabled = true;
+        }
+        else {
+            var collider = shapeCopy.GetComponent<BoxCollider>();
+            collider.enabled = true;
+        }
         shapeCopy.GetComponent<Shape>().SetAdditive(selectedShape.GetComponent<Shape>().isAdditive());
         shapeCopy.transform.localScale = new Vector3(shapeCopy.transform.localScale.x/1000f,shapeCopy.transform.localScale.y/1000f,shapeCopy.transform.localScale.z/1000f);
         shapeCopy.transform.SetParent(volumeDatasetManager.transform.GetChild(0));

@@ -53,6 +53,7 @@ public class ShapeMenuController : MonoBehaviour
     void Update()
     {
         var firstActive = getFirstActiveDataSet();
+        firstActive.DisplayMask = true;
         if (firstActive && _activeDataSet != firstActive)
         {
             _activeDataSet = firstActive;
@@ -120,6 +121,12 @@ public class ShapeMenuController : MonoBehaviour
         {
             menu.SetActive(true);
         }
+    }
+
+    public void applyMask()
+    {
+        shapesManager.applyMask(_activeDataSet, _volumeInputController, true);
+        shapesManager.applyMask(_activeDataSet, _volumeInputController, false);      
     }
 
 
