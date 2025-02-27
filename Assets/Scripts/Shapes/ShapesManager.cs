@@ -10,13 +10,10 @@ public class ShapesManager : MonoBehaviour {
     public GameObject cuboid;
     public GameObject sphere;
     public GameObject cylinder;
-    private bool additive = true;
     private GameObject currentShape; 
     private int currentShapeIndex;
     private List<GameObject> activeShapes = new List<GameObject>();
     private GameObject[] shapes;
-    private Color additiveColour;
-    private Color subtractiveColour;
 
     private Color32 baseColour;
 
@@ -25,8 +22,6 @@ public class ShapesManager : MonoBehaviour {
 
     public void StartShapes() {
         state = ShapeState.selecting;
-        additiveColour = Color.green;
-        subtractiveColour = Color.red;
         baseColour = new Color32(42,46,40,255);
         currentShape = cube;
         currentShapeIndex = 0;
@@ -40,8 +35,8 @@ public class ShapesManager : MonoBehaviour {
     public void SelectShape() {
         if(state == ShapeState.selected) return;
         state = ShapeState.selected;
-        var renderer = currentShape.GetComponent<Renderer>();
-        renderer.material.color = additiveColour;
+        var shapeScript = currentShape.GetComponent<Shape>();
+        shapeScript.SetAdditive(true);
     }
 
     public void DeselectShape() {
@@ -78,6 +73,18 @@ public class ShapesManager : MonoBehaviour {
     public GameObject GetSelectedShape() {
         if(state == ShapeState.selecting) return null;
         return currentShape;
+    }
+
+    public void ChangeShapeMode() {
+        if(state == ShapeState.selecting) return;
+
+        var shapeScript = currentShape.GetComponent<Shape>();
+        if(shapeScript.isAdditive()) {
+            shapeScript.SetAdditive(false);
+        }
+        else {
+            shapeScript.SetAdditive(true);
+        }
     }
 
     public void DestroyCurrentShape() {

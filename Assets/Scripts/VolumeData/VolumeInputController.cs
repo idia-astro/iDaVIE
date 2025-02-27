@@ -414,6 +414,11 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnMenuLeftPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
+        if(fromSource == PrimaryHand && _shapeSelection) {
+            shapesManager.ChangeShapeMode();
+            return;
+        }
+
         if (fromSource != PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
             UndoBrushStroke(fromSource);
@@ -422,7 +427,10 @@ public class VolumeInputController : MonoBehaviour
     
     private void OnMenuRightPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
-		
+		if(fromSource == PrimaryHand && _shapeSelection) {
+            shapesManager.ChangeShapeMode();
+            return;
+        }
         if (fromSource != PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
             RedoBrushStroke(fromSource);  
@@ -1374,9 +1382,13 @@ public class VolumeInputController : MonoBehaviour
     }
 
     public void PlaceShape() {
-        GameObject shape = shapesManager.GetSelectedShape();
-        if(shape == null) return;
-        GameObject shapeCopy = Instantiate(shape,shape.transform.position,shape.transform.rotation);
+        GameObject shape = shapesManager.GetCurrentShape();
+        GameObject selectedShape = shapesManager.GetSelectedShape();
+        if(selectedShape == null) return;
+
+        GameObject shapeCopy = Instantiate(shape,selectedShape.transform.position,selectedShape.transform.rotation);
+        shapeCopy.GetComponent<Shape>().SetAdditive(selectedShape.GetComponent<Shape>().isAdditive());
+        shapeCopy.transform.localScale = new Vector3(shapeCopy.transform.localScale.x/1000f,shapeCopy.transform.localScale.y/1000f,shapeCopy.transform.localScale.z/1000f);
         shapeCopy.transform.SetParent(volumeDatasetManager.transform.GetChild(0));
         shapesManager.AddShape(shapeCopy);
     }
