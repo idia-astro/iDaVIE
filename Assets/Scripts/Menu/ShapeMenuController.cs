@@ -81,6 +81,7 @@ public class ShapeMenuController : MonoBehaviour
         shapesManager.DestroyShapes();
         shapesManager.DestroyCurrentShape();
         shapeSelectionStarted = false;
+        _activeDataSet.DisplayMask = false;
         this.gameObject.SetActive(false);
     }
 
