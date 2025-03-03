@@ -105,6 +105,10 @@ public class ShapeMenuController : MonoBehaviour
         _volumeInputController.ShowSelectableShape(shapesManager.GetCurrentShape());
     }
 
+    public void DeleteSelectedShapes() {
+        shapesManager.DeleteSelectedShapes();
+    }
+
     public void spawnMenu(GameObject menu)
     {
         Vector3 playerPos = Camera.main.transform.position;

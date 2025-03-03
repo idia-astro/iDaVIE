@@ -14,6 +14,7 @@ public class ShapesManager : MonoBehaviour {
     private GameObject movableShape;
     private int currentShapeIndex;
     private List<GameObject> activeShapes = new List<GameObject>();
+    private List<GameObject> selectedShapes = new List<GameObject>();
     private GameObject[] shapes;
     private Color32 baseColour;
     private bool shapeSelected = false;
@@ -80,6 +81,23 @@ public class ShapesManager : MonoBehaviour {
 
     public void AddShape(GameObject shape) {
          activeShapes.Add(shape);
+    }
+
+    public void AddSelectedShape(GameObject shape) {
+        selectedShapes.Add(shape);
+    }
+
+    public void RemoveSelectedShape(GameObject shape) {
+        selectedShapes.Remove(shape);
+    }
+
+    public void DeleteSelectedShapes() {
+        foreach(GameObject shape in selectedShapes) {
+            activeShapes.Remove(shape);
+            Shape shapeScript = shape.GetComponent<Shape>();
+            shapeScript.DestroyShape();
+        }
+        selectedShapes = new List<GameObject>();
     }
 
     public void SetSelectableShape(GameObject shape) {

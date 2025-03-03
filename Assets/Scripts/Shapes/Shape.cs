@@ -7,6 +7,7 @@ public class Shape : MonoBehaviour {
     private Renderer rend;
     private VolumeInputController _volumeInputController;
     private ShapesManager _shapeManager;
+    private bool selected;
 
 
     void Start()
@@ -31,6 +32,7 @@ public class Shape : MonoBehaviour {
         else{
             rend.material.color = highlighSubtractiveColor;
         }
+        selected = true;
         _shapeManager.SetMoveableShape(gameObject);
 
     }
@@ -44,6 +46,7 @@ public class Shape : MonoBehaviour {
         else{
             rend.material.color = Color.red;
         }
+        selected = false;
         _shapeManager.SetMoveableShape(null);
         
     }
@@ -53,6 +56,32 @@ public class Shape : MonoBehaviour {
         if(isAdditive) rend.material.color = Color.green;
         else  rend.material.color = Color.red;
         additive = isAdditive;
+    }
+
+    public void ShapeClicked() {
+        if(!selected){
+            if(additive)
+            {
+                rend.material.color = highlightAdditiveColor;
+            }
+            else{
+                rend.material.color = highlighSubtractiveColor;
+            }
+            selected = true;
+            _shapeManager.AddSelectedShape(gameObject);
+        }
+        else {
+            if(additive)
+            {
+                rend.material.color = Color.green;
+            }
+            else{
+                rend.material.color = Color.red;
+            }
+            selected = false;
+            _shapeManager.RemoveSelectedShape(gameObject);
+        }
+        
     }
 
     public bool isAdditive() {

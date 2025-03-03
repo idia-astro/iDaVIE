@@ -190,9 +190,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: ClickableCube, Assembly-CSharp
-        m_MethodName: shapeClicked
+      - m_Target: {fileID: 3426628132015614219}
+        m_TargetAssemblyTypeName: Shape, Assembly-CSharp
+        m_MethodName: ShapeClicked
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
