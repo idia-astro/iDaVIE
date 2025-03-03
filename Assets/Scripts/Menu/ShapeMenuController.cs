@@ -109,6 +109,10 @@ public class ShapeMenuController : MonoBehaviour
         shapesManager.DeleteSelectedShapes();
     }
 
+    public void ChangeModes() {
+        shapesManager.ChangeModes();
+    }
+
     public void spawnMenu(GameObject menu)
     {
         Vector3 playerPos = Camera.main.transform.position;

@@ -53,8 +53,24 @@ public class Shape : MonoBehaviour {
     
     public void SetAdditive(bool isAdditive) {
         rend = GetComponent<Renderer>();
-        if(isAdditive) rend.material.color = Color.green;
-        else  rend.material.color = Color.red;
+        if(selected){
+            if(isAdditive)
+            {
+                rend.material.color = highlightAdditiveColor;
+            }
+            else{
+                rend.material.color = highlighSubtractiveColor;
+            }
+        }
+        else {
+            if(isAdditive)
+            {
+                rend.material.color = Color.green;
+            }
+            else{
+                rend.material.color = Color.red;
+            }
+        }
         additive = isAdditive;
     }
 

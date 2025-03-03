@@ -1423,7 +1423,6 @@ public class VolumeInputController : MonoBehaviour
         shapeCopy.GetComponent<Shape>().SetAdditive(selectedShape.GetComponent<Shape>().isAdditive());
         shapeCopy.transform.localScale = new Vector3(shapeCopy.transform.localScale.x/1000f,shapeCopy.transform.localScale.y/1000f,shapeCopy.transform.localScale.z/1000f);
         shapeCopy.transform.SetParent(volumeDatasetManager.transform.GetChild(0));
-        Debug.Log("Shape Placed in Scene");
         shapesManager.AddShape(shapeCopy);
     }
 

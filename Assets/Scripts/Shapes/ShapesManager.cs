@@ -100,6 +100,13 @@ public class ShapesManager : MonoBehaviour {
         selectedShapes = new List<GameObject>();
     }
 
+    public void ChangeModes() {
+        foreach(GameObject shape in selectedShapes) {
+            Shape shapeScript = shape.GetComponent<Shape>();
+            shapeScript.SetAdditive(!shapeScript.isAdditive());
+        }
+    }
+
     public void SetSelectableShape(GameObject shape) {
         currentShape = shape;
     }
