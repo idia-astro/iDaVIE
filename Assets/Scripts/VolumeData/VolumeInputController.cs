@@ -485,7 +485,14 @@ public class VolumeInputController : MonoBehaviour
         if (fromSource == PrimaryHand)
         {
             if(_shapeSelection) {
-                shapesManager.DeselectShape();
+                if(newState)
+                {
+                    if(shapesManager.isShapeSelected()) shapesManager.DeselectShape();
+                    else {
+                        shapesManager.DestroyCurrentShape();
+                        shapesManager.MakeIdle();
+                    }
+                }
                 return;
             }
             if (_config.usePushToTalk)
@@ -524,6 +531,19 @@ public class VolumeInputController : MonoBehaviour
         for (var i = 0; i < 2; i++)
         {
             _currentGripPositions[i] = _handTransforms[i].position;
+        }
+
+        if(_shapeSelection) {
+            GameObject moveableShape = shapesManager.GetMoveableShape();
+            if(moveableShape != null) {
+                if(newState) {
+                    moveableShape.transform.SetParent(_handTransforms[PrimaryHandIndex]);
+                }
+                else {
+                    moveableShape.transform.SetParent(volumeDatasetManager.transform.GetChild(0));
+                }
+                return;
+            }
         }
 
         switch (gripCount)
@@ -1403,6 +1423,8 @@ public class VolumeInputController : MonoBehaviour
         shapeCopy.GetComponent<Shape>().SetAdditive(selectedShape.GetComponent<Shape>().isAdditive());
         shapeCopy.transform.localScale = new Vector3(shapeCopy.transform.localScale.x/1000f,shapeCopy.transform.localScale.y/1000f,shapeCopy.transform.localScale.z/1000f);
         shapeCopy.transform.SetParent(volumeDatasetManager.transform.GetChild(0));
+        Debug.Log("Shape Placed in Scene");
         shapesManager.AddShape(shapeCopy);
     }
+
 }

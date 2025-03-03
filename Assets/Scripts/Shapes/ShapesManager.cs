@@ -11,13 +11,14 @@ public class ShapesManager : MonoBehaviour {
     public GameObject sphere;
     public GameObject cylinder;
     private GameObject currentShape; 
+    private GameObject movableShape;
     private int currentShapeIndex;
     private List<GameObject> activeShapes = new List<GameObject>();
     private GameObject[] shapes;
     private Color32 baseColour;
     private bool shapeSelected = false;
 
-    public enum ShapeState {selecting, selected};
+    public enum ShapeState {idle, selecting, selected};
     public ShapeState state;
 
     public void StartShapes() {
@@ -33,7 +34,7 @@ public class ShapesManager : MonoBehaviour {
     }
 
     public void SelectShape() {
-        if(state == ShapeState.selected) return;
+        if(state != ShapeState.selecting) return;
         state = ShapeState.selected;
         var shapeScript = currentShape.GetComponent<Shape>();
         shapeScript.SetAdditive(true);
@@ -41,7 +42,7 @@ public class ShapesManager : MonoBehaviour {
     }
 
     public void DeselectShape() {
-        if(state == ShapeState.selecting) return;
+        if(state != ShapeState.selected) return;
         state = ShapeState.selecting;
         var renderer = currentShape.GetComponent<Renderer>();
         renderer.material.color = baseColour;
@@ -50,6 +51,15 @@ public class ShapesManager : MonoBehaviour {
 
     public bool isShapeSelected() {
         return shapeSelected;
+    }
+
+    public bool isIdle() {
+        if(state == ShapeState.idle) return true;
+        return false;
+    }
+
+    public void MakeIdle() {
+        state = ShapeState.idle;
     }
 
     public GameObject GetNextShape() {
@@ -79,6 +89,14 @@ public class ShapesManager : MonoBehaviour {
     public GameObject GetSelectedShape() {
         if(state == ShapeState.selecting) return null;
         return currentShape;
+    }
+
+    public void SetMoveableShape(GameObject shape) {
+        movableShape = shape;
+    }
+
+    public GameObject GetMoveableShape() {
+        return movableShape;
     }
 
     public void ChangeShapeMode() {
