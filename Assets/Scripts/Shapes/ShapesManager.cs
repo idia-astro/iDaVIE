@@ -15,6 +15,8 @@ public class ShapesManager : MonoBehaviour {
     private int currentShapeIndex;
     private List<GameObject> activeShapes = new List<GameObject>();
     private List<GameObject> selectedShapes = new List<GameObject>();
+    private List<GameObject> deletedShapes = new List<GameObject>();
+    private Stack<ShapeAction> actions = new Stack<ShapeAction>();
     private GameObject[] shapes;
     private Color32 baseColour;
     private bool shapeSelected = false;
@@ -81,6 +83,7 @@ public class ShapesManager : MonoBehaviour {
 
     public void AddShape(GameObject shape) {
          activeShapes.Add(shape);
+         actions.Push(new ShapeAction(shape));
     }
 
     public void AddSelectedShape(GameObject shape) {
@@ -92,11 +95,14 @@ public class ShapesManager : MonoBehaviour {
     }
 
     public void DeleteSelectedShapes() {
+        List<GameObject> delShapes = new List<GameObject>();
         foreach(GameObject shape in selectedShapes) {
             activeShapes.Remove(shape);
-            Shape shapeScript = shape.GetComponent<Shape>();
-            shapeScript.DestroyShape();
+            shape.SetActive(false);
+            deletedShapes.Add(shape);
+            delShapes.Add(shape);
         }
+        actions.Push(new ShapeAction(ShapeAction.ActionType.DeleteShapes, delShapes));
         selectedShapes = new List<GameObject>();
     }
 
@@ -108,6 +114,7 @@ public class ShapesManager : MonoBehaviour {
     }
 
     public void CopyShapes() {
+        List<GameObject> copiedShapes = new List<GameObject>();
         foreach(GameObject shape in selectedShapes) {
             GameObject copiedShape = Instantiate(shape, shape.transform.position, shape.transform.rotation);
             Vector3 pos = copiedShape.transform.position;
@@ -117,7 +124,9 @@ public class ShapesManager : MonoBehaviour {
             Shape shapeScript = copiedShape.GetComponent<Shape>();
             shapeScript.SetAdditive(shape.GetComponent<Shape>().isAdditive());
             activeShapes.Add(copiedShape);
+            copiedShapes.Add(copiedShape);
         }
+        actions.Push(new ShapeAction(ShapeAction.ActionType.CopyShapes, copiedShapes));
     }
 
     public void SetSelectableShape(GameObject shape) {
@@ -237,6 +246,34 @@ public class ShapesManager : MonoBehaviour {
         return centre/vertices.Length;
     }
 
+    public void Undo() {
+        if(actions.Count == 0) return;
+        ShapeAction lastAction = actions.Pop();
+        switch (lastAction.type) {
+            case ShapeAction.ActionType.AddShape:
+                activeShapes.Remove(lastAction.addedShape);
+                if(selectedShapes.Contains(lastAction.addedShape)) selectedShapes.Remove(lastAction.addedShape);
+                lastAction.addedShape.GetComponent<Shape>().DestroyShape();
+            break;
+
+            case ShapeAction.ActionType.DeleteShapes:
+                foreach(GameObject shape in lastAction.shapeList) {
+                    shape.SetActive(true);
+                    activeShapes.Add(shape);
+                    selectedShapes.Add(shape);
+                    deletedShapes.Remove(shape);
+                }
+            break;
+
+            case ShapeAction.ActionType.CopyShapes:
+                foreach(GameObject shape in lastAction.shapeList) {
+                    activeShapes.Remove(shape);
+                    shape.GetComponent<Shape>().DestroyShape();
+                }
+            break;
+        }
+    }
+
     public void DestroyCurrentShape() {
         Shape shapeScript = currentShape.GetComponent<Shape>();
         shapeScript.DestroyShape();
@@ -247,6 +284,11 @@ public class ShapesManager : MonoBehaviour {
             Shape shapeScript = shape.GetComponent<Shape>();
             shapeScript.DestroyShape();
         }
+        foreach(GameObject shape in deletedShapes) {
+            Shape shapeScript = shape.GetComponent<Shape>();
+            shapeScript.DestroyShape();
+        }
+        actions.Clear();
         activeShapes = new List<GameObject>();
     }
 }

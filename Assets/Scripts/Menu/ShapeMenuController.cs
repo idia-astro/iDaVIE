@@ -117,6 +117,10 @@ public class ShapeMenuController : MonoBehaviour
         shapesManager.CopyShapes();
     }
 
+    public void Undo() {
+        shapesManager.Undo();
+    }
+
     public void spawnMenu(GameObject menu)
     {
         Vector3 playerPos = Camera.main.transform.position;
