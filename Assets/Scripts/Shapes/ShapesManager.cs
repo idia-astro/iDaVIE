@@ -107,6 +107,19 @@ public class ShapesManager : MonoBehaviour {
         }
     }
 
+    public void CopyShapes() {
+        foreach(GameObject shape in selectedShapes) {
+            GameObject copiedShape = Instantiate(shape, shape.transform.position, shape.transform.rotation);
+            Vector3 pos = copiedShape.transform.position;
+            pos.y+=0.1f;
+            copiedShape.transform.position = pos;
+            copiedShape.transform.SetParent(shape.transform.parent);
+            Shape shapeScript = copiedShape.GetComponent<Shape>();
+            shapeScript.SetAdditive(shape.GetComponent<Shape>().isAdditive());
+            activeShapes.Add(copiedShape);
+        }
+    }
+
     public void SetSelectableShape(GameObject shape) {
         currentShape = shape;
     }

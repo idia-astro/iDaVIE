@@ -10,10 +10,10 @@ public class Shape : MonoBehaviour {
     private bool selected;
 
 
-    void Start()
+    void OnEnable()
     {
         rend = GetComponent<Renderer>();
-
+        selected = false;
         if (_volumeInputController == null)
             _volumeInputController = FindObjectOfType<VolumeInputController>(); 
 
