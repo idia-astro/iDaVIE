@@ -37,6 +37,7 @@ public class ShapeMenuController : MonoBehaviour
     private VolumeInputController _volumeInputController = null;
     public VolumeInputController VolumeInputController => _volumeInputController;
     public ShapesManager shapesManager;
+    private Text sourceIDText;
 
     void OnEnable()
     {
@@ -46,6 +47,7 @@ public class ShapeMenuController : MonoBehaviour
         if (_volumeInputController == null)
             _volumeInputController = FindObjectOfType<VolumeInputController>();
         
+        sourceIDText = gameObject.transform.GetChild(1).gameObject.transform.GetChild(0).GetComponent<Text>();
         shapesManager.MakeIdle();
         
     }
@@ -58,6 +60,14 @@ public class ShapeMenuController : MonoBehaviour
         if (firstActive && _activeDataSet != firstActive)
         {
             _activeDataSet = firstActive;
+        }
+        if (_volumeInputController.SourceId <= 0)
+        {
+            sourceIDText.text = "Please select a Source ID to paint";
+        }
+        else
+        {
+            sourceIDText.text = $"Shape Mode (Source ID {_volumeInputController.SourceId})";
         }
 
     }

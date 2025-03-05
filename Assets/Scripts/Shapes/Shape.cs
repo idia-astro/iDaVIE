@@ -47,6 +47,7 @@ public class Shape : MonoBehaviour {
             rend.material.color = Color.red;
         }
         selected = false;
+        _shapeManager.RemoveSelectedShape(gameObject);
         _shapeManager.SetMoveableShape(null);
         
     }

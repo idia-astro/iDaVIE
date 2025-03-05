@@ -201,7 +201,7 @@ public class ShapesManager : MonoBehaviour {
                             if(additive)
                             {
                                 _activeDataSet.SetCursorPosition(pos,1);
-                                _activeDataSet.PaintCursor((short) 1000);     
+                                _activeDataSet.PaintCursor((short) _volumeInputController.SourceId);     
                             }
                             else{
                                 _activeDataSet.SetCursorPosition(pos,1);
@@ -281,14 +281,23 @@ public class ShapesManager : MonoBehaviour {
 
     public void DestroyShapes() {
         foreach(GameObject shape in activeShapes) {
-            Shape shapeScript = shape.GetComponent<Shape>();
-            shapeScript.DestroyShape();
+            if(shape)
+            {
+                Shape shapeScript = shape.GetComponent<Shape>();
+                shapeScript.DestroyShape();
+            }
         }
         foreach(GameObject shape in deletedShapes) {
-            Shape shapeScript = shape.GetComponent<Shape>();
-            shapeScript.DestroyShape();
+            if(shape)
+            {
+                Shape shapeScript = shape.GetComponent<Shape>();
+                shapeScript.DestroyShape(); 
+            }
+            
         }
         actions.Clear();
         activeShapes = new List<GameObject>();
+        selectedShapes = new List<GameObject>();
+        deletedShapes = new List<GameObject>();
     }
 }
