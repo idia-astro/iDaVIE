@@ -66,7 +66,7 @@ public class ShapesManager : MonoBehaviour {
     }
 
     public GameObject GetNextShape() {
-        if(state == ShapeState.selected) return null;
+        if(state != ShapeState.selecting) return null;
         DestroyCurrentShape();
         currentShapeIndex++;
         if(currentShapeIndex == shapes.Length) currentShapeIndex = 0;
@@ -74,7 +74,7 @@ public class ShapesManager : MonoBehaviour {
     }
 
     public GameObject GetPreviousShape() {
-        if(state == ShapeState.selected) return null;
+        if(state != ShapeState.selecting) return null;
         DestroyCurrentShape();
         currentShapeIndex-=1;
         if(currentShapeIndex < 0) currentShapeIndex = shapes.Length - 1;
@@ -92,6 +92,24 @@ public class ShapesManager : MonoBehaviour {
 
     public void RemoveSelectedShape(GameObject shape) {
         selectedShapes.Remove(shape);
+    }
+
+    public void IncreaseScale() {
+        if(state == ShapeState.selecting) return;
+        foreach(GameObject shape in selectedShapes) {
+           Vector3 scale = shape.transform.localScale;
+           scale = scale + new Vector3(0.01f,0.01f,0.01f);
+           shape.transform.localScale = scale;
+        }
+    }
+
+    public void DecreaseScale() {
+        if(state == ShapeState.selecting) return;
+        foreach(GameObject shape in selectedShapes) {
+           Vector3 scale = shape.transform.localScale;
+           scale = scale - new Vector3(0.01f,0.01f,0.01f);
+           shape.transform.localScale = scale;
+        }
     }
 
     public void DeleteSelectedShapes() {
@@ -147,7 +165,7 @@ public class ShapesManager : MonoBehaviour {
     }
 
     public void ChangeShapeMode() {
-        if(state == ShapeState.selecting) return;
+        if(state != ShapeState.selected) return;
 
         var shapeScript = currentShape.GetComponent<Shape>();
         if(shapeScript.isAdditive()) {

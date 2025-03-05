@@ -367,6 +367,7 @@ public class VolumeInputController : MonoBehaviour
     {
         if(_shapeSelection && fromSource == PrimaryHand) {
             ShowSelectableShape(shapesManager.GetNextShape());
+            shapesManager.IncreaseScale();
         }
         else if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
@@ -392,6 +393,7 @@ public class VolumeInputController : MonoBehaviour
     {
         if(_shapeSelection && fromSource == PrimaryHand) {
             ShowSelectableShape(shapesManager.GetPreviousShape());
+            shapesManager.DecreaseScale();
         }
         else if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
