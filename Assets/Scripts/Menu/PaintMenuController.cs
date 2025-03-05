@@ -48,6 +48,7 @@ public class PaintMenuController : MonoBehaviour
 
     private Text _topPanelText;
     private Button _exitButton;
+    private GameObject _shapeSelectionButton;
     private string oldSaveText = "";
 
     void OnEnable()
@@ -62,6 +63,7 @@ public class PaintMenuController : MonoBehaviour
 
         _topPanelText = gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>();
         _exitButton = gameObject.transform.Find("Content/SecondRow/ExitButton")?.GetComponent<Button>();
+        _shapeSelectionButton = gameObject.transform.Find("Content/ThirdRow/ShapeMenu").gameObject;
     }
 
     // Update is called once per frame
@@ -80,10 +82,14 @@ public class PaintMenuController : MonoBehaviour
         else if (_volumeInputController.SourceId <= 0)
         {
             _topPanelText.text = "Please select a Source ID to paint";
+            _shapeSelectionButton.GetComponent<Button>().enabled = false;
+            _shapeSelectionButton.GetComponent<Image>().color = Color.gray;
         }
         else
         {
             _topPanelText.text = $"Paint Mode (Source ID {_volumeInputController.SourceId})";
+            _shapeSelectionButton.GetComponent<Button>().enabled = true;
+            _shapeSelectionButton.GetComponent<Image>().color = Color.white;
         }
 
     }
