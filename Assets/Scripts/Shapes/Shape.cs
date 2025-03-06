@@ -105,6 +105,10 @@ public class Shape : MonoBehaviour {
         return additive;
     }
 
+    public void SetSelected(bool isSelected) {
+        selected = isSelected;
+    }
+
 
     public void DestroyShape() {
         Destroy(gameObject);

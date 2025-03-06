@@ -88,10 +88,12 @@ public class ShapesManager : MonoBehaviour {
 
     public void AddSelectedShape(GameObject shape) {
         selectedShapes.Add(shape);
+        print(selectedShapes.Count);
     }
 
     public void RemoveSelectedShape(GameObject shape) {
         selectedShapes.Remove(shape);
+        print(selectedShapes.Count);
     }
 
     public void IncreaseScale() {
@@ -279,6 +281,7 @@ public class ShapesManager : MonoBehaviour {
                     shape.SetActive(true);
                     activeShapes.Add(shape);
                     selectedShapes.Add(shape);
+                    shape.GetComponent<Shape>().SetSelected(true);
                     deletedShapes.Remove(shape);
                 }
             break;
