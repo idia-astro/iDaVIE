@@ -31,6 +31,8 @@ public class TabsManager : MonoBehaviour
 
     public Color defaultColor;
     public Color selectedColor;
+    public GameObject RegionCubeDisplay;
+    public CanvassDesktop _canvasDesktop;
 
     private int activeTabIndex=0;
     private int old_activeTabIndex = -1;
@@ -72,6 +74,14 @@ public class TabsManager : MonoBehaviour
             panels[activeTabIndex].SetActive(true);
         }
 
+    }
+
+    public void paintModeEntered()
+    {
+        if(activeTabIndex == 4)
+        {
+            _canvasDesktop.paintTabSelected();
+        }
     }
 }
 

@@ -96,6 +96,12 @@ public class CanvassDesktop : MonoBehaviour
     protected Coroutine showLoadDialogCoroutine;
 
     public MenuBarBehaviour MenuBarBehaviour;
+    private bool inPaintMode = false;  //Must be in paint mode (VR) in order to do desktop painting
+    public GameObject vrMapDisplay;  //To hide the VR Map Display when desktop selection is selected
+    public GameObject RegionCubeDisplay; //add display the slice
+    public GameObject PaintSelectionContainer;  //To have correct container active for desktop paint selection
+    public GameObject PaintWaitingContainer;
+    public TabsManager _tabsManager;  //For updating paint menu
 
     private void Awake()
     {
@@ -1420,5 +1426,48 @@ public class CanvassDesktop : MonoBehaviour
             .gameObject.transform.Find("Line_max")
             .gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text = max.ToString();
         statsPanelContent.gameObject.transform.Find("Histogram_container").gameObject.transform.Find("Histogram").GetComponent<Image>().sprite = img;
+    }
+
+    public VolumeDataSet getActiveDataSet()
+    {
+        return GetFirstActiveRenderer().Data;  //returns the volumedataset
+    }
+
+    public VolumeDataSet getActiveMaskSet()
+    {
+        return GetFirstActiveRenderer().Mask;  //returns the mask
+    }
+
+    public VolumeDataSetRenderer activeDataSet()
+    {
+        return GetFirstActiveRenderer();
+    }
+
+    public void paintTabSelected()
+    {
+        Debug.Log("Paint tab selected");
+        if(inPaintMode)
+        {
+            Debug.Log("In Paint Mode");
+            vrMapDisplay.SetActive(false);
+            RegionCubeDisplay.SetActive(true);
+            PaintSelectionContainer.SetActive(true);
+            PaintWaitingContainer.SetActive(false);
+        }
+        else{
+            Debug.Log("Not in paint mode");
+            PaintSelectionContainer.SetActive(false);
+            PaintWaitingContainer.SetActive(true);
+        }
+    }
+
+    public void setPaintMode(bool state)
+    {
+        inPaintMode = state;
+        Debug.Log("Paint mode set to " + state);
+        if(inPaintMode)
+        {
+            _tabsManager.paintModeEntered();
+        }
     }
 }
