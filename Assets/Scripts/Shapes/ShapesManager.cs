@@ -18,6 +18,7 @@ public class ShapesManager : MonoBehaviour {
     private List<GameObject> deletedShapes = new List<GameObject>();
     private Stack<ShapeAction> actions = new Stack<ShapeAction>();
     private GameObject[] shapes;
+    private int[] shapesCount;
     private Color32 baseColour;
     private bool shapeSelected = false;
 
@@ -30,6 +31,7 @@ public class ShapesManager : MonoBehaviour {
         currentShape = cube;
         currentShapeIndex = 0;
         shapes = new GameObject[] {cube, cuboid, sphere, cylinder};
+        shapesCount = new int[]{0,0,0,0};
     }
 
     public GameObject GetCurrentShape() {
@@ -86,14 +88,18 @@ public class ShapesManager : MonoBehaviour {
          actions.Push(new ShapeAction(shape));
     }
 
+    public string GetShapeName(GameObject shape) {
+        shapesCount[currentShapeIndex]++;
+        print(shape.name + $"{shapesCount[currentShapeIndex]}");
+        return shape.name + $"{shapesCount[currentShapeIndex]}";
+    }
+
     public void AddSelectedShape(GameObject shape) {
         selectedShapes.Add(shape);
-        print(selectedShapes.Count);
     }
 
     public void RemoveSelectedShape(GameObject shape) {
         selectedShapes.Remove(shape);
-        print(selectedShapes.Count);
     }
 
     public void IncreaseScale() {
@@ -320,5 +326,6 @@ public class ShapesManager : MonoBehaviour {
         activeShapes = new List<GameObject>();
         selectedShapes = new List<GameObject>();
         deletedShapes = new List<GameObject>();
+        shapesCount = new int[]{0,0,0,0};
     }
 }

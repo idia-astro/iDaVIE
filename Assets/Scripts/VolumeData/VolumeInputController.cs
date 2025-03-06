@@ -1409,7 +1409,7 @@ public class VolumeInputController : MonoBehaviour
         if(selectedShape == null) return;
 
         GameObject shapeCopy = Instantiate(shape,selectedShape.transform.position,selectedShape.transform.rotation);
-
+        shapeCopy.name = shapesManager.GetShapeName(shapeCopy);
         if(shapeCopy.name.Contains("Cylinder")) {
             var collider = shapeCopy.GetComponent<CapsuleCollider>();
             collider.enabled = true;
