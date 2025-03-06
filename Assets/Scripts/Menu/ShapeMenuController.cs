@@ -106,6 +106,8 @@ public class ShapeMenuController : MonoBehaviour
         
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeEnabled);
         _volumeInputController.ChangeShapeSelection();
+        shapesManager.DestroyShapes();
+        if(!shapesManager.isIdle()) shapesManager.DestroyCurrentShape();
         gameObject.SetActive(false);
         paintMenu.SetActive(true);
     }
