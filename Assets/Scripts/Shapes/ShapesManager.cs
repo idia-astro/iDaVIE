@@ -90,7 +90,6 @@ public class ShapesManager : MonoBehaviour {
 
     public string GetShapeName(GameObject shape) {
         shapesCount[currentShapeIndex]++;
-        print(shape.name + $"{shapesCount[currentShapeIndex]}");
         return shape.name + $"{shapesCount[currentShapeIndex]}";
     }
 

@@ -24,7 +24,7 @@ public class Shape : MonoBehaviour {
 
     void OnTriggerEnter(Collider other)
     {
-
+        if(_shapeManager.GetMoveableShape() != null) return;
         if(additive)
         {
             rend.material.color = highlightAdditiveColor;
@@ -34,11 +34,11 @@ public class Shape : MonoBehaviour {
         }
         selected = true;
         _shapeManager.SetMoveableShape(gameObject);
-
     }
 
     void OnTriggerExit(Collider other)
     {
+        if(_shapeManager.GetMoveableShape() != gameObject) return;
         if(additive)
         {
             rend.material.color = Color.green; 
@@ -48,8 +48,7 @@ public class Shape : MonoBehaviour {
         }
         selected = false;
         _shapeManager.RemoveSelectedShape(gameObject);
-        _shapeManager.SetMoveableShape(null);
-        
+        _shapeManager.SetMoveableShape(null); 
     }
     
     public void SetAdditive(bool isAdditive) {
