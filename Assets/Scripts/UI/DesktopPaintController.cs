@@ -49,6 +49,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
 
     public GameObject sliceCameraPrefab;
     private GameObject sliceCamera;
+    public GameObject iDaVIELogo;
     private CameraTransform cameraX = new CameraTransform();
     private CameraTransform cameraY = new CameraTransform();
     private CameraTransform cameraZ = new CameraTransform();
@@ -145,7 +146,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         SetSliceSlider();
         SpawnSliceIndicator();
         ResetSlice();  //Call texture straight away
-
+        iDaVIELogo.SetActive(false);
     }
 
     void Update()
@@ -674,6 +675,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
 
     public void OnPointerDown(PointerEventData eventData)
     {
+        Debug.Log("pointer down");
         resetButton.interactable = true;
         selectionButton.interactable = true;
 

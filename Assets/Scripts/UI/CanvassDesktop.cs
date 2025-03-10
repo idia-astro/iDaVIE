@@ -587,6 +587,8 @@ public class CanvassDesktop : MonoBehaviour
             .interactable = true;
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Sources_Button").GetComponent<Button>()
             .interactable = true;
+        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Paint_Button").GetComponent<Button>()
+            .interactable = true;
 
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Stats_Button").GetComponent<Button>()
             .onClick.Invoke();

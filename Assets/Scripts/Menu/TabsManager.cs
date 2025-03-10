@@ -28,6 +28,7 @@ public class TabsManager : MonoBehaviour
 {
     public GameObject[] tabs;
     public GameObject[] panels;
+    public GameObject vrMapDisplay;
 
     public Color defaultColor;
     public Color selectedColor;
@@ -73,6 +74,19 @@ public class TabsManager : MonoBehaviour
             panels[old_activeTabIndex].SetActive(false);
             panels[activeTabIndex].SetActive(true);
         }
+
+        if(newActiveTab == 4)
+        {
+            _canvasDesktop.paintTabSelected();  //lets the canvas desktop know the paint tab is active
+        }
+        else{
+            if(RegionCubeDisplay.activeSelf)  //else if in a different tab and the region cube is displayed (for desktop paint) then deselect it and activate vr map display
+            {
+                RegionCubeDisplay.SetActive(false);
+                vrMapDisplay.SetActive(true);
+            }
+        }
+
 
     }
 

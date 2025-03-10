@@ -5406,6 +5406,7 @@ MonoBehaviour:
   - {fileID: 1106231069}
   - {fileID: 1943185978}
   - {fileID: 1896378512}
+  vrMapDisplay: {fileID: 0}
   defaultColor: {r: 0.2901961, g: 0.3960785, b: 0.4470589, a: 0.2}
   selectedColor: {r: 0.2901961, g: 0.3960785, b: 0.4470589, a: 1}
   RegionCubeDisplay: {fileID: 0}
@@ -7612,6 +7613,7 @@ MonoBehaviour:
   - {fileID: 118312572}
   - {fileID: 944284242}
   - {fileID: 1457964689}
+  vrMapDisplay: {fileID: 0}
   defaultColor: {r: 0.2901961, g: 0.3960785, b: 0.4470589, a: 0.2}
   selectedColor: {r: 0.2901961, g: 0.3960785, b: 0.4470589, a: 1}
   RegionCubeDisplay: {fileID: 0}
@@ -8851,7 +8853,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 203792207}
   m_OnClick:
     m_PersistentCalls:
@@ -13737,6 +13739,7 @@ MonoBehaviour:
   - {fileID: 1554072663}
   - {fileID: 6450642904310639648}
   - {fileID: 1668878795}
+  vrMapDisplay: {fileID: 1243533670}
   defaultColor: {r: 0.36862746, g: 0.5686275, b: 0.9490196, a: 1}
   selectedColor: {r: 0, g: 0.23137255, b: 0.5568628, a: 1}
   RegionCubeDisplay: {fileID: 1920295487}
@@ -57358,6 +57361,7 @@ MonoBehaviour:
   panels:
   - {fileID: 1939572769}
   - {fileID: 1949224980}
+  vrMapDisplay: {fileID: 0}
   defaultColor: {r: 0.2901961, g: 0.3960785, b: 0.4470589, a: 0.2}
   selectedColor: {r: 0.2901961, g: 0.3960785, b: 0.4470589, a: 1}
   RegionCubeDisplay: {fileID: 0}
@@ -59943,6 +59947,7 @@ MonoBehaviour:
   paintMenu: {fileID: 1393187942}
   shapeMenu: {fileID: 5926290297137715604}
   savePopup: {fileID: 426473890}
+  _canvassDesktop: {fileID: 1173555221}
 --- !u!225 &1393187944
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -86036,13 +86041,17 @@ GameObject:
   m_Component:
   - component: {fileID: 1920295489}
   - component: {fileID: 1920295488}
+  - component: {fileID: 1920295491}
+  - component: {fileID: 1920295490}
+  - component: {fileID: 1920295493}
+  - component: {fileID: 1920295492}
   m_Layer: 5
   m_Name: RegionCubeDisplay
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1920295488
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -86055,19 +86064,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 32cf10c98c21cb241ad3c6d7d6f8cd35, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  markerPrefab: {fileID: 0}
-  volumeDatasetManager: {fileID: 0}
-  sliceCameraPrefab: {fileID: 0}
-  sliceText: {fileID: 0}
-  clearMaskLabel: {fileID: 0}
-  colorMapDropdown: {fileID: 0}
-  sliceSlider: {fileID: 0}
-  axisDropdown: {fileID: 0}
-  resetButton: {fileID: 0}
-  selectionButton: {fileID: 0}
-  maskButton: {fileID: 0}
-  sliceIndicatorPrefab: {fileID: 0}
-  colormap: {fileID: 0}
+  markerPrefab: {fileID: 2704549236309499865, guid: 13376a5c0728c91459024780b8a35a44,
+    type: 3}
+  volumeDatasetManager: {fileID: 379208438}
+  sliceCameraPrefab: {fileID: 181664181290028547, guid: d1e2c82f446f09a4992ad6bc37402e4c,
+    type: 3}
+  iDaVIELogo: {fileID: 1169313746}
+  sliceText: {fileID: 6450642904698268167}
+  clearMaskLabel: {fileID: 6450642902788886763}
+  colorMapDropdown: {fileID: 6450642902843213782}
+  sliceSlider: {fileID: 6450642903204252795}
+  axisDropdown: {fileID: 6450642903917201636}
+  resetButton: {fileID: 6450642903854567572}
+  selectionButton: {fileID: 6450642903822232664}
+  maskButton: {fileID: 6450642903800209007}
+  sliceIndicatorPrefab: {fileID: 4230467056648783235, guid: b5c66553cf245994294f40c1b6bca7e8,
+    type: 3}
+  colormap: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}
   colormapWidth: 1080
   colormapHeight: 800
   colorMapRowHeight: 10
@@ -86089,8 +86102,82 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 100}
+  m_SizeDelta: {x: 935, y: 800}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1920295490
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1920295487}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1344c3c82d62a2a41a3576d8abb8e3ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Texture: {fileID: 2800000, guid: 49c85b85cbb36e94bad2c034d2e49c88, type: 3}
+  m_UVRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+--- !u!222 &1920295491
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1920295487}
+  m_CullTransparentMesh: 0
+--- !u!114 &1920295492
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1920295487}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IgnoreReversedGraphics: 1
+  m_BlockingObjects: 0
+  m_BlockingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!223 &1920295493
+Canvas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1920295487}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 2
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 0
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
+  m_AdditionalShaderChannelsFlag: 0
+  m_SortingLayerID: 0
+  m_SortingOrder: 0
+  m_TargetDisplay: 0
 --- !u!1 &1922912220
 GameObject:
   m_ObjectHideFlags: 0
@@ -99540,7 +99627,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1920295488}
         m_TargetAssemblyTypeName: DesktopPaintController, Assembly-CSharp
         m_MethodName: SaveMask
         m_Mode: 6
@@ -99899,7 +99986,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1920295488}
         m_TargetAssemblyTypeName: DesktopPaintController, Assembly-CSharp
         m_MethodName: ChangeColorMap
         m_Mode: 1
@@ -100676,7 +100763,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1920295488}
         m_TargetAssemblyTypeName: DesktopPaintController, Assembly-CSharp
         m_MethodName: GetPrevMask
         m_Mode: 1
@@ -101426,7 +101513,7 @@ MonoBehaviour:
   onValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1920295487}
         m_TargetAssemblyTypeName: CanvassDesktop, Assembly-CSharp
         m_MethodName: 
         m_Mode: 0
@@ -101664,7 +101751,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1920295488}
         m_TargetAssemblyTypeName: DesktopPaintController, Assembly-CSharp
         m_MethodName: SliceSliderChanged
         m_Mode: 1
@@ -102137,7 +102224,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1920295488}
         m_TargetAssemblyTypeName: DesktopPaintController, Assembly-CSharp
         m_MethodName: ClearMaskButton
         m_Mode: 1
@@ -102444,7 +102531,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1920295488}
         m_TargetAssemblyTypeName: DesktopPaintController, Assembly-CSharp
         m_MethodName: SaveMask
         m_Mode: 6
@@ -104074,7 +104161,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1920295488}
         m_TargetAssemblyTypeName: DesktopPaintController, Assembly-CSharp
         m_MethodName: ApplyMaskButton
         m_Mode: 1
@@ -104207,7 +104294,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1920295488}
         m_TargetAssemblyTypeName: DesktopPaintController, Assembly-CSharp
         m_MethodName: CompletePolygon
         m_Mode: 1
@@ -104607,7 +104694,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1920295488}
         m_TargetAssemblyTypeName: DesktopPaintController, Assembly-CSharp
         m_MethodName: ResetSelectionButton
         m_Mode: 1
@@ -104720,7 +104807,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1920295488}
         m_TargetAssemblyTypeName: DesktopPaintController, Assembly-CSharp
         m_MethodName: ChangeAxis
         m_Mode: 0
@@ -107316,7 +107403,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1920295488}
         m_TargetAssemblyTypeName: DesktopPaintController, Assembly-CSharp
         m_MethodName: NextSlice
         m_Mode: 1
@@ -107400,7 +107487,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: -0.00024414062, y: 0}
+  m_AnchoredPosition: {x: -1818, y: 0}
   m_SizeDelta: {x: 850, y: 879.3329}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &6450642904477534247
@@ -107548,7 +107635,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 42.65625, y: -1074.5002}
+  m_AnchoredPosition: {x: 40, y: -1086}
   m_SizeDelta: {x: 880, y: 919.3757}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &6450642904484885623
@@ -107952,7 +108039,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1920295488}
         m_TargetAssemblyTypeName: DesktopPaintController, Assembly-CSharp
         m_MethodName: PreviousSlice
         m_Mode: 1
@@ -108617,7 +108704,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 1818, y: 0}
   m_SizeDelta: {x: -863, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &6450642904726831036
