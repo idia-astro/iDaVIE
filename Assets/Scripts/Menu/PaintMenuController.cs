@@ -45,7 +45,6 @@ public class PaintMenuController : MonoBehaviour
 
     private VolumeInputController _volumeInputController = null;
     public VolumeInputController VolumeInputController => _volumeInputController;
-    public CanvassDesktop _canvassDesktop;
 
     private Text _topPanelText;
     private Button _exitButton;
@@ -65,7 +64,6 @@ public class PaintMenuController : MonoBehaviour
         _topPanelText = gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>();
         _exitButton = gameObject.transform.Find("Content/SecondRow/ExitButton")?.GetComponent<Button>();
         _shapeSelectionButton = gameObject.transform.Find("Content/ThirdRow/ShapeMenu").gameObject;
-        _canvassDesktop.setPaintMode(true);
     }
 
     // Update is called once per frame
@@ -179,7 +177,6 @@ public class PaintMenuController : MonoBehaviour
             _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.CancelEditSource);
         
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
-        _canvassDesktop.setPaintMode(false);
         this.gameObject.SetActive(false);
     }
 

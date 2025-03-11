@@ -50697,6 +50697,7 @@ MonoBehaviour:
   RegionCubeDisplay: {fileID: 1920295487}
   PaintSelectionContainer: {fileID: 6450642903029644544}
   PaintWaitingContainer: {fileID: 6450642904162642221}
+  quickMenuController: {fileID: 379983799}
   _tabsManager: {fileID: 340565910}
 --- !u!114 &1173555222
 MonoBehaviour:
@@ -59947,7 +59948,6 @@ MonoBehaviour:
   paintMenu: {fileID: 1393187942}
   shapeMenu: {fileID: 5926290297137715604}
   savePopup: {fileID: 426473890}
-  _canvassDesktop: {fileID: 1173555221}
 --- !u!225 &1393187944
 CanvasGroup:
   m_ObjectHideFlags: 0
