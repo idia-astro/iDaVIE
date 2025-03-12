@@ -9,25 +9,32 @@ Unfortunately, due to the limitations of VR headset drivers on Unix operating sy
     * From the Unity Hub, go the the Installs tab and click Add. Select Unity version 2021.3.xf1 (LTS – long term support), where x is the highest number available. Click next, leave the default extras, click next again. Accept the licence and install.
     * Make note of where the Unity Editor executable is installed – by default, this is at `C:\Program Files\Unity\2021.3.xf1\Editor\Unity.exe`. Make sure of the version number.
 
-2. Install CMake
+2. Complete Visual Studio install
+    * Installing a Unity Editor will automatically install the Visual Studio Installer if a version of Visual Studio isn't installed yet, and run the installer once the Unity Editor install is completed.
+    * On the screen that comes up, select the `Desktop development with C++` workload on the left.
+    * On the right, select only the MSVC v142 compiler, the Windows X SDK (where X is your operating system), and the C++ CMake Tools for Windows components.
+    * Click install and wait for it to complete.
+
+3. Install CMake
     * Download [CMake for Windows](https://cmake.org/download/) and install it. Choose the installer binary distribution for Windows (almost certainly x64) and run it. Follow the instructions provided by the installer.
     * Make sure you can run `cmake` from the PowerShell terminal (or command line).
         - `cmake --version` is a good test.
 
-3. Install vcpkg
+4. Install vcpkg
     * Download [vcpkg](https://github.com/microsoft/vcpkg) and install it, following the instructions provided on the repository.
+    * Make sure to run the `vcpkg integrate install` command from the PowerShell teerminal once the install has completed.
     * Make sure to note the path to the vcpkg root folder, i.e., the vcpkg directory. If you changed nothing from the default install settings, this is found at `C:\vcpkg`.
   
-4. Install Steam and SteamVR
+5. Install Steam and SteamVR
     * To use iDaVIE with any VR headset, we use Steam's SteamVR application as a bridge.
     * Download the [Steam installer](https://store.steampowered.com/about/) and install it. Create a Steam account if you do not already have one (no cost to create).
     * Install [SteamVR](https://store.steampowered.com/app/250820/SteamVR/) by clicking the "Play Game" button on the SteamVR page.
 ## Install
-5. Download iDaVIE source code
+6. Download iDaVIE source code
     * Download the iDaVIE source code from the [GitHub repository](https://github.com/idia-astro/idia_unity_vr).
     * (Optional) You can do this through a Git client, such as [GitHub Desktop](https://desktop.github.com/download/) or [Git Extensions](https://github.com/gitextensions/gitextensions/releases/latest), both of which will require [Git](https://git-scm.com/) to be installed.
 
-6. Run the configuration script
+7. Run the configuration script
     * Open a PowerShell terminal in the iDaVIE root folder
     * Run the `Configure.ps1` script. This script takes two arguments: the vcpkg root folder path (as mentioned in step 3), and the Unity executable path (as mentioned in step 1). The default assumption is positional arguments.
        - For example: `.\Configure.ps1 "C:\vcpkg" "C:\Program Files\Unity\2021.3.xf1\Editor\Unity.exe"`
@@ -35,7 +42,7 @@ Unfortunately, due to the limitations of VR headset drivers on Unix operating sy
     * (Optional) You can specify the Unity executable with `-u` or `-unity` flags.
     * (Optional) For example: `.\configure.ps1 -v "C:\vcpkg" -u "C:\Program Files\Unity\2021.3.xf1\Editor\Unity.exe"`
   
-7. Generate SteamVR actions
+8. Generate SteamVR actions
     * Open iDaVIE in the Unity Editor.
     * From the Unity Hub, select the `Add` button and click `Add project from disk` (only necessary the first time). Navigate to where you downloaded the iDaVIE source code in step 5 and select the iDaVIE folder.
     * Once the project is opened, navigate to `Assets/Scenes/` in the Editor's navigation window (at the bottom) and double-click on the ui.unity file.
@@ -43,7 +50,7 @@ Unfortunately, due to the limitations of VR headset drivers on Unix operating sy
     ![Window->SteamVR Input](https://github.com/idia-astro/iDaVIE/blob/main/.github/static/build.md/Build_SteamVRInput_1.png)
     ![Save and generate SteamVR actions](https://github.com/idia-astro/iDaVIE/blob/main/.github/static/build.md/Build_SteamVRInput_2.png)
   
-8. Build iDaVIE
+9. Build iDaVIE
     * Open iDaVIE in the Unity Editor.
     * Open the build settings menu under **File->Build Settings**.
     ![Open build settings](https://github.com/idia-astro/iDaVIE/blob/main/.github/static/build.md/Build_Build_1.png)
