@@ -12,7 +12,9 @@ Unfortunately, due to the limitations of VR headset drivers on Unix operating sy
 2. Complete Visual Studio install
     * Installing a Unity Editor will automatically install the Visual Studio Installer if a version of Visual Studio isn't installed yet, and run the installer once the Unity Editor install is completed.
     * On the screen that comes up, select the `Desktop development with C++` workload on the left.
+	![Visual Studio Workload selection to install](https://github.com/idia-astro/iDaVIE/blob/main/.github/static/build.md/Build_VisualStudioInstall_WorkloadSelect.png)
     * On the right, select only the MSVC v142 compiler, the Windows X SDK (where X is your operating system), and the C++ CMake Tools for Windows components.
+	![Visual Studio component selection to install](https://github.com/idia-astro/iDaVIE/blob/main/.github/static/build.md/Build_VisualStudioInstall_ComponentSelect.png)
     * Click install and wait for it to complete.
 
 3. Install CMake
