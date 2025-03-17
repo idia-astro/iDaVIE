@@ -127,10 +127,6 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         maskSet = dataRenderer.Mask;
         maskCube = maskSet.RegionCube;
 
-        Debug.Log("Current region dimensions: " + regionCube.width + "x" + regionCube.height + "x" + regionCube.depth);
-        Debug.Log("Current mask dimensions: " + maskCube.width + "x" + maskCube.height + "x" + maskCube.depth);
-        Debug.Log("Current mask texture: " + maskCube.format);
-
         cubeWidth = regionCube.width;
         cubeHeight = regionCube.height;
         cubeDepth = regionCube.depth;
@@ -675,7 +671,6 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        Debug.Log("pointer down");
         resetButton.interactable = true;
         selectionButton.interactable = true;
 

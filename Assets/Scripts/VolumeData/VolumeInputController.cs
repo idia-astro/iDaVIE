@@ -245,6 +245,9 @@ public class VolumeInputController : MonoBehaviour
         SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateUpListener(OnMenuDownReleased, SteamVR_Input_Sources.LeftHand);
         SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateUpListener(OnMenuDownReleased, SteamVR_Input_Sources.RightHand);
 
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.AddOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.LeftHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.AddOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.RightHand);
+
 
         UpdateDataSets();
 
@@ -345,6 +348,8 @@ public class VolumeInputController : MonoBehaviour
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuLeft")?.RemoveOnStateDownListener(OnMenuLeftPressed, SteamVR_Input_Sources.RightHand);
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.RemoveOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.LeftHand);
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.RemoveOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.RightHand);
+             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.RemoveOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.LeftHand);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.RemoveOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.RightHand);
         }
     }
 
@@ -533,19 +538,6 @@ public class VolumeInputController : MonoBehaviour
         for (var i = 0; i < 2; i++)
         {
             _currentGripPositions[i] = _handTransforms[i].position;
-        }
-
-        if(_shapeSelection) {
-            GameObject moveableShape = shapesManager.GetMoveableShape();
-            if(moveableShape != null) {
-                if(newState) {
-                    moveableShape.transform.SetParent(_handTransforms[PrimaryHandIndex]);
-                }
-                else {
-                    moveableShape.transform.SetParent(volumeDatasetManager.transform.GetChild(0));
-                }
-                return;
-            }
         }
 
         switch (gripCount)
@@ -1385,6 +1377,22 @@ public class VolumeInputController : MonoBehaviour
         _lineAxisSeparation?.Destroy();
         _lineRotationAxes?.Destroy();
     }
+
+    private void OnTriggerChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState) {
+         if(_shapeSelection) {
+            GameObject moveableShape = shapesManager.GetMoveableShape();
+            if(moveableShape != null) {
+                if(newState) {
+                    moveableShape.transform.SetParent(_handTransforms[PrimaryHandIndex]);
+                }
+                else {
+                    moveableShape.transform.SetParent(volumeDatasetManager.transform.GetChild(0));
+                }
+                return;
+            }
+        }
+    }
+
 
     public void ChangeShapeSelection() {
         _shapeSelection = !_shapeSelection;
