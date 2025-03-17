@@ -1403,10 +1403,11 @@ public class VolumeInputController : MonoBehaviour
         Vector3 position = _handTransforms[PrimaryHandIndex].position;
         Quaternion rotation = _handTransforms[PrimaryHandIndex].rotation;
         GameObject shape = Instantiate(currentShape, position, rotation);
-        shape.transform.localScale = new Vector3(shape.transform.localScale.x/1000f,shape.transform.localScale.y/1000f,shape.transform.localScale.z/1000f);
+        shape.transform.localScale = Vector3.Scale((ActiveDataSet.transform.localScale/10.0f), shape.transform.localScale);
+        //shape.transform.localScale = new Vector3(shape.transform.localScale.x/1000f,shape.transform.localScale.y/1000f,shape.transform.localScale.z/1000f);
         shape.transform.SetParent(_handTransforms[PrimaryHandIndex]);
         position = shape.transform.localPosition;
-        position.z+=0.07f;
+        position.z+=shape.transform.localScale.x/2.0f;
         shape.transform.localPosition = position;
         shapesManager.SetSelectableShape(shape);
     }
@@ -1431,7 +1432,7 @@ public class VolumeInputController : MonoBehaviour
             collider.enabled = true;
         }
         shapeCopy.GetComponent<Shape>().SetAdditive(selectedShape.GetComponent<Shape>().isAdditive());
-        shapeCopy.transform.localScale = new Vector3(shapeCopy.transform.localScale.x/1000f,shapeCopy.transform.localScale.y/1000f,shapeCopy.transform.localScale.z/1000f);
+        shapeCopy.transform.localScale = selectedShape.transform.localScale;
         shapeCopy.transform.SetParent(volumeDatasetManager.transform.GetChild(0));
         shapesManager.AddShape(shapeCopy);
     }

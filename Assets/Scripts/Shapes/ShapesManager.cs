@@ -159,7 +159,6 @@ public class ShapesManager : MonoBehaviour {
     }
 
     public GameObject GetSelectedShape() {
-        if(state == ShapeState.selecting) return null;
         return currentShape;
     }
 
