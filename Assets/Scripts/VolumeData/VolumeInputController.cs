@@ -1435,6 +1435,9 @@ public class VolumeInputController : MonoBehaviour
         shapeCopy.transform.localScale = selectedShape.transform.localScale;
         shapeCopy.transform.SetParent(volumeDatasetManager.transform.GetChild(0));
         shapesManager.AddShape(shapeCopy);
+        shapesManager.DeselectShape();
+        shapesManager.DestroyCurrentShape();
+        shapesManager.MakeIdle();
     }
 
 }
