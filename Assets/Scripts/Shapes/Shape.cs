@@ -2,8 +2,10 @@ using UnityEngine;
 
 public class Shape : MonoBehaviour {
     private bool additive;
-    private Color highlightAdditiveColor = new Color(0.6773301f, 0.8490566f, 0.2923638f); 
-    private Color highlighSubtractiveColor = new Color(0.8509804f, 0.4262924f, 0.2941177f);
+    private Color highlightAdditiveColor = Color.green; 
+    private Color highlighSubtractiveColor = Color.red;
+    private Color baseAdditiveColor = new Color(0.6773301f, 0.8490566f, 0.2923638f);
+    private Color baseSubtractiveColor = new Color(0.8509804f, 0.4262924f, 0.2941177f);
     private Renderer rend;
     private VolumeInputController _volumeInputController;
     private ShapesManager _shapeManager;
@@ -41,10 +43,10 @@ public class Shape : MonoBehaviour {
         if(_shapeManager.GetMoveableShape() != gameObject) return;
         if(additive)
         {
-            rend.material.color = Color.green; 
+            rend.material.color = baseAdditiveColor; 
         }
         else{
-            rend.material.color = Color.red;
+            rend.material.color = baseSubtractiveColor;
         }
         selected = false;
         _shapeManager.RemoveSelectedShape(gameObject);
@@ -65,10 +67,10 @@ public class Shape : MonoBehaviour {
         else {
             if(isAdditive)
             {
-                rend.material.color = Color.green;
+                rend.material.color = baseAdditiveColor;
             }
             else{
-                rend.material.color = Color.red;
+                rend.material.color = baseSubtractiveColor;
             }
         }
         additive = isAdditive;
@@ -89,10 +91,10 @@ public class Shape : MonoBehaviour {
         else {
             if(additive)
             {
-                rend.material.color = Color.green;
+                rend.material.color = baseAdditiveColor;
             }
             else{
-                rend.material.color = Color.red;
+                rend.material.color = baseSubtractiveColor;
             }
             selected = false;
             _shapeManager.RemoveSelectedShape(gameObject);
