@@ -156,9 +156,11 @@ public class ShapesManager : MonoBehaviour {
 
     public void SetSelectableShape(GameObject shape) {
         currentShape = shape;
+        //print(currentShape.transform.localScale);
     }
 
     public GameObject GetSelectedShape() {
+        //print(currentShape.transform.localScale);
         return currentShape;
     }
 
