@@ -169,6 +169,7 @@ public class VolumeInputController : MonoBehaviour
     //Shape Selection Scaling
     private bool scalingUp = false;
     private bool scalingDown = false;
+    private float scalingTimer = 0f;
 
     private bool _paintMenuOn = false;
     private bool _shapeMenuOn = false;
@@ -399,6 +400,7 @@ public class VolumeInputController : MonoBehaviour
          }
          else if(fromSource == PrimaryHand && _shapeSelection) {
             scalingUp = false;
+            scalingTimer = 0f;
          }
     }
 
@@ -428,6 +430,7 @@ public class VolumeInputController : MonoBehaviour
         }
         else if(fromSource == PrimaryHand && _shapeSelection) {
             scalingDown = false;
+            scalingTimer = 0f;
         }
     }
 
@@ -793,13 +796,20 @@ public class VolumeInputController : MonoBehaviour
             ScrollObject.GetComponent<CustomDragHandler>().MoveUp();
         }
 
+        scalingTimer += Time.deltaTime;
         if(scalingUp)
         {
-            shapesManager.IncreaseScale();
+            if(scalingTimer > 0.03f) {
+                shapesManager.IncreaseScale();
+                scalingTimer = 0f;
+            }
         }
         if(scalingDown)
         {
-            shapesManager.DecreaseScale();
+            if(scalingTimer > 0.03f) {
+                shapesManager.DecreaseScale();
+                scalingTimer = 0f;
+            }
         }
 
         ToastNotification.Update();

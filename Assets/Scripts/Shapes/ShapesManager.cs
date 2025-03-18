@@ -115,6 +115,7 @@ public class ShapesManager : MonoBehaviour {
         foreach(GameObject shape in selectedShapes) {
            Vector3 scale = shape.transform.localScale;
            scale = scale - new Vector3(0.001f,0.001f,0.001f);
+           if(scale.x < 0.002f | scale.y < 0.002f | scale.z < 0.002f) scale = new Vector3(0.001f,0.001f,0.001f);
            shape.transform.localScale = scale;
         }
     }

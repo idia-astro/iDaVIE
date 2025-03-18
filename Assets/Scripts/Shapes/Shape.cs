@@ -10,6 +10,7 @@ public class Shape : MonoBehaviour {
     private VolumeInputController _volumeInputController;
     private ShapesManager _shapeManager;
     private bool selected;
+    private bool previouslySelected;
 
 
     void OnEnable()
@@ -27,6 +28,7 @@ public class Shape : MonoBehaviour {
     void OnTriggerEnter(Collider other)
     {
         if(_shapeManager.GetMoveableShape() != null) return;
+        if(selected) previouslySelected = true;
         if(additive)
         {
             rend.material.color = highlightAdditiveColor;
@@ -36,11 +38,16 @@ public class Shape : MonoBehaviour {
         }
         selected = true;
         _shapeManager.SetMoveableShape(gameObject);
+        _shapeManager.AddSelectedShape(gameObject);
     }
 
     void OnTriggerExit(Collider other)
     {
         if(_shapeManager.GetMoveableShape() != gameObject) return;
+        if(previouslySelected) {
+            _shapeManager.SetMoveableShape(null); 
+            return;
+        }
         if(additive)
         {
             rend.material.color = baseAdditiveColor; 
@@ -97,6 +104,7 @@ public class Shape : MonoBehaviour {
                 rend.material.color = baseSubtractiveColor;
             }
             selected = false;
+            previouslySelected = false;
             _shapeManager.RemoveSelectedShape(gameObject);
         }
         
