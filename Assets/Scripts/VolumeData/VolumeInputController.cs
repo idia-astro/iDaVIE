@@ -166,6 +166,10 @@ public class VolumeInputController : MonoBehaviour
     // VR-family dependent values
     private VRFamily _vrFamily;
 
+    //Shape Selection Scaling
+    private bool scalingUp = false;
+    private bool scalingDown = false;
+
     private bool _paintMenuOn = false;
     private bool _shapeMenuOn = false;
     private bool _savePopupOn = false;
@@ -372,7 +376,8 @@ public class VolumeInputController : MonoBehaviour
     {
         if(_shapeSelection && fromSource == PrimaryHand) {
             ShowSelectableShape(shapesManager.GetNextShape());
-            shapesManager.IncreaseScale();
+            scalingDown = false;
+            scalingUp = true;
         }
         else if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
@@ -392,13 +397,17 @@ public class VolumeInputController : MonoBehaviour
          {
             scrollUp = false;
          }
+         else if(fromSource == PrimaryHand && _shapeSelection) {
+            scalingUp = false;
+         }
     }
 
     private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
         if(_shapeSelection && fromSource == PrimaryHand) {
             ShowSelectableShape(shapesManager.GetPreviousShape());
-            shapesManager.DecreaseScale();
+            scalingUp = false;
+            scalingDown = true;
         }
         else if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
@@ -416,6 +425,9 @@ public class VolumeInputController : MonoBehaviour
         if (fromSource == PrimaryHand && scrollSelected)
         {
             scrollDown = false;
+        }
+        else if(fromSource == PrimaryHand && _shapeSelection) {
+            scalingDown = false;
         }
     }
 
@@ -779,6 +791,15 @@ public class VolumeInputController : MonoBehaviour
         if (scrollUp)
         { 
             ScrollObject.GetComponent<CustomDragHandler>().MoveUp();
+        }
+
+        if(scalingUp)
+        {
+            shapesManager.IncreaseScale();
+        }
+        if(scalingDown)
+        {
+            shapesManager.DecreaseScale();
         }
 
         ToastNotification.Update();

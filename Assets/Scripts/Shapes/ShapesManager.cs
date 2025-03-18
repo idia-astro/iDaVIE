@@ -105,7 +105,7 @@ public class ShapesManager : MonoBehaviour {
         if(state == ShapeState.selecting) return;
         foreach(GameObject shape in selectedShapes) {
            Vector3 scale = shape.transform.localScale;
-           scale = scale + new Vector3(0.01f,0.01f,0.01f);
+           scale = scale + new Vector3(0.001f,0.001f,0.001f);
            shape.transform.localScale = scale;
         }
     }
@@ -114,7 +114,7 @@ public class ShapesManager : MonoBehaviour {
         if(state == ShapeState.selecting) return;
         foreach(GameObject shape in selectedShapes) {
            Vector3 scale = shape.transform.localScale;
-           scale = scale - new Vector3(0.01f,0.01f,0.01f);
+           scale = scale - new Vector3(0.001f,0.001f,0.001f);
            shape.transform.localScale = scale;
         }
     }
