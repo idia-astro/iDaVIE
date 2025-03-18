@@ -29,12 +29,12 @@ using VolumeData;
 public class ShapeMenuController : MonoBehaviour
 {
     public GameObject volumeDatasetRendererObj = null;
-    private VolumeDataSetRenderer _activeDataSet;
+    public VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
 
     public GameObject paintMenu;
 
-    private VolumeInputController _volumeInputController = null;
+    public VolumeInputController _volumeInputController = null;
     public VolumeInputController VolumeInputController => _volumeInputController;
     public ShapesManager shapesManager;
     private Text sourceIDText;
@@ -154,6 +154,7 @@ public class ShapeMenuController : MonoBehaviour
 
     public void applyMask()
     {
+        shapesManager.ClearPaintedShapes();
         shapesManager.applyMask(_activeDataSet, _volumeInputController, true);
         shapesManager.applyMask(_activeDataSet, _volumeInputController, false);
         shapesManager.ClearShapes();      

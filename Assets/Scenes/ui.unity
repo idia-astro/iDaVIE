@@ -23974,6 +23974,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1ca38286bb890343ae5301cacbee62d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  shapeMenuController: {fileID: 5926290297137715607}
   cube: {fileID: 6328064290919473691, guid: 9b292f9019823814190a10acd416c8b0, type: 3}
   cuboid: {fileID: 6328064290919473691, guid: 520f2b35f88d89c44a5a6e4fb53db4d6, type: 3}
   sphere: {fileID: 6295815927880627, guid: 9533edd294df70b4e9064e6709f808ee, type: 3}

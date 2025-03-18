@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class ShapeAction {
     public GameObject addedShape;
     public List<GameObject> shapeList = new List<GameObject>();
-    public enum ActionType {AddShape,CopyShapes,DeleteShapes};
+    public enum ActionType {AddShape,CopyShapes,DeleteShapes,Paint};
     public ActionType type;
     public ShapeAction(GameObject shape) {
         type = ActionType.AddShape;

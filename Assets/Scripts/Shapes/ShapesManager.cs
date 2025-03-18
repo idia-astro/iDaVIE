@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using VolumeData;
 
 public class ShapesManager : MonoBehaviour {
+    public ShapeMenuController shapeMenuController;
     public GameObject cube;
     public GameObject cuboid;
     public GameObject sphere;
@@ -200,6 +201,7 @@ public class ShapesManager : MonoBehaviour {
 
     public void applyMask(VolumeDataSetRenderer _activeDataSet, VolumeInputController  _volumeInputController, bool additive)
     {
+        List<GameObject> undoShapes = new List<GameObject>();
         foreach (GameObject shape in activeShapes)
         {
             shape.SetActive(false);
@@ -253,8 +255,21 @@ public class ShapesManager : MonoBehaviour {
                 }
             }
             paintedShapes.Add(shape);
+            if(additive) {
+                GameObject copiedShape = Instantiate(shape, shape.transform.position, shape.transform.rotation);
+                copiedShape.transform.SetParent(shape.transform.parent);
+                copiedShape.transform.localScale = shape.transform.localScale;
+                shapeScript = copiedShape.GetComponent<Shape>();
+                shapeScript.SetAdditive(false);
+                copiedShape.SetActive(false);
+                undoShapes.Add(copiedShape);
+            }
             shape.SetActive(false);
         }
+        if(additive) {
+            actions.Push(new ShapeAction(ShapeAction.ActionType.Paint, undoShapes));
+        }
+
         _activeDataSet.Mask.ConsolidateMaskEntries();
     }
 
@@ -308,6 +323,18 @@ public class ShapesManager : MonoBehaviour {
                     shape.GetComponent<Shape>().DestroyShape();
                 }
             break;
+
+            case ShapeAction.ActionType.Paint:
+                foreach(GameObject shape in lastAction.shapeList) {
+                    shape.SetActive(true);
+                    activeShapes.Add(shape);
+                }
+                applyMask(shapeMenuController._activeDataSet,shapeMenuController._volumeInputController,false);
+                foreach(GameObject shape in lastAction.shapeList) {
+                    activeShapes.Remove(shape);
+                    //shape.SetActive(false);
+                }
+            break;
         }
     }
 
@@ -319,6 +346,10 @@ public class ShapesManager : MonoBehaviour {
     public void ClearShapes() {
         activeShapes = new List<GameObject>();
         selectedShapes = new List<GameObject>();
+    }
+
+    public void ClearPaintedShapes() {
+        paintedShapes = new List<GameObject>();
     }
 
     public void DestroyShapes() {
@@ -340,7 +371,7 @@ public class ShapesManager : MonoBehaviour {
         actions.Clear();
         ClearShapes();
         deletedShapes = new List<GameObject>();
-        paintedShapes = new List<GameObject>();
+        ClearPaintedShapes();
         shapesCount = new int[]{0,0,0,0};
     }
 }
