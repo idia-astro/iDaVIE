@@ -155,7 +155,8 @@ public class ShapeMenuController : MonoBehaviour
     public void applyMask()
     {
         shapesManager.applyMask(_activeDataSet, _volumeInputController, true);
-        shapesManager.applyMask(_activeDataSet, _volumeInputController, false);      
+        shapesManager.applyMask(_activeDataSet, _volumeInputController, false);
+        shapesManager.ClearShapes();      
     }
 
 

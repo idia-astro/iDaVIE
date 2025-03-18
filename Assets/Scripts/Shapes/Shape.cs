@@ -38,14 +38,15 @@ public class Shape : MonoBehaviour {
         }
         selected = true;
         _shapeManager.SetMoveableShape(gameObject);
-        _shapeManager.AddSelectedShape(gameObject);
+        if(!previouslySelected) _shapeManager.AddSelectedShape(gameObject);
     }
 
     void OnTriggerExit(Collider other)
     {
         if(_shapeManager.GetMoveableShape() != gameObject) return;
         if(previouslySelected) {
-            _shapeManager.SetMoveableShape(null); 
+            _shapeManager.SetMoveableShape(null);
+            print("Out of shape"); 
             return;
         }
         if(additive)

@@ -16,6 +16,7 @@ public class ShapesManager : MonoBehaviour {
     private List<GameObject> activeShapes = new List<GameObject>();
     private List<GameObject> selectedShapes = new List<GameObject>();
     private List<GameObject> deletedShapes = new List<GameObject>();
+    private List<GameObject> paintedShapes = new List<GameObject>();
     private Stack<ShapeAction> actions = new Stack<ShapeAction>();
     private GameObject[] shapes;
     private int[] shapesCount;
@@ -140,6 +141,18 @@ public class ShapesManager : MonoBehaviour {
     }
 
     public void CopyShapes() {
+        if(selectedShapes.Count > 0) {
+            paintedShapes = new List<GameObject>();
+        }
+        if(paintedShapes.Count > 0) {
+            foreach(GameObject shape in paintedShapes) {
+                activeShapes.Add(shape);
+                shape.SetActive(true);
+            }
+            paintedShapes = new List<GameObject>();
+            return;
+        }
+
         List<GameObject> copiedShapes = new List<GameObject>();
         foreach(GameObject shape in selectedShapes) {
             GameObject copiedShape = Instantiate(shape, shape.transform.position, shape.transform.rotation);
@@ -199,7 +212,7 @@ public class ShapesManager : MonoBehaviour {
 
             if(shapeScript.isAdditive() != additive)
             {
-                Debug.Log("Skipped shape: " + additive);
+                shape.SetActive(false);
                 continue;
             }
 
@@ -239,12 +252,8 @@ public class ShapesManager : MonoBehaviour {
                     }
                 }
             }
+            paintedShapes.Add(shape);
             shape.SetActive(false);
-        }
-
-        foreach (GameObject shape in activeShapes)
-        {
-            shape.SetActive(true);
         }
         _activeDataSet.Mask.ConsolidateMaskEntries();
     }
@@ -307,6 +316,11 @@ public class ShapesManager : MonoBehaviour {
         shapeScript.DestroyShape();
     }
 
+    public void ClearShapes() {
+        activeShapes = new List<GameObject>();
+        selectedShapes = new List<GameObject>();
+    }
+
     public void DestroyShapes() {
         foreach(GameObject shape in activeShapes) {
             if(shape)
@@ -324,9 +338,9 @@ public class ShapesManager : MonoBehaviour {
             
         }
         actions.Clear();
-        activeShapes = new List<GameObject>();
-        selectedShapes = new List<GameObject>();
+        ClearShapes();
         deletedShapes = new List<GameObject>();
+        paintedShapes = new List<GameObject>();
         shapesCount = new int[]{0,0,0,0};
     }
 }
