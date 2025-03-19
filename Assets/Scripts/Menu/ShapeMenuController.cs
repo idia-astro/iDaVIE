@@ -132,6 +132,7 @@ public class ShapeMenuController : MonoBehaviour
 
     public void Undo() {
         shapesManager.Undo();
+        _activeDataSet.GetMomentMapRenderer().CalculateMomentMaps();  
     }
 
     public void spawnMenu(GameObject menu)
@@ -155,9 +156,10 @@ public class ShapeMenuController : MonoBehaviour
     public void applyMask()
     {
         shapesManager.ClearPaintedShapes();
-        shapesManager.applyMask(_activeDataSet, _volumeInputController, true);
-        shapesManager.applyMask(_activeDataSet, _volumeInputController, false);
-        shapesManager.ClearShapes();      
+        shapesManager.applyMask(_activeDataSet, _volumeInputController, true, false);
+        shapesManager.applyMask(_activeDataSet, _volumeInputController, false, false);
+        shapesManager.ClearShapes();    
+        _activeDataSet.GetMomentMapRenderer().CalculateMomentMaps();  
     }
 
 

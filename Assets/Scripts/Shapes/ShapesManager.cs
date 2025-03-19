@@ -199,7 +199,7 @@ public class ShapesManager : MonoBehaviour {
         }
     }
 
-    public void applyMask(VolumeDataSetRenderer _activeDataSet, VolumeInputController  _volumeInputController, bool additive)
+    public void applyMask(VolumeDataSetRenderer _activeDataSet, VolumeInputController  _volumeInputController, bool additive, bool undo)
     {
         List<GameObject> undoShapes = new List<GameObject>();
         foreach (GameObject shape in activeShapes)
@@ -254,7 +254,7 @@ public class ShapesManager : MonoBehaviour {
                     }
                 }
             }
-            paintedShapes.Add(shape);
+            if(!undo) paintedShapes.Add(shape);
             if(additive) {
                 GameObject copiedShape = Instantiate(shape, shape.transform.position, shape.transform.rotation);
                 copiedShape.transform.SetParent(shape.transform.parent);
@@ -329,7 +329,7 @@ public class ShapesManager : MonoBehaviour {
                     shape.SetActive(true);
                     activeShapes.Add(shape);
                 }
-                applyMask(shapeMenuController._activeDataSet,shapeMenuController._volumeInputController,false);
+                applyMask(shapeMenuController._activeDataSet,shapeMenuController._volumeInputController,false,true);
                 foreach(GameObject shape in lastAction.shapeList) {
                     activeShapes.Remove(shape);
                     //shape.SetActive(false);
