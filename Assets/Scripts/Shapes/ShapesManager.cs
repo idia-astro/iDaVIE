@@ -166,6 +166,7 @@ public class ShapesManager : MonoBehaviour {
             activeShapes.Add(copiedShape);
             copiedShapes.Add(copiedShape);
         }
+        foreach(GameObject shape in copiedShapes) selectedShapes.Add(shape);
         actions.Push(new ShapeAction(ShapeAction.ActionType.CopyShapes, copiedShapes));
     }
 
@@ -320,6 +321,7 @@ public class ShapesManager : MonoBehaviour {
             case ShapeAction.ActionType.CopyShapes:
                 foreach(GameObject shape in lastAction.shapeList) {
                     activeShapes.Remove(shape);
+                    if(selectedShapes.Contains(shape)) selectedShapes.Remove(shape);
                     shape.GetComponent<Shape>().DestroyShape();
                 }
             break;

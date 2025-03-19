@@ -16,13 +16,13 @@ public class Shape : MonoBehaviour {
     void OnEnable()
     {
         rend = GetComponent<Renderer>();
-        selected = false;
+        selected = true;
+        
         if (_volumeInputController == null)
             _volumeInputController = FindObjectOfType<VolumeInputController>(); 
 
         if(_shapeManager == null)
             _shapeManager = FindObjectOfType<ShapesManager>(); 
-
     }
 
     void OnTriggerEnter(Collider other)
@@ -46,7 +46,6 @@ public class Shape : MonoBehaviour {
         if(_shapeManager.GetMoveableShape() != gameObject) return;
         if(previouslySelected) {
             _shapeManager.SetMoveableShape(null);
-            print("Out of shape"); 
             return;
         }
         if(additive)

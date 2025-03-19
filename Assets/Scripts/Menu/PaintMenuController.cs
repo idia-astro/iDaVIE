@@ -325,6 +325,7 @@ public class PaintMenuController : MonoBehaviour
         
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
         _volumeInputController.ChangeShapeSelection();
+        PaintingAdditive();
         gameObject.SetActive(false);
         shapeMenu.SetActive(true);
         
