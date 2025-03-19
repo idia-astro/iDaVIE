@@ -149,6 +149,7 @@ public class ShapesManager : MonoBehaviour {
             foreach(GameObject shape in paintedShapes) {
                 activeShapes.Add(shape);
                 shape.SetActive(true);
+                selectedShapes.Add(shape);
             }
             paintedShapes = new List<GameObject>();
             return;
@@ -333,9 +334,9 @@ public class ShapesManager : MonoBehaviour {
                 }
                 applyMask(shapeMenuController._activeDataSet,shapeMenuController._volumeInputController,false,true);
                 foreach(GameObject shape in lastAction.shapeList) {
-                    activeShapes.Remove(shape);
-                    //shape.SetActive(false);
+                    shape.SetActive(false);
                 }
+                activeShapes = new List<GameObject>();
             break;
         }
     }
