@@ -55,7 +55,6 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     private CameraTransform cameraZ = new CameraTransform();
 
     public Text sliceText;  //the text displaying the current slice
-    public GameObject clearMaskLabel;
     private RawImage rawImage;  
     private int prevIndex = 0;
     private CanvassDesktop canvassDesktop;  //could be changed to public
@@ -85,7 +84,6 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     public Button resetButton;  //Reset temp selection button
     public Button selectionButton;  //make temp selection button
     public TextMeshProUGUI selectionButtonText;
-    public Button maskButton; //apply mask button
 
     public GameObject sliceIndicatorPrefab;
     private GameObject sliceIndicator;
@@ -869,12 +867,10 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     //Handles the resets when a new slice is selected (markers)
     private void ResetSlice()
     {
-        clearMaskLabel.GetComponent<TextMeshProUGUI>().text = "Clear Mask (All)\n(C)";
         maskVoxels.Clear();
         UpdateTexture();  //go get the original slice without temp modifications (shading showing where masking would happen)
         RemoveMarkers();  
         ClearSelectionPoly();
-        maskButton.interactable = false;
         selectionButton.interactable = false;
         selectionButtonText.text = "Fill \n(Space)";
         //Debug.Log("Selection Poly list length: " + selectionPolyList.Count);
@@ -902,17 +898,11 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     //Shows where mask will be applied and stores those position in the mask list (by calling inside out method)
     public void FillPolygon()
     {
-        clearMaskLabel.GetComponent<TextMeshProUGUI>().text = "Clear Mask (Selection)\n(C)";
         //Debug.Log("Filling polygon with selection list of size: " + selectionPolyList.Count);
         if(selectionPolyList.Count > 10)  //stop the drawing if a polygone has been made (fill polygone is called too early due to first points being so close together)
         {
             isDrawing = false;
         } 
-
-        if(!isDrawing)  //if the user is not drawing and a polygon has been filled, allow them to apply mask
-        {
-            maskButton.interactable = true;
-        }
 
         if (currentRegionSlice == null || selectionPolyList == null || selectionPolyList.Count < 3)
         {
@@ -921,6 +911,8 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         }
 
         Color fillColor = new Color(0.6941177f, 0.7113449f, 0.8392157f, 0.75f);  //0.5f alpha for future layer blending
+        if(additive) fillColor = Color.green;
+        else fillColor = Color.red;
 
         // Calculate the bounding box of the polygon
         float minX = float.MaxValue, minY = float.MaxValue;
@@ -946,11 +938,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         {
             for (int x = Mathf.FloorToInt(minX); x <= Mathf.CeilToInt(maxX); x++)
             {
-                if (IsPointInPolygon(new Vector2(x, y), selectionPolyList))
-                {
-                    currentRegionSlice.SetPixel(x, y, fillColor);  //future improvement - make the colour layer separate and combine it witht his layer (so temp mask can be semi transparent)
-                    pixelsChanged++;
-
+                if (IsPointInPolygon(new Vector2(x, y), selectionPolyList)) {
                     if(axis == 0) //x axis
                     {
                         Vector3Int pixel = new Vector3Int(sliceIndex, x, y); //Down the x axis - the actual x = slice, actual y = x, actual z = y 
@@ -968,6 +956,11 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
                         Vector3Int pixel = new Vector3Int(x, y, sliceIndex); 
                         maskVoxels.Add(pixel);
                     }
+                }
+                if(selectionPolyList.Contains(new Vector2(x, y)))
+                {
+                    currentRegionSlice.SetPixel(x, y, fillColor);  //future improvement - make the colour layer separate and combine it witht his layer (so temp mask can be semi transparent)
+                    pixelsChanged++;
                 }
             }
         }
