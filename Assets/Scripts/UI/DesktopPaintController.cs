@@ -172,7 +172,8 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         {
             if(IsPolygonClosed(selectionPolyList))
             {
-                ApplyMask();
+                if(additive) ApplyMask();
+                else SubtractiveSelection();
             }
             CompletePolygon();
         }
@@ -762,22 +763,6 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
             return;
         }
 
-        Debug.Log("Mask Voxel Count (in clear mask button): " + maskVoxels.Count);
-
-        if(maskVoxels.Count > 0)  //If a selection has been made then you can clear just that area. //Add the name change of the mask
-        {
-            for(int i = 0; i < maskVoxels.Count; i++)
-            {
-                maskSet.PaintMaskVoxel(maskVoxels[i], 0);
-            }
-
-            //dataRenderer.FinishBrushStroke();
-            maskSet.ConsolidateMaskEntries();
-
-            ResetSlice();
-            return;
-        }
-
         //mask count > 0 then set all pixels to 0 source id and reset
 
         Debug.Log("Removing masks of number: " + maskCount);
@@ -819,6 +804,23 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         maskSet.ConsolidateMaskEntries();
 
         ResetSlice();
+    }
+
+    private void SubtractiveSelection() {
+        Debug.Log("Mask Voxel Count (in clear mask button): " + maskVoxels.Count);
+        if(maskVoxels.Count > 0)  //If a selection has been made then you can clear just that area. //Add the name change of the mask
+        {
+            for(int i = 0; i < maskVoxels.Count; i++)
+            {
+                maskSet.PaintMaskVoxel(maskVoxels[i], 0);
+            }
+
+            //dataRenderer.FinishBrushStroke();
+            maskSet.ConsolidateMaskEntries();
+
+            ResetSlice();
+            return;
+        }
     }
 
     //clear the modifications made to the texture (not to the slice)
@@ -1220,7 +1222,8 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     public void SelectionButton() {
         if(IsPolygonClosed(selectionPolyList))
             {
-                ApplyMask();
+                if(additive) ApplyMask();
+                else SubtractiveSelection();
             }
         CompletePolygon();
     }
