@@ -62,6 +62,9 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     public GameObject colorMapDropdown;
     public GameObject sliceSlider;
     public GameObject axisDropdown;
+    public GameObject selectionModeToggle;
+    private Image selectionModeImage;
+    private Text selectionModeText;
 
     private int axis;  //x = 0, y = 1, z = 0
     private int sliceIndex;  //of the region cube
@@ -70,6 +73,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     private short sourceID = 1000;
     private List<Vector3Int> maskVoxels = new List<Vector3Int>{};
     private int maskCount = 0;  //no point in removing mask if there are no mask voxels
+    private bool additive;
 
     //of the region cube. For ensuring slices are bound
     private int cubeWidth;
@@ -80,6 +84,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
 
     public Button resetButton;  //Reset temp selection button
     public Button selectionButton;  //make temp selection button
+    public TextMeshProUGUI selectionButtonText;
     public Button maskButton; //apply mask button
 
     public GameObject sliceIndicatorPrefab;
@@ -133,6 +138,11 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
 
         axis = 2;
         sliceIndex = 0;
+        additive = true;
+        selectionModeImage = selectionModeToggle.transform.GetChild(0).gameObject.GetComponent<Image>();
+        selectionModeImage.color = Color.green;
+        selectionModeText = selectionModeToggle.transform.GetChild(1).gameObject.GetComponent<Text>();
+        selectionModeText.text = "Additive";
 
         //colorMapEnum = dataRenderer.ColorMap;
         //Debug.Log("Color map is: " + colorMapEnum.GetHashCode() + " " + colorMapEnum);
@@ -162,7 +172,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         {
             if(IsPolygonClosed(selectionPolyList))
             {
-                ApplyMaskButton();
+                ApplyMask();
             }
             CompletePolygon();
         }
@@ -741,6 +751,11 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     //clear the mask at the current layer
     public void ClearMaskButton()
     {
+        if(selectionPolyList.Count > 0 && maskCount < 1) {
+            Debug.Log("In Here");
+            ResetSlice();
+            return;
+        }
 
         if(maskCount < 1)
         {
@@ -764,7 +779,6 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         }
 
         //mask count > 0 then set all pixels to 0 source id and reset
-        
 
         Debug.Log("Removing masks of number: " + maskCount);
         for(int x = 0; x < currentRegionSlice.width; x++)
@@ -823,7 +837,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     }
 
     //Apply the selection as a mask
-    public void ApplyMaskButton()
+    public void ApplyMask()
     {
         //must make sure polygon is complete (list is populated)
         if(maskVoxels.Count == 0)
@@ -859,8 +873,8 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         RemoveMarkers();  
         ClearSelectionPoly();
         maskButton.interactable = false;
-        resetButton.interactable = false;
         selectionButton.interactable = false;
+        selectionButtonText.text = "Fill \n(Space)";
         //Debug.Log("Selection Poly list length: " + selectionPolyList.Count);
         //Debug.Log("Mask voxels list length: " + maskVoxels.Count);
         //Debug.Log("Is drawing: " + isDrawing);
@@ -956,12 +970,8 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
             }
         }
 
-        if(pixelsChanged > 10)
-        {
-            selectionButton.interactable = false;
-        }
-
         currentRegionSlice.Apply();
+        selectionButtonText.text = "Apply Mask \n(Space)";
     }
 
     //Inside out method to see if point is in the polygon
@@ -989,7 +999,6 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         {
             selectionPolyList.Add(selectionPolyList[0]);
         }
-        selectionButton.interactable = false;
         CheckForPolygonCompletion();
     }
 
@@ -1194,5 +1203,25 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         {
             _paintMenuController.SaveNewMask();
         }
+    }
+
+    public void OnToggleChanged(bool val) {
+        additive = val;
+        if(additive) {
+            selectionModeImage.color = Color.green;
+            selectionModeText.text = "Additive";
+        }
+        else {
+            selectionModeImage.color = Color.red;
+            selectionModeText.text = "Subtractive";
+        }
+    }
+
+    public void SelectionButton() {
+        if(IsPolygonClosed(selectionPolyList))
+            {
+                ApplyMask();
+            }
+        CompletePolygon();
     }
 }
