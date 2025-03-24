@@ -1434,7 +1434,7 @@ public class VolumeInputController : MonoBehaviour
         Vector3 position = _handTransforms[PrimaryHandIndex].position;
         Quaternion rotation = _handTransforms[PrimaryHandIndex].rotation;
         GameObject shape = Instantiate(currentShape, position, rotation);
-        shape.transform.localScale = Vector3.Scale((ActiveDataSet.transform.localScale/10.0f), shape.transform.localScale);
+        shape.transform.localScale = Vector3.Scale((ActiveDataSet.transform.localScale/20.0f), shape.transform.localScale);
         shape.transform.SetParent(_handTransforms[PrimaryHandIndex]);
         position = shape.transform.localPosition;
         position.z+=shape.transform.localScale.x/2.0f;
@@ -1446,7 +1446,7 @@ public class VolumeInputController : MonoBehaviour
         GameObject shape = shapesManager.GetCurrentShape();
         GameObject selectedShape = shapesManager.GetSelectedShape();
         if(selectedShape == null) return;
-        selectedShape.transform.localScale = Vector3.Scale((ActiveDataSet.transform.localScale/10.0f), shape.transform.localScale);
+        selectedShape.transform.localScale = Vector3.Scale((ActiveDataSet.transform.localScale/20.0f), shape.transform.localScale);
         GameObject shapeCopy = Instantiate(shape,selectedShape.transform.position,selectedShape.transform.rotation);
         shapeCopy.name = shapesManager.GetShapeName(shapeCopy);
         if(shapeCopy.name.Contains("Cylinder")) {
