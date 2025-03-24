@@ -162,6 +162,7 @@ public class ShapesManager : MonoBehaviour {
             pos.y+=0.1f;
             copiedShape.transform.position = pos;
             copiedShape.transform.SetParent(shape.transform.parent);
+            copiedShape.transform.localScale = shape.transform.localScale;
             Shape shapeScript = copiedShape.GetComponent<Shape>();
             shapeScript.SetAdditive(shape.GetComponent<Shape>().isAdditive());
             activeShapes.Add(copiedShape);
@@ -232,9 +233,9 @@ public class ShapesManager : MonoBehaviour {
             float xStep = _activeDataSet.transform.localScale.x/_activeDataSet.GetCubeDimensions().x;
             float yStep = _activeDataSet.transform.localScale.y/_activeDataSet.GetCubeDimensions().y;
             float zStep = _activeDataSet.transform.localScale.z/_activeDataSet.GetCubeDimensions().z;
-            for(float i = min.x; i < max.x; i+=xStep/2) {
-                for(float j = min.y; j < max.y; j+=yStep/2) {
-                    for(float k = min.z; k < max.z; k+=zStep/2)
+            for(float i = min.x; i < max.x; i+=xStep/4) {
+                for(float j = min.y; j < max.y; j+=yStep/4) {
+                    for(float k = min.z; k < max.z; k+=zStep/4)
                      {
                         Vector3 pos = new Vector3(i,j,k);
                         pos = pos - boundingBox.transform.position;
