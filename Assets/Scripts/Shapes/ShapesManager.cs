@@ -1,6 +1,7 @@
 using DataFeatures;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
@@ -201,7 +202,6 @@ public class ShapesManager : MonoBehaviour {
             shapeScript.SetAdditive(true);
         }
     }
-
     public void applyMask(VolumeDataSetRenderer _activeDataSet, VolumeInputController  _volumeInputController, bool additive, bool undo)
     {
         List<GameObject> undoShapes = new List<GameObject>();

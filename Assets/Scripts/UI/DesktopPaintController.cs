@@ -95,6 +95,15 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     public int colormapHeight = 800;
     public int colorMapRowHeight = 10;
 
+    //Zooming
+    public RectTransform imageRect;
+    public float zoomSpeed = 0.1f;
+    public float minZoom = 0.5f;
+    public float maxZoom = 3f;
+
+    private Rect originalUVRect;
+    private float currentZoom = 1f;
+
     struct CameraTransform
     {
         public Vector3 position;
@@ -117,6 +126,11 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         }
 
         rawImage = GetComponent<RawImage>();
+
+        if (imageRect == null)
+            imageRect = GetComponent<RectTransform>();
+
+         originalUVRect = rawImage.uvRect;
 
         dataRenderer = canvassDesktop.activeDataSet();
 
@@ -209,6 +223,51 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
             axisDropdown.GetComponent<TMP_Dropdown>().value = 2;
         }
 
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (scroll != 0)
+        {
+            if (!IsMouseOverImage()) return;
+
+            scroll = -scroll;
+            Vector2 mousePosition = Input.mousePosition;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(rawImage.rectTransform, mousePosition, null, out Vector2 localMousePos);
+
+            // Normalize the mouse position to UV space (0 to 1 range)
+            float uvMouseX = Mathf.InverseLerp(-rawImage.rectTransform.rect.width / 2, rawImage.rectTransform.rect.width / 2, localMousePos.x);
+            float uvMouseY = Mathf.InverseLerp(-rawImage.rectTransform.rect.height / 2, rawImage.rectTransform.rect.height / 2, localMousePos.y);
+
+            // Update zoom level while preventing zooming out beyond the original size
+            float newZoom = Mathf.Clamp(currentZoom - scroll * zoomSpeed, 1f, maxZoom);
+            float zoomFactor = newZoom / currentZoom;
+            currentZoom = newZoom;
+
+            // Adjust the UV Rect to zoom in at the mouse position
+            float newWidth = rawImage.uvRect.width / zoomFactor;
+            float newHeight = rawImage.uvRect.height / zoomFactor;
+
+            // Prevent zooming out beyond the original image bounds
+            if (newWidth > 1f) newWidth = 1f;
+            if (newHeight > 1f) newHeight = 1f;
+
+            float newX = rawImage.uvRect.x + (rawImage.uvRect.width - newWidth) * uvMouseX;
+            float newY = rawImage.uvRect.y + (rawImage.uvRect.height - newHeight) * uvMouseY;
+
+            // Ensure the UV rect stays within (0,0,1,1)
+            newX = Mathf.Clamp(newX, 0f, 1f - newWidth);
+            newY = Mathf.Clamp(newY, 0f, 1f - newHeight);
+
+            rawImage.uvRect = new Rect(newX, newY, newWidth, newHeight);
+        }
+
+    }
+
+    private bool IsMouseOverImage()
+    {
+        RectTransform rectTransform = rawImage.rectTransform;
+        Vector2 localMousePos;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, Input.mousePosition, null, out localMousePos);
+
+        return rectTransform.rect.Contains(localMousePos);
     }
 
     void OnDisable()
