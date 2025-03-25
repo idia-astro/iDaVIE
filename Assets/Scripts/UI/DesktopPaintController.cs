@@ -777,21 +777,29 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(rawImage.rectTransform, eventData.position, eventData.pressEventCamera, out localCursor))
             return;
 
-        // Convert the local cursor to texture coordinates
         Rect rect = rawImage.rectTransform.rect;
-        float x = (localCursor.x - rect.x) / rect.width;
-        float y = (localCursor.y - rect.y) / rect.height;
 
-        // Make sure we are inside the bounds of the texture
-        if (x >= 0 && x <= 1 && y >= 0 && y <= 1)
+        // Normalize localCursor to (0,1) range within the visible rect
+        float normalizedX = (localCursor.x - rect.x) / rect.width;
+        float normalizedY = (localCursor.y - rect.y) / rect.height;
+
+        // Get the uvRect to adjust for zoom/panning
+        Rect uvRect = rawImage.uvRect;
+
+        // Map normalized coordinates to UV coordinates
+        float uvX = uvRect.x + normalizedX * uvRect.width;
+        float uvY = uvRect.y + normalizedY * uvRect.height;
+
+        // Ensure we're within valid UV range
+        if (uvX >= 0 && uvX <= 1 && uvY >= 0 && uvY <= 1)
         {
-            int textureX = Mathf.FloorToInt(x * currentRegionSlice.width);
-            int textureY = Mathf.FloorToInt(y * currentRegionSlice.height);
-            textureX += 1;
+            int textureX = Mathf.FloorToInt(uvX * currentRegionSlice.width);
+            int textureY = Mathf.FloorToInt(uvY * currentRegionSlice.height);
+            
+            // Ensure pixel is inside bounds
+            textureX = Mathf.Clamp(textureX, 0, currentRegionSlice.width - 1);
+            textureY = Mathf.Clamp(textureY, 0, currentRegionSlice.height - 1);
 
-            //Debug.Log("Texture coordinates: (" + textureX + ", " + textureY + ")");
-            //currentRegionSlice.SetPixel(textureX, textureY, Color.red);
-            //currentRegionSlice.Apply();
             Vector2 texturePoint = new Vector2(textureX, textureY);
             AddPointToList(localCursor, texturePoint);
         }
