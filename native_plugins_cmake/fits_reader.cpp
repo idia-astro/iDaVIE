@@ -231,7 +231,7 @@ int FitsWriteNewCopySubImageInt16(char* newFileName, fitsfile* fptr, long* fPix,
         }
         // Open the now new file with CFITSIO.
         fitsfile* fptr2;
-        fits_open_file(fptr2, filename, READWRITE, status);
+        fits_open_file(&fptr2, newFileName, READWRITE, status);
         // Write as subset.
         long* firstPix = new long[3];
         for (int i = 0; i < 3; i++)
@@ -245,7 +245,8 @@ int FitsWriteNewCopySubImageInt16(char* newFileName, fitsfile* fptr, long* fPix,
 
         fits_close_file(fptr2, status);
         return success;
-    }
+    };
+    
     //Call the lambda above to execute in a separate thread.
     std::thread t1(f);
 
