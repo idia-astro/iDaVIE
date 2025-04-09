@@ -654,19 +654,19 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
                     if(axis == 0) //x axis
                     {
                         Vector3Int pixel = new Vector3Int(sliceIndex, x, y); //Down the x axis - the actual x = slice, actual y = x, actual z = y 
-                        maskSet.PaintMaskVoxel(pixel, sourceID);  //set to 0 to remove mask
+                        maskSet.PaintMaskVoxel(pixel, maskSet.GetMaskValue2(prevIndex,x,y));  //set to 0 to remove mask
                     }
 
                     if(axis == 1)
                     {
-                        Vector3Int pixel = new Vector3Int(x, sliceIndex, y); 
-                        maskSet.PaintMaskVoxel(pixel, sourceID);
+                        Vector3Int pixel = new Vector3Int(x, sliceIndex, y);
+                        maskSet.PaintMaskVoxel(pixel, maskSet.GetMaskValue2(x,prevIndex,y));
                     }
 
                     if(axis == 2)
                     {
                         Vector3Int pixel = new Vector3Int(x, y, sliceIndex); 
-                        maskSet.PaintMaskVoxel(pixel, sourceID);
+                        maskSet.PaintMaskVoxel(pixel, maskSet.GetMaskValue2(x,y,prevIndex));
                     }
                 }
                 
