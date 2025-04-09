@@ -169,11 +169,13 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         SpawnSliceIndicator();
         ResetSlice();  //Call texture straight away
         iDaVIELogo.SetActive(false);
+
+        sourceIDInput.onValueChanged.AddListener(OnInputFieldValueChanged);
     }
 
     void Update()
     {
-        sourceID = short.Parse(sourceIDInput.text);
+        sliceIndex = (int)sliceSlider.GetComponent<Slider>().value;
 
         if(maskCount > 0) clearAllButton.interactable = true;
         else clearAllButton.interactable = false;
@@ -268,6 +270,12 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
             rawImage.uvRect = new Rect(newX, newY, newWidth, newHeight);
         }
 
+    }
+
+    private void OnInputFieldValueChanged(string newValue)
+    {
+        sourceID = short.Parse(newValue);
+        HighlightMask();
     }
 
     private bool IsMouseOverImage()
@@ -601,6 +609,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         int width = texture.width;
         int height = texture.height;
         HashSet<Vector2Int> borderPixels = new HashSet<Vector2Int>();
+        Color currentSourceColor = Color.yellow;
 
         foreach (var pixel in region)
         {
@@ -622,6 +631,26 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
 
         foreach (var pixel in borderPixels)
         {
+            if(axis == 0) //x axis
+            {
+                if(maskSet.GetMaskValue2(sliceIndex,pixel.x,pixel.y) == sourceID) {
+                    color = currentSourceColor;
+                } 
+            }
+
+            if(axis == 1)
+            {
+                if(maskSet.GetMaskValue2(pixel.x,sliceIndex,pixel.y) == sourceID) {
+                    color = currentSourceColor;
+                } 
+            }
+
+            if(axis == 2)
+            {
+                if(maskSet.GetMaskValue2(pixel.x,pixel.y,sliceIndex) == sourceID){
+                    color = currentSourceColor;
+                } 
+            }
             texture.SetPixel(pixel.x, pixel.y, color);
         }
 
@@ -677,6 +706,46 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         maskSet.ConsolidateMaskEntries();
 
         ResetSlice();
+    }
+
+    public void UpdateSourceColours() {
+        float[,] slice = GetFloatSlice(maskCube, axis, sliceIndex);
+        Color maskColor = new Color(0.8018868f, 0.5030705f, 0.5030705f);
+        Color currentSourceColor = Color.yellow;
+        for(int x = 0; x < currentRegionSlice.width; x++)
+        {
+            for(int y = 0; y < currentRegionSlice.height; y++)
+            {
+                if(slice[x,y] > 0)
+                {
+                    if(axis == 0) //x axis
+                    {
+                       if(maskSet.GetMaskValue2(sliceIndex,x,y) == sourceID) {
+                            currentRegionSlice.SetPixel(x,y,currentSourceColor);
+                       } 
+                       else currentRegionSlice.SetPixel(x,y,maskColor);
+                    }
+
+                    if(axis == 1)
+                    {
+                        if(maskSet.GetMaskValue2(x,sliceIndex,y) == sourceID) {
+                            currentRegionSlice.SetPixel(x,y,currentSourceColor);
+                        } 
+                        else currentRegionSlice.SetPixel(x,y,maskColor);
+                    }
+
+                    if(axis == 2)
+                    {
+                        if(maskSet.GetMaskValue2(x,y,sliceIndex) == sourceID){
+                            currentRegionSlice.SetPixel(x,y,currentSourceColor);
+                        } 
+                        else currentRegionSlice.SetPixel(x,y,maskColor);
+                    }
+                }
+                
+            }
+        }
+
     }
 
      public Color GetColorFromColormap(int rowIndex, float value)
@@ -988,6 +1057,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         //dataRenderer.FinishBrushStroke();
         maskSet.ConsolidateMaskEntries();
         //dataRenderer.FinishBrushStroke();
+        UpdateSourceColours();
         ResetSlice();
     }
 
