@@ -8048,7 +8048,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1798270351}
   m_HandleRect: {fileID: 1798270350}
   m_Direction: 0
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -74443,7 +74443,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 845581046}
   m_HandleRect: {fileID: 845581045}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -86668,6 +86668,7 @@ MonoBehaviour:
   resetButton: {fileID: 6450642903854567572}
   selectionButton: {fileID: 6450642903822232664}
   selectionButtonText: {fileID: 6450642904035961905}
+  sourceIDInput: {fileID: 6450642904041622232}
   sliceIndicatorPrefab: {fileID: 4230467056648783235, guid: b5c66553cf245994294f40c1b6bca7e8,
     type: 3}
   colormap: {fileID: 2800000, guid: ba5f630a4856acf4883ec84d122c226b, type: 3}

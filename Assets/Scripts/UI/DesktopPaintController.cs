@@ -87,6 +87,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     public Button resetButton;  //Reset temp selection button
     public Button selectionButton;  //make temp selection button
     public TextMeshProUGUI selectionButtonText;
+    public InputField sourceIDInput;
 
     public GameObject sliceIndicatorPrefab;
     private GameObject sliceIndicator;
@@ -172,6 +173,8 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
 
     void Update()
     {
+        sourceID = short.Parse(sourceIDInput.text);
+
         if(maskCount > 0) clearAllButton.interactable = true;
         else clearAllButton.interactable = false;
 
