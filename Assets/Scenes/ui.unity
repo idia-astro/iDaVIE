@@ -88127,6 +88127,8 @@ MonoBehaviour:
   sliceCameraPrefab: {fileID: 181664181290028547, guid: d1e2c82f446f09a4992ad6bc37402e4c,
     type: 3}
   iDaVIELogo: {fileID: 1169313746}
+  selectionContainer: {fileID: 6450642903029644544}
+  waitingContainer: {fileID: 6450642904162642221}
   sliceText: {fileID: 6450642904698268167}
   colorMapDropdown: {fileID: 6450642902843213782}
   sliceSlider: {fileID: 6450642903204252795}
@@ -106986,7 +106988,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Enter Paint Mode in VR
+  m_text: Data needs to be in full resolution
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

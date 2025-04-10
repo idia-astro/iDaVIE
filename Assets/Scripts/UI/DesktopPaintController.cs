@@ -51,6 +51,8 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     public GameObject sliceCameraPrefab;
     private GameObject sliceCamera;
     public GameObject iDaVIELogo;
+    public GameObject selectionContainer;
+    public GameObject waitingContainer;
     private CameraTransform cameraX = new CameraTransform();
     private CameraTransform cameraY = new CameraTransform();
     private CameraTransform cameraZ = new CameraTransform();
@@ -192,6 +194,16 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
 
         if(maskCount > 0) clearAllButton.interactable = true;
         else clearAllButton.interactable = false;
+
+        if(dataRenderer.IsFullResolution) {
+            selectionContainer.SetActive(true);
+            waitingContainer.SetActive(false);
+        }
+        else {
+            selectionContainer.SetActive(false);
+            waitingContainer.SetActive(true);
+            return;
+        }
 
         //should be a second script to handle all of this (add timer so next slice goes faster when held for longer)
         if (Input.GetKeyDown(KeyCode.RightArrow))
