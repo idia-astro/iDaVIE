@@ -46,6 +46,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     private float[,] currentMaskSlice;  
     private Texture3D maskCube;  //texture3d cube of texture r16 (value of mask i think)
     //Actual VolumeDataSet mask cube - for writing mask
+    public Dictionary<int, DataAnalysis.SourceStats> SourceStatsDict { get; private set; }
 
     public GameObject sliceCameraPrefab;
     private GameObject sliceCamera;
@@ -170,8 +171,19 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         SpawnSliceIndicator();
         ResetSlice();  //Call texture straight away
         iDaVIELogo.SetActive(false);
-
         sourceIDDropdown.onValueChanged.AddListener(OnDropDownFieldValueChanged);
+
+        var sourceArray = DataAnalysis.GetMaskedSourceArray(maskSet.FitsData, maskSet.XDim, maskSet.YDim, maskSet.ZDim);
+        if(sourceArray.Count > 0) {
+            sourceIDDropdown.options.Clear();
+            foreach (var source in sourceArray) {
+                sourceIDDropdown.options.Add(new TMP_Dropdown.OptionData(""+source.maskVal));
+                if(source.maskVal > maxID) maxID = source.maskVal;
+            }
+            sourceIDDropdown.value = 0;
+            short.Parse(sourceIDDropdown.options[0].text);
+            sourceIDDropdown.RefreshShownValue();
+        }
     }
 
     void Update()
