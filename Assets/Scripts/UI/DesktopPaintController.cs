@@ -70,6 +70,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     private float maxVal;  //max and min value of region cube
     private float minVal;
     private short sourceID = 1000;
+    private short maxID = 1000;
     private List<Vector3Int> maskVoxels = new List<Vector3Int>{};
     private List<Vector3Int> lastMaskVoxels = new List<Vector3Int>{};
     private bool subtracted = false;
@@ -87,7 +88,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     public Button resetButton;  //Reset temp selection button
     public Button selectionButton;  //make temp selection button
     public TextMeshProUGUI selectionButtonText;
-    public InputField sourceIDInput;
+    public TMP_Dropdown sourceIDDropdown;
 
     public GameObject sliceIndicatorPrefab;
     private GameObject sliceIndicator;
@@ -170,7 +171,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         ResetSlice();  //Call texture straight away
         iDaVIELogo.SetActive(false);
 
-        sourceIDInput.onValueChanged.AddListener(OnInputFieldValueChanged);
+        sourceIDDropdown.onValueChanged.AddListener(OnDropDownFieldValueChanged);
     }
 
     void Update()
@@ -272,9 +273,18 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
 
     }
 
-    private void OnInputFieldValueChanged(string newValue)
+    private void OnDropDownFieldValueChanged(int index)
     {
-        sourceID = short.Parse(newValue);
+        sourceID = short.Parse(sourceIDDropdown.options[index].text);
+        HighlightMask();
+    }
+
+    public void AddSource() {
+        maxID++;
+        sourceID = maxID;
+        sourceIDDropdown.options.Add(new TMP_Dropdown.OptionData(""+maxID));
+        sourceIDDropdown.value = sourceIDDropdown.options.Count - 1;
+        sourceIDDropdown.RefreshShownValue();
         HighlightMask();
     }
 
