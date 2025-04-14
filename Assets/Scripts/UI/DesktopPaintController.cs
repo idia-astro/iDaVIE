@@ -91,6 +91,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     public Button resetButton;  //Reset temp selection button
     public Button selectionButton;  //make temp selection button
     public TextMeshProUGUI selectionButtonText;
+    public GameObject saveMessage;
     public TMP_Dropdown sourceIDDropdown;
 
     public GameObject sliceIndicatorPrefab;
@@ -1431,11 +1432,20 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         if(overwrite)
         {
             _paintMenuController.SaveOverwriteMask();
+            StartCoroutine(ShowMessage("\tMask written to disk"));
         }
         else
         {
             _paintMenuController.SaveNewMask();
+            StartCoroutine(ShowMessage("\tNew Mask saved"));
         }
+    }
+
+    public IEnumerator ShowMessage(string message) {
+        saveMessage.GetComponent<TextMeshProUGUI>().text = message;
+        saveMessage.SetActive(true);
+        yield return new WaitForSeconds(2.0f);
+        saveMessage.SetActive(false);
     }
 
     public void OnToggleChanged(bool val) {
