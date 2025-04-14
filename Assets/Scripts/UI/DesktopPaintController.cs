@@ -79,6 +79,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     private bool subtracted = false;
     private int maskCount = 0;  //no point in removing mask if there are no mask voxels
     private bool additive;
+    private bool painted = false;
 
     //of the region cube. For ensuring slices are bound
     private int cubeWidth;
@@ -184,7 +185,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
                 if(source.maskVal > maxID) maxID = source.maskVal;
             }
             sourceIDDropdown.value = 0;
-            short.Parse(sourceIDDropdown.options[0].text);
+            sourceID = short.Parse(sourceIDDropdown.options[0].text);
             sourceIDDropdown.RefreshShownValue();
         }
     }
@@ -221,8 +222,8 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         {
             if(IsPolygonClosed(selectionPolyList))
             {
-                if(additive) ApplyMask();
-                else SubtractiveSelection();
+                if(additive) ApplyMask(true);
+                else SubtractiveSelection(true);
             }
             CompletePolygon();
         }
@@ -932,14 +933,14 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     public void ClearMaskButton()
     {
         if(selectionPolyList.Count > 0) {
-            Debug.Log("In Here");
             ResetSlice();
             return;
         }
 
         if(subtracted) {
             maskVoxels = lastMaskVoxels;
-            ApplyMask();
+            ApplyMask(false);
+            painted = false;
             subtracted = false;
             return;
         }
@@ -949,46 +950,15 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
             return;
         }
 
-        maskVoxels = lastMaskVoxels;
-        SubtractiveSelection();
-        //mask count > 0 then set all pixels to 0 source id and reset
-        /*
-        Debug.Log("Removing masks of number: " + maskCount);
-        for(int x = 0; x < currentRegionSlice.width; x++)
+        if(painted)
         {
-            for(int y = 0; y < currentRegionSlice.height; y++)
-            {
-                //can be more efficient by switch statement and having axis checked before loop
-                if(axis == 0) //x axis
-                {
-                    Vector3Int pixel = new Vector3Int(sliceIndex, x, y); //Down the x axis - the actual x = slice, actual y = x, actual z = y 
-                    maskSet.PaintMaskVoxel(pixel, 0);  //set to 0 to remove mask
-                }
-
-                if(axis == 1)
-                {
-                    Vector3Int pixel = new Vector3Int(x, sliceIndex, y); 
-                    maskSet.PaintMaskVoxel(pixel, 0);
-                }
-
-                if(axis == 2)
-                {
-                    Vector3Int pixel = new Vector3Int(x, y, sliceIndex); 
-                    maskSet.PaintMaskVoxel(pixel, 0);
-                }
-
-                maskCount--;
-
-                if(maskCount % 20 == 0)
-                {
-                    //maskSet.FlushBrushStroke();
-                }
-
-                
-            }
+            UpdateMaskVoxels();
+            SubtractiveSelection(false);
+            maskVoxels = lastMaskVoxels;
+            ApplyMask(false);
+            painted = false;
         }
-        */
-        //dataRenderer.FinishBrushStroke();
+        
         maskSet.ConsolidateMaskEntries();
 
         ResetSlice();
@@ -1040,7 +1010,8 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         
     }
 
-    private void SubtractiveSelection() {
+    private void SubtractiveSelection(bool update) {
+        if(update) UpdateLastMaskVoxels();
         Debug.Log("Mask Voxel Count (in clear mask button): " + maskVoxels.Count);
         if(maskVoxels.Count > 0)  //If a selection has been made then you can clear just that area. //Add the name change of the mask
         {
@@ -1073,9 +1044,9 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     }
 
     //Apply the selection as a mask
-    public void ApplyMask()
+    public void ApplyMask(bool update)
     {
-        lastMaskVoxels = new List<Vector3Int>();
+        if(update) UpdateLastMaskVoxels();
         //must make sure polygon is complete (list is populated)
         if(maskVoxels.Count == 0)
         {
@@ -1086,14 +1057,11 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         for(int i = 0; i < maskVoxels.Count; i++)
         {
             maskSet.PaintMaskVoxel(maskVoxels[i], sourceID);
-            lastMaskVoxels.Add(maskVoxels[i]);
         }
-        
-        //dataRenderer.FinishBrushStroke();
         maskSet.ConsolidateMaskEntries();
-        //dataRenderer.FinishBrushStroke();
         UpdateSourceColours();
         ResetSlice();
+        painted = true;
     }
 
     //Removes the last point that was added (will need modifications if other children are added to the display)
@@ -1106,7 +1074,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     //Handles the resets when a new slice is selected (markers)
     private void ResetSlice()
     {
-        maskVoxels.Clear();
+        maskVoxels = new List<Vector3Int>();
         UpdateTexture();  //go get the original slice without temp modifications (shading showing where masking would happen)
         RemoveMarkers();  
         ClearSelectionPoly();
@@ -1137,7 +1105,6 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     //Shows where mask will be applied and stores those position in the mask list (by calling inside out method)
     public void FillPolygon()
     {
-        //Debug.Log("Filling polygon with selection list of size: " + selectionPolyList.Count);
         if(selectionPolyList.Count > 10)  //stop the drawing if a polygone has been made (fill polygone is called too early due to first points being so close together)
         {
             isDrawing = false;
@@ -1203,7 +1170,6 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
                 }
             }
         }
-
         currentRegionSlice.Apply();
         selectionButtonText.text = "Apply Mask \n(Space)";
     }
@@ -1244,6 +1210,71 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         float distance = Vector2.Distance(firstPoint, lastPoint);
         return distance < 1f; // if points are the same
     }
+
+    public void UpdateMaskVoxels() {
+        maskVoxels.Clear();
+        float[,] slice = GetFloatSlice(maskCube, axis, sliceIndex);
+        for(int x = 0; x < currentRegionSlice.width; x++)
+        {
+            for(int y = 0; y < currentRegionSlice.height; y++)
+            {
+                if(slice[x,y] > 0)
+                {
+                    if(axis == 0) //x axis
+                    {
+                        Vector3Int pixel = new Vector3Int(sliceIndex,x,y);
+                        maskVoxels.Add(pixel);
+                    }
+
+                    if(axis == 1)
+                    {
+                        Vector3Int pixel = new Vector3Int(x,sliceIndex,y);
+                        maskVoxels.Add(pixel);
+                    }
+
+                    if(axis == 2)
+                    {
+                        Vector3Int pixel = new Vector3Int(x,y,sliceIndex);
+                        maskVoxels.Add(pixel);
+                    }
+                }
+                
+            }
+        }
+    }
+
+     public void UpdateLastMaskVoxels() {
+        lastMaskVoxels.Clear();
+        float[,] slice = GetFloatSlice(maskCube, axis, sliceIndex);
+        for(int x = 0; x < currentRegionSlice.width; x++)
+        {
+            for(int y = 0; y < currentRegionSlice.height; y++)
+            {
+                if(slice[x,y] > 0)
+                {
+                    if(axis == 0) //x axis
+                    {
+                        Vector3Int pixel = new Vector3Int(sliceIndex,x,y);
+                        lastMaskVoxels.Add(pixel);
+                    }
+
+                    if(axis == 1)
+                    {
+                        Vector3Int pixel = new Vector3Int(x,sliceIndex,y);
+                        lastMaskVoxels.Add(pixel);
+                    }
+
+                    if(axis == 2)
+                    {
+                        Vector3Int pixel = new Vector3Int(x,y,sliceIndex);
+                        lastMaskVoxels.Add(pixel);
+                    }
+                }
+                
+            }
+        }
+        print(lastMaskVoxels.Count);
+    }
     
     //clear the polygon selection
     private void ClearSelectionPoly()
@@ -1280,7 +1311,11 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         sliceIndex -= 1;
         sliceSlider.GetComponent<Slider>().value = sliceIndex;
         //SliderIndicatorChange();
+        UpdateSourceColours();
+        UpdateMaskVoxels();
+        UpdateLastMaskVoxels();
         ResetSlice();
+        painted = false;
     }
 
     //select next slice or go to start
@@ -1296,8 +1331,11 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
 
         sliceSlider.GetComponent<Slider>().value = sliceIndex;
         //SliderIndicatorChange();
+        UpdateSourceColours();
+        UpdateMaskVoxels();
+        UpdateLastMaskVoxels();
         ResetSlice();
-        
+        painted = false;
     }
 
     //change the axis (being looked down) and call the new slice
@@ -1463,8 +1501,8 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     public void SelectionButton() {
         if(IsPolygonClosed(selectionPolyList))
             {
-                if(additive) ApplyMask();
-                else SubtractiveSelection();
+                if(additive) ApplyMask(true);
+                else SubtractiveSelection(true);
             }
         CompletePolygon();
     }
