@@ -952,10 +952,10 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
 
         if(painted)
         {
-            UpdateMaskVoxels();
+            UpdateMaskVoxels(true);
             SubtractiveSelection(false);
             maskVoxels = lastMaskVoxels;
-            ApplyMask(false);
+            //ApplyMask(false);
             painted = false;
         }
         
@@ -1056,7 +1056,8 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         Debug.Log("Mask voxels: " + maskVoxels.Count);
         for(int i = 0; i < maskVoxels.Count; i++)
         {
-            maskSet.PaintMaskVoxel(maskVoxels[i], sourceID);
+            Int16 maskVal = maskSet.GetMaskValue2(maskVoxels[i].x,maskVoxels[i].y,maskVoxels[i].z);
+            if(maskVal == 0) maskSet.PaintMaskVoxel(maskVoxels[i], sourceID);
         }
         maskSet.ConsolidateMaskEntries();
         UpdateSourceColours();
@@ -1139,6 +1140,8 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         maxY = Mathf.Clamp(maxY, 0, currentRegionSlice.height - 1);
 
         int pixelsChanged = 0;
+        bool incorrectSourceCrossed = false;
+        Color[] originalPixels = currentRegionSlice.GetPixels();
 
         for (int y = Mathf.FloorToInt(minY); y <= Mathf.CeilToInt(maxY); y++)
         {
@@ -1148,27 +1151,48 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
                     if(axis == 0) //x axis
                     {
                         Vector3Int pixel = new Vector3Int(sliceIndex, x, y); //Down the x axis - the actual x = slice, actual y = x, actual z = y 
+                        if(maskSet.GetMaskValue2(pixel.x,pixel.y,pixel.z) != sourceID && maskSet.GetMaskValue2(pixel.x,pixel.y,pixel.z) != 0) {
+                            incorrectSourceCrossed = true;
+                            continue;
+                        }
                         maskVoxels.Add(pixel);
                     }
 
                     if(axis == 1)
                     {
                         Vector3Int pixel = new Vector3Int(x, sliceIndex, y); 
+                        if(maskSet.GetMaskValue2(pixel.x,pixel.y,pixel.z) != sourceID && maskSet.GetMaskValue2(pixel.x,pixel.y,pixel.z) != 0) {
+                            incorrectSourceCrossed = true;
+                            continue;
+                        }
                         maskVoxels.Add(pixel);
                     }
 
                     if(axis == 2)
                     {
                         Vector3Int pixel = new Vector3Int(x, y, sliceIndex); 
+                        if(maskSet.GetMaskValue2(pixel.x,pixel.y,pixel.z) != sourceID && maskSet.GetMaskValue2(pixel.x,pixel.y,pixel.z) != 0) {
+                            incorrectSourceCrossed = true;
+                            continue;
+                        }
                         maskVoxels.Add(pixel);
                     }
                 }
                 if(selectionPolyList.Contains(new Vector2(x, y)))
                 {
-                    currentRegionSlice.SetPixel(x, y, fillColor);  //future improvement - make the colour layer separate and combine it witht his layer (so temp mask can be semi transparent)
+                    
+                    currentRegionSlice.SetPixel(x, y, fillColor); //future improvement - make the colour layer separate and combine it witht his layer (so temp mask can be semi transparent)
                     pixelsChanged++;
                 }
             }
+        }
+        if(incorrectSourceCrossed) {
+            selectionPolyList = new List<Vector2>();
+            maskVoxels.Clear();
+            StartCoroutine(ShowMessage("\tCannot paint over mask of different source. Please change source ID", 4.0f));
+            currentRegionSlice.SetPixels(originalPixels);
+            currentRegionSlice.Apply();
+            return;
         }
         currentRegionSlice.Apply();
         selectionButtonText.text = "Apply Mask \n(Space)";
@@ -1211,7 +1235,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         return distance < 1f; // if points are the same
     }
 
-    public void UpdateMaskVoxels() {
+    public void UpdateMaskVoxels(bool matchID) {
         maskVoxels.Clear();
         float[,] slice = GetFloatSlice(maskCube, axis, sliceIndex);
         for(int x = 0; x < currentRegionSlice.width; x++)
@@ -1223,19 +1247,28 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
                     if(axis == 0) //x axis
                     {
                         Vector3Int pixel = new Vector3Int(sliceIndex,x,y);
-                        maskVoxels.Add(pixel);
+                        if(matchID) {
+                            if(maskSet.GetMaskValue2(pixel.x,pixel.y,pixel.z) == sourceID) maskVoxels.Add(pixel);
+                        }
+                        else maskVoxels.Add(pixel);
                     }
 
                     if(axis == 1)
                     {
                         Vector3Int pixel = new Vector3Int(x,sliceIndex,y);
-                        maskVoxels.Add(pixel);
+                       if(matchID) {
+                            if(maskSet.GetMaskValue2(pixel.x,pixel.y,pixel.z) == sourceID) maskVoxels.Add(pixel);
+                        }
+                        else maskVoxels.Add(pixel);
                     }
 
                     if(axis == 2)
                     {
                         Vector3Int pixel = new Vector3Int(x,y,sliceIndex);
-                        maskVoxels.Add(pixel);
+                        if(matchID) {
+                            if(maskSet.GetMaskValue2(pixel.x,pixel.y,pixel.z) == sourceID) maskVoxels.Add(pixel);
+                        }
+                        else maskVoxels.Add(pixel);
                     }
                 }
                 
@@ -1273,7 +1306,6 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
                 
             }
         }
-        print(lastMaskVoxels.Count);
     }
     
     //clear the polygon selection
@@ -1312,7 +1344,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         sliceSlider.GetComponent<Slider>().value = sliceIndex;
         //SliderIndicatorChange();
         UpdateSourceColours();
-        UpdateMaskVoxels();
+        UpdateMaskVoxels(false);
         UpdateLastMaskVoxels();
         ResetSlice();
         painted = false;
@@ -1332,7 +1364,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         sliceSlider.GetComponent<Slider>().value = sliceIndex;
         //SliderIndicatorChange();
         UpdateSourceColours();
-        UpdateMaskVoxels();
+        UpdateMaskVoxels(false);
         UpdateLastMaskVoxels();
         ResetSlice();
         painted = false;
@@ -1470,19 +1502,19 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         if(overwrite)
         {
             _paintMenuController.SaveOverwriteMask();
-            StartCoroutine(ShowMessage("\tMask written to disk"));
+            StartCoroutine(ShowMessage("\tMask written to disk", 2.0f));
         }
         else
         {
             _paintMenuController.SaveNewMask();
-            StartCoroutine(ShowMessage("\tNew Mask saved"));
+            StartCoroutine(ShowMessage("\tNew Mask saved",2.0f));
         }
     }
 
-    public IEnumerator ShowMessage(string message) {
+    public IEnumerator ShowMessage(string message, float time) {
         saveMessage.GetComponent<TextMeshProUGUI>().text = message;
         saveMessage.SetActive(true);
-        yield return new WaitForSeconds(2.0f);
+        yield return new WaitForSeconds(time);
         saveMessage.SetActive(false);
     }
 
