@@ -105,7 +105,7 @@ public class ShapesManager : MonoBehaviour {
     }
 
     public void IncreaseScale() {
-        if(state == ShapeState.selecting) return;
+        if(state == ShapeState.selecting || state == ShapeState.selected) return;
         foreach(GameObject shape in selectedShapes) {
            Vector3 scale = shape.transform.localScale;
            Vector3 scaleVector = new Vector3(0,0,0);
@@ -117,7 +117,7 @@ public class ShapesManager : MonoBehaviour {
     }
 
     public void DecreaseScale() {
-        if(state == ShapeState.selecting) return;
+        if(state == ShapeState.selecting || state == ShapeState.selected) return;
         foreach(GameObject shape in selectedShapes) {
            Vector3 scale = shape.transform.localScale;
            Vector3 scaleVector = new Vector3(0,0,0);
@@ -142,6 +142,10 @@ public class ShapesManager : MonoBehaviour {
     }
 
     public void ChangeModes() {
+        if(state == ShapeState.selected){
+            ChangeShapeMode();
+            return;
+        } 
         foreach(GameObject shape in selectedShapes) {
             Shape shapeScript = shape.GetComponent<Shape>();
             shapeScript.SetAdditive(!shapeScript.isAdditive());
