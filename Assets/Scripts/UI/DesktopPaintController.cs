@@ -80,6 +80,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     private int maskCount = 0;  //no point in removing mask if there are no mask voxels
     private bool additive;
     private bool painted = false;
+    private bool firstEnable = true;
 
     //of the region cube. For ensuring slices are bound
     private int cubeWidth;
@@ -147,8 +148,15 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         //dataSet = canvassDesktop.getActiveDataSet();
         dataSet = dataRenderer.Data;
         regionCube = dataSet.RegionCube;
-        maxVal = dataSet.MaxValue;
-        minVal = dataSet.MinValue;
+
+        var effectiveMin = dataRenderer.ScaleMin + dataRenderer.ThresholdMin 
+                * (dataRenderer.ScaleMax - dataRenderer.ScaleMin);
+        var effectiveMax = dataRenderer.ScaleMin + dataRenderer.ThresholdMax 
+                * (dataRenderer.ScaleMax - dataRenderer.ScaleMin);
+
+        maxVal = effectiveMax;
+        minVal = effectiveMin;
+       
 
         //maskSet = canvassDesktop.getActiveMaskSet();
         maskSet = dataRenderer.Mask;
@@ -166,7 +174,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         selectionModeText = selectionModeToggle.transform.GetChild(1).gameObject.GetComponent<Text>();
         selectionModeText.text = "Additive";
 
-        //colorMapEnum = dataRenderer.ColorMap;
+        colorMapEnum = dataRenderer.ColorMap;
         //Debug.Log("Color map is: " + colorMapEnum.GetHashCode() + " " + colorMapEnum);
 
         SpawnCameras();
@@ -193,7 +201,6 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     void Update()
     {
         sliceIndex = (int)sliceSlider.GetComponent<Slider>().value;
-
         if(maskCount > 0) clearAllButton.interactable = true;
         else clearAllButton.interactable = false;
 
@@ -297,6 +304,18 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
             rawImage.uvRect = new Rect(newX, newY, newWidth, newHeight);
         }
 
+        if(ColorMapUtils.FromHashCode(colorMapDropdown.GetComponent<TMP_Dropdown>().value) != colorMapEnum) {
+            colorMapDropdown.GetComponent<TMP_Dropdown>().value = (int)colorMapEnum;
+        }
+
+    }
+
+    public void UpdateMinValue(float value) {
+        minVal = value;
+    }
+
+    public void UpdateMaxValue(float value) {
+        minVal = value;
     }
 
     private void OnDropDownFieldValueChanged(int index)
@@ -792,11 +811,11 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
             return Color.black;
         }
 
-        if (value < 0f || value > 1f)
-        {
-            Debug.LogError("Value must be between 0 and 1.");
-            return Color.black;
-        }
+        //if (value < 0f || value > 1f)
+        //{
+            //Debug.LogError("Value must be between 0 and 1.");
+         //   return Color.black;
+        //}
 
         // Calculate the Y-coordinate of the specific row
         int y = rowIndex * colorMapRowHeight - 1;
@@ -1073,7 +1092,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     }
 
     //Handles the resets when a new slice is selected (markers)
-    private void ResetSlice()
+    public void ResetSlice()
     {
         maskVoxels = new List<Vector3Int>();
         UpdateTexture();  //go get the original slice without temp modifications (shading showing where masking would happen)
@@ -1388,16 +1407,16 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     public void ChangeColorMap()
     {
         colorMapEnum = ColorMapUtils.FromHashCode(colorMapDropdown.GetComponent<TMP_Dropdown>().value);
+        dataRenderer.ColorMap = colorMapEnum;
         ResetSlice();
     }
 
-    private void SetColorMap()
+    public void SetColorMap()
     {
         colorMapDropdown.GetComponent<TMP_Dropdown>().options.Clear();
 
         foreach (var colorMap in Enum.GetValues(typeof(ColorMapEnum)))
         {
-
             colorMapDropdown.GetComponent<TMP_Dropdown>().options.Add(new TMP_Dropdown.OptionData() { text = colorMap.ToString() });
         }
 
