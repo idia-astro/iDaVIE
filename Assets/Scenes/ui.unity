@@ -60725,7 +60725,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1371977616
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -100431,6 +100431,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   volumeDatasetRendererObj: {fileID: 379208438}
   _activeDataSet: {fileID: 0}
+  featureMenuController: {fileID: 1696286063}
   paintMenu: {fileID: 1393187942}
   _volumeInputController: {fileID: 0}
   shapesManager: {fileID: 581074822}

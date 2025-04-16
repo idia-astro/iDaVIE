@@ -30,6 +30,7 @@ public class ShapeMenuController : MonoBehaviour
 {
     public GameObject volumeDatasetRendererObj = null;
     public VolumeDataSetRenderer _activeDataSet;
+    public FeatureMenuController featureMenuController;
     private VolumeDataSetRenderer[] _dataSets;
 
     public GameObject paintMenu;
@@ -132,7 +133,8 @@ public class ShapeMenuController : MonoBehaviour
 
     public void Undo() {
         shapesManager.Undo();
-        _activeDataSet.GetMomentMapRenderer().CalculateMomentMaps();  
+        _activeDataSet.GetMomentMapRenderer().CalculateMomentMaps();
+        //featureMenuController.UpdateInfo();    
     }
 
     public void spawnMenu(GameObject menu)
@@ -159,7 +161,8 @@ public class ShapeMenuController : MonoBehaviour
         shapesManager.applyMask(_activeDataSet, _volumeInputController, true, false);
         shapesManager.applyMask(_activeDataSet, _volumeInputController, false, false);
         shapesManager.ClearShapes();    
-        _activeDataSet.GetMomentMapRenderer().CalculateMomentMaps();  
+        _activeDataSet.GetMomentMapRenderer().CalculateMomentMaps();
+        //featureMenuController.UpdateInfo();  
     }
 
 

@@ -108,7 +108,10 @@ public class ShapesManager : MonoBehaviour {
         if(state == ShapeState.selecting) return;
         foreach(GameObject shape in selectedShapes) {
            Vector3 scale = shape.transform.localScale;
-           scale = scale + new Vector3(0.001f,0.001f,0.001f);
+           Vector3 scaleVector = new Vector3(0,0,0);
+           if(shape.name.Contains("Cuboid")) scaleVector = new Vector3(0.01f,0.01f,0.01f);
+           else scaleVector = new Vector3(0.001f,0.001f,0.001f);
+           scale = scale + scaleVector;
            shape.transform.localScale = scale;
         }
     }
@@ -117,7 +120,10 @@ public class ShapesManager : MonoBehaviour {
         if(state == ShapeState.selecting) return;
         foreach(GameObject shape in selectedShapes) {
            Vector3 scale = shape.transform.localScale;
-           scale = scale - new Vector3(0.001f,0.001f,0.001f);
+           Vector3 scaleVector = new Vector3(0,0,0);
+           if(shape.name.Contains("Cuboid")) scaleVector = new Vector3(0.01f,0.01f,0.01f);
+           else scaleVector = new Vector3(0.001f,0.001f,0.001f);
+           scale = scale - scaleVector;
            if(scale.x < 0.002f | scale.y < 0.002f | scale.z < 0.002f) scale = new Vector3(0.001f,0.001f,0.001f);
            shape.transform.localScale = scale;
         }

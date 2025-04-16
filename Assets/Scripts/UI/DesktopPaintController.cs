@@ -955,7 +955,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
             UpdateMaskVoxels(true);
             SubtractiveSelection(false);
             maskVoxels = lastMaskVoxels;
-            //ApplyMask(false);
+            ApplyMask(false);
             painted = false;
         }
         
