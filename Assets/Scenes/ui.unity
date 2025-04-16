@@ -48934,7 +48934,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Clear All
+  m_text: Clear Source
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -52028,7 +52028,6 @@ MonoBehaviour:
   VolumePlayer: {fileID: 135890493}
   SourceRowPrefab: {fileID: 6994270282387301837, guid: f0550dbbe6249c14bae955d5013488b6,
     type: 3}
-  desktopPaintController: {fileID: 1920295488}
   WelcomeMenu: {fileID: 1426185498}
   LoadingText: {fileID: 499592097}
   loadTextLabel: {fileID: 499592099}

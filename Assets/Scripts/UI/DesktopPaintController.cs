@@ -990,38 +990,39 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         }
             //mask count > 0 then set all pixels to 0 source id and reset
         
-        Debug.Log("Removing masks of number: " + maskCount);
+        float[,] slice = GetFloatSlice(maskCube, axis, sliceIndex);
         for(int x = 0; x < currentRegionSlice.width; x++)
         {
             for(int y = 0; y < currentRegionSlice.height; y++)
             {
-                //can be more efficient by switch statement and having axis checked before loop
-                if(axis == 0) //x axis
-                {
-                    Vector3Int pixel = new Vector3Int(sliceIndex, x, y); //Down the x axis - the actual x = slice, actual y = x, actual z = y 
-                    maskSet.PaintMaskVoxel(pixel, 0);  //set to 0 to remove mask
+                if(slice[x,y] > 0) {
+
+                    if(axis == 0) //x axis
+                    {
+                        Vector3Int pixel = new Vector3Int(sliceIndex, x, y); //Down the x axis - the actual x = slice, actual y = x, actual z = y
+                        if(maskSet.GetMaskValue2(pixel.x,pixel.y,pixel.z) == sourceID)  maskSet.PaintMaskVoxel(pixel, 0);  
+                    }
+
+                    if(axis == 1)
+                    {
+                        Vector3Int pixel = new Vector3Int(x, sliceIndex, y); 
+                        if(maskSet.GetMaskValue2(pixel.x,pixel.y,pixel.z) == sourceID)  maskSet.PaintMaskVoxel(pixel, 0); 
+                    }
+
+                    if(axis == 2)
+                    {
+                        Vector3Int pixel = new Vector3Int(x, y, sliceIndex); 
+                        if(maskSet.GetMaskValue2(pixel.x,pixel.y,pixel.z) == sourceID)  maskSet.PaintMaskVoxel(pixel, 0); 
+                    }
+
+                    maskCount--;
+
+                    if(maskCount % 20 == 0)
+                    {
+                        //maskSet.FlushBrushStroke();
+                    }
+
                 }
-
-                if(axis == 1)
-                {
-                    Vector3Int pixel = new Vector3Int(x, sliceIndex, y); 
-                    maskSet.PaintMaskVoxel(pixel, 0);
-                }
-
-                if(axis == 2)
-                {
-                    Vector3Int pixel = new Vector3Int(x, y, sliceIndex); 
-                    maskSet.PaintMaskVoxel(pixel, 0);
-                }
-
-                maskCount--;
-
-                if(maskCount % 20 == 0)
-                {
-                    //maskSet.FlushBrushStroke();
-                }
-
-                
             }
         }
         maskSet.ConsolidateMaskEntries();
