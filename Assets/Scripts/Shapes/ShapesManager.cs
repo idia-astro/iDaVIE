@@ -256,7 +256,10 @@ public class ShapesManager : MonoBehaviour {
                             if(additive)
                             {
                                 _activeDataSet.SetCursorPosition(pos,1);
-                                _activeDataSet.PaintCursor((short) _volumeInputController.SourceId);     
+                                _activeDataSet.PaintCursor((short) _volumeInputController.SourceId);
+                                
+                                //note: I changed the method called used here (UpdateStats) to public in order for the source list to be updated 
+                                _activeDataSet.Mask.UpdateStats(_volumeInputController.SourceId);  
                             }
                             else{
                                 _activeDataSet.SetCursorPosition(pos,1);

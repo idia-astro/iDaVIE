@@ -161,8 +161,6 @@ public class ShapeMenuController : MonoBehaviour
         shapesManager.applyMask(_activeDataSet, _volumeInputController, true, false);
         shapesManager.applyMask(_activeDataSet, _volumeInputController, false, false);
         shapesManager.ClearShapes();    
-        _activeDataSet.GetMomentMapRenderer().CalculateMomentMaps();
-        //featureMenuController.UpdateInfo();  
     }
 
 

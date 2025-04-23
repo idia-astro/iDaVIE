@@ -433,7 +433,7 @@ namespace VolumeData
         /// Updates the calculated stats for the given mask value.
         /// </summary>
         /// <param name="maskVal"></param>
-        private void UpdateStats(short maskVal)
+        public void UpdateStats(short maskVal)
         {
             if (!SourceStatsDict.ContainsKey(maskVal))
             {
