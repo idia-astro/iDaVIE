@@ -98,7 +98,7 @@ public class PaintMenuController : MonoBehaviour
     {
         foreach (var dataSet in _dataSets)
         {
-            if (dataSet.isActiveAndEnabled)
+            if (dataSet && dataSet.isActiveAndEnabled)
             {
                 return dataSet;
             }

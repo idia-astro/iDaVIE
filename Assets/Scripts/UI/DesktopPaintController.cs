@@ -129,7 +129,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     The region cube sampling checks are already done so do not need to be repeated. (I think).
     Axis and sliceindex are set to 0 (and selecting to false) here in case a new file is loaded so they will then again be set to 0.
     */
-    void OnEnable()
+    public void StartPaintSelection()
     {
         if(canvassDesktop == null)
         {

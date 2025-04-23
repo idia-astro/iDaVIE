@@ -87,6 +87,8 @@ public class TabsManager : MonoBehaviour
             }
         }
 
+        if(old_activeTabIndex == 4) _canvasDesktop.paintTabLeft();
+
 
     }
 

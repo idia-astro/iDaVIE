@@ -102,6 +102,7 @@ public class CanvassDesktop : MonoBehaviour
     public GameObject PaintSelectionContainer;  //To have correct container active for desktop paint selection
     public GameObject PaintWaitingContainer;
     public QuickMenuController quickMenuController;
+    public PaintMenuController paintMenuController;
     public TabsManager _tabsManager;  //For updating paint menu
 
     private void Awake()
@@ -1453,6 +1454,11 @@ public class CanvassDesktop : MonoBehaviour
         RegionCubeDisplay.SetActive(true);
         PaintSelectionContainer.SetActive(true);
         PaintWaitingContainer.SetActive(false);
+        RegionCubeDisplay.GetComponent<DesktopPaintController>().StartPaintSelection();
+    }
+
+    public void paintTabLeft() {
+        paintMenuController.ExitPaintMode();
     }
 
 }
