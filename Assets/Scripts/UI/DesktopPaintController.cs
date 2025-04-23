@@ -989,7 +989,8 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
             return;
         }
             //mask count > 0 then set all pixels to 0 source id and reset
-        
+
+        UpdateLastMaskVoxels();
         float[,] slice = GetFloatSlice(maskCube, axis, sliceIndex);
         for(int x = 0; x < currentRegionSlice.width; x++)
         {
