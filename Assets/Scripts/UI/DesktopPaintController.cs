@@ -64,9 +64,10 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     public GameObject colorMapDropdown;
     public GameObject sliceSlider;
     public GameObject axisDropdown;
-    public GameObject selectionModeToggle;
+    public GameObject additiveToggle;
+    public GameObject subtractiveToggle;
     private Image selectionModeImage;
-    private Text selectionModeText;
+    private Image selectionModeImage2;
 
     private int axis;  //x = 0, y = 1, z = 0
     private int sliceIndex;  //of the region cube
@@ -169,10 +170,10 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         axis = 2;
         sliceIndex = 0;
         additive = true;
-        selectionModeImage = selectionModeToggle.transform.GetChild(0).gameObject.GetComponent<Image>();
+        selectionModeImage = additiveToggle.transform.GetChild(0).gameObject.GetComponent<Image>();
         selectionModeImage.color = Color.green;
-        selectionModeText = selectionModeToggle.transform.GetChild(1).gameObject.GetComponent<Text>();
-        selectionModeText.text = "Additive";
+        selectionModeImage2 = subtractiveToggle.transform.GetChild(0).gameObject.GetComponent<Image>();
+        selectionModeImage2.color = Color.gray;
 
         colorMapEnum = dataRenderer.ColorMap;
         //Debug.Log("Color map is: " + colorMapEnum.GetHashCode() + " " + colorMapEnum);
@@ -1101,7 +1102,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         RemoveMarkers();  
         ClearSelectionPoly();
         selectionButton.interactable = false;
-        selectionButtonText.text = "Fill \n(Space)";
+        selectionButtonText.text = "Fill \n(Space Bar)";
         //Debug.Log("Selection Poly list length: " + selectionPolyList.Count);
         //Debug.Log("Mask voxels list length: " + maskVoxels.Count);
         //Debug.Log("Is drawing: " + isDrawing);
@@ -1216,7 +1217,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
             return;
         }
         currentRegionSlice.Apply();
-        selectionButtonText.text = "Apply Mask \n(Space)";
+        selectionButtonText.text = "Apply Mask \n(Space Bar)";
     }
 
     //Inside out method to see if point is in the polygon
@@ -1539,15 +1540,20 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         saveMessage.SetActive(false);
     }
 
-    public void OnToggleChanged(bool val) {
-        additive = val;
+    public void OnToggleChanged() {
         if(additive) {
-            selectionModeImage.color = Color.green;
-            selectionModeText.text = "Additive";
+            selectionModeImage.color = Color.gray;
+            selectionModeImage2.color = Color.red;
+            additive = false;
+            additiveToggle.GetComponent<Toggle>().interactable = true;
+            subtractiveToggle.GetComponent<Toggle>().interactable = false;
         }
         else {
-            selectionModeImage.color = Color.red;
-            selectionModeText.text = "Subtractive";
+            selectionModeImage2.color = Color.gray;
+            selectionModeImage.color = Color.green;
+            additive = true;
+            additiveToggle.GetComponent<Toggle>().interactable = false;
+            subtractiveToggle.GetComponent<Toggle>().interactable = true;
         }
     }
 
