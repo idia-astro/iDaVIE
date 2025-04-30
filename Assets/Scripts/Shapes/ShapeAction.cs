@@ -1,3 +1,7 @@
+/*
+ * This class just stores information about actions performed by the user 
+ * in shape mode to allow for undo functionality
+ */
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;

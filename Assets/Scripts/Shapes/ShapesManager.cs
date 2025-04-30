@@ -1,3 +1,8 @@
+/*
+ * ShapeManager class manages state of all shapes in the scene, keeping track of selected and non-selected shapes
+ * as actions performed by the user to allow undo functionality
+*/
+
 using DataFeatures;
 using System.Collections;
 using System.Collections.Generic;
@@ -26,22 +31,29 @@ public class ShapesManager : MonoBehaviour {
     private Color32 baseColour;
     private bool shapeSelected = false;
 
+    /*
+    * States user can be in:
+    * idle: not adding a new shape
+    * selecting: cycling through available shapes on controller
+    * selected: user has chosen a shape from the list, but has not placed it in the scene yet
+    */
     public enum ShapeState {idle, selecting, selected};
     public ShapeState state;
 
     public void StartShapes() {
         state = ShapeState.selecting;
-        baseColour = new Color32(42,46,40,255);
+        baseColour = new Color32(42,46,40,255); 
         currentShape = cube;
         currentShapeIndex = 0;
         shapes = new GameObject[] {cube, cuboid, sphere, cylinder};
-        shapesCount = new int[]{0,0,0,0};
+        shapesCount = new int[]{0,0,0,0}; //Used to have unique names for each shape added into scene
     }
 
     public GameObject GetCurrentShape() {
         return shapes[currentShapeIndex];
     }
 
+    //called when user transitions from selecting to selected state
     public void SelectShape() {
         if(state != ShapeState.selecting) return;
         state = ShapeState.selected;
@@ -50,6 +62,7 @@ public class ShapesManager : MonoBehaviour {
         shapeSelected = true;
     }
 
+    //called when user transitions from selected to selecting state
     public void DeselectShape() {
         if(state != ShapeState.selected) return;
         state = ShapeState.selecting;
@@ -92,6 +105,7 @@ public class ShapesManager : MonoBehaviour {
          actions.Push(new ShapeAction(shape));
     }
 
+    //Generates unique name for shape to be added into the scene
     public string GetShapeName(GameObject shape) {
         shapesCount[currentShapeIndex]++;
         return shape.name + $"{shapesCount[currentShapeIndex]}";
@@ -105,6 +119,8 @@ public class ShapesManager : MonoBehaviour {
         selectedShapes.Remove(shape);
     }
 
+
+    //Increases scale of shapes. If in selected state only increases shape attatched to controller, otherwise increases scale of all selected shapes in the scene
     public void IncreaseScale() {
         if(state == ShapeState.selecting) return;
         if(state == ShapeState.selected) {
@@ -126,6 +142,7 @@ public class ShapesManager : MonoBehaviour {
         }
     }
 
+    //Same as above but with decreasing scale
     public void DecreaseScale() {
         if(state == ShapeState.selecting) return;
         if(state == ShapeState.selected) {
@@ -149,6 +166,7 @@ public class ShapesManager : MonoBehaviour {
         }
     }
 
+    //Delete all selected shapes in the secene (shapes are only properly deleted upon exiting shape mode)
     public void DeleteSelectedShapes() {
         List<GameObject> delShapes = new List<GameObject>();
         foreach(GameObject shape in selectedShapes) {
@@ -161,6 +179,7 @@ public class ShapesManager : MonoBehaviour {
         selectedShapes = new List<GameObject>();
     }
 
+    //If in selected state change only that shape's state, otherwise change all selected shapes in scene to the inverse of their current state
     public void ChangeModes() {
         if(state == ShapeState.selected){
             ChangeShapeMode();
@@ -172,6 +191,9 @@ public class ShapesManager : MonoBehaviour {
         }
     }
 
+    /*
+    * Copies all selected shapes in scene, if used after confirming a selection it returns all shapes used for the selection to the scene
+    */
     public void CopyShapes() {
         if(selectedShapes.Count > 0) {
             paintedShapes = new List<GameObject>();
@@ -203,16 +225,19 @@ public class ShapesManager : MonoBehaviour {
         actions.Push(new ShapeAction(ShapeAction.ActionType.CopyShapes, copiedShapes));
     }
 
+    //Sets the shape selected by the user in the selected state
     public void SetSelectableShape(GameObject shape) {
         currentShape = shape;
         currentShapeScale = shape.transform.localScale;
     }
 
+    //Returns the shape selected by the user in the selected state, used to make a copy of the shape to be placed into the scene
     public GameObject GetSelectedShape() {
         if(currentShapeIndex == 1) currentShape.transform.localScale = Vector3.Scale(currentShape.transform.localScale, currentShapeScale);
         return currentShape;
     }
 
+    //Ensures only one shape can be moved at a time
     public void SetMoveableShape(GameObject shape) {
         movableShape = shape;
     }
@@ -232,6 +257,12 @@ public class ShapesManager : MonoBehaviour {
             shapeScript.SetAdditive(true);
         }
     }
+
+    /*
+     *Applies the selection and generates the mask from the shapes
+     *The additive param decides whether the function will be used on additive or subtractive shapes
+     *The undo param is used if the user is undoing a selection
+    */
     public void applyMask(VolumeDataSetRenderer _activeDataSet, VolumeInputController  _volumeInputController, bool additive, bool undo)
     {
         List<GameObject> undoShapes = new List<GameObject>();
@@ -252,22 +283,28 @@ public class ShapesManager : MonoBehaviour {
             }
 
             Vector3 centre = findCentre(shape);
+
+            //The following block of code does a transformation to get the correct bounding corners of the bounding box
             GameObject boundingBox = shape.transform.GetChild(0).gameObject;
-            boundingBox.transform.rotation = Quaternion.identity;
+            boundingBox.transform.rotation = Quaternion.identity; 
             BoxCollider boxCollider = boundingBox.GetComponent<BoxCollider>();
             Vector3 min = boxCollider.center - boxCollider.size * 0.5f; 
             Vector3 max = boxCollider.center + boxCollider.size * 0.5f;
             min = boxCollider.transform.TransformPoint(min);
             max = boxCollider.transform.TransformPoint(max);
             boundingBox.transform.rotation = shape.transform.rotation;
+
             float xStep = _activeDataSet.transform.localScale.x/_activeDataSet.GetCubeDimensions().x;
             float yStep = _activeDataSet.transform.localScale.y/_activeDataSet.GetCubeDimensions().y;
             float zStep = _activeDataSet.transform.localScale.z/_activeDataSet.GetCubeDimensions().z;
+
+            //These loops loop through the dimensions of the bounding box of the shape aligned with the data cubes axes
             for(float i = min.x; i < max.x; i+=xStep/4) {
                 for(float j = min.y; j < max.y; j+=yStep/4) {
                     for(float k = min.z; k < max.z; k+=zStep/4)
                      {
                         Vector3 pos = new Vector3(i,j,k);
+                        //each position needs to be transformed to match the correct orientation of the shape's bounding box
                         pos = pos - boundingBox.transform.position;
                         pos = boundingBox.transform.rotation * pos;
                         pos = pos + boundingBox.transform.position;
@@ -291,6 +328,7 @@ public class ShapesManager : MonoBehaviour {
             }
             //note: I changed the method called here (UpdateStats) to public in order for the source list to be updated  
             _activeDataSet.Mask.UpdateStats(_volumeInputController.SourceId);
+            
             if(!undo) paintedShapes.Add(shape);
             if(additive) {
                 GameObject copiedShape = Instantiate(shape, shape.transform.position, shape.transform.rotation);
@@ -310,6 +348,7 @@ public class ShapesManager : MonoBehaviour {
         _activeDataSet.Mask.ConsolidateMaskEntries();
     }
 
+    //Inside outside test for shapes
     public bool insideShape(GameObject shape, Vector3 point, Vector3 centre)
     {
         RaycastHit hit;
@@ -325,6 +364,7 @@ public class ShapesManager : MonoBehaviour {
         return true;
     }
 
+    //Find the centre of a shape's mesh of vertices
     public Vector3 findCentre(GameObject shape) {
         Vector3 centre = new Vector3(0,0,0);
         Vector3[] vertices = shape.GetComponent<MeshFilter>().mesh.vertices;
@@ -334,6 +374,7 @@ public class ShapesManager : MonoBehaviour {
         return centre/vertices.Length;
     }
 
+    //Undo the last action performed by the user
     public void Undo() {
         if(actions.Count == 0) return;
         ShapeAction lastAction = actions.Pop();

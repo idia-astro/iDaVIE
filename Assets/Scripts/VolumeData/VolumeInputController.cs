@@ -1429,6 +1429,7 @@ public class VolumeInputController : MonoBehaviour
         _shapeSelection = !_shapeSelection;
     }
 
+    //Used to display the selectable shapes for the user to scroll through in the scene
     public void ShowSelectableShape(GameObject currentShape) {
         if(currentShape == null) return;
         Vector3 position = _handTransforms[PrimaryHandIndex].position;
@@ -1442,11 +1443,11 @@ public class VolumeInputController : MonoBehaviour
         shapesManager.SetSelectableShape(shape);
     }
 
+    //Places the selected shape into the scene
     public void PlaceShape() {
         GameObject shape = shapesManager.GetCurrentShape();
         GameObject selectedShape = shapesManager.GetSelectedShape();
         if(selectedShape == null) return;
-        //selectedShape.transform.localScale = Vector3.Scale((ActiveDataSet.transform.localScale/20.0f), shape.transform.localScale);
         GameObject shapeCopy = Instantiate(shape,selectedShape.transform.position,selectedShape.transform.rotation);
         shapeCopy.name = shapesManager.GetShapeName(shapeCopy);
         if(shapeCopy.name.Contains("Cylinder")) {

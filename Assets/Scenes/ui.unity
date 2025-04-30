@@ -105825,7 +105825,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1920295488}
         m_TargetAssemblyTypeName: DesktopPaintController, Assembly-CSharp
-        m_MethodName: ClearMaskButton
+        m_MethodName: UndoButton
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

@@ -1,3 +1,7 @@
+/*
+ * Shape class, used to manage the state of individual shapes used in shape selection
+*/
+
 using UnityEngine;
 
 public class Shape : MonoBehaviour {
@@ -25,6 +29,7 @@ public class Shape : MonoBehaviour {
             _shapeManager = FindObjectOfType<ShapesManager>(); 
     }
 
+    //The following two functions check for collisions of the users hand entering the shape to allow the user to move the shape when inside
     void OnTriggerEnter(Collider other)
     {
         if(_shapeManager.GetMoveableShape() != null) return;
@@ -60,6 +65,7 @@ public class Shape : MonoBehaviour {
         _shapeManager.SetMoveableShape(null); 
     }
     
+    //Change the state of a shape and the relevant colour of the shape
     public void SetAdditive(bool isAdditive) {
         rend = GetComponent<Renderer>();
         if(selected){
@@ -83,6 +89,7 @@ public class Shape : MonoBehaviour {
         additive = isAdditive;
     }
 
+    //This function is called when a shape is selected with the ray from a controller
     public void ShapeClicked() {
         if(!selected){
             if(additive)

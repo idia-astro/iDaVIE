@@ -1,3 +1,4 @@
+//This class is just used to resize the mesh of the cuboid shape to be correct
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
