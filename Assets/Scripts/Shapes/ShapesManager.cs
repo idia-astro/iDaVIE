@@ -13,6 +13,7 @@ public class ShapesManager : MonoBehaviour {
     public GameObject sphere;
     public GameObject cylinder;
     private GameObject currentShape; 
+    private Vector3 currentShapeScale;
     private GameObject movableShape;
     private int currentShapeIndex;
     private List<GameObject> activeShapes = new List<GameObject>();
@@ -105,7 +106,16 @@ public class ShapesManager : MonoBehaviour {
     }
 
     public void IncreaseScale() {
-        if(state == ShapeState.selecting || state == ShapeState.selected) return;
+        if(state == ShapeState.selecting) return;
+        if(state == ShapeState.selected) {
+           Vector3 scale = currentShape.transform.localScale;
+           Vector3 scaleVector = new Vector3(0,0,0);
+           if(currentShape.name.Contains("Cuboid")) scaleVector = new Vector3(0.01f,0.01f,0.01f);
+           else scaleVector = new Vector3(0.001f,0.001f,0.001f);
+           scale = scale + scaleVector;
+           currentShape.transform.localScale = scale;
+           return;
+        }
         foreach(GameObject shape in selectedShapes) {
            Vector3 scale = shape.transform.localScale;
            Vector3 scaleVector = new Vector3(0,0,0);
@@ -117,7 +127,17 @@ public class ShapesManager : MonoBehaviour {
     }
 
     public void DecreaseScale() {
-        if(state == ShapeState.selecting || state == ShapeState.selected) return;
+        if(state == ShapeState.selecting) return;
+        if(state == ShapeState.selected) {
+           Vector3 scale = currentShape.transform.localScale;
+           Vector3 scaleVector = new Vector3(0,0,0);
+           if(currentShape.name.Contains("Cuboid")) scaleVector = new Vector3(0.01f,0.01f,0.01f);
+           else scaleVector = new Vector3(0.001f,0.001f,0.001f);
+           scale = scale - scaleVector;
+           if(scale.x < 0.002f | scale.y < 0.002f | scale.z < 0.002f) scale = new Vector3(0.001f,0.001f,0.001f);
+           currentShape.transform.localScale = scale;
+           return;
+        }
         foreach(GameObject shape in selectedShapes) {
            Vector3 scale = shape.transform.localScale;
            Vector3 scaleVector = new Vector3(0,0,0);
@@ -185,11 +205,11 @@ public class ShapesManager : MonoBehaviour {
 
     public void SetSelectableShape(GameObject shape) {
         currentShape = shape;
-        //print(currentShape.transform.localScale);
+        currentShapeScale = shape.transform.localScale;
     }
 
     public GameObject GetSelectedShape() {
-        //print(currentShape.transform.localScale);
+        if(currentShapeIndex == 1) currentShape.transform.localScale = Vector3.Scale(currentShape.transform.localScale, currentShapeScale);
         return currentShape;
     }
 
@@ -258,7 +278,7 @@ public class ShapesManager : MonoBehaviour {
                                 _activeDataSet.SetCursorPosition(pos,1);
                                 _activeDataSet.PaintCursor((short) _volumeInputController.SourceId);
                                 
-                                //note: I changed the method called used here (UpdateStats) to public in order for the source list to be updated 
+                                //note: I changed the method called here (UpdateStats) to public in order for the source list to be updated 
                                 _activeDataSet.Mask.UpdateStats(_volumeInputController.SourceId);  
                             }
                             else{

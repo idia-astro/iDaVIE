@@ -1446,7 +1446,7 @@ public class VolumeInputController : MonoBehaviour
         GameObject shape = shapesManager.GetCurrentShape();
         GameObject selectedShape = shapesManager.GetSelectedShape();
         if(selectedShape == null) return;
-        selectedShape.transform.localScale = Vector3.Scale((ActiveDataSet.transform.localScale/20.0f), shape.transform.localScale);
+        //selectedShape.transform.localScale = Vector3.Scale((ActiveDataSet.transform.localScale/20.0f), shape.transform.localScale);
         GameObject shapeCopy = Instantiate(shape,selectedShape.transform.position,selectedShape.transform.rotation);
         shapeCopy.name = shapesManager.GetShapeName(shapeCopy);
         if(shapeCopy.name.Contains("Cylinder")) {

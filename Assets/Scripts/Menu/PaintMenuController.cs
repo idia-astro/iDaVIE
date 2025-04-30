@@ -63,7 +63,7 @@ public class PaintMenuController : MonoBehaviour
 
         _topPanelText = gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>();
         _exitButton = gameObject.transform.Find("Content/SecondRow/ExitButton")?.GetComponent<Button>();
-        _shapeSelectionButton = gameObject.transform.Find("Content/ThirdRow/ShapeMenu").gameObject;
+        _shapeSelectionButton = gameObject.transform.Find("Content/SecondRow/ShapeMenu").gameObject;
     }
 
     // Update is called once per frame
