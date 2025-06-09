@@ -24,7 +24,7 @@ Unfortunately, due to the limitations of VR headset drivers on Unix operating sy
 
 4. Install vcpkg
     * Download [vcpkg](https://github.com/microsoft/vcpkg) and install it, following the instructions provided on the repository.
-    * Make sure to run the `vcpkg integrate install` command from the PowerShell teerminal once the install has completed.
+    * Make sure to run the `vcpkg integrate install` command from the PowerShell terminal once the install has completed.
     * Make sure to note the path to the vcpkg root folder, i.e., the vcpkg directory. If you changed nothing from the default install settings, this is found at `C:\vcpkg`.
   
 5. Install Steam and SteamVR
