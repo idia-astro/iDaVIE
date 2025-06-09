@@ -38,7 +38,7 @@ public class DebugLogging : MonoBehaviour
     public TMP_InputField logOutput;
     public Button saveButton;
 
-    public const string defaultFile = "i-DaVIE-v_Log.log";
+    public const string defaultFile = "iDaVIE_Log.log";
 
     private string autosavePath;
     Queue debugLogQueue = new Queue();
