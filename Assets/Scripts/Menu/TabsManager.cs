@@ -89,14 +89,14 @@ public class TabsManager : MonoBehaviour
             }
         }
 
-        if(old_activeTabIndex == 4) _canvasDesktop.paintTabLeft();
+        if(old_activeTabIndex == PAINT_TAB_INDEX) _canvasDesktop.paintTabLeft();
 
 
     }
 
     public void paintModeEntered()
     {
-        if(activeTabIndex == 4)
+        if(activeTabIndex == PAINT_TAB_INDEX)
         {
             _canvasDesktop.paintTabSelected();
         }
