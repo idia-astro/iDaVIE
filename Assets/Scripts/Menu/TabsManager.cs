@@ -26,6 +26,8 @@ using UnityEngine.UI;
 
 public class TabsManager : MonoBehaviour
 {
+    const int PAINT_TAB_INDEX = 4;
+
     public GameObject[] tabs;
     public GameObject[] panels;
     public GameObject vrMapDisplay;
@@ -75,7 +77,7 @@ public class TabsManager : MonoBehaviour
             panels[activeTabIndex].SetActive(true);
         }
 
-        if(newActiveTab == 4)
+        if(newActiveTab == PAINT_TAB_INDEX)
         {
             _canvasDesktop.paintTabSelected();  //lets the canvas desktop know the paint tab is active
         }

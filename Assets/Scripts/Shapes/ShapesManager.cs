@@ -348,7 +348,19 @@ public class ShapesManager : MonoBehaviour {
         _activeDataSet.Mask.ConsolidateMaskEntries();
     }
 
-    //Inside outside test for shapes
+    /// <summary>
+    /// Determines whether a given point is inside a specified shape using a raycast test.
+    /// 
+    /// The function casts a ray from the point towards the centre of the shape. If the ray hits the shape,
+    /// it checks the direction of the surface normal at the hit point to determine if the point is inside.
+    /// Returns true if the point is considered inside the shape, otherwise false.
+    /// 
+    /// Note: This method relies on Unity's Physics.Raycast and assumes the shape has appropriate colliders.
+    /// </summary>
+    /// <param name="shape">The GameObject representing the shape to test against.</param>
+    /// <param name="point">The world-space position to test for inclusion within the shape.</param>
+    /// <param name="centre">The world-space centre of the shape (typically the centroid of its mesh).</param>
+    /// <returns>True if the point is inside the shape, otherwise false.</returns>
     public bool insideShape(GameObject shape, Vector3 point, Vector3 centre)
     {
         RaycastHit hit;

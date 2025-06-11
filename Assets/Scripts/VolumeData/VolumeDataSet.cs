@@ -1669,7 +1669,6 @@ namespace VolumeData
             Object.DestroyImmediate(RegionCube);
         }
 
-        //The other GetMaskValue method was not returning the correct values for the desktop method so I added this one
         public Int16 GetMaskValue2(int x, int y, int z)
         {
             if (x < 1 || x > XDim || y < 1 || y > YDim || z < 1 || z > ZDim)

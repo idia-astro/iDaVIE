@@ -1442,11 +1442,6 @@ public class CanvassDesktop : MonoBehaviour
         return GetFirstActiveRenderer().Mask;  //returns the mask
     }
 
-    public VolumeDataSetRenderer activeDataSet()
-    {
-        return GetFirstActiveRenderer();
-    }
-
     public void paintTabSelected()
     {
         quickMenuController.OpenPaintMenu();

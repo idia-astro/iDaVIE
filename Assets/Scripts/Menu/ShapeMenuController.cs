@@ -102,19 +102,27 @@ public class ShapeMenuController : MonoBehaviour
         paintMenu.transform.localRotation = this.transform.localRotation;
         paintMenu.transform.localScale = this.transform.localScale;
 
-        if(_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.EditingSourceId)
+        if (_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.EditingSourceId)
+        {
             _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.CancelEditSource);
+        }
         
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeEnabled);
         _volumeInputController.ChangeShapeSelection();
         shapesManager.DestroyShapes();
-        if(!shapesManager.isIdle()) shapesManager.DestroyCurrentShape();
+        if (!shapesManager.isIdle())
+        {
+            shapesManager.DestroyCurrentShape();
+        }
         gameObject.SetActive(false);
         paintMenu.SetActive(true);
     }
 
     public void StartShapeSelection() {
-        if(!shapesManager.isIdle()) return; 
+        if (!shapesManager.isIdle())
+        {
+            return;
+        }
         shapesManager.StartShapes();
         _volumeInputController.ShowSelectableShape(shapesManager.GetCurrentShape());
     }

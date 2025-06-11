@@ -21,17 +21,6 @@ using UnityEngine.EventSystems;
 using Unity.Collections;
 using Unity.Mathematics;
 
-/*TODO
-
-Button to enter paint mode
-Brush for adding and removing
-
-fix the deleting mask
-Add threshholds (as found in render panel)
-
-I need to get the _maskDataSet from the volumedatarenderer. i must be in paint mode first though.
-*/
-
 public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
 {
 
@@ -137,7 +126,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
 
          originalUVRect = rawImage.uvRect;
 
-        dataRenderer = canvassDesktop.activeDataSet();
+        dataRenderer = canvassDesktop.GetFirstActiveRenderer();
 
         dataSet = dataRenderer.Data;
         regionCube = dataSet.RegionCube;
@@ -1205,75 +1194,98 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         return distance < 1f; // if points are the same
     }
 
-    public void UpdateMaskVoxels(bool matchID) {
+    /// <summary>
+    /// Updates the <c>maskVoxels</c> list with the coordinates of all voxels in the current mask slice
+    /// that are nonzero (i.e., have a mask applied). 
+    /// If <paramref name="matchID"/> is true, only voxels whose mask value matches the current <c>sourceID</c> are included.
+    /// The voxel coordinates are calculated based on the current axis and slice index.
+    /// </summary>
+    /// <param name="matchID">
+    /// If true, only voxels with a mask value equal to <c>sourceID</c> are added to <c>maskVoxels</c>.
+    /// If false, all nonzero voxels are added.
+    /// </param>
+    /// 
+    public void UpdateMaskVoxels(bool matchID)
+    {
         maskVoxels.Clear();
         float[,] slice = GetFloatSlice(maskCube, axis, sliceIndex);
-        for(int x = 0; x < currentRegionSlice.width; x++)
+        for (int x = 0; x < currentRegionSlice.width; x++)
         {
-            for(int y = 0; y < currentRegionSlice.height; y++)
+            for (int y = 0; y < currentRegionSlice.height; y++)
             {
-                if(slice[x,y] > 0)
+                if (slice[x, y] > 0)
                 {
-                    if(axis == 0) //x axis
+                    if (axis == 0) //x axis
                     {
-                        Vector3Int pixel = new Vector3Int(sliceIndex,x,y);
-                        if(matchID) {
-                            if(maskSet.GetMaskValue2(pixel.x,pixel.y,pixel.z) == sourceID) maskVoxels.Add(pixel);
+                        Vector3Int pixel = new Vector3Int(sliceIndex, x, y);
+                        if (matchID)
+                        {
+                            if (maskSet.GetMaskValue2(pixel.x, pixel.y, pixel.z) == sourceID) maskVoxels.Add(pixel);
                         }
                         else maskVoxels.Add(pixel);
                     }
 
-                    if(axis == 1)
+                    if (axis == 1)
                     {
-                        Vector3Int pixel = new Vector3Int(x,sliceIndex,y);
-                       if(matchID) {
-                            if(maskSet.GetMaskValue2(pixel.x,pixel.y,pixel.z) == sourceID) maskVoxels.Add(pixel);
+                        Vector3Int pixel = new Vector3Int(x, sliceIndex, y);
+                        if (matchID)
+                        {
+                            if (maskSet.GetMaskValue2(pixel.x, pixel.y, pixel.z) == sourceID) maskVoxels.Add(pixel);
                         }
                         else maskVoxels.Add(pixel);
                     }
 
-                    if(axis == 2)
+                    if (axis == 2)
                     {
-                        Vector3Int pixel = new Vector3Int(x,y,sliceIndex);
-                        if(matchID) {
-                            if(maskSet.GetMaskValue2(pixel.x,pixel.y,pixel.z) == sourceID) maskVoxels.Add(pixel);
+                        Vector3Int pixel = new Vector3Int(x, y, sliceIndex);
+                        if (matchID)
+                        {
+                            if (maskSet.GetMaskValue2(pixel.x, pixel.y, pixel.z) == sourceID) maskVoxels.Add(pixel);
                         }
                         else maskVoxels.Add(pixel);
                     }
                 }
-                
+
             }
         }
     }
 
-     public void UpdateLastMaskVoxels() {
+    /// <summary>
+    /// Updates the <c>lastMaskVoxels</c> list with the coordinates of all voxels in the current mask slice
+    /// that are nonzero (i.e., have a mask applied), regardless of their mask value.
+    /// The voxel coordinates are calculated based on the current axis and slice index.
+    /// This function is typically used to store the state of the mask before a new operation,
+    /// allowing for undo functionality or restoration of the previous mask state.
+    /// </summary>
+    public void UpdateLastMaskVoxels()
+    {
         lastMaskVoxels.Clear();
         float[,] slice = GetFloatSlice(maskCube, axis, sliceIndex);
-        for(int x = 0; x < currentRegionSlice.width; x++)
+        for (int x = 0; x < currentRegionSlice.width; x++)
         {
-            for(int y = 0; y < currentRegionSlice.height; y++)
+            for (int y = 0; y < currentRegionSlice.height; y++)
             {
-                if(slice[x,y] > 0)
+                if (slice[x, y] > 0)
                 {
-                    if(axis == 0) //x axis
+                    if (axis == 0) //x axis
                     {
-                        Vector3Int pixel = new Vector3Int(sliceIndex,x,y);
+                        Vector3Int pixel = new Vector3Int(sliceIndex, x, y);
                         lastMaskVoxels.Add(pixel);
                     }
 
-                    if(axis == 1)
+                    if (axis == 1)
                     {
-                        Vector3Int pixel = new Vector3Int(x,sliceIndex,y);
+                        Vector3Int pixel = new Vector3Int(x, sliceIndex, y);
                         lastMaskVoxels.Add(pixel);
                     }
 
-                    if(axis == 2)
+                    if (axis == 2)
                     {
-                        Vector3Int pixel = new Vector3Int(x,y,sliceIndex);
+                        Vector3Int pixel = new Vector3Int(x, y, sliceIndex);
                         lastMaskVoxels.Add(pixel);
                     }
                 }
-                
+
             }
         }
     }
