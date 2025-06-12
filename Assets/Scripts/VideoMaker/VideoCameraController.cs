@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 public abstract class VideoCameraPath
 {
@@ -62,7 +64,33 @@ public class VideoAction
 
 public class VideoCameraController : MonoBehaviour
 {
-    
+
+    private enum Status
+    {
+        Idle,
+        Load,
+        Export,
+        ExportPlayback,
+        PreviewPlayback,
+    }
+
+    //TODO What's the best way to assign a label to the enum? Description attribute seems like overkill...
+    private Dictionary<Status, string> _statusLabels = new Dictionary<Status, string>
+    {
+        {Status.Idle, ""},
+        {Status.Load, "Loading"},
+        {Status.Export, "Exporting Video"},
+        {Status.ExportPlayback, "Recording Video"},
+        {Status.PreviewPlayback, "Preview Video"}
+    };
+
+    private Status _status = Status.Idle;
+
+    // TODO use a different MonoBehaviour to manage the playback and status bar?
+    public  GameObject ProgressBar;
+ 
+    public TMP_Text StatusText;
+
     // private Array<VideoAction> _actionQueue = new Array<VideoAction>();
     private VideoAction _action = new VideoAction(
         0.0f,
@@ -74,6 +102,7 @@ public class VideoCameraController : MonoBehaviour
 
     void Awake()
     {
+        ProgressBar.SetActive(false);
         enabled = false;
     }
 
@@ -83,10 +112,12 @@ public class VideoCameraController : MonoBehaviour
         _actionTime += Time.deltaTime;
 
         UpdateTransform(_action.GetPosition(_actionTime), _action.GetLookDirection(_actionTime));
+        ProgressBar.GetComponent<Slider>().value = _actionTime / _action.duration;
 
         if (_actionTime > _action.duration)
         {
             enabled = false;
+            ProgressBar.SetActive(false);
         }
     }
 
@@ -101,6 +132,9 @@ public class VideoCameraController : MonoBehaviour
         UpdateTransform(_action.GetPosition(0f), _action.GetLookDirection(0f));
 
         enabled = true;
+        StatusText.text = _statusLabels[Status.PreviewPlayback];
+        ProgressBar.GetComponent<Slider>().value = 0;
+        ProgressBar.SetActive(true);
         _actionTime = 0f;
     }
 }
