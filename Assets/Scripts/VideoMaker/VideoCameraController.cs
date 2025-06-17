@@ -5,77 +5,22 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public abstract class VideoCameraPath
+namespace VideoMaker
 {
-    public abstract Vector3 GetPosition(float pathParam);
-    public abstract Vector3 GetTangent(float pathParam);
-}
-
-public class LinePath : VideoCameraPath
-{
-    public Vector3 startPosition;
-
-    public Vector3 endPosition;
-
-    public LinePath(Vector3 startPosition, Vector3 endPosition) {
-        this.startPosition = startPosition;
-        this.endPosition = endPosition;
-    }
-
-    public override Vector3 GetPosition(float pathParam)
+    public class VideoCameraController : MonoBehaviour
     {
-        return startPosition * (1 - pathParam) + endPosition * pathParam;
-    }
 
-    public override Vector3 GetTangent(float pathParam)
-    {
-        return (endPosition - startPosition).normalized;
-    }
-}
+        private enum Status
+        {
+            Idle,
+            Load,
+            Export,
+            ExportPlayback,
+            PreviewPlayback,
+        }
 
-public class VideoAction
-{
-    public float startTime;
-    public float duration;
-
-    public VideoCameraPath path;
-
-    public VideoAction(float startTime, float duration, VideoCameraPath path)
-    {
-        this.startTime = startTime;
-        this.duration = duration;
-        this.path = path;
-    }
-
-    public Vector3 GetPosition(float time)
-    {
-        float pathParam = Math.Clamp((time - startTime) / duration, 0f, 1f);
-
-        return path.GetPosition(pathParam);
-    }
-
-    public Vector3 GetLookDirection(float time)
-    { 
-        float pathParam = Math.Clamp((time - startTime) / duration, 0f, 0f);
-        return path.GetTangent(pathParam);
-    }
-}
-
-
-public class VideoCameraController : MonoBehaviour
-{
-
-    private enum Status
-    {
-        Idle,
-        Load,
-        Export,
-        ExportPlayback,
-        PreviewPlayback,
-    }
-
-    //TODO What's the best way to assign a label to the enum? Description attribute seems like overkill...
-    private Dictionary<Status, string> _statusLabels = new Dictionary<Status, string>
+        //TODO What's the best way to assign a label to the enum? Description attribute seems like overkill...
+        private Dictionary<Status, string> _statusLabels = new Dictionary<Status, string>
     {
         {Status.Idle, ""},
         {Status.Load, "Loading"},
@@ -84,57 +29,145 @@ public class VideoCameraController : MonoBehaviour
         {Status.PreviewPlayback, "Preview Video"}
     };
 
-    private Status _status = Status.Idle;
+        private Status _status = Status.Idle;
 
-    // TODO use a different MonoBehaviour to manage the playback and status bar?
-    public  GameObject ProgressBar;
- 
-    public TMP_Text StatusText;
+        // TODO use a different MonoBehaviour to manage the playback and status bar?
+        public GameObject ProgressBar;
 
-    // private Array<VideoAction> _actionQueue = new Array<VideoAction>();
-    private VideoAction _action = new VideoAction(
-        0.0f,
-        3.0f,
-        new LinePath(new Vector3(0f, 0f, -1f), new Vector3(0f, 0f, -0.5f))
-    );
+        public TMP_Text StatusText;
 
-    private float _actionTime = 0f;
+        private VideoPositionAction[] _positionActionArray = {
+            new VideoPositionActionHold(0.5f, new Vector3(0f, 0f, -1f)),
+            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(0f, 0f, -1f), new Vector3(0f, 0f, -0.5f))),
+            new VideoPositionActionHold(0.5f, new Vector3(0f, 0f, -0.5f)),
+            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(0f, 0f, -0.5f), new Vector3(-0.5f, 0f, -0.5f))),
+            new VideoPositionActionHold(0.5f, new Vector3(-0.5f, 0f, -0.5f)),
+            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(-0.5f, 0f, -0.5f), new Vector3(-0.5f, 0f, 0f)))
+        };
+        private VideoDirectionAction[] _directionActionArray = {
+            new VideoDirectionActionLookAt(3f, new Vector3(0f, 0f, 0f))
+        };
+        private VideoDirectionAction[] _upDirectionActionArray= { 
+            new VideoDirectionActionHold(3f, Vector3.up)
+        };
 
-    void Awake()
-    {
-        ProgressBar.SetActive(false);
-        enabled = false;
-    }
+        private List<VideoPositionAction> _positionActionQueue;
+        private List<VideoDirectionAction> _directionActionQueue;
+        private List<VideoDirectionAction> _upDirectionActionQueue;
 
-    void Update()
-    {
-        //TODO: For preview mode use Time.deltaTime, for recordings use the defined frame time of the VideoScript
-        _actionTime += Time.deltaTime;
+        private float _duration = 0f;
+        private float _time = 0f;
+        private float _timePosition = 0f;
+        private float _timeDirection = 0f;
+        private float _timeUpDirection = 0f;
 
-        UpdateTransform(_action.GetPosition(_actionTime), _action.GetLookDirection(_actionTime));
-        ProgressBar.GetComponent<Slider>().value = _actionTime / _action.duration;
-
-        if (_actionTime > _action.duration)
+        void Awake()
         {
-            enabled = false;
             ProgressBar.SetActive(false);
+            enabled = false;
         }
-    }
 
-    private void UpdateTransform(Vector3 position, Vector3 lookDirection)
-    {
-        gameObject.transform.position = position;
-        gameObject.transform.LookAt(position + lookDirection);
-    }
+        void Update()
+        {
+            ProgressBar.GetComponent<Slider>().value = _time / _duration;
 
-    public void OnPreviewClick()
-    {
-        UpdateTransform(_action.GetPosition(0f), _action.GetLookDirection(0f));
+            Vector3 position = _positionActionQueue[0].GetPosition(_timePosition);
 
-        enabled = true;
-        StatusText.text = _statusLabels[Status.PreviewPlayback];
-        ProgressBar.GetComponent<Slider>().value = 0;
-        ProgressBar.SetActive(true);
-        _actionTime = 0f;
+            UpdateTransform(
+                position,
+                _directionActionQueue[0].GetDirection(_timeDirection, position),
+                _upDirectionActionQueue[0].GetDirection(_timeUpDirection, position)
+            );
+
+            //TODO: For preview mode use Time.deltaTime, for recordings use the defined frame time of the VideoScript
+            _time += Time.deltaTime;
+            _timePosition += Time.deltaTime;
+            _timeDirection += Time.deltaTime;
+            _timeUpDirection += Time.deltaTime;
+
+            //TODO Reduce copy-and-paste (use Zip and refs)
+            if (_timePosition > _positionActionQueue[0].Duration)
+            {
+                if (_positionActionQueue.Count <= 1)
+                {
+                    //TODO break here when looping through queues
+                    enabled = false;
+                }
+                else
+                {
+                    _positionActionQueue.RemoveAt(0);
+                    _timePosition = 0f;
+                }
+            }
+
+            if (_timeDirection > _directionActionQueue[0].Duration)
+            {
+                if (_directionActionQueue.Count <= 1)
+                {
+                    enabled = false;
+                }
+                else
+                {
+                    _directionActionQueue.RemoveAt(0);
+                    _timeDirection = 0f;
+                }
+            }
+            
+            if (_timeUpDirection > _upDirectionActionQueue[0].Duration)
+            {
+                if (_upDirectionActionQueue.Count <= 1)
+                {
+                    enabled = false;
+                }
+                else
+                {
+                    _upDirectionActionQueue.RemoveAt(0);
+                    _timeUpDirection = 0f;
+                }
+            }
+        }
+
+        private void UpdateTransform(Vector3 position, Vector3 direction, Vector3 upDirection)
+        {
+            gameObject.transform.position = position;
+            gameObject.transform.LookAt(position + direction, upDirection);
+        }
+
+        public void OnPreviewClick()
+        {
+            _positionActionQueue = new(_positionActionArray);
+            _directionActionQueue = new(_directionActionArray);
+            _upDirectionActionQueue = new(_upDirectionActionArray);
+
+
+            //Calculating the overall duration - this should be done somewhere else. Also use less copy-and-paste
+            float duration = 0f;
+            foreach (VideoCameraAction action in _positionActionQueue)
+            {
+                duration += action.Duration;
+            }
+            _duration = duration;
+
+            foreach (VideoCameraAction action in _directionActionQueue)
+            {
+                duration += action.Duration;
+            }
+            _duration = Math.Min(_duration, duration);
+
+            foreach (VideoCameraAction action in _upDirectionActionQueue)
+            {
+                duration += action.Duration;
+            }
+            _duration = Math.Min(_duration, duration);
+
+            enabled = true;
+            StatusText.text = _statusLabels[Status.PreviewPlayback];
+            ProgressBar.SetActive(true);
+
+            _time = 0f;
+            _timePosition = 0f;
+            _timeDirection = 0f;
+            _timeUpDirection = 0f;
+        }
     }
 }
