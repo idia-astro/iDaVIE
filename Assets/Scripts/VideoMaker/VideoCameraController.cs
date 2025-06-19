@@ -36,24 +36,29 @@ namespace VideoMaker
 
         public TMP_Text StatusText;
 
+        private const float Dist = 1.5f;
+
         private VideoPositionAction[] _positionActionArray = {
-            new VideoPositionActionHold(0.5f, new Vector3(0f, 0f, -1f)),
-            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(0f, 0f, -1f), new Vector3(0f, 0f, -0.5f))),
-            new VideoPositionActionHold(0.5f, new Vector3(0f, 0f, -0.5f)),
-            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(0f, 0f, -0.5f), new Vector3(-0.5f, 0f, -0.5f))),
-            new VideoPositionActionHold(0.5f, new Vector3(-0.5f, 0f, -0.5f)),
-            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(-0.5f, 0f, -0.5f), new Vector3(-0.5f, 0f, 0f)))
+            new VideoPositionActionHold(0.5f, new Vector3(0f, 0f, -2 * Dist)),
+            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(0f, 0f, -2 * Dist), new Vector3(0f, 0f, -Dist))),
+            new VideoPositionActionHold(0.5f, new Vector3(0f, 0f, -Dist)),
+            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(0f, 0f, -Dist), new Vector3(-Dist, 0f, -Dist))),
+            new VideoPositionActionHold(0.5f, new Vector3(-Dist, 0f, -Dist)),
+            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(-Dist, 0f, -Dist), new Vector3(-Dist, 0f, 0f)))
         };
         private VideoDirectionAction[] _directionActionArray = {
-            new VideoDirectionActionLookAt(3f, new Vector3(0f, 0f, 0f))
+            new VideoDirectionActionLookAt(4f, new Vector3(0f, 0f, 0f))
         };
         private VideoDirectionAction[] _upDirectionActionArray= { 
-            new VideoDirectionActionHold(3f, Vector3.up)
+            new VideoDirectionActionHold(4f, Vector3.up)
         };
 
         private List<VideoPositionAction> _positionActionQueue;
         private List<VideoDirectionAction> _directionActionQueue;
         private List<VideoDirectionAction> _upDirectionActionQueue;
+
+        private GameObject _targetCube;
+        private Transform _cubeTransform;
 
         private float _duration = 0f;
         private float _time = 0f;
@@ -65,6 +70,8 @@ namespace VideoMaker
         {
             ProgressBar.SetActive(false);
             enabled = false;
+            _targetCube = GameObject.Find("TestCube");
+            _targetCube.SetActive(false);
         }
 
         void Update()
@@ -90,8 +97,9 @@ namespace VideoMaker
             {
                 if (_positionActionQueue.Count <= 1)
                 {
-                    //TODO break here when looping through queues
                     enabled = false;
+                    ProgressBar.SetActive(false);
+                    return;
                 }
                 else
                 {
@@ -105,6 +113,8 @@ namespace VideoMaker
                 if (_directionActionQueue.Count <= 1)
                 {
                     enabled = false;
+                    ProgressBar.SetActive(false);
+                    return;
                 }
                 else
                 {
@@ -118,6 +128,8 @@ namespace VideoMaker
                 if (_upDirectionActionQueue.Count <= 1)
                 {
                     enabled = false;
+                    ProgressBar.SetActive(false);
+                    return;
                 }
                 else
                 {
@@ -129,12 +141,32 @@ namespace VideoMaker
 
         private void UpdateTransform(Vector3 position, Vector3 direction, Vector3 upDirection)
         {
+            position = _cubeTransform.TransformPoint(position);
+            direction = _cubeTransform.TransformDirection(direction);
+            upDirection = _cubeTransform.TransformDirection(upDirection);
+
             gameObject.transform.position = position;
             gameObject.transform.LookAt(position + direction, upDirection);
         }
 
         public void OnPreviewClick()
         {
+            _cubeTransform = null;
+            _targetCube.SetActive(false);
+
+            GameObject volume = GameObject.Find("VolumeDataSetManager");
+
+            if (volume is not null)
+            {
+                _cubeTransform = volume.transform.Find("CubePrefab(Clone)");
+            }
+
+            if (_cubeTransform is null)
+            {
+                _targetCube.SetActive(true);
+                _cubeTransform = _targetCube.transform;
+            }
+
             _positionActionQueue = new(_positionActionArray);
             _directionActionQueue = new(_directionActionArray);
             _upDirectionActionQueue = new(_upDirectionActionArray);

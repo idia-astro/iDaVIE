@@ -54542,7 +54542,7 @@ GameObject:
   - component: {fileID: 1158583003}
   - component: {fileID: 1158583002}
   m_Layer: 0
-  m_Name: Cube
+  m_Name: TestCube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
