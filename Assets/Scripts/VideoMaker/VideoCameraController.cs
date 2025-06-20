@@ -44,13 +44,18 @@ namespace VideoMaker
             new VideoPositionActionHold(0.5f, new Vector3(0f, 0f, -Dist)),
             new VideoPositionActionPath(0.5f, new LinePath(new Vector3(0f, 0f, -Dist), new Vector3(-Dist, 0f, -Dist))),
             new VideoPositionActionHold(0.5f, new Vector3(-Dist, 0f, -Dist)),
-            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(-Dist, 0f, -Dist), new Vector3(-Dist, 0f, 0f)))
+            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(-Dist, 0f, -Dist), new Vector3(-Dist, 0f, 0f))),
+            new VideoPositionActionHold(0.5f, new Vector3(-Dist, 0f, 0f)),
+            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(-Dist, 0f, 0f), new Vector3(-Dist,  Dist, 0f))),
+            new VideoPositionActionHold(0.5f, new Vector3(-Dist, Dist, 0f)),
+            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(-Dist, Dist, 0f), new Vector3(0f, Dist, 0f)))
         };
         private VideoDirectionAction[] _directionActionArray = {
-            new VideoDirectionActionLookAt(4f, new Vector3(0f, 0f, 0f))
+            new VideoDirectionActionLookAt(5f, new Vector3(0f, 0f, 0f))
         };
-        private VideoDirectionAction[] _upDirectionActionArray= { 
-            new VideoDirectionActionHold(4f, Vector3.up)
+        private VideoDirectionAction[] _upDirectionActionArray= {
+            new VideoDirectionActionHold(4.5f, Vector3.up),
+            new VideoDirectionActionTween(0.5f, Vector3.up, new Vector3(1f, 0f, 0f))
         };
 
         private List<VideoPositionAction> _positionActionQueue;
@@ -87,57 +92,73 @@ namespace VideoMaker
             );
 
             //TODO: For preview mode use Time.deltaTime, for recordings use the defined frame time of the VideoScript
-            _time += Time.deltaTime;
-            _timePosition += Time.deltaTime;
-            _timeDirection += Time.deltaTime;
-            _timeUpDirection += Time.deltaTime;
+            float deltaTime = Time.deltaTime;
 
-            //TODO Reduce copy-and-paste (use Zip and refs)
-            if (_timePosition > _positionActionQueue[0].Duration)
+            _time += deltaTime;
+
+            //TODO is a final frame necessary?
+
+            if (!UpdateActionTime(ref _timePosition, ref _positionActionQueue, deltaTime))
             {
-                if (_positionActionQueue.Count <= 1)
-                {
-                    enabled = false;
-                    ProgressBar.SetActive(false);
-                    return;
-                }
-                else
-                {
-                    _positionActionQueue.RemoveAt(0);
-                    _timePosition = 0f;
-                }
+                enabled = false;
+                ProgressBar.SetActive(false);
+                return;
             }
 
-            if (_timeDirection > _directionActionQueue[0].Duration)
+            if (!UpdateActionTime(ref _timeDirection, ref _directionActionQueue, deltaTime))
             {
-                if (_directionActionQueue.Count <= 1)
-                {
-                    enabled = false;
-                    ProgressBar.SetActive(false);
-                    return;
-                }
-                else
-                {
-                    _directionActionQueue.RemoveAt(0);
-                    _timeDirection = 0f;
-                }
+                enabled = false;
+                ProgressBar.SetActive(false);
+                return;
             }
-            
-            if (_timeUpDirection > _upDirectionActionQueue[0].Duration)
+
+            if (!UpdateActionTime(ref _timeUpDirection, ref _upDirectionActionQueue, deltaTime))
             {
-                if (_upDirectionActionQueue.Count <= 1)
-                {
-                    enabled = false;
-                    ProgressBar.SetActive(false);
-                    return;
-                }
-                else
-                {
-                    _upDirectionActionQueue.RemoveAt(0);
-                    _timeUpDirection = 0f;
-                }
+                enabled = false;
+                ProgressBar.SetActive(false);
+                return;
             }
         }
+
+        //TODO how to deal with type casting so I can just define one method?
+        private bool UpdateActionTime(ref float time, ref List<VideoPositionAction> actionQueue, float deltaTime)
+        {
+            time += deltaTime;
+
+            if (time > actionQueue[0].Duration)
+            {
+                if (actionQueue.Count <= 1)
+                {
+                    return false;
+                }
+                else
+                {
+                    time -= actionQueue[0].Duration;
+                    actionQueue.RemoveAt(0);
+                }
+            }
+            return true;
+        }
+
+        private bool UpdateActionTime(ref float time, ref List<VideoDirectionAction> actionQueue, float deltaTime)
+        {
+            time += deltaTime;
+
+            if (time > actionQueue[0].Duration)
+            {
+                if (actionQueue.Count <= 1)
+                {
+                    return false;
+                }
+                else
+                {
+                    time -= actionQueue[0].Duration;
+                    actionQueue.RemoveAt(0);
+                }
+            }
+            return true;
+        }
+
 
         private void UpdateTransform(Vector3 position, Vector3 direction, Vector3 upDirection)
         {
