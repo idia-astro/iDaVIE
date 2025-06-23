@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Diagnostics;
 
 namespace VideoMaker
 {
@@ -63,6 +64,7 @@ namespace VideoMaker
 
         private int _frameRate = 10;
         private int _frameCounter = 0;
+        private int _frameDigits = 3;
         private bool _captureFrames = false;
         private Queue<byte[]> _frameQueue = new();
 
@@ -134,7 +136,6 @@ namespace VideoMaker
             _camera.enabled = true;
             StartPlayback();
 
-            yield return null;
             while (_time < _duration)
             {
                 UpdatePlayback(Time.deltaTime);
@@ -149,9 +150,16 @@ namespace VideoMaker
         IEnumerator Export()
         {
             // Kill the encoder thread if running from a previous execution
-            if (_exportThread != null && (_threadIsProcessing || _exportThread.IsAlive)) {
+            if (_exportThread != null && (_threadIsProcessing || _exportThread.IsAlive))
+            {
                 _threadIsProcessing = false;
                 _exportThread.Join();
+            }
+
+            //Deleting existing frames and video file
+            foreach (FileInfo file in new DirectoryInfo(_directoryPath).EnumerateFiles())
+            {
+                file.Delete();
             }
 
             _status = Status.ExportPlayback;
@@ -161,7 +169,7 @@ namespace VideoMaker
             _exportThread = new Thread(SaveFrames);
             _exportThread.Start();
             //TODO: Does the Thread terminate when callback is complete?
-            
+
             _camera.enabled = true;
 
             StartPlayback();
@@ -169,6 +177,7 @@ namespace VideoMaker
             _captureFrames = true;
 
             float deltaTime = 1f / (float)_frameRate;
+            // _frameDigits = 
 
             while (_time < _duration)
             {
@@ -180,12 +189,14 @@ namespace VideoMaker
             _captureFrames = false;
             _terminateThreadWhenDone = true;
 
+            //TODO check if status changes to Export and change text on progress bar
             while (_threadIsProcessing)
             {
                 yield return null;
             }
+
             ProgressBar.SetActive(false);
-            _status = Status.Idle; //TODO move to next stage of export
+            _status = Status.Idle;
         }
 
         private void UpdatePlayback(float deltaTime)
@@ -314,9 +325,10 @@ namespace VideoMaker
             {
                 if (_frameQueue.Count > 0)
                 {
+                    //TODO change to bmp for better video
                     string path = Path.Combine(
                         _directoryPath,
-                        "frame" + _frameCounter.ToString() + ".png" //TODO change to bmp for better video
+                        string.Format("frame{0:d"+ _frameDigits.ToString() + "}.png", _frameCounter)
                     );
                     //TODO is a FileStream better here?
                     //TODO does this work with .bmp format?
@@ -331,6 +343,34 @@ namespace VideoMaker
                     }
                     Thread.Sleep(1);
                 }
+            }
+
+            //TODO change ProgressBar text
+            //ffmpeg -framerate 10 -i frame%03d.png -c:v libx264 -pix_fmt yuv420p  video.mp4
+            string command = string.Format("-framerate {0} -i frame%0{1}d.png -c:v libx264 -pix_fmt yuv420p video.mp4", _frameRate, _frameDigits);
+
+            print(command);
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = @"C:\Program Files\WinGet\Links\ffmpeg.exe",
+                Arguments = command,
+                WorkingDirectory = _directoryPath,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+
+            using (var process = new Process { StartInfo = startInfo })
+            {
+                process.EnableRaisingEvents = true;
+                process.Start();
+                process.BeginErrorReadLine();
+                process.BeginOutputReadLine();
+                process.OutputDataReceived += (s, e) => { if (e.Data != null) print(e.Data); };
+                process.ErrorDataReceived += (s, e) => { if (e.Data != null) print(e.Data); };
+                process.WaitForExit();
             }
 
             // _terminateThreadWhenDone = false;
