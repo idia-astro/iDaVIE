@@ -11,7 +11,6 @@ namespace VideoMaker
 {
     public class VideoCameraController : MonoBehaviour
     {
-
         private enum Status
         {
             Idle,
@@ -64,6 +63,7 @@ namespace VideoMaker
 
         private int _frameRate = 10;
         private int _frameCounter = 0;
+        private bool _captureFrames = false;
         private Queue<byte[]> _frameQueue = new();
 
         private Thread _exportThread;
@@ -72,23 +72,27 @@ namespace VideoMaker
 
         private string _directoryPath;
 
-        private List<VideoPositionAction> _positionActionQueue;
-        private List<VideoDirectionAction> _directionActionQueue;
-        private List<VideoDirectionAction> _upDirectionActionQueue;
+        private Queue<VideoPositionAction> _positionQueue = new();
+        private Queue<VideoDirectionAction> _directionQueue = new();
+        private Queue<VideoDirectionAction> _upDirectionQueue = new();
+
+        private VideoPositionAction _positionAction;
+        private VideoDirectionAction _directionAction;
+        private VideoDirectionAction _upDirectionAction;
 
         private GameObject _targetCube;
         private Transform _cubeTransform;
 
         private float _duration = 0f;
         private float _time = 0f;
-        private float _timePosition = 0f;
-        private float _timeDirection = 0f;
-        private float _timeUpDirection = 0f;
+
+        private float _positionTime = 0f;
+        private float _directionTime = 0f;
+        private float _upDirectionTime = 0f;
 
         void Awake()
         {
             ProgressBar.SetActive(false);
-            enabled = false;
             _targetCube = GameObject.Find("TestCube");
             _targetCube.SetActive(false);
 
@@ -102,101 +106,123 @@ namespace VideoMaker
 
             _camera = GetComponent<Camera>();
             _camera.enabled = false;
+
+            //Calculating the overall duration - this should be done somewhere else. Also use Zip?
+            float duration = 0f;
+            foreach (VideoCameraAction action in _positionActionArray)
+            {
+                duration += action.Duration;
+            }
+            _duration = duration;
+
+            foreach (VideoCameraAction action in _directionActionArray)
+            {
+                duration += action.Duration;
+            }
+            _duration = Math.Min(_duration, duration);
+
+            foreach (VideoCameraAction action in _upDirectionActionArray)
+            {
+                duration += action.Duration;
+            }
+            _duration = Math.Min(_duration, duration);
         }
 
-        void Update()
+        IEnumerator Preview()
+        {
+            _status = Status.PreviewPlayback;
+            _camera.enabled = true;
+            StartPlayback();
+
+            yield return null;
+            while (_time < _duration)
+            {
+                UpdatePlayback(Time.deltaTime);
+                yield return null;
+            }
+
+            _camera.enabled = false;
+            ProgressBar.SetActive(false);
+            _status = Status.Idle;
+        }
+
+        IEnumerator Export()
+        {
+            // Kill the encoder thread if running from a previous execution
+            if (_exportThread != null && (_threadIsProcessing || _exportThread.IsAlive)) {
+                _threadIsProcessing = false;
+                _exportThread.Join();
+            }
+
+            _status = Status.ExportPlayback;
+            _frameCounter = 0;
+            _terminateThreadWhenDone = false;
+            _threadIsProcessing = true;
+            _exportThread = new Thread(SaveFrames);
+            _exportThread.Start();
+            //TODO: Does the Thread terminate when callback is complete?
+            
+            _camera.enabled = true;
+
+            StartPlayback();
+
+            _captureFrames = true;
+
+            float deltaTime = 1f / (float)_frameRate;
+
+            while (_time < _duration)
+            {
+                UpdatePlayback(deltaTime);
+                yield return null;
+            }
+
+            _camera.enabled = false;
+            _captureFrames = false;
+            _terminateThreadWhenDone = true;
+
+            while (_threadIsProcessing)
+            {
+                yield return null;
+            }
+            ProgressBar.SetActive(false);
+            _status = Status.Idle; //TODO move to next stage of export
+        }
+
+        private void UpdatePlayback(float deltaTime)
         {
             ProgressBar.GetComponent<Slider>().value = _time / _duration;
 
-            Vector3 position = _positionActionQueue[0].GetPosition(_timePosition);
+            Vector3 position = _positionAction.GetPosition(_positionTime);
 
             UpdateTransform(
                 position,
-                _directionActionQueue[0].GetDirection(_timeDirection, position),
-                _upDirectionActionQueue[0].GetDirection(_timeUpDirection, position)
+                _directionAction.GetDirection(_directionTime, position),
+                _upDirectionAction.GetDirection(_upDirectionTime, position)
             );
 
-            float deltaTime = 0f;
-
-            switch (_status)
-            {
-                case Status.PreviewPlayback:
-                    deltaTime = Time.deltaTime;
-                    break;
-                case Status.ExportPlayback:
-                    deltaTime = 1f / (float)_frameRate;
-                    //Write texture to queue. Should I wait till end of frame?
-                    // _camera.Render();
-                    // // Make a new texture and read the active Render Texture into it.
-                    // Texture2D tex = new Texture2D(_camera.targetTexture.width, _camera.targetTexture.height, TextureFormat.RGB24, false);
-                    // tex.ReadPixels(new Rect(0, 0, _camera.targetTexture.width, _camera.targetTexture.height), 0, 0);
-                    // tex.Apply();
-                    // // Encode texture into PNG
-                    // byte[] bytes = tex.EncodeToPNG();
-                    // Destroy(tex); //Is it better to re-use the texture each frame?
-                    // _frameQueue.Enqueue(bytes);
-                    break;
-            }
-            
             _time += deltaTime;
 
-            //TODO is a final frame necessary?
-            if (!UpdateActionTime(ref _timePosition, ref _positionActionQueue, deltaTime))
-            {
-                TaskComplete();
-                return;
-            }
-
-            if (!UpdateActionTime(ref _timeDirection, ref _directionActionQueue, deltaTime))
-            {
-                TaskComplete();
-                return;
-            }
-
-            if (!UpdateActionTime(ref _timeUpDirection, ref _upDirectionActionQueue, deltaTime))
-            {
-                TaskComplete();
-                return;
-            }
+            UpdateActionTime<VideoPositionAction>(deltaTime, ref _positionTime, ref _positionAction, ref _positionQueue);
+            UpdateActionTime<VideoDirectionAction>(deltaTime, ref _directionTime, ref _directionAction, ref _directionQueue);
+            UpdateActionTime<VideoDirectionAction>(deltaTime, ref _upDirectionTime, ref _upDirectionAction, ref _upDirectionQueue);
         }
 
-        //TODO how to deal with type casting so I can just define one method?
-        private bool UpdateActionTime(ref float time, ref List<VideoPositionAction> actionQueue, float deltaTime)
+        private void UpdateActionTime<T>(float deltaTime, ref float time, ref T action, ref Queue<T> actionQueue) where T : VideoCameraAction
         {
             time += deltaTime;
 
-            if (time > actionQueue[0].Duration)
+            if (time > action.Duration)
             {
-                if (actionQueue.Count <= 1)
+                if (actionQueue.Count == 0)
                 {
-                    return false;
+                    time = action.Duration;
                 }
                 else
                 {
-                    time -= actionQueue[0].Duration;
-                    actionQueue.RemoveAt(0);
+                    time -= action.Duration;
+                    action = actionQueue.Dequeue();
                 }
             }
-            return true;
-        }
-
-        private bool UpdateActionTime(ref float time, ref List<VideoDirectionAction> actionQueue, float deltaTime)
-        {
-            time += deltaTime;
-
-            if (time > actionQueue[0].Duration)
-            {
-                if (actionQueue.Count <= 1)
-                {
-                    return false;
-                }
-                else
-                {
-                    time -= actionQueue[0].Duration;
-                    actionQueue.RemoveAt(0);
-                }
-            }
-            return true;
         }
 
         private void UpdateTransform(Vector3 position, Vector3 direction, Vector3 upDirection)
@@ -229,38 +255,20 @@ namespace VideoMaker
                 _cubeTransform = _targetCube.transform;
             }
 
-            _positionActionQueue = new(_positionActionArray);
-            _directionActionQueue = new(_directionActionArray);
-            _upDirectionActionQueue = new(_upDirectionActionArray);
+            _positionQueue = new(_positionActionArray);
+            _directionQueue = new(_directionActionArray);
+            _upDirectionQueue = new(_upDirectionActionArray);
 
+            _positionAction = _positionQueue.Dequeue();
+            _directionAction = _directionQueue.Dequeue();
+            _upDirectionAction = _upDirectionQueue.Dequeue();
 
-            //Calculating the overall duration - this should be done somewhere else. Also use less copy-and-paste
-            float duration = 0f;
-            foreach (VideoCameraAction action in _positionActionQueue)
-            {
-                duration += action.Duration;
-            }
-            _duration = duration;
-
-            foreach (VideoCameraAction action in _directionActionQueue)
-            {
-                duration += action.Duration;
-            }
-            _duration = Math.Min(_duration, duration);
-
-            foreach (VideoCameraAction action in _upDirectionActionQueue)
-            {
-                duration += action.Duration;
-            }
-            _duration = Math.Min(_duration, duration);
-
-            enabled = true;
             ProgressBar.SetActive(true);
 
             _time = 0f;
-            _timePosition = 0f;
-            _timeDirection = 0f;
-            _timeUpDirection = 0f;
+            _positionTime = 0f;
+            _directionTime = 0f;
+            _upDirectionTime = 0f;
         }
 
         public void OnPreviewClick()
@@ -269,9 +277,7 @@ namespace VideoMaker
             {
                 return;
             }
-            _status = Status.PreviewPlayback;
-            _camera.enabled = true;
-            StartPlayback();
+            StartCoroutine(Preview());
         }
 
         public void OnRecordClick()
@@ -280,55 +286,18 @@ namespace VideoMaker
             {
                 return;
             }
-            // Kill the encoder thread if running from a previous execution
-            if (_exportThread != null && (_threadIsProcessing || _exportThread.IsAlive)) {
-                _threadIsProcessing = false;
-                _exportThread.Join();
-            }
-
-                _status = Status.ExportPlayback;
-            _frameCounter = 0;
-            _terminateThreadWhenDone = false;
-            _threadIsProcessing = true;
-            _exportThread = new Thread(SaveFrames);
-            _exportThread.Start();
-            //TODO: Does the Thread terminate when callback is complete?
-            
-            _camera.enabled = true;
-
-            StartPlayback();
-        }
-
-        private void TaskComplete() {
-            switch (_status)
-            {
-                case Status.PreviewPlayback:
-                    enabled = false;
-                    _camera.enabled = false;
-                    ProgressBar.SetActive(false);
-                    _status = Status.Idle;
-                    break;
-                case Status.ExportPlayback:
-                    enabled = false;
-                    _camera.enabled = false;
-                    _terminateThreadWhenDone = true;
-                    if (!_threadIsProcessing)
-                    {
-                        ProgressBar.SetActive(false);
-                        _status = Status.Idle; //TODO move to next stage of export
-                    }
-                    break;
-            }
+            StartCoroutine(Export());
         }
 
         private void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
             Graphics.Blit(source, destination);
-            if (_status != Status.ExportPlayback)
+            if (!_captureFrames)
             {
                 return;
             }
 
+            //Derived from CameraControllerTool.cs:96+
             // Make a new texture and read the active Render Texture into it.
             Texture2D tex = new Texture2D(destination.width, destination.height, TextureFormat.RGB24, false);
             tex.ReadPixels(new Rect(0, 0, destination.width, destination.height), 0, 0);
@@ -337,8 +306,6 @@ namespace VideoMaker
             byte[] bytes = tex.EncodeToPNG();
             Destroy(tex); //Is it better to re-use the texture each frame?
             _frameQueue.Enqueue(bytes);
-
-            // Graphics.Blit(source, destination);
         }
 
         private void SaveFrames()
@@ -368,7 +335,6 @@ namespace VideoMaker
 
             // _terminateThreadWhenDone = false;
             _threadIsProcessing = false;
-            TaskComplete(); //Can only call this on the  main thread, what to do?
         }
     }
 }
