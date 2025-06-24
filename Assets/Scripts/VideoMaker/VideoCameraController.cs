@@ -38,6 +38,10 @@ namespace VideoMaker
 
         public TMP_Text StatusText;
 
+        public Texture2D Logo;
+        private float _logoScale = 0.1f;
+        private byte[] _logoBytes = new byte[0];
+
         private Camera _camera;
 
         private const float WaitTime = 1.5f;
@@ -64,6 +68,7 @@ namespace VideoMaker
         private Thread _exportThread;
         private bool _threadIsProcessing;
         private bool _terminateThreadWhenDone;
+        private bool _threadFramesProcessing;
 
         private string _directoryPath;
 
@@ -96,7 +101,7 @@ namespace VideoMaker
             );
 
             circleBack = new(
-                Target + Dist * Vector3.left, Target + Dist * Vector3.up, Target
+                Target + Dist * Vector3.up, Target + Dist * Vector3.back, Target
             );
 
             _positionActionArray = new VideoPositionAction[] {
@@ -187,6 +192,32 @@ namespace VideoMaker
                 file.Delete();
             }
 
+            //TODO The result from this looks really strange, I need to troubleshoot it
+            // if (Logo is not null && _logoBytes.Length == 0)
+            // {
+            //     // _logoBytes = Logo.EncodeToPNG();
+
+            //     //See https://stackoverflow.com/questions/44733841/how-to-make-texture2d-readable-via-script
+            //     RenderTexture renderTex = RenderTexture.GetTemporary(
+            //         Logo.width,
+            //         Logo.height,
+            //         0,
+            //         RenderTextureFormat.Default,
+            //         RenderTextureReadWrite.Linear);
+
+            //     Graphics.Blit(Logo, renderTex);
+            //     RenderTexture previous = RenderTexture.active;
+            //     RenderTexture.active = renderTex;
+
+            //     Texture2D tex = new Texture2D(renderTex.width, renderTex.height, TextureFormat.RGB24, false);
+            //     tex.ReadPixels(new Rect(0, 0, renderTex.width, renderTex.height), 0, 0);
+            //     tex.Apply();
+            //     // Encode texture into PNG
+            //     _logoBytes = tex.EncodeToPNG();
+            //     Destroy(tex);
+            //     // Destroy(renderTex);
+            // }
+
             _status = Status.ExportPlayback;
             _frameCounter = 0;
             _terminateThreadWhenDone = false;
@@ -219,6 +250,9 @@ namespace VideoMaker
             {
                 yield return null;
             }
+
+            //I'm not using this right now because I'd rather clear properly than letting garbage pile up
+            // _logoBytes = new(0);
 
             ProgressBar.SetActive(false);
             _status = Status.Idle;
@@ -370,9 +404,22 @@ namespace VideoMaker
                 }
             }
 
+            string overlay = string.Format("-i ..\\logo.png -filter_complex \"[1:v]scale=iw*{0:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ", _logoScale);
+
+            // string overlay = "";
+
+            // Save logo
+            // if (_logoBytes.Length > 0)
+            // {
+            //     string path = Path.Combine(_directoryPath, "logo.png");
+            //     File.WriteAllBytes(path, _logoBytes);
+            //     overlay = string.Format("-i logo.png -filter_complex \"[1:v]scale=iw*{0:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ", _logoScale);
+            // }
+
             //TODO change ProgressBar text
             //ffmpeg -framerate 10 -i frame%03d.png -c:v libx264 -pix_fmt yuv420p  video.mp4
-            string command = string.Format("-framerate {0} -i frame%0{1}d.png -c:v libx264 -pix_fmt yuv420p video.mp4", _frameRate, _frameDigits);
+            //-i idavie_logo_better.png -filter_complex "[1:v]scale=iw*0.1:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10"
+            string command = string.Format("-framerate {0} -i frame%0{1}d.png {2}-c:v libx264 -pix_fmt yuv420p video.mp4", _frameRate, _frameDigits, overlay);
 
             print(command);
 
