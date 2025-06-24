@@ -40,27 +40,20 @@ namespace VideoMaker
 
         private Camera _camera;
 
+        private const float WaitTime = 1.5f;
+        private const float PunchInTime = 1f;
+        private const float CircleTime = 1f;
+        private const float RotateTime = 1f;
         private const float Dist = 1.5f;
+        private Vector3 Target = Vector3.zero;
 
-        private VideoPositionAction[] _positionActionArray = {
-            new VideoPositionActionHold(0.5f, new Vector3(0f, 0f, -2 * Dist)),
-            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(0f, 0f, -2 * Dist), new Vector3(0f, 0f, -Dist))),
-            new VideoPositionActionHold(0.5f, new Vector3(0f, 0f, -Dist)),
-            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(0f, 0f, -Dist), new Vector3(-Dist, 0f, -Dist))),
-            new VideoPositionActionHold(0.5f, new Vector3(-Dist, 0f, -Dist)),
-            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(-Dist, 0f, -Dist), new Vector3(-Dist, 0f, 0f))),
-            new VideoPositionActionHold(0.5f, new Vector3(-Dist, 0f, 0f)),
-            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(-Dist, 0f, 0f), new Vector3(-Dist,  Dist, 0f))),
-            new VideoPositionActionHold(0.5f, new Vector3(-Dist, Dist, 0f)),
-            new VideoPositionActionPath(0.5f, new LinePath(new Vector3(-Dist, Dist, 0f), new Vector3(0f, Dist, 0f)))
-        };
-        private VideoDirectionAction[] _directionActionArray = {
-            new VideoDirectionActionLookAt(5f, new Vector3(0f, 0f, 0f))
-        };
-        private VideoDirectionAction[] _upDirectionActionArray = {
-            new VideoDirectionActionHold(4.5f, Vector3.up),
-            new VideoDirectionActionTween(0.5f, Vector3.up, new Vector3(1f, 0f, 0f))
-        };
+        private CirclePath circleSide;
+        private CirclePath circleTop;
+        private CirclePath circleBack;
+
+        private VideoPositionAction[] _positionActionArray;
+        private VideoDirectionAction[] _directionActionArray;
+        private VideoDirectionAction[] _upDirectionActionArray;
 
         private int _frameRate = 10;
         private int _frameCounter = 0;
@@ -94,6 +87,38 @@ namespace VideoMaker
 
         void Awake()
         {
+            circleSide = new(
+                Target + Dist * Vector3.back, Target + Dist * Vector3.left, Target
+            );
+
+            circleTop = new(
+                Target + Dist * Vector3.left, Target + Dist * Vector3.up, Target
+            );
+
+            circleBack = new(
+                Target + Dist * Vector3.left, Target + Dist * Vector3.up, Target
+            );
+
+            _positionActionArray = new VideoPositionAction[] {
+                new VideoPositionActionHold(WaitTime, Target + Dist * Vector3.back),
+                new VideoPositionActionPath(CircleTime, circleSide),
+                new VideoPositionActionHold(WaitTime, Target + Dist * Vector3.left),
+                new VideoPositionActionPath(CircleTime, circleTop),
+                new VideoPositionActionHold(WaitTime + RotateTime, Target + Dist * Vector3.up),
+                new VideoPositionActionPath(CircleTime, circleBack)
+            };
+            _directionActionArray = new VideoDirectionAction[] {
+                new VideoDirectionActionLookAt(1000f, Target)
+            };
+            _upDirectionActionArray = new VideoDirectionAction[] {
+                new VideoDirectionActionHold(2 * WaitTime + 1 * CircleTime, Vector3.up),
+                new VideoDirectionActionPath(CircleTime, circleTop),
+                new VideoDirectionActionHold(WaitTime, Vector3.right),
+                new VideoDirectionActionTween(RotateTime, Vector3.right, Vector3.forward),
+                new VideoDirectionActionPath(CircleTime, circleBack, invert: true),
+            };
+
+
             ProgressBar.SetActive(false);
             _targetCube = GameObject.Find("TestCube");
             _targetCube.SetActive(false);

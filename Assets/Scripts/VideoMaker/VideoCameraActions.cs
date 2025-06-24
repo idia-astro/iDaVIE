@@ -45,6 +45,68 @@ namespace VideoMaker
         }
     }
 
+    public class CirclePath : VideoCameraPath
+    {
+        private Vector3 _center;
+        private Vector3 _basis1;
+        private Vector3 _basis2;
+        private float _radius;
+        private float _rotations;
+
+        public CirclePath(
+            Vector3 startPosition, Vector3 endPosition, Vector3 center,
+            bool largeAngleDirection = false, int additionalRotations = 0, bool fullRotation = false
+        )
+        {
+            _center = center;
+
+            Vector3 relStart = startPosition - center;
+            Vector3 relEnd = endPosition - center;
+
+            _radius = relStart.magnitude;
+
+            Vector3 axis = Vector3.Cross(relStart, relEnd);
+            _basis1 = relStart / _radius;
+            _basis2 = Vector3.Cross(axis, _basis1).normalized;
+
+            float angle = Vector3.Angle(relStart, relEnd) / 360f;
+
+            if (fullRotation)
+            {
+                _rotations = 1 + additionalRotations;
+            }
+            else
+            {
+                if (largeAngleDirection)
+                {
+                    _rotations = angle - 1 - additionalRotations;
+                }
+                else
+                {
+                    _rotations = angle + additionalRotations;
+                }
+            }
+        }
+
+        public override Vector3 GetPosition(float pathParam)
+        {
+            float angle = 2 * Mathf.PI * _rotations * pathParam;
+            return _center + _radius * (Mathf.Cos(angle) * _basis1 + Mathf.Sin(angle) * _basis2);
+        }
+
+        public override Vector3 GetDirection(float pathParam)
+        {
+            float angle = 2 * Mathf.PI * _rotations * pathParam;
+            return (Mathf.Cos(angle) * _basis2 - Mathf.Sin(angle) * _basis1).normalized;
+        }
+
+        public override Vector3 GetUpDirection(float pathParam)
+        {
+            float angle = 2 * Mathf.PI * _rotations * pathParam;
+            return - (Mathf.Cos(angle) * _basis1 + Mathf.Sin(angle) * _basis2).normalized;
+        }
+    }
+
     // VideoCameraActions
     public abstract class VideoCameraAction
     {
@@ -54,18 +116,8 @@ namespace VideoMaker
 
         public VideoCameraAction(float duration)
         {
-            // this.StartTime = startTime;
             this.Duration = duration;
         }
-
-        // public bool IsActionStarted(float time)
-        // {
-        //     return time > StartTime;
-        // }
-
-        // public bool IsActionFinished(float time) {
-        //     return time > StartTime + Duration;
-        // }
     }
 
     // VideoPositionActions
@@ -173,15 +225,19 @@ namespace VideoMaker
         private float _startTimeOffset;
         private float _endTimeOffset;
         private bool _useUpDirection;
+        private bool _invert;
 
         public VideoDirectionActionPath(float duration,
-            VideoCameraPath path, float startTimeOffset = 0f, float endTimeOffset = 0f, bool useUpDirection = false
+            VideoCameraPath path,
+            float startTimeOffset = 0f, float endTimeOffset = 0f,
+            bool useUpDirection = false, bool invert = false
         ) : base(duration)
         {
             _path = path;
             _startTimeOffset = startTimeOffset;
             _endTimeOffset = endTimeOffset;
             _useUpDirection = useUpDirection;
+            _invert = invert;
         }
 
         public override Vector3 GetDirection(float time, Vector3 position)
@@ -196,12 +252,19 @@ namespace VideoMaker
                 0f, 1f
             );
 
-            if (_useUpDirection)
+            int sign = 1;
+
+            if (_invert)
             {
-                return _path.GetUpDirection(pathParam);
+                sign = -1;
             }
 
-            return _path.GetDirection(pathParam);
+            if (_useUpDirection)
+            {
+                return sign * _path.GetUpDirection(pathParam);
+            }
+
+            return sign * _path.GetDirection(pathParam);
         }
     }
 }
