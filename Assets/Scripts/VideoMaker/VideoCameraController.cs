@@ -50,10 +50,11 @@ namespace VideoMaker
         private const float RotateTime = 1f;
         private const float Dist = 1.5f;
         private Vector3 Target = Vector3.zero;
-
+        private EasingInOut easingIO = new(2);
         private CirclePath circleSide;
         private CirclePath circleTop;
         private CirclePath circleBack;
+
 
         private VideoPositionAction[] _positionActionArray;
         private VideoDirectionAction[] _directionActionArray;
@@ -93,15 +94,18 @@ namespace VideoMaker
         void Awake()
         {
             circleSide = new(
-                Target + Dist * Vector3.back, Target + Dist * Vector3.left, Target
+                Target + Dist * Vector3.back, Target + Dist * Vector3.left, Target,
+                easing: easingIO
             );
 
             circleTop = new(
-                Target + Dist * Vector3.left, Target + Dist * Vector3.up, Target
+                Target + Dist * Vector3.left, Target + Dist * Vector3.up, Target,
+                easing: easingIO
             );
 
             circleBack = new(
-                Target + Dist * Vector3.up, Target + Dist * Vector3.back, Target
+                Target + Dist * Vector3.up, Target + Dist * Vector3.back, Target,
+                easing: easingIO
             );
 
             _positionActionArray = new VideoPositionAction[] {
@@ -119,7 +123,7 @@ namespace VideoMaker
                 new VideoDirectionActionHold(2 * WaitTime + 1 * CircleTime, Vector3.up),
                 new VideoDirectionActionPath(CircleTime, circleTop),
                 new VideoDirectionActionHold(WaitTime, Vector3.right),
-                new VideoDirectionActionTween(RotateTime, Vector3.right, Vector3.forward),
+                new VideoDirectionActionTween(RotateTime, Vector3.right, Vector3.forward, easing: easingIO),
                 new VideoDirectionActionPath(CircleTime, circleBack, invert: true),
             };
 
