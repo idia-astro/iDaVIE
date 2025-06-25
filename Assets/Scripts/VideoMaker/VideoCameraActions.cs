@@ -75,6 +75,37 @@ namespace VideoMaker
         }
     }
 
+    public class EasingAccelDecel : VideoEasing
+    {
+        private float _t1;
+        private float _t2;
+
+        public EasingAccelDecel(float t1, float t2)
+        {
+            _t1 = t1;
+            _t2 = t2;
+        }
+
+        protected override float OnGetValue(float valueIn)
+        {
+            float mag = 0.5f * (1 + _t2 - _t1);
+
+            if (valueIn < _t1 && _t1 > 0f)
+            {
+                return 0.5f * valueIn * valueIn / _t1 / mag;
+            }
+            if (valueIn < _t2 && _t2 < 1f)
+            {
+                return (valueIn - 0.5f * _t1) / mag;
+            }
+            return (
+                _t2 - 0.5f * _t1
+                + valueIn * (1 - 0.5f * valueIn) / (1 - _t2)
+                - _t2 * (1 - 0.5f * _t2) / (1 - _t2)
+                ) / mag;
+        }
+    }
+
     //Paths
     public abstract class VideoCameraPath
     {

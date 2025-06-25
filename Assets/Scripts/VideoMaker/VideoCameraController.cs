@@ -34,33 +34,39 @@ namespace VideoMaker
         private Status _status = Status.Idle;
 
         // TODO use a different MonoBehaviour to manage the playback and status bar?
+        public TMP_Dropdown VideoScriptDropdown;
         public GameObject ProgressBar;
-
         public TMP_Text StatusText;
-
         public Texture2D Logo;
-        private float _logoScale = 0.1f;
+        private bool _useLogo = true;
+        private float _logoScale = 0.2f;
         private byte[] _logoBytes = new byte[0];
 
         private Camera _camera;
 
         private const float WaitTime = 1.5f;
         private const float PunchInTime = 1f;
-        private const float CircleTime = 1f;
-        private const float RotateTime = 1f;
-        private const float Dist = 1.5f;
-        private Vector3 Target = Vector3.zero;
+        private const float CircleTime = 1.5f;
+        private const float RotateTime = 1.5f;
+        private const float BackWaitTime = 0.5f;
+        private const float Dist = 2f;
+        private Vector3 Target = Vector3.zero;//new Vector3(0.01f, 0.02f, 0.02f);
         private EasingInOut easingIO = new(2);
-        private CirclePath circleSide;
-        private CirclePath circleTop;
-        private CirclePath circleBack;
 
+        private const float TurntableTime = 15f;
+        private const float TurntableWaitTime = 0.5f;
 
-        private VideoPositionAction[] _positionActionArray;
-        private VideoDirectionAction[] _directionActionArray;
-        private VideoDirectionAction[] _upDirectionActionArray;
+        private TMP_Dropdown.OptionData[] _videoScriptOptions = {
+            new ("Front-side-top"),
+            new ("Turntable y"),
+            new ("Turntable y/z")
+        };
 
-        private int _frameRate = 10;
+        private VideoPositionAction[][] _positionArrays;
+        private VideoDirectionAction[][] _directionArrays;
+        private VideoDirectionAction[][] _upDirectionArrays;
+        
+        private int _frameRate = 30;
         private int _frameCounter = 0;
         private int _frameDigits = 3;
         private bool _captureFrames = false;
@@ -93,38 +99,88 @@ namespace VideoMaker
 
         void Awake()
         {
-            circleSide = new(
+            VideoScriptDropdown.options = new List<TMP_Dropdown.OptionData>(_videoScriptOptions);
+
+            _positionArrays = new VideoPositionAction[_videoScriptOptions.Length][];
+            _directionArrays = new VideoDirectionAction[_videoScriptOptions.Length][];
+            _upDirectionArrays = new VideoDirectionAction[_videoScriptOptions.Length][];
+
+            //Front-side-top
+            CirclePath circleSide = new(
                 Target + Dist * Vector3.back, Target + Dist * Vector3.left, Target,
                 easing: easingIO
             );
 
-            circleTop = new(
+            CirclePath circleTop = new(
                 Target + Dist * Vector3.left, Target + Dist * Vector3.up, Target,
                 easing: easingIO
             );
 
-            circleBack = new(
+            CirclePath circleBack = new(
                 Target + Dist * Vector3.up, Target + Dist * Vector3.back, Target,
                 easing: easingIO
             );
 
-            _positionActionArray = new VideoPositionAction[] {
+            _positionArrays[0] = new VideoPositionAction[] {
                 new VideoPositionActionHold(WaitTime, Target + Dist * Vector3.back),
                 new VideoPositionActionPath(CircleTime, circleSide),
                 new VideoPositionActionHold(WaitTime, Target + Dist * Vector3.left),
                 new VideoPositionActionPath(CircleTime, circleTop),
-                new VideoPositionActionHold(WaitTime + RotateTime, Target + Dist * Vector3.up),
+                new VideoPositionActionHold(WaitTime + RotateTime + BackWaitTime, Target + Dist * Vector3.up),
                 new VideoPositionActionPath(CircleTime, circleBack)
             };
-            _directionActionArray = new VideoDirectionAction[] {
+            _directionArrays[0] = new VideoDirectionAction[] {
                 new VideoDirectionActionLookAt(1000f, Target)
             };
-            _upDirectionActionArray = new VideoDirectionAction[] {
+            _upDirectionArrays[0] = new VideoDirectionAction[] {
                 new VideoDirectionActionHold(2 * WaitTime + 1 * CircleTime, Vector3.up),
                 new VideoDirectionActionPath(CircleTime, circleTop),
                 new VideoDirectionActionHold(WaitTime, Vector3.right),
                 new VideoDirectionActionTween(RotateTime, Vector3.right, Vector3.forward, easing: easingIO),
+                new VideoDirectionActionHold(BackWaitTime, Vector3.forward),
                 new VideoDirectionActionPath(CircleTime, circleBack, invert: true),
+            };
+
+            // Turntable y
+            _positionArrays[1] = new VideoPositionAction[] {
+                new VideoPositionActionPath(TurntableTime, new CirclePath(
+                    Vector3.back * Dist, Vector3.right * Dist, Vector3.zero, fullRotation: true
+                ))
+            };
+            _directionArrays[1] = new VideoDirectionAction[] {
+                new VideoDirectionActionLookAt(TurntableTime, Vector3.zero)
+            };
+            _upDirectionArrays[1] = new VideoDirectionAction[] {
+                new VideoDirectionActionHold(TurntableTime, Vector3.up)
+            };
+
+            // Turntable y/z
+            EasingAccelDecel easingADFull = new(0.25f, 0.75f);
+            EasingAccelDecel easingADStart = new(1f, 1f);
+            EasingAccelDecel easingADEnd = new(0f, 2f / 3f);
+
+            CirclePath circleZ = new CirclePath(
+                Dist * Vector3.left, Dist * Vector3.up, Vector3.zero, easing: easingADFull, fullRotation: true
+            );
+
+            _positionArrays[2] = new VideoPositionAction[] {
+                new VideoPositionActionPath(TurntableTime * 0.75f, new CirclePath(
+                    Dist * Vector3.back, Dist * Vector3.left, Vector3.zero, easing: easingADEnd, largeAngleDirection: true
+                )),
+                new VideoPositionActionHold(TurntableWaitTime, Dist * Vector3.left),
+                new VideoPositionActionPath(TurntableTime, circleZ),
+                new VideoPositionActionHold(TurntableWaitTime, Dist * Vector3.left),
+                new VideoPositionActionPath(TurntableTime * 0.25f, new CirclePath(
+                    Dist * Vector3.left, Dist * Vector3.back, Vector3.zero, easing: easingADStart
+                ))
+            };
+            _upDirectionArrays[2] = new VideoDirectionAction[] {
+                new VideoDirectionActionHold(TurntableTime * 0.75f + TurntableWaitTime, Vector3.up),
+                new VideoDirectionActionPath(TurntableTime, circleZ),
+                new VideoDirectionActionHold(TurntableWaitTime + TurntableTime * 0.25f, Vector3.up)
+            };
+            _directionArrays[2] = new VideoDirectionAction[] {
+                new VideoDirectionActionLookAt(TurntableTime * 2 + TurntableWaitTime, Vector3.zero)
             };
 
 
@@ -143,25 +199,7 @@ namespace VideoMaker
             _camera = GetComponent<Camera>();
             _camera.enabled = false;
 
-            //Calculating the overall duration - this should be done somewhere else. Also use Zip?
-            float duration = 0f;
-            foreach (VideoCameraAction action in _positionActionArray)
-            {
-                duration += action.Duration;
-            }
-            _duration = duration;
-
-            foreach (VideoCameraAction action in _directionActionArray)
-            {
-                duration += action.Duration;
-            }
-            _duration = Math.Min(_duration, duration);
-
-            foreach (VideoCameraAction action in _upDirectionActionArray)
-            {
-                duration += action.Duration;
-            }
-            _duration = Math.Min(_duration, duration);
+            
         }
 
         IEnumerator Preview()
@@ -329,9 +367,30 @@ namespace VideoMaker
                 _cubeTransform = _targetCube.transform;
             }
 
-            _positionQueue = new(_positionActionArray);
-            _directionQueue = new(_directionActionArray);
-            _upDirectionQueue = new(_upDirectionActionArray);
+            int scriptIdx = VideoScriptDropdown.value;
+
+            _positionQueue = new(_positionArrays[scriptIdx]);
+            _directionQueue = new(_directionArrays[scriptIdx]);
+            _upDirectionQueue = new(_upDirectionArrays[scriptIdx]);
+            
+            float duration = 0f;
+            foreach (VideoCameraAction action in _positionArrays[scriptIdx])
+            {
+                duration += action.Duration;
+            }
+            _duration = duration;
+
+            foreach (VideoCameraAction action in _directionArrays[scriptIdx])
+            {
+                duration += action.Duration;
+            }
+            _duration = Math.Min(_duration, duration);
+
+            foreach (VideoCameraAction action in _upDirectionArrays[scriptIdx])
+            {
+                duration += action.Duration;
+            }
+            _duration = Math.Min(_duration, duration);
 
             _positionAction = _positionQueue.Dequeue();
             _directionAction = _directionQueue.Dequeue();
@@ -363,6 +422,18 @@ namespace VideoMaker
             StartCoroutine(Export());
         }
 
+        public void OnLogoOptionSelected(int idx)
+        {
+            if (idx == 0)
+            {
+                _useLogo = true;
+            }
+            else
+            {
+                _useLogo = false;
+            }
+        }
+
         private void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
             Graphics.Blit(source, destination);
@@ -371,15 +442,23 @@ namespace VideoMaker
                 return;
             }
 
+            //This is necessary to preserve colors when writing out
+            RenderTexture rtNew = new RenderTexture(source.width, source.height, 8, RenderTextureFormat.ARGB32);
+            Graphics.Blit(source, rtNew);
+            RenderTexture.active = rtNew;
+
             //Derived from CameraControllerTool.cs:96+
             // Make a new texture and read the active Render Texture into it.
-            Texture2D tex = new Texture2D(destination.width, destination.height, TextureFormat.RGB24, false);
-            tex.ReadPixels(new Rect(0, 0, destination.width, destination.height), 0, 0);
+            Texture2D tex = new Texture2D(source.width, source.height, TextureFormat.RGB24, false);
+
+            tex.ReadPixels(new Rect(0, 0, source.width, source.height), 0, 0);
             tex.Apply();
             // Encode texture into PNG
             byte[] bytes = tex.EncodeToPNG();
             Destroy(tex); //Is it better to re-use the texture each frame?
             _frameQueue.Enqueue(bytes);
+            
+            RenderTexture.active = destination; //TODO rather set to null?
         }
 
         private void SaveFrames()
@@ -408,8 +487,13 @@ namespace VideoMaker
                 }
             }
 
-            string overlay = string.Format("-i ..\\logo.png -filter_complex \"[1:v]scale=iw*{0:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ", _logoScale);
+            string overlay = "";
 
+            if (_useLogo)
+            {
+                overlay = string.Format("-i ..\\logo.png -filter_complex \"[1:v]scale=iw*{0:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ", _logoScale);
+            }
+            
             // string overlay = "";
 
             // Save logo
