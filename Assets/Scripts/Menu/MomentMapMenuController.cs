@@ -43,6 +43,10 @@ public class MomentMapMenuController : MonoBehaviour
     public GameObject volumeDataSetManager;
     private VolumeDataSetRenderer[] dataSets;
     private float _threshold;
+    // <summary>
+    /// This attribute dictates by how much the threshold value changes when the user clicks the button.
+    /// </summary>
+    private float _thresholdIncrement = 0.01f;
     private float _cached_threshold;
     public Camera MomentMapCamera;
     int thresholdType = 0;
@@ -69,6 +73,11 @@ public class MomentMapMenuController : MonoBehaviour
             {
                 VolumeDataSet dataSet = getFirstActiveDataSet().GetDataSet();
                 getFirstActiveDataSet().GetMomentMapRenderer().UpdatePlotWindow();
+
+                float dataMin = dataSet.MinValue;
+                float dataMax = dataSet.MaxValue;
+                int increments = Config.Instance.momentMapThresholdSteps;
+                _thresholdIncrement = (dataMax - dataMin) / increments;
 
                 LimitTypeText.text = $"{_limitType}";
 
@@ -100,16 +109,28 @@ public class MomentMapMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Increases the moment map threshold.
+    /// </summary>
     public void IncreaseMomentMapThreshold()
     {
-        _threshold += getFirstActiveDataSet().GetMomentMapRenderer().momstep;
+        float dataMin = getFirstActiveDataSet().GetDataSet().MinValue;
+        float dataMax = getFirstActiveDataSet().GetDataSet().MaxValue;
+        _threshold = Mathf.Clamp(_threshold + _thresholdIncrement, dataMin, dataMax);
         ThresholdValueText.text = _threshold.ToString();
+        SetMomentMapThreshold();
     }
 
+    /// <summary>
+    /// Decreases the moment map threshold.
+    /// summary>
     public void DecreaseMomentMapThreshold()
     {
-        _threshold -= getFirstActiveDataSet().GetMomentMapRenderer().momstep;
+        float dataMin = getFirstActiveDataSet().GetDataSet().MinValue;
+        float dataMax = getFirstActiveDataSet().GetDataSet().MaxValue;
+        _threshold = Mathf.Clamp(_threshold - _thresholdIncrement, dataMin, dataMax);
         ThresholdValueText.text = _threshold.ToString();
+        SetMomentMapThreshold();
     }
 
     public void SetMomentMapThreshold()
