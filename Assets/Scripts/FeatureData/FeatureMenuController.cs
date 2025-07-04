@@ -319,17 +319,23 @@ public class FeatureMenuController : MonoBehaviour
             textObject.GetComponent<TMP_Text>().text +=
                 $"Source # : {_featureSetManager.SelectedFeature.Id + 1}{Environment.NewLine}";
             
-                double centerX, centerY, centerZ, ra, dec, physz, normR, normD, normZ;
+                double centerX, centerY, centerZ, ra, dec, physz, normR, normD, normZ, sum, peak;
                 
                 // if the selected feature is from a mask, get the centroid from the sourceStats dictionary
                 if (_featureSetManager.SelectedFeature.FeatureSetParent.FeatureSetType == FeatureSetType.Mask 
                     && _featureSetManager.VolumeRenderer.SourceStatsDict != null)
                 {
+                    sum = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.sum;
+                    peak = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.peak;
                     centerX = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cX;
                     centerY = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cY;
                     centerZ = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cZ;
                     textObject.GetComponent<TMP_Text>().text +=
                         $"Centroid : {Environment.NewLine}";
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"  sum : {sum:F5}{Environment.NewLine}";
+                    textObject.GetComponent<TMP_Text>().text +=
+                        $"  peak : {peak:F5}{Environment.NewLine}";
                     textObject.GetComponent<TMP_Text>().text +=
                         $"  x : {centerX:F5}{Environment.NewLine}";
                     textObject.GetComponent<TMP_Text>().text +=
