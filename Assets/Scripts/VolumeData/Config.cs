@@ -73,6 +73,11 @@ namespace VolumeData
         public int histogramStepsPerSecond = 10;
 
         /// <summary>
+        /// The number of steps for a full range when incrementing the moment map threshold.
+        /// </summary>
+        public int momentMapThresholdSteps = 40;
+
+        /// <summary>
         /// Use the quick, less precise percentile calculation for the scale min/max
         /// that uses the histogram instead of the full data set.
         /// </summary>
