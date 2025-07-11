@@ -37,6 +37,7 @@ public class PaintMenuController : MonoBehaviour
     public GameObject sourcesMenu;
     public GameObject plotsMenu;
     public GameObject paintMenu;
+    public GameObject shapeMenu; // Menu for shape selection
     public GameObject savePopup;
     int maskstatus = 0;
     int cropstatus = 0;
@@ -47,6 +48,7 @@ public class PaintMenuController : MonoBehaviour
 
     private Text _topPanelText;
     private Button _exitButton;
+    private GameObject _shapeSelectionButton;
     private string oldSaveText = "";
 
     void OnEnable()
@@ -61,6 +63,7 @@ public class PaintMenuController : MonoBehaviour
 
         _topPanelText = gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>();
         _exitButton = gameObject.transform.Find("Content/SecondRow/ExitButton")?.GetComponent<Button>();
+        _shapeSelectionButton = gameObject.transform.Find("Content/SecondRow/ShapeMenu").gameObject;
     }
 
     // Update is called once per frame
@@ -79,10 +82,14 @@ public class PaintMenuController : MonoBehaviour
         else if (_volumeInputController.SourceId <= 0)
         {
             _topPanelText.text = "Please select a Source ID to paint";
+            _shapeSelectionButton.GetComponent<Button>().enabled = false;
+            _shapeSelectionButton.GetComponent<Image>().color = Color.gray;
         }
         else
         {
             _topPanelText.text = $"Paint Mode (Source ID {_volumeInputController.SourceId})";
+            _shapeSelectionButton.GetComponent<Button>().enabled = true;
+            _shapeSelectionButton.GetComponent<Image>().color = Color.white;
         }
 
     }
@@ -91,7 +98,7 @@ public class PaintMenuController : MonoBehaviour
     {
         foreach (var dataSet in _dataSets)
         {
-            if (dataSet.isActiveAndEnabled)
+            if (dataSet && dataSet.isActiveAndEnabled)
             {
                 return dataSet;
             }
@@ -304,6 +311,24 @@ public class PaintMenuController : MonoBehaviour
     public void EditSourceId()
     {
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.StartEditSource);
+    }
+
+     public void OpenShapeMenu()
+    {
+        shapeMenu.transform.SetParent(this.transform.parent, false);
+        shapeMenu.transform.localPosition = this.transform.localPosition;
+        shapeMenu.transform.localRotation = this.transform.localRotation;
+        shapeMenu.transform.localScale = this.transform.localScale;
+
+        if(_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.EditingSourceId)
+            _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.CancelEditSource);
+        
+        _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
+        _volumeInputController.ChangeShapeSelection();
+        PaintingAdditive();
+        gameObject.SetActive(false);
+        shapeMenu.SetActive(true);
+        
     }
 
 }
