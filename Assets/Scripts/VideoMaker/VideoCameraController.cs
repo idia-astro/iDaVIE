@@ -470,12 +470,13 @@ namespace VideoMaker
                     //TODO change to bmp for better video
                     string path = Path.Combine(
                         _directoryPath,
-                        string.Format("frame{0:d"+ _frameDigits.ToString() + "}.png", _frameCounter)
+                        string.Format("frame{0:d" + _frameDigits.ToString() + "}.png", _frameCounter)
                     );
                     //TODO is a FileStream better here?
                     //TODO does this work with .bmp format?
                     File.WriteAllBytes(path, _frameQueue.Dequeue());
                     _frameCounter++;
+                    //TODO tick up progress for video render progress
                 }
                 else
                 {
@@ -528,7 +529,7 @@ namespace VideoMaker
                 process.Start();
                 process.BeginErrorReadLine();
                 process.BeginOutputReadLine();
-                process.OutputDataReceived += (s, e) => { if (e.Data != null) print(e.Data); };
+                process.OutputDataReceived += (s, e) => { if (e.Data != null) print(e.Data); }; //TODO use this to increase progress ticks for render mode
                 process.ErrorDataReceived += (s, e) => { if (e.Data != null) print(e.Data); };
                 process.WaitForExit();
             }

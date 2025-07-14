@@ -94,7 +94,7 @@ namespace VideoMaker
             {
                 return 0.5f * valueIn * valueIn / _t1 / mag;
             }
-            if (valueIn < _t2 && _t2 < 1f)
+            if (valueIn < _t2)
             {
                 return (valueIn - 0.5f * _t1) / mag;
             }
