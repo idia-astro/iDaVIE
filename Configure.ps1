@@ -156,6 +156,6 @@ Write-Host "Packages imported."
 Write-Host "Adding UPM packages to manifest"
 $Manifest = Get-Content -Path "$PSScriptRoot\Packages\manifest.json" -Raw | ConvertFrom-Json
 $Manifest.dependencies | Add-Member -MemberType NoteProperty -Name "com.unity.mathematics" -Value "1.3.2"
-$Manifest | ConvertTo-Json -Depth 1 | Out-File "$PSScriptRoot\Packages\manifest.json"
+$Manifest | ConvertTo-Json -Depth 1 | Out-File "$PSScriptRoot\Packages\manifest.json" -Encoding utf8
 
 Write-Host "Configuration complete!"
