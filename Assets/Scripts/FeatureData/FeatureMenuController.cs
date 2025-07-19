@@ -319,7 +319,7 @@ public class FeatureMenuController : MonoBehaviour
             textObject.GetComponent<TMP_Text>().text +=
                 $"Source # : {_featureSetManager.SelectedFeature.Id + 1}{Environment.NewLine}";
             
-                double centerX, centerY, centerZ, ra, dec, physz, normR, normD, normZ, sum, peak;
+                double centerX, centerY, centerZ, ra, dec, physz, normR, normD, normZ;
                 
                 // if the selected feature is from a mask, get the centroid from the sourceStats dictionary
                 if (_featureSetManager.SelectedFeature.FeatureSetParent.FeatureSetType == FeatureSetType.Mask 
