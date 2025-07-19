@@ -325,8 +325,6 @@ public class FeatureMenuController : MonoBehaviour
                 if (_featureSetManager.SelectedFeature.FeatureSetParent.FeatureSetType == FeatureSetType.Mask 
                     && _featureSetManager.VolumeRenderer.SourceStatsDict != null)
                 {
-                    sum = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.sum;
-                    peak = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.peak;
                     centerX = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cX;
                     centerY = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cY;
                     centerZ = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cZ;
