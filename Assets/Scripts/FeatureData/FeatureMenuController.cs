@@ -333,10 +333,6 @@ public class FeatureMenuController : MonoBehaviour
                     textObject.GetComponent<TMP_Text>().text +=
                         $"Centroid : {Environment.NewLine}";
                     textObject.GetComponent<TMP_Text>().text +=
-                        $"  sum : {sum:F5}{Environment.NewLine}";
-                    textObject.GetComponent<TMP_Text>().text +=
-                        $"  peak : {peak:F5}{Environment.NewLine}";
-                    textObject.GetComponent<TMP_Text>().text +=
                         $"  x : {centerX:F5}{Environment.NewLine}";
                     textObject.GetComponent<TMP_Text>().text +=
                         $"  y : {centerY:F5}{Environment.NewLine}";
