@@ -1,68 +1,95 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
+using Valve.Newtonsoft.Json.Linq;
+// using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 
 namespace VideoMaker
 {
-    public class VideoScriptReader
+    public class VideoScriptData
     {
         public int FrameRate = 20;
         //TODO add more logo parameters, such as position
         public bool UseLogo = true;
         public float LogoScale = 0.2f;
         public VideoPositionAction[] PositionActions;
-        public VideoDirectionAction[] DiractionActions;
+        public VideoDirectionAction[] DirectionActions;
         public VideoDirectionAction[] UpDirectionActions;
+    }
 
-        public VideoScriptReader(string videoScriptString)
+    public class VideoScriptReader
+    {
+        const int EasingOrderDefault = 2;
+
+        private static T ToObjectOrDefualt<T>(JToken token, T defaultValue)
         {
-            JObject root = JObject.Parse(videoScriptString);
+            Type type = typeof(T);
 
-            if (root.ContainsKey("frameRate"))
-            {
-                FrameRate = root.Value<int>("frameRate");// ?? FramesRate;
+            if (
+                (
+                    (type == typeof(int) || type == typeof(float)) &&
+                    (token.Type == JTokenType.Integer || token.Type == JTokenType.Float)
+                ) || (
+                    type == typeof(string) && token.Type == JTokenType.String
+                ) || (
+                    type == typeof(bool) && token.Type == JTokenType.Boolean
+                )
+            ) {
+                return token.ToObject<T>();
             }
 
-            if (root.ContainsKey("useLogo"))
+            return defaultValue;
+        }
+
+        private static T ValueOrDefault<T>(JToken token, string childPath, T defaultValue)
+        {
+            JToken childToken = token.SelectToken(childPath);
+            if (childToken is null)
             {
-                UseLogo = root.Value<bool>("useLogo");// ?? UseLogo;
+                return defaultValue;
             }
 
-            if (root.ContainsKey("logoScale"))
-            {
-                LogoScale = root.Value<float>("logoScale"); //?? LogoScale;
-            }
-            
+            return ToObjectOrDefualt(childToken, defaultValue);
+        }
+
+        public static VideoScriptData ReadVideoScript(string videoScriptString)
+        {
+            VideoScriptData data = new();
+
+            JToken root = JToken.Parse(videoScriptString);
+
+            data.FrameRate = ValueOrDefault(root, "frameRate", data.FrameRate);
+            data.UseLogo = ValueOrDefault(root, "useLogo", data.UseLogo);
+            data.LogoScale = ValueOrDefault(root, "logoScale", data.LogoScale);
+
             List<VideoPositionAction> positions = new();
             List<VideoDirectionAction> directions = new();
             List<VideoDirectionAction> upDirections = new();
 
-            Vector3 positionBefore = new(0, 0, 0);
-            Vector3 directionBefore = new(0, 0, 0);
-            Vector3 upDirectionBefore = new(0, 0, 0);
-            JToken? transitionData = null;
+            Vector3 positionBefore = Vector3.zero;
+            Vector3 directionBefore = Vector3.forward;
+            Vector3 upDirectionBefore = Vector3.up;
+            JToken transitionData = null;
 
             foreach (JToken actionData in (JArray)root["actions"])
             {
-                if (actionData.Value<string>("type") == "transition")
+                if (ValueOrDefault(actionData, "type", "") == "transition")
                 {
                     transitionData = actionData;
                     continue;
                 }
 
-                var actions = ActionDataToActions(actionData);
+                var actions = ActionDataToActions(actionData, positionBefore, directionBefore, upDirectionBefore);
 
-                VideoPositionAction positionAction = actions.positions[actions.positions.Count - 1];
-                Vector3 positionAfter = positionAction.GetPosition(positionAction.Duration);
+                VideoPositionAction positionAction = actions.positions[0];
+                Vector3 positionAfter = positionAction.GetPosition(0f);
 
-                VideoDirectionAction directionAction = actions.directions[actions.directions.Count - 1];
-                Vector3 directionAfter = directionAction.GetDirection(directionAction.Duration, positionAfter);
+                VideoDirectionAction directionAction = actions.directions[0];
+                Vector3 directionAfter = directionAction.GetDirection(0f, positionAfter);
 
-                directionAction = actions.upDirections[actions.upDirections.Count - 1];
-                Vector3 upDirectionAfter = directionAction.GetDirection(directionAction.Duration, positionAfter);
+                directionAction = actions.upDirections[0];
+                Vector3 upDirectionAfter = directionAction.GetDirection(0f, positionAfter);
 
                 if (transitionData is not null)
                 {
@@ -81,59 +108,85 @@ namespace VideoMaker
                 directions.AddRange(actions.directions);
                 upDirections.AddRange(actions.upDirections);
 
-                positionBefore = positionAfter;
-                directionBefore = directionAfter;
-                upDirectionBefore = upDirectionAfter;
+
+                positionAction = actions.positions[^1];
+                positionBefore = positionAction.GetPosition(positionAction.Duration);
+
+                directionAction = actions.directions[^1];
+                directionBefore = directionAction.GetDirection(directionAction.Duration, positionBefore);
+
+                directionAction = actions.upDirections[^1];
+                upDirectionBefore = directionAction.GetDirection(directionAction.Duration, positionBefore);
             }
+
+            data.PositionActions = positions.ToArray();
+            data.DirectionActions = directions.ToArray();
+            data.UpDirectionActions = upDirections.ToArray();
+
+            return data;
         }
 
         //TODO return single actions instead of lists? There may not ever be a case where lists are needed
-        public static (List<VideoPositionAction> positions, List<VideoDirectionAction> directions, List<VideoDirectionAction> upDirections) ActionDataToActions(JToken actionData)
+        public static (List<VideoPositionAction> positions, List<VideoDirectionAction> directions, List<VideoDirectionAction> upDirections) ActionDataToActions(JToken actionData,
+            Vector3 positionBefore, Vector3 directionBefore, Vector3 upDirectionBefore)
         {
             List<VideoPositionAction> positions = new();
             List<VideoDirectionAction> directions = new();
             List<VideoDirectionAction> upDirections = new();
 
-            float duration = actionData.Value<float>("duration");
+            float duration = ValueOrDefault(actionData, "duration", 0f);
 
             JToken positionData = actionData["position"];
             JToken directionData = actionData["lookAt"];
             JToken upDirectionData = actionData["lookUp"];
 
-            VideoCameraPath? path = null;
+            VideoCameraPath path = null;
             if (positionData is not null)
             {
-                switch (positionData.Value<string>("type"))
+                switch (ValueOrDefault(positionData, "type", ""))
                 {
                     case "path":
-                        path = DataToPath(positionData);
+                        path = DataToPath(positionData, positionBefore, positionBefore);
                         positions.Add(new VideoPositionActionPath(duration, path));
                         break;
                     case "position":
                         positions.Add(new VideoPositionActionHold(duration, DataToPosition(positionData)));
                         break;
                     default:
-                        positions.Add(new VideoPositionActionHold(duration, Vector3.zero));
+                        positions.Add(new VideoPositionActionHold(duration, positionBefore));
                         break;
                 }
             }
             else
             {
-                positions.Add(new VideoPositionActionHold(duration, Vector3.zero));
+                positions.Add(new VideoPositionActionHold(duration, positionBefore));
             }
 
-
-            directions.Add(DirectionActionFromData(directionData, duration, path, Vector3.forward));
-            upDirections.Add(DirectionActionFromData(upDirectionData, duration, path, Vector3.up));
+            directions.Add(DirectionActionFromData(directionData, duration, path, directionBefore, false));
+            upDirections.Add(DirectionActionFromData(upDirectionData, duration, path, upDirectionBefore, true));
 
             return (positions, directions, upDirections);
         }
 
-        public static VideoDirectionAction DirectionActionFromData(JToken data, float duration, VideoCameraPath? path, Vector3 defualtDirection)
+        public static VideoDirectionAction DirectionActionFromData(JToken data, float duration, VideoCameraPath path, Vector3 defualtDirection, bool pathUpDirection)
         {
             if (data is not null)
             {
-                switch (data.Value<string>("type"))
+                //TDOO check for strings alongPath, alongPathReverse, upFromPath, upFromPathReverse
+                // switch (data.Type == JTokenType.String ? data.ToObject<string>() : "") //More efficient, but less sustainable
+                switch (ToObjectOrDefualt(data, ""))
+                {
+                    case "alongPath":
+                        return new VideoDirectionActionPath(duration, path);
+                    case "alongPathReverse":
+                        return new VideoDirectionActionPath(duration, path, invert: true);
+                    case "upFromPath":
+                        return new VideoDirectionActionPath(duration, path, useUpDirection: true);
+                    case "upFromPathReverse":
+                        return new VideoDirectionActionPath(duration, path, useUpDirection: true, invert: true);
+
+                }
+                switch (ValueOrDefault(data, "type", ""))
                 {
                     case "direction":
                         return new VideoDirectionActionHold(duration: duration, direction: DataToDirection(data));
@@ -149,7 +202,7 @@ namespace VideoMaker
                         }
                         else
                         {
-                            return new VideoDirectionActionPath(duration, path);
+                            return new VideoDirectionActionPath(duration, path, useUpDirection: pathUpDirection);
                         }
                 }
             }
@@ -173,8 +226,8 @@ namespace VideoMaker
 
             if (lookStartData is not null)
             {
-                startDuration = lookStartData.Value<float>("duration"); //?? 0f;
-                startOverlap = lookStartData.Value<bool>("overlapWithTravel");// ?? false;
+                startDuration = ValueOrDefault(lookStartData, "duration", 0f);
+                startOverlap = ValueOrDefault(lookStartData, "overlapWithTravel", false);
             }
 
             JToken lookEndData = transitionData["lookEnd"];
@@ -183,24 +236,24 @@ namespace VideoMaker
 
             if (lookEndData is not null)
             {
-                endDuration = lookEndData.Value<float>("duration");// ?? 0f;
-                endOverlap = lookEndData.Value<bool>("overlapWithTravel");// ?? false;
+                endDuration = ValueOrDefault(lookEndData, "duration", 0f);
+                endOverlap = ValueOrDefault(lookEndData, "overlapWithTravel", false);
             }
 
             JToken travelData = transitionData["travel"];
 
-            Vector3 travelDirectionStart = Vector3.forward;
-            Vector3 travelUpDirectionStart = Vector3.up;
-            Vector3 travelDirectionEnd = Vector3.forward;
-            Vector3 travelUpDirectionEnd = Vector3.up;
+            Vector3 travelDirectionStart = directionAfter;
+            Vector3 travelUpDirectionStart = upDirectionAfter;
+            Vector3 travelDirectionEnd = directionBefore;
+            Vector3 travelUpDirectionEnd = upDirectionBefore;
 
             if (travelData is not null)
             {
-                float duration = travelData.Value<float>("duration");// ?? 0f;
+                float duration = ValueOrDefault(travelData, "duration", 0f);
 
                 //TODO check for path and then use DataToPath with start and end positions
                 // JToken pathData = travelData["path"];
-                VideoCameraPath path = new LinePath(positionBefore, positionAfter, new EasingInOut(order: 2));
+                VideoCameraPath path = new LinePath(positionBefore, positionAfter, new EasingInOut(order: EasingOrderDefault));
                 VideoPositionAction positionAction = new VideoPositionActionPath(duration, path);
                 positions.Add(positionAction);
 
@@ -219,7 +272,7 @@ namespace VideoMaker
                     directionDuration -= endDuration;
                     endTimeOffset = endDuration;
                 }
-                
+
                 Vector3 positionStart = positionAction.GetPosition(startTimeOffset);
                 Vector3 positionEnd = positionAction.GetPosition(duration - endTimeOffset);
 
@@ -255,6 +308,11 @@ namespace VideoMaker
                     easing = DataToEasing(easingData);
                 }
 
+                if (!startOverlap)
+                {
+                    positions.Add(new VideoPositionActionHold(duration: endDuration, position: positionBefore));
+                }
+
                 directions.Insert(0, new VideoDirectionActionTween(duration: startDuration,
                     directionFrom: directionBefore, directionTo: travelDirectionStart, easing: easing));
                 upDirections.Insert(0, new VideoDirectionActionTween(duration: startDuration,
@@ -270,12 +328,16 @@ namespace VideoMaker
                     easing = DataToEasing(easingData);
                 }
 
+                if (!endOverlap)
+                {
+                    positions.Add(new VideoPositionActionHold(duration: endDuration, position: positionAfter));
+                }
+
                 directions.Add(new VideoDirectionActionTween(duration: endDuration,
                     directionFrom: travelDirectionEnd, directionTo: directionAfter, easing: easing));
                 upDirections.Add(new VideoDirectionActionTween(duration: endDuration,
                     directionFrom: travelUpDirectionEnd, directionTo: upDirectionAfter, easing: easing));
             }
-
 
             return (positions, directions, upDirections);
         }
@@ -284,82 +346,81 @@ namespace VideoMaker
         {
             //TODO Add subtype parameters: WCS, source, etc
             return new Vector3(
-                positionData.Value<float>("x"),// ?? 0,
-                positionData.Value<float>("y"),// ?? 0,
-                positionData.Value<float>("z")// ?? 0
+                ValueOrDefault(positionData, "x", 0f),
+                ValueOrDefault(positionData, "y", 0f),
+                ValueOrDefault(positionData, "z", 0f)
             );
         }
 
         public static Vector3 DataToDirection(JToken directionData)
         {
-            switch (directionData.Value<string>("name"))
+            //TODO move named directions a level higher? (Implement in DirectionActionFromData)
+            return ValueOrDefault(directionData, "name", "") switch
             {
-                case "up":
-                    return Vector3.up;
-                case "down":
-                    return Vector3.down;
-                case "left":
-                    return Vector3.left;
-                case "right":
-                    return Vector3.right;
-                case "forward":
-                    return Vector3.forward;
-                case "back":
-                    return Vector3.back;
-            }
-
-            //TODO normalise and set to forward if 0 magnitude?
-            return new Vector3(
-                directionData.Value<float>("x"),// ?? 0,
-                directionData.Value<float>("y"),// ?? 0,
-                directionData.Value<float>("z") //?? 0
-            );
+                "up" => Vector3.up,
+                "down" => Vector3.down,
+                "left" => Vector3.left,
+                "right" => Vector3.right,
+                "forward" => Vector3.forward,
+                "back" => Vector3.back,
+                //TODO normalise and set to forward if 0 magnitude?
+                _ => new Vector3(
+                                ValueOrDefault(directionData, "x", 0f),
+                                ValueOrDefault(directionData, "y", 0f),
+                                ValueOrDefault(directionData, "z", 0f)
+                            ),
+            };
         }
 
-        public static VideoEasing? DataToEasing(JToken easingData)
+        public static VideoEasing DataToEasing(JToken easingData)
         {
-            switch (easingData.Value<string>("easing"))
+            return ValueOrDefault(easingData, "easing", "") switch
             {
-                case "in":
-                    return new EasingIn(easingData.Value<int>("order"));// ?? 2);
-                case "out":
-                    return new EasingOut(easingData.Value<int>("order"));// ?? 2);
-                case "inOut":
-                    return new EasingInOut(easingData.Value<int>("order"));// ?? 2);
-                case "accelDecel":
-                    return new EasingAccelDecel(easingData.Value<float>("timeAccel"),// ?? 0.0f,
-                        easingData.Value<float>("timeDecel"));// ?? 1.0f);
-            }
-
-            return null;
+                "in" => new EasingIn(ValueOrDefault(easingData, "order", EasingOrderDefault)),
+                "out" => new EasingOut(ValueOrDefault(easingData, "order", EasingOrderDefault)),
+                "inOut" => new EasingInOut(ValueOrDefault(easingData, "order", EasingOrderDefault)),
+                "accelDecel" => new EasingAccelDecel(ValueOrDefault(easingData, "timeAccel", 0.0f),
+                                        ValueOrDefault(easingData, "timeDecel", 1.0f)),
+                _ => null,
+            };
         }
 
-        public static VideoCameraPath DataToPath(JToken pathData)
+        public static VideoCameraPath DataToPath(JToken pathData, Vector3 startPosition, Vector3 endPosition)
         {
-            switch (pathData.Value<string>("path"))
+            JToken startPosToken = pathData.SelectToken("startPosition");
+            if (startPosToken is not null && ValueOrDefault(startPosToken, "type", "") == "position")
             {
-
-                case "line":
-                    return new LinePath(DataToPosition(pathData["startPosition"]), DataToPosition(pathData["endPosition"]), DataToEasing(pathData["easing"]));
-                case "circle":
-                    return new CirclePath(
-                        startPosition: DataToPosition(pathData["startPosition"]),
-                        endPosition: DataToPosition(pathData["endPosition"]),
-                        center: DataToPosition(pathData["center"]),
-                        largeAngleDirection: pathData.Value<bool>("largeAngleDirection"),// ?? false,
-                        additionalRotations: pathData.Value<int>("additionalRotations"),// ?? 0,
-                        fullRotation: pathData.Value<bool>("fullRotation"),// ?? false,
-                        easing: DataToEasing(pathData["easing"])
-                    );
+                startPosition = DataToPosition(startPosToken);
             }
 
-            return new LinePath(Vector3.zero, Vector3.zero);
-        }
+            JToken endPosToken = pathData.SelectToken("endPosition");
+            if (endPosToken is not null && ValueOrDefault(endPosToken, "type", "") == "position")
+            {
+                endPosition = DataToPosition(endPosToken);
+            }
 
-        // public static VideoCameraPath DataToPath(JToken pathData, Vector3 startPosition, Vector3 endPosition)
-        // {
-            
-        // }
-        
+            VideoEasing easing = null;
+            JToken easingToken = pathData.SelectToken("easing");
+            if (easingToken is not null && ValueOrDefault(easingToken, "type", "") == "easing")
+            {
+                easing = DataToEasing(easingToken);
+            }
+
+            return ValueOrDefault(pathData, "path", "") switch
+            {
+                // "line" => new LinePath(startPosition, endPosition, easing),
+                "circle" => new CirclePath(
+                                        //TODO Make this statement more efficient. I still want a one-liner if possible
+                                        startPosition: startPosition,
+                                        endPosition: endPosition,
+                                        center: DataToPosition(pathData["centerPosition"]),//pathData.SelectToken("centerPosition") is not null ? DataToPosition(pathData["centerPosition"]) : Vector3.zero, // TODO complain if nothing given here
+                                        largeAngleDirection: ValueOrDefault(pathData, "largeAngleDirection", false),
+                                        additionalRotations: ValueOrDefault(pathData, "additionalRotations", 0),
+                                        fullRotation: ValueOrDefault(pathData, "fullRotation", false),
+                                        easing: easing
+                                    ),
+                _ => new LinePath(startPosition, endPosition, easing),
+            };
+        }
     }
 }

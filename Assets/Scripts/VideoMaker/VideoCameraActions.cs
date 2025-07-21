@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing.Printing;
 using UnityEngine;
 
 namespace VideoMaker
@@ -384,11 +385,6 @@ namespace VideoMaker
 
         public override Vector3 GetDirection(float time, Vector3 position)
         {
-            // float pathParam = Math.Clamp(
-            //     (time + _startTimeOffset - StartTime) / (Duration + _startTimeOffset + _endTimeOffset),
-            //     0f, 1f
-            // );
-
             float pathParam = Math.Clamp(
                 (time + _startTimeOffset) / (Duration + _startTimeOffset + _endTimeOffset),
                 0f, 1f

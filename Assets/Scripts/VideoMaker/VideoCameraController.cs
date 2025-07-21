@@ -7,11 +7,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Diagnostics;
+using SFB;
 
 namespace VideoMaker
 {
     public class VideoCameraController : MonoBehaviour
     {
+        //TODO consider phasing this out
         private enum Status
         {
             Idle,
@@ -34,39 +36,15 @@ namespace VideoMaker
         private Status _status = Status.Idle;
 
         // TODO use a different MonoBehaviour to manage the playback and status bar?
-        public TMP_Dropdown VideoScriptDropdown;
         public GameObject ProgressBar;
         public TMP_Text StatusText;
         public Texture2D Logo;
-        private bool _useLogo = true;
-        private float _logoScale = 0.2f;
         private byte[] _logoBytes = new byte[0];
 
         private Camera _camera;
 
-        private const float WaitTime = 1.5f;
-        private const float PunchInTime = 1f;
-        private const float CircleTime = 1.5f;
-        private const float RotateTime = 1.5f;
-        private const float BackWaitTime = 0.5f;
-        private const float Dist = 2f;
-        private Vector3 Target = Vector3.zero;//new Vector3(0.01f, 0.02f, 0.02f);
-        private EasingInOut easingIO = new(2);
+        private VideoScriptData _videoScript = null;
 
-        private const float TurntableTime = 15f;
-        private const float TurntableWaitTime = 0.5f;
-
-        private TMP_Dropdown.OptionData[] _videoScriptOptions = {
-            new ("Front-side-top"),
-            new ("Turntable y"),
-            new ("Turntable y/z")
-        };
-
-        private VideoPositionAction[][] _positionArrays;
-        private VideoDirectionAction[][] _directionArrays;
-        private VideoDirectionAction[][] _upDirectionArrays;
-        
-        private int _frameRate = 30;
         private int _frameCounter = 0;
         private int _frameDigits = 3;
         private bool _captureFrames = false;
@@ -75,7 +53,6 @@ namespace VideoMaker
         private Thread _exportThread;
         private bool _threadIsProcessing;
         private bool _terminateThreadWhenDone;
-        private bool _threadFramesProcessing;
 
         private string _directoryPath;
 
@@ -99,91 +76,6 @@ namespace VideoMaker
 
         void Awake()
         {
-            VideoScriptDropdown.options = new List<TMP_Dropdown.OptionData>(_videoScriptOptions);
-
-            _positionArrays = new VideoPositionAction[_videoScriptOptions.Length][];
-            _directionArrays = new VideoDirectionAction[_videoScriptOptions.Length][];
-            _upDirectionArrays = new VideoDirectionAction[_videoScriptOptions.Length][];
-
-            //Front-side-top
-            CirclePath circleSide = new(
-                Target + Dist * Vector3.back, Target + Dist * Vector3.left, Target,
-                easing: easingIO
-            );
-
-            CirclePath circleTop = new(
-                Target + Dist * Vector3.left, Target + Dist * Vector3.up, Target,
-                easing: easingIO
-            );
-
-            CirclePath circleBack = new(
-                Target + Dist * Vector3.up, Target + Dist * Vector3.back, Target,
-                easing: easingIO
-            );
-
-            _positionArrays[0] = new VideoPositionAction[] {
-                new VideoPositionActionHold(WaitTime, Target + Dist * Vector3.back),
-                new VideoPositionActionPath(CircleTime, circleSide),
-                new VideoPositionActionHold(WaitTime, Target + Dist * Vector3.left),
-                new VideoPositionActionPath(CircleTime, circleTop),
-                new VideoPositionActionHold(WaitTime + RotateTime + BackWaitTime, Target + Dist * Vector3.up),
-                new VideoPositionActionPath(CircleTime, circleBack)
-            };
-            _directionArrays[0] = new VideoDirectionAction[] {
-                new VideoDirectionActionLookAt(1000f, Target)
-            };
-            _upDirectionArrays[0] = new VideoDirectionAction[] {
-                new VideoDirectionActionHold(2 * WaitTime + 1 * CircleTime, Vector3.up),
-                new VideoDirectionActionPath(CircleTime, circleTop),
-                new VideoDirectionActionHold(WaitTime, Vector3.right),
-                new VideoDirectionActionTween(RotateTime, Vector3.right, Vector3.forward, easing: easingIO),
-                new VideoDirectionActionHold(BackWaitTime, Vector3.forward),
-                new VideoDirectionActionPath(CircleTime, circleBack, invert: true),
-            };
-
-            // Turntable y
-            _positionArrays[1] = new VideoPositionAction[] {
-                new VideoPositionActionPath(TurntableTime, new CirclePath(
-                    Vector3.back * Dist, Vector3.right * Dist, Vector3.zero, fullRotation: true
-                ))
-            };
-            _directionArrays[1] = new VideoDirectionAction[] {
-                new VideoDirectionActionLookAt(TurntableTime, Vector3.zero)
-            };
-            _upDirectionArrays[1] = new VideoDirectionAction[] {
-                new VideoDirectionActionHold(TurntableTime, Vector3.up)
-            };
-
-            // Turntable y/z
-            EasingAccelDecel easingADFull = new(0.25f, 0.75f);
-            EasingAccelDecel easingADStart = new(1f, 1f);
-            EasingAccelDecel easingADEnd = new(0f, 2f / 3f);
-
-            CirclePath circleZ = new CirclePath(
-                Dist * Vector3.left, Dist * Vector3.up, Vector3.zero, easing: easingADFull, fullRotation: true
-            );
-
-            _positionArrays[2] = new VideoPositionAction[] {
-                new VideoPositionActionPath(TurntableTime * 0.75f, new CirclePath(
-                    Dist * Vector3.back, Dist * Vector3.left, Vector3.zero, easing: easingADEnd, largeAngleDirection: true
-                )),
-                new VideoPositionActionHold(TurntableWaitTime, Dist * Vector3.left),
-                new VideoPositionActionPath(TurntableTime, circleZ),
-                new VideoPositionActionHold(TurntableWaitTime, Dist * Vector3.left),
-                new VideoPositionActionPath(TurntableTime * 0.25f, new CirclePath(
-                    Dist * Vector3.left, Dist * Vector3.back, Vector3.zero, easing: easingADStart
-                ))
-            };
-            _upDirectionArrays[2] = new VideoDirectionAction[] {
-                new VideoDirectionActionHold(TurntableTime * 0.75f + TurntableWaitTime, Vector3.up),
-                new VideoDirectionActionPath(TurntableTime, circleZ),
-                new VideoDirectionActionHold(TurntableWaitTime + TurntableTime * 0.25f, Vector3.up)
-            };
-            _directionArrays[2] = new VideoDirectionAction[] {
-                new VideoDirectionActionLookAt(TurntableTime * 2 + TurntableWaitTime, Vector3.zero)
-            };
-
-
             ProgressBar.SetActive(false);
             _targetCube = GameObject.Find("TestCube");
             _targetCube.SetActive(false);
@@ -191,19 +83,60 @@ namespace VideoMaker
             var directory = new DirectoryInfo(Application.dataPath);
             _directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/Video");
 
-            if (!System.IO.Directory.Exists(_directoryPath))
+            if (!Directory.Exists(_directoryPath))
             {
-                System.IO.Directory.CreateDirectory(_directoryPath);
+                Directory.CreateDirectory(_directoryPath);
             }
 
             _camera = GetComponent<Camera>();
             _camera.enabled = false;
+        }
 
-            
+        //Taken from CanvassDesktop.BrowseImageFile
+        public void BrowseVideoScriptFile()
+        {
+            string lastPath = PlayerPrefs.GetString("LastPath");
+            if (!Directory.Exists(lastPath))
+                lastPath = "";
+            var extensions = new[]
+            {
+            new ExtensionFilter("JSON Files", "json"),
+            new ExtensionFilter("All Files", "*"),
+        };
+            StandaloneFileBrowser.OpenFilePanelAsync("Open File", lastPath, extensions, false, (string[] paths) =>
+            {
+                if (paths.Length == 1)
+                {
+                    PlayerPrefs.SetString("LastPath", Path.GetDirectoryName(paths[0]));
+                    PlayerPrefs.Save();
+
+                    LoadVideoScriptFile(paths[0]);
+                }
+            });
+        }
+
+        private void LoadVideoScriptFile(string path)
+        {
+            if (path == null)
+            {
+                return;
+            }
+
+            using (StreamReader reader = new(path))
+            {
+                //TODO use async?
+                string jsonString = reader.ReadToEnd();
+                _videoScript = VideoScriptReader.ReadVideoScript(jsonString);
+            }
         }
 
         IEnumerator Preview()
         {
+            if (_videoScript is null)
+            {
+                yield break;
+            }
+
             _status = Status.PreviewPlayback;
             _camera.enabled = true;
             StartPlayback();
@@ -221,6 +154,11 @@ namespace VideoMaker
 
         IEnumerator Export()
         {
+            if (_videoScript is null)
+            {
+                yield break;
+            }
+
             // Kill the encoder thread if running from a previous execution
             if (_exportThread != null && (_threadIsProcessing || _exportThread.IsAlive))
             {
@@ -274,7 +212,7 @@ namespace VideoMaker
 
             _captureFrames = true;
 
-            float deltaTime = 1f / (float)_frameRate;
+            float deltaTime = 1f / (float)_videoScript.FrameRate;
             // _frameDigits = 
 
             while (_time < _duration)
@@ -314,9 +252,9 @@ namespace VideoMaker
 
             _time += deltaTime;
 
-            UpdateActionTime<VideoPositionAction>(deltaTime, ref _positionTime, ref _positionAction, ref _positionQueue);
-            UpdateActionTime<VideoDirectionAction>(deltaTime, ref _directionTime, ref _directionAction, ref _directionQueue);
-            UpdateActionTime<VideoDirectionAction>(deltaTime, ref _upDirectionTime, ref _upDirectionAction, ref _upDirectionQueue);
+            UpdateActionTime(deltaTime, ref _positionTime, ref _positionAction, ref _positionQueue);
+            UpdateActionTime(deltaTime, ref _directionTime, ref _directionAction, ref _directionQueue);
+            UpdateActionTime(deltaTime, ref _upDirectionTime, ref _upDirectionAction, ref _upDirectionQueue);
         }
 
         private void UpdateActionTime<T>(float deltaTime, ref float time, ref T action, ref Queue<T> actionQueue) where T : VideoCameraAction
@@ -367,26 +305,27 @@ namespace VideoMaker
                 _cubeTransform = _targetCube.transform;
             }
 
-            int scriptIdx = VideoScriptDropdown.value;
 
-            _positionQueue = new(_positionArrays[scriptIdx]);
-            _directionQueue = new(_directionArrays[scriptIdx]);
-            _upDirectionQueue = new(_upDirectionArrays[scriptIdx]);
+            // int scriptIdx = VideoScriptDropdown.value;
+
+            _positionQueue = new(_videoScript.PositionActions);
+            _directionQueue = new(_videoScript.DirectionActions);
+            _upDirectionQueue = new(_videoScript.UpDirectionActions);
             
             float duration = 0f;
-            foreach (VideoCameraAction action in _positionArrays[scriptIdx])
+            foreach (VideoCameraAction action in _videoScript.PositionActions)
             {
                 duration += action.Duration;
             }
             _duration = duration;
 
-            foreach (VideoCameraAction action in _directionArrays[scriptIdx])
+            foreach (VideoCameraAction action in _videoScript.DirectionActions)
             {
                 duration += action.Duration;
             }
             _duration = Math.Min(_duration, duration);
 
-            foreach (VideoCameraAction action in _upDirectionArrays[scriptIdx])
+            foreach (VideoCameraAction action in _videoScript.UpDirectionActions)
             {
                 duration += action.Duration;
             }
@@ -420,18 +359,6 @@ namespace VideoMaker
                 return;
             }
             StartCoroutine(Export());
-        }
-
-        public void OnLogoOptionSelected(int idx)
-        {
-            if (idx == 0)
-            {
-                _useLogo = true;
-            }
-            else
-            {
-                _useLogo = false;
-            }
         }
 
         private void OnRenderImage(RenderTexture source, RenderTexture destination)
@@ -490,9 +417,9 @@ namespace VideoMaker
 
             string overlay = "";
 
-            if (_useLogo)
+            if (_videoScript.UseLogo)
             {
-                overlay = string.Format("-i ..\\logo.png -filter_complex \"[1:v]scale=iw*{0:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ", _logoScale);
+                overlay = string.Format("-i ..\\logo.png -filter_complex \"[1:v]scale=iw*{0:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ", _videoScript.LogoScale);
             }
             
             // string overlay = "";
@@ -502,13 +429,13 @@ namespace VideoMaker
             // {
             //     string path = Path.Combine(_directoryPath, "logo.png");
             //     File.WriteAllBytes(path, _logoBytes);
-            //     overlay = string.Format("-i logo.png -filter_complex \"[1:v]scale=iw*{0:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ", _logoScale);
+            //     overlay = string.Format("-i logo.png -filter_complex \"[1:v]scale=iw*{0:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ", _videoScript.LogoScale);
             // }
 
             //TODO change ProgressBar text
             //ffmpeg -framerate 10 -i frame%03d.png -c:v libx264 -pix_fmt yuv420p  video.mp4
             //-i idavie_logo_better.png -filter_complex "[1:v]scale=iw*0.1:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10"
-            string command = string.Format("-framerate {0} -i frame%0{1}d.png {2}-c:v libx264 -pix_fmt yuv420p video.mp4", _frameRate, _frameDigits, overlay);
+            string command = string.Format("-framerate {0} -i frame%0{1}d.png {2}-c:v libx264 -pix_fmt yuv420p video.mp4", _videoScript.FrameRate, _frameDigits, overlay);
 
             print(command);
 
