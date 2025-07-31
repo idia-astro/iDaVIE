@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Valve.Newtonsoft.Json.Linq;
 // using Newtonsoft.Json.Linq;
 using UnityEngine;
+using System.Runtime.Remoting.Messaging;
 
 
 namespace VideoMaker
@@ -127,7 +128,7 @@ namespace VideoMaker
         }
 
         //TODO return single actions instead of lists? There may not ever be a case where lists are needed
-        public static (List<VideoPositionAction> positions, List<VideoDirectionAction> directions, List<VideoDirectionAction> upDirections) ActionDataToActions(JToken actionData,
+        private static (List<VideoPositionAction> positions, List<VideoDirectionAction> directions, List<VideoDirectionAction> upDirections) ActionDataToActions(JToken actionData,
             Vector3 positionBefore, Vector3 directionBefore, Vector3 upDirectionBefore)
         {
             List<VideoPositionAction> positions = new();
@@ -143,18 +144,20 @@ namespace VideoMaker
             VideoCameraPath path = null;
             if (positionData is not null)
             {
-                switch (ValueOrDefault(positionData, "type", ""))
+                path = DataToPath(positionData, positionBefore, positionBefore);
+                Vector3? position = DataToPosition(positionData);
+
+                if (path is not null)
                 {
-                    case "path":
-                        path = DataToPath(positionData, positionBefore, positionBefore);
-                        positions.Add(new VideoPositionActionPath(duration, path));
-                        break;
-                    case "position":
-                        positions.Add(new VideoPositionActionHold(duration, DataToPosition(positionData)));
-                        break;
-                    default:
-                        positions.Add(new VideoPositionActionHold(duration, positionBefore));
-                        break;
+                    positions.Add(new VideoPositionActionPath(duration, path));
+                }
+                else if (position is not null)
+                {
+                    positions.Add(new VideoPositionActionHold(duration, (Vector3)position));
+                }
+                else
+                {
+                    positions.Add(new VideoPositionActionHold(duration, positionBefore));
                 }
             }
             else
@@ -168,42 +171,46 @@ namespace VideoMaker
             return (positions, directions, upDirections);
         }
 
-        public static VideoDirectionAction DirectionActionFromData(JToken data, float duration, VideoCameraPath path, Vector3 defualtDirection, bool pathUpDirection)
+        private static VideoDirectionAction DirectionActionFromData(JToken data, float duration, VideoCameraPath path, Vector3 defualtDirection,
+            bool pathUpDirection, float startTimeOffset = 0f, float endTimeOffset = 0f)
         {
             if (data is not null)
             {
-                //TDOO check for strings alongPath, alongPathReverse, upFromPath, upFromPathReverse
-                // switch (data.Type == JTokenType.String ? data.ToObject<string>() : "") //More efficient, but less sustainable
                 switch (ToObjectOrDefualt(data, ""))
                 {
                     case "alongPath":
-                        return new VideoDirectionActionPath(duration, path);
+                        return new VideoDirectionActionPath(duration, path, startTimeOffset: startTimeOffset, endTimeOffset: endTimeOffset);
                     case "alongPathReverse":
-                        return new VideoDirectionActionPath(duration, path, invert: true);
+                        return new VideoDirectionActionPath(duration, path, invert: true, startTimeOffset: startTimeOffset, endTimeOffset: endTimeOffset);
                     case "upFromPath":
-                        return new VideoDirectionActionPath(duration, path, useUpDirection: true);
+                        return new VideoDirectionActionPath(duration, path, useUpDirection: true, startTimeOffset: startTimeOffset, endTimeOffset: endTimeOffset);
                     case "upFromPathReverse":
-                        return new VideoDirectionActionPath(duration, path, useUpDirection: true, invert: true);
+                        return new VideoDirectionActionPath(duration, path, useUpDirection: true, invert: true, startTimeOffset: startTimeOffset, endTimeOffset: endTimeOffset);
 
                 }
-                switch (ValueOrDefault(data, "type", ""))
-                {
-                    case "direction":
-                        return new VideoDirectionActionHold(duration: duration, direction: DataToDirection(data));
-                    case "position":
-                        return new VideoDirectionActionLookAt(duration: duration, target: DataToPosition(data));
-                    //TODO case "path":
 
-                    default:
-                        //Wildcard along path or looking forward
-                        if (path is null)
-                        {
-                            return new VideoDirectionActionHold(duration, defualtDirection);
-                        }
-                        else
-                        {
-                            return new VideoDirectionActionPath(duration, path, useUpDirection: pathUpDirection);
-                        }
+                Vector3? direction = DataToDirection(data);
+
+                if (direction is not null)
+                {
+                    return new VideoDirectionActionHold(duration: duration, direction: (Vector3)direction);
+                }
+
+                Vector3? position = DataToPosition(data);
+
+                if (position is not null)
+                {
+                    return new VideoDirectionActionLookAt(duration: duration, target: (Vector3)position);
+                }
+
+                // Defualt: along path or looking forward
+                if (path is null)
+                {
+                    return new VideoDirectionActionHold(duration, defualtDirection);
+                }
+                else
+                {
+                    return new VideoDirectionActionPath(duration, path, useUpDirection: pathUpDirection, startTimeOffset: startTimeOffset, endTimeOffset: endTimeOffset);
                 }
             }
             else
@@ -212,7 +219,7 @@ namespace VideoMaker
             }
         }
 
-        public static (List<VideoPositionAction> positions, List<VideoDirectionAction> directions, List<VideoDirectionAction> upDirections) TransitionDataToActions(JToken transitionData,
+        private static (List<VideoPositionAction> positions, List<VideoDirectionAction> directions, List<VideoDirectionAction> upDirections) TransitionDataToActions(JToken transitionData,
             Vector3 positionBefore, Vector3 directionBefore, Vector3 upDirectionBefore,
             Vector3 positionAfter, Vector3 directionAfter, Vector3 upDirectionAfter)
         {
@@ -251,13 +258,13 @@ namespace VideoMaker
             {
                 float duration = ValueOrDefault(travelData, "duration", 0f);
 
-                //TODO check for path and then use DataToPath with start and end positions
-                // JToken pathData = travelData["path"];
-                VideoCameraPath path = new LinePath(positionBefore, positionAfter, new EasingInOut(order: EasingOrderDefault));
+                JToken travelPositionData = travelData["position"];
+                VideoCameraPath path = travelPositionData is not null ? DataToPath(travelPositionData, positionBefore, positionAfter) : null;
+                path ??= new LinePath(positionBefore, positionAfter, new EasingInOut(order: EasingOrderDefault));
+
                 VideoPositionAction positionAction = new VideoPositionActionPath(duration, path);
                 positions.Add(positionAction);
 
-                //TODO lookAt and LookUp options. For now going with default - along path
                 float directionDuration = duration;
                 float startTimeOffset = 0f;
                 if (startOverlap)
@@ -276,41 +283,30 @@ namespace VideoMaker
                 Vector3 positionStart = positionAction.GetPosition(startTimeOffset);
                 Vector3 positionEnd = positionAction.GetPosition(duration - endTimeOffset);
 
-                VideoDirectionAction directionAction = new VideoDirectionActionPath(
-                    duration: directionDuration,
-                    path: path,
-                    startTimeOffset: startTimeOffset, endTimeOffset: endTimeOffset
-                );
+                //TODO there is something wrong with this! Maybe even the method
+                VideoDirectionAction directionAction = DirectionActionFromData(travelData["lookAt"], directionDuration, path, directionBefore, false, startTimeOffset, endTimeOffset);
                 directions.Add(directionAction);
 
                 travelDirectionStart = directionAction.GetDirection(0f, positionStart);
                 travelDirectionEnd = directionAction.GetDirection(duration - endTimeOffset, positionEnd);
 
-                VideoDirectionAction upDirectionAction = new VideoDirectionActionPath(
-                    duration: directionDuration,
-                    path: path,
-                    startTimeOffset: startTimeOffset, endTimeOffset: endTimeOffset,
-                    useUpDirection: true
-                );
+                VideoDirectionAction upDirectionAction = DirectionActionFromData(travelData["LookUp"], directionDuration, path, upDirectionBefore, true, startTimeOffset, endTimeOffset);
+
                 upDirections.Add(upDirectionAction);
 
                 travelUpDirectionStart = upDirectionAction.GetDirection(0f, positionStart);
                 travelUpDirectionEnd = upDirectionAction.GetDirection(duration - endTimeOffset, positionEnd);
             }
 
-
+            //TODO eliminate repitition. Use a function?
             if (lookStartData is not null)
             {
                 JToken easingData = lookStartData["easing"];
-                VideoEasing easing = null;
-                if (easingData is not null)
-                {
-                    easing = DataToEasing(easingData);
-                }
+                VideoEasing easing = easingData is not null ? DataToEasing(easingData) : null;
 
                 if (!startOverlap)
                 {
-                    positions.Add(new VideoPositionActionHold(duration: endDuration, position: positionBefore));
+                    positions.Add(new VideoPositionActionHold(duration: startDuration, position: positionBefore));
                 }
 
                 directions.Insert(0, new VideoDirectionActionTween(duration: startDuration,
@@ -322,12 +318,8 @@ namespace VideoMaker
             if (lookEndData is not null)
             {
                 JToken easingData = lookEndData["easing"];
-                VideoEasing easing = null;
-                if (easingData is not null)
-                {
-                    easing = DataToEasing(easingData);
-                }
-
+                VideoEasing easing = easingData is not null ? DataToEasing(easingData) : null;
+                
                 if (!endOverlap)
                 {
                     positions.Add(new VideoPositionActionHold(duration: endDuration, position: positionAfter));
@@ -342,8 +334,18 @@ namespace VideoMaker
             return (positions, directions, upDirections);
         }
 
-        public static Vector3 DataToPosition(JToken positionData)
+        private static Vector3? DataToPosition(JToken positionData)
         {
+            if (ToObjectOrDefualt(positionData, "") == "center")
+            {
+                return Vector3.zero;
+            }
+
+            if (ValueOrDefault(positionData, "type", "") != "position")
+            {
+                return null;
+            }
+
             //TODO Add subtype parameters: WCS, source, etc
             return new Vector3(
                 ValueOrDefault(positionData, "x", 0f),
@@ -352,10 +354,10 @@ namespace VideoMaker
             );
         }
 
-        public static Vector3 DataToDirection(JToken directionData)
+        private static Vector3? DataToDirection(JToken directionData)
         {
             //TODO move named directions a level higher? (Implement in DirectionActionFromData)
-            return ValueOrDefault(directionData, "name", "") switch
+            return ToObjectOrDefualt(directionData, "") switch
             {
                 "up" => Vector3.up,
                 "down" => Vector3.down,
@@ -364,15 +366,16 @@ namespace VideoMaker
                 "forward" => Vector3.forward,
                 "back" => Vector3.back,
                 //TODO normalise and set to forward if 0 magnitude?
-                _ => new Vector3(
+                _ => ValueOrDefault(directionData, "type", "") == "direction" ? new Vector3(
                                 ValueOrDefault(directionData, "x", 0f),
                                 ValueOrDefault(directionData, "y", 0f),
                                 ValueOrDefault(directionData, "z", 0f)
-                            ),
+                            ) : null
             };
         }
 
-        public static VideoEasing DataToEasing(JToken easingData)
+        //TODO re-write both this and the accelDecel (generic inOut)
+        private static VideoEasing DataToEasing(JToken easingData)
         {
             return ValueOrDefault(easingData, "easing", "") switch
             {
@@ -385,27 +388,22 @@ namespace VideoMaker
             };
         }
 
-        public static VideoCameraPath DataToPath(JToken pathData, Vector3 startPosition, Vector3 endPosition)
+        private static VideoCameraPath DataToPath(JToken pathData, Vector3 startPosition, Vector3 endPosition)
         {
-            JToken startPosToken = pathData.SelectToken("startPosition");
-            if (startPosToken is not null && ValueOrDefault(startPosToken, "type", "") == "position")
+            if (ValueOrDefault(pathData, "type", "") != "path")
             {
-                startPosition = DataToPosition(startPosToken);
+                return null;
             }
+            JToken startPosToken = pathData.SelectToken("startPosition");
+            startPosition = startPosToken is not null ? DataToPosition(startPosToken) ?? startPosition : startPosition;
 
             JToken endPosToken = pathData.SelectToken("endPosition");
-            if (endPosToken is not null && ValueOrDefault(endPosToken, "type", "") == "position")
-            {
-                endPosition = DataToPosition(endPosToken);
-            }
+            endPosition = endPosToken is not null ? DataToPosition(endPosToken) ?? endPosition : endPosition;
 
-            VideoEasing easing = null;
             JToken easingToken = pathData.SelectToken("easing");
-            if (easingToken is not null && ValueOrDefault(easingToken, "type", "") == "easing")
-            {
-                easing = DataToEasing(easingToken);
-            }
+            VideoEasing easing = easingToken is not null ? DataToEasing(easingToken) : null;
 
+            //TODO change to "name". Also whether startPosition and endPositions are defined or not is signifigant for some paths, it should be indicated
             return ValueOrDefault(pathData, "path", "") switch
             {
                 // "line" => new LinePath(startPosition, endPosition, easing),
@@ -413,7 +411,7 @@ namespace VideoMaker
                                         //TODO Make this statement more efficient. I still want a one-liner if possible
                                         startPosition: startPosition,
                                         endPosition: endPosition,
-                                        center: DataToPosition(pathData["centerPosition"]),//pathData.SelectToken("centerPosition") is not null ? DataToPosition(pathData["centerPosition"]) : Vector3.zero, // TODO complain if nothing given here
+                                        center: pathData.SelectToken("centerPosition") is not null ? DataToPosition(pathData["centerPosition"]) ?? Vector3.zero : Vector3.zero, // TODO complain if nothing given here
                                         largeAngleDirection: ValueOrDefault(pathData, "largeAngleDirection", false),
                                         additionalRotations: ValueOrDefault(pathData, "additionalRotations", 0),
                                         fullRotation: ValueOrDefault(pathData, "fullRotation", false),

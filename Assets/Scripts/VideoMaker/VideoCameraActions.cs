@@ -9,7 +9,8 @@ namespace VideoMaker
     //Easing functions
     public class VideoEasing
     {
-        public float GetValue(float valueIn) {
+        public float GetValue(float valueIn)
+        {
             if (valueIn < 0)
             {
                 return 0;
@@ -238,7 +239,7 @@ namespace VideoMaker
         protected override Vector3 OnGetUpDirection(float pathParam)
         {
             float angle = 2 * Mathf.PI * _rotations * pathParam;
-            return - (Mathf.Cos(angle) * _basis1 + Mathf.Sin(angle) * _basis2).normalized;
+            return -(Mathf.Cos(angle) * _basis1 + Mathf.Sin(angle) * _basis2).normalized;
         }
     }
 
@@ -345,7 +346,6 @@ namespace VideoMaker
             return (_directionFrom * (1 - frac) + _directionTo * frac).normalized;
         }
     }
-
 
     public class VideoDirectionActionLookAt : VideoDirectionAction
     {
