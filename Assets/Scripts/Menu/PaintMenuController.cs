@@ -26,24 +26,54 @@ using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
 
+/// <summary>
+/// Controls the UI and input for the paint mode.
+/// Manages brush size, mask modes, painting behavior, and menu navigation.
+/// </summary>
+
 public class PaintMenuController : MonoBehaviour
 {
+    /// <summary>
+    /// Reference to the GameObject containing VolumeDataSetRenderer components.
+    /// </summary>
     public GameObject volumeDatasetRendererObj = null;
+    /// <summary>
+    /// Text UI element for displaying user notifications.
+    /// </summary>
     public GameObject notificationText = null;
 
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
 
+    /// <summary>
+    /// Reference to the sources menu UI.
+    /// </summary>
     public GameObject sourcesMenu;
+    /// <summary>
+    /// Reference to the plots menu UI.
+    /// </summary>
     public GameObject plotsMenu;
+    /// <summary>
+    /// Reference to the paint menu UI.
+    /// </summary>
     public GameObject paintMenu;
-    public GameObject shapeMenu; // Menu for shape selection
+    /// <summary>
+    /// Reference to the shape selection menu UI.
+    /// </summary>
+    public GameObject shapeMenu;
+    /// <summary>
+    /// Reference to the save mask popup UI.
+    /// </summary>
     public GameObject savePopup;
     int maskstatus = 0;
     int cropstatus = 0;
     int featureStatus = 0;
 
     private VolumeInputController _volumeInputController = null;
+
+    /// <summary>
+    /// Gets the VolumeInputController instance used for brush input and state management.
+    /// </summary>
     public VolumeInputController VolumeInputController => _volumeInputController;
 
     private Text _topPanelText;
@@ -51,6 +81,10 @@ public class PaintMenuController : MonoBehaviour
     private GameObject _shapeSelectionButton;
     private string oldSaveText = "";
 
+    /// <summary>
+    /// Unity event called when the object becomes enabled and active.
+    /// Initializes dataset references and sets paint mode state.
+    /// </summary>
     void OnEnable()
     {
         if (volumeDatasetRendererObj != null)
@@ -58,7 +92,7 @@ public class PaintMenuController : MonoBehaviour
 
         if (_volumeInputController == null)
             _volumeInputController = FindObjectOfType<VolumeInputController>();
-        
+
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeEnabled);
 
         _topPanelText = gameObject.transform.Find("TopPanel").gameObject.transform.Find("Text").GetComponent<Text>();
@@ -66,7 +100,9 @@ public class PaintMenuController : MonoBehaviour
         _shapeSelectionButton = gameObject.transform.Find("Content/SecondRow/ShapeMenu").gameObject;
     }
 
-    // Update is called once per frame
+    /// <summary>
+    /// Unity update loop to update UI based on brush mode and dataset activity.
+    /// </summary>
     void Update()
     {
         var firstActive = getFirstActiveDataSet();
@@ -93,7 +129,11 @@ public class PaintMenuController : MonoBehaviour
         }
 
     }
-    
+
+    /// <summary>
+    /// Returns the first active and enabled VolumeDataSetRenderer in the scene.
+    /// </summary>
+    /// <returns>The first active VolumeDataSetRenderer or null if none found.</returns>
     private VolumeDataSetRenderer getFirstActiveDataSet()
     {
         foreach (var dataSet in _dataSets)
@@ -106,6 +146,9 @@ public class PaintMenuController : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// Toggles the visibility of the outline (mask overlay) for the current dataset.
+    /// </summary>
     public void ShowOutline()
     {
 
@@ -127,6 +170,10 @@ public class PaintMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Cycles through different mask modes: Disabled, Enabled, Inverted, and Isolated.
+    /// Updates the mask UI accordingly.
+    /// </summary>
     public void ToggleMask()
     {
         if (maskstatus == 3)
@@ -163,6 +210,11 @@ public class PaintMenuController : MonoBehaviour
         }
 
     }
+
+    /// <summary>
+    /// Sets the mask mode on the currently active dataset.
+    /// </summary>
+    /// <param name="mode">The mask mode to apply.</param>
     private void setMask(MaskMode mode)
     {
         if (_activeDataSet)
@@ -171,65 +223,96 @@ public class PaintMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Exits paint mode and disables this controller.
+    /// </summary>
     public void ExitPaintMode()
     {
-        if(_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.EditingSourceId)
+        if (_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.EditingSourceId)
             _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.CancelEditSource);
-        
+
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
         this.gameObject.SetActive(false);
     }
 
-
+    /// <summary>
+    /// Increases the brush size and updates the bottom panel UI text.
+    /// </summary>
     public void BrushSizeIncrease()
     {
         _volumeInputController.IncreaseBrushSize();
         this.gameObject.transform.Find("BottomPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Increase brush size (actual: " + _volumeInputController.BrushSize + ")";
     }
 
+    /// <summary>
+    /// Decreases the brush size and updates the bottom panel UI text.
+    /// </summary>
     public void BrushSizeDecrease()
     {
         _volumeInputController.DecreaseBrushSize();
         this.gameObject.transform.Find("BottomPanel").gameObject.transform.Find("Text").GetComponent<Text>().text = "Decrease brush size (actual: " + _volumeInputController.BrushSize + ")";
     }
 
+    /// <summary>
+    /// Undoes the last brush stroke using the primary hand.
+    /// </summary>
     public void UndoBrushStroke()
     {
         _volumeInputController.UndoBrushStroke(_volumeInputController.PrimaryHand);
     }
 
+    /// <summary>
+    /// Redoes the last undone brush stroke using the primary hand.
+    /// </summary>
     public void RedoBrushStroke()
     {
         _volumeInputController.RedoBrushStroke(_volumeInputController.PrimaryHand);
     }
 
-
+    /// <summary>
+    /// Resets the brush size to its default value.
+    /// </summary>
     public void BrushSizeReset()
     {
         _volumeInputController.ResetBrushSize();
     }
 
-
+    /// <summary>
+    /// Sets the painting mode to additive (brush adds to the mask).
+    /// </summary>
     public void PaintingAdditive()
     {
         _volumeInputController.SetBrushAdditive();
     }
 
+    /// <summary>
+    /// Sets the painting mode to subtractive (brush erases from the mask).
+    /// </summary>
     public void PaintingSubtractive()
     {
         _volumeInputController.SetBrushSubtractive();
     }
 
+    /// <summary>
+    /// Sets the painting mode to subtractive (brush erases from the mask).
+    /// </summary>
     public void OpenSourcesMenu()
     {
         spawnMenu(sourcesMenu);
     }
-    
+
+    /// <summary>
+    /// Opens the plots menu in front of the player.
+    /// </summary>
     public void OpenPlotsWindow()
     {
         spawnMenu(plotsMenu);
     }
-    
+
+    /// <summary>
+    /// Spawns a UI menu in front of the player at a fixed distance.
+    /// </summary>
+    /// <param name="menu">The GameObject representing the menu to spawn.</param>
     public void spawnMenu(GameObject menu)
     {
         Vector3 playerPos = Camera.main.transform.position;
@@ -248,6 +331,10 @@ public class PaintMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Initiates the save mask process. If it's a new mask, saves it immediately;
+    /// otherwise, shows a popup for overwrite confirmation.
+    /// </summary>
     public void SaveMask()
     {
         if (_activeDataSet.IsMaskNew)
@@ -283,12 +370,18 @@ public class PaintMenuController : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// Cancels the save popup and returns to the paint menu.
+    /// </summary>
     public void SaveCancel()
     {
         paintMenu.SetActive(true);
         savePopup.SetActive(false);
     }
 
+    /// <summary>
+    /// Saves the current mask and overwrites the existing one.
+    /// </summary>
     public void SaveOverwriteMask()
     {
         _activeDataSet?.SaveMask(true);
@@ -297,38 +390,51 @@ public class PaintMenuController : MonoBehaviour
         SaveCancel();
     }
 
+    /// <summary>
+    /// Saves the current mask and overwrites the existing one.
+    /// </summary>
     public void SaveNewMask()
-    { 
+    {
         _activeDataSet?.SaveMask(false);
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
         SaveCancel();
     }
 
+    /// <summary>
+    /// Adds a new painting source ID via the input controller.
+    /// </summary>
     public void AddNewSource()
     {
         _volumeInputController.AddNewSource();
     }
+
+    /// <summary>
+    /// Enables editing of the current source ID.
+    /// </summary>
     public void EditSourceId()
     {
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.StartEditSource);
     }
 
-     public void OpenShapeMenu()
+    /// <summary>
+    /// Opens the shape selection menu and prepares for switching paint shape.
+    /// </summary>
+    public void OpenShapeMenu()
     {
         shapeMenu.transform.SetParent(this.transform.parent, false);
         shapeMenu.transform.localPosition = this.transform.localPosition;
         shapeMenu.transform.localRotation = this.transform.localRotation;
         shapeMenu.transform.localScale = this.transform.localScale;
 
-        if(_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.EditingSourceId)
+        if (_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.EditingSourceId)
             _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.CancelEditSource);
-        
+
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
         _volumeInputController.ChangeShapeSelection();
         PaintingAdditive();
         gameObject.SetActive(false);
         shapeMenu.SetActive(true);
-        
+
     }
 
 }

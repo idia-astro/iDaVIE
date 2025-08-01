@@ -5,8 +5,21 @@ using UnityEngine;
 
 public class StretchMesh : MonoBehaviour
 {
+    /// <summary>
+    /// Reference to the bounding box <see cref="GameObject"/> used for visualizing or calculating bounds.
+    /// </summary>
     public GameObject boundingBox; // Reference to the bounding box GameObject
 
+    /// <summary>
+    /// Initializes the mesh and bounding box for the shape by scaling vertices and adjusting colliders.
+    /// </summary>
+    /// <remarks>
+    /// - Resets the transform scale to (1,1,1) temporarily to avoid double scaling.
+    /// - Scales mesh vertices according to the original transform scale.
+    /// - Recalculates mesh bounds and normals for accurate rendering.
+    /// - Adjusts the BoxCollider size to match the current scale.
+    /// - Sets the bounding box to slightly larger than the mesh (scaled by 1.05) and centers it.
+    /// </remarks>
     void Start()
     {
         // Get the MeshFilter component

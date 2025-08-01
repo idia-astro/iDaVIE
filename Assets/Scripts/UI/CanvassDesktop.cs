@@ -96,13 +96,48 @@ public class CanvassDesktop : MonoBehaviour
     protected Coroutine showLoadDialogCoroutine;
 
     public MenuBarBehaviour MenuBarBehaviour;
-    private bool inPaintMode = false;  //Must be in paint mode (VR) in order to do desktop painting
-    public GameObject vrMapDisplay;  //To hide the VR Map Display when desktop selection is selected
-    public GameObject RegionCubeDisplay; //add display the slice
-    public GameObject PaintSelectionContainer;  //To have correct container active for desktop paint selection
+
+    /// <summary>
+    /// Indicates whether the system is currently in paint mode (VR). 
+    /// Desktop painting is only allowed when this is true.
+    /// </summary>
+    private bool inPaintMode = false;
+
+    /// <summary>
+    /// Reference to the VR Map Display <see cref="GameObject"/>.
+    /// Hidden when desktop selection mode is active.
+    /// </summary>
+    public GameObject vrMapDisplay;
+
+    /// <summary>
+    /// Reference to the Region Cube Display <see cref="GameObject"/>.
+    /// Used to display the current slice region.
+    /// </summary>
+    public GameObject RegionCubeDisplay;
+
+    /// <summary>
+    /// Container <see cref="GameObject"/> that holds the UI elements for desktop paint selection mode.
+    /// </summary>
+    public GameObject PaintSelectionContainer;
+
+    /// <summary>
+    /// Container <see cref="GameObject"/> that holds UI elements shown while waiting during painting.
+    /// </summary>
     public GameObject PaintWaitingContainer;
+
+    /// <summary>
+    /// Reference to the <see cref="QuickMenuController"/> instance for managing quick menu interactions.
+    /// </summary>
     public QuickMenuController quickMenuController;
+
+    /// <summary>
+    /// Reference to the <see cref="PaintMenuController"/> instance for managing paint menu interactions.
+    /// </summary>
     public PaintMenuController paintMenuController;
+
+    /// <summary>
+    /// Reference to the <see cref="TabsManager"/> used for updating the paint menu tabs.
+    /// </summary>
     public TabsManager _tabsManager;  //For updating paint menu
 
     private void Awake()
@@ -551,6 +586,8 @@ public class CanvassDesktop : MonoBehaviour
 
     /// <summary>
     /// Method for all the necessary post loading actions after loading a cube from the file system
+    /// Called after a file is loaded into the file system. 
+    /// Initialises the rendering environment, updates UI states, and sets up dataset-specific interactions.
     /// </summary>
     private void postLoadFileFileSystem()
     {
@@ -561,14 +598,14 @@ public class CanvassDesktop : MonoBehaviour
         VolumePlayer.SetActive(true);
 
         var firstActiveRenderer = GetFirstActiveRenderer();
-        
+
         renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
                 .Find("Settings").gameObject.transform.Find("Mask_container").gameObject.transform.Find("Dropdown_mask").GetComponent<TMP_Dropdown>().interactable =
             firstActiveRenderer.MaskFileName != "";
 
         populateColorMapDropdown();
         populateStatsValue();
-        
+
         // Populate the rest frequency dropdown in the Rendering tab from config file
         PopulateRestfreqencyDropdown();
         SetRestFrequencyInputInteractable(false);
@@ -577,8 +614,8 @@ public class CanvassDesktop : MonoBehaviour
         //subscribe rest frequency change behanvior to changes in new loaded cube
         firstActiveRenderer.RestFrequencyGHzListIndexChanged += OnRestFrequencyIndexOfDatasetChanged;
         firstActiveRenderer.RestFrequencyGHzChanged += OnRestFrequencyOfDatasetChanged;
-        
-        
+
+
         LoadingText.gameObject.SetActive(false);
         progressBar.gameObject.SetActive(false);
         WelcomeMenu.gameObject.SetActive(false);
@@ -594,7 +631,7 @@ public class CanvassDesktop : MonoBehaviour
 
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Stats_Button").GetComponent<Button>()
             .onClick.Invoke();
-        
+
         // Enable the desktop GUI VR View as default left panel content to display
         if (MenuBarBehaviour.AboutSection.activeSelf)
         {
@@ -1432,16 +1469,28 @@ public class CanvassDesktop : MonoBehaviour
         statsPanelContent.gameObject.transform.Find("Histogram_container").gameObject.transform.Find("Histogram").GetComponent<Image>().sprite = img;
     }
 
+    /// <summary>
+    /// Retrieves the active <see cref="VolumeDataSet"/> currently being rendered.
+    /// </summary>
+    /// <returns>The main volume dataset from the first active renderer.</returns>
     public VolumeDataSet getActiveDataSet()
     {
         return GetFirstActiveRenderer().Data;  //returns the volumedataset
     }
 
+    /// <summary>
+    /// Retrieves the active mask <see cref="VolumeDataSet"/> associated with the currently rendered data.
+    /// </summary>
+    /// <returns>The mask dataset from the first active renderer.</returns>
     public VolumeDataSet getActiveMaskSet()
     {
         return GetFirstActiveRenderer().Mask;  //returns the mask
     }
 
+    /// <summary>
+    /// Called when the Paint tab is selected in the UI.
+    /// Configures the display and UI containers to enable desktop painting functionality.
+    /// </summary>
     public void paintTabSelected()
     {
         quickMenuController.OpenPaintMenu();
@@ -1452,7 +1501,12 @@ public class CanvassDesktop : MonoBehaviour
         RegionCubeDisplay.GetComponent<DesktopPaintController>().StartPaintSelection();
     }
 
-    public void paintTabLeft() {
+    /// <summary>
+    /// Called when the Paint tab is exited. 
+    /// Exits paint mode and resets relevant paint-related states.
+    /// </summary>
+    public void paintTabLeft()
+    {
         paintMenuController.ExitPaintMode();
     }
 
