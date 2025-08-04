@@ -13,42 +13,28 @@ namespace VideoMaker
 {
     public class VideoCameraController : MonoBehaviour
     {
-        //TODO consider phasing this out
-        private enum Status
-        {
-            Idle,
-            Load,
-            Export,
-            ExportPlayback,
-            PreviewPlayback,
-        }
+        private const string ExportMessage = "Exporting Video";
+        private const string PreviewMessage = "Preview Video";
 
-        //TODO What's the best way to assign a label to the enum? Description attribute seems like overkill...
-        private Dictionary<Status, string> _statusLabels = new Dictionary<Status, string>
-    {
-        {Status.Idle, ""},
-        {Status.Load, "Loading"},
-        {Status.Export, "Exporting Video"},
-        {Status.ExportPlayback, "Recording Video"},
-        {Status.PreviewPlayback, "Preview Video"}
-    };
+        private const int FfmpegConsoleCount = 58; //From limited observation, this is how many console messages are printed by ffmpeg
 
-        private Status _status = Status.Idle;
-
-        public TMP_Text VideoScriptFileText;
+        public TMP_Text VideoScriptFilePath;
 
         // TODO use a different MonoBehaviour to manage the playback and status bar?
         public GameObject ProgressBar;
         public TMP_Text StatusText;
-        public Texture2D Logo;
-        private byte[] _logoBytes = new byte[0];
+        // public Texture2D Logo;
+        // private byte[] _logoBytes = new byte[0];
 
         private Camera _camera;
 
         private VideoScriptData _videoScript = null;
 
+        private bool _isPlaying = false;
+
         private int _frameCounter = 0;
-        private int _frameDigits = 3;
+        private int _frameTotal = 0;
+        private int _frameDigits = 0;
         private bool _captureFrames = false;
         private Queue<byte[]> _frameQueue = new();
 
@@ -113,7 +99,7 @@ namespace VideoMaker
                     PlayerPrefs.Save();
 
                     LoadVideoScriptFile(paths[0]);
-                    VideoScriptFileText.text = Path.GetFileName(paths[0]);
+                    VideoScriptFilePath.text = Path.GetFileName(paths[0]);
                 }
             });
         }
@@ -140,19 +126,20 @@ namespace VideoMaker
                 yield break;
             }
 
-            _status = Status.PreviewPlayback;
+            _isPlaying = true;
             _camera.enabled = true;
-            StartPlayback();
+            StartPlayback(PreviewMessage);
 
             while (_time < _duration)
             {
+                ProgressBar.GetComponent<Slider>().value = _time / _duration;
                 UpdatePlayback(Time.deltaTime);
                 yield return null;
             }
 
             _camera.enabled = false;
             ProgressBar.SetActive(false);
-            _status = Status.Idle;
+            _isPlaying = false;
         }
 
         IEnumerator Export()
@@ -201,8 +188,9 @@ namespace VideoMaker
             //     // Destroy(renderTex);
             // }
 
-            _status = Status.ExportPlayback;
+            _isPlaying = true;
             _frameCounter = 0;
+
             _terminateThreadWhenDone = false;
             _threadIsProcessing = true;
             _exportThread = new Thread(SaveFrames);
@@ -211,7 +199,11 @@ namespace VideoMaker
 
             _camera.enabled = true;
 
-            StartPlayback();
+            StartPlayback(ExportMessage);
+
+            _frameTotal = (int)((float)_videoScript.FrameRate * _duration);
+            _frameDigits = (int)Mathf.Floor(Mathf.Log10(_frameTotal) + 1);
+            _frameTotal += FfmpegConsoleCount;
 
             _captureFrames = true;
 
@@ -220,6 +212,7 @@ namespace VideoMaker
 
             while (_time < _duration)
             {
+                ProgressBar.GetComponent<Slider>().value = _frameCounter / (float)_frameTotal;
                 UpdatePlayback(deltaTime);
                 yield return null;
             }
@@ -231,6 +224,7 @@ namespace VideoMaker
             //TODO check if status changes to Export and change text on progress bar
             while (_threadIsProcessing)
             {
+                ProgressBar.GetComponent<Slider>().value = _frameCounter / (float)_frameTotal;
                 yield return null;
             }
 
@@ -238,13 +232,11 @@ namespace VideoMaker
             // _logoBytes = new(0);
 
             ProgressBar.SetActive(false);
-            _status = Status.Idle;
+            _isPlaying = false;
         }
 
         private void UpdatePlayback(float deltaTime)
         {
-            ProgressBar.GetComponent<Slider>().value = _time / _duration;
-
             Vector3 position = _positionAction.GetPosition(_positionTime);
 
             UpdateTransform(
@@ -288,9 +280,9 @@ namespace VideoMaker
             gameObject.transform.LookAt(position + direction, upDirection);
         }
 
-        public void StartPlayback()
+        public void StartPlayback(string message)
         {
-            StatusText.text = _statusLabels[_status];
+            StatusText.text = message;
 
             _cubeTransform = null;
             _targetCube.SetActive(false);
@@ -348,7 +340,7 @@ namespace VideoMaker
 
         public void OnPreviewClick()
         {
-            if (_status != Status.Idle)
+            if (_isPlaying)
             {
                 return;
             }
@@ -357,7 +349,7 @@ namespace VideoMaker
 
         public void OnRecordClick()
         {
-            if (_status != Status.Idle)
+            if (_isPlaying)
             {
                 return;
             }
@@ -406,7 +398,6 @@ namespace VideoMaker
                     //TODO does this work with .bmp format?
                     File.WriteAllBytes(path, _frameQueue.Dequeue());
                     _frameCounter++;
-                    //TODO tick up progress for video render progress
                 }
                 else
                 {
@@ -435,12 +426,7 @@ namespace VideoMaker
             //     overlay = string.Format("-i logo.png -filter_complex \"[1:v]scale=iw*{0:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ", _videoScript.LogoScale);
             // }
 
-            //TODO change ProgressBar text
-            //ffmpeg -framerate 10 -i frame%03d.png -c:v libx264 -pix_fmt yuv420p  video.mp4
-            //-i idavie_logo_better.png -filter_complex "[1:v]scale=iw*0.1:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10"
             string command = string.Format("-framerate {0} -i frame%0{1}d.png {2}-c:v libx264 -pix_fmt yuv420p video.mp4", _videoScript.FrameRate, _frameDigits, overlay);
-
-            print(command);
 
             var startInfo = new ProcessStartInfo
             {
@@ -459,12 +445,11 @@ namespace VideoMaker
                 process.Start();
                 process.BeginErrorReadLine();
                 process.BeginOutputReadLine();
-                process.OutputDataReceived += (s, e) => { if (e.Data != null) print(e.Data); }; //TODO use this to increase progress ticks for render mode
-                process.ErrorDataReceived += (s, e) => { if (e.Data != null) print(e.Data); };
+                process.OutputDataReceived += (s, e) => { if (e.Data != null) print(e.Data); };
+                process.ErrorDataReceived += (s, e) => { if (e.Data != null) { print(e.Data); _frameCounter++; } };
                 process.WaitForExit();
             }
 
-            // _terminateThreadWhenDone = false;
             _threadIsProcessing = false;
         }
     }
