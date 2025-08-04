@@ -151,6 +151,24 @@ Write-Progress "File_browser package imported" -Status "80% complete" -PercentCo
 Write-Progress "Extracting scroll_rect.unitypackage... " -Status "80% complete" -PercentComplete 80
 Start-Process "$UNITYPATH" -Wait -ArgumentList "-projectPath $PSScriptRoot -batchmode -nographics -ignorecompilererrors -logfile $PSScriptRoot\import4.log -importPackage $PSScriptRoot\plugin_build\scroll_rect.unitypackage -quit"
 Write-Progress "scroll_rect.unitypackage imported" -Status "100% complete" -PercentComplete 100
-
 Write-Host "Packages imported."
+
+Write-Host "Adding UPM packages to manifest..."
+
+if (Test-Path "$PSScriptRoot\Packages\manifest.json")
+{
+	$Manifest = Get-Content -Path "$PSScriptRoot\Packages\manifest.json" -Raw | ConvertFrom-Json
+} 
+else 
+{
+	Write-Progress "Manifest file not found, generating a new one..."
+	if (!(Test-Path "$PSScriptRoot\Packages")){
+		New-Item -ItemType Directory -Path "$PSScriptRoot\Packages"
+	}
+	$Manifest = @{"dependencies" = @{}}
+}
+
+$Manifest.dependencies | Add-Member -MemberType NoteProperty -Name "com.unity.mathematics" -Value "1.3.2" -Force
+$Manifest | ConvertTo-Json -Depth 10 | Out-File "$PSScriptRoot\Packages\manifest.json" -Encoding utf8
+
 Write-Host "Configuration complete!"

@@ -1192,7 +1192,7 @@ public class CanvassDesktop : MonoBehaviour
         Application.Quit();
     }
 
-    private VolumeDataSetRenderer GetFirstActiveRenderer()
+    public VolumeDataSetRenderer GetFirstActiveRenderer()
     {
         if (_volumeDataSetRenderers != null)
         {
