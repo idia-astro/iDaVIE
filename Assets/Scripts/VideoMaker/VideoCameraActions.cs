@@ -183,6 +183,17 @@ namespace VideoMaker
 
     public class CirclePath : VideoCameraPath
     {
+        public enum AxisDirection
+        {
+            Up,
+            Down,
+            Left,
+            Right,
+            Forward,
+            Back,
+            None
+        }
+
         private Vector3 _center;
         private Vector3 _basis1;
         private Vector3 _basis2;
@@ -191,7 +202,7 @@ namespace VideoMaker
 
         public CirclePath(
             Vector3 startPosition, Vector3 endPosition, Vector3 center,
-            bool largeAngleDirection = false, int additionalRotations = 0, bool fullRotation = false,
+            bool largeAngleDirection = false, int additionalRotations = 0,
             VideoEasing easing = null) : base(easing)
         {
             _center = center;
@@ -207,20 +218,67 @@ namespace VideoMaker
 
             float angle = Vector3.Angle(relStart, relEnd) / 360f;
 
-            if (fullRotation)
+            if (largeAngleDirection)
             {
-                _rotations = 1 + additionalRotations;
+                _rotations = angle - 1 - additionalRotations;
             }
             else
             {
-                if (largeAngleDirection)
-                {
-                    _rotations = angle - 1 - additionalRotations;
-                }
-                else
-                {
-                    _rotations = angle + additionalRotations;
-                }
+                _rotations = angle + additionalRotations;
+            }
+        }
+
+        //TODO test this more
+        public CirclePath(Vector3 startPosition, Vector3 center, Vector3 axis, float rotations, VideoEasing easing = null) : base(easing)
+        {
+            _center = center;
+
+            Vector3 relStart = startPosition - center;
+
+            _radius = relStart.magnitude;
+
+            _basis1 = relStart / _radius;
+            _basis2 = Vector3.Cross(axis, _basis1).normalized;
+
+            _rotations = rotations;
+        }
+
+        //TODO test this more
+        public CirclePath(Vector3 center, AxisDirection axis, float startAngle, float rotations, float radius, VideoEasing easing = null) : base(easing)
+        {
+            _center = center;
+            _radius = radius;
+            _rotations = rotations;
+
+            float sin = Mathf.Sin(startAngle);
+            float cos = Mathf.Cos(startAngle);
+
+            switch (axis)
+            {
+                case AxisDirection.Up:
+                    _basis1 = new(sin, 0, -cos);
+                    _basis2 = new(cos, 0, sin);
+                    break;
+                case AxisDirection.Down:
+                    _basis1 = new(-sin, 0, -cos);
+                    _basis2 = new(-cos, 0, sin);
+                    break;
+                case AxisDirection.Left:
+                    _basis1 = new(0, cos, sin);
+                    _basis2 = new(0, -sin, cos);
+                    break;
+                case AxisDirection.Right:
+                    _basis1 = new(0, cos, -sin);
+                    _basis2 = new(0, -sin, -cos);
+                    break;
+                case AxisDirection.Back:
+                    _basis1 = new(cos, sin, 0);
+                    _basis2 = new(-sin, cos, 0);
+                    break;
+                case AxisDirection.Forward:
+                    _basis1 = new(cos, -sin, 0);
+                    _basis2 = new(-sin, -cos, 0);
+                    break;
             }
         }
 

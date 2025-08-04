@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Valve.Newtonsoft.Json.Linq;
-// using Newtonsoft.Json.Linq;
 using UnityEngine;
 using System.Runtime.Remoting.Messaging;
 
@@ -404,21 +403,66 @@ namespace VideoMaker
             VideoEasing easing = easingToken is not null ? DataToEasing(easingToken) : null;
 
             //TODO change to "name". Also whether startPosition and endPositions are defined or not is signifigant for some paths, it should be indicated
-            return ValueOrDefault(pathData, "path", "") switch
+
+
+
+            switch (ValueOrDefault(pathData, "name", ""))
             {
                 // "line" => new LinePath(startPosition, endPosition, easing),
-                "circle" => new CirclePath(
-                                        //TODO Make this statement more efficient. I still want a one-liner if possible
-                                        startPosition: startPosition,
-                                        endPosition: endPosition,
-                                        center: pathData.SelectToken("centerPosition") is not null ? DataToPosition(pathData["centerPosition"]) ?? Vector3.zero : Vector3.zero, // TODO complain if nothing given here
-                                        largeAngleDirection: ValueOrDefault(pathData, "largeAngleDirection", false),
-                                        additionalRotations: ValueOrDefault(pathData, "additionalRotations", 0),
-                                        fullRotation: ValueOrDefault(pathData, "fullRotation", false),
-                                        easing: easing
-                                    ),
-                _ => new LinePath(startPosition, endPosition, easing),
-            };
+                case "circle":
+                    CirclePath.AxisDirection axisDirection = ValueOrDefault(pathData, "axis", "") switch
+                    {
+                        "up" => CirclePath.AxisDirection.Up,
+                        "down" => CirclePath.AxisDirection.Down,
+                        "left" => CirclePath.AxisDirection.Left,
+                        "right" => CirclePath.AxisDirection.Right,
+                        "forward" => CirclePath.AxisDirection.Forward,
+                        "back" => CirclePath.AxisDirection.Back,
+                        _ => CirclePath.AxisDirection.None
+                    };
+
+                     // TODO complain if nothing given here
+                    Vector3 center = pathData.SelectToken("centerPosition") is not null ? DataToPosition(pathData["centerPosition"]) ?? Vector3.zero : Vector3.zero;
+
+                    if (axisDirection != CirclePath.AxisDirection.None && pathData["startAngle"] is not null)
+                    {
+                        return new CirclePath(
+                            center: center,
+                            axis: axisDirection,
+                            startAngle: ValueOrDefault(pathData, "startAngle", 0f),
+                            rotations: ValueOrDefault(pathData, "rotations", 1f),
+                            radius: ValueOrDefault(pathData, "radius", 1f),
+                            easing: easing
+                        );
+                    }
+
+                    Vector3? axis = pathData["axis"] is not null ? DataToDirection(pathData["axis"]) : null;
+
+                    //Check is not robust enough for more circle options
+                    if (axis is not null)
+                    {
+                        return new CirclePath(
+                            startPosition: startPosition,
+                            axis: (Vector3)axis,
+                            center: center,
+                            rotations: ValueOrDefault(pathData, "rotations", 1f),
+                            easing: easing
+                        );
+                    }
+
+                        return new CirclePath(
+                                //TODO Make this statement more efficient. I still want a one-liner if possible
+                                startPosition: startPosition,
+                                endPosition: endPosition,
+                                center: center,
+                                largeAngleDirection: ValueOrDefault(pathData, "largeAngleDirection", false),
+                                additionalRotations: ValueOrDefault(pathData, "additionalRotations", 0),
+                                easing: easing
+                            );
+                    
+                default:
+                    return new LinePath(startPosition, endPosition, easing);
+            }
         }
     }
 }
