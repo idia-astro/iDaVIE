@@ -5858,6 +5858,8 @@ MonoBehaviour:
   MomentMap0Title: {fileID: 1604525522}
   MomentMap1Title: {fileID: 1180242692}
   volumeDataSetManager: {fileID: 379208438}
+  DecreaseThresholdButton: {fileID: 42229605}
+  IncreaseThresholdButton: {fileID: 153405328}
   MomentMapCamera: {fileID: 948872833}
   keypadPrefab: {fileID: 6416275286271051024, guid: 6cde475feaea8b149b1ed13d31e44de7,
     type: 3}
@@ -8258,7 +8260,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1798270351}
   m_HandleRect: {fileID: 1798270350}
   m_Direction: 0
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
