@@ -24284,7 +24284,7 @@ GameObject:
   - component: {fileID: 573058381}
   - component: {fileID: 573058380}
   m_Layer: 5
-  m_Name: ImageFilePath_text
+  m_Name: VideoScriptFilePath_text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -36487,6 +36487,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 883c0e7734f8cee4db3071fb7ca339cc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  VideoScriptFileText: {fileID: 573058380}
   ProgressBar: {fileID: 1969116326}
   StatusText: {fileID: 2122252680}
   Logo: {fileID: 2800000, guid: 044cd135de590c040a3cc7d08b6462d8, type: 3}

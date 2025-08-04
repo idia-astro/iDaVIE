@@ -35,6 +35,8 @@ namespace VideoMaker
 
         private Status _status = Status.Idle;
 
+        public TMP_Text VideoScriptFileText;
+
         // TODO use a different MonoBehaviour to manage the playback and status bar?
         public GameObject ProgressBar;
         public TMP_Text StatusText;
@@ -111,6 +113,7 @@ namespace VideoMaker
                     PlayerPrefs.Save();
 
                     LoadVideoScriptFile(paths[0]);
+                    VideoScriptFileText.text = Path.GetFileName(paths[0]);
                 }
             });
         }
