@@ -25982,7 +25982,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 800, y: 450}
+  m_SizeDelta: {x: 800, y: 800}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &608991399
 GameObject:
@@ -31472,8 +31472,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 440, y: -225}
-  m_SizeDelta: {x: 800, y: 450}
+  m_AnchoredPosition: {x: 440, y: -367}
+  m_SizeDelta: {x: 700, y: 700}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &725330305
 MonoBehaviour:
@@ -36490,7 +36490,8 @@ MonoBehaviour:
   VideoScriptFilePath: {fileID: 573058380}
   ProgressBar: {fileID: 1969116326}
   StatusText: {fileID: 2122252680}
-  Logo: {fileID: 2800000, guid: 044cd135de590c040a3cc7d08b6462d8, type: 3}
+  PreviewBackground: {fileID: 0}
+  PreviewDisplay: {fileID: 725330303}
 --- !u!81 &823534367
 AudioListener:
   m_ObjectHideFlags: 0
@@ -36509,7 +36510,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -49072,8 +49073,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 440, y: -225}
-  m_SizeDelta: {x: 800, y: 450}
+  m_AnchoredPosition: {x: 440, y: -367}
+  m_SizeDelta: {x: 700, y: 700}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1098118660
 MonoBehaviour:
@@ -49088,7 +49089,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 1}
+  m_Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

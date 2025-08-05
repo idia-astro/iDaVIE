@@ -26,6 +26,9 @@ namespace VideoMaker
         // public Texture2D Logo;
         // private byte[] _logoBytes = new byte[0];
 
+        public GameObject PreviewDisplay;
+        private Vector2 _previewDisplaySizeDelta;
+
         private Camera _camera;
 
         private VideoScriptData _videoScript = null;
@@ -67,6 +70,8 @@ namespace VideoMaker
             ProgressBar.SetActive(false);
             _targetCube = GameObject.Find("TestCube");
             _targetCube.SetActive(false);
+
+            _previewDisplaySizeDelta = PreviewDisplay.GetComponent<RectTransform>().sizeDelta;
 
             var directory = new DirectoryInfo(Application.dataPath);
             _directoryPath = System.IO.Path.Combine(directory.Parent.FullName, "Outputs/Video");
@@ -116,6 +121,30 @@ namespace VideoMaker
                 //TODO use async?
                 string jsonString = reader.ReadToEnd();
                 _videoScript = VideoScriptReader.ReadVideoScript(jsonString);
+            }
+
+            //Setting RenderMaterial properties
+
+            RenderTexture tex = GetComponent<Camera>().targetTexture;
+            tex.Release();
+            tex.height = _videoScript.Height;
+            tex.width = _videoScript.Width;
+
+            RectTransform rect = PreviewDisplay.GetComponent<RectTransform>();
+
+            if (_videoScript.Height > _videoScript.Width)
+            {
+                rect.sizeDelta = new Vector2(
+                    _previewDisplaySizeDelta.x * _videoScript.Width / (float)_videoScript.Height,
+                    _previewDisplaySizeDelta.y
+                    );
+            }
+            else
+            {
+                rect.sizeDelta = new Vector2(
+                    _previewDisplaySizeDelta.x,
+                    _previewDisplaySizeDelta.y * _videoScript.Height / (float)_videoScript.Width
+                );
             }
         }
 

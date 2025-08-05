@@ -9,6 +9,8 @@ namespace VideoMaker
 {
     public class VideoScriptData
     {
+        public int Width = 1280;
+        public int Height = 720;
         public int FrameRate = 20;
         //TODO add more logo parameters, such as position
         public bool UseLogo = true;
@@ -22,43 +24,14 @@ namespace VideoMaker
     {
         const int EasingOrderDefault = 2;
 
-        private static T ToObjectOrDefualt<T>(JToken token, T defaultValue)
-        {
-            Type type = typeof(T);
-
-            if (
-                (
-                    (type == typeof(int) || type == typeof(float)) &&
-                    (token.Type == JTokenType.Integer || token.Type == JTokenType.Float)
-                ) || (
-                    type == typeof(string) && token.Type == JTokenType.String
-                ) || (
-                    type == typeof(bool) && token.Type == JTokenType.Boolean
-                )
-            ) {
-                return token.ToObject<T>();
-            }
-
-            return defaultValue;
-        }
-
-        private static T ValueOrDefault<T>(JToken token, string childPath, T defaultValue)
-        {
-            JToken childToken = token.SelectToken(childPath);
-            if (childToken is null)
-            {
-                return defaultValue;
-            }
-
-            return ToObjectOrDefualt(childToken, defaultValue);
-        }
-
         public static VideoScriptData ReadVideoScript(string videoScriptString)
         {
             VideoScriptData data = new();
 
             JToken root = JToken.Parse(videoScriptString);
 
+            data.Width = ValueOrDefault(root, "height", data.Height);
+            data.Width = ValueOrDefault(root, "width", data.Width);
             data.FrameRate = ValueOrDefault(root, "frameRate", data.FrameRate);
             data.UseLogo = ValueOrDefault(root, "useLogo", data.UseLogo);
             data.LogoScale = ValueOrDefault(root, "logoScale", data.LogoScale);
@@ -124,6 +97,37 @@ namespace VideoMaker
             data.UpDirectionActions = upDirections.ToArray();
 
             return data;
+        }
+
+        private static T ToObjectOrDefualt<T>(JToken token, T defaultValue)
+        {
+            Type type = typeof(T);
+
+            if (
+                (
+                    (type == typeof(int) || type == typeof(float)) &&
+                    (token.Type == JTokenType.Integer || token.Type == JTokenType.Float)
+                ) || (
+                    type == typeof(string) && token.Type == JTokenType.String
+                ) || (
+                    type == typeof(bool) && token.Type == JTokenType.Boolean
+                )
+            ) {
+                return token.ToObject<T>();
+            }
+
+            return defaultValue;
+        }
+
+        private static T ValueOrDefault<T>(JToken token, string childPath, T defaultValue)
+        {
+            JToken childToken = token.SelectToken(childPath);
+            if (childToken is null)
+            {
+                return defaultValue;
+            }
+
+            return ToObjectOrDefualt(childToken, defaultValue);
         }
 
         //TODO return single actions instead of lists? There may not ever be a case where lists are needed
