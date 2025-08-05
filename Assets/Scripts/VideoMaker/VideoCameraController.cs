@@ -44,13 +44,13 @@ namespace VideoMaker
 
         private string _directoryPath;
 
-        private Queue<VideoPositionAction> _positionQueue = new();
-        private Queue<VideoDirectionAction> _directionQueue = new();
-        private Queue<VideoDirectionAction> _upDirectionQueue = new();
+        private Queue<PositionAction> _positionQueue = new();
+        private Queue<DirectionAction> _directionQueue = new();
+        private Queue<DirectionAction> _upDirectionQueue = new();
 
-        private VideoPositionAction _positionAction;
-        private VideoDirectionAction _directionAction;
-        private VideoDirectionAction _upDirectionAction;
+        private PositionAction _positionAction;
+        private DirectionAction _directionAction;
+        private DirectionAction _upDirectionAction;
 
         private GameObject _targetCube;
         private Transform _cubeTransform;
@@ -69,7 +69,7 @@ namespace VideoMaker
             _targetCube.SetActive(false);
 
             var directory = new DirectoryInfo(Application.dataPath);
-            _directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/Video");
+            _directoryPath = System.IO.Path.Combine(directory.Parent.FullName, "Outputs/Video");
 
             if (!Directory.Exists(_directoryPath))
             {
@@ -95,11 +95,11 @@ namespace VideoMaker
             {
                 if (paths.Length == 1)
                 {
-                    PlayerPrefs.SetString("LastPath", Path.GetDirectoryName(paths[0]));
+                    PlayerPrefs.SetString("LastPath", System.IO.Path.GetDirectoryName(paths[0]));
                     PlayerPrefs.Save();
 
                     LoadVideoScriptFile(paths[0]);
-                    VideoScriptFilePath.text = Path.GetFileName(paths[0]);
+                    VideoScriptFilePath.text = System.IO.Path.GetFileName(paths[0]);
                 }
             });
         }
@@ -252,7 +252,7 @@ namespace VideoMaker
             UpdateActionTime(deltaTime, ref _upDirectionTime, ref _upDirectionAction, ref _upDirectionQueue);
         }
 
-        private void UpdateActionTime<T>(float deltaTime, ref float time, ref T action, ref Queue<T> actionQueue) where T : VideoCameraAction
+        private void UpdateActionTime<T>(float deltaTime, ref float time, ref T action, ref Queue<T> actionQueue) where T : Action
         {
             time += deltaTime;
 
@@ -300,27 +300,24 @@ namespace VideoMaker
                 _cubeTransform = _targetCube.transform;
             }
 
-
-            // int scriptIdx = VideoScriptDropdown.value;
-
             _positionQueue = new(_videoScript.PositionActions);
             _directionQueue = new(_videoScript.DirectionActions);
             _upDirectionQueue = new(_videoScript.UpDirectionActions);
             
             float duration = 0f;
-            foreach (VideoCameraAction action in _videoScript.PositionActions)
+            foreach (Action action in _videoScript.PositionActions)
             {
                 duration += action.Duration;
             }
             _duration = duration;
 
-            foreach (VideoCameraAction action in _videoScript.DirectionActions)
+            foreach (Action action in _videoScript.DirectionActions)
             {
                 duration += action.Duration;
             }
             _duration = Math.Min(_duration, duration);
 
-            foreach (VideoCameraAction action in _videoScript.UpDirectionActions)
+            foreach (Action action in _videoScript.UpDirectionActions)
             {
                 duration += action.Duration;
             }
@@ -390,7 +387,7 @@ namespace VideoMaker
                 if (_frameQueue.Count > 0)
                 {
                     //TODO change to bmp for better video
-                    string path = Path.Combine(
+                    string path = System.IO.Path.Combine(
                         _directoryPath,
                         string.Format("frame{0:d" + _frameDigits.ToString() + "}.png", _frameCounter)
                     );
@@ -421,7 +418,7 @@ namespace VideoMaker
             // Save logo
             // if (_logoBytes.Length > 0)
             // {
-            //     string path = Path.Combine(_directoryPath, "logo.png");
+            //     string path = System.IO.Path.Combine(_directoryPath, "logo.png");
             //     File.WriteAllBytes(path, _logoBytes);
             //     overlay = string.Format("-i logo.png -filter_complex \"[1:v]scale=iw*{0:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ", _videoScript.LogoScale);
             // }
