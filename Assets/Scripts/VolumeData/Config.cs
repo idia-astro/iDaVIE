@@ -80,7 +80,7 @@ namespace VolumeData
         /// <summary>
         /// The number of steps per second when incrementing the histogram min/max.
         /// </summary>
-        public int momentMapStepsPerSecond = 8;
+        public int momentMapStepsPerSecond = 2;
 
         /// <summary>
         /// Use the quick, less precise percentile calculation for the scale min/max
