@@ -8,6 +8,8 @@ using System.IO;
 using System.Threading;
 using System.Diagnostics;
 using SFB;
+using JetBrains.Annotations;
+using Unity.VisualScripting;
 
 namespace VideoMaker
 {
@@ -45,7 +47,8 @@ namespace VideoMaker
         private bool _threadIsProcessing;
         private bool _terminateThreadWhenDone;
 
-        private string _directoryPath;
+        private string _framePath;
+        private string _ffmpegPath;
 
         private Queue<PositionAction> _positionQueue = new();
         private Queue<DirectionAction> _directionQueue = new();
@@ -68,17 +71,18 @@ namespace VideoMaker
         void Awake()
         {
             ProgressBar.SetActive(false);
+            StatusText.gameObject.SetActive(false);
             _targetCube = GameObject.Find("TestCube");
             _targetCube.SetActive(false);
 
             _previewDisplaySizeDelta = PreviewDisplay.GetComponent<RectTransform>().sizeDelta;
 
             var directory = new DirectoryInfo(Application.dataPath);
-            _directoryPath = System.IO.Path.Combine(directory.Parent.FullName, "Outputs/Video");
+            _framePath = System.IO.Path.Combine(directory.Parent.FullName, "Outputs/Video");
 
-            if (!Directory.Exists(_directoryPath))
+            if (!Directory.Exists(_framePath))
             {
-                Directory.CreateDirectory(_directoryPath);
+                Directory.CreateDirectory(_framePath);
             }
 
             _camera = GetComponent<Camera>();
@@ -88,23 +92,149 @@ namespace VideoMaker
         //Taken from CanvassDesktop.BrowseImageFile
         public void BrowseVideoScriptFile()
         {
-            string lastPath = PlayerPrefs.GetString("LastPath");
+            string lastPath = PlayerPrefs.GetString("LastPathVideo");
             if (!Directory.Exists(lastPath))
-                lastPath = "";
-            var extensions = new[]
             {
-            new ExtensionFilter("JSON Files", "json"),
-            new ExtensionFilter("All Files", "*"),
-        };
+                lastPath = "";
+            }
+            var extensions = new[]{
+                new ExtensionFilter("JSON Files", "json"),
+                new ExtensionFilter("All Files", "*"),
+            };
             StandaloneFileBrowser.OpenFilePanelAsync("Open File", lastPath, extensions, false, (string[] paths) =>
             {
                 if (paths.Length == 1)
                 {
-                    PlayerPrefs.SetString("LastPath", System.IO.Path.GetDirectoryName(paths[0]));
+                    PlayerPrefs.SetString("LastPathVideo", System.IO.Path.GetDirectoryName(paths[0]));
                     PlayerPrefs.Save();
 
                     LoadVideoScriptFile(paths[0]);
                     VideoScriptFilePath.text = System.IO.Path.GetFileName(paths[0]);
+                }
+            });
+        }
+
+        private enum FfmpegTestResults
+        {
+            Valid,
+            NoExe,
+            NotFffmpeg,
+            ExeError,
+        }
+
+        //TODO use error handling with Result instead?
+        private FfmpegTestResults TestFfmpegExe()
+        {
+            try
+            {
+                // var startInfo = new ProcessStartInfo
+                // {
+                //     FileName = _ffmpegPath,
+                //     Arguments = "-version",
+                //     RedirectStandardOutput = true,
+                //     RedirectStandardError = true,
+                //     UseShellExecute = false,
+                //     CreateNoWindow = true
+                // };
+
+                // bool isValid = false;
+
+                // using (var process = new Process { StartInfo = startInfo })
+                // {
+                //     process.EnableRaisingEvents = true;
+                //     process.Start();
+                //     process.BeginErrorReadLine();
+                //     process.BeginOutputReadLine();
+                //     process.OutputDataReceived += (s, e) => { if (e.Data != null && e.Data.StartsWith("ffmpeg version", StringComparison.OrdinalIgnoreCase)) print(e.Data); isValid = true; };
+                //     process.ErrorDataReceived += (s, e) => { if (e.Data != null) { print(e.Data);} };
+                //     process.WaitForExit();
+                // }
+
+                // if (isValid) {
+                //     return FfmpegTestResults.Valid;
+                // }
+                // return FfmpegTestResults.NotFffmpeg;
+
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = _ffmpegPath,
+                        Arguments = "-version",
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+
+                process.Start();
+                string output = process.StandardOutput.ReadToEnd();
+                // string error = process.StandardError.ReadToEnd();
+                process.WaitForExit();
+
+                // Check output for a recognizable ffmpeg version string
+                if (output.StartsWith("ffmpeg version", StringComparison.OrdinalIgnoreCase))
+                {
+                    return FfmpegTestResults.Valid;
+                }
+                return FfmpegTestResults.NotFffmpeg;
+
+            }
+            catch
+            {
+                return FfmpegTestResults.ExeError;
+            }
+        }
+
+        public void ValidateFfmpegPath()
+        {
+            _ffmpegPath = PlayerPrefs.GetString("FfmpegPath");
+
+            if (File.Exists(_ffmpegPath) && TestFfmpegExe() == FfmpegTestResults.Valid)
+            {
+
+                StartCoroutine(Export());
+                return;
+            }
+            else
+            {
+                _ffmpegPath = "";
+            }
+
+            var extensions = new[]{
+                new ExtensionFilter("Executable Files", "exe"),
+                new ExtensionFilter("All Files", "*")
+            };
+
+            StandaloneFileBrowser.OpenFilePanelAsync("Open the FFmpeg executable", "", extensions, false, (string[] paths) =>
+            {
+                if (paths.Length == 1)
+                {
+                    _ffmpegPath = paths[0];
+                    
+                    switch (string.IsNullOrEmpty(_ffmpegPath) ? FfmpegTestResults.NoExe : TestFfmpegExe())
+                    {
+                        case FfmpegTestResults.Valid:
+                            StatusText.gameObject.SetActive(false);
+                            break;
+                        case FfmpegTestResults.NoExe:
+                            StatusText.text = "No FFmpeg exe selected. Please try again.";
+                            StatusText.gameObject.SetActive(true);
+                            return;
+                        case FfmpegTestResults.NotFffmpeg:
+                            StatusText.text = "Exe selected is not FFmpeg. Please try again.";
+                            StatusText.gameObject.SetActive(true);
+                            return;
+                        case FfmpegTestResults.ExeError:
+                            StatusText.text = "Exe selected executed with errors. Please try again.";
+                            StatusText.gameObject.SetActive(true);
+                            return;
+                    }
+
+                    PlayerPrefs.SetString("FfmpegPath", _ffmpegPath);
+                    PlayerPrefs.Save();
+                    StartCoroutine(Export());
                 }
             });
         }
@@ -186,7 +316,7 @@ namespace VideoMaker
             }
 
             //Deleting existing frames and video file
-            foreach (FileInfo file in new DirectoryInfo(_directoryPath).EnumerateFiles())
+            foreach (FileInfo file in new DirectoryInfo(_framePath).EnumerateFiles())
             {
                 file.Delete();
             }
@@ -261,6 +391,7 @@ namespace VideoMaker
             // _logoBytes = new(0);
 
             ProgressBar.SetActive(false);
+            StatusText.gameObject.SetActive(false);
             _isPlaying = false;
         }
 
@@ -357,6 +488,7 @@ namespace VideoMaker
             _upDirectionAction = _upDirectionQueue.Dequeue();
 
             ProgressBar.SetActive(true);
+            StatusText.gameObject.SetActive(true);
 
             _time = 0f;
             _positionTime = 0f;
@@ -373,13 +505,13 @@ namespace VideoMaker
             StartCoroutine(Preview());
         }
 
-        public void OnRecordClick()
+        public void OnExportClick()
         {
             if (_isPlaying)
             {
                 return;
             }
-            StartCoroutine(Export());
+            ValidateFfmpegPath();
         }
 
         private void OnRenderImage(RenderTexture source, RenderTexture destination)
@@ -417,7 +549,7 @@ namespace VideoMaker
                 {
                     //TODO change to bmp for better video
                     string path = System.IO.Path.Combine(
-                        _directoryPath,
+                        _framePath,
                         string.Format("frame{0:d" + _frameDigits.ToString() + "}.png", _frameCounter)
                     );
                     //TODO is a FileStream better here?
@@ -447,18 +579,18 @@ namespace VideoMaker
             // Save logo
             // if (_logoBytes.Length > 0)
             // {
-            //     string path = System.IO.Path.Combine(_directoryPath, "logo.png");
+            //     string path = System.IO.Path.Combine(_framePath, "logo.png");
             //     File.WriteAllBytes(path, _logoBytes);
             //     overlay = string.Format("-i logo.png -filter_complex \"[1:v]scale=iw*{0:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ", _videoScript.LogoScale);
             // }
 
-            string command = string.Format("-framerate {0} -i frame%0{1}d.png {2}-c:v libx264 -pix_fmt yuv420p video.mp4", _videoScript.FrameRate, _frameDigits, overlay);
+            string command = $"-framerate {_videoScript.FrameRate} -i frame%0{_frameDigits}d.png {overlay}-c:v libx264 -pix_fmt yuv420p video.mp4";
 
             var startInfo = new ProcessStartInfo
             {
-                FileName = @"C:\Program Files\WinGet\Links\ffmpeg.exe",
+                FileName = _ffmpegPath,
                 Arguments = command,
-                WorkingDirectory = _directoryPath,
+                WorkingDirectory = _framePath,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
