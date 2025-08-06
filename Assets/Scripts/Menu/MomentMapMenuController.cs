@@ -43,7 +43,24 @@ public class MomentMapMenuController : MonoBehaviour
     public GameObject volumeDataSetManager;
     private VolumeDataSetRenderer[] dataSets;
     private float _threshold;
+    // <summary>
+    /// This attribute dictates by how much the threshold value changes when the user clicks the button.
+    /// </summary>
+    private float _thresholdIncrement = 0.01f;
     private float _cached_threshold;
+    /// <summary>
+    /// Timer for the increment and decrement buttons for min and max values.
+    /// </summary>
+    private float _deltaT = 0.00000f;
+
+    /// <summary>
+    /// If _deltaT > this, reset _deltaT to 0.
+    /// </summary>
+    private float _resetTime = 0.2f;
+    
+    [SerializeField] private Button DecreaseThresholdButton;
+    [SerializeField] private Button IncreaseThresholdButton;
+    
     public Camera MomentMapCamera;
     int thresholdType = 0;
     [SerializeField] private GameObject keypadPrefab = null;
@@ -69,6 +86,12 @@ public class MomentMapMenuController : MonoBehaviour
             {
                 VolumeDataSet dataSet = getFirstActiveDataSet().GetDataSet();
                 getFirstActiveDataSet().GetMomentMapRenderer().UpdatePlotWindow();
+
+                float dataMin = dataSet.MinValue;
+                float dataMax = dataSet.MaxValue;
+                int increments = Config.Instance.momentMapThresholdSteps;
+                _thresholdIncrement = (dataMax - dataMin) / increments;
+                _resetTime = 1.0f / Config.Instance.momentMapStepsPerSecond;
 
                 LimitTypeText.text = $"{_limitType}";
 
@@ -98,18 +121,47 @@ public class MomentMapMenuController : MonoBehaviour
         {
             SetMomentMapThreshold();
         }
+
+        // Add previous frame time to timer
+        _deltaT += Time.smoothDeltaTime;
+        // If timer has not yet reached reset, don't activate any buttons.
+        if (_deltaT < _resetTime)
+            return;
+        // Else, reset timer and activate buttons where appropriate
+        _deltaT = 0.00000f;
+        if (DecreaseThresholdButton.gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
+        {
+           DecreaseMomentMapThreshold();
+        }
+
+        if (IncreaseThresholdButton.gameObject.GetComponent<UI.UserSelectableItem>().isPressed)
+        {
+            IncreaseMomentMapThreshold();
+        }
     }
 
+    /// <summary>
+    /// Increases the moment map threshold.
+    /// </summary>
     public void IncreaseMomentMapThreshold()
     {
-        _threshold += getFirstActiveDataSet().GetMomentMapRenderer().momstep;
+        float dataMin = getFirstActiveDataSet().GetDataSet().MinValue;
+        float dataMax = getFirstActiveDataSet().GetDataSet().MaxValue;
+        _threshold = Mathf.Clamp(_threshold + _thresholdIncrement, dataMin, dataMax);
         ThresholdValueText.text = _threshold.ToString();
+        SetMomentMapThreshold();
     }
 
+    /// <summary>
+    /// Decreases the moment map threshold.
+    /// summary>
     public void DecreaseMomentMapThreshold()
     {
-        _threshold -= getFirstActiveDataSet().GetMomentMapRenderer().momstep;
+        float dataMin = getFirstActiveDataSet().GetDataSet().MinValue;
+        float dataMax = getFirstActiveDataSet().GetDataSet().MaxValue;
+        _threshold = Mathf.Clamp(_threshold - _thresholdIncrement, dataMin, dataMax);
         ThresholdValueText.text = _threshold.ToString();
+        SetMomentMapThreshold();
     }
 
     public void SetMomentMapThreshold()
