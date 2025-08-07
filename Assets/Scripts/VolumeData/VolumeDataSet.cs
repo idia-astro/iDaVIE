@@ -515,7 +515,7 @@ namespace VolumeData
         /// Updates the calculated stats for the given mask value.
         /// </summary>
         /// <param name="maskVal"></param>
-        private void UpdateStats(short maskVal)
+        public void UpdateStats(short maskVal)
         {
             if (!SourceStatsDict.ContainsKey(maskVal))
             {
@@ -1134,7 +1134,7 @@ namespace VolumeData
             {
                 return true;
             }
-
+            
             _regionMaskVoxels[index] = value;
             Vector3Int location = RegionOffset + coordsRegionSpace;
             if (!FitsReader.UpdateMaskVoxel(FitsData, Dims, location, value))
@@ -1279,7 +1279,7 @@ namespace VolumeData
             _dirtyMaskBounds = new Bounds();
         }
 
-        private void ConsolidateMaskEntries()
+        public void ConsolidateMaskEntries()
         {
             Vector3Int cubeSize = new Vector3Int(RegionCube.width, RegionCube.height, RegionCube.depth);
             if (_existingRegionMaskEntries == null || _existingRegionMaskEntries.Count == 0)
@@ -1802,6 +1802,26 @@ namespace VolumeData
             
             Object.DestroyImmediate(DataCube);
             Object.DestroyImmediate(RegionCube);
+        }
+
+        public Int16 GetMaskValue2(int x, int y, int z)
+        {
+            if (x < 1 || x > XDim || y < 1 || y > YDim || z < 1 || z > ZDim)
+            {
+                return 0;
+            }
+            // Use the cached / current mask array if the cursor location is within the cropped region
+            if (_regionMaskVoxels != null && RegionCube && x >= RegionOffset.x && x < RegionOffset.x + RegionCube.width &&
+                y >= RegionOffset.y && y < RegionOffset.y + RegionCube.height &&
+                z >= RegionOffset.z && z < RegionOffset.z + RegionCube.depth)
+            {
+                var index = x + y * RegionCube.width + z * (RegionCube.width * RegionCube.height);
+                return _regionMaskVoxels[index];
+            }
+            
+            Int16 val;
+            DataAnalysis.GetVoxelInt16Value(FitsData, out val, (int) XDim, (int) YDim, (int) ZDim, x, y, z);
+            return val;
         }
     }
 }
