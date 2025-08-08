@@ -36,8 +36,6 @@
 #include <sstream>
 #include <string>
 
-static constexpr std::string_view defaultDebugFile = "Outputs/Logs/iDaVIE_Plugin_Debug.log";
-
 // These are the keys that will be copied over from the main fits cube to the moment maps if they are exported as fits files
 const std::vector<std::string> REQUIRED_MOMENT_MAP_DBL_KEYS = {"CRVAL1", "CDELT1", "CRPIX1", "CRVAL2", "CDELT2", "CRPIX2", "BMAJ", "BMIN", "BPA"};
 const std::vector<std::string> REQUIRED_MOMENT_MAP_STR_KEYS = {"CTYPE1", "CTYPE2"};
