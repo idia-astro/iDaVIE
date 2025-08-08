@@ -28,8 +28,9 @@ namespace VideoMaker
         // public Texture2D Logo;
         // private byte[] _logoBytes = new byte[0];
 
-        public GameObject PreviewDisplay;
-        private Vector2 _previewDisplaySizeDelta;
+        public GameObject VideoView;
+        private RectTransform _videoDisplayRect;
+        private Vector2 _videoDisplaySizeDelta;
 
         private Camera _camera;
 
@@ -75,7 +76,9 @@ namespace VideoMaker
             _targetCube = GameObject.Find("TestCube");
             _targetCube.SetActive(false);
 
-            _previewDisplaySizeDelta = PreviewDisplay.GetComponent<RectTransform>().sizeDelta;
+
+            _videoDisplayRect = VideoView.transform.Find("VideoDisplay").gameObject.GetComponent<RectTransform>();
+            _videoDisplaySizeDelta = _videoDisplayRect.sizeDelta;
 
             var directory = new DirectoryInfo(Application.dataPath);
             _framePath = System.IO.Path.Combine(directory.Parent.FullName, "Outputs/Video");
@@ -260,20 +263,18 @@ namespace VideoMaker
             tex.height = _videoScript.Height;
             tex.width = _videoScript.Width;
 
-            RectTransform rect = PreviewDisplay.GetComponent<RectTransform>();
-
-            if (_videoScript.Height > _videoScript.Width)
+            if (_videoScript.Height / (float)_videoScript.Width > _videoDisplaySizeDelta.y / _videoDisplaySizeDelta.x)
             {
-                rect.sizeDelta = new Vector2(
-                    _previewDisplaySizeDelta.x * _videoScript.Width / (float)_videoScript.Height,
-                    _previewDisplaySizeDelta.y
+                _videoDisplayRect.sizeDelta = new Vector2(
+                    _videoDisplaySizeDelta.x * _videoScript.Width / (float)_videoScript.Height,
+                    _videoDisplaySizeDelta.y
                     );
             }
             else
             {
-                rect.sizeDelta = new Vector2(
-                    _previewDisplaySizeDelta.x,
-                    _previewDisplaySizeDelta.y * _videoScript.Height / (float)_videoScript.Width
+                _videoDisplayRect.sizeDelta = new Vector2(
+                    _videoDisplaySizeDelta.x,
+                    _videoDisplaySizeDelta.y * _videoScript.Height / (float)_videoScript.Width
                 );
             }
         }
@@ -285,8 +286,6 @@ namespace VideoMaker
                 yield break;
             }
 
-            _isPlaying = true;
-            _camera.enabled = true;
             StartPlayback(PreviewMessage);
 
             while (_time < _duration)
@@ -296,9 +295,7 @@ namespace VideoMaker
                 yield return null;
             }
 
-            _camera.enabled = false;
-            ProgressBar.SetActive(false);
-            _isPlaying = false;
+            EndPlayback();
         }
 
         IEnumerator Export()
@@ -347,7 +344,6 @@ namespace VideoMaker
             //     // Destroy(renderTex);
             // }
 
-            _isPlaying = true;
             _frameCounter = 0;
 
             _terminateThreadWhenDone = false;
@@ -355,8 +351,6 @@ namespace VideoMaker
             _exportThread = new Thread(SaveFrames);
             _exportThread.Start();
             //TODO: Does the Thread terminate when callback is complete?
-
-            _camera.enabled = true;
 
             StartPlayback(ExportMessage);
 
@@ -390,9 +384,7 @@ namespace VideoMaker
             //I'm not using this right now because I'd rather clear properly than letting garbage pile up
             // _logoBytes = new(0);
 
-            ProgressBar.SetActive(false);
-            StatusText.gameObject.SetActive(false);
-            _isPlaying = false;
+            EndPlayback();
         }
 
         private void UpdatePlayback(float deltaTime)
@@ -443,6 +435,10 @@ namespace VideoMaker
         public void StartPlayback(string message)
         {
             StatusText.text = message;
+            
+            _camera.enabled = true;
+            VideoView.SetActive(true);
+            _isPlaying = true;
 
             _cubeTransform = null;
             _targetCube.SetActive(false);
@@ -494,6 +490,15 @@ namespace VideoMaker
             _positionTime = 0f;
             _directionTime = 0f;
             _upDirectionTime = 0f;
+        }
+
+        public void EndPlayback()
+        {
+            _camera.enabled = false;
+            ProgressBar.SetActive(false);
+            StatusText.gameObject.SetActive(false);
+            VideoView.SetActive(false);
+            _isPlaying = false;
         }
 
         public void OnPreviewClick()
