@@ -11,7 +11,7 @@ They are both fully functional, and considerably more lightweight than Visual St
   * [VSCode Tools for Unity](https://marketplace.visualstudio.com/items?itemName=visualstudiotoolsforunity.vstuc)
 ### Set up UnityYamlMerge
 To facilitate the merging of separate branches that include merge conflicts in scene (`*.unity`) files in iDaVIE, Unity provides a mergetool called UnityYamlMerge. This requires a few set up steps before it can be used.
-  1. First, the iDaVIE repo should be told to use UnityYamlMerge as the mergetool. Add the following lines to the `.git/commit` file. Note the escaped slash `\\` for folder divisors -- it will not work otherwise.
+  1. First, the iDaVIE repo should be told to use UnityYamlMerge as the mergetool. Add the following lines to the `.git/config` file. Note the escaped slash `\\` for folder divisors -- it will not work otherwise.
 ```
 [mergetool "UnityYamlMerge"]
 	cmd = '<path\\to\\Unity>\\Unity\\2021.3.47f1\\Editor\\Data\\Tools\\UnityYAMLMerge.exe' merge -p "$BASE" "$REMOTE" "$LOCAL" "$MERGED"
