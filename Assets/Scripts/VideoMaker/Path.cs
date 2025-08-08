@@ -110,9 +110,9 @@ namespace VideoMaker
 
             _radius = relStart.magnitude;
 
-            Vector3 axis = Vector3.Cross(relStart, relEnd);
+            Vector3 axis = Vector3.Cross(relEnd, relStart);
             _basis1 = relStart / _radius;
-            _basis2 = Vector3.Cross(axis, _basis1).normalized;
+            _basis2 = Vector3.Cross(_basis1, axis).normalized;
 
             float angle = Vector3.Angle(relStart, relEnd) / 360f;
 
@@ -136,7 +136,7 @@ namespace VideoMaker
             _radius = relStart.magnitude;
 
             _basis1 = relStart / _radius;
-            _basis2 = Vector3.Cross(axis, _basis1).normalized;
+            _basis2 = Vector3.Cross(_basis1, axis).normalized;
 
             _rotations = rotations;
         }
