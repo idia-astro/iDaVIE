@@ -96,6 +96,14 @@ public class CanvassDesktop : MonoBehaviour
     protected Coroutine showLoadDialogCoroutine;
 
     public MenuBarBehaviour MenuBarBehaviour;
+    private bool inPaintMode = false;  //Must be in paint mode (VR) in order to do desktop painting
+    public GameObject vrMapDisplay;  //To hide the VR Map Display when desktop selection is selected
+    public GameObject RegionCubeDisplay; //add display the slice
+    public GameObject PaintSelectionContainer;  //To have correct container active for desktop paint selection
+    public GameObject PaintWaitingContainer;
+    public QuickMenuController quickMenuController;
+    public PaintMenuController paintMenuController;
+    public TabsManager _tabsManager;  //For updating paint menu
 
     private void Awake()
     {
@@ -580,6 +588,8 @@ public class CanvassDesktop : MonoBehaviour
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Stats_Button").GetComponent<Button>()
             .interactable = true;
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Sources_Button").GetComponent<Button>()
+            .interactable = true;
+        mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Paint_Button").GetComponent<Button>()
             .interactable = true;
 
         mainCanvassDesktop.gameObject.transform.Find("RightPanel").gameObject.transform.Find("Tabs_ container").gameObject.transform.Find("Stats_Button").GetComponent<Button>()
@@ -1182,7 +1192,7 @@ public class CanvassDesktop : MonoBehaviour
         Application.Quit();
     }
 
-    private VolumeDataSetRenderer GetFirstActiveRenderer()
+    public VolumeDataSetRenderer GetFirstActiveRenderer()
     {
         if (_volumeDataSetRenderers != null)
         {
@@ -1421,4 +1431,29 @@ public class CanvassDesktop : MonoBehaviour
             .gameObject.transform.Find("InputField_max").GetComponent<TMP_InputField>().text = max.ToString();
         statsPanelContent.gameObject.transform.Find("Histogram_container").gameObject.transform.Find("Histogram").GetComponent<Image>().sprite = img;
     }
+
+    public VolumeDataSet getActiveDataSet()
+    {
+        return GetFirstActiveRenderer().Data;  //returns the volumedataset
+    }
+
+    public VolumeDataSet getActiveMaskSet()
+    {
+        return GetFirstActiveRenderer().Mask;  //returns the mask
+    }
+
+    public void paintTabSelected()
+    {
+        quickMenuController.OpenPaintMenu();
+        vrMapDisplay.SetActive(false);
+        RegionCubeDisplay.SetActive(true);
+        PaintSelectionContainer.SetActive(true);
+        PaintWaitingContainer.SetActive(false);
+        RegionCubeDisplay.GetComponent<DesktopPaintController>().StartPaintSelection();
+    }
+
+    public void paintTabLeft() {
+        paintMenuController.ExitPaintMode();
+    }
+
 }
