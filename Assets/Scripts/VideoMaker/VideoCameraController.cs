@@ -25,8 +25,6 @@ namespace VideoMaker
         // TODO use a different MonoBehaviour to manage the playback and status bar?
         public GameObject ProgressBar;
         public TMP_Text StatusText;
-        // public Texture2D Logo;
-        // private byte[] _logoBytes = new byte[0];
 
         public GameObject VideoView;
         private RectTransform _videoDisplayRect;
@@ -49,6 +47,7 @@ namespace VideoMaker
         private bool _terminateThreadWhenDone;
 
         private string _framePath;
+        private string _logoPath;
         private string _ffmpegPath;
 
         private Queue<PositionAction> _positionQueue = new();
@@ -59,7 +58,6 @@ namespace VideoMaker
         private DirectionAction _directionAction;
         private DirectionAction _upDirectionAction;
 
-        private GameObject _targetCube;
         private Transform _cubeTransform;
 
         private float _duration = 0f;
@@ -73,15 +71,13 @@ namespace VideoMaker
         {
             ProgressBar.SetActive(false);
             StatusText.gameObject.SetActive(false);
-            _targetCube = GameObject.Find("TestCube");
-            _targetCube.SetActive(false);
-
 
             _videoDisplayRect = VideoView.transform.Find("VideoDisplay").gameObject.GetComponent<RectTransform>();
             _videoDisplaySizeDelta = _videoDisplayRect.sizeDelta;
 
             var directory = new DirectoryInfo(Application.dataPath);
             _framePath = System.IO.Path.Combine(directory.Parent.FullName, "Outputs/Video");
+            _logoPath = System.IO.Path.GetRelativePath(_framePath, System.IO.Path.Combine(Application.streamingAssetsPath, "logo.png"));
 
             if (!Directory.Exists(_framePath))
             {
@@ -125,39 +121,10 @@ namespace VideoMaker
             ExeError,
         }
 
-        //TODO use error handling with Result instead?
         private FfmpegTestResults TestFfmpegExe()
         {
             try
             {
-                // var startInfo = new ProcessStartInfo
-                // {
-                //     FileName = _ffmpegPath,
-                //     Arguments = "-version",
-                //     RedirectStandardOutput = true,
-                //     RedirectStandardError = true,
-                //     UseShellExecute = false,
-                //     CreateNoWindow = true
-                // };
-
-                // bool isValid = false;
-
-                // using (var process = new Process { StartInfo = startInfo })
-                // {
-                //     process.EnableRaisingEvents = true;
-                //     process.Start();
-                //     process.BeginErrorReadLine();
-                //     process.BeginOutputReadLine();
-                //     process.OutputDataReceived += (s, e) => { if (e.Data != null && e.Data.StartsWith("ffmpeg version", StringComparison.OrdinalIgnoreCase)) print(e.Data); isValid = true; };
-                //     process.ErrorDataReceived += (s, e) => { if (e.Data != null) { print(e.Data);} };
-                //     process.WaitForExit();
-                // }
-
-                // if (isValid) {
-                //     return FfmpegTestResults.Valid;
-                // }
-                // return FfmpegTestResults.NotFffmpeg;
-
                 var process = new Process
                 {
                     StartInfo = new ProcessStartInfo
@@ -173,7 +140,6 @@ namespace VideoMaker
 
                 process.Start();
                 string output = process.StandardOutput.ReadToEnd();
-                // string error = process.StandardError.ReadToEnd();
                 process.WaitForExit();
 
                 // Check output for a recognizable ffmpeg version string
@@ -318,32 +284,6 @@ namespace VideoMaker
                 file.Delete();
             }
 
-            //TODO The result from this looks really strange, I need to troubleshoot it
-            // if (Logo is not null && _logoBytes.Length == 0)
-            // {
-            //     // _logoBytes = Logo.EncodeToPNG();
-
-            //     //See https://stackoverflow.com/questions/44733841/how-to-make-texture2d-readable-via-script
-            //     RenderTexture renderTex = RenderTexture.GetTemporary(
-            //         Logo.width,
-            //         Logo.height,
-            //         0,
-            //         RenderTextureFormat.Default,
-            //         RenderTextureReadWrite.Linear);
-
-            //     Graphics.Blit(Logo, renderTex);
-            //     RenderTexture previous = RenderTexture.active;
-            //     RenderTexture.active = renderTex;
-
-            //     Texture2D tex = new Texture2D(renderTex.width, renderTex.height, TextureFormat.RGB24, false);
-            //     tex.ReadPixels(new Rect(0, 0, renderTex.width, renderTex.height), 0, 0);
-            //     tex.Apply();
-            //     // Encode texture into PNG
-            //     _logoBytes = tex.EncodeToPNG();
-            //     Destroy(tex);
-            //     // Destroy(renderTex);
-            // }
-
             _frameCounter = 0;
 
             _terminateThreadWhenDone = false;
@@ -380,9 +320,6 @@ namespace VideoMaker
                 ProgressBar.GetComponent<Slider>().value = _frameCounter / (float)_frameTotal;
                 yield return null;
             }
-
-            //I'm not using this right now because I'd rather clear properly than letting garbage pile up
-            // _logoBytes = new(0);
 
             EndPlayback();
         }
@@ -440,21 +377,13 @@ namespace VideoMaker
             VideoView.SetActive(true);
             _isPlaying = true;
 
-            _cubeTransform = null;
-            _targetCube.SetActive(false);
-
             GameObject volume = GameObject.Find("VolumeDataSetManager");
 
-            if (volume is not null)
-            {
-                _cubeTransform = volume.transform.Find("CubePrefab(Clone)");
-            }
-
-            if (_cubeTransform is null)
-            {
-                _targetCube.SetActive(true);
-                _cubeTransform = _targetCube.transform;
-            }
+            //This shouldn't be possible anymore
+            // if (volume is not null)
+            // {
+            _cubeTransform = volume.transform.Find("CubePrefab(Clone)");
+            // }
 
             _positionQueue = new(_videoScript.PositionActions);
             _directionQueue = new(_videoScript.DirectionActions);
@@ -576,18 +505,9 @@ namespace VideoMaker
 
             if (_videoScript.UseLogo)
             {
-                overlay = string.Format("-i ..\\logo.png -filter_complex \"[1:v]scale=iw*{0:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ", _videoScript.LogoScale);
+                overlay = $"-i {_logoPath} -filter_complex \"[1:v]scale=iw*{_videoScript.LogoScale:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ";
             }
             
-            // string overlay = "";
-
-            // Save logo
-            // if (_logoBytes.Length > 0)
-            // {
-            //     string path = System.IO.Path.Combine(_framePath, "logo.png");
-            //     File.WriteAllBytes(path, _logoBytes);
-            //     overlay = string.Format("-i logo.png -filter_complex \"[1:v]scale=iw*{0:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ", _videoScript.LogoScale);
-            // }
 
             string command = $"-framerate {_videoScript.FrameRate} -i frame%0{_frameDigits}d.png {overlay}-c:v libx264 -pix_fmt yuv420p video.mp4";
 
