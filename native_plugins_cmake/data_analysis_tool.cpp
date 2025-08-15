@@ -784,9 +784,9 @@ int GetMaskedSources(const int16_t* maskDataPtr, int64_t dimX, int64_t dimY, int
  * using an AST FrameSet.
  *
  * The following statistics are computed and stored in the provided `SourceStats` struct:
- * - Total flux (sum of finite values)
+ * - Total flux (sum of finite values) (does not account for beam size)
  * - Number of contributing voxels
- * - Peak flux
+ * - Peak flux (does not account for beam size)
  * - Flux-weighted centroid (only using positive flux)
  * - Spatial bounding box (min/max X/Y/Z)
  * - Spectral profile (flux summed per channel Z)
