@@ -33,13 +33,24 @@
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
 
+/**
+ * @brief Represents the bounding box and ID of a source region identified in a 3D mask volume.
+ *
+ * This struct holds the spatial extent of a connected region (or source) in the mask, defined
+ * by its minimum and maximum coordinates in the X, Y, and Z dimensions. Each source is
+ * associated with a unique, non-zero `maskVal`.
+ */
 struct SourceInfo
 {
-    int64_t minX, maxX;
-    int64_t minY, maxY;
-    int64_t minZ, maxZ;
-    int16_t maskVal;
-    char _padding[6];
+    int64_t minX;     /**< Minimum X coordinate of the source */
+    int64_t maxX;     /**< Maximum X coordinate of the source */
+    int64_t minY;     /**< Minimum Y coordinate of the source */
+    int64_t maxY;     /**< Maximum Y coordinate of the source */
+    int64_t minZ;     /**< Minimum Z coordinate of the source */
+    int64_t maxZ;     /**< Maximum Z coordinate of the source */
+    int16_t maskVal;  /**< Unique non-zero value representing the source in the mask */
+
+    char _padding[6]; /**< Internal padding to maintain memory alignment (optional) */
 };
 
 struct SourceStats
