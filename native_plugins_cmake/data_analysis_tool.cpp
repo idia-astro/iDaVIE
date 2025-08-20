@@ -268,7 +268,7 @@ int GetYProfile(const float *dataPtr, float **profile, int64_t xDim, int64_t yDi
 
 int GetZProfile(const float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y)
 {
-    float* newProfile = new float[xDim];
+    float* newProfile = new float[zDim];
     if (x > xDim || y > yDim || x < 1 || y < 1)
         return EXIT_FAILURE;
     for (int i = 0; i < zDim; i++)
