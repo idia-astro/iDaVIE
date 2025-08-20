@@ -26,11 +26,16 @@ using UnityEngine.UI;
 
 public class TabsManager : MonoBehaviour
 {
+    const int PAINT_TAB_INDEX = 4;
+
     public GameObject[] tabs;
     public GameObject[] panels;
+    public GameObject vrMapDisplay;
 
     public Color defaultColor;
     public Color selectedColor;
+    public GameObject RegionCubeDisplay;
+    public CanvassDesktop _canvasDesktop;
 
     private int activeTabIndex=0;
     private int old_activeTabIndex = -1;
@@ -72,6 +77,29 @@ public class TabsManager : MonoBehaviour
             panels[activeTabIndex].SetActive(true);
         }
 
+        if(newActiveTab == PAINT_TAB_INDEX)
+        {
+            _canvasDesktop.paintTabSelected();  //lets the canvas desktop know the paint tab is active
+        }
+        else{
+            if(RegionCubeDisplay.activeSelf)  //else if in a different tab and the region cube is displayed (for desktop paint) then deselect it and activate vr map display
+            {
+                RegionCubeDisplay.SetActive(false);
+                vrMapDisplay.SetActive(true);
+            }
+        }
+
+        if(old_activeTabIndex == PAINT_TAB_INDEX) _canvasDesktop.paintTabLeft();
+
+
+    }
+
+    public void paintModeEntered()
+    {
+        if(activeTabIndex == PAINT_TAB_INDEX)
+        {
+            _canvasDesktop.paintTabSelected();
+        }
     }
 }
 

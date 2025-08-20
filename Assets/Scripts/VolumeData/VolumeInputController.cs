@@ -87,6 +87,7 @@ public class VolumeInputController : MonoBehaviour
     }
     //reference to quick menu canvass
     public GameObject CanvassQuickMenu;
+    public GameObject CanvassPaintMenu;
 
     // Choice of left/right primary hand
     public SteamVR_Input_Sources PrimaryHand = SteamVR_Input_Sources.RightHand;
@@ -115,6 +116,8 @@ public class VolumeInputController : MonoBehaviour
     private SteamVR_Action_Boolean _grabPinchAction;
     private SteamVR_Action_Boolean _quickMenuAction;
     public VolumeDataSetRenderer[] _volumeDataSets;
+    public GameObject volumeDatasetManager;
+    public ShapesManager shapesManager;
     private float[] _startDataSetScales;
     private Vector3[] _currentGripPositions;
     private Vector3 _startGripSeparation;
@@ -163,9 +166,16 @@ public class VolumeInputController : MonoBehaviour
     // VR-family dependent values
     private VRFamily _vrFamily;
 
+    //Shape Selection Scaling
+    private bool scalingUp = false;
+    private bool scalingDown = false;
+    private float scalingTimer = 0f;
+
     private bool _paintMenuOn = false;
+    private bool _shapeMenuOn = false;
     private bool _savePopupOn = false;
     private bool _exportPopupOn = false;
+    private bool _shapeSelection = false;
 
     [SerializeField]
     public GameObject toastNotificationPrefab = null;
@@ -239,6 +249,9 @@ public class VolumeInputController : MonoBehaviour
         SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.AddOnStateUpListener(OnMenuUpReleased, SteamVR_Input_Sources.RightHand);
         SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateUpListener(OnMenuDownReleased, SteamVR_Input_Sources.LeftHand);
         SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateUpListener(OnMenuDownReleased, SteamVR_Input_Sources.RightHand);
+
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.AddOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.LeftHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.AddOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.RightHand);
 
 
         UpdateDataSets();
@@ -340,6 +353,8 @@ public class VolumeInputController : MonoBehaviour
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuLeft")?.RemoveOnStateDownListener(OnMenuLeftPressed, SteamVR_Input_Sources.RightHand);
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.RemoveOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.LeftHand);
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.RemoveOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.RightHand);
+             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.RemoveOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.LeftHand);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.RemoveOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.RightHand);
         }
     }
 
@@ -360,7 +375,12 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnMenuUpPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
-        if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
+        if(_shapeSelection && fromSource == PrimaryHand) {
+            ShowSelectableShape(shapesManager.GetNextShape());
+            scalingDown = false;
+            scalingUp = true;
+        }
+        else if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
             IncreaseBrushSize();
         }
@@ -378,11 +398,20 @@ public class VolumeInputController : MonoBehaviour
          {
             scrollUp = false;
          }
+         else if(fromSource == PrimaryHand && _shapeSelection) {
+            scalingUp = false;
+            scalingTimer = 0f;
+         }
     }
 
     private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
-        if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
+        if(_shapeSelection && fromSource == PrimaryHand) {
+            ShowSelectableShape(shapesManager.GetPreviousShape());
+            scalingUp = false;
+            scalingDown = true;
+        }
+        else if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
             DecreaseBrushSize();
         }
@@ -399,10 +428,19 @@ public class VolumeInputController : MonoBehaviour
         {
             scrollDown = false;
         }
+        else if(fromSource == PrimaryHand && _shapeSelection) {
+            scalingDown = false;
+            scalingTimer = 0f;
+        }
     }
 
     private void OnMenuLeftPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
+        if(fromSource == PrimaryHand && _shapeSelection) {
+            shapesManager.ChangeShapeMode();
+            return;
+        }
+
         if (fromSource != PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
             UndoBrushStroke(fromSource);
@@ -411,7 +449,10 @@ public class VolumeInputController : MonoBehaviour
     
     private void OnMenuRightPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
-		
+		if(fromSource == PrimaryHand && _shapeSelection) {
+            shapesManager.ChangeShapeMode();
+            return;
+        }
         if (fromSource != PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
         {
             RedoBrushStroke(fromSource);  
@@ -465,6 +506,17 @@ public class VolumeInputController : MonoBehaviour
         // Use primary hand for voice command activation (push-to-talk)
         if (fromSource == PrimaryHand)
         {
+            if(_shapeSelection) {
+                if(newState)
+                {
+                    if(shapesManager.isShapeSelected()) shapesManager.DeselectShape();
+                    else {
+                        shapesManager.DestroyCurrentShape();
+                        shapesManager.MakeIdle();
+                    }
+                }
+                return;
+            }
             if (_config.usePushToTalk)
             {
                 if (newState)
@@ -480,10 +532,11 @@ public class VolumeInputController : MonoBehaviour
         }
 
         _paintMenuOn = CanvassQuickMenu.GetComponent<QuickMenuController>().paintMenu.activeSelf;
+        _shapeMenuOn = CanvassPaintMenu.GetComponent<PaintMenuController>().shapeMenu.activeSelf;
         _savePopupOn = CanvassQuickMenu.GetComponent<QuickMenuController>().savePopup.activeSelf;
         _exportPopupOn = CanvassQuickMenu.GetComponent<QuickMenuController>().exportPopup.activeSelf;
 
-        if (newState && !_paintMenuOn && !_savePopupOn && !_exportPopupOn)
+        if (newState && !_paintMenuOn && !_shapeMenuOn && !_savePopupOn && !_exportPopupOn)
         {
             StartRequestQuickMenu(fromSource == SteamVR_Input_Sources.LeftHand ? 0 : 1);
         }
@@ -531,6 +584,15 @@ public class VolumeInputController : MonoBehaviour
         // Skip input from secondary hand
         if (fromSource != PrimaryHand)
         {
+            return;
+        }
+        
+        if(_shapeSelection) {
+            if(newState)
+            {
+                if(shapesManager.isShapeSelected()) PlaceShape();
+                shapesManager.SelectShape();
+            }
             return;
         }
 
@@ -732,6 +794,22 @@ public class VolumeInputController : MonoBehaviour
         if (scrollUp)
         { 
             ScrollObject.GetComponent<CustomDragHandler>().MoveUp();
+        }
+
+        scalingTimer += Time.deltaTime;
+        if(scalingUp)
+        {
+            if(scalingTimer > 0.03f) {
+                shapesManager.IncreaseScale();
+                scalingTimer = 0f;
+            }
+        }
+        if(scalingDown)
+        {
+            if(scalingTimer > 0.03f) {
+                shapesManager.DecreaseScale();
+                scalingTimer = 0f;
+            }
         }
 
         ToastNotification.Update();
@@ -1330,4 +1408,68 @@ public class VolumeInputController : MonoBehaviour
         _lineAxisSeparation?.Destroy();
         _lineRotationAxes?.Destroy();
     }
+
+    private void OnTriggerChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState) {
+         if(_shapeSelection) {
+            GameObject moveableShape = shapesManager.GetMoveableShape();
+            if(moveableShape != null) {
+                if(newState) {
+                    moveableShape.transform.SetParent(_handTransforms[PrimaryHandIndex]);
+                }
+                else {
+                    moveableShape.transform.SetParent(volumeDatasetManager.transform.GetChild(0));
+                }
+                return;
+            }
+        }
+    }
+
+
+    public void ChangeShapeSelection() {
+        _shapeSelection = !_shapeSelection;
+    }
+
+    //Used to display the selectable shapes for the user to scroll through in the scene
+    public void ShowSelectableShape(GameObject currentShape) {
+        if(currentShape == null) return;
+        Vector3 position = _handTransforms[PrimaryHandIndex].position;
+        Quaternion rotation = _handTransforms[PrimaryHandIndex].rotation;
+        GameObject shape = Instantiate(currentShape, position, rotation);
+        shape.transform.localScale = Vector3.Scale((ActiveDataSet.transform.localScale/20.0f), shape.transform.localScale);
+        shape.transform.SetParent(_handTransforms[PrimaryHandIndex]);
+        position = shape.transform.localPosition;
+        position.z+=shape.transform.localScale.x/2.0f;
+        shape.transform.localPosition = position;
+        shapesManager.SetSelectableShape(shape);
+    }
+
+    //Places the selected shape into the scene
+    public void PlaceShape() {
+        GameObject shape = shapesManager.GetCurrentShape();
+        GameObject selectedShape = shapesManager.GetSelectedShape();
+        if(selectedShape == null) return;
+        GameObject shapeCopy = Instantiate(shape,selectedShape.transform.position,selectedShape.transform.rotation);
+        shapeCopy.name = shapesManager.GetShapeName(shapeCopy);
+        if(shapeCopy.name.Contains("Cylinder")) {
+            var collider = shapeCopy.GetComponent<CapsuleCollider>();
+            collider.enabled = true;
+        }
+        else if (shapeCopy.name.Contains("Sphere")) {
+            var collider = shapeCopy.GetComponent<SphereCollider>();
+            collider.enabled = true;
+        }
+        else {
+            var collider = shapeCopy.GetComponent<BoxCollider>();
+            collider.enabled = true;
+        }
+        shapeCopy.GetComponent<Shape>().SetAdditive(selectedShape.GetComponent<Shape>().isAdditive());
+        shapeCopy.transform.localScale = selectedShape.transform.localScale;
+        shapeCopy.transform.SetParent(volumeDatasetManager.transform.GetChild(0));
+        shapesManager.AddShape(shapeCopy);
+        shapesManager.AddSelectedShape(shapeCopy);
+        shapesManager.DeselectShape();
+        shapesManager.DestroyCurrentShape();
+        shapesManager.MakeIdle();
+    }
+
 }
