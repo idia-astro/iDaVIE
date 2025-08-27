@@ -204,8 +204,7 @@ int FitsWriteSubImageInt16(fitsfile* fptr, long* fPix, long* lPix, int16_t* arra
 }
 
 /*
- * @brief Function that writes a new copy of a mask that was loaded as a rectangular subset. This requires loading in
- * the entire old mask file, done in a separate thread to prevent very long hangtimes while the user is in the VR.
+ * @brief Function that writes a new copy of a mask that was loaded as a rectangular subset.
  *
  * @param oldFileName The filepath of the new/destination mask.
  * @param fptr The fitsfile being worked on.
@@ -215,44 +214,96 @@ int FitsWriteSubImageInt16(fitsfile* fptr, long* fPix, long* lPix, int16_t* arra
  * @param status Value containing outcome of CFITSIO operation.
  * @return int 
  */
-int FitsWriteNewCopySubImageInt16(char* newFileName, fitsfile* fptr, long* fPix, long* lPix, int16_t* array, int* status)
+int FitsWriteNewCopySubImageInt16(char* newFileName, fitsfile* fptr, long* fPix, long* lPix, int16_t* array, char* historyTimestamp, int* status)
 {
-    auto f = [&]()
-    {
-        // Use system calls to copy oldFileName to the new file location.
-        auto oldFileName = fptr->Fptr->filename;
-        try{
-            std::filesystem::copy_file(oldFileName, newFileName);
-        }
-        catch (std::exception& e){
-            std::stringstream debug;
-            debug << "Failed to copy mask file from " << oldFileName << " to " << newFileName << ".";
-            WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
-        }
-        // Open the now new file with CFITSIO.
-        fitsfile* fptr2;
-        fits_open_file(&fptr2, newFileName, READWRITE, status);
-        // Write as subset.
-        long* firstPix = new long[3];
-        for (int i = 0; i < 3; i++)
-            firstPix[i] = fPix[i];
-        
-        std::stringstream debug;
-        debug << "Writing mask sub image from [" << firstPix[0] << ", " << firstPix[1] << ", " << firstPix[2] << "] to [" << lPix[0] << ", " << lPix[1] << ", " << lPix[2] << "].";
-        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
-        
-        int success = fits_write_subset(fptr2, TSHORT, firstPix, lPix, array, status);
-
-        fits_close_file(fptr2, status);
-        return success;
-    };
     
-    //Call the lambda above to execute in a separate thread.
-    std::thread t1(f);
+    std::stringstream debug;
 
-    //Uncomment to test delay
-    //t1.join();
-    return 0;
+    // Use system calls to copy oldFileName to the new file location.
+    auto oldFileName = fptr->Fptr->filename;
+    
+    //Remove exclamation mark if present, CFITSIO dark magic does not agree with Windows calls
+    std::string file(newFileName);
+    if (file.front() == '!')
+        file = file.substr(1);
+    try{
+        std::filesystem::copy_file(oldFileName, file.c_str());
+        debug.clear();
+        debug.str("");
+        debug << "Copied mask from " << oldFileName << " to " << file << ".";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    }
+    catch (std::exception& e){
+        debug.clear();
+        debug.str("");
+        debug << "Failed to copy mask file from " << oldFileName << " to " << file << "." << std::endl;
+        debug << "Exception " << e.what() << " thrown.";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    }
+    
+    // Open the now new file with CFITSIO.
+    fitsfile* fptr2;
+    fits_open_file(&fptr2, file.c_str(), READWRITE, status);
+    if (status != 0)
+    {
+        debug.clear();
+        debug.str("");
+        debug << "Failed attempting to open fits file " << file << " with status code " << status << ".";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        return status;
+    }
+    
+    // Write as subset.
+    long* firstPix = new long[3];
+    for (int i = 0; i < 3; i++)
+        firstPix[i] = fPix[i];
+    
+    debug.clear();
+    debug.str("");
+    debug << "Writing new mask sub image from [" << firstPix[0] << ", " << firstPix[1] << ", " << firstPix[2] << "] to [" << lPix[0] << ", " << lPix[1] << ", " << lPix[2] << "].";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    
+    // Write new data to copied file.
+    int success = fits_write_subset(fptr2, TSHORT, firstPix, lPix, array, status);
+    debug.clear();
+    debug.str("");
+    debug << "Completed new mask sub image writing with result code " << success << ".";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+
+    // Update file history with latest timestamp
+    FitsWriteHistory(fptr2, historyTimestamp, status);
+    if (status != 0)
+    {
+        debug.clear();
+        debug.str("");
+        debug << "Failed attempting to write file history with result code " << success << ".";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        return status;
+    }
+
+    // Flush file buffer to make sure it is written.
+    FitsFlushFile(fptr2, status);
+    if (status != 0)
+    {
+        debug.clear();
+        debug.str("");
+        debug << "Failed attempting to flush file with result code " << success << ".";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        return status;
+    }
+
+    // Close the file to free up the memory and keep CFITSIO happy.
+    FitsCloseFile(fptr2, status);
+    if (status != 0)
+    {
+        debug.clear();
+        debug.str("");
+        debug << "Failed attempting to close fits file " << file << " with status code " << status << ".";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        return status;
+    }
+
+    return success;
 }
 
 int FitsWriteHistory(fitsfile *fptr, char *history,  int *status)

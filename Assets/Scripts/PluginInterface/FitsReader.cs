@@ -274,6 +274,9 @@ public class FitsReader
     public static extern int FitsWriteSubImageInt16(IntPtr fptr, IntPtr cornerMin, IntPtr cornerMax, IntPtr array, out int status);
 
     [DllImport("idavie_native")]
+    public static extern int FitsWriteNewCopySubImageInt16(string newFileName, IntPtr fptr, IntPtr cornerMin, IntPtr cornerMax, IntPtr array, out int status);
+
+    [DllImport("idavie_native")]
     public static extern int FitsWriteHistory(IntPtr fptr, string history, out int status);
     
     [DllImport("idavie_native")]
@@ -582,20 +585,37 @@ public class FitsReader
         }
     }
 
-    public static int SaveSubMask(IntPtr fitsPtr, IntPtr maskData, int[] firstPix, int[] lastPix, string fileName)
+    public static int SaveSubMask(IntPtr fitsPtr, IntPtr maskData, int[] firstPix, int[] lastPix, string fileName, bool exporting)
     {
         bool isNewFile = (fileName != null);
         IntPtr fPix = Marshal.AllocHGlobal(sizeof(int) * firstPix.Length);
         IntPtr lPix = Marshal.AllocHGlobal(sizeof(int) * lastPix.Length);
         Marshal.Copy(firstPix, 0, fPix, firstPix.Length);
         Marshal.Copy(lastPix, 0, lPix, lastPix.Length);
-        UnityEngine.Debug.Log("Writing submask from first pixel [" + String.Join(", ", fPix) + "] and end pixel [" + String.Join(", ", lPix) + "].");
+        UnityEngine.Debug.Log("Writing submask from first pixel [" + String.Join(", ", firstPix) + "] and end pixel [" + String.Join(", ", lastPix) + "].");
         if (isNewFile)
         {
-            return SaveNewInt16SubMask(fitsPtr, maskData, fPix, lPix, fileName);
+            if (exporting)
+            {
+                UnityEngine.Debug.Log("Attempting to export mask to a new file " + fileName + ".");
+                int status = 0;
+                var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
+                FitsReader.FitsWriteNewCopySubImageInt16(fileName, fitsPtr, fPix, lPix, maskData, historyTimeStamp, out status);
+                if (status != 0)
+                {
+                    UnityEngine.Debug.LogError($"Fits save new copy error {FitsErrorMessage(status)}, see plugin log for details.");
+                } 
+                return status;
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Saving mask file " + fileName + " for the first time.");
+                return SaveNewInt16SubMask(fitsPtr, maskData, fPix, lPix, fileName);
+            }
         }
         else
         {
+            UnityEngine.Debug.Log("Overwriting existing mask file " + fileName + ".");
             return UpdateOldInt16SubMask(fitsPtr, maskData, fPix, lPix);
         }
     }

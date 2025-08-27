@@ -1486,7 +1486,8 @@ namespace VolumeData
                 FitsReader.FreeFitsPtrMemory(subCubeData);
             return status;
         }
-        public int SaveMask(IntPtr cubeFitsPtr, string filename)
+
+        public int SaveMask(IntPtr cubeFitsPtr, string filename, bool exporting)
         {
             int[] firstPix = new int[3];
             int[] lastPix = new int[3];
@@ -1495,7 +1496,8 @@ namespace VolumeData
                 firstPix[i] = subsetBounds[i * 2];
                 lastPix[i] = subsetBounds[i * 2 + 1];
             }
-            int status = FitsReader.SaveSubMask(cubeFitsPtr, FitsData, firstPix, lastPix, filename);
+            Debug.Log("Attempting to save mask with filename " + filename);
+            int status = FitsReader.SaveSubMask(cubeFitsPtr, FitsData, firstPix, lastPix, filename, exporting);
             if (!string.IsNullOrEmpty(filename))
             {
                 // Update filename after stripping out exclamation mark indicating overwrite flag

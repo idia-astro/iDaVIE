@@ -1215,6 +1215,7 @@ namespace VolumeData
             }
              _dataSet.SaveSubCubeFromOriginal(cornerMin, cornerMax, _maskDataSet);
         }
+
         public void SaveMask(bool overwrite)
         {
             if (_maskDataSet == null)
@@ -1227,10 +1228,11 @@ namespace VolumeData
             if (IsMaskNew)
             {
                 // Save new mask because none exists yet
+                Debug.Log("Attempting to save new mask because none exist.");
                 FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _dataSet.FileName, out status);
                 string directory = Path.GetDirectoryName(_dataSet.FileName);
-                _maskDataSet.FileName = $"{directory}/{Path.GetFileNameWithoutExtension(_dataSet.FileName)}-mask.fits";
-                if (_maskDataSet.SaveMask(cubeFitsPtr, $"!{_maskDataSet.FileName}") != 0)
+                _maskDataSet.FileName = $"!{directory}/{Path.GetFileNameWithoutExtension(_dataSet.FileName)}-mask.fits";
+                if (_maskDataSet.SaveMask(cubeFitsPtr, _maskDataSet.FileName, false) != 0)
                 {
                     ToastNotification.ShowError("Error saving new mask!");
                 }
@@ -1244,6 +1246,7 @@ namespace VolumeData
             else if (!overwrite)
             {
                 // Save a copy
+                Debug.Log("Attempting to save new mask copy.");
                 FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _maskDataSet.FileName, out status);
                 Regex regex = new Regex(@"_copy_\d{8}_\d{5}");
                 string fileName = Path.GetFileNameWithoutExtension(_maskDataSet.FileName);
@@ -1259,7 +1262,7 @@ namespace VolumeData
                 }
                 string directory = Path.GetDirectoryName(_maskDataSet.FileName);
                 string fullPath = $"!{directory}/{fileName}.fits";
-                if (_maskDataSet.SaveMask(cubeFitsPtr, fullPath) != 0)
+                if (_maskDataSet.SaveMask(cubeFitsPtr, fullPath, true) != 0)
                 {
                     ToastNotification.ShowError("Error saving mask copy!");
                 }
@@ -1272,8 +1275,9 @@ namespace VolumeData
             else
             {
                 // Overwrite existing mask
+                Debug.Log("Attempting to overwrite existing mask.");
                 FitsReader.FitsOpenFileReadWrite(out cubeFitsPtr, _maskDataSet.FileName, out status);
-                if (_maskDataSet.SaveMask(cubeFitsPtr, null) != 0)
+                if (_maskDataSet.SaveMask(cubeFitsPtr, null, false) != 0)
                 {
                     ToastNotification.ShowError("Error overwriting existing mask!");
                 }

@@ -95,6 +95,8 @@ DllExport int FitsWriteImageInt16(fitsfile * , int , int64_t , int16_t* , int* )
 
 DllExport int FitsWriteSubImageInt16(fitsfile * , long* , long* , int16_t* , int* );
 
+DllExport int FitsWriteNewCopySubImageInt16(char* , fitsfile* , long* , long* , int16_t* , char* , int* );
+
 DllExport int FitsWriteHistory(fitsfile *, char *,  int *);
 
 DllExport int FitsWriteKey(fitsfile * , int , char *, void *, char *, int *);
