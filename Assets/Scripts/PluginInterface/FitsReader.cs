@@ -274,7 +274,7 @@ public class FitsReader
     public static extern int FitsWriteSubImageInt16(IntPtr fptr, IntPtr cornerMin, IntPtr cornerMax, IntPtr array, out int status);
 
     [DllImport("idavie_native")]
-    public static extern int FitsWriteNewCopySubImageInt16(string newFileName, IntPtr fptr, IntPtr cornerMin, IntPtr cornerMax, IntPtr array, out int status);
+    public static extern int FitsWriteNewCopySubImageInt16(string newFileName, IntPtr fptr, IntPtr cornerMin, IntPtr cornerMax, IntPtr array, string historyTimeStamp, out int status);
 
     [DllImport("idavie_native")]
     public static extern int FitsWriteHistory(IntPtr fptr, string history, out int status);
