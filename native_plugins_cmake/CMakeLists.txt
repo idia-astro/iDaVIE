@@ -22,7 +22,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 project(native_plugins)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 IF (WIN32)
     find_package(unofficial-cfitsio CONFIG REQUIRED)

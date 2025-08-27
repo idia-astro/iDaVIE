@@ -39,8 +39,10 @@ public class DebugLogging : MonoBehaviour
     public Button saveButton;
 
     public const string defaultFile = "iDaVIE_Log.log";
+    public const string defaultPluginFile = "i-DaVIE_Plugin_Debug.log";
 
     private string autosavePath;
+    private string pluginSavePath;
     Queue debugLogQueue = new Queue();
     
     // Start is called before the first frame update
@@ -62,6 +64,14 @@ public class DebugLogging : MonoBehaviour
                 // Move existing log to default with '_old' appended
                 File.Copy(autosavePath, Path.Combine(directoryPath, defaultFile.Substring(0, defaultFile.Length - 4) + "_previous.log"), true);
                 File.Delete(autosavePath);
+            }
+
+            pluginSavePath = Path.Combine(directoryPath, defaultPluginFile);
+            if (File.Exists(pluginSavePath))
+            {
+                // Move existing log to default with '_old' appended
+                File.Copy(pluginSavePath, Path.Combine(directoryPath, defaultFile.Substring(0, defaultFile.Length - 4) + "_previous.log"), true);
+                File.Delete(pluginSavePath);
             }
         }
         catch (Exception ex)

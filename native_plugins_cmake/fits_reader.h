@@ -25,6 +25,7 @@
 #define DllExport __declspec (dllexport)
 
 #include <cfitsio/fitsio.h>
+#include <cstring>
 #include <iostream>
 #include <cstring>
 #include <string_view>
@@ -35,24 +36,28 @@
 #include <sstream>
 #include <string>
 
-static constexpr std::string_view defaultDebugFile = "Outputs/Logs/iDaVIE_Plugin_Debug.log";
-
 // These are the keys that will be copied over from the main fits cube to the moment maps if they are exported as fits files
 const std::vector<std::string> REQUIRED_MOMENT_MAP_DBL_KEYS = {"CRVAL1", "CDELT1", "CRPIX1", "CRVAL2", "CDELT2", "CRPIX2", "BMAJ", "BMIN", "BPA"};
 const std::vector<std::string> REQUIRED_MOMENT_MAP_STR_KEYS = {"CTYPE1", "CTYPE2"};
 
+//Use the WriteLogFile function to output directly to a text file for debugging.
+static constexpr std::string_view defaultDebugFile = "Outputs/Logs/i-DaVIE_Plugin_Debug.log";
 
 extern "C"
 {
-DllExport int FitsOpenFileReadOnly(fitsfile**, char*,  int*);
+DllExport int FitsOpenFileReadOnly(fitsfile **, char *,  int *);
 
-DllExport int FitsOpenFileReadWrite(fitsfile** , char* , int* );
+DllExport int FitsOpenFileReadWrite(fitsfile ** , char *, int *);
 
-DllExport int FitsCreateFile(fitsfile** , char* , int* );
+DllExport int FitsCreateFile(fitsfile ** , char * , int *);
 
 DllExport int FitsCloseFile(fitsfile *, int *);
 
-DllExport int FitsFlushFile(fitsfile* , int* );
+DllExport int FitsFlushFile(fitsfile * , int *);
+
+DllExport int FitsGetHduCount(fitsfile *, int *, int *);
+
+DllExport int FitsGetCurrentHdu(fitsfile *, int *);
 
 DllExport int FitsMovabsHdu(fitsfile *, int , int *, int *);
 
@@ -88,6 +93,10 @@ DllExport int FitsCopyCubeSection(fitsfile *, fitsfile *, char *, int *);
 
 DllExport int FitsWriteImageInt16(fitsfile * , int , int64_t , int16_t* , int* );
 
+DllExport int FitsWriteSubImageInt16(fitsfile * , long* , long* , int16_t* , int* );
+
+DllExport int FitsWriteNewCopySubImageInt16(char* , fitsfile* , long* , long* , int16_t* , char* , int* );
+
 DllExport int FitsWriteHistory(fitsfile *, char *,  int *);
 
 DllExport int FitsWriteKey(fitsfile * , int , char *, void *, char *, int *);
@@ -106,9 +115,11 @@ DllExport int FitsReadColString(fitsfile *, int , long ,
 
 DllExport int FitsReadImageFloat(fitsfile *, int , int64_t , float **, int *);
 
-DllExport int FitsReadSubImageFloat(fitsfile *, int, long *, long *, int64_t, float **, int *);
+DllExport int FitsReadSubImageFloat(fitsfile *, int, int, long *, long *, int64_t, float **, int *);
 
 DllExport int FitsReadImageInt16(fitsfile *, int , int64_t , int16_t **, int *);
+
+DllExport int FitsReadSubImageInt16(fitsfile *, int, int, long *, long *, int64_t, float **, int *);
 
 DllExport int FitsCreateHdrPtrForAst(fitsfile *, char **, int *, int *);
 
@@ -124,9 +135,6 @@ DllExport int WriteMomentMap(fitsfile *, char*, float*, long, long, int);
 
 int writeFitsHeader(fitsfile *, fitsfile *, int);
 
-
 }
-
-
 
 #endif //FITS_READER_FITS_READER_H
