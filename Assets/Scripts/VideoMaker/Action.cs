@@ -9,35 +9,34 @@ namespace VideoMaker
     public abstract class Action
     {
         //TODO use private variable + setters and getters to make these unchangable
-        public float StartTime;
-        public float Duration;
+        public float StartTime { set; get; }
+        public float Duration { set; get; } = 0f;
 
-        public Action(float duration)
-        {
-            this.Duration = duration;
-        }
+        public float EndTime { get => StartTime + Duration; }
     }
 
     // PositionActions
     public abstract class PositionAction : Action
     {
-        public abstract Vector3 GetPosition(float time);
+        public (Vector3 position, Vector3 direction, Vector3 upDirection) GetPositionDirection(float time) {
+            return OnGetPositionDirection(Duration > 0 ? (time - StartTime) / Duration : 0);
+        }
 
-        public PositionAction(float duration) : base(duration) { }
+        protected abstract (Vector3 position, Vector3 direction, Vector3 upDirection) OnGetPositionDirection(float time)
     }
 
     public class PositionActionHold : PositionAction
     {
         private Vector3 _position;
 
-        public PositionActionHold(float duration, Vector3 position) : base(duration)
+        public PositionActionHold(Vector3 position)
         {
             _position = position;
         }
 
-        public override Vector3 GetPosition(float time)
+        protected override (Vector3 position, Vector3 direction, Vector3 upDirection) OnGetPositionDirection(float time)
         {
-            return _position;
+            return (_position, Vector3.forward, Vector3.up);
         }
     }
 
@@ -45,67 +44,61 @@ namespace VideoMaker
     {
         private Path _path;
 
-        public PositionActionPath(float duration, Path path) : base(duration)
+        public PositionActionPath(Path path)
         {
             _path = path;
         }
 
-        public override Vector3 GetPosition(float time)
+        protected override (Vector3 position, Vector3 direction, Vector3 upDirection) OnGetPositionDirection(float time)
         {
-            // float pathParam = Math.Clamp((time - StartTime) / Duration, 0f, 1f);
-            float pathParam = Math.Clamp(time / Duration, 0f, 1f);
-
-            return _path.GetPosition(pathParam);
+            return _path.GetPositionDirection(time);
         }
     }
 
     // DirectionActions
     public abstract class DirectionAction : Action
     {
-        public abstract Vector3 GetDirection(float time, Vector3 position);
-        public DirectionAction(float duration) : base(duration) { }
+        public bool ReverseDirection { get; set; } = false;
+        public Vector3 GetDirection(float time, Vector3 position, Vector3 pathForward, Vector3 pathUp) {
+            return (ReverseDirection ? -1 : 1) * OnGetDirection(Duration > 0 ? (time - StartTime) / Duration : 0, position, pathForward, pathUp);
+        }
+
+        protected abstract Vector3 OnGetDirection(float time, Vector3 position, Vector3 pathForward, Vector3 pathUp);
     }
 
     public class DirectionActionHold : DirectionAction
     {
         private Vector3 _direction;
 
-        public DirectionActionHold(float duration, Vector3 direction) : base(duration)
+        public DirectionActionHold(Vector3 direction)
         {
             _direction = direction;
         }
 
-        public override Vector3 GetDirection(float time, Vector3 position)
+        protected override Vector3 OnGetDirection(float time, Vector3 position, Vector3 pathForward, Vector3 pathUp)
         {
             return _direction;
         }
     }
 
-    //Note this can be replaced with a path...
     public class DirectionActionTween : DirectionAction
     {
         private Vector3 _directionFrom;
         private Vector3 _directionTo;
         private Easing _easing;
 
-        public DirectionActionTween(float duration, Vector3 directionFrom, Vector3 directionTo, Easing easing = null) : base(duration)
+        public DirectionActionTween(Vector3 directionFrom, Vector3 directionTo, Easing easing = null)
         {
             _directionFrom = directionFrom;
             _directionTo = directionTo;
             _easing = easing;
         }
 
-        public override Vector3 GetDirection(float time, Vector3 position)
+        protected override Vector3 OnGetDirection(float time, Vector3 position, Vector3 pathForward, Vector3 pathUp)
         {
-            // float frac = Math.Clamp((time - StartTime) / Duration, 0f, 1f);
-            float frac = Math.Clamp(time / Duration, 0f, 1f);
+            time = _easing is null? time : _easing.GetValue(time);
 
-            if (_easing is not null)
-            {
-                frac = _easing.GetValue(frac);
-            }
-
-            return (_directionFrom * (1 - frac) + _directionTo * frac).normalized;
+            return (_directionFrom * (1 - time) + _directionTo * time).normalized;
         }
     }
 
@@ -113,12 +106,12 @@ namespace VideoMaker
     {
         private Vector3 _target;
 
-        public DirectionActionLookAt(float duration, Vector3 target) : base(duration)
+        public DirectionActionLookAt(Vector3 target)
         {
             _target = target;
         }
 
-        public override Vector3 GetDirection(float time, Vector3 position)
+        protected override Vector3 OnGetDirection(float time, Vector3 position, Vector3 pathForward, Vector3 pathUp)
         {
             return (_target - position).normalized;
         }
@@ -126,45 +119,17 @@ namespace VideoMaker
 
     public class DirectionActionPath : DirectionAction
     {
-        private Path _path;
-        private float _startTimeOffset;
-        private float _endTimeOffset;
-        private bool _useUpDirection;
-        private bool _invert;
-
-        public DirectionActionPath(float duration,
-            Path path,
-            float startTimeOffset = 0f, float endTimeOffset = 0f,
-            bool useUpDirection = false, bool invert = false
-        ) : base(duration)
+        protected override Vector3 OnGetDirection(float time, Vector3 position, Vector3 pathForward, Vector3 pathUp)
         {
-            _path = path;
-            _startTimeOffset = startTimeOffset;
-            _endTimeOffset = endTimeOffset;
-            _useUpDirection = useUpDirection;
-            _invert = invert;
+            return pathForward;
         }
+    }
 
-        public override Vector3 GetDirection(float time, Vector3 position)
+    public class UpDirectionActionPath : DirectionAction
+    {
+        protected override Vector3 OnGetDirection(float time, Vector3 position, Vector3 pathForward, Vector3 pathUp)
         {
-            float pathParam = Math.Clamp(
-                (time + _startTimeOffset) / (Duration + _startTimeOffset + _endTimeOffset),
-                0f, 1f
-            );
-
-            int sign = 1;
-
-            if (_invert)
-            {
-                sign = -1;
-            }
-
-            if (_useUpDirection)
-            {
-                return sign * _path.GetUpDirection(pathParam);
-            }
-
-            return sign * _path.GetDirection(pathParam);
+            return pathUp;
         }
     }
 }

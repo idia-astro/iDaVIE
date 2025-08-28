@@ -77,55 +77,56 @@ namespace VideoMaker
     }
 
     //TODO replace AccelDecel with this
-    // public class EasingInLinOut : Easing
-    // {
-    //     private int _order;
-    //     private float _t1;
-    //     private float _t2;
-
-    //     public EasingInLinOut(int order, float timeIn, float timeOut)
-    //     {
-    //         _order = order;
-    //         _t1 = timeIn;
-    //         _t2 = 1 - timeOut;
-
-    //         _t2 = _t2 < _t1 ? _t1 : _t2;
-    //     }
-
-    //     protected override float OnGetValue(float valueIn)
-    //     {
-
-    //     }
-    // }
-
-    public class EasingAccelDecel : Easing
+    public class EasingInLinOut : Easing
     {
+        private int _order;
         private float _t1;
         private float _t2;
 
-        public EasingAccelDecel(float t1, float t2)
+        public EasingInLinOut(int order, float timeIn, float timeOut)
         {
-            _t1 = t1;
-            _t2 = t2;
+            _order = order;
+            _t1 = timeIn;
+            _t2 = 1 - timeOut;
+
+            _t2 = _t2 < _t1 ? _t1 : _t2;
         }
 
         protected override float OnGetValue(float valueIn)
         {
-            float mag = 0.5f * (1 + _t2 - _t1);
-
-            if (valueIn < _t1 && _t1 > 0f)
-            {
-                return 0.5f * valueIn * valueIn / _t1 / mag;
-            }
-            if (valueIn < _t2)
-            {
-                return (valueIn - 0.5f * _t1) / mag;
-            }
-            return (
-                _t2 - 0.5f * _t1
-                + valueIn * (1 - 0.5f * valueIn) / (1 - _t2)
-                - _t2 * (1 - 0.5f * _t2) / (1 - _t2)
-                ) / mag;
+            //TODO finish this
+            return valueIn;
         }
     }
+
+    // public class EasingAccelDecel : Easing
+    // {
+    //     private float _t1;
+    //     private float _t2;
+
+    //     public EasingAccelDecel(float t1, float t2)
+    //     {
+    //         _t1 = t1;
+    //         _t2 = t2;
+    //     }
+
+    //     protected override float OnGetValue(float valueIn)
+    //     {
+    //         float mag = 0.5f * (1 + _t2 - _t1);
+
+    //         if (valueIn < _t1 && _t1 > 0f)
+    //         {
+    //             return 0.5f * valueIn * valueIn / _t1 / mag;
+    //         }
+    //         if (valueIn < _t2)
+    //         {
+    //             return (valueIn - 0.5f * _t1) / mag;
+    //         }
+    //         return (
+    //             _t2 - 0.5f * _t1
+    //             + valueIn * (1 - 0.5f * valueIn) / (1 - _t2)
+    //             - _t2 * (1 - 0.5f * _t2) / (1 - _t2)
+    //             ) / mag;
+    //     }
+    // }
 }

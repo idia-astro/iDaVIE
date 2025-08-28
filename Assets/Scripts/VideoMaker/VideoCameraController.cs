@@ -20,6 +20,9 @@ namespace VideoMaker
 
         private const int FfmpegConsoleCount = 58; //From limited observation, this is how many console messages are printed by ffmpeg
 
+        public TextAsset JsonSchema;
+        private VideoScriptReader _vsReader;
+
         public TMP_Text VideoScriptFilePath;
 
         // TODO use a different MonoBehaviour to manage the playback and status bar?
@@ -69,6 +72,8 @@ namespace VideoMaker
 
         void Awake()
         {
+            _vsReader = new(JsonSchema.text);
+
             ProgressBar.SetActive(false);
             StatusText.gameObject.SetActive(false);
 
@@ -219,7 +224,7 @@ namespace VideoMaker
             {
                 //TODO use async?
                 string jsonString = reader.ReadToEnd();
-                _videoScript = VideoScriptReader.ReadVideoScript(jsonString);
+                _videoScript = _vsReader.ReadVideoScript(jsonString);
             }
 
             //Setting RenderMaterial properties
@@ -326,12 +331,12 @@ namespace VideoMaker
 
         private void UpdatePlayback(float deltaTime)
         {
-            Vector3 position = _positionAction.GetPosition(_positionTime);
+            (Vector3 position, Vector3 pathForward, Vector3 pathUp) = _positionAction.GetPositionDirection(_positionTime);
 
             UpdateTransform(
                 position,
-                _directionAction.GetDirection(_directionTime, position),
-                _upDirectionAction.GetDirection(_upDirectionTime, position)
+                _directionAction.GetDirection(_directionTime, position, pathForward, pathUp),
+                _upDirectionAction.GetDirection(_upDirectionTime, position, pathForward, pathUp)
             );
 
             _time += deltaTime;
@@ -341,6 +346,7 @@ namespace VideoMaker
             UpdateActionTime(deltaTime, ref _upDirectionTime, ref _upDirectionAction, ref _upDirectionQueue);
         }
 
+        //TODO remove this as actions have been refactored to use continuous time
         private void UpdateActionTime<T>(float deltaTime, ref float time, ref T action, ref Queue<T> actionQueue) where T : Action
         {
             time += deltaTime;
@@ -501,12 +507,8 @@ namespace VideoMaker
                 }
             }
 
-            string overlay = "";
-
-            if (_videoScript.UseLogo)
-            {
-                overlay = $"-i {_logoPath} -filter_complex \"[1:v]scale=iw*{_videoScript.LogoScale:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ";
-            }
+            string overlay = $"-i {_logoPath} -filter_complex \"[1:v]scale=iw*{_videoScript.LogoScale:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ";
+            
             
 
             string command = $"-framerate {_videoScript.FrameRate} -i frame%0{_frameDigits}d.png {overlay}-c:v libx264 -pix_fmt yuv420p video.mp4";

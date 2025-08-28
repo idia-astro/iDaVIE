@@ -16,33 +16,27 @@ namespace VideoMaker
             _easing = easing;
         }
 
+        public (Vector3 position, Vector3 direction, Vector3 upDirection) GetPositionDirection(float pathParam){
+            pathParam = _easing is not null? _easing.GetValue(pathParam): pathParam;
+
+            return (OnGetPosition(pathParam), OnGetDirection(pathParam), OnGetUpDirection(pathParam));
+        }
+
         public Vector3 GetPosition(float pathParam)
         {
-            if (_easing is not null)
-            {
-                pathParam = _easing.GetValue(pathParam);
-            }
-            return OnGetPosition(pathParam);
+            return OnGetPosition(_easing is not null? _easing.GetValue(pathParam): pathParam);
         }
 
         //Normalised tangent of path
         public Vector3 GetDirection(float pathParam)
         {
-            if (_easing is not null)
-            {
-                pathParam = _easing.GetValue(pathParam);
-            }
-            return OnGetDirection(pathParam);
+            return OnGetDirection(_easing is not null? _easing.GetValue(pathParam): pathParam);
         }
 
         //Normalised curvature of path
         public Vector3 GetUpDirection(float pathParam)
         {
-            if (_easing is not null)
-            {
-                pathParam = _easing.GetValue(pathParam);
-            }
-            return OnGetUpDirection(pathParam);
+            return OnGetUpDirection(_easing is not null? _easing.GetValue(pathParam): pathParam);
         }
 
         protected abstract Vector3 OnGetPosition(float pathParam);
