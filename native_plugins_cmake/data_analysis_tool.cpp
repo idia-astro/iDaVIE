@@ -266,6 +266,29 @@ int GetYProfile(const float *dataPtr, float **profile, int64_t xDim, int64_t yDi
     return EXIT_SUCCESS;
 }
 
+
+/**
+ * @brief Extracts a 1D profile along the Z dimension at the specified X and Y coordinates.
+ *
+ * This function allocates and returns a new float array containing values along the Z-axis
+ * for the given X and Y indices in a flattened 3D volume stored in z-major order
+ * (i.e., Z → Y → X). The coordinate system is 1-based.
+ *
+ * @param dataPtr Pointer to the flattened 3D float array (size: xDim * yDim * zDim).
+ * @param profile Output pointer to a float array that will hold the extracted profile.
+ *                The caller is responsible for deleting this allocated array.
+ * @param xDim Size of the X dimension.
+ * @param yDim Size of the Y dimension.
+ * @param zDim Size of the Z dimension.
+ * @param x X coordinate (1-based).
+ * @param y Y coordinate (1-based).
+ *
+ * @return EXIT_SUCCESS if the profile was successfully extracted;
+ *         EXIT_FAILURE if the X or Y coordinates are out of bounds.
+ *
+ * @warning The pointer @p profile must not be null.
+ * @note Coordinates must be in the range [1, xDim] and [1, yDim].
+ */
 int GetZProfile(const float *dataPtr, float **profile, int64_t xDim, int64_t yDim, int64_t zDim, int64_t x, int64_t y)
 {
     float* newProfile = new float[zDim];
@@ -889,6 +912,7 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
             stats->numVoxels = numVoxels;
             stats->peak = peakFlux;
             stats->sum = totalFlux;
+            stats->beamUnit = "JY/BEAM";
             stats->cX = sumX / totalPositiveFlux;
             stats->cY = sumY / totalPositiveFlux;
             stats->cZ = sumZ / totalPositiveFlux;

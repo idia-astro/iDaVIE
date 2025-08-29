@@ -274,7 +274,7 @@ namespace DataFeatures
                 var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
                 var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
                 var featureName = $"Masked Source #{item.Key}";
-                var rawStrings = new [] {$"{sourceStats.sum} JY/BEAM", $"{sourceStats.peak} JY/BEAM", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
+                var rawStrings = new [] {$"{sourceStats.sum} {sourceStats.beamUnit}", $"{sourceStats.peak} {sourceStats.beamUnit}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
                 AddFeature(new Feature(boxMin, boxMax, FeatureColor, featureName, flag, FeatureList.Count, item.Key - 1, rawStrings, false));
             }
             FeatureMenuScrollerDataSource.InitData();
