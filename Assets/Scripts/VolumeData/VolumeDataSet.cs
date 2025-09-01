@@ -1412,7 +1412,7 @@ namespace VolumeData
             var newFilename = $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}.fits";
             var filePath = Path.Combine(directoryPath, newFilename);
             var maskFilePath = Path.Combine(directoryPath, $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}_mask.fits");
-            Vector3Int offset = new Vector3Int(this.subsetBounds[0], this.subsetBounds[2], this.subsetBounds[4]);
+            Vector3Int offset = new Vector3Int(this.subsetBounds[0] - 1, this.subsetBounds[2] - 1, this.subsetBounds[4] - 1);
             // Works only with 3D cubes for now... need 4D askap capability
             // Fits_open_file can take a subset specified in the filename, e.g., myimage.fits[101:200,301:400]
             UnityEngine.Debug.Log("Attempting to load file:" + FileName + $"[{cornerMin.x + offset.x}:{cornerMax.x + offset.x}, {cornerMin.y + offset.y}:{cornerMax.y + offset.y}, {cornerMin.z + offset.z}:{cornerMax.z + offset.z}]");
