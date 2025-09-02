@@ -30,7 +30,6 @@
 #include <regex>
 #include <sstream>
 #include <string>
-#include <thread>
 
 int FitsOpenFileReadOnly(fitsfile **fptr, char* filename,  int *status)
 {
@@ -243,14 +242,14 @@ int FitsWriteNewCopySubImageInt16(char* newFileName, fitsfile* fptr, long* fPix,
     
     // Open the now new file with CFITSIO.
     fitsfile* fptr2;
-    fits_open_file(&fptr2, file.c_str(), READWRITE, status);
-    if (status != 0)
+    int success = fits_open_file(&fptr2, file.c_str(), READWRITE, status);
+    if (success != 0)
     {
         debug.clear();
         debug.str("");
         debug << "Failed attempting to open fits file " << file << " with status code " << status << ".";
         WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
-        return status;
+        return success;
     }
     
     // Write as subset.
@@ -264,43 +263,46 @@ int FitsWriteNewCopySubImageInt16(char* newFileName, fitsfile* fptr, long* fPix,
     WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     
     // Write new data to copied file.
-    int success = fits_write_subset(fptr2, TSHORT, firstPix, lPix, array, status);
+    success = fits_write_subset(fptr2, TSHORT, firstPix, lPix, array, status);
     debug.clear();
     debug.str("");
-    debug << "Completed new mask sub image writing with result code " << success << ".";
+    if (success != 0)
+        debug << "Failed writing new mask subimage with result code " << success << ".";
+    else
+        debug << "Completed new mask sub image writing with result code " << success << ".";
     WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
 
     // Update file history with latest timestamp
-    FitsWriteHistory(fptr2, historyTimestamp, status);
-    if (status != 0)
+    success = FitsWriteHistory(fptr2, historyTimestamp, status);
+    if (success != 0)
     {
         debug.clear();
         debug.str("");
         debug << "Failed attempting to write file history with result code " << success << ".";
         WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
-        return status;
+        return success;
     }
 
     // Flush file buffer to make sure it is written.
-    FitsFlushFile(fptr2, status);
-    if (status != 0)
+    success = FitsFlushFile(fptr2, status);
+    if (success != 0)
     {
         debug.clear();
         debug.str("");
         debug << "Failed attempting to flush file with result code " << success << ".";
         WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
-        return status;
+        return success;
     }
 
     // Close the file to free up the memory and keep CFITSIO happy.
-    FitsCloseFile(fptr2, status);
-    if (status != 0)
+    success = FitsCloseFile(fptr2, status);
+    if (success != 0)
     {
         debug.clear();
         debug.str("");
-        debug << "Failed attempting to close fits file " << file << " with status code " << status << ".";
+        debug << "Failed attempting to close fits file " << file << " with status code " << success << ".";
         WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
-        return status;
+        return success;
     }
 
     return success;
