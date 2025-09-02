@@ -1442,6 +1442,10 @@ namespace VolumeData
             else
             {
                 ToastNotification.ShowSuccess($"Sub-cube saved to ${newFilename}");
+                if (maskDataSet != null)
+                {
+                    ToastNotification.ShowSuccess($"Submask saved to ${Path.GetFileName(maskFilePath)}");
+                }
             }
 
             return status;
