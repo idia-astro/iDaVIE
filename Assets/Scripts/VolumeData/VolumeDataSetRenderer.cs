@@ -625,7 +625,7 @@ namespace VolumeData
                 {
                     _previousBrushSize = brushSize;
                     CursorVoxel = newVoxelCursor;
-                    CursorValue = _dataSet.GetDataValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
+                    CursorValue = (Config.Instance.displayCursorInfoOutsideCube && !(objectBounds.Contains(objectSpacePosition))) ? Single.NaN : _dataSet.GetDataValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
                     if (/*GlobalDebugIsOn &&*/Double.IsNaN(CursorValue))
                     {
                         // Debug.Log("NAN value at CursorVoxel [" + CursorVoxel.x.ToString() + ", " + CursorVoxel.y.ToString() + ", " + CursorVoxel.z.ToString() + "]!");
@@ -1210,10 +1210,11 @@ namespace VolumeData
             else
             {
                 ToastNotification.ShowWarning("No feature selected, saving entire loaded cube as subcube.");
-                cornerMin = new Vector3Int(0, 0, 0);
-                cornerMax = GetCubeDimensions() - new Vector3Int(1, 1, 1);
+                cornerMin = new Vector3Int(1, 1, 1);
+                cornerMax = GetCubeDimensions();
             }
-             _dataSet.SaveSubCubeFromOriginal(cornerMin, cornerMax, _maskDataSet);
+            Debug.Log("Saving subcube from " + cornerMin.ToString() + " to " + cornerMax.ToString() + ".");
+            _dataSet.SaveSubCubeFromOriginal(cornerMin, cornerMax, _maskDataSet);
         }
 
         public void SaveMask(bool overwrite)
