@@ -22,7 +22,7 @@ namespace VideoMaker
             return OnGetPositionDirection(Duration > 0 ? (time - StartTime) / Duration : 0);
         }
 
-        protected abstract (Vector3 position, Vector3 direction, Vector3 upDirection) OnGetPositionDirection(float time)
+        protected abstract (Vector3 position, Vector3 direction, Vector3 upDirection) OnGetPositionDirection(float time);
     }
 
     public class PositionActionHold : PositionAction
