@@ -9,17 +9,17 @@ namespace VideoMaker
     public abstract class Action
     {
         //TODO use private variable + setters and getters to make these unchangable
-        public float StartTime { set; get; }
+        // public float StartTime { set; get; }
         public float Duration { set; get; } = 0f;
 
-        public float EndTime { get => StartTime + Duration; }
+        // public float EndTime { get => StartTime + Duration; }
     }
 
     // PositionActions
     public abstract class PositionAction : Action
     {
         public (Vector3 position, Vector3 direction, Vector3 upDirection) GetPositionDirection(float time) {
-            return OnGetPositionDirection(Duration > 0 ? (time - StartTime) / Duration : 0);
+            return OnGetPositionDirection(Duration > 0 ? time / Duration : 0);
         }
 
         protected abstract (Vector3 position, Vector3 direction, Vector3 upDirection) OnGetPositionDirection(float time);
@@ -60,7 +60,7 @@ namespace VideoMaker
     {
         public bool ReverseDirection { get; set; } = false;
         public Vector3 GetDirection(float time, Vector3 position, Vector3 pathForward, Vector3 pathUp) {
-            return (ReverseDirection ? -1 : 1) * OnGetDirection(Duration > 0 ? (time - StartTime) / Duration : 0, position, pathForward, pathUp);
+            return (ReverseDirection ? -1 : 1) * OnGetDirection(Duration > 0 ? time / Duration : 0, position, pathForward, pathUp);
         }
 
         protected abstract Vector3 OnGetDirection(float time, Vector3 position, Vector3 pathForward, Vector3 pathUp);

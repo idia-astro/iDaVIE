@@ -46,24 +46,24 @@ namespace VideoMaker
 
     public class LinePath : Path
     {
-        private Vector3 _startPosition;
+        private Vector3 _start;
 
-        private Vector3 _endPosition;
+        private Vector3 _end;
 
-        public LinePath(Vector3 startPosition, Vector3 endPosition, Easing easing = null) : base(easing)
+        public LinePath(Vector3 start, Vector3 end, Easing easing = null) : base(easing)
         {
-            this._startPosition = startPosition;
-            this._endPosition = endPosition;
+            this._start = start;
+            this._end = end;
         }
 
         protected override Vector3 OnGetPosition(float pathParam)
         {
-            return _startPosition * (1 - pathParam) + _endPosition * pathParam;
+            return _start * (1 - pathParam) + _end * pathParam;
         }
 
         protected override Vector3 OnGetDirection(float pathParam)
         {
-            return (_endPosition - _startPosition).normalized;
+            return (_end - _start).normalized;
         }
 
         protected override Vector3 OnGetUpDirection(float pathParam)
@@ -93,14 +93,15 @@ namespace VideoMaker
         private float _rotations;
 
         public CirclePath(
-            Vector3 startPosition, Vector3 endPosition, Vector3 center,
-            bool largeAngleDirection = false, int additionalRotations = 0,
+            Vector3 start, Vector3 end, Vector3 center,
+            int rotations = 1,
+            // bool largeAngleDirection = false, int additionalRotations = 0,
             Easing easing = null) : base(easing)
         {
             _center = center;
 
-            Vector3 relStart = startPosition - center;
-            Vector3 relEnd = endPosition - center;
+            Vector3 relStart = start - center;
+            Vector3 relEnd = end - center;
 
             _radius = relStart.magnitude;
 
@@ -110,22 +111,15 @@ namespace VideoMaker
 
             float angle = Vector3.Angle(relStart, relEnd) / 360f;
 
-            if (largeAngleDirection)
-            {
-                _rotations = angle - 1 - additionalRotations;
-            }
-            else
-            {
-                _rotations = angle + additionalRotations;
-            }
+            _rotations = angle + rotations - (rotations < 0 ? 1 : 0);
         }
 
         //TODO test this more
-        public CirclePath(Vector3 startPosition, Vector3 center, Vector3 axis, float rotations, Easing easing = null) : base(easing)
+        public CirclePath(Vector3 start, Vector3 center, Vector3 axis, float rotations, Easing easing = null) : base(easing)
         {
             _center = center;
 
-            Vector3 relStart = startPosition - center;
+            Vector3 relStart = start - center;
 
             _radius = relStart.magnitude;
 

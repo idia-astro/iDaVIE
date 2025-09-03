@@ -8,6 +8,8 @@ using UnityEngine;
 
 namespace VideoMaker
 {
+    //TODO consider how to generate the actual schema from this class in order to reduce book keeping
+    //note that the class members should remain static and constant for reference in scripts
     public static class SchemaDefs
     {
         public static class Logo
@@ -111,7 +113,7 @@ namespace VideoMaker
         {
             public const string Def = "rotateBetween";
             public const string Type = "rotateBetween";
-            
+
             public const string Start = "start";
             public const string StartDefault = Relative.Previous;
             public const string End = "end";
@@ -122,7 +124,54 @@ namespace VideoMaker
         {
             public const string Def = "path";
             public const string Type = "path";
+            public const string KindDefault = Line.Kind;
 
+            public const string Start = "start";
+            public const string StartDefault = Relative.Previous;
+            public const string End = "end";
+            public const string EndDefault = Relative.Next;
+
+            public const string Easing = "easing";
+
+            public static class Line
+            {
+                public const string Kind = "line";
+            }
+
+            public static class Circle
+            {
+                public const string Kind = "circle";
+                public const string Center = "center";
+                public const string CenterDefault = "center";
+
+                public const string Axis = "axis";
+
+                public static class StartCenterEnd
+                {
+                    public const int Index = 0;
+                    public const string Rotations = "rotations";
+                    public const int RotationsDefault = 1;
+                }
+                public static class StartCenterAxis
+                {
+                    public const int Index = 1;
+                    public const string Rotations = "rotations";
+                    public const float RotationsDefault = 1f;
+                }
+            }
+
+            public static class Spiral
+            {
+                public const string Kind = "spiral";
+                
+                public static class StartCenterEnd
+                {
+                    public const int Index = 0;
+                }
+                public static class StartCenterAxis {
+                    public const int Index = 1;
+                }
+            }
         }
 
         public static class Action

@@ -227,6 +227,11 @@ namespace VideoMaker
                 _videoScript = _vsReader.ReadVideoScript(jsonString);
             }
 
+            if (_videoScript is null)
+            {
+                UnityEngine.Debug.LogWarning("VideoScript failed to construct actions.");
+                return;
+            }
             //Setting RenderMaterial properties
 
             RenderTexture tex = GetComponent<Camera>().targetTexture;

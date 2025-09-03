@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Windows.Forms;
+using System.Xml.Schema;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema;
+using UnityEditor;
 using UnityEngine;
 
 
@@ -43,11 +46,14 @@ namespace VideoMaker
             public float StartTime { set; get; }
             public float Duration { set; get; }
 
-            public bool RequireRelative { get => (
+            public bool RequireRelative
+            {
+                get => (
                 RequirePreviousPosition || RequirePreviousDirection || RequirePreviousUpDirection
                 || RequireNextPosition || RequireNextDirection || RequireNextUpDirection
                 || RequireFirstPosition || RequireFirstDirection || RequireFirstUpDirection
-                ); }
+                );
+            }
 
             public bool RequirePreviousPosition { set; get; }
             public bool RequirePreviousDirection { set; get; }
@@ -70,8 +76,8 @@ namespace VideoMaker
 
 
         //TODO put schema related constants in here
-        
-        
+
+
         private readonly Vector3 PositionDefault = Vector3.zero;
         private readonly Vector3 DirectionDefault = Vector3.forward;
         private readonly Vector3 UpDirectionDefault = Vector3.up;
@@ -80,6 +86,7 @@ namespace VideoMaker
 
         private readonly JSchema _schema;
         private readonly Dictionary<string, JSchema> _definitions;
+        private readonly Dictionary<string, IList<JSchema>> _pathSchema;
 
         public VideoScriptReader(string schemaString = "")
         {
@@ -102,6 +109,22 @@ namespace VideoMaker
                     }
                 }
             }
+
+            _pathSchema = new();
+            //Extract sub-path schema from definitions
+            JSchema pathSchema = _definitions.GetValueOrDefault(SchemaDefs.Path.Def);
+            if (pathSchema is not null)
+            {
+                foreach (JSchema kindSchema in pathSchema.OneOf)
+                {
+                    string kind = ToObjectOrDefualt(kindSchema.Properties["kind"].Const, "");
+                    if (kind == "")
+                    {
+                        return;
+                    }
+                    _pathSchema[kind] = kindSchema.OneOf;
+                }
+            }
         }
 
         public VideoScriptData ReadVideoScript(string videoScriptString)
@@ -111,11 +134,13 @@ namespace VideoMaker
             IList<string> errorMessages;
             if (!root.IsValid(_schema, out errorMessages))
             {
-                Debug.Log("Json validation failed");
+
+                string warn = "Json validation failed\n";
                 foreach (string msg in errorMessages)
                 {
-                    Debug.Log(msg);
+                    warn += $"{msg}\n";
                 }
+                Debug.LogWarning(warn);
                 return null;
             }
             else
@@ -357,7 +382,8 @@ namespace VideoMaker
                 ) || (
                     type == typeof(bool) && token.Type == JTokenType.Boolean
                 )
-            ) {
+            )
+            {
                 return token.ToObject<T>();
             }
 
@@ -388,6 +414,26 @@ namespace VideoMaker
             return "";
         }
 
+        private int GetPathOneOf(string kind, JToken jToken)
+        {
+            IList<JSchema> oneOf = _pathSchema.GetValueOrDefault(kind);
+
+            if (oneOf is null)
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < oneOf.Count; i++)
+            {
+                if (jToken.IsValid(oneOf[i]))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
         private bool ShouldPositionContinue(JToken data)
         {
             return ValueOrDefault(data, "position", SchemaDefs.Continue.Value) == SchemaDefs.Continue.Value;
@@ -397,7 +443,8 @@ namespace VideoMaker
         {
             JToken directionData = data.SelectToken("rotation") ?? data.SelectToken("lookAt") ?? data.SelectToken("lookAway");
 
-            if (directionData is null) {
+            if (directionData is null)
+            {
                 return true;
             }
 
@@ -408,7 +455,8 @@ namespace VideoMaker
         {
             JToken directionData = data.SelectToken("rotation") ?? data.SelectToken("lookUp") ?? data.SelectToken("lookDown");
 
-            if (directionData is null) {
+            if (directionData is null)
+            {
                 return true;
             }
 
@@ -556,17 +604,30 @@ namespace VideoMaker
             return directionAction;
         }
 
-
-        //TODO Everything below this line needs to be re-worked
-        private Path DataToPath(JToken data,
-            Vector3 positionPrevious, Vector3 directionPrevious, Vector3 upDirectionPrevious,
-            Vector3 positionNext, Vector3 directionNext, Vector3 upDirectionNext
-        )
+        private Vector3 DataToPosition(JToken data, Vector3 first, Vector3 previous, Vector3 next)
         {
-            //TODO!
-            return new LinePath(positionPrevious, positionNext);
+            return GetValidSchema(data) switch
+            {
+                SchemaDefs.Relative.Def => ToObjectOrDefualt(data, "") switch
+                {
+                    SchemaDefs.Relative.First => first,
+                    SchemaDefs.Relative.Previous => previous,
+                    SchemaDefs.Relative.Next => next,
+                    _ => PositionDefault
+                },
+                SchemaDefs.NamedPosition.Def => DataToNamedPosition(ToObjectOrDefualt(data, "")),
+                SchemaDefs.Position.Def => DataToPosition(data),
+                _ => PositionDefault
+            };
         }
 
+        private static Vector3 DataToNamedPosition(string name)
+        {
+            return name switch
+            {
+                _ => Vector3.zero
+            };
+        }
 
         private static Vector3 DataToPosition(JToken data)
         {
@@ -578,13 +639,49 @@ namespace VideoMaker
             );
         }
 
+        private Vector3 DataToDirection(JToken data, Vector3 first, Vector3 previous, Vector3 next)
+        {
+            return GetValidSchema(data) switch
+            {
+                SchemaDefs.Relative.Def => ToObjectOrDefualt(data, "") switch
+                {
+                    SchemaDefs.Relative.First => first,
+                    SchemaDefs.Relative.Previous => previous,
+                    SchemaDefs.Relative.Next => next,
+                    _ => DirectionDefault
+                },
+                SchemaDefs.NamedDirection.Def => DataToNamedDirection(ToObjectOrDefualt(data, "")),
+                SchemaDefs.Direction.Def => DataToDirection(data),
+                _ => DirectionDefault
+            };
+        }
+
+        private Vector3 DataToNamedDirection(string name)
+        {
+            return name switch
+            {
+                SchemaDefs.NamedDirection.Forward => Vector3.forward,
+                SchemaDefs.NamedDirection.Back => Vector3.back,
+                SchemaDefs.NamedDirection.Up => Vector3.up,
+                SchemaDefs.NamedDirection.Down => Vector3.down,
+                SchemaDefs.NamedDirection.Left => Vector3.left,
+                SchemaDefs.NamedDirection.Right => Vector3.right,
+                _ => DirectionDefault
+            };
+        }
+
         private Vector3 DataToDirection(JToken data)
         {
-            return new Vector3(
-                ValueOrDefault(data, "x", 0f),
-                ValueOrDefault(data, "y", 0f),
-                ValueOrDefault(data, "z", 0f)
-            );
+            float x = ValueOrDefault(data, "x", 0f);
+            float y = ValueOrDefault(data, "y", 0f);
+            float z = ValueOrDefault(data, "z", 0f);
+
+            if (x == 0 && y == 0 && z == 0)
+            {
+                return DirectionDefault;
+            }
+
+            return new Vector3(x, y, z).normalized;
         }
 
         //TODO re-write both this and the accelDecel (generic inOut)
@@ -633,6 +730,58 @@ namespace VideoMaker
 
                     return new EasingInLinOut(order, timeIn / sum, timeOut / sum);
             }
+        }
+        
+        private Path DataToPath(JToken data,
+            Vector3 positionFirst, Vector3 directionFirst, Vector3 upDirectionFirst,
+            Vector3 positionPrevious, Vector3 directionPrevious, Vector3 upDirectionPrevious,
+            Vector3 positionNext, Vector3 directionNext, Vector3 upDirectionNext
+        )
+        {
+            // JToken startData = data.SelectToken(SchemaDefs.Path.Start);
+            // bool hasStart = startData is not null;
+            Vector3 start = DataToPosition(
+                data.SelectToken(SchemaDefs.Path.Start) ?? SchemaDefs.Path.StartDefault,
+                positionFirst, positionPrevious, positionNext
+            );
+
+            Vector3 end = DataToPosition(
+                data.SelectToken(SchemaDefs.Path.End) ?? SchemaDefs.Path.StartDefault,
+                positionFirst, positionPrevious, positionNext
+            );
+
+            JToken easingData = data.SelectToken(SchemaDefs.Path.Easing);
+            Easing easing = easingData is null ? new Easing() : DataToEasing(easingData);
+
+            return ValueOrDefault(data, "kind", SchemaDefs.Path.KindDefault) switch
+            {
+                SchemaDefs.Path.Line.Kind => new LinePath(start, end),
+                SchemaDefs.Path.Circle.Kind => GetPathOneOf(SchemaDefs.Path.Circle.Kind, data) switch
+                {
+                    SchemaDefs.Path.Circle.StartCenterEnd.Index => new CirclePath(
+                        start: start,
+                        end: end,
+                        center: DataToPosition(
+                            data.SelectToken(SchemaDefs.Path.Circle.Center) ?? SchemaDefs.Path.Circle.CenterDefault,
+                            positionFirst, positionPrevious, positionNext
+                        ),
+                        rotations: ValueOrDefault(data, SchemaDefs.Path.Circle.StartCenterEnd.Rotations, SchemaDefs.Path.Circle.StartCenterEnd.RotationsDefault)
+                    ),
+                    SchemaDefs.Path.Circle.StartCenterAxis.Index => new CirclePath(
+                        start: start,
+                        center: DataToPosition(
+                            data.SelectToken(SchemaDefs.Path.Circle.Center) ?? SchemaDefs.Path.Circle.CenterDefault,
+                            positionFirst, positionPrevious, positionNext
+                        ),
+                        axis: DataToDirection(
+                            data.SelectToken(SchemaDefs.Path.Circle.Axis)
+                        ),
+                        rotations: ValueOrDefault(data, SchemaDefs.Path.Circle.StartCenterAxis.Rotations, SchemaDefs.Path.Circle.StartCenterAxis.RotationsDefault)
+                    )
+                },
+                //TODO Spiral path
+                _ => null //TODO throw error
+            };
         }
     }
 }

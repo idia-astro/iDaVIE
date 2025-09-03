@@ -271,7 +271,7 @@
                             "required": ["start", "end", "center"]
                         },
                         {
-                            "description": "End position determined by other properties provided.",
+                            "description": "The start / end position is determined by other properties provided.",
                             "properties": {
                                 "rotations" : {
                                     "description": "The number of rotations covered by the circle path. Partial rotations can be used.",
@@ -280,7 +280,7 @@
                                 }
                             },
                             "required": ["start", "center", "axis"]
-                        }
+                            }
                     ]
                 },
                 {
