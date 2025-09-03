@@ -612,7 +612,8 @@ namespace VolumeData
         {
             UnityEngine.Vector3 objectSpacePosition = transform.InverseTransformPoint(cursor);
             Bounds objectBounds = new Bounds(UnityEngine.Vector3.zero, UnityEngine.Vector3.one);
-            if ((objectBounds.Contains(objectSpacePosition) || Config.Instance.displayCursorInfoOutsideCube) && _dataSet != null)
+            bool cursorInDataCube = objectBounds.Contains(objectSpacePosition);
+            if ((cursorInDataCube || Config.Instance.displayCursorInfoOutsideCube) && _dataSet != null)
             {
                 UnityEngine.Vector3 positionCubeSpace = new UnityEngine.Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim,
                                                                                 (objectSpacePosition.y + 0.5f) * _dataSet.YDim,
@@ -625,12 +626,12 @@ namespace VolumeData
                 {
                     _previousBrushSize = brushSize;
                     CursorVoxel = newVoxelCursor;
-                    CursorValue = (Config.Instance.displayCursorInfoOutsideCube && !(objectBounds.Contains(objectSpacePosition))) ? Single.NaN : _dataSet.GetDataValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
+                    CursorValue = (cursorInDataCube) ? _dataSet.GetDataValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z) : Single.NaN;
                     if (/*GlobalDebugIsOn &&*/Double.IsNaN(CursorValue))
                     {
                         // Debug.Log("NAN value at CursorVoxel [" + CursorVoxel.x.ToString() + ", " + CursorVoxel.y.ToString() + ", " + CursorVoxel.z.ToString() + "]!");
                     }
-                    if (_maskDataSet != null)
+                    if (_maskDataSet != null && cursorInDataCube)
                     {
                         // Debug.Log("Trying to access mask value at [" + CursorVoxel.x.ToString() + ", " + CursorVoxel.y.ToString() + ", " + CursorVoxel.z.ToString() + "].");
                         CursorSource = _maskDataSet.GetMaskValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
