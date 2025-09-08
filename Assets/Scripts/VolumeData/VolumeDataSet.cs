@@ -1468,12 +1468,44 @@ namespace VolumeData
                         Marshal.WriteInt32(keyValue, 16);
                         if (FitsReader.FitsUpdateKey(subMaskFilePtr, 21, "BITPIX", keyValue, null, out status) == 0)
                         {
+                            IntPtr naxis = Marshal.AllocHGlobal(sizeof(int));
+                            if (FitsReader.FitsReadKey(subMaskFilePtr, 31, "NAXIS", naxis, IntPtr.Zero, out status) != 0)
+                            {
+                                Debug.LogError($"Error reading fits file header when attempting to save new mask: error #{status.ToString()}");
+                            }
+                            if (Marshal.ReadInt32(naxis) == 4)
+                            {
+                                Debug.Log("Mask header has NAXIS = 4, correcting to 3.");
+                                Marshal.WriteInt32(naxis, 3);
+                                FitsReader.FitsUpdateKey(subMaskFilePtr, 31, "NAXIS", naxis, null, out status);
+                                if (status != 0)
+                                {
+                                    Debug.LogError($"Error updating fits file header with new NAXIS value: error #{status.ToString()}");
+                                }
+
+                                FitsReader.FitsDeleteKey(subMaskFilePtr, "NAXIS4", out status);
+                                if (status != 0)
+                                {
+                                    Debug.Log($"Could not delete NAXIS4 key, error code #{status.ToString()}");
+                                    status = 0;
+                                }
+                            }
+                            
+                            if (naxis != IntPtr.Zero)
+                                {
+                                    Marshal.FreeHGlobal(naxis);
+                                    naxis = IntPtr.Zero;
+                                }
                             if (FitsReader.FitsDeleteKey(subMaskFilePtr, "BUNIT", out status) != 0)
                             {
                                 Debug.Log("Could not delete unit key. It probably does not exist!");
                                 status = 0;
                             }
                             FitsReader.FitsWriteImageInt16(subMaskFilePtr, 3, regionVolume, subCubeData, out status);
+                            if (status != 0)
+                            {
+                                Debug.LogError($"Fits save mask cube data error #{status.ToString()}");
+                            }
                         }
                         if (keyValue != IntPtr.Zero)
                         {
@@ -1483,9 +1515,9 @@ namespace VolumeData
                     }
                 }
                 FitsReader.FitsCloseFile(subMaskFilePtr, out status);
+                if (status != 0)
+                    Debug.LogError($"FITS error when closing mask file:  error #{status.ToString()}");
             }
-            if (status != 0)
-                Debug.LogError($"Fits Read mask cube data error #{status.ToString()}");
             if (subCubeData != IntPtr.Zero)
                 FitsReader.FreeFitsPtrMemory(subCubeData);
             return status;

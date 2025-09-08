@@ -296,6 +296,19 @@ public class FitsReader
     
     [DllImport("idavie_native")]
     public static extern int FitsReadKey(IntPtr fptr, int datatype, string keyname, StringBuilder colname, IntPtr comm, out int status);
+    
+    /// <summary>
+    /// Same function as above modified to read any value type, not just string.
+    /// </summary>
+    /// <param name="fptr">The FITS pointer of the file to use for the operation.</param>
+    /// <param name="datatype">The datatype stored by `keyname`.</param>
+    /// <param name="keyname">The STRING name of the key to read.</param>
+    /// <param name="value">Variable to store the value stored in the header by key `keyname`.</param>
+    /// <param name="comm">Comment attached to the header key, commonly empty.</param>
+    /// <param name="status">Variable to store result code of operation.</param>
+    /// <returns>0 if successful, FITS error code if failed.</returns>
+    [DllImport("idavie_native")]
+    public static extern int FitsReadKey(IntPtr fptr, int datatype, string keyname, IntPtr value, IntPtr comm, out int status);
 
     [DllImport("idavie_native")]
     public static extern int FitsReadKeyN(IntPtr fptr, int keynum, StringBuilder keyname, StringBuilder keyvalue, StringBuilder comment, out int status);
