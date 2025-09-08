@@ -96,6 +96,9 @@ namespace VideoMaker
             public const string In = "in";
             public const string Out = "out";
             public const string InOut = "inOut";
+
+            public const string Order = "order";
+            public const int OrderDefault = 2;
         }
 
         public static class DirectionBetween
@@ -107,6 +110,7 @@ namespace VideoMaker
             public const string StartDefault = Relative.Previous;
             public const string End = "end";
             public const string EndDefault = Relative.Next;
+            public const string Easing = "easing";
         }
 
         public static class RotationBetween

@@ -10,6 +10,7 @@ using System.Diagnostics;
 using SFB;
 using JetBrains.Annotations;
 using Unity.VisualScripting;
+using Debug = UnityEngine.Debug;
 
 namespace VideoMaker
 {
@@ -63,7 +64,6 @@ namespace VideoMaker
 
         private Transform _cubeTransform;
 
-        private float _duration = 0f;
         private float _time = 0f;
 
         private float _positionTime = 0f;
@@ -264,9 +264,9 @@ namespace VideoMaker
 
             StartPlayback(PreviewMessage);
 
-            while (_time < _duration)
+            while (_time < _videoScript.Duration)
             {
-                ProgressBar.GetComponent<Slider>().value = _time / _duration;
+                ProgressBar.GetComponent<Slider>().value = _time / _videoScript.Duration;
                 UpdatePlayback(Time.deltaTime);
                 yield return null;
             }
@@ -304,7 +304,7 @@ namespace VideoMaker
 
             StartPlayback(ExportMessage);
 
-            _frameTotal = (int)((float)_videoScript.FrameRate * _duration);
+            _frameTotal = (int)((float)_videoScript.FrameRate * _videoScript.Duration);
             _frameDigits = (int)Mathf.Floor(Mathf.Log10(_frameTotal) + 1);
             _frameTotal += FfmpegConsoleCount;
 
@@ -313,7 +313,7 @@ namespace VideoMaker
             float deltaTime = 1f / (float)_videoScript.FrameRate;
             // _frameDigits = 
 
-            while (_time < _duration)
+            while (_time < _videoScript.Duration)
             {
                 ProgressBar.GetComponent<Slider>().value = _frameCounter / (float)_frameTotal;
                 UpdatePlayback(deltaTime);
@@ -399,25 +399,6 @@ namespace VideoMaker
             _positionQueue = new(_videoScript.PositionActions);
             _directionQueue = new(_videoScript.DirectionActions);
             _upDirectionQueue = new(_videoScript.UpDirectionActions);
-            
-            float duration = 0f;
-            foreach (Action action in _videoScript.PositionActions)
-            {
-                duration += action.Duration;
-            }
-            _duration = duration;
-
-            foreach (Action action in _videoScript.DirectionActions)
-            {
-                duration += action.Duration;
-            }
-            _duration = Math.Min(_duration, duration);
-
-            foreach (Action action in _videoScript.UpDirectionActions)
-            {
-                duration += action.Duration;
-            }
-            _duration = Math.Min(_duration, duration);
 
             _positionAction = _positionQueue.Dequeue();
             _directionAction = _directionQueue.Dequeue();

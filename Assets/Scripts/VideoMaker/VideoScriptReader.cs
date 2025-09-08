@@ -31,6 +31,7 @@ namespace VideoMaker
         //TODO add more logo parameters, such as position
         public float LogoScale = 0.2f;
         public LogoPosition logoPosition = LogoPosition.BottomRight;
+        public float Duration;
         public PositionAction[] PositionActions;
         public DirectionAction[] DirectionActions;
         public DirectionAction[] UpDirectionActions;
@@ -45,6 +46,10 @@ namespace VideoMaker
             // public int EndIndex { set; get; }
             public float StartTime { set; get; }
             public float Duration { set; get; }
+            public float EndTime
+            {
+                get => StartTime + Duration;
+            }
 
             public bool RequireRelative
             {
@@ -143,10 +148,6 @@ namespace VideoMaker
                 Debug.LogWarning(warn);
                 return null;
             }
-            else
-            {
-                Debug.Log("Json validation succeeded");
-            }
 
             VideoScriptData data = new();
 
@@ -189,7 +190,7 @@ namespace VideoMaker
             int posIdx = 0;
             int dirIdx = 0;
             int upIdx = 0;
-
+            
             foreach (JToken actionData in actionDataArray)
             {
                 float duration = ValueOrDefault(actionData, "duration", 0f);
@@ -197,7 +198,7 @@ namespace VideoMaker
                 if (ShouldPositionContinue(actionData))
                 {
                     // positionActionItems[-1].EndIndex = i;
-                    positionActionItems[-1].Duration += duration;
+                    positionActionItems[^1].Duration += duration;
                 }
                 else
                 {
@@ -230,7 +231,7 @@ namespace VideoMaker
                 if (ShouldDirectionContinue(actionData))
                 {
                     // directionActionItems[-1].EndIndex = i;
-                    directionActionItems[-1].Duration += duration;
+                    directionActionItems[^1].Duration += duration;
                 }
                 else
                 {
@@ -263,7 +264,7 @@ namespace VideoMaker
                 if (ShouldUpDirectionContinue(actionData))
                 {
                     // upDirectionActionItems[-1].EndIndex = i;
-                    upDirectionActionItems[-1].Duration += duration;
+                    upDirectionActionItems[^1].Duration += duration;
                 }
                 else
                 {
@@ -297,15 +298,16 @@ namespace VideoMaker
             PositionAction[] positionActions = new PositionAction[positionActionItems.Count];
             DirectionAction[] directionActions = new DirectionAction[directionActionItems.Count];
             DirectionAction[] upDirectionActions = new DirectionAction[upDirectionActionItems.Count];
-
-            //Instancing everything that doesn't have dependancies
+            
+            //Instancing everything that doesn't have dependency
             //Positions
             foreach (ActionItem actionItem in positionActionItems)
             {
-                if (actionItem.RequireRelative)
-                {
-                    continue;
-                }
+                // if (actionItem.RequireRelative)
+                // {
+                //     Debug.Log("Action is relative");
+                //     continue;
+                // }
 
                 PositionAction action = DataToPositionAction(
                     actionItem.Data, actionItem.StartTime, actionItem.Duration,
@@ -314,6 +316,14 @@ namespace VideoMaker
                     PositionDefault, DirectionDefault, UpDirectionDefault
                 );
 
+                if (action is null)
+                {
+                    Debug.Log("Action is null");
+                    continue;
+                }
+                
+                action.Duration = actionItem.Duration;
+                
                 // actionItem.Instance = action;
                 positionActions[actionItem.Index] = action;
 
@@ -324,10 +334,10 @@ namespace VideoMaker
             //Directions
             foreach (ActionItem actionItem in directionActionItems)
             {
-                if (actionItem.RequireRelative)
-                {
-                    continue;
-                }
+                // if (actionItem.RequireRelative)
+                // {
+                //     continue;
+                // }
 
                 DirectionAction action = DataToDirectionAction(
                     actionItem.Data, actionItem.StartTime, actionItem.Duration,
@@ -335,7 +345,15 @@ namespace VideoMaker
                     PositionDefault, DirectionDefault, UpDirectionDefault,
                     PositionDefault, DirectionDefault, UpDirectionDefault
                 );
-
+                
+                if (action is null)
+                {
+                    Debug.Log("Action is null");
+                    continue;
+                }
+                
+                action.Duration = actionItem.Duration;
+                
                 directionActions[actionItem.Index] = action;
 
                 //TODO check for existing instance of position action for overlapping time, and use to instance start/end directions
@@ -344,10 +362,10 @@ namespace VideoMaker
             // Up directions
             foreach (ActionItem actionItem in upDirectionActionItems)
             {
-                if (actionItem.RequireRelative)
-                {
-                    continue;
-                }
+                // if (actionItem.RequireRelative)
+                // {
+                //     continue;
+                // }
 
                 DirectionAction action = DataToDirectionAction(
                     actionItem.Data, actionItem.StartTime, actionItem.Duration,
@@ -356,7 +374,15 @@ namespace VideoMaker
                     PositionDefault, DirectionDefault, UpDirectionDefault,
                     isUp: true
                 );
+                
+                if (action is null)
+                {
+                    Debug.Log("Action is null");
+                    continue;
+                }
 
+                action.Duration = actionItem.Duration;
+                
                 upDirectionActions[actionItem.Index] = action;
 
                 //TODO check for existing instance of position action for overlapping time, and use to instance start/end upDirections
@@ -366,6 +392,11 @@ namespace VideoMaker
             data.DirectionActions = directionActions;
             data.UpDirectionActions = upDirectionActions;
 
+            data.Duration = Mathf.Min(positionActionItems[^1].EndTime,
+                Mathf.Min(directionActionItems[^1].EndTime, upDirectionActionItems[^1].EndTime));
+            
+            Debug.Log($"Actions instanced: position {positionActions.Length} / {positionActionItems.Count}, direction {directionActions.Length} / {directionActionItems.Count}, upDirection {upDirectionActions.Length} / {upDirectionActionItems.Count}");
+            
             return data;
         }
 
@@ -436,7 +467,14 @@ namespace VideoMaker
 
         private bool ShouldPositionContinue(JToken data)
         {
-            return ValueOrDefault(data, "position", SchemaDefs.Continue.Value) == SchemaDefs.Continue.Value;
+            JToken positionData = data.SelectToken("position");
+
+            if (positionData is null)
+            {
+                return true;
+            }
+            
+            return ValueOrDefault(data, "position", "") == SchemaDefs.Continue.Value;
         }
 
         private bool ShouldDirectionContinue(JToken data)
@@ -568,11 +606,19 @@ namespace VideoMaker
         )
         {
             //Note continueAction schema should have been handled and position token is garanteed
-            switch (GetValidSchema(data.SelectToken("position")))
+
+            JToken positionData = data.SelectToken("position");
+            
+            return GetValidSchema(positionData) switch
             {
-                default:
-                    return new PositionActionHold(positionPrevious);
-            }
+                SchemaDefs.Path.Def => new PositionActionPath(DataToPath(
+                        positionData, 
+                        positionFirst, directionFirst, upDirectionFirst,
+                        positionPrevious, directionPrevious, upDirectionPrevious,
+                        positionNext, directionNext, upDirectionNext
+                    )),
+                _ => new PositionActionHold(DataToPosition(positionData, positionFirst, positionPrevious, positionNext))
+            };
         }
 
         private DirectionAction DataToDirectionAction(JToken data, float startTime, float duration,
@@ -591,14 +637,44 @@ namespace VideoMaker
                 directionData = data.SelectToken(isUp ? "lookDown" : "LookAway");
             }
 
-            DirectionAction directionAction;
-
-            switch (GetValidSchema(directionData))
+            DirectionAction directionAction = GetValidSchema(directionData) switch
             {
-                default:
-                    directionAction = new DirectionActionHold(isUp ? upDirectionPrevious : upDirectionPrevious);
-                    break;
-            }
+                SchemaDefs.PathDirection.Def => ToObjectOrDefualt(directionData, SchemaDefs.PathDirection.Along) switch
+                {
+                    SchemaDefs.PathDirection.Up => new UpDirectionActionPath(),
+                    _ => new DirectionActionPath()
+                },
+                SchemaDefs.Easing.Def => new DirectionActionTween(
+                        isUp ? upDirectionPrevious : directionPrevious,
+                        isUp ? upDirectionNext : directionNext,
+                        DataToEasing(directionData)
+                    ),
+                SchemaDefs.DirectionBetween.Def => new DirectionActionTween(
+                    DataToDirection(
+                        directionData.SelectToken(SchemaDefs.DirectionBetween.Start) ?? SchemaDefs.DirectionBetween.StartDefault,
+                        isUp ? upDirectionFirst : directionFirst,
+                        isUp ? upDirectionPrevious : directionPrevious,
+                        isUp ? upDirectionNext : directionNext
+                    ),
+                    DataToDirection(
+                        directionData.SelectToken(SchemaDefs.DirectionBetween.End) ?? SchemaDefs.DirectionBetween.EndDefault,
+                        isUp ? upDirectionFirst : directionFirst,
+                        isUp ? upDirectionPrevious : directionPrevious,
+                        isUp ? upDirectionNext : directionNext
+                    ),
+                    (
+                            directionData.SelectToken(SchemaDefs.DirectionBetween.Easing) is null ? new Easing()
+                            : DataToEasing(directionData.SelectToken(SchemaDefs.DirectionBetween.Easing))
+                    )
+                ),
+                SchemaDefs.NamedPosition.Def or SchemaDefs.Position.Def => new DirectionActionLookAt(DataToPosition(
+                    directionData, positionFirst, positionPrevious, positionNext
+                )),
+                _ => new DirectionActionHold(isUp ? 
+                    DataToDirection(directionData, upDirectionFirst, upDirectionPrevious, upDirectionNext)
+                    : DataToDirection(directionData, directionFirst, directionPrevious, directionNext)
+                    )
+            };
 
             directionAction.ReverseDirection = reverse;
             return directionAction;
@@ -746,13 +822,17 @@ namespace VideoMaker
             );
 
             Vector3 end = DataToPosition(
-                data.SelectToken(SchemaDefs.Path.End) ?? SchemaDefs.Path.StartDefault,
+                data.SelectToken(SchemaDefs.Path.End) ?? SchemaDefs.Path.EndDefault,
                 positionFirst, positionPrevious, positionNext
             );
 
             JToken easingData = data.SelectToken(SchemaDefs.Path.Easing);
             Easing easing = easingData is null ? new Easing() : DataToEasing(easingData);
 
+            string pathKind = ValueOrDefault(data, "kind", SchemaDefs.Path.KindDefault);
+            Debug.Log($"Path kind {pathKind}");
+            Debug.Log($"Path OneOf index {GetPathOneOf(SchemaDefs.Path.Circle.Kind, data)}");
+            
             return ValueOrDefault(data, "kind", SchemaDefs.Path.KindDefault) switch
             {
                 SchemaDefs.Path.Line.Kind => new LinePath(start, end),
@@ -765,8 +845,9 @@ namespace VideoMaker
                             data.SelectToken(SchemaDefs.Path.Circle.Center) ?? SchemaDefs.Path.Circle.CenterDefault,
                             positionFirst, positionPrevious, positionNext
                         ),
-                        rotations: ValueOrDefault(data, SchemaDefs.Path.Circle.StartCenterEnd.Rotations, SchemaDefs.Path.Circle.StartCenterEnd.RotationsDefault)
-                    ),
+                        rotations: ValueOrDefault(data, SchemaDefs.Path.Circle.StartCenterEnd.Rotations, SchemaDefs.Path.Circle.StartCenterEnd.RotationsDefault),
+                        easing : easing
+                        ),
                     SchemaDefs.Path.Circle.StartCenterAxis.Index => new CirclePath(
                         start: start,
                         center: DataToPosition(
@@ -774,9 +855,10 @@ namespace VideoMaker
                             positionFirst, positionPrevious, positionNext
                         ),
                         axis: DataToDirection(
-                            data.SelectToken(SchemaDefs.Path.Circle.Axis)
+                            data.SelectToken(SchemaDefs.Path.Circle.Axis), directionFirst, directionPrevious, directionNext
                         ),
-                        rotations: ValueOrDefault(data, SchemaDefs.Path.Circle.StartCenterAxis.Rotations, SchemaDefs.Path.Circle.StartCenterAxis.RotationsDefault)
+                        rotations: ValueOrDefault(data, SchemaDefs.Path.Circle.StartCenterAxis.Rotations, SchemaDefs.Path.Circle.StartCenterAxis.RotationsDefault),
+                        easing: easing
                     )
                 },
                 //TODO Spiral path
