@@ -66,10 +66,10 @@ struct SourceStats
     // Flux
     double sum;
     double peak;
-    std::string beamUnit = "JY/BEAM";
+    char* beamUnit;
     // Vsys (in channel units)
     double channelVsys;
-    double channelW20;
+    double channelW20; 
     double veloVsys;
     double veloW20;
 

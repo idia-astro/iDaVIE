@@ -865,6 +865,7 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
         stats->maxX = source.minX;
         stats->maxY = source.minY;
         stats->maxZ = source.minZ;
+        stats->beamUnit = "";
 
 
         for (int64_t k = source.minZ; k <= source.maxZ; k++)
@@ -996,6 +997,7 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
             stats->numVoxels = 0;
             stats->peak = NAN;
             stats->sum = NAN;
+            stats->beamUnit = "";
             stats->cX = NAN;
             stats->cY = NAN;
             stats->cZ = NAN;

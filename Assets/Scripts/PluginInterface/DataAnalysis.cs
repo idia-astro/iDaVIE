@@ -118,6 +118,7 @@ public static class DataAnalysis
         // Flux
         public double sum;
         public double peak;
+        public IntPtr beamUnit;
         // Vsys (in channel units)
         public double channelVsys;
         public double channelW20;
