@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Xml.Schema;
 using Newtonsoft.Json.Linq;
@@ -132,9 +134,18 @@ namespace VideoMaker
             }
         }
 
-        public VideoScriptData ReadVideoScript(string videoScriptString)
+        ///
+        public VideoScriptData ReadIDVSVideoScript(StreamReader videoIDVSScriptStream)
         {
-            JToken root = JToken.Parse(videoScriptString);
+            VideoScriptData data = new();
+            IDVSParser parser = new();
+            (List<videoLocation>, List<object>) tuple = parser.Parse(videoIDVSScriptStream);
+            return data;
+        }
+
+        public VideoScriptData ReadJSONVideoScript(string videoJSONScriptString)
+        {
+            JToken root = JToken.Parse(videoJSONScriptString);
 
             IList<string> errorMessages;
             if (!root.IsValid(_schema, out errorMessages))
@@ -190,7 +201,7 @@ namespace VideoMaker
             int posIdx = 0;
             int dirIdx = 0;
             int upIdx = 0;
-            
+
             foreach (JToken actionData in actionDataArray)
             {
                 float duration = ValueOrDefault(actionData, "duration", 0f);
@@ -298,7 +309,7 @@ namespace VideoMaker
             PositionAction[] positionActions = new PositionAction[positionActionItems.Count];
             DirectionAction[] directionActions = new DirectionAction[directionActionItems.Count];
             DirectionAction[] upDirectionActions = new DirectionAction[upDirectionActionItems.Count];
-            
+
             //Instancing everything that doesn't have dependency
             //Positions
             foreach (ActionItem actionItem in positionActionItems)
@@ -321,9 +332,9 @@ namespace VideoMaker
                     Debug.Log("Action is null");
                     continue;
                 }
-                
+
                 action.Duration = actionItem.Duration;
-                
+
                 // actionItem.Instance = action;
                 positionActions[actionItem.Index] = action;
 
@@ -345,15 +356,15 @@ namespace VideoMaker
                     PositionDefault, DirectionDefault, UpDirectionDefault,
                     PositionDefault, DirectionDefault, UpDirectionDefault
                 );
-                
+
                 if (action is null)
                 {
                     Debug.Log("Action is null");
                     continue;
                 }
-                
+
                 action.Duration = actionItem.Duration;
-                
+
                 directionActions[actionItem.Index] = action;
 
                 //TODO check for existing instance of position action for overlapping time, and use to instance start/end directions
@@ -374,7 +385,7 @@ namespace VideoMaker
                     PositionDefault, DirectionDefault, UpDirectionDefault,
                     isUp: true
                 );
-                
+
                 if (action is null)
                 {
                     Debug.Log("Action is null");
@@ -382,7 +393,7 @@ namespace VideoMaker
                 }
 
                 action.Duration = actionItem.Duration;
-                
+
                 upDirectionActions[actionItem.Index] = action;
 
                 //TODO check for existing instance of position action for overlapping time, and use to instance start/end upDirections
@@ -394,9 +405,9 @@ namespace VideoMaker
 
             data.Duration = Mathf.Min(positionActionItems[^1].EndTime,
                 Mathf.Min(directionActionItems[^1].EndTime, upDirectionActionItems[^1].EndTime));
-            
+
             Debug.Log($"Actions instanced: position {positionActions.Length} / {positionActionItems.Count}, direction {directionActions.Length} / {directionActionItems.Count}, upDirection {upDirectionActions.Length} / {upDirectionActionItems.Count}");
-            
+
             return data;
         }
 
