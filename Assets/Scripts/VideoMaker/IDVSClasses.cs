@@ -5,7 +5,8 @@ namespace VideoMaker
     public enum Method
     {
         LINE,
-        ARC
+        ARC,
+        INVALID
     }
 
     public enum RotationAxes
@@ -15,7 +16,8 @@ namespace VideoMaker
         PosY,
         NegY,
         PosZ,
-        NegZ
+        NegZ,
+        Invalid
     }
 
     public class videoLocation
@@ -29,6 +31,11 @@ namespace VideoMaker
             _alias = name;
             _position = pos;
             _rotation = rot;
+        }
+
+        public string getAlias()
+        {
+            return _alias;
         }
     }
 
@@ -69,6 +76,15 @@ namespace VideoMaker
             _destination = dest;
             _method = method;
             _duration = dur;
+        }
+
+        public static Method ParseMethod(string methodAlias)
+        {
+            if (methodAlias.Equals("LINE", System.StringComparison.OrdinalIgnoreCase))
+                return Method.LINE;
+            if (methodAlias.Equals("ARC", System.StringComparison.OrdinalIgnoreCase))
+                return Method.ARC;
+            return Method.INVALID;
         }
     }
 

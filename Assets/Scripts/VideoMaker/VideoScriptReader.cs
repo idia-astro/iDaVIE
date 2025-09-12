@@ -135,11 +135,11 @@ namespace VideoMaker
         }
 
         ///
-        public VideoScriptData ReadIDVSVideoScript(StreamReader videoIDVSScriptStream)
+        public VideoScriptData ReadIDVSVideoScript(StreamReader videoIDVSScriptStream, string filePath)
         {
             VideoScriptData data = new();
             IDVSParser parser = new();
-            (List<videoLocation>, List<object>) tuple = parser.Parse(videoIDVSScriptStream);
+            (List<videoLocation>, List<object>) tuple = parser.Parse(videoIDVSScriptStream, filePath);
             return data;
         }
 

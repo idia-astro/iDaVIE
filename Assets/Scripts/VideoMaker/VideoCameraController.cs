@@ -231,7 +231,7 @@ namespace VideoMaker
                         _videoScript = _vsReader.ReadJSONVideoScript(jsonString);
                         break;
                     case ".idvs":
-                        _videoScript = _vsReader.ReadIDVSVideoScript(reader);
+                        _videoScript = _vsReader.ReadIDVSVideoScript(reader, path);
                         break;
                     default:
                         Debug.LogError("Selected file is not of an appropriate type!");
