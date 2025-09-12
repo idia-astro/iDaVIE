@@ -210,23 +210,40 @@ public class ShapesManager : MonoBehaviour {
 
         List<GameObject> copiedShapes = new List<GameObject>();
         foreach(GameObject shape in selectedShapes) {
-            GameObject copiedShape = Instantiate(shape, shape.transform.position, shape.transform.rotation);
-            Vector3 pos = copiedShape.transform.position;
-            pos.y+=0.1f;
-            copiedShape.transform.position = pos;
-            copiedShape.transform.SetParent(shape.transform.parent);
-            copiedShape.transform.localScale = shape.transform.localScale;
-            Shape shapeScript = copiedShape.GetComponent<Shape>();
-            shapeScript.SetAdditive(shape.GetComponent<Shape>().isAdditive());
+            GameObject copiedShape = DeepCopyShape(shape);
             activeShapes.Add(copiedShape);
             copiedShapes.Add(copiedShape);
         }
         foreach(GameObject shape in copiedShapes) selectedShapes.Add(shape);
         actions.Push(new ShapeAction(ShapeAction.ActionType.CopyShapes, copiedShapes));
     }
+    
+    GameObject DeepCopyShape(GameObject original) {
+        GameObject copy = Instantiate(original, original.transform.position, original.transform.rotation);
+
+        copy.transform.SetParent(original.transform.parent);
+        copy.transform.localScale = original.transform.localScale;
+
+        Renderer renderer = copy.GetComponent<Renderer>();
+        if (renderer != null) {
+            Material[] mats = renderer.materials; // this already makes unique instances in Unity
+            for (int i = 0; i < mats.Length; i++) {
+                mats[i] = new Material(mats[i]);   // full deep copy of each material
+            }
+            renderer.materials = mats;
+        }
+
+        MeshFilter mf = copy.GetComponent<MeshFilter>();
+        if (mf != null && mf.sharedMesh != null) {
+            mf.mesh = Instantiate(mf.sharedMesh); // unique mesh instance
+        }
+
+        return copy;
+    }
 
     //Sets the shape selected by the user in the selected state
-    public void SetSelectableShape(GameObject shape) {
+    public void SetSelectableShape(GameObject shape)
+    {
         currentShape = shape;
         currentShapeScale = shape.transform.localScale;
     }
