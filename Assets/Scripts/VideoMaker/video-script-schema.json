@@ -341,6 +341,34 @@
                             "required": ["start", "center", "axis"]
                         }
                     ]
+                },
+                {
+                    "title": "Cubic Path",
+                    "description": "Temporary, to be replaced with cubic spline",
+                    "properties": {
+                        "kind": {"const": "cubic"},
+                        "startDirection": {
+                            "description": "Direction of the second derivative of the spline at the start.",
+                            "default": "previous",
+                            "oneOf": [
+                                {"$ref": "#/$defs/relativeAction"},
+                                {"$ref": "#/$defs/namedDirection"},
+                                {"$ref": "#/$defs/direction"},
+                                {"$ref": "#/$defs/rotation"}
+                            ]
+                        },
+                        "endDirection": {
+                            "description": "Direction of the second derivative of the spline at the end.",
+                            "default": "next",
+                            "oneOf": [
+                                {"$ref": "#/$defs/relativeAction"},
+                                {"$ref": "#/$defs/namedDirection"},
+                                {"$ref": "#/$defs/direction"},
+                                {"$ref": "#/$defs/rotation"}
+                            ]
+                        }
+                    },
+                    "required": ["kind"]
                 }
             ]
         },
@@ -378,6 +406,7 @@
                         {"$ref": "#/$defs/directionBetween"},
                         {"$ref": "#/$defs/easing"},
                         {"$ref": "#/$defs/rotation"},
+                        {"$ref": "#/$defs/rotateBetween"},
                         {"$ref": "#/$defs/namedPosition"},
                         {"$ref": "#/$defs/position"},
                         {"$ref": "#/$defs/path"}
@@ -411,6 +440,7 @@
                         {"$ref": "#/$defs/directionBetween"},
                         {"$ref": "#/$defs/easing"},
                         {"$ref": "#/$defs/rotation"},
+                        {"$ref": "#/$defs/rotateBetween"},
                         {"$ref": "#/$defs/namedPosition"},
                         {"$ref": "#/$defs/position"},
                         {"$ref": "#/$defs/path"}

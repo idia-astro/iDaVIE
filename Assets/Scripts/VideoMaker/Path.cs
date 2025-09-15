@@ -9,42 +9,17 @@ namespace VideoMaker
 {
     public abstract class Path
     {
-        private Easing _easing;
+        public Easing Easing { set; get; }
 
-        public Path(Easing easing = null)
+
+        public (Vector3 position, Vector3 direction, Vector3 upDirection) GetPositionDirection(float pathParam)
         {
-            _easing = easing;
-        }
-
-        public (Vector3 position, Vector3 direction, Vector3 upDirection) GetPositionDirection(float pathParam){
-            pathParam = _easing is not null? _easing.GetValue(pathParam): pathParam;
+            pathParam = Easing is not null ? Easing.GetValue(pathParam) : pathParam;
 
             return OnGetPositionDirection(pathParam);
-            // return (OnGetPosition(pathParam), OnGetDirection(pathParam), OnGetUpDirection(pathParam));
         }
 
         protected abstract (Vector3 position, Vector3 direction, Vector3 upDirection) OnGetPositionDirection(float pathParam);
-        
-        // public Vector3 GetPosition(float pathParam)
-        // {
-        //     return OnGetPosition(_easing is not null? _easing.GetValue(pathParam): pathParam);
-        // }
-        //
-        // //Normalised tangent of path
-        // public Vector3 GetDirection(float pathParam)
-        // {
-        //     return OnGetDirection(_easing is not null? _easing.GetValue(pathParam): pathParam);
-        // }
-        //
-        // //Normalised curvature of path
-        // public Vector3 GetUpDirection(float pathParam)
-        // {
-        //     return OnGetUpDirection(_easing is not null? _easing.GetValue(pathParam): pathParam);
-        // }
-        //
-        // protected abstract Vector3 OnGetPosition(float pathParam);
-        // protected abstract Vector3 OnGetDirection(float pathParam);
-        // protected abstract Vector3 OnGetUpDirection(float pathParam);
     }
 
     public class LinePath : Path
@@ -53,7 +28,7 @@ namespace VideoMaker
 
         private Vector3 _end;
 
-        public LinePath(Vector3 start, Vector3 end, Easing easing = null) : base(easing)
+        public LinePath(Vector3 start, Vector3 end)
         {
             this._start = start;
             this._end = end;
@@ -67,22 +42,6 @@ namespace VideoMaker
                 Vector3.up
             );
         }
-
-        // protected override Vector3 OnGetPosition(float pathParam)
-        // {
-        //     return _start * (1 - pathParam) + _end * pathParam;
-        // }
-        //
-        // protected override Vector3 OnGetDirection(float pathParam)
-        // {
-        //     return (_end - _start).normalized;
-        // }
-        //
-        // protected override Vector3 OnGetUpDirection(float pathParam)
-        // {
-        //     //Note straight line has zero curvature, which is not allowed here
-        //     return Vector3.up;
-        // }
     }
 
     public class CirclePath : Path
@@ -104,11 +63,7 @@ namespace VideoMaker
         private float _radius;
         private float _rotations;
 
-        public CirclePath(
-            Vector3 start, Vector3 end, Vector3 center,
-            int rotations = 1,
-            // bool largeAngleDirection = false, int additionalRotations = 0,
-            Easing easing = null) : base(easing)
+        public CirclePath(Vector3 start, Vector3 end, Vector3 center, int rotations = 1)
         {
             _center = center;
 
@@ -123,10 +78,10 @@ namespace VideoMaker
                 //Start, center and end are co-linear, so use a default axis
                 axis = Vector3.up;
             }
-            
+
             _basis1 = relStart / _radius;
             _basis2 = Vector3.Cross(_basis1, axis).normalized;
-            
+
             float angle = Vector3.Angle(relStart, relEnd) / 360f;
 
             if (rotations <= 0)
@@ -138,12 +93,12 @@ namespace VideoMaker
                 _rotations = angle + rotations - 1;
             }
             // _rotations = angle + rotations - (rotations < 0 ? 1 : 0);
-            
+
             Debug.Log($"Circle with center {_center.ToString()}, radius {_radius}, basis1 {_basis1.ToString()} and basis2 {_basis2.ToString()}");
         }
 
         //TODO test this more
-        public CirclePath(Vector3 start, Vector3 center, Vector3 axis, float rotations, Easing easing = null) : base(easing)
+        public CirclePath(Vector3 start, Vector3 center, Vector3 axis, float rotations)
         {
             _center = center;
 
@@ -155,12 +110,12 @@ namespace VideoMaker
             _basis2 = Vector3.Cross(_basis1, axis).normalized;
 
             _rotations = rotations;
-            
+
             Debug.Log($"Circle with center {_center.ToString()}, radius {_radius}, axis {axis.ToString()}, basis1 {_basis1.ToString()} and basis2 {_basis2.ToString()}");
         }
 
         //TODO test this more
-        public CirclePath(Vector3 center, AxisDirection axis, float startAngle, float rotations, float radius, Easing easing = null) : base(easing)
+        public CirclePath(Vector3 center, AxisDirection axis, float startAngle, float rotations, float radius)
         {
             _center = center;
             _radius = radius;
@@ -211,23 +166,34 @@ namespace VideoMaker
                 -(cos * _basis1 + sin * _basis2).normalized
             );
         }
+    }
 
-        // protected override Vector3 OnGetPosition(float pathParam)
-        // {
-        //     float angle = 2 * Mathf.PI * _rotations * pathParam;
-        //     return _center + _radius * (Mathf.Cos(angle) * _basis1 + Mathf.Sin(angle) * _basis2);
-        // }
-        //
-        // protected override Vector3 OnGetDirection(float pathParam)
-        // {
-        //     float angle = 2 * Mathf.PI * _rotations * pathParam;
-        //     return (Mathf.Cos(angle) * _basis2 - Mathf.Sin(angle) * _basis1).normalized;
-        // }
-        //
-        // protected override Vector3 OnGetUpDirection(float pathParam)
-        // {
-        //     float angle = 2 * Mathf.PI * _rotations * pathParam;
-        //     return -(Mathf.Cos(angle) * _basis1 + Mathf.Sin(angle) * _basis2).normalized;
-        // }
+    public class CubicPath : Path
+    {
+        private Vector3 _a;
+        private Vector3 _b;
+        private Vector3 _c;
+        private Vector3 _d;
+
+        public CubicPath(Vector3 start, Vector3 end, Vector3 startDd, Vector3 endDd)
+        {
+            _a = (endDd - startDd) / 6;
+            _b = 0.5f * startDd;
+            _c = end - start - (2 * startDd + endDd) / 6;
+            _d = start;
+        }
+
+        protected override (Vector3 position, Vector3 direction, Vector3 upDirection) OnGetPositionDirection(float pathParam)
+        {
+            float t = pathParam;
+            float t2 = pathParam * pathParam;
+            float t3 = t2 * pathParam;
+
+            return (
+                _a * t3 + _b * t2 + _c * t + _d,
+                3 * t2 * _a + 2 * t * _b + _c,
+                6 * t * _a + 2 * _b
+            );
+        }
     }
 }

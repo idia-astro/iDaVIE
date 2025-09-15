@@ -122,6 +122,7 @@ namespace VideoMaker
             public const string StartDefault = Relative.Previous;
             public const string End = "end";
             public const string EndDefault = Relative.Next;
+            public const string Easing = "easing";
         }
 
         public static class Path
@@ -149,6 +150,7 @@ namespace VideoMaker
                 public const string CenterDefault = "center";
 
                 public const string Axis = "axis";
+                public const string AxisDefault = "up";
 
                 public static class StartCenterEnd
                 {
@@ -167,14 +169,31 @@ namespace VideoMaker
             public static class Spiral
             {
                 public const string Kind = "spiral";
-                
+
                 public static class StartCenterEnd
                 {
                     public const int Index = 0;
                 }
-                public static class StartCenterAxis {
+                public static class StartCenterAxis
+                {
                     public const int Index = 1;
                 }
+            }
+
+            //TODO Replace with cubic Spline
+            public static class Cubic
+            {
+                public const string Kind = "cubic";
+
+                public const string StartDirection = "startDirection";
+                public const string StartDirectionDefault = "previous";
+                // public const string StartScale = "startScale";
+                // public const float StartScaleDefault = 1;
+
+                public const string EndDirection = "endDirection";
+                public const string EndDirectionDefault = "next";
+                // public const string EndScale = "endScale";
+                // public const float EndScaleDefault = 1;
             }
         }
 
