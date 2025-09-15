@@ -24,7 +24,8 @@ namespace VideoMaker
             CenterLeft,
             TopRight,
             TopCenter,
-            TopLeft
+            TopLeft,
+            Invalid
         }
 
         public int Width = 1280;
@@ -37,6 +38,55 @@ namespace VideoMaker
         public PositionAction[] PositionActions;
         public DirectionAction[] DirectionActions;
         public DirectionAction[] UpDirectionActions;
+
+        public static LogoPosition ParsePosition(string pos)
+        {
+            if (pos.Equals("BR", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("BottomR", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("BRight", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("BottomRight", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("RB", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("RightBottom", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("RBottom", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("RightB", StringComparison.OrdinalIgnoreCase))
+
+                return LogoPosition.BottomRight;
+
+            if (pos.Equals("BL", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("BottomL", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("BLeft", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("BottomLeft", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("LB", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("LeftBottom", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("LBottom", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("LeftB", StringComparison.OrdinalIgnoreCase))
+
+                return LogoPosition.BottomLeft;
+
+            if (pos.Equals("TR", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("TopR", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("TRight", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("TopRight", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("RT", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("RightTop", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("RTop", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("RightT", StringComparison.OrdinalIgnoreCase))
+
+                return LogoPosition.TopRight;
+
+            if (pos.Equals("TL", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("TopL", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("TLeft", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("TopLeft", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("LT", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("LeftTop", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("LTop", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("LeftT", StringComparison.OrdinalIgnoreCase))
+
+                return LogoPosition.TopLeft;
+
+            return LogoPosition.Invalid;
+        }
     }
 
     public class VideoScriptReader
@@ -139,7 +189,7 @@ namespace VideoMaker
         {
             VideoScriptData data = new();
             IDVSParser parser = new();
-            (List<videoLocation>, List<object>) tuple = parser.Parse(videoIDVSScriptStream, filePath);
+            (videoSettings, List<videoLocation>, List<object>) tuple = parser.Parse(videoIDVSScriptStream, filePath);
             return data;
         }
 

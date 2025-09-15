@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace VideoMaker
@@ -18,6 +19,57 @@ namespace VideoMaker
         PosZ,
         NegZ,
         Invalid
+    }
+
+    public class videoSettings
+    {
+        public enum settingOption
+        {
+            HEIGHT,
+            WIDTH,
+            FRAMERATE,
+            LOGOPOS,
+            INVALID
+        }
+        VideoScriptData.LogoPosition _logoPos = VideoScriptData.LogoPosition.BottomRight;
+        int _height = 720;
+        int _width = 1280;
+        int _framerate = 20;
+
+        public void setSetting(settingOption set, int value)
+        {
+            switch (set)
+            {
+                case settingOption.HEIGHT:
+                    _height = value;
+                    break;
+                case settingOption.WIDTH:
+                    _width = value;
+                    break;
+                case settingOption.FRAMERATE:
+                    _framerate = value;
+                    break;
+                case settingOption.LOGOPOS:
+                    _logoPos = (VideoScriptData.LogoPosition)value;
+                    break;
+                default:
+                    UnityEngine.Debug.LogError("Invalid setting option " + set.ToString() + " when setting settings in videoSettings class. How did you even manage that?");
+                    break;
+            }
+        }
+
+        public static settingOption ParseSetting(string settingName)
+        {
+            if (settingName.Equals("HEIGHT", System.StringComparison.OrdinalIgnoreCase))
+                return settingOption.HEIGHT;
+            if (settingName.Equals("WIDTH", System.StringComparison.OrdinalIgnoreCase))
+                return settingOption.WIDTH;
+            if (settingName.Equals("FRAMERATE", System.StringComparison.OrdinalIgnoreCase))
+                return settingOption.FRAMERATE;
+            if (settingName.Equals("LOGOPOS", System.StringComparison.OrdinalIgnoreCase))
+                return settingOption.LOGOPOS;
+            return settingOption.INVALID;
+        }
     }
 
     public class videoLocation
