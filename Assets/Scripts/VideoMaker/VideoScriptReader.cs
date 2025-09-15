@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.IO;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Xml.Schema;
 using Newtonsoft.Json.Linq;
@@ -24,7 +25,8 @@ namespace VideoMaker
             CenterLeft,
             TopRight,
             TopCenter,
-            TopLeft
+            TopLeft,
+            Invalid
         }
 
         public int Width = 1280;
@@ -37,6 +39,55 @@ namespace VideoMaker
         public PositionAction[] PositionActions;
         public DirectionAction[] DirectionActions;
         public DirectionAction[] UpDirectionActions;
+
+        public static LogoPosition ParsePosition(string pos)
+        {
+            if (pos.Equals("BR", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("BottomR", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("BRight", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("BottomRight", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("RB", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("RightBottom", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("RBottom", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("RightB", StringComparison.OrdinalIgnoreCase))
+
+                return LogoPosition.BottomRight;
+
+            if (pos.Equals("BL", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("BottomL", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("BLeft", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("BottomLeft", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("LB", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("LeftBottom", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("LBottom", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("LeftB", StringComparison.OrdinalIgnoreCase))
+
+                return LogoPosition.BottomLeft;
+
+            if (pos.Equals("TR", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("TopR", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("TRight", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("TopRight", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("RT", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("RightTop", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("RTop", StringComparison.OrdinalIgnoreCase) || 
+                pos.Equals("RightT", StringComparison.OrdinalIgnoreCase))
+
+                return LogoPosition.TopRight;
+
+            if (pos.Equals("TL", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("TopL", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("TLeft", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("TopLeft", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("LT", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("LeftTop", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("LTop", StringComparison.OrdinalIgnoreCase) ||
+                pos.Equals("LeftT", StringComparison.OrdinalIgnoreCase))
+
+                return LogoPosition.TopLeft;
+
+            return LogoPosition.Invalid;
+        }
     }
 
     public class VideoScriptReader
@@ -134,9 +185,18 @@ namespace VideoMaker
             }
         }
 
-        public VideoScriptData ReadVideoScript(string videoScriptString)
+        ///
+        public VideoScriptData ReadIDVSVideoScript(StreamReader videoIDVSScriptStream, string filePath)
         {
-            JToken root = JToken.Parse(videoScriptString);
+            VideoScriptData data = new();
+            IDVSParser parser = new();
+            (videoSettings, List<videoLocation>, List<object>) tuple = parser.Parse(videoIDVSScriptStream, filePath);
+            return data;
+        }
+
+        public VideoScriptData ReadJSONVideoScript(string videoJSONScriptString)
+        {
+            JToken root = JToken.Parse(videoJSONScriptString);
 
             IList<string> errorMessages;
             if (!root.IsValid(_schema, out errorMessages))
@@ -192,7 +252,7 @@ namespace VideoMaker
             int posIdx = 0;
             int dirIdx = 0;
             int upIdx = 0;
-            
+
             foreach (JToken actionData in actionDataArray)
             {
                 float duration = ValueOrDefault(actionData, "duration", 0f);
@@ -300,7 +360,7 @@ namespace VideoMaker
             PositionAction[] positionActions = new PositionAction[positionActionItems.Count];
             DirectionAction[] directionActions = new DirectionAction[directionActionItems.Count];
             DirectionAction[] upDirectionActions = new DirectionAction[upDirectionActionItems.Count];
-            
+
             //Instancing everything that doesn't have dependency
             //Positions
             foreach (ActionItem actionItem in positionActionItems)
@@ -323,9 +383,9 @@ namespace VideoMaker
                     Debug.Log("Action is null");
                     continue;
                 }
-                
+
                 action.Duration = actionItem.Duration;
-                
+
                 // actionItem.Instance = action;
                 positionActions[actionItem.Index] = action;
 
@@ -347,15 +407,15 @@ namespace VideoMaker
                     PositionDefault, DirectionDefault, UpDirectionDefault,
                     PositionDefault, DirectionDefault, UpDirectionDefault
                 );
-                
+
                 if (action is null)
                 {
                     Debug.Log("Action is null");
                     continue;
                 }
-                
+
                 action.Duration = actionItem.Duration;
-                
+
                 directionActions[actionItem.Index] = action;
 
                 //TODO check for existing instance of position action for overlapping time, and use to instance start/end directions
@@ -376,7 +436,7 @@ namespace VideoMaker
                     PositionDefault, DirectionDefault, UpDirectionDefault,
                     isUp: true
                 );
-                
+
                 if (action is null)
                 {
                     Debug.Log("Action is null");
@@ -384,7 +444,7 @@ namespace VideoMaker
                 }
 
                 action.Duration = actionItem.Duration;
-                
+
                 upDirectionActions[actionItem.Index] = action;
 
                 //TODO check for existing instance of position action for overlapping time, and use to instance start/end upDirections
@@ -396,9 +456,9 @@ namespace VideoMaker
 
             data.Duration = Mathf.Min(positionActionItems[^1].EndTime,
                 Mathf.Min(directionActionItems[^1].EndTime, upDirectionActionItems[^1].EndTime));
-            
+
             Debug.Log($"Actions instanced: position {positionActions.Length} / {positionActionItems.Count}, direction {directionActions.Length} / {directionActionItems.Count}, upDirection {upDirectionActions.Length} / {upDirectionActionItems.Count}");
-            
+
             return data;
         }
 

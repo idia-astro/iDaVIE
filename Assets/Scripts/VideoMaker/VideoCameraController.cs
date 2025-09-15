@@ -102,8 +102,8 @@ namespace VideoMaker
                 lastPath = "";
             }
             var extensions = new[]{
-                new ExtensionFilter("JSON Files", "json"),
-                new ExtensionFilter("All Files", "*"),
+                new ExtensionFilter("Video scripts ", "json", "idvs"),
+                new ExtensionFilter("All Files ", "*"),
             };
             StandaloneFileBrowser.OpenFilePanelAsync("Open File", lastPath, extensions, false, (string[] paths) =>
             {
@@ -222,9 +222,22 @@ namespace VideoMaker
 
             using (StreamReader reader = new(path))
             {
+                // Check file extension to decide on which reader to use
+                string fileExtension = System.IO.Path.GetExtension(path);
+                switch (fileExtension)
+                {
+                    case ".json":
+                        string jsonString = reader.ReadToEnd();
+                        _videoScript = _vsReader.ReadJSONVideoScript(jsonString);
+                        break;
+                    case ".idvs":
+                        _videoScript = _vsReader.ReadIDVSVideoScript(reader, path);
+                        break;
+                    default:
+                        Debug.LogError("Selected file is not of an appropriate type!");
+                        return;
+                }
                 //TODO use async?
-                string jsonString = reader.ReadToEnd();
-                _videoScript = _vsReader.ReadVideoScript(jsonString);
             }
 
             if (_videoScript is null)

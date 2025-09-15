@@ -142,13 +142,16 @@ public class QuickMenuController : MonoBehaviour
         spawnMenu(settingsMenu);
     }
     
+    /// <summary>
+    /// Called when the user selects the voice command button on the quick menu, opening the list of voice commands.
+    /// </summary>
     public void OpenListOfVoiceCommands()
     {
         spawnMenu(voiceCommandsListCanvas);
     }
 
     /// <summary>
-    /// Function that is called when user selects the colour map button on the main menu
+    /// Function that is called when user selects the colour map button on the main menu.
     /// </summary>
     public void OpenListOfColourMaps()
     {
@@ -279,6 +282,9 @@ public class QuickMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Opens the paint menu and replaces the quick menu.
+    /// </summary>
     public void OpenPaintMenu()
     {
         if (!gameObject.activeSelf)
@@ -292,7 +298,8 @@ public class QuickMenuController : MonoBehaviour
         {
             ToastNotification.ShowError("Cannot paint downsampled mask!\nPlease select a smaller region");
         }
-        else {             
+        else
+        {
             paintMenu.transform.SetParent(this.transform.parent, false);
             paintMenu.transform.localPosition = this.transform.localPosition;
             paintMenu.transform.localRotation = this.transform.localRotation;
@@ -303,11 +310,17 @@ public class QuickMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Called when the user clicks on the Plots button in the quick menu, opening the plots menu.
+    /// </summary>
     public void OpenPlotsMenu()
     {
         spawnMenu(plotsMenu);
     }
 
+    /// <summary>
+    /// Called when the user clicks on the mask button in the export popup, which brings up a popup to save or export the mask.
+    /// </summary>
     public void SaveMask()
     {
         if (_activeDataSet.Mask == null)
@@ -318,7 +331,7 @@ public class QuickMenuController : MonoBehaviour
 
         if (exportPopup.activeSelf)
             exportPopup.SetActive(false);
-        
+
         savePopup.transform.SetParent(this.transform.parent, false);
         savePopup.transform.localPosition = this.transform.localPosition;
         savePopup.transform.localRotation = this.transform.localRotation;
@@ -332,13 +345,16 @@ public class QuickMenuController : MonoBehaviour
         savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
         savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
 
-        if (_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.Painting )
+        if (_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.Painting)
             _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
-        
+
         this.gameObject.SetActive(false);
         savePopup.SetActive(true);
     }
 
+    /// <summary>
+    /// Called when the user clicks on the export button in the quick menu, which brings up a popup that allows the user to select between saving the mask or exporting the selected data as a subcube.
+    /// </summary>
     public void ExportData()
     {
         exportPopup.transform.SetParent(this.transform.parent, false);
@@ -358,11 +374,17 @@ public class QuickMenuController : MonoBehaviour
         exportPopup.SetActive(true);
     }
 
+    /// <summary>
+    /// Called when the user selects cancel on the export menu.
+    /// </summary>
     public void ExportCancel()
     {
         exportPopup.SetActive(false);
     }
 
+    /// <summary>
+    /// Called when the user selects the subcube on the export popup.
+    /// </summary>
     public void SaveSubCube()
     {
         _activeDataSet.SaveSubCube();

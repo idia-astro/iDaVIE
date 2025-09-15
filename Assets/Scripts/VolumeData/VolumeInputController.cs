@@ -56,7 +56,7 @@ public class VolumeInputController : MonoBehaviour
         EditingThresholdMax,
         EditingZAxis
     }
-    
+
     public enum InteractionState
     {
         IdleSelecting,
@@ -64,7 +64,8 @@ public class VolumeInputController : MonoBehaviour
         EditingSourceId,
         Creating,
         Editing,
-        Painting
+        Painting,
+        VideoCamPosRecording
     }
 
     public enum InteractionEvents
@@ -75,7 +76,9 @@ public class VolumeInputController : MonoBehaviour
         PaintModeDisabled,
         StartEditSource,
         EndEditSource,
-        CancelEditSource
+        CancelEditSource,
+        StartVideoRecording,
+        EndVideoRecording
     }
 
     [Flags]
@@ -302,6 +305,7 @@ public class VolumeInputController : MonoBehaviour
         InteractionStateMachine.Configure(InteractionState.IdleSelecting)
             .OnEntryFrom(InteractionEvents.PaintModeDisabled, ExitPaintMode)
             .Permit(InteractionEvents.PaintModeEnabled, InteractionState.IdlePainting)
+            .Permit(InteractionEvents.StartVideoRecording, InteractionState.VideoCamPosRecording)
             .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Creating, () => !HasHoverAnchor)
             .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Editing, () => HasHoverAnchor);
 
@@ -331,6 +335,11 @@ public class VolumeInputController : MonoBehaviour
             .OnEntry(StartRegionEditing)
             .OnExit(EndRegionEditing)
             .Permit(InteractionEvents.InteractionEnded, InteractionState.IdleSelecting);
+
+        InteractionStateMachine.Configure(InteractionState.VideoCamPosRecording)
+            .OnEntry(StartVideoCamPosRecording)
+            .OnExit(EndVideoCamPosRecording)
+            .Permit(InteractionEvents.EndVideoRecording, InteractionState.IdleSelecting);
     }
 
     private void OnDisable()
@@ -1443,14 +1452,24 @@ public class VolumeInputController : MonoBehaviour
         shapesManager.SetSelectableShape(shape);
     }
 
+    public void StartVideoCamPosRecording()
+    {
+        
+    }
+
+    public void EndVideoCamPosRecording()
+    {
+
+    }
+
     //Places the selected shape into the scene
     public void PlaceShape() {
         GameObject shape = shapesManager.GetCurrentShape();
         GameObject selectedShape = shapesManager.GetSelectedShape();
-        if(selectedShape == null) return;
-        GameObject shapeCopy = Instantiate(shape,selectedShape.transform.position,selectedShape.transform.rotation);
+        if (selectedShape == null) return;
+        GameObject shapeCopy = Instantiate(shape, selectedShape.transform.position, selectedShape.transform.rotation);
         shapeCopy.name = shapesManager.GetShapeName(shapeCopy);
-        if(shapeCopy.name.Contains("Cylinder")) {
+        if (shapeCopy.name.Contains("Cylinder")) {
             var collider = shapeCopy.GetComponent<CapsuleCollider>();
             collider.enabled = true;
         }
