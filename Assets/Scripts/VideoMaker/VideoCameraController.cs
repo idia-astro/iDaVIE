@@ -226,7 +226,7 @@ namespace VideoMaker
                     //     _videoScript = _vsReader.ReadJSONVideoScript(jsonString);
                     //     break;
                     case ".idvs":
-                        _videoScript = VideoScriptReader.ReadIDVSVideoScript(reader, path);
+                        _videoScript = VideoScriptReader.ReadIdvsVideoScript(reader, path);
                         break;
                     default:
                         Debug.LogError("Selected file is not of an appropriate type!");
@@ -380,12 +380,16 @@ namespace VideoMaker
 
         private void UpdateTransform(Vector3 position, Vector3 direction, Vector3 upDirection)
         {
+            Vector3 upBefore = upDirection;
             position = _cubeTransform.TransformPoint(position);
             direction = _cubeTransform.TransformDirection(direction);
             upDirection = _cubeTransform.TransformDirection(upDirection);
-
-            gameObject.transform.position = position;
-            gameObject.transform.LookAt(position + direction, upDirection);
+            
+            Debug.Log("Up: " + upBefore.ToString() + " to " + upDirection.ToString());
+            
+            gameObject.transform.SetPositionAndRotation(position, Quaternion.LookRotation(direction, upDirection));
+            // gameObject.transform.position = position;
+            // gameObject.transform.LookAt(position + direction, upDirection);
         }
 
         public void StartPlayback(string message)

@@ -92,13 +92,16 @@ namespace VideoMaker
 
     public static class VideoScriptReader
     {
-        private static readonly videoLocation DefaultLocation = new videoLocation("", Vector3.zero, Vector3.zero);
+        private static readonly VideoLocation DefaultLocation = new VideoLocation("", Vector3.zero, Vector3.zero);
+
+        private static readonly Easing EasingIO = new EasingInOut(order: 2);
+        private static readonly Easing EasingILO = new EasingInLinOut(order: 2, timeIn: 0.25f, timeOut: 0.25f);
         
-        public static VideoScriptData ReadIDVSVideoScript(StreamReader videoIDVSScriptStream, string filePath)
+        public static VideoScriptData ReadIdvsVideoScript(StreamReader videoIdvsScriptStream, string filePath)
         {
             VideoScriptData data = new();
-            IDVSParser parser = new();
-            (videoSettings settings, List<videoLocation> locations, List<object> commands) = parser.Parse(videoIDVSScriptStream, filePath);
+            IdvsParser parser = new();
+            (VideoSettings settings, List<VideoLocation> locations, List<object> commands) = parser.Parse(videoIdvsScriptStream, filePath);
 
             data.logoPosition = settings.logoPos;
             data.Height = settings.height;
@@ -114,40 +117,40 @@ namespace VideoMaker
             List<DirectionAction> directionActions = new List<DirectionAction>();
             List<DirectionAction> upDirectionActions = new List<DirectionAction>();
             
-            videoLocation locationPrevious = ((startCommand)commands[0])?.position ?? DefaultLocation;
-
-            Easing easing = new EasingInOut(2);
+            VideoLocation locationPrevious = ((StartCommand)commands[0])?.position ?? DefaultLocation;
             
             for (int i = 1; i < commands.Count; i++)
             {
                 switch (commands[i])
                 {
-                    case waitCommand command:
+                    case WaitCommand command:
                         positionActions.Add(new PositionActionHold(locationPrevious.position){Duration = command.duration});
                         directionActions.Add(new DirectionActionHold(locationPrevious.forward){Duration = command.duration});
                         upDirectionActions.Add(new DirectionActionHold(locationPrevious.up){Duration = command.duration});
                         data.Duration += command.duration;
                         break;
-                    case moveCommand command:
+                    case MoveCommand command:
                         Path path;
                         switch (command.method)
                         {
-                            case Method.LINE:
-                                path = new LinePath(locationPrevious.position, command.destination.position){Easing = easing};
+                            case Method.Line:
+                                path = new LinePath(locationPrevious.position, command.destination.position){Easing = EasingIO};
                                 break;
-                            case Method.ARC:
+                            case Method.Arc:
                                 //Double-derivative at boundaries (magnitude)
-                                // float dy = - (
-                                //     Mathf.Sign(Vector3.Dot(locationPrevious.forward, 
-                                //         command.destination.forward)) * 
-                                //     (command.destination.position - locationPrevious.position).magnitude 
-                                //     / command.duration);
-
-                                float dy = (command.destination.position - locationPrevious.position).magnitude;
+                                float dy = - (
+                                    Mathf.Sign(Vector3.Dot(locationPrevious.forward, 
+                                        command.destination.forward)) * 
+                                    (command.destination.position - locationPrevious.position).magnitude 
+                                    / command.duration);
+                                
+                                //Single derivative at boundaries
+                                // float dy = (command.destination.position - locationPrevious.position).magnitude;
                                 
                                 path = new CubicPath(
                                     locationPrevious.position, command.destination.position,
                                     dy * locationPrevious.forward, dy * command.destination.forward);
+                                // directionActions.Add( new DirectionActionPath(){Duration = command.duration});
                                 break;
                             default:
                                 continue;
@@ -155,13 +158,14 @@ namespace VideoMaker
 
                         positionActions.Add(new PositionActionPath(path){Duration = command.duration});
                         directionActions.Add(new DirectionActionTween(
-                            locationPrevious.forward, command.destination.forward, easing: easing){Duration = command.duration});
+                            locationPrevious.forward, command.destination.forward, easing: EasingIO){Duration = command.duration});
                         upDirectionActions.Add(new DirectionActionTween(
-                            locationPrevious.up, command.destination.up, easing: easing){Duration = command.duration});
+                            locationPrevious.up, command.destination.up, easing: EasingIO){Duration = command.duration});
                         locationPrevious = command.destination;
                         data.Duration += command.duration;
                         break;
-                    case rotateCommand command:
+                    case RotateCommand command:
+                        //Using global space axes for rotation
                         Vector3 axis = command.rotationAxis switch
                         {
                             RotationAxes.PosX => Vector3.right,
@@ -172,34 +176,41 @@ namespace VideoMaker
                             RotationAxes.NegZ => Vector3.back,
                             _ => Vector3.up //TODO Rather skip?
                         };
+                        // Vector3 axis = command.centrePoint.up;
                         
                         //Turn to face center location
                         positionActions.Add(new PositionActionHold(locationPrevious.position){Duration = command.turnDuration});
-                        directionActions.Add(new DirectionActionTween(locationPrevious.forward, 
-                            (command.centrePoint.position - locationPrevious.position)){Duration = command.turnDuration});
-                        upDirectionActions.Add(new DirectionActionTween(locationPrevious.up, axis){Duration = command.turnDuration});
+                        directionActions.Add(new DirectionActionTween(
+                                locationPrevious.forward, 
+                                (command.centrePoint.position - locationPrevious.position),
+                                easing: EasingIO
+                            ){Duration = command.turnDuration});
+                        upDirectionActions.Add(new DirectionActionTween(
+                            locationPrevious.up, axis, easing: EasingIO){Duration = command.turnDuration});
                         
                         //Orbit
+                        float orbitDuration = command.orbitDuration * command.iterations;
+                        
                         positionActions.Add(new PositionActionPath(new CirclePath(
                             start: locationPrevious.position, 
                             center: command.centrePoint.position, 
                             axis: axis, 
                             rotations: command.iterations
-                            ){Easing = easing}){Duration = command.orbitDuration});
-                        directionActions.Add(new DirectionActionLookAt(command.centrePoint.position){Duration = command.orbitDuration});
-                        upDirectionActions.Add(new DirectionActionHold(axis){Duration = command.orbitDuration});
+                            ){Easing = EasingILO}){Duration = orbitDuration});
+                        directionActions.Add(new DirectionActionLookAt(command.centrePoint.position){Duration = orbitDuration});
+                        upDirectionActions.Add(new DirectionActionHold(axis){Duration = orbitDuration});
 
                         (Vector3 position, Vector3 alongPath, Vector3 upPath) =
-                            positionActions[^1].GetPositionDirection(command.orbitDuration);
+                            positionActions[^1].GetPositionDirection(orbitDuration);
                         
-                        locationPrevious = new videoLocation("",
+                        locationPrevious = new VideoLocation("",
                             position,
                             Quaternion.LookRotation(
-                                directionActions[^1].GetDirection(command.orbitDuration, position, alongPath, upPath),
-                                upDirectionActions[^1].GetDirection(command.orbitDuration, position, alongPath, upPath)
+                                directionActions[^1].GetDirection(orbitDuration, position, alongPath, upPath),
+                                upDirectionActions[^1].GetDirection(orbitDuration, position, alongPath, upPath)
                                 ).eulerAngles
                         );
-                        data.Duration += command.turnDuration + command.orbitDuration;
+                        data.Duration += command.turnDuration + orbitDuration;
                         break;
                 }
             }

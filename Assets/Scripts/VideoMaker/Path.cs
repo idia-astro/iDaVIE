@@ -65,6 +65,7 @@ namespace VideoMaker
 
         public CirclePath(Vector3 start, Vector3 end, Vector3 center, int rotations = 1)
         {
+            //TODO move center to preserve radius instead of moving end point
             _center = center;
 
             Vector3 relStart = start - center;
@@ -94,12 +95,14 @@ namespace VideoMaker
             }
             // _rotations = angle + rotations - (rotations < 0 ? 1 : 0);
 
-            Debug.Log($"Circle with center {_center.ToString()}, radius {_radius}, basis1 {_basis1.ToString()} and basis2 {_basis2.ToString()}");
+            // Debug.Log($"Circle with center {_center.ToString()}, radius {_radius}, basis1 {_basis1.ToString()} and basis2 {_basis2.ToString()}");
         }
 
         //TODO test this more - problem seems over-subscribed without altering the center
         public CirclePath(Vector3 start, Vector3 center, Vector3 axis, float rotations)
         {
+            //Move center so that start and axis are preserved
+            center += Vector3.Project(start - center, axis); //Vector3.Dot(start - center, axis) * axis;
             _center = center;
 
             Vector3 relStart = start - center;
@@ -111,7 +114,7 @@ namespace VideoMaker
 
             _rotations = rotations;
 
-            Debug.Log($"Circle with center {_center.ToString()}, radius {_radius}, axis {axis.ToString()}, basis1 {_basis1.ToString()} and basis2 {_basis2.ToString()}");
+            // Debug.Log($"Circle with center {_center.ToString()}, radius {_radius}, axis {axis.ToString()}, basis1 {_basis1.ToString()} and basis2 {_basis2.ToString()}");
         }
 
         //TODO test this more

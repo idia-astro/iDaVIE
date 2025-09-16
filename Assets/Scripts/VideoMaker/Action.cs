@@ -98,7 +98,7 @@ namespace VideoMaker
         {
             time = _easing is null? time : _easing.GetValue(time);
 
-            return (_directionFrom * (1 - time) + _directionTo * time).normalized;
+            return Vector3.Slerp(_directionFrom, _directionTo, time).normalized;
         }
     }
 
