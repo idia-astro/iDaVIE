@@ -97,7 +97,7 @@ namespace VideoMaker
             Debug.Log($"Circle with center {_center.ToString()}, radius {_radius}, basis1 {_basis1.ToString()} and basis2 {_basis2.ToString()}");
         }
 
-        //TODO test this more
+        //TODO test this more - problem seems over-subscribed without altering the center
         public CirclePath(Vector3 start, Vector3 center, Vector3 axis, float rotations)
         {
             _center = center;
@@ -170,19 +170,29 @@ namespace VideoMaker
 
     public class CubicPath : Path
     {
-        private Vector3 _a;
-        private Vector3 _b;
-        private Vector3 _c;
-        private Vector3 _d;
+        private readonly Vector3 _a;
+        private readonly Vector3 _b;
+        private readonly Vector3 _c;
+        private readonly Vector3 _d;
 
-        public CubicPath(Vector3 start, Vector3 end, Vector3 startDd, Vector3 endDd)
+        public CubicPath(Vector3 start, Vector3 end, Vector3 startD, Vector3 endD, bool isSecondDerivative = false)
         {
-            _a = (endDd - startDd) / 6;
-            _b = 0.5f * startDd;
-            _c = end - start - (2 * startDd + endDd) / 6;
-            _d = start;
+            if (isSecondDerivative)
+            {
+                _a = (endD - startD) / 6;
+                _b = 0.5f * startD;
+                _c = end - start - (2 * startD + endD) / 6;
+                _d = start;
+            }
+            else
+            {
+                _a = 2 * (start - end) + startD + endD;
+                _b = 3 * (end - start) - 2 * startD - endD;
+                _c = startD;
+                _d = start;
+            }
         }
-
+        
         protected override (Vector3 position, Vector3 direction, Vector3 upDirection) OnGetPositionDirection(float pathParam)
         {
             float t = pathParam;

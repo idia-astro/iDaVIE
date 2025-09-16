@@ -21,9 +21,6 @@ namespace VideoMaker
 
         private const int FfmpegConsoleCount = 58; //From limited observation, this is how many console messages are printed by ffmpeg
 
-        public TextAsset JsonSchema;
-        private VideoScriptReader _vsReader;
-
         public TMP_Text VideoScriptFilePath;
 
         // TODO use a different MonoBehaviour to manage the playback and status bar?
@@ -72,8 +69,6 @@ namespace VideoMaker
 
         void Awake()
         {
-            _vsReader = new(JsonSchema.text);
-
             ProgressBar.SetActive(false);
             StatusText.gameObject.SetActive(false);
 
@@ -102,7 +97,7 @@ namespace VideoMaker
                 lastPath = "";
             }
             var extensions = new[]{
-                new ExtensionFilter("Video scripts ", "json", "idvs"),
+                new ExtensionFilter("Video scripts ", "idvs"), //excluding "json" for now
                 new ExtensionFilter("All Files ", "*"),
             };
             StandaloneFileBrowser.OpenFilePanelAsync("Open File", lastPath, extensions, false, (string[] paths) =>
@@ -226,12 +221,12 @@ namespace VideoMaker
                 string fileExtension = System.IO.Path.GetExtension(path);
                 switch (fileExtension)
                 {
-                    case ".json":
-                        string jsonString = reader.ReadToEnd();
-                        _videoScript = _vsReader.ReadJSONVideoScript(jsonString);
-                        break;
+                    // case ".json":
+                    //     string jsonString = reader.ReadToEnd();
+                    //     _videoScript = _vsReader.ReadJSONVideoScript(jsonString);
+                    //     break;
                     case ".idvs":
-                        _videoScript = _vsReader.ReadIDVSVideoScript(reader, path);
+                        _videoScript = VideoScriptReader.ReadIDVSVideoScript(reader, path);
                         break;
                     default:
                         Debug.LogError("Selected file is not of an appropriate type!");

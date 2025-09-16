@@ -31,26 +31,26 @@ namespace VideoMaker
             LOGOPOS,
             INVALID
         }
-        VideoScriptData.LogoPosition _logoPos = VideoScriptData.LogoPosition.BottomRight;
-        int _height = 720;
-        int _width = 1280;
-        int _framerate = 20;
+        public VideoScriptData.LogoPosition logoPos { get; private set; } = VideoScriptData.LogoPosition.BottomRight;
+        public int height { get; private set; } = 720;
+        public int width { get; private set; } = 1280;
+        public int framerate { get; private set; } = 20;
 
         public void setSetting(settingOption set, int value)
         {
             switch (set)
             {
                 case settingOption.HEIGHT:
-                    _height = value;
+                    height = value;
                     break;
                 case settingOption.WIDTH:
-                    _width = value;
+                    width = value;
                     break;
                 case settingOption.FRAMERATE:
-                    _framerate = value;
+                    framerate = value;
                     break;
                 case settingOption.LOGOPOS:
-                    _logoPos = (VideoScriptData.LogoPosition)value;
+                    logoPos = (VideoScriptData.LogoPosition)value;
                     break;
                 default:
                     UnityEngine.Debug.LogError("Invalid setting option " + set.ToString() + " when setting settings in videoSettings class. How did you even manage that?");
@@ -75,14 +75,17 @@ namespace VideoMaker
     public class videoLocation
     {
         string _alias;
-        Vector3 _position;
-        Vector3 _rotation;
+        public Vector3 position { get; private set; }
+        public Vector3 rotation { get; private set; }
+        
+        public Vector3 forward => Quaternion.Euler(rotation) * Vector3.forward;
+        public Vector3 up => Quaternion.Euler(rotation) * Vector3.up;
 
         public videoLocation(string name, Vector3 pos, Vector3 rot)
         {
             _alias = name;
-            _position = pos;
-            _rotation = rot;
+            position = pos;
+            rotation = rot;
         }
 
         public string getAlias()
@@ -93,41 +96,41 @@ namespace VideoMaker
 
     public class command
     {
-        string _name;
+        public string name { get; private set; }
         public command(string name)
         {
-            _name = name;
+            name = name;
         }
     }
 
     public class startCommand : command
     {
-        videoLocation _position;
+        public videoLocation position { get; private set; }
         public startCommand(string name, videoLocation pos) : base(name)
         {
-            _position = pos;
+            position = pos;
         }
     }
 
     public class waitCommand : command
     {
-        float _duration = 5.0F;
-        public waitCommand(string name, float dur) : base(name)
+        public float duration { get; private set; }
+        public waitCommand(string name, float dur = 5.0f) : base(name)
         {
-            _duration = dur;
+            duration = dur;
         }
     }
 
     public class moveCommand : command
     {
-        videoLocation _destination;
-        Method _method;
-        float _duration = 5.0F;
-        public moveCommand(string name, videoLocation dest, Method method, float dur) : base(name)
+        public videoLocation destination { get; private set; }
+        public Method method { get; private set; }
+        public float duration { get; private set; }
+        public moveCommand(string name, videoLocation dest, Method method, float dur = 5.0f) : base(name)
         {
-            _destination = dest;
-            _method = method;
-            _duration = dur;
+            destination = dest;
+            this.method = method;
+            duration = dur;
         }
 
         public static Method ParseMethod(string methodAlias)
@@ -142,19 +145,23 @@ namespace VideoMaker
 
     public class rotateCommand : command
     {
-        videoLocation _centrePoint;
-        RotationAxes _rotationAxis;
-        float _iterations = 1.0F;
-        float _turnDuration = 5.0F;
-        float _orbitDuration = 10.0F;
+        public videoLocation centrePoint { get; private set; }
+        public RotationAxes rotationAxis { get; private set; }
+        public float iterations { get; private set; }
+        public float turnDuration { get; private set; }
+        public float orbitDuration { get; private set; }
 
-        public rotateCommand(string name, videoLocation centre, float iterations, RotationAxes rotAxis = RotationAxes.PosY, float turn = 5.0F, float orbit = 10.0F) : base(name)
+        public rotateCommand(string name, videoLocation centre, 
+            float iterations = 1.0f, 
+            RotationAxes rotAxis = RotationAxes.PosY, 
+            float turn = 5.0F, 
+            float orbit = 10.0F) : base(name)
         {
-            _centrePoint = centre;
-            _rotationAxis = rotAxis;
-            _iterations = iterations;
-            _turnDuration = turn;
-            _orbitDuration = orbit;
+            centrePoint = centre;
+            rotationAxis = rotAxis;
+            this.iterations = iterations;
+            turnDuration = turn;
+            orbitDuration = orbit;
         }
     }
 }
