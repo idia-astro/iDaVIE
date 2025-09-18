@@ -669,31 +669,11 @@ namespace VolumeData
         /// </summary>
         /// <param name="cursorPosWorldSpace">Where in the world space is the user pointing?</param>
         /// <returns>An indexed location in data space.</returns>
-        public Vector3Int GetVoxelPosition(UnityEngine.Vector3 cursorPosWorldSpace)
+        public Vector3Int GetVoxelPositionDataSpace()
         {
-            UnityEngine.Vector3 objectSpacePosition = transform.InverseTransformPoint(cursorPosWorldSpace);
-            objectSpacePosition = new UnityEngine.Vector3(
-                Mathf.Clamp(objectSpacePosition.x, -0.5f, 0.5f),
-                Mathf.Clamp(objectSpacePosition.y, -0.5f, 0.5f),
-                Mathf.Clamp(objectSpacePosition.z, -0.5f, 0.5f)
-            );
+            UnityEngine.Vector3Int offset = new UnityEngine.Vector3Int(_dataSet.subsetBounds[0], _dataSet.subsetBounds[2], _dataSet.subsetBounds[4]);
 
-            if (_dataSet == null)
-            {
-                return Vector3Int.zero;
-            }
-            
-            UnityEngine.Vector3 positionCubeSpace = new UnityEngine.Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim,
-                                                                            (objectSpacePosition.y + 0.5f) * _dataSet.YDim,
-                                                                            (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
-            UnityEngine.Vector3 voxelCornerCubeSpace = new UnityEngine.Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
-            Vector3Int newVoxelCursor = new Vector3Int(
-                Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),
-                Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, 1, (int)_dataSet.YDim),
-                Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1, 1, (int)_dataSet.ZDim)
-            );
-
-            return newVoxelCursor;
+            return CursorVoxel + offset - new Vector3Int(-1, -1, -1);
         }
         
         /// <summary>

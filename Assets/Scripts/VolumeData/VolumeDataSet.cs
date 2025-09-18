@@ -28,6 +28,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using DataFeatures;
+using Unity.VisualScripting;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
@@ -117,7 +118,7 @@ namespace VolumeData
         public long[] Dims => new[] {XDim, YDim, ZDim};
         public int[] subsetBounds {get; private set; }
 
-        private bool loadSubset => subsetBounds[0] != -1;
+        private bool loadedAsSubset = false;
 
         public Vector3Int RegionOffset { get; private set; }
 
@@ -296,7 +297,7 @@ namespace VolumeData
             if (cubeDimensions < 3)
             {
                 Debug.Log("Only " + cubeDimensions.ToString() +
-                          " found. Please use Fits cube with at least 3 dimensions.");
+                          " dimensions found. Please use Fits cube with at least 3 dimensions.");
                 FitsReader.FitsCloseFile(fptr, out status);
                 return null;
             }
@@ -325,8 +326,16 @@ namespace VolumeData
                 FitsReader.FitsCloseFile(fptr, out status);
                 return null;
             }
+            for (int i = 0; i < 6; i++)
+            {
+                if (subBounds[i] != volumeDataSetRes.trueSize[i])
+                {
+                    volumeDataSetRes.loadedAsSubset = true;
+                    break;
+                }
+            }
             if (dataPtr != IntPtr.Zero)
-                FitsReader.FreeFitsPtrMemory(dataPtr);
+                    FitsReader.FreeFitsPtrMemory(dataPtr);
             long numberDataPoints = volumeDataSetRes.cubeSize[0] * volumeDataSetRes.cubeSize[1] * volumeDataSetRes.cubeSize[index2];
             IntPtr fitsDataPtr = IntPtr.Zero;
             
@@ -1809,7 +1818,7 @@ namespace VolumeData
 
         public bool isSubset()
         {
-            return this.loadSubset;
+            return loadedAsSubset;
         }
         
         public void CleanUp(bool randomCube)
