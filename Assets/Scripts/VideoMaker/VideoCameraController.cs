@@ -380,16 +380,11 @@ namespace VideoMaker
 
         private void UpdateTransform(Vector3 position, Vector3 direction, Vector3 upDirection)
         {
-            Vector3 upBefore = upDirection;
             position = _cubeTransform.TransformPoint(position);
             direction = _cubeTransform.TransformDirection(direction);
             upDirection = _cubeTransform.TransformDirection(upDirection);
             
-            Debug.Log("Up: " + upBefore.ToString() + " to " + upDirection.ToString());
-            
             gameObject.transform.SetPositionAndRotation(position, Quaternion.LookRotation(direction, upDirection));
-            // gameObject.transform.position = position;
-            // gameObject.transform.LookAt(position + direction, upDirection);
         }
 
         public void StartPlayback(string message)
@@ -401,12 +396,7 @@ namespace VideoMaker
             _isPlaying = true;
 
             GameObject volume = GameObject.Find("VolumeDataSetManager");
-
-            //This shouldn't be possible anymore
-            // if (volume is not null)
-            // {
             _cubeTransform = volume.transform.Find("CubePrefab(Clone)");
-            // }
 
             _positionQueue = new(_videoScript.PositionActions);
             _directionQueue = new(_videoScript.DirectionActions);

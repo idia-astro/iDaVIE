@@ -95,7 +95,6 @@ namespace VideoMaker
         private static readonly VideoLocation DefaultLocation = new VideoLocation("", Vector3.zero, Vector3.zero);
 
         private static readonly Easing EasingIO = new EasingInOut(order: 2);
-        private static readonly Easing EasingILO = new EasingInLinOut(order: 2, timeIn: 0.25f, timeOut: 0.25f);
         
         public static VideoScriptData ReadIdvsVideoScript(StreamReader videoIdvsScriptStream, string filePath)
         {
@@ -155,7 +154,6 @@ namespace VideoMaker
                             default:
                                 continue;
                         }
-
                         positionActions.Add(new PositionActionPath(path){Duration = command.duration});
                         directionActions.Add(new DirectionActionTween(
                             locationPrevious.forward, command.destination.forward, easing: EasingIO){Duration = command.duration});
@@ -196,7 +194,11 @@ namespace VideoMaker
                             center: command.centrePoint.position, 
                             axis: axis, 
                             rotations: command.iterations
-                            ){Easing = EasingILO}){Duration = orbitDuration});
+                            ){Easing = new EasingInLinOut(
+                            order: 2, 
+                            timeIn: 0.25f / command.iterations, 
+                            timeOut: 0.25f / command.iterations)
+                        }){Duration = orbitDuration});
                         directionActions.Add(new DirectionActionLookAt(command.centrePoint.position){Duration = orbitDuration});
                         upDirectionActions.Add(new DirectionActionHold(axis){Duration = orbitDuration});
 
@@ -217,7 +219,7 @@ namespace VideoMaker
 
             data.PositionActions = positionActions.ToArray();
             data.DirectionActions = directionActions.ToArray();
-            data.UpDirectionActions = directionActions.ToArray();
+            data.UpDirectionActions = upDirectionActions.ToArray();
             
             return data;
         }
