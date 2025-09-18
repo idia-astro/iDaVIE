@@ -673,7 +673,7 @@ namespace VolumeData
         {
             UnityEngine.Vector3Int offset = new UnityEngine.Vector3Int(_dataSet.subsetBounds[0], _dataSet.subsetBounds[2], _dataSet.subsetBounds[4]);
 
-            return CursorVoxel + offset - new Vector3Int(-1, -1, -1);
+            return CursorVoxel + offset - new Vector3Int(1, 1, 1);
         }
         
         /// <summary>
