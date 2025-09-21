@@ -209,4 +209,72 @@ namespace VideoMaker
             );
         }
     }
+
+	public class QuadraticBezierPath : Path
+    {
+
+        private Vector3 _start;
+        private Vector3 _end;
+        private Vector3 _c;
+
+        public QuadraticBezierPath(Vector3 start, Vector3 end, Vector3 controlPoint)
+        {
+            _start = start;
+            _end = end;
+            _c = controlPoint;
+        }
+
+        protected override (Vector3 position, Vector3 direction, Vector3 upDirection) OnGetPositionDirection(
+            float pathParam)
+        {
+            float pathParamInv = 1 - pathParam;
+
+            return (
+                pathParamInv * pathParamInv * _start + 2 * pathParamInv * pathParam * _c + pathParam * pathParam * _end,
+                - 2 * pathParamInv * _start + 2 * (1 - 2 * pathParam) * _c + 2 * pathParam * _end,
+                2 * _start - 4 * _c + 2 * _end
+                );
+        }
+    }
+
+    public class CubicBezierPath : Path
+    {
+        private Vector3 _start;
+        private Vector3 _end;
+        private Vector3 _c1;
+        private Vector3 _c2;
+        
+
+        public CubicBezierPath(Vector3 start, Vector3 end, Vector3 controlPoint1, Vector3 controlPoint2)
+        {
+            _start = start;
+            _end = end;
+            _c1 = controlPoint1;
+            _c2 = controlPoint2;
+        }
+
+        protected override (Vector3 position, Vector3 direction, Vector3 upDirection) OnGetPositionDirection(
+            float pathParam)
+        {
+            float pathParamInv = 1 - pathParam;
+
+            return (
+                (
+                    pathParamInv * pathParamInv * pathParamInv * _start 
+                    + 3 * pathParamInv * pathParamInv * pathParam * _c1
+                    + 3 * pathParamInv * pathParam * pathParam * _c2
+                    + pathParam * pathParam * pathParam * _end
+                    ),
+                (
+                    3 * pathParamInv * pathParamInv * (_c1 - _start)
+                    + 6 * pathParamInv * pathParam * (_c2 - _c1)
+                    + 3 * pathParam * pathParam * (_end - _c2)
+                    ),
+                (
+                    6 * pathParamInv * (_c2 - 2 * _c1 + _start)
+                    + 6 * pathParam * (_end - 2 * _c2 + _c1)
+                    )
+            );
+        }
+    }
 }

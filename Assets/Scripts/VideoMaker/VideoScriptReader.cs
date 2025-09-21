@@ -136,20 +136,27 @@ namespace VideoMaker
                                 path = new LinePath(locationPrevious.position, command.destination.position){Easing = EasingIO};
                                 break;
                             case Method.Arc:
-                                //Double-derivative at boundaries (magnitude)
-                                float dy = - (
-                                    Mathf.Sign(Vector3.Dot(locationPrevious.forward, 
-                                        command.destination.forward)) * 
-                                    (command.destination.position - locationPrevious.position).magnitude 
-                                    / command.duration);
+                                Vector3 start = locationPrevious.position;
+                                Vector3 startDir = locationPrevious.forward;
+                                Vector3 end = command.destination.position;
+                                Vector3 endDir = command.destination.forward;
                                 
-                                //Single derivative at boundaries
-                                // float dy = (command.destination.position - locationPrevious.position).magnitude;
+                                //Determining closest points along start and end directions
+                                float dirDot = Vector3.Dot(startDir, endDir);
+
+                                float endL = Vector3.Dot(dirDot * startDir - endDir, end - start) /
+                                             (1 - dirDot * dirDot);
+                                float startL = endL * dirDot + Vector3.Dot(startDir, end - start);
                                 
-                                path = new CubicPath(
-                                    locationPrevious.position, command.destination.position,
-                                    dy * locationPrevious.forward, dy * command.destination.forward);
-                                // directionActions.Add( new DirectionActionPath(){Duration = command.duration});
+                                //Use closest points to determine the control point for the quad-bezier curve:
+                                // - Take halfway (chosen to reduce "sharpness" of curve) to midpoint between closest points
+                                // - Use oposite of this point as the control point
+                                path = new QuadraticBezierPath(
+                                    start: start,
+                                    end: end,
+                                    controlPoint: 0.5f * ( start + end) - 0.25f *(endL * endDir + startL * startDir)
+                                );
+                                
                                 break;
                             default:
                                 continue;
