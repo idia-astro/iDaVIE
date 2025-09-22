@@ -40,6 +40,7 @@ public class QuickMenuController : MonoBehaviour
     public GameObject voiceCommandsListCanvas;
     public GameObject settingsMenu;
 
+    public GameObject videoRecordingMenu;
 
     public GameObject colorMapListCanvas;
     public GameObject savePopup;
@@ -148,6 +149,26 @@ public class QuickMenuController : MonoBehaviour
     public void OpenListOfVoiceCommands()
     {
         spawnMenu(voiceCommandsListCanvas);
+    }
+
+    /// <summary>
+    /// Called when the user selects the video recording mode button on the quick menu, opening the video recording mode menu.
+    /// </summary>
+    public void OpenVideoRecordingMenu()
+    {
+        if (!gameObject.activeSelf)
+        {
+            gameObject.SetActive(true);
+            Update();
+        }
+
+        videoRecordingMenu.transform.SetParent(this.transform.parent, false);
+        videoRecordingMenu.transform.localPosition = this.transform.localPosition;
+        videoRecordingMenu.transform.localRotation = this.transform.localRotation;
+        videoRecordingMenu.transform.localScale = this.transform.localScale;
+
+        gameObject.SetActive(false);
+        videoRecordingMenu.SetActive(true);
     }
 
     /// <summary>

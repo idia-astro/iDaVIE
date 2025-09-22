@@ -132,6 +132,8 @@ public class VolumeInputController : MonoBehaviour
 
     public event Action PushToTalkButtonPressed;
     public event Action PushToTalkButtonReleased;
+
+    public VideoPosRecorder _videoPosRecorder { get;  set; } = null;
     
     
     // Interactions
@@ -362,7 +364,7 @@ public class VolumeInputController : MonoBehaviour
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuLeft")?.RemoveOnStateDownListener(OnMenuLeftPressed, SteamVR_Input_Sources.RightHand);
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.RemoveOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.LeftHand);
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.RemoveOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.RightHand);
-             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.RemoveOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.LeftHand);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.RemoveOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.LeftHand);
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.RemoveOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.RightHand);
         }
     }
@@ -371,7 +373,7 @@ public class VolumeInputController : MonoBehaviour
     {
         if (_locomotionState == LocomotionState.EditingThresholdMax || 
             _locomotionState == LocomotionState.EditingThresholdMin ||
-             _locomotionState == LocomotionState.EditingZAxis)
+            _locomotionState == LocomotionState.EditingZAxis)
         {
             EndEditing();
         }
@@ -403,14 +405,14 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnMenuUpReleased(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
-         if (fromSource == PrimaryHand && scrollSelected)
-         {
+        if (fromSource == PrimaryHand && scrollSelected)
+        {
             scrollUp = false;
-         }
-         else if(fromSource == PrimaryHand && _shapeSelection) {
+        }
+        else if(fromSource == PrimaryHand && _shapeSelection) {
             scalingUp = false;
             scalingTimer = 0f;
-         }
+        }
     }
 
     private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
@@ -610,7 +612,17 @@ public class VolumeInputController : MonoBehaviour
             Debug.Log("Pinch Started");
         }
 
-        InteractionStateMachine.Fire(newState ? InteractionEvents.InteractionStarted : InteractionEvents.InteractionEnded);
+        if (InteractionStateMachine.State == InteractionState.VideoCamPosRecording)
+        {
+            // If pressing down on button, add location
+            if (newState)
+                AddNewLocation(fromSource);
+            // else if letting go, do nothing.
+        }
+        else
+        {
+            InteractionStateMachine.Fire(newState ? InteractionEvents.InteractionStarted : InteractionEvents.InteractionEnded);
+        }
     }
 
     private void StateTransitionMovingToIdle()
@@ -1370,6 +1382,31 @@ public class VolumeInputController : MonoBehaviour
         ShowCursorInfo = !ShowCursorInfo;
     }
 
+    public void AddNewLocation(SteamVR_Input_Sources fromSource)
+    {
+        switch (_videoPosRecorder.GetRecordingMode())
+        {
+            case VideoPosRecorder.videoLocRecMode.CURSOR:
+                Vector3 cursorPos = ActiveDataSet.ConvertWorldPositionToDataCubePosition(_handTransforms[PrimaryHandIndex].position);
+                Vector3 cursorRot = Vector3.zero;
+                _videoPosRecorder.addLocation(cursorPos, cursorRot);
+                Debug.Log($"Recording new cursor location at {{{cursorPos}, {cursorRot}}}");
+                VibrateController(fromSource, 0.1f);
+                break;
+            case VideoPosRecorder.videoLocRecMode.HEAD:
+                Vector3 headPos = ActiveDataSet.ConvertWorldPositionToDataCubePosition(Camera.main.transform.position);
+                
+                Vector3 headRot = Camera.main.transform.forward.normalized;
+                _videoPosRecorder.addLocation(headPos, headRot);
+                Debug.Log($"Recording new head location at {{{headPos}, {headRot}}}");
+                VibrateController(fromSource, 0.1f);
+                break;
+            default:
+                Debug.LogError("Invalid video recording mode: how did you manage this?");
+                break;
+        }
+    }
+
     public void AddNewSource()
     {
         AdditiveBrush = true;
@@ -1419,7 +1456,7 @@ public class VolumeInputController : MonoBehaviour
     }
 
     private void OnTriggerChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState) {
-         if(_shapeSelection) {
+        if(_shapeSelection) {
             GameObject moveableShape = shapesManager.GetMoveableShape();
             if(moveableShape != null) {
                 if(newState) {
@@ -1432,7 +1469,6 @@ public class VolumeInputController : MonoBehaviour
             }
         }
     }
-
 
     public void ChangeShapeSelection() {
         _shapeSelection = !_shapeSelection;
@@ -1454,12 +1490,12 @@ public class VolumeInputController : MonoBehaviour
 
     public void StartVideoCamPosRecording()
     {
-        
+        Debug.Log("Entering video position recording mode.");
     }
 
     public void EndVideoCamPosRecording()
     {
-
+        Debug.Log("Exiting video position recording mode.");
     }
 
     //Places the selected shape into the scene

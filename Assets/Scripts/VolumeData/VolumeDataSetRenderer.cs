@@ -591,6 +591,13 @@ namespace VolumeData
             ColorMap = ColorMapUtils.FromHashCode(newIndex);
         }
 
+        public Vector3 ConvertWorldPositionToDataCubePosition(Vector3 worldLoc)
+        {
+            Vector3 objectSpacePosition = transform.InverseTransformPoint(worldLoc);
+            Vector3 dataCubePos = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
+            return dataCubePos; 
+        }
+
         public void SetCursorPosition(Vector3 cursor, int brushSize)
         {
             Vector3 objectSpacePosition = transform.InverseTransformPoint(cursor);
@@ -1140,7 +1147,7 @@ namespace VolumeData
             IntPtr subCubeHeader = IntPtr.Zero;
             var cornerMin = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMin);
             var cornerMax = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMax);
-             _dataSet.SaveSubCubeFromOriginal(cornerMin, cornerMax, _maskDataSet);
+            _dataSet.SaveSubCubeFromOriginal(cornerMin, cornerMax, _maskDataSet);
         }
         public void SaveMask(bool overwrite)
         {

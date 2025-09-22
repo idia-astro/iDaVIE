@@ -23,21 +23,21 @@ namespace VideoMaker
         private List<(LineOption, Regex)> _valid = new List<(LineOption, Regex)>
         {
             //pN is {[XN,YN,ZN],[xN,yN,zN]}       -   Position declaration
-            (LineOption.Position, new Regex(@"^\s*(\w+)\s+is\s+\{\s*\[\s*(-?\s*\d+(\.\d+)?)\s*,\s*(-?\s*\d+(\.\d+)?)\s*,\s*(-?\s*\d+(\.\d+)?)\s*\]\s*,\s*\[\s*(-?\s*\d+(\.\d+)?)\s*,\s*(-?\s*\d+(\.\d+)?)\s*,\s*(-?\s*\d+(\.\d+)?)\]\s*\}")),
+            (LineOption.Position, new Regex(@"^\s*(\w+)\s+is\s+\{\s*(?:\[|\()\s*(-?\s*\d+(?:\.\d+)?)\s*,\s*(-?\s*\d+(?:\.\d+)?)\s*,\s*(-?\s*\d+(?:\.\d+)?)\s*(?:\]|\))\s*,\s*(?:\[|\()\s*(-?\s*\d+(?:\.\d+)?)\s*,\s*(-?\s*\d+(?:\.\d+)?)\s*,\s*(-?\s*\d+(?:\.\d+)?)(?:\]|\))\s*\}\s*$")),
             //Start at pX                         -   Initial command
-            (LineOption.Start,   new Regex(@"^\s*Start\s+at\s+(\w+)")),
+            (LineOption.Start,   new Regex(@"^\s*Start\s+at\s+(\w+)\s*$")),
             //Wait N seconds                      -   command
-            (LineOption.Wait,    new Regex(@"^\s*Wait\s+(\d+(\.\d+)?)\s+seconds?")),
+            (LineOption.Wait,    new Regex(@"^\s*Wait\s+(\d+(?:\.\d+)?)\s+seconds?\s*$")),
             //Move in METHOD to pX over N seconds -   command
-            (LineOption.Move,    new Regex(@"^\s*Move\s+in\s+(\w+)\sto\s+(\w+)+\s+over\s+(\d+(\.\d+)?)\s+seconds?")),
+            (LineOption.Move,    new Regex(@"^\s*Move\s+in\s+(\w+)\sto\s+(\w+)+\s+over\s+(\d+(?:\.\d+)?)\s+seconds?\s*$")),
             //Rotate around pX N times            -   command
-            (LineOption.Rotate,  new Regex(@"^\s*Rotate\s+around\s+(\w+)\s+(\d+(\.\d+)?)\s+times?")),
+            (LineOption.Rotate,  new Regex(@"^\s*Rotate\s+around\s+(\w+)\s+(\d+(?:\.\d+)?)\s+times?\s*$")),
             (LineOption.Emptyline, new Regex(@"^\s*$")),
-            (LineOption.Setting, new Regex(@"^\s*(\w+)\s*:\s*(\w+)"))
-            // ("Rotate1",  @"Rotate\s+around\s+(\w+)\s+(\d+(\.\d+)?)+\s+times\s+turn\s+(\d+(\.\d+)?)seconds"),
-            // ("Rotate2",  @"Rotate\s+around\s+(\w+)\s+(\d+(\.\d+)?)+\s+times\s+orbit\s+(\d+(\.\d+)?)seconds"),
-            // ("Rotate3",  @"Rotate\s+around\s+(\w+)\s+(\d+(\.\d+)?)+\s+times\s+turn\s+(\d+(\.\d+)?)seconds\s+orbit\s+(\d+(\.\d+)?)seconds"),
-            // ("Rotate4",  @"Rotate\s+around\s+(\w+)\s+(\d+(\.\d+)?)+\s+times\s+orbit\s+(\d+(\.\d+)?)seconds\s+turn\s+(\d+(\.\d+)?)seconds"),
+            (LineOption.Setting, new Regex(@"^\s*(\w+)\s*:\s*(\w+)\s*$"))
+            // ("Rotate1",  @"Rotate\s+around\s+(\w+)\s+(\d+(?:\.\d+)?)+\s+times\s+turn\s+(\d+(?:\.\d+)?)seconds"),
+            // ("Rotate2",  @"Rotate\s+around\s+(\w+)\s+(\d+(?:\.\d+)?)+\s+times\s+orbit\s+(\d+(?:\.\d+)?)seconds"),
+            // ("Rotate3",  @"Rotate\s+around\s+(\w+)\s+(\d+(?:\.\d+)?)+\s+times\s+turn\s+(\d+(?:\.\d+)?)seconds\s+orbit\s+(\d+(?:\.\d+)?)seconds"),
+            // ("Rotate4",  @"Rotate\s+around\s+(\w+)\s+(\d+(?:\.\d+)?)+\s+times\s+orbit\s+(\d+(?:\.\d+)?)seconds\s+turn\s+(\d+(?:\.\d+)?)seconds"),
         };
 
         public (VideoSettings, List<VideoLocation>, List<object>) Parse(StreamReader script, string filename)
@@ -67,8 +67,8 @@ namespace VideoMaker
                 {
                     case LineOption.Position: //Position:
                         string name = match.Groups[1].Value;
-                        Vector3 pos = new Vector3(float.Parse(match.Groups[2].Value), float.Parse(match.Groups[4].Value), float.Parse(match.Groups[6].Value));
-                        Vector3 rot = new Vector3(float.Parse(match.Groups[8].Value), float.Parse(match.Groups[10].Value), float.Parse(match.Groups[12].Value));
+                        Vector3 pos = new Vector3(float.Parse(match.Groups[2].Value), float.Parse(match.Groups[3].Value), float.Parse(match.Groups[4].Value));
+                        Vector3 rot = new Vector3(float.Parse(match.Groups[5].Value), float.Parse(match.Groups[6].Value), float.Parse(match.Groups[7].Value));
                         foreach (var loc in locs)
                         {
                             if (loc.GetAlias().Equals(name))
