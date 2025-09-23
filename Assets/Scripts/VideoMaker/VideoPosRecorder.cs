@@ -8,7 +8,10 @@ using UnityEngine;
 
 public class VideoPosRecorder
 {
-    private struct videoRecLocation
+    /// <summary>
+    /// Struct used to store a location for exporting to a video script file.
+    /// </summary>
+    public struct videoRecLocation
     {
         public Vector3 position;
         public Vector3 rotation;
@@ -20,6 +23,9 @@ public class VideoPosRecorder
         }
     }
 
+    /// <summary>
+    /// The various recording modes that the recorder can be in.
+    /// </summary>
     public enum videoLocRecMode
     {
         HEAD,
@@ -30,27 +36,59 @@ public class VideoPosRecorder
 
     videoLocRecMode _recordingMode = videoLocRecMode.HEAD;
 
+    /// <summary>
+    /// Constructor, initialises list.
+    /// </summary>
     public VideoPosRecorder()
     {
         _videoPositions = new List<videoRecLocation>();
     }
 
+    public List<videoRecLocation> GetVideoRecLocationList()
+    {
+        var list = new List<videoRecLocation>(_videoPositions);
+        return list;
+    }
+
+    public int GetVideoRecLocCount()
+    {
+        return _videoPositions.Count;
+    }
+
+    /// <summary>
+    /// Returns the current recording mode (used by VolumeInputController).
+    /// </summary>
+    /// <returns>The current recording mode.</returns>
     public videoLocRecMode GetRecordingMode()
     {
         return _recordingMode;
     }
 
+    /// <summary>
+    /// Sets the recording mode (used by VolumeInputController to determine the location to send to addLocation).
+    /// </summary>
+    /// <param name="mode">The mode to set _recordingMode to.</param>
     public void SetRecordingMode(videoLocRecMode mode = videoLocRecMode.HEAD)
     {
         this._recordingMode = mode;
     }
 
+    /// <summary>
+    /// Adds a location to _videoPositions.
+    /// </summary>
+    /// <param name="position">The position of the location.</param>
+    /// <param name="rotation">The direction of the location.</param>
     public void addLocation(Vector3 position, Vector3 rotation)
     {
         videoRecLocation loc = new videoRecLocation(position, rotation);
         _videoPositions.Add(loc);
     }
 
+    /// <summary>
+    /// Exports the list of positions (stored in _videoPositions) to a file.
+    /// </summary>
+    /// <param name="path">Path to the file that the list of positions should be exported to.</param>
+    /// <returns>0 if successful, 1 if exception is thrown.</returns>
     public int ExportToIDVS(string path)
     {
         StringBuilder output = new StringBuilder();

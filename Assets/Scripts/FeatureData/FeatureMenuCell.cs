@@ -219,7 +219,7 @@ public class FeatureMenuCell : MonoBehaviour, ICell
             _featureSetManager.NeedToUpdateInfo = true;
     }
 
-   public void GoTo()
+    public void GoTo()
     {
         Teleport(Feature.CornerMin, Feature.CornerMax);
     }
