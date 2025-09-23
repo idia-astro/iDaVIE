@@ -593,9 +593,14 @@ namespace VolumeData
 
         public Vector3 ConvertWorldPositionToDataCubePosition(Vector3 worldLoc)
         {
-            Vector3 objectSpacePosition = transform.InverseTransformPoint(worldLoc);
-            Vector3 dataCubePos = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
+            Vector3 dataCubePos = transform.InverseTransformPoint(worldLoc);
             return dataCubePos; 
+        }
+
+        public Vector3 ConvertWorldRotationToDatacubeRotation(Vector3 worldRot)
+        {
+            Vector3 dataCubeRot = transform.InverseTransformDirection(worldRot);
+            return dataCubeRot;
         }
 
         public void SetCursorPosition(Vector3 cursor, int brushSize)

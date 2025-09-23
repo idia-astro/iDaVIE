@@ -65,6 +65,12 @@ public class VideoPosRecorder
 
         // Position declarations
         output.AppendLine("# List of positions:");
+        output.AppendLine("# Takes the form:");
+        output.AppendLine("#    <alias> is {<location>, <direction>}");
+        output.AppendLine("# Alias can be any combination of characters, excluding whitespace.");
+        output.AppendLine("# Both location and direction are Vector3, printed in the form `(x, y, z)`,");
+        output.AppendLine("# and are relative to the datacube's normalised position and rotation.");
+        output.AppendLine();
         for (int i = 0; i < _videoPositions.Count; i++)
         {
             videoRecLocation loc = _videoPositions[i];
@@ -74,7 +80,15 @@ public class VideoPosRecorder
 
         // Script commands
         output.AppendLine("# Script:");
-        output.AppendLine($"Start at p1");
+        output.AppendLine("# Accepted commands (see documentation for details):");
+        //TODO: Make this pull from IDVSParser's static list of examples
+        output.AppendLine("#    - Start at <alias>");
+        output.AppendLine("#    - Wait <n> seconds");
+        output.AppendLine("#    - Move in <METHOD> to <alias> over <n> seconds");
+        output.AppendLine("#        - Methods allowed: (LINE, ARC)");
+        output.AppendLine("#    - Rotate around <alias> <n> times");
+        output.AppendLine();
+        output.AppendLine("Start at p1");
 
         // Write to file
         try
@@ -82,6 +96,7 @@ public class VideoPosRecorder
             StreamWriter writer = new StreamWriter(path, false);
             writer.Write(output.ToString());
             writer.Close();
+            Debug.Log($"Exported positions to IDVS file \'{path}\'.");
         }
         catch (System.Exception)
         {

@@ -36,6 +36,7 @@ public class VideoRecordMenuController : MonoBehaviour
 
     }
 
+    //TODO: Set the button to toggle instead
     public void SetRecordingModeHead()
     {
         _videoPosRecorder.SetRecordingMode(VideoPosRecorder.videoLocRecMode.HEAD);
@@ -62,7 +63,7 @@ public class VideoRecordMenuController : MonoBehaviour
         var directory = new DirectoryInfo(Application.dataPath);
         var directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/VideoScripts");
 
-        string dataFileName = "DataFile";
+        string dataFileName = Path.GetFileName(_volumeInputController.ActiveDataSet.FileName);
         string path = "";
         try
         {
@@ -79,7 +80,15 @@ public class VideoRecordMenuController : MonoBehaviour
             UnityEngine.Debug.Log("Error creating video script directory!");
             UnityEngine.Debug.Log(ex);
         }
-        _videoPosRecorder.ExportToIDVS(path);
+        if (_videoPosRecorder.ExportToIDVS(path) == 0)
+        {
+            _volumeInputController.VibrateController(Valve.VR.SteamVR_Input_Sources.RightHand);
+            ToastNotification.ShowSuccess($"Exported positions to video script {Path.GetFileName(path)}.");
+        }
+        else
+        {
+            ToastNotification.ShowError("Failed to export video script file");
+        }
     }
 
     public void OpenListOfLocations()
