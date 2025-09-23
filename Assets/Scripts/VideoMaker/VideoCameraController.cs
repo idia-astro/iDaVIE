@@ -21,6 +21,11 @@ namespace VideoMaker
 
         private const int FfmpegConsoleCount = 58; //From limited observation, this is how many console messages are printed by ffmpeg
 
+        public Shader logoShader;
+        public Texture2D logoTexture;
+        private Material _logoMaterial;
+        private float _logoAspect;
+        
         public TMP_Text VideoScriptFilePath;
 
         // TODO use a different MonoBehaviour to manage the playback and status bar?
@@ -47,9 +52,10 @@ namespace VideoMaker
         private bool _threadIsProcessing;
         private bool _terminateThreadWhenDone;
 
+        private string _videoPath;
         private string _framePath;
-        private string _logoPath;
         private string _ffmpegPath;
+        private string _videoFileName;
 
         private Queue<PositionAction> _positionQueue = new();
         private Queue<DirectionAction> _directionQueue = new();
@@ -69,6 +75,10 @@ namespace VideoMaker
 
         void Awake()
         {
+            _logoMaterial = new Material(logoShader);
+            _logoMaterial.SetTexture("_LogoTex", logoTexture);
+            _logoAspect = logoTexture.width / logoTexture.height;
+            
             ProgressBar.SetActive(false);
             StatusText.gameObject.SetActive(false);
 
@@ -76,12 +86,12 @@ namespace VideoMaker
             _videoDisplaySizeDelta = _videoDisplayRect.sizeDelta;
 
             var directory = new DirectoryInfo(Application.dataPath);
-            _framePath = System.IO.Path.Combine(directory.Parent.FullName, "Outputs/Video");
-            _logoPath = System.IO.Path.GetRelativePath(_framePath, System.IO.Path.Combine(Application.streamingAssetsPath, "logo.png"));
+            _videoPath = System.IO.Path.Combine(directory.Parent.FullName, "Outputs/Video");
+            _framePath = System.IO.Path.Combine(_videoPath, "frames");
 
-            if (!Directory.Exists(_framePath))
+            if (!Directory.Exists(_videoPath))
             {
-                Directory.CreateDirectory(_framePath);
+                Directory.CreateDirectory(_videoPath);
             }
 
             _camera = GetComponent<Camera>();
@@ -108,7 +118,6 @@ namespace VideoMaker
                     PlayerPrefs.Save();
 
                     LoadVideoScriptFile(paths[0]);
-                    VideoScriptFilePath.text = System.IO.Path.GetFileName(paths[0]);
                 }
             });
         }
@@ -214,7 +223,10 @@ namespace VideoMaker
             {
                 return;
             }
-
+            
+            _videoFileName = System.IO.Path.GetFileNameWithoutExtension(path);
+            VideoScriptFilePath.text = System.IO.Path.GetFileName(path);
+            
             using (StreamReader reader = new(path))
             {
                 // Check file extension to decide on which reader to use
@@ -240,8 +252,8 @@ namespace VideoMaker
                 UnityEngine.Debug.LogWarning("VideoScript failed to construct actions.");
                 return;
             }
+            
             //Setting RenderMaterial properties
-
             RenderTexture tex = GetComponent<Camera>().targetTexture;
             tex.Release();
             tex.height = _videoScript.Height;
@@ -261,6 +273,26 @@ namespace VideoMaker
                     _videoDisplaySizeDelta.y * _videoScript.Height / (float)_videoScript.Width
                 );
             }
+            
+            //Setting logo properties in shader
+            //Length of u compoent of logo UV. Length of V is given by LogoScale
+            float logoLenV = _videoScript.LogoScale;
+            float logoLenU = _logoAspect * _videoScript.LogoScale * _videoScript.Height / _videoScript.Width;
+            
+            //Vector components are left bottom right top
+            _logoMaterial.SetVector("_LogoBounds", _videoScript.logoPosition switch
+            {
+                VideoScriptData.LogoPosition.BottomLeft => new Vector4(0, 0, logoLenU, logoLenV),
+                VideoScriptData.LogoPosition.BottomCenter => new Vector4(0.5f * (1 - logoLenU), 0, 0.5f * (1 + logoLenU), logoLenV),
+                VideoScriptData.LogoPosition.BottomRight => new Vector4(1 - logoLenU, 0, 1, logoLenV),
+                VideoScriptData.LogoPosition.CenterLeft => new Vector4(0, 0.5f * (1 - logoLenV), logoLenU, 0.5f * (1 + logoLenV)),
+                VideoScriptData.LogoPosition.CenterCenter => new Vector4(0.5f * (1 - logoLenU), 0.5f * (1 - logoLenV), 0.5f * (1 + logoLenU), 0.5f * (1 + logoLenV)),
+                VideoScriptData.LogoPosition.CenterRight => new Vector4(1 - logoLenU, 0.5f * (1 - logoLenV), 1, 0.5f * (1 + logoLenV)),
+                VideoScriptData.LogoPosition.TopLeft => new Vector4(0, 1 - logoLenV, logoLenU, 1),
+                VideoScriptData.LogoPosition.TopCenter => new Vector4(0.5f * (1 - logoLenU), 1 - logoLenV, 0.5f * (1 + logoLenU), 1),
+                VideoScriptData.LogoPosition.TopRight => new Vector4(1 - logoLenU, 1 - logoLenV, 1, 1),
+                _ => new Vector4(1 - logoLenU, 0, 1, logoLenV)
+            });
         }
 
         IEnumerator Preview()
@@ -297,10 +329,10 @@ namespace VideoMaker
             }
 
             //Deleting existing frames and video file
-            foreach (FileInfo file in new DirectoryInfo(_framePath).EnumerateFiles())
-            {
-                file.Delete();
-            }
+            // foreach (FileInfo file in new DirectoryInfo(_videoPath).EnumerateFiles())
+            // {
+            //     file.Delete();
+            // }
 
             _frameCounter = 0;
 
@@ -338,7 +370,6 @@ namespace VideoMaker
                 ProgressBar.GetComponent<Slider>().value = _frameCounter / (float)_frameTotal;
                 yield return null;
             }
-
             EndPlayback();
         }
 
@@ -444,7 +475,7 @@ namespace VideoMaker
 
         private void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
-            Graphics.Blit(source, destination);
+            Graphics.Blit(source, destination, _logoMaterial);
             if (!_captureFrames)
             {
                 return;
@@ -452,7 +483,7 @@ namespace VideoMaker
 
             //This is necessary to preserve colors when writing out
             RenderTexture rtNew = new RenderTexture(source.width, source.height, 8, RenderTextureFormat.ARGB32);
-            Graphics.Blit(source, rtNew);
+            Graphics.Blit(source, rtNew, _logoMaterial);
             RenderTexture.active = rtNew;
 
             //Derived from CameraControllerTool.cs:96+
@@ -471,6 +502,12 @@ namespace VideoMaker
 
         private void SaveFrames()
         {
+            if (Directory.Exists(_framePath))
+            {
+                Directory.Delete(_framePath, recursive: true);
+            }
+            Directory.CreateDirectory(_framePath);
+            
             while (_threadIsProcessing)
             {
                 if (_frameQueue.Count > 0)
@@ -494,18 +531,14 @@ namespace VideoMaker
                     Thread.Sleep(1);
                 }
             }
-
-            string overlay = $"-i {_logoPath} -filter_complex \"[1:v]scale=iw*{_videoScript.LogoScale:F}:-1[logo];[0:v][logo]overlay=W-w-10:H-h-10\" ";
             
+            string command = $"-framerate {_videoScript.FrameRate} -i ./frames/frame%0{_frameDigits}d.png -c:v libx264 -pix_fmt yuv420p {_videoFileName}_{DateTime.Now:yyyyMMdd_Hmmssf}.mp4";
             
-
-            string command = $"-framerate {_videoScript.FrameRate} -i frame%0{_frameDigits}d.png {overlay}-c:v libx264 -pix_fmt yuv420p video.mp4";
-
             var startInfo = new ProcessStartInfo
             {
                 FileName = _ffmpegPath,
                 Arguments = command,
-                WorkingDirectory = _framePath,
+                WorkingDirectory = _videoPath,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -524,6 +557,8 @@ namespace VideoMaker
             }
 
             _threadIsProcessing = false;
+            
+            Directory.Delete(_framePath, recursive: true);
         }
     }
 }
