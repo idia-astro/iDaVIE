@@ -597,9 +597,9 @@ namespace VolumeData
             return dataCubePos; 
         }
 
-        public Vector3 ConvertWorldRotationToDatacubeRotation(Vector3 worldRot)
+        public Quaternion ConvertWorldRotationToDatacubeRotation(Quaternion worldRot)
         {
-            Vector3 dataCubeRot = transform.InverseTransformDirection(worldRot);
+            Quaternion dataCubeRot = Quaternion.Inverse(transform.rotation) * worldRot;
             return dataCubeRot;
         }
 

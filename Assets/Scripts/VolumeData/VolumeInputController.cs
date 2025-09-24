@@ -1396,7 +1396,7 @@ public class VolumeInputController : MonoBehaviour
             case VideoPosRecorder.videoLocRecMode.HEAD:
                 Vector3 headPos = ActiveDataSet.ConvertWorldPositionToDataCubePosition(Camera.main.transform.position);
                 
-                Vector3 headRot = ActiveDataSet.ConvertWorldRotationToDatacubeRotation(Camera.main.transform.forward.normalized);
+                Vector3 headRot = ActiveDataSet.ConvertWorldRotationToDatacubeRotation(Camera.main.transform.rotation).eulerAngles;
                 _videoPosRecorder.addLocation(headPos, headRot);
                 Debug.Log($"Recording new head location at {{{headPos}, {headRot}}}");
                 VibrateController(fromSource, 0.1f);

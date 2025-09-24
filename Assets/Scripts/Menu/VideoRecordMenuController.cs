@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class VideoRecordMenuController : MonoBehaviour
 {
@@ -11,6 +12,11 @@ public class VideoRecordMenuController : MonoBehaviour
 
     public GameObject videoRecPosListMenu;
 
+    private GameObject headPosImage = null;
+    private GameObject cursorPosImage = null;
+
+    public Text notificationBar = null;
+    
     // Start is called before the first frame update
     void Start()
     {
@@ -27,6 +33,12 @@ public class VideoRecordMenuController : MonoBehaviour
 
         _volumeInputController._videoPosRecorder = _videoPosRecorder;
 
+        if (headPosImage == null || cursorPosImage == null)
+        {
+            headPosImage = this.gameObject.transform.Find("Content").Find("FirstRow").Find("ToggleRecordingMode").Find("HeadPosImage").gameObject;
+            cursorPosImage = this.gameObject.transform.Find("Content").Find("FirstRow").Find("ToggleRecordingMode").Find("CursorPosImage").gameObject;
+        }
+
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.StartVideoRecording);
     }
 
@@ -37,14 +49,26 @@ public class VideoRecordMenuController : MonoBehaviour
     }
 
     //TODO: Set the button to toggle instead
-    public void SetRecordingModeHead()
+    public void ToggleRecordingMode()
     {
-        _videoPosRecorder.SetRecordingMode(VideoPosRecorder.videoLocRecMode.HEAD);
-    }
-
-    public void SetRecordingModeCursor()
-    {
-        _videoPosRecorder.SetRecordingMode(VideoPosRecorder.videoLocRecMode.CURSOR);
+        switch (_videoPosRecorder.GetRecordingMode())
+        {
+            case VideoPosRecorder.videoLocRecMode.CURSOR:
+                _videoPosRecorder.SetRecordingMode(VideoPosRecorder.videoLocRecMode.HEAD);
+                headPosImage.SetActive(true);
+                cursorPosImage.SetActive(false);
+                notificationBar.text = "Recording head position";
+                break;
+            case VideoPosRecorder.videoLocRecMode.HEAD:
+                _videoPosRecorder.SetRecordingMode(VideoPosRecorder.videoLocRecMode.CURSOR);
+                cursorPosImage.SetActive(true);
+                headPosImage.SetActive(false);
+                notificationBar.text = "Recording cursor position";
+                break;
+            default:
+                Debug.LogError("Invalid video recording mode... how did you manage that?");
+                break;
+        }
     }
 
     public void ExitVideoRecordingMode()
@@ -93,6 +117,11 @@ public class VideoRecordMenuController : MonoBehaviour
 
     public void OpenListOfLocations()
     {
+        if (true)
+        {
+            ToastNotification.ShowWarning("Work in progress, sorry! Check back soon!");
+            return;
+        }
         spawnMenu(videoRecPosListMenu);
     }
 
