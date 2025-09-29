@@ -1266,9 +1266,13 @@ namespace VolumeData
         public void FlushBrushStroke()
         {
             ConsolidateMaskEntries();
-            foreach (var maskVal in CurrentBrushStroke.ChangedSources?.Keys)
+            var maskKeys = CurrentBrushStroke.ChangedSources?.Keys;
+            if (maskKeys != null)
             {
-                UpdateStats((short)maskVal);
+                foreach (var maskVal in maskKeys)
+                {
+                    UpdateStats((short)maskVal);
+                }
             }
             BrushStrokeHistory.Add(CurrentBrushStroke);
             CurrentBrushStroke = new BrushStrokeTransaction(CurrentBrushStroke.NewValue);

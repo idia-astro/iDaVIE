@@ -33,11 +33,22 @@
 
 int FitsOpenFileReadOnly(fitsfile **fptr, char* filename,  int *status)
 {
-    return fits_open_file(fptr, filename, READONLY, status);
+    std::stringstream debug;
+    debug << "Opening file " << filename << " in read-only mode.";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    int result = fits_open_file(fptr, filename, READONLY, status);
+    debug.clear();
+    debug.str("");
+    debug << "Opened file " << filename << " with result " << result << ".";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    return result;
 }
 
 int FitsOpenFileReadWrite(fitsfile** fptr, char* filename, int* status)
 {
+    std::stringstream debug;
+    debug << "Opening file " << filename << " in read-write mode.";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     return fits_open_file(fptr, filename, READWRITE, status);
 }
 
@@ -395,6 +406,10 @@ int FitsReadImageFloat(fitsfile *fptr, int dims, int64_t nelem, float **array, i
  */
 int FitsReadSubImageFloat(fitsfile *fptr, int dims, int zAxis, long *startPix, long *finalPix, int64_t nelem, float **array, int *status)
 {
+    
+    std::stringstream debug;
+    debug << "Reading file with " << dims << " dimensions, sized [" << finalPix[0] - startPix[0] + 1 << ", " << finalPix[1] - startPix[1] + 1 << ", " << finalPix[2] - startPix[2] + 1 << "].";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     int anynul;
     float nulval = 0;
     long* increment = new long[dims];
