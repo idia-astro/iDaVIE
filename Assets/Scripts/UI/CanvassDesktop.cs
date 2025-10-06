@@ -548,9 +548,6 @@ public class CanvassDesktop : MonoBehaviour
             _header += entry.Key + "\t\t " + entry.Value + "\n";
         }
 
-           
-
-            
         informationPanelContent.gameObject.transform.Find("Header_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject
             .transform.Find("Content").gameObject.transform.Find("Header").GetComponent<TextMeshProUGUI>().text = _header;
         informationPanelContent.gameObject.transform.Find("Header_container").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Scrollbar Vertical")
@@ -946,8 +943,13 @@ public class CanvassDesktop : MonoBehaviour
     public bool CheckMemSpaceForCubes(string _imagePath, string _maskPath)
     {
         int ramSizeMB = SystemInfo.systemMemorySize;
-        float imgSize = new FileInfo(_imagePath).Length / 1024f / 1024f;
-        float maskSize = (String.IsNullOrEmpty(_maskPath)) ? 0 : new FileInfo(_maskPath).Length / 1024f / 1024f;
+        float fileSize = new FileInfo(_imagePath).Length;
+        long x = (_subset[1] - _subset[0] + 1);
+        long y = (_subset[3] - _subset[2] + 1);
+        long z = (_subset[5] - _subset[4] + 1);
+        long nelem = x * y * z;
+        float imgSize = (nelem * sizeof(float)) / 1024f / 1024f;
+        float maskSize = (String.IsNullOrEmpty(_maskPath)) ? 0 : (nelem * sizeof(short)) / 1024f / 1024f;
         float sumSizeMB = imgSize + maskSize;
         if (sumSizeMB >= ramSizeMB){
             Debug.LogWarning("Cube and mask size (" + sumSizeMB.ToString("F2") + " MB) exceed RAM size (" + ramSizeMB.ToString("F2") + " MB)!");

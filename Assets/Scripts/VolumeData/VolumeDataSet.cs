@@ -262,10 +262,10 @@ namespace VolumeData
             {
                 fileNameExtension += $"[{selectedHdu}]";
             }
-            if (subBounds[0] != -1)
-            {
-                fileNameExtension += $"[{subBounds[0]}:{subBounds[1]},{subBounds[2]}:{subBounds[3]},{subBounds[4]}:{subBounds[5]}]";
-            }
+            // if (subBounds[0] != -1)
+            // {
+            //     fileNameExtension += $"[{subBounds[0]}:{subBounds[1]},{subBounds[2]}:{subBounds[3]},{subBounds[4]}:{subBounds[5]}]";
+            // }
             Debug.Log("Loading file: " + fileName + fileNameExtension);
             if (FitsReader.FitsOpenFile(out fptr, fileName + fileNameExtension, out status, true) != 0)
             {
@@ -331,6 +331,10 @@ namespace VolumeData
                 if (subBounds[i] != volumeDataSetRes.trueSize[i])
                 {
                     volumeDataSetRes.loadedAsSubset = true;
+                    for (int j = 0; j < 3; j++)
+                    {
+                        volumeDataSetRes.cubeSize[j] = subBounds[(j * 2) + 1] - subBounds[j * 2] + 1;
+                    }
                     break;
                 }
             }
@@ -347,8 +351,8 @@ namespace VolumeData
                 {
                     if (i < 3)
                     {
-                        startPix[i] = 1;
-                        finalPix[i] = (int) volumeDataSetRes.cubeSize[i];
+                        startPix[i] = subBounds[i * 2];
+                        finalPix[i] = subBounds[(i * 2) + 1];
                     }
                     else
                     {
@@ -394,8 +398,8 @@ namespace VolumeData
                 {
                     if (i < 3)
                     {
-                        startPix[i] = 1;
-                        finalPix[i] = (int)volumeDataSetRes.cubeSize[i];
+                        startPix[i] = subBounds[i * 2];
+                        finalPix[i] = subBounds[(i * 2) + 1];
                     }
                     else
                     {

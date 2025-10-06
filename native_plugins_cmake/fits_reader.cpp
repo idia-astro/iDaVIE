@@ -424,6 +424,10 @@ int FitsReadSubImageFloat(fitsfile *fptr, int dims, int zAxis, long *startPix, l
      */
     long slicesInChunk = std::max((long) 1, (long) std::floor(std::numeric_limits<long>::max() / sliceSize));
     long finalZ = finalPix[zAxis];
+    debug.clear();
+    debug.str("");
+    debug << "Reading file in chunks of " << slicesInChunk << " channels at a time." << std::endl;
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
 
     // auto start = std::chrono::high_resolution_clock::now();
     // Loop over the third dimension
@@ -439,13 +443,24 @@ int FitsReadSubImageFloat(fitsfile *fptr, int dims, int zAxis, long *startPix, l
             sliceFinalPix[i] = finalPix[i];
         }
         sliceStartPix[zAxis] = z;
-        sliceFinalPix[zAxis] = std::min(z + slicesInChunk, finalZ);
+        sliceFinalPix[zAxis] = std::min(z + slicesInChunk - 1, finalZ);
 
         // Read the current slice directly into the final dataarray
-        std::stringstream debug;
+        debug.clear();
+        debug.str("");
         debug << "Reading cube sub image from [" << sliceStartPix[0] << ", " << sliceStartPix[1] << ", " << sliceStartPix[2] << "] to [" << sliceFinalPix[0] << ", " << sliceFinalPix[1] << ", " << sliceFinalPix[2] << "].";
         WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        
+        debug.clear();
+        debug.str("");
+        debug << "Attempting to call `fits_read_subset( " << fptr << ", " << TFLOAT << ", sliceStartPix, sliceFinalPix, " << increment << ", nulval, dataarray + " << offset << ", " << status << ")";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        
         int success = fits_read_subset(fptr, TFLOAT, sliceStartPix, sliceFinalPix, increment, &nulval, dataarray + offset, &anynul, status);
+        debug.clear();
+        debug.str("");
+        debug << "Received result code " << success << std::endl;
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
         
         if (success != 0)
         {

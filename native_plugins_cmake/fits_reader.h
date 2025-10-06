@@ -41,7 +41,7 @@ const std::vector<std::string> REQUIRED_MOMENT_MAP_DBL_KEYS = {"CRVAL1", "CDELT1
 const std::vector<std::string> REQUIRED_MOMENT_MAP_STR_KEYS = {"CTYPE1", "CTYPE2"};
 
 //Use the WriteLogFile function to output directly to a text file for debugging.
-static constexpr std::string_view defaultDebugFile = "Outputs/Logs/i-DaVIE_Plugin_Debug.log";
+static constexpr std::string_view defaultDebugFile = "Outputs/Logs/iDaVIE_Plugin_Log_0.log";
 
 extern "C"
 {

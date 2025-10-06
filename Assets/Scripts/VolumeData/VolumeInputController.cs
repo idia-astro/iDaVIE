@@ -1209,7 +1209,8 @@ public class VolumeInputController : MonoBehaviour
         {
             double physX, physY, physZ, normX, normY;
             double normZ = 0;
-            dataSet.GetFitsCoordsAst(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z, out physX, out physY, out physZ);
+            var dataCoordinate = dataSetRenderer.GetVoxelPositionDataSpace();
+            dataSet.GetFitsCoordsAst(dataCoordinate.x, dataCoordinate.y, dataCoordinate.z, out physX, out physY, out physZ);
             dataSet.GetNormCoords(physX, physY, physZ, out normX, out normY, out normZ);
             stringToReturn += $"WCS: ({dataSet.GetFormattedCoord(normX, 1)}, {dataSet.GetFormattedCoord(normY, 2)}){Environment.NewLine}"
                               + $"{dataSet.GetAstAttribute("System(3)")}: {dataSet.GetFormattedCoord(normZ, 3),10} {dataSet.GetAstAttribute("Unit(3)")}{Environment.NewLine}";

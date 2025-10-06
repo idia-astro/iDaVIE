@@ -25,10 +25,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VolumeData;
 
 /// <summary>
 /// 
@@ -38,8 +41,9 @@ public class DebugLogging : MonoBehaviour
     public TMP_InputField logOutput;
     public Button saveButton;
 
-    public const string defaultFile = "iDaVIE_Log.log";
-    public const string defaultPluginFile = "i-DaVIE_Plugin_Debug.log";
+    public const string defaultFile = "iDaVIE_Log";
+    public const string defaultPluginFile = "iDaVIE_Plugin_Log";
+    public const string logExtension = ".log";
 
     private string autosavePath;
     private string pluginSavePath;
@@ -51,6 +55,9 @@ public class DebugLogging : MonoBehaviour
         // Initializing the autosave
         var directory = new DirectoryInfo(Application.dataPath);
         var directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/Logs");
+
+        int maxLogs = Config.Instance.numberOfLogsToKeep;
+
         try
         {
             if (!Directory.Exists(directoryPath))
@@ -58,21 +65,66 @@ public class DebugLogging : MonoBehaviour
                 Directory.CreateDirectory(directoryPath);
             }
 
-            autosavePath = Path.Combine(directoryPath, defaultFile);
-            if (File.Exists(autosavePath))
+            // Rotate existing logs: from maxLogs - 1 down to 0
+            for (int i = maxLogs - 1; i >= 0; i--)
             {
-                // Move existing log to default with '_old' appended
-                File.Copy(autosavePath, Path.Combine(directoryPath, defaultFile.Substring(0, defaultFile.Length - 4) + "_previous.log"), true);
-                File.Delete(autosavePath);
+                string searchPatternUnity = $"{defaultFile}_{i}_*{logExtension}";
+                string searchPatternPlugin = $"{defaultPluginFile}_{i}{logExtension}";
+                var existingLog = Directory.GetFiles(directoryPath, searchPatternUnity).FirstOrDefault();
+
+                if (existingLog != null)
+                {
+                    if (i == maxLogs - 1)
+                    {
+                        // Delete the oldest log (N=maxLogs-1)
+                        File.Delete(existingLog);
+                    }
+                    else
+                    {
+                        // Rename log N to log N+1
+                        Regex regex = new Regex(@"(\d{8}_\d{6})");
+                        Match match = regex.Match(existingLog);
+                        string oldTimestamp = match.Groups[1].Value;
+
+                        string newLogName = Path.Combine(directoryPath, $"{defaultFile}_{i + 1}_{oldTimestamp}{logExtension}");
+                        File.Move(existingLog, newLogName);
+                    }
+                }
+
+                existingLog = Directory.GetFiles(directoryPath, searchPatternPlugin).FirstOrDefault();
+                if (existingLog != null)
+                {
+                    if (i == maxLogs - 1)
+                    {
+                        // Delete the oldest log (N=maxLogs-1)
+                        File.Delete(existingLog);
+                    }
+                    else
+                    {
+                        // Rename log N to log N+1
+
+                        string newLogName = Path.Combine(directoryPath, $"{defaultPluginFile}_{i + 1}{logExtension}");
+                        File.Move(existingLog, newLogName);
+                    }
+                }
             }
 
-            pluginSavePath = Path.Combine(directoryPath, defaultPluginFile);
-            if (File.Exists(pluginSavePath))
-            {
-                // Move existing log to default with '_old' appended
-                File.Copy(pluginSavePath, Path.Combine(directoryPath, defaultFile.Substring(0, defaultFile.Length - 4) + "_previous.log"), true);
-                File.Delete(pluginSavePath);
-            }
+            string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            autosavePath = Path.Combine(directoryPath, $"{defaultFile}_0_{timestamp}{logExtension}");
+            // if (File.Exists(autosavePath))
+            // {
+            //     // Move existing log to default with '_old' appended
+            //     File.Copy(autosavePath, Path.Combine(directoryPath, defaultFile.Substring(0, defaultFile.Length - 4) + "_previous.log"), true);
+            //     File.Delete(autosavePath);
+            // }
+
+            // pluginSavePath = Path.Combine(directoryPath, defaultPluginFile);
+            // if (File.Exists(pluginSavePath))
+            // {
+            //     // Move existing log to default with '_old' appended
+            //     File.Copy(pluginSavePath, Path.Combine(directoryPath, defaultPluginFile.Substring(0, defaultPluginFile.Length - 4) + "_previous.log"), true);
+            //     File.Delete(pluginSavePath);
+            // }
         }
         catch (Exception ex)
         {
