@@ -1,9 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using Microsoft.Win32;
 using Unity.VisualScripting;
+using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
 
 public class VideoPosRecorder
@@ -21,6 +23,12 @@ public class VideoPosRecorder
             this.position = pos;
             this.rotation = rot;
         }
+
+        public override string ToString()
+        {
+            string result = $"{position.ToString()},\n{rotation.ToString()}";
+            return result;
+        }
     }
 
     /// <summary>
@@ -36,6 +44,8 @@ public class VideoPosRecorder
 
     videoLocRecMode _recordingMode = videoLocRecMode.HEAD;
 
+    public bool listChanged { get; private set; } = false;
+
     /// <summary>
     /// Constructor, initialises list.
     /// </summary>
@@ -44,6 +54,10 @@ public class VideoPosRecorder
         _videoPositions = new List<videoRecLocation>();
     }
 
+    /// <summary>
+    /// Returns a copy of the list of videopositions. Since all members of the videoRecLocation struct are value types, it is implicitly a deep copy.
+    /// </summary>
+    /// <returns>A copy of the video positions in this recorder.</returns>
     public List<videoRecLocation> GetVideoRecLocationList()
     {
         var list = new List<videoRecLocation>(_videoPositions);
@@ -82,6 +96,25 @@ public class VideoPosRecorder
     {
         videoRecLocation loc = new videoRecLocation(position, rotation);
         _videoPositions.Add(loc);
+        listChanged = true;
+    }
+
+    /// <summary>
+    /// Function is called by the VideoPosList cell when the user selects the delete button in the cell.
+    /// </summary>
+    /// <param name="loc">The location to be removed.</param>
+    public void removeLocation(videoRecLocation loc)
+    {
+        _videoPositions.Remove(loc);
+        listChanged = true;
+    }
+
+    /// <summary>
+    /// This function is called by the VideoRecPointListController to acknowledge the change in the list data.
+    /// </summary>
+    public void listUpdated()
+    {
+        listChanged = false;
     }
 
     /// <summary>

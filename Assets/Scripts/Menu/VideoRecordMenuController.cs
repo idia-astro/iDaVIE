@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,6 +10,8 @@ public class VideoRecordMenuController : MonoBehaviour
     private VolumeInputController _volumeInputController = null;
 
     private VideoPosRecorder _videoPosRecorder = null;
+
+    private VideoRecPointListController _videoRecPointListController = null;
 
     public GameObject videoRecPosListMenu;
 
@@ -37,6 +40,13 @@ public class VideoRecordMenuController : MonoBehaviour
         {
             headPosImage = this.gameObject.transform.Find("Content").Find("FirstRow").Find("ToggleRecordingMode").Find("HeadPosImage").gameObject;
             cursorPosImage = this.gameObject.transform.Find("Content").Find("FirstRow").Find("ToggleRecordingMode").Find("CursorPosImage").gameObject;
+        }
+
+        if (_videoRecPointListController == null)
+        {
+            _videoRecPointListController = videoRecPosListMenu.gameObject.GetComponentInChildren<VideoRecPointListController>(true);
+            _videoRecPointListController.setVideoRecorder(_videoPosRecorder);
+            _videoRecPointListController.setVolumeInputController(_volumeInputController);
         }
 
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.StartVideoRecording);
@@ -78,9 +88,13 @@ public class VideoRecordMenuController : MonoBehaviour
         else
             Debug.LogError("Trying to exit video recording mode while not in video recording mode... How did you manage that?");
 
-        this.gameObject.SetActive(false);
+        gameObject.SetActive(false);
+        videoRecPosListMenu.SetActive(false);
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public void ExportToFile()
     {
 
@@ -115,13 +129,11 @@ public class VideoRecordMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// This function is called when the user presses the list button in the menu, and opens the list of points.
+    /// </summary>
     public void OpenListOfLocations()
     {
-        if (true)
-        {
-            ToastNotification.ShowWarning("Work in progress, sorry! Check back soon!");
-            return;
-        }
         spawnMenu(videoRecPosListMenu);
     }
 

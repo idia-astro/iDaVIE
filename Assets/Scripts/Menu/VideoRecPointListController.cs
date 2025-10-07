@@ -12,11 +12,12 @@ public class VideoRecPointListController : MonoBehaviour
 
     public RecyclableScrollRect RecyclableScrollView;
 
-    public bool reloadNeeded = false;
+    VolumeInputController _volumeInputController;
+
     // Start is called before the first frame update
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
@@ -26,13 +27,26 @@ public class VideoRecPointListController : MonoBehaviour
         {
             _videoPosListDataSource = new VideoPosListDataSource(_videoPosRecorder);
             RecyclableScrollView = Instantiate(RecyclableScrollViewPrefab, this.transform).GetComponent<RecyclableScrollRect>();
+            _videoPosListDataSource.Initialize(RecyclableScrollView, _volumeInputController);
             RecyclableScrollView.Initialize(_videoPosListDataSource);
-            reloadNeeded = false;
+            Debug.Log("RecyclableScrollView for video recording positions instantiated.");
         }
 
-        if (reloadNeeded)
+        if (_videoPosRecorder.listChanged)
         {
+            _videoPosListDataSource.InitData();
             RecyclableScrollView.ReloadData();
+            _videoPosRecorder.listUpdated();
         }
+    }
+
+    public void setVideoRecorder(VideoPosRecorder vidPosRecorder)
+    {
+        _videoPosRecorder = vidPosRecorder;
+    }
+
+    public void setVolumeInputController(VolumeInputController volInController)
+    {
+        _volumeInputController = volInController;
     }
 }

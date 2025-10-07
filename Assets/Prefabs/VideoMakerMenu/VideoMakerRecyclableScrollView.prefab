@@ -37,7 +37,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90}
   m_AnchorMin: {x: 1, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
-  m_AnchoredPosition: {x: -30, y: 210}
+  m_AnchoredPosition: {x: -30, y: 375}
   m_SizeDelta: {x: 60, y: 60}
   m_Pivot: {x: 1, y: 0.5}
 --- !u!222 &546129889652794139
@@ -186,7 +186,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -90}
   m_AnchorMin: {x: 1, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
-  m_AnchoredPosition: {x: -30, y: -210}
+  m_AnchoredPosition: {x: -30, y: -375}
   m_SizeDelta: {x: 60, y: 60}
   m_Pivot: {x: 1, y: 0.5}
 --- !u!222 &3205098542309053447
@@ -307,7 +307,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1527163063724600, guid: 3c01abf790e1a42ca8d10525f571cab5, type: 3}
       propertyPath: m_Name
-      value: Recyclable Scroll View Variant
+      value: VideoMakerRecyclableScrollView
       objectReference: {fileID: 0}
     - target: {fileID: 114310977074674660, guid: 3c01abf790e1a42ca8d10525f571cab5,
         type: 3}
@@ -358,12 +358,12 @@ PrefabInstance:
     - target: {fileID: 224141822819573504, guid: 3c01abf790e1a42ca8d10525f571cab5,
         type: 3}
       propertyPath: m_SizeDelta.x
-      value: 640
+      value: 750
       objectReference: {fileID: 0}
     - target: {fileID: 224141822819573504, guid: 3c01abf790e1a42ca8d10525f571cab5,
         type: 3}
       propertyPath: m_SizeDelta.y
-      value: 423.04285
+      value: 750
       objectReference: {fileID: 0}
     - target: {fileID: 224141822819573504, guid: 3c01abf790e1a42ca8d10525f571cab5,
         type: 3}

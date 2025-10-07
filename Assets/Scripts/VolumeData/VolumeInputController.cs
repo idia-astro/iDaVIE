@@ -548,12 +548,7 @@ public class VolumeInputController : MonoBehaviour
             return;
         }
 
-        _paintMenuOn = CanvassQuickMenu.GetComponent<QuickMenuController>().paintMenu.activeSelf;
-        _shapeMenuOn = CanvassPaintMenu.GetComponent<PaintMenuController>().shapeMenu.activeSelf;
-        _savePopupOn = CanvassQuickMenu.GetComponent<QuickMenuController>().savePopup.activeSelf;
-        _exportPopupOn = CanvassQuickMenu.GetComponent<QuickMenuController>().exportPopup.activeSelf;
-
-        if (newState && !_paintMenuOn && !_shapeMenuOn && !_savePopupOn && !_exportPopupOn)
+        if (newState && InteractionStateMachine.State == InteractionState.IdleSelecting)
         {
             StartRequestQuickMenu(fromSource == SteamVR_Input_Sources.LeftHand ? 0 : 1);
         }
@@ -1325,6 +1320,19 @@ public class VolumeInputController : MonoBehaviour
             Vector3 centerWorldSpace = dataSetTransform.TransformPoint((boundsMaxObjectSpace + boundsMinObjectSpace) / 2.0f);
             Vector3 deltaPosition = targetPosition - centerWorldSpace;
             dataSetTransform.position += deltaPosition;
+        }
+    }
+
+    public void TeleportToVidRecLoc(Vector3 pos, Vector3 rotEulerAngles)
+    {
+        var activeDataSet = ActiveDataSet;
+        if (activeDataSet != null && Camera.main != null)
+        {
+            var dataSetTransform = activeDataSet.transform;
+            var cameraTransform = Camera.main.transform;
+
+            dataSetTransform.rotation = cameraTransform.rotation * Quaternion.Inverse(Quaternion.Euler(rotEulerAngles));
+            dataSetTransform.position = cameraTransform.position - (dataSetTransform.rotation * pos);
         }
     }
 

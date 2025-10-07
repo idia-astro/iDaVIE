@@ -16,6 +16,8 @@ public class VideoPosListDataSource : MonoBehaviour, IRecyclableScrollRectDataSo
 
     public VideoPosRecorder _videoPosRecorder;
 
+    private VolumeInputController _volumeInputController;
+
     public VideoPosListDataSource(VideoPosRecorder vidPosRec)
     {
         _videoPosRecorder = vidPosRec;
@@ -26,6 +28,13 @@ public class VideoPosListDataSource : MonoBehaviour, IRecyclableScrollRectDataSo
     {
         InitData();
         _recyclableScrollRect.DataSource = this;
+    }
+
+    public void Initialize(RecyclableScrollRect rect, VolumeInputController VolInController)
+    {
+        _recyclableScrollRect = rect;
+        _volumeInputController = VolInController;
+        Awake();
     }
 
     public void InitData()
@@ -51,7 +60,7 @@ public class VideoPosListDataSource : MonoBehaviour, IRecyclableScrollRectDataSo
     {
         //Casting to the implemented Cell
         var item = cell as VideoPosListCell;
-        item.ConfigureCell(_videoLocList[index], index, _videoPosRecorder);
+        item.ConfigureCell(_videoLocList[index], index, _videoPosRecorder, _volumeInputController);
     }
     
     #endregion
