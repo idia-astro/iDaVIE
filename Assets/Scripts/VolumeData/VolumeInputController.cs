@@ -182,6 +182,12 @@ public class VolumeInputController : MonoBehaviour
     private bool _exportPopupOn = false;
     private bool _shapeSelection = false;
 
+    /// <summary>
+    /// Timer for video position recording mode to ensure that the buttons don't register multiple presses.
+    /// </summary>
+    float _deltaT = 0.0f;
+    float _resetTime = 0.5f;
+
     [SerializeField]
     public GameObject toastNotificationPrefab = null;
     public GameObject followHead = null;
@@ -589,7 +595,6 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
-
     private void OnPinchChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
         // Skip input from secondary hand
@@ -614,10 +619,16 @@ public class VolumeInputController : MonoBehaviour
 
         if (InteractionStateMachine.State == InteractionState.VideoCamPosRecording)
         {
-            // If pressing down on button, add location
-            if (newState)
-                AddNewLocation(fromSource);
-            // else if letting go, do nothing.
+            // If timer has not yet reached reset, don't activate any buttons.
+            if (_deltaT > _resetTime)
+            {
+                // Else, reset timer and activate buttons where appropriate
+                _deltaT = 0.00000f;
+                // If pressing down on button, add location
+                if (newState)
+                    AddNewLocation(fromSource);
+                // else if letting go, do nothing.
+            }
         }
         else
         {
@@ -833,6 +844,11 @@ public class VolumeInputController : MonoBehaviour
             }
         }
 
+        if (InteractionStateMachine.State == InteractionState.VideoCamPosRecording)
+        {
+            // Add previous frame time to timer
+            _deltaT += Time.smoothDeltaTime;
+        }
         ToastNotification.Update();
     }
 
@@ -1490,6 +1506,7 @@ public class VolumeInputController : MonoBehaviour
 
     public void StartVideoCamPosRecording()
     {
+        _deltaT = 0.0f;
         Debug.Log("Entering video position recording mode.");
     }
 
