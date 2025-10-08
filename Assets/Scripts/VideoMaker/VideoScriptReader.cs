@@ -132,10 +132,10 @@ namespace VideoMaker
                         Path path;
                         switch (command.method)
                         {
-                            case Method.Line:
+                            case MovementMethod.Line:
                                 path = new LinePath(locationPrevious.position, command.destination.position){Easing = EasingIO};
                                 break;
-                            case Method.Arc:
+                            case MovementMethod.Arc:
                                 Vector3 start = locationPrevious.position;
                                 Vector3 startDir = locationPrevious.forward;
                                 Vector3 end = command.destination.position;
