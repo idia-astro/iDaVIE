@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using PolyAndCode.UI;
 using UnityEngine;
 
+/// <summary>
+/// This class manages the data of the RecyclableScrollView that displays the list of video locations.
+/// </summary>
 public class VideoPosListDataSource : MonoBehaviour, IRecyclableScrollRectDataSource
 {
     [SerializeField]
@@ -30,6 +33,11 @@ public class VideoPosListDataSource : MonoBehaviour, IRecyclableScrollRectDataSo
         _recyclableScrollRect.DataSource = this;
     }
 
+    /// <summary>
+    /// This function is used to set some of the references, and initialise the data source instance.
+    /// </summary>
+    /// <param name="rect">The RecyclableScrollView that this data source is responsible for.</param>
+    /// <param name="VolInController">The VolumeInputController instance that manages user input, used to pass through for functionality.</param>
     public void Initialize(RecyclableScrollRect rect, VolumeInputController VolInController)
     {
         _recyclableScrollRect = rect;
@@ -37,6 +45,9 @@ public class VideoPosListDataSource : MonoBehaviour, IRecyclableScrollRectDataSo
         Awake();
     }
 
+    /// <summary>
+    /// Copies the list of locations from the video recorder to this data source. Since all members of the videoRecLocation struct are value types, it is implicitly a deep copy, and can therefore not be left as a reference. It is thus called whenever the videorecorder data changes.
+    /// </summary>
     public void InitData()
     {
         _videoLocList = _videoPosRecorder.GetVideoRecLocationList();
@@ -62,6 +73,6 @@ public class VideoPosListDataSource : MonoBehaviour, IRecyclableScrollRectDataSo
         var item = cell as VideoPosListCell;
         item.ConfigureCell(_videoLocList[index], index, _videoPosRecorder, _volumeInputController);
     }
-    
+
     #endregion
 }

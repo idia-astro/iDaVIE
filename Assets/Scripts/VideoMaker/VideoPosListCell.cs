@@ -3,6 +3,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// This class holds the data for displaying the list of video positions in the RecyclableScrollView, and is a passthrough for some of the available functionality.
+/// </summary>
 public class VideoPosListCell : MonoBehaviour, ICell
 {
 
@@ -23,6 +26,14 @@ public class VideoPosListCell : MonoBehaviour, ICell
     private VideoPosRecorder.videoRecLocation _location;
     private VideoPosRecorder _videoPosRecorder;
     private VolumeInputController _volumeInputController;
+
+    /// <summary>
+    /// This function is called by VideoPosListDataSource to set the data values of the cell, and update the cell UI.
+    /// </summary>
+    /// <param name="loc">The VideoLocation this cell represents.</param>
+    /// <param name="index">The index this cell is displaying.</param>
+    /// <param name="vidPosRec">Reference to the VideoPosRecorder instance that manages the list of locations, used for passing functions through.</param>
+    /// <param name="volInController">Reference to the VolumeInputController instance that manages most of the user input, used for passing functions through.</param>
     public void ConfigureCell(VideoPosRecorder.videoRecLocation loc, int index, VideoPosRecorder vidPosRec, VolumeInputController volInController)
     {
         _location = loc;
@@ -41,7 +52,11 @@ public class VideoPosListCell : MonoBehaviour, ICell
             locationType.SetText(headPos);
         }
     }
-    // Start is called before the first frame update
+
+    /// <summary>
+    /// Is called before the first frame update.
+    /// Determines the colour and height of the cell.
+    /// </summary>
     void Start()
     {
         if (CellIndex % 2 != 0)
@@ -51,22 +66,17 @@ public class VideoPosListCell : MonoBehaviour, ICell
         CellHeight = GetComponent<RectTransform>().rect.height;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
+    /// <summary>
+    /// The function that is triggered when the user clicks on the teleport button of the cell.
+    /// </summary>
     public void GoTo()
     {
-        Teleport(_location.position, _location.rotation);
+        _volumeInputController.TeleportToVidRecLoc(_location.position, _location.rotation);
     }
 
-    private void Teleport(Vector3 pos, Vector3 rot)
-    {
-        _volumeInputController.TeleportToVidRecLoc(pos, rot);
-    }
-
+    /// <summary>
+    /// Function is called when the user clicks on the delete button of the cell.
+    /// </summary>
     public void RemoveFromList()
     {
         _videoPosRecorder.removeLocation(_location);

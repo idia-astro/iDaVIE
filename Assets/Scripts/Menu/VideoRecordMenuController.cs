@@ -1,9 +1,11 @@
 using System;
 using System.IO;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// This class is used to control the menu that is open in video recording mode, and is the parent controller of the model aspect of the video recording mode.
+/// </summary>
 public class VideoRecordMenuController : MonoBehaviour
 {
 
@@ -19,13 +21,10 @@ public class VideoRecordMenuController : MonoBehaviour
     private GameObject cursorPosImage = null;
 
     public Text notificationBar = null;
-    
-    // Start is called before the first frame update
-    void Start()
-    {
 
-    }
-
+    /// <summary>
+    /// When the menu is opened, initialise the various entities it requires.
+    /// </summary>
     public void OnEnable()
     {
         if (_volumeInputController == null)
@@ -52,13 +51,10 @@ public class VideoRecordMenuController : MonoBehaviour
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.StartVideoRecording);
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
-    //TODO: Set the button to toggle instead
+    /// <summary>
+    /// This function is triggered by the user pressing the recording mode button on the menu.
+    /// Each press switches the recording mode to the next mode, with accompanying change in the image and notification text.
+    /// </summary>
     public void ToggleRecordingMode()
     {
         switch (_videoPosRecorder.GetRecordingMode())
@@ -81,6 +77,10 @@ public class VideoRecordMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Function is called when the user presses the exit mode button on the menu.
+    /// It safely hides the relevant menus and triggers a state change in _volumeInputController.
+    /// </summary>
     public void ExitVideoRecordingMode()
     {
         if (_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.VideoCamPosRecording)
@@ -93,7 +93,9 @@ public class VideoRecordMenuController : MonoBehaviour
     }
 
     /// <summary>
-    /// 
+    /// Function is called by user pressing the export button on the menu, or by using the relevant voice command.
+    /// _videoPosRecorder is called to write to a specified file, with the file name determined here.
+    /// Filenames are a combination of the data file name, and a timestamp.
     /// </summary>
     public void ExportToFile()
     {
@@ -137,6 +139,10 @@ public class VideoRecordMenuController : MonoBehaviour
         spawnMenu(videoRecPosListMenu);
     }
 
+    /// <summary>
+    /// Function is used to open a given menu in a suitable location relative to the user.
+    /// </summary>
+    /// <param name="menu">The menu to open.</param>
     public void spawnMenu(GameObject menu)
     {
         Vector3 playerPos = Camera.main.transform.position;

@@ -1,13 +1,11 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.Remoting.Messaging;
 using System.Text;
-using Microsoft.Win32;
-using Unity.VisualScripting;
-using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
 
+/// <summary>
+/// This class manages a list of positions specified by the user in VR, which can be exported to an IDVS file. The IDVS file can be loaded by the VideoScriptReader class to be turned into a video.
+/// </summary>
 public class VideoPosRecorder
 {
     /// <summary>
@@ -24,6 +22,10 @@ public class VideoPosRecorder
             this.rotation = rot;
         }
 
+        /// <summary>
+        /// Formats the data of this struct in a pretty manner.
+        /// </summary>
+        /// <returns>A formatted string.</returns>
         public override string ToString()
         {
             string result = $"{position.ToString()},\n{rotation.ToString()}";
@@ -64,6 +66,10 @@ public class VideoPosRecorder
         return list;
     }
 
+    /// <summary>
+    /// Returns the number of locations in this recorder's list.
+    /// </summary>
+    /// <returns></returns>
     public int GetVideoRecLocCount()
     {
         return _videoPositions.Count;

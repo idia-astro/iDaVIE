@@ -1323,6 +1323,11 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Teleports the data cube to be in the same position as it was, relative to the camera, when the user saved the location. Used by the list of video positions.
+    /// </summary>
+    /// <param name="pos">The position of the camera relative to the cube when saved.</param>
+    /// <param name="rotEulerAngles">The rotation of the camera relative to the cube when saved.</param>
     public void TeleportToVidRecLoc(Vector3 pos, Vector3 rotEulerAngles)
     {
         var activeDataSet = ActiveDataSet;
@@ -1406,6 +1411,10 @@ public class VolumeInputController : MonoBehaviour
         ShowCursorInfo = !ShowCursorInfo;
     }
 
+    /// <summary>
+    /// A function to add a new location to _videoPosRecorder's list, which can be either the user pressing a button, or by voice command.
+    /// </summary>
+    /// <param name="fromSource">The hand that triggered this command – will always be PrimaryHand</param>
     public void AddNewLocation(SteamVR_Input_Sources fromSource)
     {
         switch (_videoPosRecorder.GetRecordingMode())
@@ -1419,7 +1428,7 @@ public class VolumeInputController : MonoBehaviour
                 break;
             case VideoPosRecorder.videoLocRecMode.HEAD:
                 Vector3 headPos = ActiveDataSet.ConvertWorldPositionToDataCubePosition(Camera.main.transform.position);
-                
+
                 Vector3 headRot = ActiveDataSet.ConvertWorldRotationToDatacubeRotation(Camera.main.transform.rotation).eulerAngles;
                 _videoPosRecorder.addLocation(headPos, headRot);
                 Debug.Log($"Recording new head location at {{{headPos}, {headRot}}}");
@@ -1512,12 +1521,18 @@ public class VolumeInputController : MonoBehaviour
         shapesManager.SetSelectableShape(shape);
     }
 
+    /// <summary>
+    /// Function that is called when the user enters the video recording mode. Initialises the button press timer.
+    /// </summary>
     public void StartVideoCamPosRecording()
     {
         _deltaT = 0.0f;
         Debug.Log("Entering video position recording mode.");
     }
 
+    /// <summary>
+    /// Function that is called when the user exits the video recording mode. Merely logs for the moment.
+    /// </summary>
     public void EndVideoCamPosRecording()
     {
         Debug.Log("Exiting video position recording mode.");
