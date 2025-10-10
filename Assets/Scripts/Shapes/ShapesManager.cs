@@ -31,29 +31,49 @@ public class ShapesManager : MonoBehaviour {
     private Color32 baseColour;
     private bool shapeSelected = false;
 
-    /*
-    * States user can be in:
-    * idle: not adding a new shape
-    * selecting: cycling through available shapes on controller
-    * selected: user has chosen a shape from the list, but has not placed it in the scene yet
-    */
+   /// <summary>
+    /// States user can be in:
+    /// idle: not adding a new shape
+    /// selecting: cycling through available shapes on controller
+    /// selected: user has chosen a shape from the list, but has not placed it in the scene yet
+    /// </summary>
     public enum ShapeState {idle, selecting, selected};
     public ShapeState state;
 
-    public void StartShapes() {
+    /// <summary>
+    /// Initializes the shape selection process and sets up shape-related state.
+    /// 
+    /// Sets the manager state to selecting, initializes the base color, sets the current shape to cube,
+    /// resets the shape index, and prepares arrays for available shapes and their counts.
+    /// This method should be called when starting shape selection mode.
+    /// </summary>
+    public void StartShapes()
+    {
         state = ShapeState.selecting;
-        baseColour = new Color32(42,46,40,255); 
+        baseColour = new Color32(42, 46, 40, 255);
         currentShape = cube;
         currentShapeIndex = 0;
-        shapes = new GameObject[] {cube, cuboid, sphere, cylinder};
-        shapesCount = new int[]{0,0,0,0}; //Used to have unique names for each shape added into scene
+        shapes = new GameObject[] { cube, cuboid, sphere, cylinder };
+        shapesCount = new int[] { 0, 0, 0, 0 }; //Used to have unique names for each shape added into scene
     }
 
-    public GameObject GetCurrentShape() {
+    /// <summary>
+    /// Returns the currently selected shape.
+    /// 
+    /// Retrieves the GameObject representing the shape at the current selection index.
+    /// </summary>
+    /// <returns>The currently selected shape GameObject.</returns>
+    public GameObject GetCurrentShape()
+    {
         return shapes[currentShapeIndex];
     }
 
-    //called when user transitions from selecting to selected state
+    /// <summary>
+    /// Selects the current shape and transitions to the selected state.
+    /// 
+    /// Changes the manager state from selecting to selected, sets the current shape to additive mode,
+    /// and marks the shape as selected. Should be called when the user confirms their shape selection.
+    /// </summary>
     public void SelectShape() {
         if(state != ShapeState.selecting) return;
         state = ShapeState.selected;
@@ -62,7 +82,12 @@ public class ShapesManager : MonoBehaviour {
         shapeSelected = true;
     }
 
-    //called when user transitions from selected to selecting state
+    /// <summary>
+    /// Deselects the current shape and returns to selecting state.
+    /// 
+    /// Changes the manager state from selected to selecting, resets the shape's color to the base color,
+    /// and marks the shape as not selected. Should be called when the user cancels their shape selection.
+    /// </summary>
     public void DeselectShape() {
         if(state != ShapeState.selected) return;
         state = ShapeState.selecting;
@@ -71,56 +96,128 @@ public class ShapesManager : MonoBehaviour {
         shapeSelected = false;
     }
 
-    public bool isShapeSelected() {
+    /// <summary>
+    /// Checks if a shape is currently selected.
+    /// 
+    /// Returns true if a shape has been selected by the user, otherwise false.
+    /// </summary>
+    /// <returns>True if a shape is selected, false otherwise.</returns>
+    public bool isShapeSelected()
+    {
         return shapeSelected;
     }
 
-    public bool isIdle() {
-        if(state == ShapeState.idle) return true;
+    /// <summary>
+    /// Checks if the manager is currently idle.
+    /// 
+    /// Returns true if the state is idle, otherwise false.
+    /// </summary>
+    /// <returns>True if in idle state, false otherwise.</returns>
+    public bool isIdle()
+    {
+        if (state == ShapeState.idle) return true;
         return false;
     }
 
-    public void MakeIdle() {
+    /// <summary>
+    /// Sets the manager state to idle.
+    /// 
+    /// Changes the current state to idle, indicating that no shape is being added or selected.
+    /// Should be called when exiting shape selection or placement mode.
+    /// </summary>
+    public void MakeIdle()
+    {
         state = ShapeState.idle;
     }
 
-    public GameObject GetNextShape() {
-        if(state != ShapeState.selecting) return null;
+    /// <summary>
+    /// Cycles to the next available shape in selection mode.
+    /// 
+    /// If the manager is in selecting state, destroys the current shape, increments the shape index,
+    /// wraps around if at the end of the shapes array, and returns the next shape GameObject.
+    /// </summary>
+    /// <returns>The next shape GameObject in the selection list, or null if not in selecting state.</returns>
+    public GameObject GetNextShape()
+    {
+        if (state != ShapeState.selecting) return null;
         DestroyCurrentShape();
         currentShapeIndex++;
-        if(currentShapeIndex == shapes.Length) currentShapeIndex = 0;
+        if (currentShapeIndex == shapes.Length) currentShapeIndex = 0;
         return shapes[currentShapeIndex];
     }
 
-    public GameObject GetPreviousShape() {
-        if(state != ShapeState.selecting) return null;
+    /// <summary>
+    /// Cycles to the previous available shape in selection mode.
+    /// 
+    /// If the manager is in selecting state, destroys the current shape, decrements the shape index,
+    /// wraps around to the end if at the beginning of the shapes array, and returns the previous shape GameObject.
+    /// </summary>
+    /// <returns>The previous shape GameObject in the selection list, or null if not in selecting state.</returns>
+    public GameObject GetPreviousShape()
+    {
+        if (state != ShapeState.selecting) return null;
         DestroyCurrentShape();
-        currentShapeIndex-=1;
-        if(currentShapeIndex < 0) currentShapeIndex = shapes.Length - 1;
+        currentShapeIndex -= 1;
+        if (currentShapeIndex < 0) currentShapeIndex = shapes.Length - 1;
         return shapes[currentShapeIndex];
     }
 
-    public void AddShape(GameObject shape) {
-         activeShapes.Add(shape);
-         actions.Push(new ShapeAction(shape));
+    /// <summary>
+    /// Adds a shape to the active shapes list and records the action for undo functionality.
+    /// 
+    /// Adds the specified shape GameObject to the list of active shapes in the scene and pushes a new ShapeAction
+    /// to the actions stack to enable undoing this addition.
+    /// </summary>
+    /// <param name="shape">The GameObject representing the shape to add.</param>
+    public void AddShape(GameObject shape)
+    {
+        activeShapes.Add(shape);
+        actions.Push(new ShapeAction(shape));
     }
 
-    //Generates unique name for shape to be added into the scene
+    /// <summary>
+    /// Generates a unique name for a shape to be added into the scene.
+    /// 
+    /// Increments the count for the current shape type and returns a unique name
+    /// by appending the count to the shape's base name.
+    /// </summary>
+    /// <param name="shape">The GameObject representing the shape to name.</param>
+    /// <returns>A unique string name for the shape.</returns>
     public string GetShapeName(GameObject shape) {
         shapesCount[currentShapeIndex]++;
         return shape.name + $"{shapesCount[currentShapeIndex]}";
     }
 
-    public void AddSelectedShape(GameObject shape) {
+    /// <summary>
+    /// Adds a shape to the selected shapes list.
+    /// 
+    /// Adds the specified shape GameObject to the list of selected shapes in the scene.
+    /// </summary>
+    /// <param name="shape">The GameObject representing the shape to add to the selected list.</param>
+    public void AddSelectedShape(GameObject shape)
+    {
         selectedShapes.Add(shape);
     }
 
-    public void RemoveSelectedShape(GameObject shape) {
+    /// <summary>
+    /// Removes a shape from the selected shapes list.
+    /// 
+    /// Removes the specified shape GameObject from the list of selected shapes in the scene.
+    /// </summary>
+    /// <param name="shape">The GameObject representing the shape to remove from the selected list.</param>
+    public void RemoveSelectedShape(GameObject shape)
+    {
         selectedShapes.Remove(shape);
     }
 
 
-    //Increases scale of shapes. If in selected state only increases shape attatched to controller, otherwise increases scale of all selected shapes in the scene
+    /// <summary>
+    /// Increases the scale of the selected shape(s).
+    /// 
+    /// If in selected state, increases the scale of the shape attached to the controller.
+    /// Otherwise, increases the scale of all selected shapes in the scene.
+    /// Cuboids are scaled by a larger increment than other shapes.
+    /// </summary>
     public void IncreaseScale() {
         if(state == ShapeState.selecting) return;
         if(state == ShapeState.selected) {
@@ -142,7 +239,14 @@ public class ShapesManager : MonoBehaviour {
         }
     }
 
-    //Same as above but with decreasing scale
+    /// <summary>
+    /// Decreases the scale of the selected shape(s).
+    /// 
+    /// If in selected state, decreases the scale of the shape attached to the controller.
+    /// Otherwise, decreases the scale of all selected shapes in the scene.
+    /// Cuboids are scaled by a larger decrement than other shapes.
+    /// Ensures that the scale does not go below a minimum threshold.
+    /// </summary>
     public void DecreaseScale() {
         if(state == ShapeState.selecting) return;
         if(state == ShapeState.selected) {
@@ -166,7 +270,13 @@ public class ShapesManager : MonoBehaviour {
         }
     }
 
-    //Delete all selected shapes in the secene (shapes are only properly deleted upon exiting shape mode)
+    /// <summary>
+    /// Deletes all selected shapes from the scene and records the action for undo functionality.
+    /// 
+    /// Removes each selected shape from the active shapes list, disables it in the scene,
+    /// adds it to the deleted shapes list, and records the deletion in the actions stack.
+    /// Clears the selected shapes list after deletion.
+    /// </summary>
     public void DeleteSelectedShapes() {
         List<GameObject> delShapes = new List<GameObject>();
         foreach(GameObject shape in selectedShapes) {
@@ -179,7 +289,13 @@ public class ShapesManager : MonoBehaviour {
         selectedShapes = new List<GameObject>();
     }
 
-    //If in selected state change only that shape's state, otherwise change all selected shapes in scene to the inverse of their current state
+    /// <summary>
+    /// Toggles the additive/subtractive mode of selected shapes.
+    /// 
+    /// If in selected state, toggles the mode of the currently selected shape.
+    /// Otherwise, toggles the mode of all shapes in the selected shapes list.
+    /// The mode determines whether the shape is additive or subtractive in masking operations.
+    /// </summary>
     public void ChangeModes() {
         if(state == ShapeState.selected){
             ChangeShapeMode();
@@ -191,9 +307,13 @@ public class ShapesManager : MonoBehaviour {
         }
     }
 
-    /*
-    * Copies all selected shapes in scene, if used after confirming a selection it returns all shapes used for the selection to the scene
-    */
+    /// <summary>
+    /// Copies all selected shapes in the scene.
+    /// 
+    /// If there are painted shapes, returns them to the scene and adds them to the active and selected shapes lists.
+    /// Otherwise, creates deep copies of all selected shapes, adds them to the active and selected shapes lists,
+    /// and records the copy action for undo functionality.
+    /// </summary>
     public void CopyShapes() {
         if(selectedShapes.Count > 0) {
             paintedShapes = new List<GameObject>();
@@ -218,6 +338,14 @@ public class ShapesManager : MonoBehaviour {
         actions.Push(new ShapeAction(ShapeAction.ActionType.CopyShapes, copiedShapes));
     }
     
+    /// <summary>
+    /// Creates a deep copy of the specified shape GameObject.
+    /// 
+    /// Instantiates a new GameObject with the same position, rotation, parent, and scale as the original.
+    /// Deep copies all materials and mesh data to ensure the new shape is independent of the original.
+    /// </summary>
+    /// <param name="original">The GameObject representing the shape to copy.</param>
+    /// <returns>A new GameObject that is a deep copy of the original shape.</returns>
     GameObject DeepCopyShape(GameObject original) {
         GameObject copy = Instantiate(original, original.transform.position, original.transform.rotation);
 
@@ -241,45 +369,87 @@ public class ShapesManager : MonoBehaviour {
         return copy;
     }
 
-    //Sets the shape selected by the user in the selected state
+    /// <summary>
+    /// Sets the currently selectable shape and updates its scale.
+    /// 
+    /// Assigns the specified GameObject as the current shape and stores its local scale.
+    /// Used when the user selects a shape in the selected state.
+    /// </summary>
+    /// <param name="shape">The GameObject to set as the currently selectable shape.</param>
     public void SetSelectableShape(GameObject shape)
     {
         currentShape = shape;
         currentShapeScale = shape.transform.localScale;
     }
 
-    //Returns the shape selected by the user in the selected state, used to make a copy of the shape to be placed into the scene
+    /// <summary>
+    /// Returns the shape selected by the user in the selected state.
+    /// 
+    /// If the current shape is a cuboid, updates its scale using the stored scale vector.
+    /// Returns the currently selected shape GameObject.
+    /// </summary>
+    /// <returns>The currently selected shape GameObject.</returns>
     public GameObject GetSelectedShape() {
         if(currentShapeIndex == 1) currentShape.transform.localScale = Vector3.Scale(currentShape.transform.localScale, currentShapeScale);
         return currentShape;
     }
 
-    //Ensures only one shape can be moved at a time
+    /// <summary>
+    /// Sets the shape that can currently be moved by the user.
+    /// 
+    /// Assigns the specified GameObject as the movable shape, allowing movement operations to be performed on it.
+    /// </summary>
+    /// <param name="shape">The GameObject to set as the movable shape.</param>
     public void SetMoveableShape(GameObject shape) {
         movableShape = shape;
     }
 
-    public GameObject GetMoveableShape() {
+    /// <summary>
+    /// Returns the shape that can currently be moved by the user.
+    /// 
+    /// Retrieves the GameObject assigned as the movable shape, allowing movement operations to be performed on it.
+    /// </summary>
+    /// <returns>The GameObject that can currently be moved by the user.</returns>
+    public GameObject GetMoveableShape()
+    {
         return movableShape;
     }
 
-    public void ChangeShapeMode() {
-        if(state != ShapeState.selected) return;
+    /// <summary>
+    /// Toggles the additive/subtractive mode of the currently selected shape.
+    /// 
+    /// If the manager is in the selected state, switches the mode of the current shape between additive and subtractive.
+    /// Used to change how the shape interacts in masking operations.
+    /// </summary>
+    public void ChangeShapeMode()
+    {
+        if (state != ShapeState.selected) return;
 
         var shapeScript = currentShape.GetComponent<Shape>();
-        if(shapeScript.isAdditive()) {
+        if (shapeScript.isAdditive())
+        {
             shapeScript.SetAdditive(false);
         }
-        else {
+        else
+        {
             shapeScript.SetAdditive(true);
         }
     }
 
-    /*
-     *Applies the selection and generates the mask from the shapes
-     *The additive param decides whether the function will be used on additive or subtractive shapes
-     *The undo param is used if the user is undoing a selection
-    */
+    /// <summary>
+    /// Applies the mask to the volume dataset using the active shapes.
+    /// 
+    /// Iterates through all active shapes and applies either additive or subtractive masking to the volume dataset,
+    /// depending on the specified mode. For each shape, disables it, then re-enables and checks if it matches the
+    /// desired additive/subtractive mode. Calculates the bounding box and iterates through its volume, transforming
+    /// each point to match the shape's orientation. If a point is inside the shape, paints the mask at that position.
+    /// Records painted shapes for undo functionality and pushes paint actions to the undo stack if additive mode is used.
+    /// Consolidates mask entries after processing.
+    /// </summary>
+    /// <param name="_activeDataSet">The VolumeDataSetRenderer to apply the mask to.</param>
+    /// <param name="_volumeInputController">The VolumeInputController providing source information.</param>
+    /// <param name="additive">True to apply additive masking, false for subtractive.</param>
+    /// <param name="undo">True if this operation is part of an undo action.</param>
     public void applyMask(VolumeDataSetRenderer _activeDataSet, VolumeInputController  _volumeInputController, bool additive, bool undo)
     {
         List<GameObject> undoShapes = new List<GameObject>();
@@ -393,7 +563,14 @@ public class ShapesManager : MonoBehaviour {
         return true;
     }
 
-    //Find the centre of a shape's mesh of vertices
+    /// <summary>
+    /// Calculates the world-space centre of a shape's mesh.
+    /// 
+    /// Iterates through all vertices of the shape's mesh, transforms each to world space,
+    /// and computes the average position to determine the centroid.
+    /// </summary>
+    /// <param name="shape">The GameObject whose mesh centre is to be calculated.</param>
+    /// <returns>The world-space centre (centroid) of the shape's mesh.</returns>
     public Vector3 findCentre(GameObject shape) {
         Vector3 centre = new Vector3(0,0,0);
         Vector3[] vertices = shape.GetComponent<MeshFilter>().mesh.vertices;
@@ -403,7 +580,47 @@ public class ShapesManager : MonoBehaviour {
         return centre/vertices.Length;
     }
 
-    //Undo the last action performed by the user
+    /// <summary>
+    /// Reverses the most recent shape-related action performed by the user.
+    /// </summary>
+    /// <remarks>
+    /// This method implements an undo system for shape manipulation actions.  
+    /// It removes the most recent <see cref="ShapeAction"/> from the action stack 
+    /// and reverts its effects depending on the action type:
+    /// <list type="bullet">
+    /// <item>
+    /// <description>
+    /// <see cref="ShapeAction.ActionType.AddShape"/> — Removes the most recently added shape 
+    /// from <c>activeShapes</c> and <c>selectedShapes</c>, then destroys it.
+    /// </description>
+    /// </item>
+    /// <item>
+    /// <description>
+    /// <see cref="ShapeAction.ActionType.DeleteShapes"/> — Restores previously deleted shapes 
+    /// by reactivating them, adding them back to <c>activeShapes</c> and <c>selectedShapes</c>,
+    /// and marking them as selected.
+    /// </description>
+    /// </item>
+    /// <item>
+    /// <description>
+    /// <see cref="ShapeAction.ActionType.CopyShapes"/> — Removes shapes that were created by a copy action 
+    /// and destroys them.
+    /// </description>
+    /// </item>
+    /// <item>
+    /// <description>
+    /// <see cref="ShapeAction.ActionType.Paint"/> — Reverts a paint operation by reapplying the 
+    /// previous mask state and resetting <c>activeShapes</c>.
+    /// </description>
+    /// </item>
+    /// </list>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Undo the last shape manipulation action
+    /// shapeController.Undo();
+    /// </code>
+    /// </example>
     public void Undo() {
         if(actions.Count == 0) return;
         ShapeAction lastAction = actions.Pop();
@@ -446,40 +663,102 @@ public class ShapesManager : MonoBehaviour {
         }
     }
 
-    public void DestroyCurrentShape() {
+    /// <summary>
+    /// Destroys the currently active shape in the scene.
+    /// </summary>
+    /// <remarks>
+    /// This method retrieves the <see cref="Shape"/> component attached to 
+    /// <c>currentShape</c> and calls its <c>DestroyShape()</c> method to 
+    /// remove it from the scene.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Destroy the shape the user is currently working on
+    /// shapeController.DestroyCurrentShape();
+    /// </code>
+    /// </example>
+    public void DestroyCurrentShape()
+    {
         Shape shapeScript = currentShape.GetComponent<Shape>();
         shapeScript.DestroyShape();
     }
 
-    public void ClearShapes() {
+
+    /// <summary>
+    /// Clears all active and selected shapes from memory.
+    /// </summary>
+    /// <remarks>
+    /// This method resets the <c>activeShapes</c> and <c>selectedShapes</c> lists 
+    /// by creating new empty lists. It does not destroy the shapes in the scene.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Remove all shape references without destroying them
+    /// shapeController.ClearShapes();
+    /// </code>
+    /// </example>
+    public void ClearShapes()
+    {
         activeShapes = new List<GameObject>();
         selectedShapes = new List<GameObject>();
     }
 
-    public void ClearPaintedShapes() {
+    /// <summary>
+    /// Clears the list of painted shapes.
+    /// </summary>
+    /// <remarks>
+    /// This method resets <c>paintedShapes</c> to a new empty list.  
+    /// It does not affect the shapes themselves in the scene.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Clear the painted shape list before starting a new paint operation
+    /// shapeController.ClearPaintedShapes();
+    /// </code>
+    /// </example>
+    public void ClearPaintedShapes()
+    {
         paintedShapes = new List<GameObject>();
     }
 
-    public void DestroyShapes() {
-        foreach(GameObject shape in activeShapes) {
-            if(shape)
+    /// <summary>
+    /// Destroys all shapes managed by the controller and resets internal state.
+    /// </summary>
+    /// <remarks>
+    /// This method destroys every <see cref="Shape"/> object in both 
+    /// <c>activeShapes</c> and <c>deletedShapes</c>, clears the undo 
+    /// <c>actions</c> stack, and resets all shape-related lists and counters.  
+    /// It effectively returns the shape system to a clean initial state.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Completely reset the shape controller
+    /// shapeController.DestroyShapes();
+    /// </code>
+    /// </example>
+    public void DestroyShapes()
+    {
+        foreach (GameObject shape in activeShapes)
+        {
+            if (shape)
             {
                 Shape shapeScript = shape.GetComponent<Shape>();
                 shapeScript.DestroyShape();
             }
         }
-        foreach(GameObject shape in deletedShapes) {
-            if(shape)
+        foreach (GameObject shape in deletedShapes)
+        {
+            if (shape)
             {
                 Shape shapeScript = shape.GetComponent<Shape>();
-                shapeScript.DestroyShape(); 
+                shapeScript.DestroyShape();
             }
-            
+
         }
         actions.Clear();
         ClearShapes();
         deletedShapes = new List<GameObject>();
         ClearPaintedShapes();
-        shapesCount = new int[]{0,0,0,0};
+        shapesCount = new int[] { 0, 0, 0, 0 };
     }
 }
