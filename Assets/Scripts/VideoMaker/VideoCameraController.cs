@@ -16,8 +16,13 @@ namespace VideoMaker
 {
     public class VideoCameraController : MonoBehaviour
     {
-        private const string ExportMessage = "Exporting Video";
-        private const string PreviewMessage = "Preview Video";
+        public class PlaybackUpdatedEventArgs : EventArgs
+        {
+            public float Progress { get; set; }
+        }
+        
+        public EventHandler PlaybackFinished;
+        public EventHandler<PlaybackUpdatedEventArgs> PlaybackUpdated;
 
         private const int FfmpegConsoleCount = 58; //From limited observation, this is how many console messages are printed by ffmpeg
 
@@ -28,19 +33,48 @@ namespace VideoMaker
         
         public TMP_Text VideoScriptFilePath;
 
-        // TODO use a different MonoBehaviour to manage the playback and status bar?
-        public GameObject ProgressBar;
-        public TMP_Text StatusText;
-
-        public GameObject VideoView;
-        private RectTransform _videoDisplayRect;
-        private Vector2 _videoDisplaySizeDelta;
-
         private Camera _camera;
 
         private VideoScriptData _videoScript = null;
+        public VideoScriptData VideoScript
+        {
+            get
+            {
+                return _videoScript;
+            }
+            set
+            {
+                _videoScript = value;
+                
+                //Setting RenderMaterial properties
+                RenderTexture tex = GetComponent<Camera>().targetTexture;
+                tex.Release();
+                tex.height = value.Height;
+                tex.width = value.Width;
+                
+                //Setting logo properties in shader
+                //Length of u compoent of logo UV. Length of V is given by LogoScale
+                float logoLenV = value.LogoScale;
+                float logoLenU = _logoAspect * value.LogoScale * value.Height / value.Width;
+                
+                //Vector components are left bottom right top
+                _logoMaterial.SetVector("_LogoBounds", value.logoPosition switch
+                {
+                    VideoScriptData.LogoPosition.BottomLeft => new Vector4(0, 0, logoLenU, logoLenV),
+                    VideoScriptData.LogoPosition.BottomCenter => new Vector4(0.5f * (1 - logoLenU), 0, 0.5f * (1 + logoLenU), logoLenV),
+                    VideoScriptData.LogoPosition.BottomRight => new Vector4(1 - logoLenU, 0, 1, logoLenV),
+                    VideoScriptData.LogoPosition.CenterLeft => new Vector4(0, 0.5f * (1 - logoLenV), logoLenU, 0.5f * (1 + logoLenV)),
+                    VideoScriptData.LogoPosition.CenterCenter => new Vector4(0.5f * (1 - logoLenU), 0.5f * (1 - logoLenV), 0.5f * (1 + logoLenU), 0.5f * (1 + logoLenV)),
+                    VideoScriptData.LogoPosition.CenterRight => new Vector4(1 - logoLenU, 0.5f * (1 - logoLenV), 1, 0.5f * (1 + logoLenV)),
+                    VideoScriptData.LogoPosition.TopLeft => new Vector4(0, 1 - logoLenV, logoLenU, 1),
+                    VideoScriptData.LogoPosition.TopCenter => new Vector4(0.5f * (1 - logoLenU), 1 - logoLenV, 0.5f * (1 + logoLenU), 1),
+                    VideoScriptData.LogoPosition.TopRight => new Vector4(1 - logoLenU, 1 - logoLenV, 1, 1),
+                    _ => new Vector4(1 - logoLenU, 0, 1, logoLenV)
+                });
+            }
+        }
 
-        private bool _isPlaying = false;
+        public bool IsPlaying { get; private set; }
 
         private int _frameCounter = 0;
         private int _frameTotal = 0;
@@ -54,8 +88,8 @@ namespace VideoMaker
 
         private string _videoPath;
         private string _framePath;
-        private string _ffmpegPath;
-        private string _videoFileName;
+        public string FfmpegPath { get; set; }
+        public string VideoFileName { get; set; }
 
         private Queue<PositionAction> _positionQueue = new();
         private Queue<DirectionAction> _directionQueue = new();
@@ -78,12 +112,6 @@ namespace VideoMaker
             _logoMaterial = new Material(logoShader);
             _logoMaterial.SetTexture("_LogoTex", logoTexture);
             _logoAspect = logoTexture.width / logoTexture.height;
-            
-            ProgressBar.SetActive(false);
-            StatusText.gameObject.SetActive(false);
-
-            _videoDisplayRect = VideoView.transform.Find("VideoDisplay").gameObject.GetComponent<RectTransform>();
-            _videoDisplaySizeDelta = _videoDisplayRect.sizeDelta;
 
             var directory = new DirectoryInfo(Application.dataPath);
             _videoPath = System.IO.Path.Combine(directory.Parent.FullName, "Outputs/Video");
@@ -98,215 +126,18 @@ namespace VideoMaker
             _camera.enabled = false;
         }
 
-        //Taken from CanvassDesktop.BrowseImageFile
-        public void BrowseVideoScriptFile()
-        {
-            string lastPath = PlayerPrefs.GetString("LastPathVideo");
-            if (!Directory.Exists(lastPath))
-            {
-                lastPath = "";
-            }
-            var extensions = new[]{
-                new ExtensionFilter("Video scripts ", "idvs"), //excluding "json" for now
-                new ExtensionFilter("All Files ", "*"),
-            };
-            StandaloneFileBrowser.OpenFilePanelAsync("Open File", lastPath, extensions, false, (string[] paths) =>
-            {
-                if (paths.Length == 1)
-                {
-                    PlayerPrefs.SetString("LastPathVideo", System.IO.Path.GetDirectoryName(paths[0]));
-                    PlayerPrefs.Save();
-
-                    LoadVideoScriptFile(paths[0]);
-                }
-            });
-        }
-
-        private enum FfmpegTestResults
-        {
-            Valid,
-            NoExe,
-            NotFffmpeg,
-            ExeError,
-        }
-
-        private FfmpegTestResults TestFfmpegExe()
-        {
-            try
-            {
-                var process = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = _ffmpegPath,
-                        Arguments = "-version",
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    }
-                };
-
-                process.Start();
-                string output = process.StandardOutput.ReadToEnd();
-                process.WaitForExit();
-
-                // Check output for a recognizable ffmpeg version string
-                if (output.StartsWith("ffmpeg version", StringComparison.OrdinalIgnoreCase))
-                {
-                    return FfmpegTestResults.Valid;
-                }
-                return FfmpegTestResults.NotFffmpeg;
-
-            }
-            catch
-            {
-                return FfmpegTestResults.ExeError;
-            }
-        }
-
-        public void ValidateFfmpegPath()
-        {
-            _ffmpegPath = PlayerPrefs.GetString("FfmpegPath");
-
-            if (File.Exists(_ffmpegPath) && TestFfmpegExe() == FfmpegTestResults.Valid)
-            {
-
-                StartCoroutine(Export());
-                return;
-            }
-            else
-            {
-                _ffmpegPath = "";
-            }
-
-            var extensions = new[]{
-                new ExtensionFilter("Executable Files", "exe"),
-                new ExtensionFilter("All Files", "*")
-            };
-
-            StandaloneFileBrowser.OpenFilePanelAsync("Open the FFmpeg executable", "", extensions, false, (string[] paths) =>
-            {
-                if (paths.Length == 1)
-                {
-                    _ffmpegPath = paths[0];
-                    
-                    switch (string.IsNullOrEmpty(_ffmpegPath) ? FfmpegTestResults.NoExe : TestFfmpegExe())
-                    {
-                        case FfmpegTestResults.Valid:
-                            StatusText.gameObject.SetActive(false);
-                            break;
-                        case FfmpegTestResults.NoExe:
-                            StatusText.text = "No FFmpeg exe selected. Please try again.";
-                            StatusText.gameObject.SetActive(true);
-                            return;
-                        case FfmpegTestResults.NotFffmpeg:
-                            StatusText.text = "Exe selected is not FFmpeg. Please try again.";
-                            StatusText.gameObject.SetActive(true);
-                            return;
-                        case FfmpegTestResults.ExeError:
-                            StatusText.text = "Exe selected executed with errors. Please try again.";
-                            StatusText.gameObject.SetActive(true);
-                            return;
-                    }
-
-                    PlayerPrefs.SetString("FfmpegPath", _ffmpegPath);
-                    PlayerPrefs.Save();
-                    StartCoroutine(Export());
-                }
-            });
-        }
-
-        private void LoadVideoScriptFile(string path)
-        {
-            if (path == null)
-            {
-                return;
-            }
-            
-            _videoFileName = System.IO.Path.GetFileNameWithoutExtension(path);
-            VideoScriptFilePath.text = System.IO.Path.GetFileName(path);
-            
-            using (StreamReader reader = new(path))
-            {
-                // Check file extension to decide on which reader to use
-                string fileExtension = System.IO.Path.GetExtension(path);
-                switch (fileExtension)
-                {
-                    // case ".json":
-                    //     string jsonString = reader.ReadToEnd();
-                    //     _videoScript = _vsReader.ReadJSONVideoScript(jsonString);
-                    //     break;
-                    case ".idvs":
-                        _videoScript = VideoScriptReader.ReadIdvsVideoScript(reader, path);
-                        break;
-                    default:
-                        Debug.LogError("Selected file is not of an appropriate type!");
-                        return;
-                }
-                //TODO use async?
-            }
-
-            if (_videoScript is null)
-            {
-                UnityEngine.Debug.LogWarning("VideoScript failed to construct actions.");
-                return;
-            }
-            
-            //Setting RenderMaterial properties
-            RenderTexture tex = GetComponent<Camera>().targetTexture;
-            tex.Release();
-            tex.height = _videoScript.Height;
-            tex.width = _videoScript.Width;
-
-            if (_videoScript.Height / (float)_videoScript.Width > _videoDisplaySizeDelta.y / _videoDisplaySizeDelta.x)
-            {
-                _videoDisplayRect.sizeDelta = new Vector2(
-                    _videoDisplaySizeDelta.x * _videoScript.Width / (float)_videoScript.Height,
-                    _videoDisplaySizeDelta.y
-                    );
-            }
-            else
-            {
-                _videoDisplayRect.sizeDelta = new Vector2(
-                    _videoDisplaySizeDelta.x,
-                    _videoDisplaySizeDelta.y * _videoScript.Height / (float)_videoScript.Width
-                );
-            }
-            
-            //Setting logo properties in shader
-            //Length of u compoent of logo UV. Length of V is given by LogoScale
-            float logoLenV = _videoScript.LogoScale;
-            float logoLenU = _logoAspect * _videoScript.LogoScale * _videoScript.Height / _videoScript.Width;
-            
-            //Vector components are left bottom right top
-            _logoMaterial.SetVector("_LogoBounds", _videoScript.logoPosition switch
-            {
-                VideoScriptData.LogoPosition.BottomLeft => new Vector4(0, 0, logoLenU, logoLenV),
-                VideoScriptData.LogoPosition.BottomCenter => new Vector4(0.5f * (1 - logoLenU), 0, 0.5f * (1 + logoLenU), logoLenV),
-                VideoScriptData.LogoPosition.BottomRight => new Vector4(1 - logoLenU, 0, 1, logoLenV),
-                VideoScriptData.LogoPosition.CenterLeft => new Vector4(0, 0.5f * (1 - logoLenV), logoLenU, 0.5f * (1 + logoLenV)),
-                VideoScriptData.LogoPosition.CenterCenter => new Vector4(0.5f * (1 - logoLenU), 0.5f * (1 - logoLenV), 0.5f * (1 + logoLenU), 0.5f * (1 + logoLenV)),
-                VideoScriptData.LogoPosition.CenterRight => new Vector4(1 - logoLenU, 0.5f * (1 - logoLenV), 1, 0.5f * (1 + logoLenV)),
-                VideoScriptData.LogoPosition.TopLeft => new Vector4(0, 1 - logoLenV, logoLenU, 1),
-                VideoScriptData.LogoPosition.TopCenter => new Vector4(0.5f * (1 - logoLenU), 1 - logoLenV, 0.5f * (1 + logoLenU), 1),
-                VideoScriptData.LogoPosition.TopRight => new Vector4(1 - logoLenU, 1 - logoLenV, 1, 1),
-                _ => new Vector4(1 - logoLenU, 0, 1, logoLenV)
-            });
-        }
-
         IEnumerator Preview()
         {
-            if (_videoScript is null)
+            if (VideoScript is null)
             {
                 yield break;
             }
 
-            StartPlayback(PreviewMessage);
+            StartPlayback();
 
-            while (_time < _videoScript.Duration)
+            while (_time < VideoScript.Duration)
             {
-                ProgressBar.GetComponent<Slider>().value = _time / _videoScript.Duration;
+                OnPlaybackUpdated(_time / VideoScript.Duration);
                 UpdatePlayback(Time.deltaTime);
                 yield return null;
             }
@@ -316,7 +147,7 @@ namespace VideoMaker
 
         IEnumerator Export()
         {
-            if (_videoScript is null)
+            if (VideoScript is null)
             {
                 yield break;
             }
@@ -328,12 +159,6 @@ namespace VideoMaker
                 _exportThread.Join();
             }
 
-            //Deleting existing frames and video file
-            // foreach (FileInfo file in new DirectoryInfo(_videoPath).EnumerateFiles())
-            // {
-            //     file.Delete();
-            // }
-
             _frameCounter = 0;
 
             _terminateThreadWhenDone = false;
@@ -342,20 +167,19 @@ namespace VideoMaker
             _exportThread.Start();
             //TODO: Does the Thread terminate when callback is complete?
 
-            StartPlayback(ExportMessage);
+            StartPlayback();
 
-            _frameTotal = (int)((float)_videoScript.FrameRate * _videoScript.Duration);
+            _frameTotal = (int)((float)VideoScript.FrameRate * VideoScript.Duration);
             _frameDigits = (int)Mathf.Floor(Mathf.Log10(_frameTotal) + 1);
             _frameTotal += FfmpegConsoleCount;
 
             _captureFrames = true;
 
-            float deltaTime = 1f / (float)_videoScript.FrameRate;
-            // _frameDigits = 
+            float deltaTime = 1f / (float)VideoScript.FrameRate;
 
-            while (_time < _videoScript.Duration)
+            while (_time < VideoScript.Duration)
             {
-                ProgressBar.GetComponent<Slider>().value = _frameCounter / (float)_frameTotal;
+                OnPlaybackUpdated(_frameCounter / (float)_frameTotal);
                 UpdatePlayback(deltaTime);
                 yield return null;
             }
@@ -367,7 +191,7 @@ namespace VideoMaker
             //TODO check if status changes to Export and change text on progress bar
             while (_threadIsProcessing)
             {
-                ProgressBar.GetComponent<Slider>().value = _frameCounter / (float)_frameTotal;
+                OnPlaybackUpdated(_frameCounter / (float)_frameTotal);
                 yield return null;
             }
             EndPlayback();
@@ -418,28 +242,22 @@ namespace VideoMaker
             gameObject.transform.SetPositionAndRotation(position, Quaternion.LookRotation(direction, upDirection));
         }
 
-        public void StartPlayback(string message)
+        public void StartPlayback()
         {
-            StatusText.text = message;
-            
             _camera.enabled = true;
-            VideoView.SetActive(true);
-            _isPlaying = true;
+            IsPlaying = true;
 
             GameObject volume = GameObject.Find("VolumeDataSetManager");
             _cubeTransform = volume.transform.Find("CubePrefab(Clone)");
 
-            _positionQueue = new(_videoScript.PositionActions);
-            _directionQueue = new(_videoScript.DirectionActions);
-            _upDirectionQueue = new(_videoScript.UpDirectionActions);
+            _positionQueue = new(VideoScript.PositionActions);
+            _directionQueue = new(VideoScript.DirectionActions);
+            _upDirectionQueue = new(VideoScript.UpDirectionActions);
 
             _positionAction = _positionQueue.Dequeue();
             _directionAction = _directionQueue.Dequeue();
             _upDirectionAction = _upDirectionQueue.Dequeue();
-
-            ProgressBar.SetActive(true);
-            StatusText.gameObject.SetActive(true);
-
+            
             _time = 0f;
             _positionTime = 0f;
             _directionTime = 0f;
@@ -449,30 +267,38 @@ namespace VideoMaker
         public void EndPlayback()
         {
             _camera.enabled = false;
-            ProgressBar.SetActive(false);
-            StatusText.gameObject.SetActive(false);
-            VideoView.SetActive(false);
-            _isPlaying = false;
+            IsPlaying = false;
+            OnPlaybackFinished();
         }
 
-        public void OnPreviewClick()
+        protected virtual void OnPlaybackUpdated(float progress)
         {
-            if (_isPlaying)
+            PlaybackUpdated?.Invoke(this, new PlaybackUpdatedEventArgs(){Progress = progress});
+        }
+        
+        protected virtual void OnPlaybackFinished()
+        {
+            PlaybackFinished?.Invoke(this,  EventArgs.Empty);
+        }
+
+        public void StartPreview()
+        {
+            if (IsPlaying)
             {
                 return;
             }
             StartCoroutine(Preview());
         }
 
-        public void OnExportClick()
+        public void StartExport()
         {
-            if (_isPlaying)
+            if (IsPlaying)
             {
                 return;
             }
-            ValidateFfmpegPath();
+            StartCoroutine(Export());
         }
-
+        
         private void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
             Graphics.Blit(source, destination, _logoMaterial);
@@ -532,11 +358,11 @@ namespace VideoMaker
                 }
             }
             
-            string command = $"-framerate {_videoScript.FrameRate} -i ./frames/frame%0{_frameDigits}d.png -c:v libx264 -pix_fmt yuv420p {_videoFileName}_{DateTime.Now:yyyyMMdd_Hmmssf}.mp4";
+            string command = $"-framerate {VideoScript.FrameRate} -i ./frames/frame%0{_frameDigits}d.png -c:v libx264 -pix_fmt yuv420p {VideoFileName}_{DateTime.Now:yyyyMMdd_Hmmssf}.mp4";
             
             var startInfo = new ProcessStartInfo
             {
-                FileName = _ffmpegPath,
+                FileName = FfmpegPath,
                 Arguments = command,
                 WorkingDirectory = _videoPath,
                 RedirectStandardOutput = true,
