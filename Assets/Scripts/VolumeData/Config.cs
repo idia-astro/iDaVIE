@@ -116,6 +116,11 @@ namespace VolumeData
         public bool useSimpleVoiceCommandStatus = true;
         
         public bool importedFeaturesStartVisible = true;
+
+        /// <summary>
+        /// The size of the box that highlights where a cursor location is in the video recording mode, as a fraction of the overall cube size.
+        /// </summary>
+        public float videoCursorLocHighlightSize = 0.06f;
         
         public class RenderConfig
         {

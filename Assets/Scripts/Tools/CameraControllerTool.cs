@@ -81,14 +81,14 @@ public class CameraControllerTool : MonoBehaviour
 
         yield return new WaitForSeconds(0.1f);
         yield return new WaitForEndOfFrame();
- 
+
         int width = Screen.width;
         int height = Screen.height;
         var rt = new RenderTexture(width*3, height*3, 24);
         var oldTargetTexture = targetCamera.targetTexture;
 
-          targetCamera.targetTexture=rt;
-       
+        targetCamera.targetTexture=rt;
+
         RenderTexture.active = targetCamera.targetTexture;
 
         // Render the camera's view.
@@ -106,7 +106,7 @@ public class CameraControllerTool : MonoBehaviour
         {
             if (!Directory.Exists(directoryPath))
             {
-             Directory.CreateDirectory(directoryPath);
+                Directory.CreateDirectory(directoryPath);
             }
             var filename = string.Format("Screenshot_{0}.png", DateTime.Now.ToString("yyyyMMdd_Hmmssf"));
             var path = Path.Combine(directoryPath, filename);

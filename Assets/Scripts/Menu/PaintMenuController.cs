@@ -313,7 +313,7 @@ public class PaintMenuController : MonoBehaviour
         _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.StartEditSource);
     }
 
-     public void OpenShapeMenu()
+    public void OpenShapeMenu()
     {
         shapeMenu.transform.SetParent(this.transform.parent, false);
         shapeMenu.transform.localPosition = this.transform.localPosition;
