@@ -8260,7 +8260,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1798270351}
   m_HandleRect: {fileID: 1798270350}
   m_Direction: 0
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -52344,6 +52344,7 @@ MonoBehaviour:
   WelcomeMenu: {fileID: 1426185498}
   LoadingText: {fileID: 499592097}
   loadTextLabel: {fileID: 499592099}
+  versionText: {fileID: 1619505343}
   progressBar: {fileID: 2053111952}
   MenuBarBehaviour: {fileID: 811511531}
   vrMapDisplay: {fileID: 1243533670}
@@ -73022,7 +73023,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: v.1.0
+  m_text: Version
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
