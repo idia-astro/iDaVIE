@@ -22,8 +22,6 @@
 using SFB;
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
 using TMPro;
@@ -66,12 +64,14 @@ public class DebugLogging : MonoBehaviour
         }
         catch (Exception ex)
         {
-            UnityEngine.Debug.Log("Error moving autosave logs!");
-            UnityEngine.Debug.Log(ex);
+            Debug.Log("Error moving autosave logs!");
+            Debug.Log(ex);
         }
 
         // Initializing the event handler
-        UnityEngine.Debug.Log("Start debug logging.");
+        Debug.Log("Start debug logging.");
+        Debug.Log("iDaVIE Version: v1.1");
+        DetermineHardware();
         saveButton.onClick.AddListener(saveToFileClick);
 
         // Check if default config file was created.
@@ -81,14 +81,14 @@ public class DebugLogging : MonoBehaviour
         // If new default config, inform user and set new to false.
         if (newConfig != 0)
         {
-            UnityEngine.Debug.Log($"Default configuration file created at {configPath}");
+            Debug.Log($"Default configuration file created at {configPath}");
             PlayerPrefs.SetInt("NewConfigFileCreated", 0);
             PlayerPrefs.Save();
         }
         // Else, inform user of current location of config file in use.
         else
         {
-            UnityEngine.Debug.Log($"Using configuration file at {configPath}");
+            Debug.Log($"Using configuration file at {configPath}");
         }
     }
 
@@ -100,6 +100,20 @@ public class DebugLogging : MonoBehaviour
     void OnDisable()
     {
         Application.logMessageReceived -= HandleLog;
+    }
+
+    /// <summary>
+    /// Function checks hardware information and reports it to the log, neatly formatted.
+    /// </summary>
+    void DetermineHardware()
+    {
+        string cpuModel = SystemInfo.processorType;
+        int systemMemory = SystemInfo.systemMemorySize;
+        string gpuModel = SystemInfo.graphicsDeviceName;
+        int gpuMemory = SystemInfo.graphicsMemorySize;
+
+        string output = $"System information:\n\t\t\tCPU Model: {cpuModel}\n\t\t\tRAM: {systemMemory} MB\n\t\t\tGPU Model: {gpuModel}\n\t\t\tVideo Memory: {gpuMemory} MB";
+        Debug.Log(output);
     }
 
     /// <summary>
@@ -184,11 +198,5 @@ public class DebugLogging : MonoBehaviour
         StreamWriter writer = new StreamWriter(autosavePath, true);
         writer.Write(message + "\n");
         writer.Close();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }
