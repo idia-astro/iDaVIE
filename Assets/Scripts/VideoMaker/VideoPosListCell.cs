@@ -18,6 +18,9 @@ public class VideoPosListCell : MonoBehaviour, ICell
 
     public TMP_Text locText;
 
+    public GameObject TeleportImage;
+    public GameObject HighlightImage;
+
     private static readonly Color _lightGrey = new Color(0.4039216f, 0.5333334f, 0.5882353f, 1f);
     private static readonly Color _darkGrey = new Color(0.2384301f, 0.3231786f, 0.3584906f, 1f);
 
@@ -26,6 +29,8 @@ public class VideoPosListCell : MonoBehaviour, ICell
     private VideoPosRecorder.videoRecLocation _location;
     private VideoPosRecorder _videoPosRecorder;
     private VolumeInputController _volumeInputController;
+
+    private VideoPosRecorder.videoLocRecMode locType;
 
     /// <summary>
     /// This function is called by VideoPosListDataSource to set the data values of the cell, and update the cell UI.
@@ -45,11 +50,17 @@ public class VideoPosListCell : MonoBehaviour, ICell
         locText.SetText(_location.ToString());
         if (_location.rotation == Vector3.zero)
         {
+            locType = VideoPosRecorder.videoLocRecMode.CURSOR;
             locationType.SetText(cursorPos);
+            HighlightImage.SetActive(true);
+            TeleportImage.SetActive(false);
         }
         else
         {
+            locType = VideoPosRecorder.videoLocRecMode.HEAD;
             locationType.SetText(headPos);
+            TeleportImage.SetActive(true);
+            HighlightImage.SetActive(false);
         }
     }
 
@@ -71,7 +82,18 @@ public class VideoPosListCell : MonoBehaviour, ICell
     /// </summary>
     public void GoTo()
     {
-        _volumeInputController.TeleportToVidRecLoc(_location.position, _location.rotation);
+        if (locType == VideoPosRecorder.videoLocRecMode.HEAD)
+        {
+            _volumeInputController.TeleportToVidRecLoc(_location.position, _location.rotation);
+        }
+        else if (locType == VideoPosRecorder.videoLocRecMode.CURSOR)
+        {
+            _volumeInputController.ActiveDataSet.SetVideoCursorLocPosition(_location.position);
+        }
+        else
+        {
+            Debug.LogError("Invalid location type, how did you manage that?");
+        }
     }
 
     /// <summary>

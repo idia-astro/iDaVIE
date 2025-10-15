@@ -90,6 +90,7 @@ public class VideoRecordMenuController : MonoBehaviour
 
         gameObject.SetActive(false);
         videoRecPosListMenu.SetActive(false);
+        _volumeInputController.ActiveDataSet.DeactivateVideoCursorLocPosition();
     }
 
     /// <summary>
