@@ -70,7 +70,7 @@ public class DebugLogging : MonoBehaviour
 
         // Initializing the event handler
         Debug.Log("Start debug logging.");
-        Debug.Log("iDaVIE Version: v1.1");
+        Debug.Log($"iDaVIE Version: {Application.version}");
         DetermineHardware();
         saveButton.onClick.AddListener(saveToFileClick);
 
