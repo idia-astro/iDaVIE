@@ -140,8 +140,8 @@ namespace VolumeData
         }
 
         public MomentConfig momentMaps = new MomentConfig();
-        
 
+        public int numberOfLogsToKeep = 5;
         private static Config _instance;
 
         private static string DefaultPath

@@ -34,7 +34,11 @@ public class TabsManager : MonoBehaviour
 
     public Color defaultColor;
     public Color selectedColor;
+
+    [SerializeField]
     public GameObject RegionCubeDisplay;
+
+    [SerializeField]
     public CanvassDesktop _canvasDesktop;
 
     private int activeTabIndex=0;
@@ -77,19 +81,31 @@ public class TabsManager : MonoBehaviour
             panels[activeTabIndex].SetActive(true);
         }
 
-        if(newActiveTab == PAINT_TAB_INDEX)
+        //Basic check if this is the main desktop UI instance of this TabsManager script.
+        if (!(_canvasDesktop && RegionCubeDisplay))
         {
-            _canvasDesktop.paintTabSelected();  //lets the canvas desktop know the paint tab is active
+            return;
         }
-        else{
-            if(RegionCubeDisplay.activeSelf)  //else if in a different tab and the region cube is displayed (for desktop paint) then deselect it and activate vr map display
+        else
+        {
+            if (newActiveTab == PAINT_TAB_INDEX)
             {
-                RegionCubeDisplay.SetActive(false);
-                vrMapDisplay.SetActive(true);
+                _canvasDesktop.paintTabSelected();  //lets the canvas desktop know the paint tab is active
+            }
+            else
+            {
+                if (RegionCubeDisplay.activeSelf)  //else if in a different tab and the region cube is displayed (for desktop paint) then deselect it and activate vr map display
+                {
+                    RegionCubeDisplay.SetActive(false);
+                    vrMapDisplay.SetActive(true);
+                }
+            }
+
+            if (old_activeTabIndex == PAINT_TAB_INDEX)
+            {
+                _canvasDesktop.paintTabLeft();
             }
         }
-
-        if(old_activeTabIndex == PAINT_TAB_INDEX) _canvasDesktop.paintTabLeft();
 
 
     }

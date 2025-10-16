@@ -353,7 +353,7 @@ public class VolumeInputController : MonoBehaviour
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuLeft")?.RemoveOnStateDownListener(OnMenuLeftPressed, SteamVR_Input_Sources.RightHand);
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.RemoveOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.LeftHand);
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.RemoveOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.RightHand);
-             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.RemoveOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.LeftHand);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.RemoveOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.LeftHand);
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.RemoveOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.RightHand);
         }
     }
@@ -362,7 +362,7 @@ public class VolumeInputController : MonoBehaviour
     {
         if (_locomotionState == LocomotionState.EditingThresholdMax || 
             _locomotionState == LocomotionState.EditingThresholdMin ||
-             _locomotionState == LocomotionState.EditingZAxis)
+            _locomotionState == LocomotionState.EditingZAxis)
         {
             EndEditing();
         }
@@ -394,14 +394,14 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnMenuUpReleased(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
-         if (fromSource == PrimaryHand && scrollSelected)
-         {
+        if (fromSource == PrimaryHand && scrollSelected)
+        {
             scrollUp = false;
-         }
-         else if(fromSource == PrimaryHand && _shapeSelection) {
+        }
+        else if(fromSource == PrimaryHand && _shapeSelection) {
             scalingUp = false;
             scalingTimer = 0f;
-         }
+        }
     }
 
     private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
@@ -586,19 +586,22 @@ public class VolumeInputController : MonoBehaviour
         {
             return;
         }
+
+        // Skip input if in source ID editing mode (only trigger is accepted then)
+        if (newState && InteractionStateMachine.State == InteractionState.EditingSourceId)
+        {
+            Debug.Log("Pinch button does nothing in this state.");
+            return;
+        }
         
-        if(_shapeSelection) {
-            if(newState)
+        if (_shapeSelection)
+        {
+            if (newState)
             {
-                if(shapesManager.isShapeSelected()) PlaceShape();
+                if (shapesManager.isShapeSelected()) PlaceShape();
                 shapesManager.SelectShape();
             }
             return;
-        }
-
-        if (newState && InteractionStateMachine.State == InteractionState.EditingSourceId)
-        {
-            Debug.Log("Pinch Started");
         }
 
         InteractionStateMachine.Fire(newState ? InteractionEvents.InteractionStarted : InteractionEvents.InteractionEnded);
@@ -1068,7 +1071,7 @@ public class VolumeInputController : MonoBehaviour
         // Edit the region bounds in Editing state, but not for mask feature sets
         else if (currentState == InteractionState.Editing && HasEditingAnchor && _editingFeature.FeatureSetParent.FeatureSetType != FeatureSetType.Mask)
         {
-            var voxelPosition = dataSet.GetVoxelPosition(cursorPosWorldSpace);
+            var voxelPosition = dataSet.GetVoxelPositionWorldSpace(cursorPosWorldSpace);
             var newCornerMin = _editingFeature.CornerMin;
             var newCornerMax = _editingFeature.CornerMax;
 
@@ -1176,7 +1179,7 @@ public class VolumeInputController : MonoBehaviour
     /// <returns></returns>
     public static bool IsCursorOutsideCube(VolumeDataSetRenderer dataSetRenderer)
     {
-        return (dataSetRenderer.CursorVoxel.x < 0 || dataSetRenderer.CursorVoxel.y < 0 || dataSetRenderer.CursorVoxel.z < 0 || dataSetRenderer.CursorVoxel.x >= dataSetRenderer.Data.XDim || dataSetRenderer.CursorVoxel.y >= dataSetRenderer.Data.YDim || dataSetRenderer.CursorVoxel.z >= dataSetRenderer.Data.ZDim);
+        return (dataSetRenderer.CursorVoxel.x < 1 || dataSetRenderer.CursorVoxel.y < 1 || dataSetRenderer.CursorVoxel.z < 1 || dataSetRenderer.CursorVoxel.x > dataSetRenderer.Data.XDim || dataSetRenderer.CursorVoxel.y > dataSetRenderer.Data.YDim || dataSetRenderer.CursorVoxel.z > dataSetRenderer.Data.ZDim);
     }
     
     /// <summary>
@@ -1206,14 +1209,22 @@ public class VolumeInputController : MonoBehaviour
         {
             double physX, physY, physZ, normX, normY;
             double normZ = 0;
-            dataSet.GetFitsCoordsAst(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z, out physX, out physY, out physZ);
+            var dataCoordinate = dataSetRenderer.GetVoxelPositionDataSpace();
+            dataSet.GetFitsCoordsAst(dataCoordinate.x, dataCoordinate.y, dataCoordinate.z, out physX, out physY, out physZ);
             dataSet.GetNormCoords(physX, physY, physZ, out normX, out normY, out normZ);
             stringToReturn += $"WCS: ({dataSet.GetFormattedCoord(normX, 1)}, {dataSet.GetFormattedCoord(normY, 2)}){Environment.NewLine}"
                               + $"{dataSet.GetAstAttribute("System(3)")}: {dataSet.GetFormattedCoord(normZ, 3),10} {dataSet.GetAstAttribute("Unit(3)")}{Environment.NewLine}";
         }
+
+        stringToReturn += $"World: ({voxelCoordinate.x,5}, {voxelCoordinate.y,5}, {voxelCoordinate.z,5}){Environment.NewLine}";
         
-        stringToReturn += $"Image: ({voxelCoordinate.x,5}, {voxelCoordinate.y,5}, {voxelCoordinate.z,5}){Environment.NewLine}"
-                        + $"Value: {dataSetRenderer.CursorValue,16} {dataSet.GetPixelUnit()}";
+        if (dataSet.isSubset())
+        {
+            Vector3Int dataVoxel = dataSetRenderer.GetVoxelPositionDataSpace();
+            stringToReturn += $"Data: ({dataVoxel.x,5}, {dataVoxel.y,5}, {dataVoxel.z,5}){Environment.NewLine}";
+        }
+
+        stringToReturn += $"Value: {dataSetRenderer.CursorValue,16} {dataSet.GetPixelUnit()}";
 
         if (dataSet.HasRestFrequency)
             stringToReturn += $"{Environment.NewLine}{dataSet.GetConvertedDepth(voxelCoordinate.z)}";
@@ -1373,13 +1384,30 @@ public class VolumeInputController : MonoBehaviour
             InteractionStateMachine.Fire(InteractionEvents.CancelEditSource);
         }
     }
+
+    public void StartEditSourceID()
+    {
+        if (InteractionStateMachine.State == InteractionState.IdlePainting)
+        {
+            Debug.Log("Starting source ID editing mode");
+            InteractionStateMachine.Fire(InteractionEvents.StartEditSource);
+        }
+        else if (InteractionStateMachine.State == InteractionState.EditingSourceId)
+        {
+            Debug.Log("Already in source ID editing mode.");
+        }
+        else
+        {
+            Debug.Log($"Attempted to enter source ID editing mode from incorrect state!");
+        }
+    }
     
     public void SetBrushAdditive()
     {
         AdditiveBrush = true;
         if (SourceId <= 0)
         {
-            InteractionStateMachine.Fire(InteractionEvents.StartEditSource);    
+            InteractionStateMachine.Fire(InteractionEvents.StartEditSource);
         }
     }
 
