@@ -334,7 +334,7 @@ public class ShapesManager : MonoBehaviour {
             activeShapes.Add(copiedShape);
             copiedShapes.Add(copiedShape);
         }
-        foreach(GameObject shape in copiedShapes) selectedShapes.Add(shape);
+        foreach(GameObject shape in copiedShapes) selectedShapes.Add(DeepCopyShape(shape));
         actions.Push(new ShapeAction(ShapeAction.ActionType.CopyShapes, copiedShapes));
     }
     
