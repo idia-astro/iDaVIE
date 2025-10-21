@@ -676,7 +676,7 @@ namespace VolumeData
             ;
             // No need to convert to relative locations, since it already is relative to the cube.
             // Vector3 objectSpacePosition = transform.InverseTransformPoint(vidCursorLocPos);
-            Vector3 positionCubeSpace = new Vector3(vidCursorLocPos.x * _dataSet.XDim, vidCursorLocPos.y * _dataSet.YDim, vidCursorLocPos.z * _dataSet.ZDim);
+            Vector3 positionCubeSpace = new Vector3((0.5f + vidCursorLocPos.x) * _dataSet.XDim, (0.5f + vidCursorLocPos.y) * _dataSet.YDim, (0.5f + vidCursorLocPos.z) * _dataSet.ZDim);
             Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
             Vector3 voxelCenterCubeSpace = voxelCornerCubeSpace + 0.5f * Vector3.one;
             Vector3Int newVidCursorLocVoxel = new Vector3Int(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1);
