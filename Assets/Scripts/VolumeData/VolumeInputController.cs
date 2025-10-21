@@ -1337,7 +1337,7 @@ public class VolumeInputController : MonoBehaviour
             var cameraTransform = Camera.main.transform;
 
             dataSetTransform.rotation = cameraTransform.rotation * Quaternion.Inverse(Quaternion.Euler(rotEulerAngles));
-            dataSetTransform.position = cameraTransform.position - (dataSetTransform.rotation * pos);
+            dataSetTransform.position = cameraTransform.position - dataSetTransform.TransformVector(pos);
         }
     }
 
