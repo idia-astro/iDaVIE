@@ -15,13 +15,15 @@ public class VideoPosRecorder
     {
         public Vector3 position;
         public Vector3 rotation;
+        public string mode;
 
-        public videoRecLocation(Vector3 pos, Vector3 rot)
+        public videoRecLocation(Vector3 pos, Vector3 rot, videoLocRecMode mode)
         {
             this.position = pos;
             this.rotation = rot;
+            this.mode = mode switch {videoLocRecMode.CURSOR => "cursor", videoLocRecMode.HEAD => "head", _ => ""};
         }
-
+        
         /// <summary>
         /// Formats the data of this struct in a pretty manner.
         /// </summary>
@@ -98,9 +100,10 @@ public class VideoPosRecorder
     /// </summary>
     /// <param name="position">The position of the location.</param>
     /// <param name="rotation">The direction of the location.</param>
-    public void addLocation(Vector3 position, Vector3 rotation)
+    /// <param name="mode">The location recording mode used to record the location.</param>
+    public void addLocation(Vector3 position, Vector3 rotation, videoLocRecMode mode)
     {
-        videoRecLocation loc = new videoRecLocation(position, rotation);
+        videoRecLocation loc = new videoRecLocation(position, rotation, mode);
         _videoPositions.Add(loc);
         listChanged = true;
     }
@@ -151,7 +154,7 @@ public class VideoPosRecorder
         for (int i = 0; i < _videoPositions.Count; i++)
         {
             videoRecLocation loc = _videoPositions[i];
-            output.AppendLine(string.Format("p{0} is {{{1}, {2}}}", i, loc.position.ToString("F3"), loc.rotation.ToString("F3")));
+            output.AppendLine(string.Format("p{0} is {{{1}, {2}}} #{3}", i + 1, loc.position.ToString("F3"), loc.rotation.ToString("F3"), loc.mode));
         }
         output.AppendLine();
 

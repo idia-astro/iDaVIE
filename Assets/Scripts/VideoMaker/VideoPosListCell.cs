@@ -24,7 +24,7 @@ public class VideoPosListCell : MonoBehaviour, ICell
     private static readonly Color _lightGrey = new Color(0.4039216f, 0.5333334f, 0.5882353f, 1f);
     private static readonly Color _darkGrey = new Color(0.2384301f, 0.3231786f, 0.3584906f, 1f);
 
-    private static readonly string headPos = "Camera position";
+    private static readonly string headPos = "Head position";
     private static readonly string cursorPos = "Cursor position";
     private VideoPosRecorder.videoRecLocation _location;
     private VideoPosRecorder _videoPosRecorder;

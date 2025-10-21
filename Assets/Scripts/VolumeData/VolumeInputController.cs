@@ -1417,12 +1417,13 @@ public class VolumeInputController : MonoBehaviour
     /// <param name="fromSource">The hand that triggered this command – will always be PrimaryHand</param>
     public void AddNewLocation(SteamVR_Input_Sources fromSource)
     {
-        switch (_videoPosRecorder.GetRecordingMode())
+        VideoPosRecorder.videoLocRecMode mode = _videoPosRecorder.GetRecordingMode();
+        switch (mode)
         {
             case VideoPosRecorder.videoLocRecMode.CURSOR:
                 Vector3 cursorPos = ActiveDataSet.ConvertWorldPositionToDataCubePosition(_handTransforms[PrimaryHandIndex].position);
                 Vector3 cursorRot = Vector3.zero;
-                _videoPosRecorder.addLocation(cursorPos, cursorRot);
+                _videoPosRecorder.addLocation(cursorPos, cursorRot, mode);
                 Debug.Log($"Recording new cursor location at {{{cursorPos}, {cursorRot}}}");
                 VibrateController(fromSource, 0.1f);
                 break;
@@ -1430,7 +1431,7 @@ public class VolumeInputController : MonoBehaviour
                 Vector3 headPos = ActiveDataSet.ConvertWorldPositionToDataCubePosition(Camera.main.transform.position);
 
                 Vector3 headRot = ActiveDataSet.ConvertWorldRotationToDatacubeRotation(Camera.main.transform.rotation).eulerAngles;
-                _videoPosRecorder.addLocation(headPos, headRot);
+                _videoPosRecorder.addLocation(headPos, headRot, mode);
                 Debug.Log($"Recording new head location at {{{headPos}, {headRot}}}");
                 VibrateController(fromSource, 0.1f);
                 break;
