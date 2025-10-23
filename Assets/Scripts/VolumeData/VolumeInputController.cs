@@ -21,18 +21,16 @@
  */
 using System;
 using System.Collections.Generic;
-using Stateless;
-using VolumeData;
-using TMPro;
-using UnityEngine;
-using UnityEngine.XR;
-using Valve.VR;
-using Valve.VR.InteractionSystem;
 using System.Diagnostics;
 using System.Linq;
 using DataFeatures;
 using LineRenderer;
-using UnityEngine.Serialization;
+using Stateless;
+using TMPro;
+using UnityEngine;
+using Valve.VR;
+using Valve.VR.InteractionSystem;
+using VolumeData;
 using Debug = UnityEngine.Debug;
 using VRHand = Valve.VR.InteractionSystem.Hand;
 
@@ -1166,17 +1164,17 @@ public class VolumeInputController : MonoBehaviour
             dataSet.GetFitsLengthsAst(regionMin, regionMax + Vector3.one, out xLength, out yLength, out zLength, out angle);
             string depthUnit = dataSet.GetAxisUnit(3);
             stringToReturn += $"Angle: {FormatAngle(angle)}{Environment.NewLine}"
-                              + $"Depth: {dataSet.GetFormattedCoord(Math.Abs(zLength), 3),15} {dataSet.GetAstAttribute("Unit(3)")}";
+                            + $"Depth: {dataSet.GetFormattedCoord(Math.Abs(zLength), 3),15} {dataSet.GetAstAttribute("Unit(3)")}";
         }
 
         return stringToReturn;
     }
 
     /// <summary>
-    /// Checks if the cursor is outside the volume cube
+    /// Checks if the cursor is outside the volume cube.
     /// </summary>
-    /// <param name="dataSetRenderer"></param>
-    /// <returns></returns>
+    /// <param name="dataSetRenderer">The renderer that determines the volume cube bounds.</param>
+    /// <returns>True if the cursor is outside the cube, false otherwise.</returns>
     public static bool IsCursorOutsideCube(VolumeDataSetRenderer dataSetRenderer)
     {
         return (dataSetRenderer.CursorVoxel.x < 1 || dataSetRenderer.CursorVoxel.y < 1 || dataSetRenderer.CursorVoxel.z < 1 || dataSetRenderer.CursorVoxel.x > dataSetRenderer.Data.XDim || dataSetRenderer.CursorVoxel.y > dataSetRenderer.Data.YDim || dataSetRenderer.CursorVoxel.z > dataSetRenderer.Data.ZDim);
@@ -1213,7 +1211,7 @@ public class VolumeInputController : MonoBehaviour
             dataSet.GetFitsCoordsAst(dataCoordinate.x, dataCoordinate.y, dataCoordinate.z, out physX, out physY, out physZ);
             dataSet.GetNormCoords(physX, physY, physZ, out normX, out normY, out normZ);
             stringToReturn += $"WCS: ({dataSet.GetFormattedCoord(normX, 1)}, {dataSet.GetFormattedCoord(normY, 2)}){Environment.NewLine}"
-                              + $"{dataSet.GetAstAttribute("System(3)")}: {dataSet.GetFormattedCoord(normZ, 3),10} {dataSet.GetAstAttribute("Unit(3)")}{Environment.NewLine}";
+                            + $"{dataSet.GetAstAttribute("System(3)")}: {dataSet.GetFormattedCoord(normZ, 3),10} {dataSet.GetAstAttribute("Unit(3)")}{Environment.NewLine}";
         }
 
         stringToReturn += $"World: ({voxelCoordinate.x,5}, {voxelCoordinate.y,5}, {voxelCoordinate.z,5}){Environment.NewLine}";
@@ -1275,6 +1273,11 @@ public class VolumeInputController : MonoBehaviour
         return VRFamily.Unknown;
     }
 
+    /// <summary>
+    /// Teleports the cube to place a given bounds directly in the user's view.
+    /// </summary>
+    /// <param name="boundsMin">Lower front left corner of the bounds.</param>
+    /// <param name="boundsMax">Top rear right corner of the bounds.</param>
     public void Teleport(Vector3 boundsMin, Vector3 boundsMax)
     {
         float targetSize = 0.3f;
@@ -1385,6 +1388,9 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Function called when trying to change source ID, used to control state machine when interacting with paint mode.
+    /// </summary>
     public void StartEditSourceID()
     {
         if (InteractionStateMachine.State == InteractionState.IdlePainting)

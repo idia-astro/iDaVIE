@@ -1,13 +1,10 @@
 using System.Collections;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Threading;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UIElements;
-using UnityEngine.EventSystems;
-using System.Numerics;
 
+/// <summary>
+/// This class is used to control the behaviour of the buttons on a popup.
+/// </summary>
 public class PopUpButtonController : MonoBehaviour
 {
     public TextMeshProUGUI ButtonText;
@@ -17,33 +14,20 @@ public class PopUpButtonController : MonoBehaviour
 
     public RectTransform transform;
 
-    public IEnumerator hidemenu; 
+    public IEnumerator hidemenu;
     public System.Action callback;
-    public string buttonText {get; set;} = "Text displayed on the button";
-    public string hoverText {get; set;} = "Text displayed when user hovers over button";
-
-    // Start is called before the first frame update
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        return;
-    }
-
+    public string buttonText { get; set; } = "Text displayed on the button";
+    public string hoverText { get; set; } = "Text displayed when user hovers over button";
 
     public void init()
     {
-        collider.size = new UnityEngine.Vector3(transform.rect.width, transform.rect.height, 1);
+        collider.size = new Vector3(transform.rect.width, transform.rect.height, 1);
     }
 
     /// <summary>
-    /// This function sets the label on the button
+    /// This function sets the label on the button.
     /// </summary>
-    /// <param name="butText">The button label</param>
+    /// <param name="butText">The button label.</param>
     public void setButtonText(string butText)
     {
         this.buttonText = butText;
@@ -70,7 +54,7 @@ public class PopUpButtonController : MonoBehaviour
     /// This function sets the TMPText object that is used
     /// to display the text when the user hovers over the button.
     /// </summary>
-    /// <param name="tmpText">The TMPText field</param>
+    /// <param name="tmpText">The TMPText field.</param>
     public void setHoverObject(TextMeshProUGUI tmpText)
     {
         HoverText = tmpText;
@@ -82,7 +66,7 @@ public class PopUpButtonController : MonoBehaviour
     /// </summary>
     public void invokeCallback()
     {
-        UnityEngine.Debug.Log("Calling callback of button labelled " + buttonText + ".");
+        Debug.Log("Calling callback of button labelled " + buttonText + ".");
         StartCoroutine(hidemenu);
         callback();
     }

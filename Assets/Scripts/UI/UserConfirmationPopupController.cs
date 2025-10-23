@@ -1,14 +1,10 @@
 using System.Collections;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Threading;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UIElements;
-using UnityEngine.EventSystems;
-using System;
-using System.Diagnostics;
 
+/// <summary>
+/// This class is used to control the behaviour of a popup menu, with one or more buttons and usually used as confirmation.
+/// </summary>
 public class UserConfirmationPopupController : MonoBehaviour
 {
     public RectTransform messageRect;
@@ -40,7 +36,10 @@ public class UserConfirmationPopupController : MonoBehaviour
         return;
     }
 
-    private void onEnable()
+    /// <summary>
+    /// Called when the popup is enabled.
+    /// </summary>
+    private void OnEnable()
     {
         if (MessageBody.text == "")
         {
@@ -49,6 +48,9 @@ public class UserConfirmationPopupController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Called when the popup is disabled.
+    /// </summary>
     private void OnDisable()
     {
         messageRect.sizeDelta = new Vector2(messageRect.rect.width, 100f);
@@ -56,9 +58,9 @@ public class UserConfirmationPopupController : MonoBehaviour
     }
 
     /// <summary>
-    /// This function sets the body of the popup
+    /// This function sets the body of the popup.
     /// </summary>
-    /// <param name="body">Message to display</param>
+    /// <param name="body">Message to display.</param>
     public void setMessageBody(string body)
     {
         MessageBody.text = body;
@@ -74,11 +76,11 @@ public class UserConfirmationPopupController : MonoBehaviour
     }
 
     /// <summary>
-    /// This function is called to add a buttonto the popup
+    /// This function is called to add a button to the popup.
     /// </summary>
-    /// <param name="buttonText">The label for the new button</param>
-    /// <param name="hoverText">The text to show when hovering over the button</param>
-    /// <param name="callback">The function to call when the user clicks on the button</param>
+    /// <param name="buttonText">The label for the new button.</param>
+    /// <param name="hoverText">The text to show when hovering over the button.</param>
+    /// <param name="callback">The function to call when the user clicks on the button.</param>
     public void addButton(string buttonText, string hoverText, System.Action callback)
     {
         var button = Instantiate(buttonPrefab, buttonFrame.transform);
@@ -97,7 +99,7 @@ public class UserConfirmationPopupController : MonoBehaviour
     public IEnumerator buttonClicked()
     {
         this.gameObject.SetActive(false);
-        UnityEngine.Debug.Log("Popup menu has been hidden.");
+        Debug.Log("Popup menu has been hidden.");
         yield return null;
     }
 }

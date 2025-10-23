@@ -24,19 +24,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using TMPro;
-using Valve.Newtonsoft.Json.Linq;
-using UnityEngine;
-using UnityEngine.UI;
-using VolumeData;
-using Valve;
-using Valve.VR;
-using DataFeatures;
-using VoTableReader;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using DataFeatures;
 using SFB;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+using Valve.VR;
+using VolumeData;
 
 public class CanvassDesktop : MonoBehaviour
 {
@@ -152,6 +149,7 @@ public class CanvassDesktop : MonoBehaviour
     }
 
     // Start is called before the first frame update
+    // Used to initialise and populate the various gameObject fields of the class.
     void Start()
     {
         _volumeInputController = FindObjectOfType<VolumeInputController>();
@@ -213,7 +211,6 @@ public class CanvassDesktop : MonoBehaviour
         {
             renderingFreqsDropdown.options.Add(new TMP_Dropdown.OptionData(freq));
         }
-        
     }
 
     private void CheckCubesDataSet()
@@ -240,9 +237,9 @@ public class CanvassDesktop : MonoBehaviour
                 _minThreshold.value = _maxThreshold.value;
             }
 
-            var effectiveMin = firstActiveRenderer.ScaleMin + firstActiveRenderer.ThresholdMin 
+            var effectiveMin = firstActiveRenderer.ScaleMin + firstActiveRenderer.ThresholdMin
                 * (firstActiveRenderer.ScaleMax - firstActiveRenderer.ScaleMin);
-            var effectiveMax = firstActiveRenderer.ScaleMin + firstActiveRenderer.ThresholdMax 
+            var effectiveMax = firstActiveRenderer.ScaleMin + firstActiveRenderer.ThresholdMax
                 * (firstActiveRenderer.ScaleMax - firstActiveRenderer.ScaleMin);
             _minThresholdLabel.text = effectiveMin.ToString();
             _maxThresholdLabel.text = effectiveMax.ToString();
@@ -267,30 +264,39 @@ public class CanvassDesktop : MonoBehaviour
         }
 
         // Check if the tab key is being pressed and if there are more than one input fields in the list
-		if (Input.GetKeyDown(KeyCode.Tab) && inputFields.Count > 1) 
-		{
-			// If there are, check if either shift key is being pressed
-			if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) 
-			{
-				// If shift is pressed, move up on the list - or, if at the top of the list, move to the bottom
-				if (_inputIndex <= 0)
-				{
-					_inputIndex = inputFields.Count;
-				}
-				_inputIndex--;
-				inputFields[_inputIndex].Select();
-			}
-			else
-			{
-    			// If shift is not pressed, move down on the list - or, if at the bottom, move to the top
+        if (Input.GetKeyDown(KeyCode.Tab) && inputFields.Count > 1)
+        {
+            // If there are, check if either shift key is being pressed
+            if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+            {
+                // If shift is pressed, move up on the list - or, if at the top of the list, move to the bottom
+                if (_inputIndex <= 0)
+                {
+                    _inputIndex = inputFields.Count;
+                }
+                _inputIndex--;
+                inputFields[_inputIndex].Select();
+            }
+            else
+            {
+                // If shift is not pressed, move down on the list - or, if at the bottom, move to the top
                 if (inputFields.Count <= _inputIndex + 1)
                 {
                     _inputIndex = -1;
                 }
                 _inputIndex++;
                 inputFields[_inputIndex].Select();
-			}
-		}
+            }
+        }
+    }
+
+    /// <summary>
+    /// Function used by the input fields when the user selects them to shift the index used for when the user presses tab to cycle between the input fields.
+    /// </summary>
+    /// <param name="newIndex">The index of the input field selected.</param>
+    public void SetInputIndex(int newIndex)
+    {
+        _inputIndex = newIndex;
     }
 
     public void BrowseImageFile()
@@ -379,7 +385,7 @@ public class CanvassDesktop : MonoBehaviour
                 for (int i = 0; i < hduNames.Count; i++)
                 {
                     hduContainer.transform.Find("Hdu_dropdown").GetComponent<TMP_Dropdown>().options.Add(
-                        new TMP_Dropdown.OptionData() { text = (i + 1) + ": " + hduNames[i] });
+                        new TMP_Dropdown.OptionData() { text = i + 1 + ": " + hduNames[i] });
                 }
                 hduContainer.transform.Find("Hdu_dropdown").GetComponent<TMP_Dropdown>().RefreshShownValue();
             }
@@ -390,7 +396,7 @@ public class CanvassDesktop : MonoBehaviour
 
             //set the path of selected file to the ui
             informationPanelContent.gameObject.transform.Find("ImageFile_container").gameObject.transform.Find("ImageFilePath_text").GetComponent<TextMeshProUGUI>().text =
-                System.IO.Path.GetFileName(_imagePath);
+                Path.GetFileName(_imagePath);
 
             UpdateHeaderFromFits(fptr);
 
@@ -483,7 +489,7 @@ public class CanvassDesktop : MonoBehaviour
             {
                 if (axes.Value > 1 && axes.Key > 2)
                 {
-                    _zAxisDropdown.options.Add((new TMP_Dropdown.OptionData() { text = axes.Key.ToString() }));
+                    _zAxisDropdown.options.Add(new TMP_Dropdown.OptionData() { text = axes.Key.ToString() });
                 }
             }
 
@@ -521,6 +527,10 @@ public class CanvassDesktop : MonoBehaviour
         return loadable;
     }
 
+    /// <summary>
+    /// Function used to write file header details to the scroll view on the desktop UI.
+    /// </summary>
+    /// <param name="fptr">The fitsfile instance whose header details are to be displayed.</param>
     private void UpdateHeaderFromFits(IntPtr fptr)
     {
         int status;
@@ -554,6 +564,10 @@ public class CanvassDesktop : MonoBehaviour
             .GetComponent<Scrollbar>().value = 1;
     }
 
+    /// <summary>
+    /// Function used to alter the UI when subset selection is enabled.
+    /// </summary>
+    /// <param name="val"></param>
     public void onSubsetToggleSelected(bool val)
     {
         if (_subsetToggle.isOn)
@@ -571,6 +585,9 @@ public class CanvassDesktop : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Function called to set initial values of the subset input fields.
+    /// </summary>
     public void setSubsetBounds()
     {
         _subset_XMin_input.text = _subsetMin.ToString();
@@ -579,163 +596,202 @@ public class CanvassDesktop : MonoBehaviour
         _subset_XMax_input.text = _subsetMax_X.ToString();
         _subset_YMax_input.text = _subsetMax_Y.ToString();
         _subset_ZMax_input.text = _subsetMax_Z.ToString();
-        
+
         _subset[0] = _subset[2] = _subset[4] = _trueBounds[0] = _trueBounds[2] = _trueBounds[4] = _subsetMin;
         _subset[1] = _trueBounds[1] = _subsetMax_X;
         _subset[3] = _trueBounds[3] = _subsetMax_Y;
         _subset[5] = _trueBounds[5] = _subsetMax_Z;
     }
 
+    /// <summary>
+    /// Function called to update the max value for the third axis, in the event that the z-axis is changed.
+    /// </summary>
+    /// <param name="val"></param>
     public void updateSubsetZMax(int val = 0)
     {
         int i2;
         int.TryParse(_zAxisDropdown.options[_zAxisDropdown.value].text, out i2);
         i2 -= 1;
         int oldMaxZ = _subsetMax_Z;
-        _subsetMax_Z = (int) _axisSize[i2 + 1];
+        _subsetMax_Z = (int)_axisSize[i2 + 1];
         string val1 = _subset_ZMax_input.text;
         int valInt = 0;
-        if (Int32.TryParse(val1, out valInt)){
+        if (Int32.TryParse(val1, out valInt))
+        {
             if (valInt < _subsetMin)
-                _subset_ZMax_input.text = (_subsetMin).ToString();
+                _subset_ZMax_input.text = _subsetMin.ToString();
             else if (valInt > _subsetMax_Z || valInt == oldMaxZ)
                 _subset_ZMax_input.text = _subsetMax_Z.ToString();
         }
-        
+
         _subset[0] = _subset[2] = _subset[4] = _subsetMin;
         _subset[1] = _subsetMax_X;
         _subset[3] = _subsetMax_Y;
         _subset[5] = _subsetMax_Z;
     }
-    
+
+    /// <summary>
+    /// Function used to ensure that only valid values are possible in the subset input fields, called whenever one of the input fields finish editing.
+    /// </summary>
+    /// <param name="val1">Value required for the listener, unused in function.</param>
     public void checkSubsetBounds(string val1 = "")
     {
         string val = _subset_XMax_input.text;
         int valInt = 0;
-        if (Int32.TryParse(val, out valInt)){
-            if (valInt < _subsetMin){
-                Debug.Log(val + " is less than the minimum which is " + (_subsetMin).ToString() + "!");
-                _subset_XMax_input.text = (_subset[0]).ToString();
+        if (Int32.TryParse(val, out valInt))
+        {
+            if (valInt < _subsetMin)
+            {
+                Debug.Log(val + " is less than the minimum which is " + _subsetMin.ToString() + "!");
+                _subset_XMax_input.text = _subset[0].ToString();
             }
-            else if (valInt > _subsetMax_X){
+            else if (valInt > _subsetMax_X)
+            {
                 Debug.Log(val + " is more than the maximum which is " + _subsetMax_X.ToString() + "!");
                 _subset_XMax_input.text = _subsetMax_X.ToString();
             }
-            else if (valInt < _subset[0]){
-                Debug.Log(val + " is less than the current chosen lower bound which is " + (_subset[0]).ToString() + "!");
-                _subset_XMax_input.text = (_subset[0]).ToString();
+            else if (valInt < _subset[0])
+            {
+                Debug.Log(val + " is less than the current chosen lower bound which is " + _subset[0].ToString() + "!");
+                _subset_XMax_input.text = _subset[0].ToString();
             }
         }
-        else{
+        else
+        {
             Debug.Log(val + " is not a number!");
             _subset_XMax_input.text = _subsetMax_X.ToString();
         }
 
         val = _subset_YMax_input.text;
         valInt = 0;
-        if (Int32.TryParse(val, out valInt)){
-            if (valInt < _subsetMin){
-                Debug.Log(val + " is less than the minimum which is " + (_subsetMin).ToString() + "!");
-                _subset_YMax_input.text = (_subset[2]).ToString();
+        if (Int32.TryParse(val, out valInt))
+        {
+            if (valInt < _subsetMin)
+            {
+                Debug.Log(val + " is less than the minimum which is " + _subsetMin.ToString() + "!");
+                _subset_YMax_input.text = _subset[2].ToString();
             }
-            else if (valInt > _subsetMax_Y){
+            else if (valInt > _subsetMax_Y)
+            {
                 Debug.Log(val + " is more than the maximum which is " + _subsetMax_Y.ToString() + "!");
                 _subset_YMax_input.text = _subsetMax_Y.ToString();
             }
-            else if (valInt < _subset[2]){
-                Debug.Log(val + " is less than the current chosen lower bound which is " + (_subset[2]).ToString() + "!");
-                _subset_YMax_input.text = (_subset[2]).ToString();
+            else if (valInt < _subset[2])
+            {
+                Debug.Log(val + " is less than the current chosen lower bound which is " + _subset[2].ToString() + "!");
+                _subset_YMax_input.text = _subset[2].ToString();
             }
         }
-        else{
+        else
+        {
             Debug.Log(val + " is not a number!");
             _subset_YMax_input.text = _subsetMax_Y.ToString();
         }
 
         val = _subset_ZMax_input.text;
         valInt = 0;
-        if (Int32.TryParse(val, out valInt)){
-            if (valInt < _subsetMin){
-                Debug.Log(val + " is less than the minimum which is " + (_subsetMin).ToString() + "!");
-                _subset_ZMax_input.text = (_subset[4]).ToString();
+        if (Int32.TryParse(val, out valInt))
+        {
+            if (valInt < _subsetMin)
+            {
+                Debug.Log(val + " is less than the minimum which is " + _subsetMin.ToString() + "!");
+                _subset_ZMax_input.text = _subset[4].ToString();
             }
-            else if (valInt > _subsetMax_Z){
+            else if (valInt > _subsetMax_Z)
+            {
                 Debug.Log(val + " is more than the maximum which is " + _subsetMax_Z.ToString() + "!");
                 _subset_ZMax_input.text = _subsetMax_Z.ToString();
             }
-            else if (valInt < _subset[4]){
-                Debug.Log(val + " is less than the current chosen lower bound which is " + (_subset[4]).ToString() + "!");
-                _subset_ZMax_input.text = (_subset[4]).ToString();
+            else if (valInt < _subset[4])
+            {
+                Debug.Log(val + " is less than the current chosen lower bound which is " + _subset[4].ToString() + "!");
+                _subset_ZMax_input.text = _subset[4].ToString();
             }
         }
-        else{
+        else
+        {
             Debug.Log(val + " is not a number!");
             _subset_ZMax_input.text = _subsetMax_Z.ToString();
         }
 
         val = _subset_XMin_input.text;
         valInt = 0;
-        if (Int32.TryParse(val, out valInt)){
-            if (valInt < _subsetMin){
+        if (Int32.TryParse(val, out valInt))
+        {
+            if (valInt < _subsetMin)
+            {
                 Debug.Log(val + " is less than the minimum which is " + _subsetMin.ToString() + "!");
                 _subset_XMin_input.text = _subsetMin.ToString();
             }
-            else if (valInt > _subsetMax_X){
-                Debug.Log(val + " is more than the maximum which is " + (_subsetMax_X).ToString() + "!");
-                _subset_XMin_input.text = (_subset[1]).ToString();
+            else if (valInt > _subsetMax_X)
+            {
+                Debug.Log(val + " is more than the maximum which is " + _subsetMax_X.ToString() + "!");
+                _subset_XMin_input.text = _subset[1].ToString();
             }
-            else if (valInt > _subset[1]){
-                Debug.Log(val + " is more than the current chosen upper bound which is " + (_subset[1]).ToString() + "!");
-                _subset_XMin_input.text = (_subset[1]).ToString();
+            else if (valInt > _subset[1])
+            {
+                Debug.Log(val + " is more than the current chosen upper bound which is " + _subset[1].ToString() + "!");
+                _subset_XMin_input.text = _subset[1].ToString();
             }
         }
-        else{
+        else
+        {
             Debug.Log(val + " is not a number!");
             _subset_XMin_input.text = _subsetMin.ToString();
         }
 
         val = _subset_YMin_input.text;
         valInt = 0;
-        if (Int32.TryParse(val, out valInt)){
-            if (valInt < _subsetMin){
+        if (Int32.TryParse(val, out valInt))
+        {
+            if (valInt < _subsetMin)
+            {
                 Debug.Log(val + " is less than the minimum which is " + _subsetMin.ToString() + "!");
                 _subset_YMin_input.text = _subsetMin.ToString();
             }
-            else if (valInt > _subsetMax_Y){
-                Debug.Log(val + " is more than the maximum which is " + (_subsetMax_Y).ToString() + "!");
-                _subset_YMin_input.text = (_subset[3]).ToString();
+            else if (valInt > _subsetMax_Y)
+            {
+                Debug.Log(val + " is more than the maximum which is " + _subsetMax_Y.ToString() + "!");
+                _subset_YMin_input.text = _subset[3].ToString();
             }
-            else if (valInt > _subset[3]){
-                Debug.Log(val + " is more than the current chosen upper bound which is " + (_subset[3]).ToString() + "!");
-                _subset_YMin_input.text = (_subset[3]).ToString();
+            else if (valInt > _subset[3])
+            {
+                Debug.Log(val + " is more than the current chosen upper bound which is " + _subset[3].ToString() + "!");
+                _subset_YMin_input.text = _subset[3].ToString();
             }
         }
-        else{
+        else
+        {
             Debug.Log(val + " is not a number!");
             _subset_YMin_input.text = _subsetMin.ToString();
         }
 
         val = _subset_ZMin_input.text;
         valInt = 0;
-        if (Int32.TryParse(val, out valInt)){
-            if (valInt < _subsetMin){
+        if (Int32.TryParse(val, out valInt))
+        {
+            if (valInt < _subsetMin)
+            {
                 Debug.Log(val + " is less than the minimum which is " + _subsetMin.ToString() + "!");
                 _subset_ZMin_input.text = _subsetMin.ToString();
             }
-            else if (valInt > _subsetMax_Z){
-                Debug.Log(val + " is more than the maximum which is " + (_subsetMax_Z).ToString() + "!");
-                _subset_ZMin_input.text = (_subset[5]).ToString();
+            else if (valInt > _subsetMax_Z)
+            {
+                Debug.Log(val + " is more than the maximum which is " + _subsetMax_Z.ToString() + "!");
+                _subset_ZMin_input.text = _subset[5].ToString();
             }
-            else if (valInt > _subset[5]){
-                Debug.Log(val + " is more than the current chosen upper bound which is " + (_subset[5]).ToString() + "!");
-                _subset_ZMin_input.text = (_subset[5]).ToString();
+            else if (valInt > _subset[5])
+            {
+                Debug.Log(val + " is more than the current chosen upper bound which is " + _subset[5].ToString() + "!");
+                _subset_ZMin_input.text = _subset[5].ToString();
             }
         }
-        else{
+        else
+        {
             Debug.Log(val + " is not a number!");
             _subset_ZMin_input.text = _subsetMin.ToString();
         }
-        
+
         _subset[0] = Int32.Parse(_subset_XMin_input.text);
         _subset[1] = Int32.Parse(_subset_XMax_input.text);
         _subset[2] = Int32.Parse(_subset_YMin_input.text);
@@ -785,7 +841,7 @@ public class CanvassDesktop : MonoBehaviour
             }
 
             informationPanelContent.gameObject.transform.Find("MaskFile_container").gameObject.transform.Find("MaskFilePath_text").GetComponent<TextMeshProUGUI>().text =
-                System.IO.Path.GetFileName(_maskPath);
+                Path.GetFileName(_maskPath);
 
             _maskAxisSize = new Dictionary<double, double>();
             List<double> list = new List<double>();
@@ -863,20 +919,6 @@ public class CanvassDesktop : MonoBehaviour
             }
         }
     }
-    
-    public void setMaskPath(string mPath)
-    {
-        _maskPath = mPath;
-    }
-
-    /// <summary>
-    /// This function should be called from the software if the cube needs to be reloaded for whatever reason.
-    /// For example, reloading after user confirmation when entering paint mode without a loaded mask if a subcube is loaded.
-    /// </summary>
-    public void reload()
-    {
-        LoadFileFromFileSystem();
-    }
 
     public void LoadFileFromFileSystem()
     {
@@ -940,18 +982,25 @@ public class CanvassDesktop : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Function used to calculate the available memory and compare it against the size of the loaded cube and mask. Provide warning if larger than available memory.
+    /// </summary>
+    /// <param name="_imagePath">The filepath of the image to be loaded.</param>
+    /// <param name="_maskPath">The filepath of the mask to be loaded.</param>
+    /// <returns>True </returns>
     public bool CheckMemSpaceForCubes(string _imagePath, string _maskPath)
     {
         int ramSizeMB = SystemInfo.systemMemorySize;
         float fileSize = new FileInfo(_imagePath).Length;
-        long x = (_subset[1] - _subset[0] + 1);
-        long y = (_subset[3] - _subset[2] + 1);
-        long z = (_subset[5] - _subset[4] + 1);
+        long x = _subset[1] - _subset[0] + 1;
+        long y = _subset[3] - _subset[2] + 1;
+        long z = _subset[5] - _subset[4] + 1;
         long nelem = x * y * z;
-        float imgSize = (nelem * sizeof(float)) / 1024f / 1024f;
-        float maskSize = (String.IsNullOrEmpty(_maskPath)) ? 0 : (nelem * sizeof(short)) / 1024f / 1024f;
+        float imgSize = nelem * sizeof(float) / 1024f / 1024f;
+        float maskSize = String.IsNullOrEmpty(_maskPath) ? 0 : nelem * sizeof(short) / 1024f / 1024f;
         float sumSizeMB = imgSize + maskSize;
-        if (sumSizeMB >= ramSizeMB){
+        if (sumSizeMB >= ramSizeMB)
+        {
             Debug.LogWarning("Cube and mask size (" + sumSizeMB.ToString("F2") + " MB) exceed RAM size (" + ramSizeMB.ToString("F2") + " MB)!");
             return true;
         }
@@ -1212,7 +1261,7 @@ public class CanvassDesktop : MonoBehaviour
         sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
         //activate load features button
         sourcesPanelContent.gameObject.transform.Find("SourcesFile_container").gameObject.transform.Find("SourcesFilePath_text").GetComponent<TextMeshProUGUI>().text =
-            System.IO.Path.GetFileName(path);
+            Path.GetFileName(path);
 
         var featureTable = FeatureTable.GetFeatureTableFromFile(path);
         
@@ -1269,7 +1318,7 @@ public class CanvassDesktop : MonoBehaviour
     private void _browseMappingFile(string path)
     {
         sourcesPanelContent.gameObject.transform.Find("MappingFile_container").gameObject.transform.Find("MappingFilePath_text").GetComponent<TextMeshProUGUI>().text =
-            System.IO.Path.GetFileName(path);
+            Path.GetFileName(path);
         _featureMapping = FeatureMapping.GetMappingFromFile(path);
         foreach (var sourceRowObject in _sourceRowObjects)
         {
@@ -1374,6 +1423,11 @@ public class CanvassDesktop : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Function called when the user changes the HDU selection from the dropdown.
+    /// Updates the fitsfile instance to point to the new HDU, and updates the header display.
+    /// </summary>
+    /// <param name="dropdown">The dropdown in question.</param>
     public void ChangeHduSelection(TMP_Dropdown dropdown)
     {
         LoadingText.SetActive(false);
@@ -1562,7 +1616,7 @@ public class CanvassDesktop : MonoBehaviour
     {
         StopAllCoroutines();
 
-        var initOpenVR = (!SteamVR.active && !SteamVR.usingNativeSupport);
+        var initOpenVR = !SteamVR.active && !SteamVR.usingNativeSupport;
         if (initOpenVR)
             OpenVR.Shutdown();
 
@@ -1622,6 +1676,10 @@ public class CanvassDesktop : MonoBehaviour
             volumeDataSet.StanDev);
     }
 
+    /// <summary>
+    /// Function used to populate the colour map dropdown menu on the rendering tab of the desktop UI.
+    /// Called after file load.
+    /// </summary>
     private void populateColorMapDropdown()
     {
         renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
@@ -1631,7 +1689,7 @@ public class CanvassDesktop : MonoBehaviour
         {
             renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
                 .Find("Settings").gameObject.transform.Find("Colormap_container").gameObject.transform.Find("Dropdown_colormap").GetComponent<TMP_Dropdown>().options
-                .Add((new TMP_Dropdown.OptionData() { text = colorMap.ToString() }));
+                .Add(new TMP_Dropdown.OptionData() { text = colorMap.ToString() });
         }
 
         renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject.transform
@@ -1639,6 +1697,9 @@ public class CanvassDesktop : MonoBehaviour
             Config.Instance.defaultColorMap.GetHashCode();
     }
 
+    /// <summary>
+    /// Function called when the user changes the colour map value from the dropdown on the rendering tab of the desktop UI.
+    /// </summary>
     public void ChangeColorMap()
     {
         var firstActiveRenderer = GetFirstActiveRenderer();

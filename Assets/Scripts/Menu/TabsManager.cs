@@ -19,8 +19,6 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -56,19 +54,10 @@ public class TabsManager : MonoBehaviour
 
         tabs[defaultTabIndex].GetComponent<Image>().color = selectedColor;
         panels[defaultTabIndex].SetActive(true);
-
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    } 
 
     public void UpdateActiveTab(int newActiveTab)
     {
-
-       
         old_activeTabIndex = activeTabIndex;
         activeTabIndex = newActiveTab;
 
@@ -106,8 +95,6 @@ public class TabsManager : MonoBehaviour
                 _canvasDesktop.paintTabLeft();
             }
         }
-
-
     }
 
     public void paintModeEntered()

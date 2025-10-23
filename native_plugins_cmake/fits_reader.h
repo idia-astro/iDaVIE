@@ -91,6 +91,7 @@ DllExport int FitsCopyFile(fitsfile *, fitsfile *, int *);
 
 DllExport int FitsCopyCubeSection(fitsfile *, fitsfile *, char *, int *); 
 
+[[deprecated("Replaced by FitsWriteSubImageInt16, which is more flexible.")]]
 DllExport int FitsWriteImageInt16(fitsfile * , int , int64_t , int16_t* , int* );
 
 DllExport int FitsWriteSubImageInt16(fitsfile * , long* , long* , int16_t* , int* );
@@ -113,10 +114,12 @@ DllExport int FitsReadColFloat(fitsfile *, int , long ,
 DllExport int FitsReadColString(fitsfile *, int , long ,
                                 long , int64_t , char ***, char **, int  *);
 
+[[deprecated("Replaced by FitsReadSubImageFloat, which is more flexible.")]]
 DllExport int FitsReadImageFloat(fitsfile *, int , int64_t , float **, int *);
 
 DllExport int FitsReadSubImageFloat(fitsfile *, int, int, long *, long *, int64_t, float **, int *);
 
+[[deprecated("Replaced by FitsReadSubImageInt16, which is more flexible.")]]
 DllExport int FitsReadImageInt16(fitsfile *, int , int64_t , int16_t **, int *);
 
 DllExport int FitsReadSubImageInt16(fitsfile *, int, int, long *, long *, int64_t, float **, int *);

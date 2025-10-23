@@ -28,7 +28,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using DataFeatures;
-using Unity.VisualScripting;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
@@ -195,25 +194,25 @@ namespace VolumeData
         /// <summary>
         /// Function that creates a random data set of the given dimensions.
         /// </summary>
-        /// <param name="min"></param>
-        /// <param name="max"></param>
-        /// <param name="xDim"></param>
-        /// <param name="yDim"></param>
-        /// <param name="zDim"></param>
-        /// <returns></returns>
+        /// <param name="min">Minimum data value.</param>
+        /// <param name="max">Maximum data value.</param>
+        /// <param name="xDim">Number of elements in the x direction.</param>
+        /// <param name="yDim">Number of elements in the y direction.</param>
+        /// <param name="zDim">Number of elements in the z direction.</param>
+        /// <returns>A VolumeDataSet instance containing the new random data set.</returns>
         public static VolumeDataSet LoadRandomFitsCube(float min, float max, int xDim, int yDim, int zDim)
         {
             VolumeDataSet volumeDataSet = new VolumeDataSet();
             long numberDataPoints = xDim * yDim * zDim;
             IntPtr dataPtr = IntPtr.Zero;
-            dataPtr = Marshal.AllocHGlobal(sizeof(float) * (int) numberDataPoints);
+            dataPtr = Marshal.AllocHGlobal(sizeof(float) * (int)numberDataPoints);
             float[] generatedData = new float[numberDataPoints];
             for (int i = 0; i < numberDataPoints; i++)
             {
                 generatedData[i] = UnityEngine.Random.Range(min, max);
             }
 
-            Marshal.Copy(generatedData, 0, dataPtr, (int) numberDataPoints);
+            Marshal.Copy(generatedData, 0, dataPtr, (int)numberDataPoints);
             volumeDataSet.FitsData = dataPtr;
             volumeDataSet.XDim = xDim;
             volumeDataSet.YDim = yDim;
@@ -238,9 +237,10 @@ namespace VolumeData
         /// <param name="subBounds">The bounds from which the data should be loaded, corresponding to [xmin,xmax,ymin,ymax,zmin,zmax] (default of [-1,-1,-1,-1,-1,-1] means load the full cube).</param>
         /// <param name="trueBounds">The bounds of the full cube.</param>
         /// <param name="imageDataPtr"></param>
-        /// <param name="index2"></param>
+        /// <param name="index2">The index of the dimension that is to be shown in the z-axis.</param>
         /// <param name="sliceDim"></param>
-        /// <returns></returns>
+        /// <param name="selectedHdu">The index of the HDU to be read.</param>
+        /// <returns>A VolumeDataSet containing the data loaded from the file.</returns>
         public static VolumeDataSet LoadDataFromFitsFile(string fileName, int[] subBounds, int[] trueBounds, IntPtr imageDataPtr = default(IntPtr), int index2 = 2, int sliceDim = 1, int selectedHdu = 1)
         {
             VolumeDataSet volumeDataSetRes = new VolumeDataSet();
@@ -262,18 +262,15 @@ namespace VolumeData
             {
                 fileNameExtension += $"[{selectedHdu}]";
             }
-            // if (subBounds[0] != -1)
-            // {
-            //     fileNameExtension += $"[{subBounds[0]}:{subBounds[1]},{subBounds[2]}:{subBounds[3]},{subBounds[4]}:{subBounds[5]}]";
-            // }
+
             Debug.Log("Loading file: " + fileName + fileNameExtension);
             if (FitsReader.FitsOpenFile(out fptr, fileName + fileNameExtension, out status, true) != 0)
             {
-                Debug.Log($"Fits open failure... code #{status.ToString()}: {FitsReader.ErrorCodes[status]}") ;
+                Debug.Log($"Fits open failure... code {FitsReader.FitsErrorMessage(status)}") ;
             }
             if (FitsReader.FitsCreateHdrPtrForAst(fptr, out volumeDataSetRes.FitsHeader, out volumeDataSetRes.NumberHeaderKeys, out status) != 0)
             {
-                Debug.Log($"Fits create header pointer failure... code #{status.ToString()}: {FitsReader.ErrorCodes[status]}");
+                Debug.Log($"Fits create header pointer failure... code {FitsReader.FitsErrorMessage(status)}");
                 FitsReader.FitsCloseFile(fptr, out status);
                 return null;
             }
@@ -289,7 +286,7 @@ namespace VolumeData
 
             if (FitsReader.FitsGetImageDims(fptr, out cubeDimensions, out status) != 0)
             {
-                Debug.Log($"Fits read image dimensions failed... code #{status.ToString()}: {FitsReader.ErrorCodes[status]}");
+                Debug.Log($"Fits read image dimensions failed... code {FitsReader.FitsErrorMessage(status)}");
                 FitsReader.FitsCloseFile(fptr, out status);
                 return null;
             }
@@ -311,7 +308,7 @@ namespace VolumeData
 
             if (FitsReader.FitsGetImageSize(fptr, cubeDimensions, out dataPtr, out status) != 0)
             {
-                Debug.Log($"Fits Read cube size error code #{status.ToString()}: {FitsReader.ErrorCodes[status]}");
+                Debug.Log($"Fits Read cube size error code {FitsReader.FitsErrorMessage(status)}");
                 FitsReader.FitsCloseFile(fptr, out status);
                 return null;
             }
@@ -380,7 +377,7 @@ namespace VolumeData
                 Marshal.Copy(finalPix, 0, finalPixPtr, finalPix.Length);
                 if (FitsReader.FitsReadSubImageInt16(fptr, cubeDimensions, index2, startPixPtr, finalPixPtr, numberDataPoints, out fitsDataPtr, out status) != 0)
                 {
-                    Debug.Log("Fits Read mask cube data error #" + status.ToString());
+                    Debug.Log($"Fits Read mask cube data error {FitsReader.FitsErrorMessage(status)}");
                     FitsReader.FitsCloseFile(fptr, out status);
                     return null;
                 }
@@ -426,7 +423,7 @@ namespace VolumeData
                 Marshal.Copy(finalPix, 0, finalPixPtr, finalPix.Length);
                 if (FitsReader.FitsReadSubImageFloat(fptr, cubeDimensions, index2, startPixPtr, finalPixPtr, numberDataPoints, out fitsDataPtr, out status) != 0)
                 {
-                    Debug.Log($"Fits Read cube data error code #{status.ToString()}: {FitsReader.ErrorCodes[status]}");
+                    Debug.Log($"Fits Read cube data error code {FitsReader.FitsErrorMessage(status)}");
                     FitsReader.FitsCloseFile(fptr, out status);
                     return null;
                 }
@@ -455,7 +452,7 @@ namespace VolumeData
                 volumeDataSetRes.HasFitsRestFrequency =
                     volumeDataSetRes.HeaderDictionary.ContainsKey("RESTFRQ") || volumeDataSetRes.HeaderDictionary.ContainsKey("RESTFREQ");
             }
-           
+
             if (volumeDataSetRes.HasFitsRestFrequency)
             {
                 Debug.Log("Found rest frequency in file.");
@@ -1431,16 +1428,15 @@ namespace VolumeData
             var maskFilePath = Path.Combine(directoryPath, $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}_mask.fits");
             Vector3Int offset = new Vector3Int(this.subsetBounds[0] - 1, this.subsetBounds[2] - 1, this.subsetBounds[4] - 1);
             // Works only with 3D cubes for now... need 4D askap capability
-            // Fits_open_file can take a subset specified in the filename, e.g., myimage.fits[101:200,301:400]
-            UnityEngine.Debug.Log("Attempting to load file:" + FileName + $"[{cornerMin.x + offset.x}:{cornerMax.x + offset.x}, {cornerMin.y + offset.y}:{cornerMax.y + offset.y}, {cornerMin.z + offset.z}:{cornerMax.z + offset.z}]");
-            if (FitsReader.FitsOpenFile(out oldFitsPtr, FileName + $"[{cornerMin.x + offset.x}:{cornerMax.x + offset.x}, {cornerMin.y + offset.y}:{cornerMax.y + offset.y}, {cornerMin.z + offset.z}:{cornerMax.z + offset.z}]", out status, true) == 0)
+            Debug.Log("Attempting to load file:" + FileName);
+            if (FitsReader.FitsOpenFile(out oldFitsPtr, FileName, out status, true) == 0)
             {
-                UnityEngine.Debug.Log("Old file opened successfully.");
+                Debug.Log("Old file opened successfully.");
                 if (FitsReader.FitsCreateFile(out newFitsPtr, filePath, out status) == 0)
                 {
-                    UnityEngine.Debug.Log("New file created successfully.");
+                    Debug.Log("New file created successfully.");
                     FitsReader.FitsCopyFile(oldFitsPtr, newFitsPtr, out status);
-                    UnityEngine.Debug.Log("File copy attempted.");
+                    Debug.Log("File copy attempted.");
                     if (maskDataSet != null)
                     {
                         SaveSubMask(maskFilePath, cornerMin, cornerMax, newFitsPtr, maskDataSet);
@@ -1450,7 +1446,7 @@ namespace VolumeData
                 FitsReader.FitsCloseFile(oldFitsPtr, out status);
             }
             else
-                UnityEngine.Debug.LogWarning("Could not open old file!");
+                Debug.LogWarning("Could not open old file!");
 
             if (status != 0)
             {
@@ -1540,6 +1536,13 @@ namespace VolumeData
             return status;
         }
 
+        /// <summary>
+        /// Saves a mask.
+        /// </summary>
+        /// <param name="cubeFitsPtr"></param>
+        /// <param name="filename">The filename to which the maskdata is to be written.</param>
+        /// <param name="exporting">True if a new copy of the mask data is written, thus requiring a copy of data that might not be loaded.</param>
+        /// <returns>Returns the status code, 0 if successful, or the error code if unsuccessful at any stage.</returns>
         public int SaveMask(IntPtr cubeFitsPtr, string filename, bool exporting)
         {
             int[] firstPix = new int[3];
@@ -1824,6 +1827,10 @@ namespace VolumeData
             }
         }
 
+        /// <summary>
+        /// Function used to check if the cube is loaded as a subset, used for modifying some information renders.
+        /// </summary>
+        /// <returns>True if loaded as a subset, false if not.</returns>
         public bool isSubset()
         {
             return loadedAsSubset;

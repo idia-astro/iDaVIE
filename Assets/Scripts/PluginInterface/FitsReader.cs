@@ -20,13 +20,10 @@
  *
  */
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using System.Runtime.InteropServices;
 using System.Text;
-using Unity.Collections;
-using System.Diagnostics;
+using UnityEngine;
 
 //TODO: consider lower level error handling for the fits interface here. Maybe have higher level
 // wrapper functions that handle the error and report to Debug.LogError
@@ -319,12 +316,14 @@ public class FitsReader
     [DllImport("idavie_native")]
     public static extern int FitsReadColString(IntPtr fptr, int colnum, long firstrow, long firstelem, long nelem, out IntPtr ptrarray, out IntPtr chararray, out int status);
 
+    [Obsolete("FitsReadImageFloat is deprecated, please use FitsReadSubImageFloat instead.")]
     [DllImport("idavie_native")]
     public static extern int FitsReadImageFloat(IntPtr fptr, int dims, long nelem, out IntPtr array, out int status);
     
     [DllImport("idavie_native")]
     public static extern int FitsReadSubImageFloat(IntPtr fptr, int dims, int zAxis, IntPtr startPix, IntPtr finalPix, long nelem, out IntPtr array, out int status);
 
+    [Obsolete("FitsReadImageInt16 is deprecated, please use FitsReadSubImageInt16 instead.")]
     [DllImport("idavie_native")]
     public static extern int FitsReadImageInt16(IntPtr fptr, int dims, long nelem, out IntPtr array, out int status);
 
@@ -357,7 +356,7 @@ public class FitsReader
         int numberKeys, keysLeft;
         if (FitsGetNumHeaderKeys(fptr, out numberKeys, out keysLeft, out status) != 0)
         {
-            UnityEngine.Debug.LogError($"Fits extract header error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits extract header error {FitsErrorMessage(status)}");
             return null;
         }
         IDictionary<string, string> dict = new Dictionary<string, string>();
@@ -377,6 +376,7 @@ public class FitsReader
         return dict;
     }
 
+    [Obsolete("SaveNewInt16Mask is deprecated, please use SaveNewInt16SubMask instead.")]
     public static int SaveNewInt16Mask(IntPtr cubeFitsPtr, IntPtr maskData, long[] maskDataDims, string fileName)
     {
         IntPtr maskPtr = IntPtr.Zero;
@@ -387,50 +387,50 @@ public class FitsReader
         Marshal.Copy(maskDataDims, 0, naxes, maskDataDims.Length);
         if (FitsCreateFile(out maskPtr, fileName, out status) != 0)
         {
-            UnityEngine.Debug.LogError($"Fits create file error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits create file error {FitsErrorMessage(status)}");
             return status;
         }
         if (FitsCopyHeader(cubeFitsPtr, maskPtr, out status) != 0)
         {
-            UnityEngine.Debug.LogError($"Fits copy header error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits copy header error {FitsErrorMessage(status)}");
             return status;
         }
         Marshal.WriteInt32(keyValue, 16);
         if (FitsUpdateKey(maskPtr, 21, "BITPIX", keyValue, null, out status) != 0)
         {
-            UnityEngine.Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
             return status;
         }
         Marshal.WriteInt32(keyValue, 3);
         if (FitsUpdateKey(maskPtr, 21, "NAXIS", keyValue, null, out status) != 0)   //Make sure new header has 3 dimensions
         {
-            UnityEngine.Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
             return status;
         }
         if (FitsDeleteKey(maskPtr, "BUNIT", out status) != 0)
         {
-            UnityEngine.Debug.LogWarning("Could not delete fits unit key. It probably does not exist!");
+            Debug.LogWarning("Could not delete fits unit key. It probably does not exist!");
             status = 0;
-        }        
+        }
         if (FitsWriteImageInt16(maskPtr, 3, nelements, maskData, out status) != 0)
         {
-            UnityEngine.Debug.LogError("Fits write image error " + FitsErrorMessage(status));
+            Debug.LogError("Fits write image error " + FitsErrorMessage(status));
             return status;
         }
         var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
-        if (FitsReader.FitsWriteHistory(maskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
+        if (FitsWriteHistory(maskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
         {
-            UnityEngine.Debug.LogError("Error writing history!");
+            Debug.LogError("Error writing history!");
             return status;
         }
         if (FitsFlushFile(maskPtr, out status) != 0)
         {
-            UnityEngine.Debug.LogError($"Fits flush file error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits flush file error {FitsErrorMessage(status)}");
             return status;
         }
         if (FitsCloseFile(maskPtr, out status) != 0)
         {
-            UnityEngine.Debug.LogError($"Fits close file error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits close file error {FitsErrorMessage(status)}");
             return status;
         }
         if (keyValue != IntPtr.Zero)
@@ -441,6 +441,7 @@ public class FitsReader
         return status;
     }
 
+    [Obsolete("UpdateOldInt16Mask is deprecated, please use UpdateOldInt16SubMask instead.")]
     public static int UpdateOldInt16Mask(IntPtr oldMaskPtr, IntPtr maskDataToSave, long[] maskDataDims)
     {
         int status = 0;
@@ -449,23 +450,23 @@ public class FitsReader
         Marshal.WriteInt32(keyValue, 3);
         if (FitsUpdateKey(oldMaskPtr, 21, "NAXIS", keyValue, null, out status) != 0)    //Make sure new header has 3 dimensions
         {
-            UnityEngine.Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
             return status;
         }
         if (FitsWriteImageInt16(oldMaskPtr, 3, nelements, maskDataToSave, out status) != 0)
         {
-            UnityEngine.Debug.LogError($"Fits write image error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits write image error {FitsErrorMessage(status)}");
             return status;
         }
         var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
-        if (FitsReader.FitsWriteHistory(oldMaskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
+        if (FitsWriteHistory(oldMaskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
         {
-            UnityEngine.Debug.LogError("Error writing history!");
+            Debug.LogError("Error writing history!");
             return status;
         }
         if (FitsFlushFile(oldMaskPtr, out status) != 0)
         {
-            UnityEngine.Debug.LogError($"Fits flush file error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits flush file error {FitsErrorMessage(status)}");
             return status;
         }
         if (keyValue != IntPtr.Zero)
@@ -475,6 +476,15 @@ public class FitsReader
         return status;
     }
 
+    /// <summary>
+    /// Function called to write a new mask of a given cube with the provided data, in the specified sequence. The target filename is provided.
+    /// </summary>
+    /// <param name="cubeFitsPtr">The data cube that the new mask is of.</param>
+    /// <param name="maskData">An array of data to be saved.</param>
+    /// <param name="firstPix">The first voxel in the sequence, taking the form [x, y, z].</param>
+    /// <param name="lastPix">The last voxel in the sequence, taking the form [x, y, z].</param>
+    /// <param name="fileName">The filename that the mask is to be saved to.</param>
+    /// <returns>Returns the status code, 0 if successful, or the error code if unsuccessful at any stage.</returns>
     public static int SaveNewInt16SubMask(IntPtr cubeFitsPtr, IntPtr maskData, IntPtr firstPix, IntPtr lastPix, string fileName)
     {
         IntPtr maskPtr = IntPtr.Zero;
@@ -482,51 +492,51 @@ public class FitsReader
         int status = 0;
         if (FitsCreateFile(out maskPtr, fileName, out status) != 0)
         {
-            UnityEngine.Debug.LogError($"Fits create file error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits create file error {FitsErrorMessage(status)}");
             return status;
         }
         if (FitsCopyHeader(cubeFitsPtr, maskPtr, out status) != 0)
         {
-            UnityEngine.Debug.LogError($"Fits copy file error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits copy file error {FitsErrorMessage(status)}");
             return status;
         }
         Marshal.WriteInt32(keyValue, 16);
         if (FitsUpdateKey(maskPtr, 21, "BITPIX", keyValue, null, out status) != 0)
         {
-            UnityEngine.Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
             return status;
         }
         Marshal.WriteInt32(keyValue, 3);
         if (FitsUpdateKey(maskPtr, 21, "NAXIS", keyValue, null, out status) != 0)   //Make sure new header has 3 dimensions
         {
-            UnityEngine.Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
             return status;
         }
         if (FitsDeleteKey(maskPtr, "BUNIT", out status) != 0)
         {
-            UnityEngine.Debug.LogWarning("Could not delete fits unit key. It probably does not exist!");
+            Debug.LogWarning("Could not delete fits unit key. It probably does not exist!");
             status = 0;
         }
         if (FitsWriteSubImageInt16(maskPtr, firstPix, lastPix, maskData, out status) != 0)
         {
-            UnityEngine.Debug.LogError("Fits write subset error " + FitsErrorMessage(status));
+            Debug.LogError("Fits write subset error " + FitsErrorMessage(status));
             FitsCloseFile(maskPtr, out status);
             return status;
         }
         var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
-        if (FitsReader.FitsWriteHistory(maskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
+        if (FitsWriteHistory(maskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
         {
-            UnityEngine.Debug.LogError("Error writing history!");
+            Debug.LogError("Error writing history!");
             return status;
         }
         if (FitsFlushFile(maskPtr, out status) != 0)
         {
-            UnityEngine.Debug.LogError($"Fits flush file error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits flush file error {FitsErrorMessage(status)}");
             return status;
         }
         if (FitsCloseFile(maskPtr, out status) != 0)
         {
-            UnityEngine.Debug.LogError($"Fits close file error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits close file error {FitsErrorMessage(status)}");
             return status;
         }
         if (keyValue != IntPtr.Zero)
@@ -537,35 +547,43 @@ public class FitsReader
         return status;
     }
 
+    /// <summary>
+    /// Function called to update an existing mask file, with a portion of the file loaded.
+    /// </summary>
+    /// <param name="oldMaskPtr">The pointer to the fitsfile instance of the existing mask.</param>
+    /// <param name="maskDataToSave">The array of values to save.</param>
+    /// <param name="firstPix">The first voxel in the sequence, taking the form [x, y, z].</param>
+    /// <param name="lastPix">The last voxel in the sequence, taking the form [x, y, z].</param>
+    /// <returns>Returns the status code, 0 if successful, or the error code if unsuccessful at any stage.</returns>
     public static int UpdateOldInt16SubMask(IntPtr oldMaskPtr, IntPtr maskDataToSave, IntPtr firstPix, IntPtr lastPix)
     {
-        UnityEngine.Debug.Log("Overwriting old mask");
+        Debug.Log("Overwriting old mask");
         int status = 0;
         IntPtr keyValue = Marshal.AllocHGlobal(sizeof(int));
         Marshal.WriteInt32(keyValue, 3);
         if (FitsUpdateKey(oldMaskPtr, 21, "NAXIS", keyValue, null, out status) != 0)    //Make sure new header has 3 dimensions
         {
-            UnityEngine.Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
             return status;
         }
-        UnityEngine.Debug.Log("Keys updated, writing data.");
+        Debug.Log("Keys updated, writing data.");
         if (FitsWriteSubImageInt16(oldMaskPtr, firstPix, lastPix, maskDataToSave, out status) != 0)
         {
-            UnityEngine.Debug.LogError($"Fits write image error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits write image error {FitsErrorMessage(status)}");
             FitsCloseFile(oldMaskPtr, out status);
             return status;
         }
-        UnityEngine.Debug.Log("Writing data complete, writing history.");
+        Debug.Log("Writing data complete, writing history.");
         var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
-        if (FitsReader.FitsWriteHistory(oldMaskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
+        if (FitsWriteHistory(oldMaskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
         {
-            UnityEngine.Debug.LogError("Error writing history!");
+            Debug.LogError("Error writing history!");
             return status;
         }
-        UnityEngine.Debug.Log("Writing history complete, flushing buffer.");
+        Debug.Log("Writing history complete, flushing buffer.");
         if (FitsFlushFile(oldMaskPtr, out status) != 0)
         {
-            UnityEngine.Debug.LogError($"Fits flush file error {FitsErrorMessage(status)}");
+            Debug.LogError($"Fits flush file error {FitsErrorMessage(status)}");
             return status;
         }
         if (keyValue != IntPtr.Zero)
@@ -585,6 +603,7 @@ public class FitsReader
         return true;
     }
 
+    [Obsolete("SaveMask is obsolete, please use SaveSubMask instead.")]
     public static int SaveMask(IntPtr fitsPtr, IntPtr maskData, long[] maskDims, string fileName)
     {
         bool isNewFile = (fileName != null);
@@ -598,41 +617,56 @@ public class FitsReader
         }
     }
 
+    /// <summary>
+    /// Function is called when a mask is to be saved. Checks which variant of the mask save functions to use.
+    /// </summary>
+    /// <param name="fitsPtr">The fitsfile instance of this mask.</param>
+    /// <param name="maskData">An array containing the data to be saved.</param>
+    /// <param name="firstPix">The first voxel in the sequence to be saved, taking the form [x, y, z].</param>
+    /// <param name="lastPix">The last voxel in the sequence to be saved, taking the form [x, y, z].</param>
+    /// <param name="fileName">The filename that the mask is to be saved to. Optional, used when writing a new file.</param>
+    /// <param name="exporting">True if a new copy of the mask data is written, thus requiring a copy of data that might not be loaded.</param>
+    /// <returns>Returns the status code, 0 if successful, or the error code if unsuccessful at any stage.</returns>
     public static int SaveSubMask(IntPtr fitsPtr, IntPtr maskData, int[] firstPix, int[] lastPix, string fileName, bool exporting)
     {
-        bool isNewFile = (fileName != null);
+        bool isNewFile = fileName != null;
         IntPtr fPix = Marshal.AllocHGlobal(sizeof(int) * firstPix.Length);
         IntPtr lPix = Marshal.AllocHGlobal(sizeof(int) * lastPix.Length);
         Marshal.Copy(firstPix, 0, fPix, firstPix.Length);
         Marshal.Copy(lastPix, 0, lPix, lastPix.Length);
-        UnityEngine.Debug.Log("Writing submask from first pixel [" + String.Join(", ", firstPix) + "] and end pixel [" + String.Join(", ", lastPix) + "].");
+        Debug.Log("Writing submask from first pixel [" + String.Join(", ", firstPix) + "] and end pixel [" + String.Join(", ", lastPix) + "].");
         if (isNewFile)
         {
             if (exporting)
             {
-                UnityEngine.Debug.Log("Attempting to export mask to a new file " + fileName + ".");
+                Debug.Log("Attempting to export mask to a new file " + fileName + ".");
                 int status = 0;
                 var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
-                FitsReader.FitsWriteNewCopySubImageInt16(fileName, fitsPtr, fPix, lPix, maskData, historyTimeStamp, out status);
+                FitsWriteNewCopySubImageInt16(fileName, fitsPtr, fPix, lPix, maskData, historyTimeStamp, out status);
                 if (status != 0)
                 {
-                    UnityEngine.Debug.LogError($"Fits save new copy error {FitsErrorMessage(status)}, see plugin log for details.");
-                } 
+                    Debug.LogError($"Fits save new copy error {FitsErrorMessage(status)}, see plugin log for details.");
+                }
                 return status;
             }
             else
             {
-                UnityEngine.Debug.Log("Saving mask file " + fileName + " for the first time.");
+                Debug.Log("Saving mask file " + fileName + " for the first time.");
                 return SaveNewInt16SubMask(fitsPtr, maskData, fPix, lPix, fileName);
             }
         }
         else
         {
-            UnityEngine.Debug.Log("Overwriting existing mask file " + fileName + ".");
+            Debug.Log("Overwriting existing mask file " + fileName + ".");
             return UpdateOldInt16SubMask(fitsPtr, maskData, fPix, lPix);
         }
     }
 
+    /// <summary>
+    /// Converts the numerical error code into its string representation through the ErrorMessages lookup table.
+    /// </summary>
+    /// <param name="status">The numerical error code returned by CFITSIO.</param>
+    /// <returns>The string explanation of the error code.</returns>
     public static string FitsErrorMessage(int status)
     {
         return $"#{status} {ErrorCodes[status]}";
@@ -646,8 +680,8 @@ public class FitsReader
         FitsMakeKeyN("TTYPE", col + 1, keyword, out status);
         if (FitsReadKeyString(fitsPtr, keyword.ToString(), colName, IntPtr.Zero, out status) != 0)
         {
-            UnityEngine.Debug.Log("Fits Read column name error #" + status.ToString());
-            FitsReader.FitsCloseFile(fitsPtr, out status);
+            Debug.Log("Fits Read column name error #" + status.ToString());
+            FitsCloseFile(fitsPtr, out status);
             return "";
         }
         return colName.ToString();
@@ -663,13 +697,13 @@ public class FitsReader
         {
             if (status == 202)
             {
-                UnityEngine.Debug.Log("No unit in column #" + col);
+                Debug.Log("No unit in column #" + col);
                 status = 0;
             }
             else
             {
-                UnityEngine.Debug.Log("Fits Read unit error #" + status.ToString());
-                FitsReader.FitsCloseFile(fitsPtr, out status);
+                Debug.Log("Fits Read unit error #" + status.ToString());
+                FitsCloseFile(fitsPtr, out status);
                 return null;
             }
         }
@@ -684,8 +718,8 @@ public class FitsReader
         FitsMakeKeyN("TFORM", col + 1, keyword, out status);
         if (FitsReadKeyString(fitsPtr, keyword.ToString(), colFormat, IntPtr.Zero, out status) != 0)
         {
-            UnityEngine.Debug.Log("Fits Read column unit error #" + status.ToString());
-            FitsReader.FitsCloseFile(fitsPtr, out status);
+            Debug.Log("Fits Read column unit error #" + status.ToString());
+            FitsCloseFile(fitsPtr, out status);
             return "";
         }
         return colFormat.ToString();

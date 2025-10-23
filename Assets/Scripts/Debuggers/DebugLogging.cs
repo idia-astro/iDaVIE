@@ -19,15 +19,13 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using SFB;
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using SFB;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -111,20 +109,6 @@ public class DebugLogging : MonoBehaviour
 
             string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
             autosavePath = Path.Combine(directoryPath, $"{defaultFile}_0_{timestamp}{logExtension}");
-            // if (File.Exists(autosavePath))
-            // {
-            //     // Move existing log to default with '_old' appended
-            //     File.Copy(autosavePath, Path.Combine(directoryPath, defaultFile.Substring(0, defaultFile.Length - 4) + "_previous.log"), true);
-            //     File.Delete(autosavePath);
-            // }
-
-            // pluginSavePath = Path.Combine(directoryPath, defaultPluginFile);
-            // if (File.Exists(pluginSavePath))
-            // {
-            //     // Move existing log to default with '_old' appended
-            //     File.Copy(pluginSavePath, Path.Combine(directoryPath, defaultPluginFile.Substring(0, defaultPluginFile.Length - 4) + "_previous.log"), true);
-            //     File.Delete(pluginSavePath);
-            // }
         }
         catch (Exception ex)
         {

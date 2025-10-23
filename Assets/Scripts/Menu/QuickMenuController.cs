@@ -19,10 +19,8 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using System.Diagnostics;
 using DataFeatures;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 using VolumeData;
 
@@ -203,6 +201,9 @@ public class QuickMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Function that is called when the user cycles through the mask modes using the menu button.
+    /// </summary>
     public void ToggleMask()
     {
         if (_activeDataSet.Mask == null)
@@ -252,6 +253,10 @@ public class QuickMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Function that is called when the user sets the mask mode through voice commands.
+    /// </summary>
+    /// <param name="mode">The mask mode to switch to.</param>
     private void setMask(MaskMode mode)
     {
         if (_activeDataSet.Mask == null)
@@ -266,12 +271,17 @@ public class QuickMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Function called when user toggles the crop button on the menu.
+    /// Either crops to selected area, or disables crop.
+    /// </summary>
     public void cropDataSet()
     {
         var imageDis = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Crop").gameObject.transform.Find("Image_dis").gameObject;
         var imageEn = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Crop").gameObject.transform.Find("Image_en").gameObject;
         imageDis.SetActive(false);
         imageEn.SetActive(false);
+
         if (_activeDataSet)
         {
             if (_activeDataSet.IsCropped)
@@ -289,6 +299,9 @@ public class QuickMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Opens paint menu when user clicks button or uses voice command to enter paint mode.
+    /// </summary>
     public void OpenPaintMenu()
     {
         if (!gameObject.activeSelf)
@@ -302,8 +315,9 @@ public class QuickMenuController : MonoBehaviour
         {
             ToastNotification.ShowError("Cannot paint downsampled mask!\nPlease select a smaller region");
         }
-        else {
-            
+        else
+        {
+
             paintMenu.transform.SetParent(this.transform.parent, false);
             paintMenu.transform.localPosition = this.transform.localPosition;
             paintMenu.transform.localRotation = this.transform.localRotation;
@@ -319,6 +333,9 @@ public class QuickMenuController : MonoBehaviour
         spawnMenu(plotsMenu);
     }
 
+    /// <summary>
+    /// Function used to generate popup to save or overwrite existing mask data.
+    /// </summary>
     public void SaveMask()
     {
         if (_activeDataSet.Mask == null)
@@ -329,19 +346,6 @@ public class QuickMenuController : MonoBehaviour
 
         if (exportPopup.activeSelf)
             exportPopup.SetActive(false);
-        
-        // savePopup.transform.SetParent(this.transform.parent, false);
-        // savePopup.transform.localPosition = this.transform.localPosition;
-        // savePopup.transform.localRotation = this.transform.localRotation;
-        // savePopup.transform.localScale = this.transform.localScale;
-
-        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
-        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.RemoveAllListeners();
-        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.RemoveAllListeners();
-
-        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(SaveCancel);
-        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
-        // savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform.Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
 
         var newSavePopup = Instantiate(userConfirmPopupPrefab, this.transform.parent);
         newSavePopup.transform.localPosition = this.transform.localPosition;
@@ -355,13 +359,17 @@ public class QuickMenuController : MonoBehaviour
         control.addButton("Overwrite", "Overwrite the existing mask file", this.SaveOverwriteMask);
         control.addButton("Cancel", "Cancel the save and return to painting", this.SaveCancel);
 
-        if (_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.Painting )
+        if (_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.Painting)
             _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
-        
+
         this.gameObject.SetActive(false);
         newSavePopup.SetActive(true);
     }
 
+    /// <summary>
+    /// Function used to generate a popup to either save the mask or export the selected area as a subcube.
+    /// Called when the user selects the export/save button in the menu.
+    /// </summary>
     public void ExportData()
     {
         var newExportPopup = Instantiate(userConfirmPopupPrefab, this.transform.parent);
@@ -380,11 +388,17 @@ public class QuickMenuController : MonoBehaviour
         newExportPopup.SetActive(true);
     }
 
+    /// <summary>
+    /// Function called when the export popup returns a cancel command.
+    /// </summary>
     public void ExportCancel()
     {
         exportPopup.SetActive(false);
     }
 
+    /// <summary>
+    /// Function called when the export popup returns an export command.
+    /// </summary>
     public void SaveSubCube()
     {
         _activeDataSet.SaveSubCube();
@@ -392,11 +406,17 @@ public class QuickMenuController : MonoBehaviour
         ExportCancel();
     }
 
+    /// <summary>
+    /// Function called when the save popup returns a cancel command.
+    /// </summary>
     public void SaveCancel()
     {
         savePopup.SetActive(false);
     }
 
+    /// <summary>
+    /// Function called when the save popup returns an overwrite command.
+    /// </summary>
     public void SaveOverwriteMask()
     {
         if (_activeDataSet.Mask == null)
@@ -410,6 +430,9 @@ public class QuickMenuController : MonoBehaviour
         SaveCancel();
     }
 
+    /// <summary>
+    /// Function called when the save popup returns a new mask command.
+    /// </summary>
     public void SaveNewMask()
     {
         if (_activeDataSet.Mask == null)
@@ -417,12 +440,14 @@ public class QuickMenuController : MonoBehaviour
             throwMissingMaskError();
             return;
         }
-        
+
         _activeDataSet.SaveMask(false);
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
         SaveCancel();
     }
 
+    /* Test code, unnecessary at the moment. Kept in reserve for if future changes are made to popup system.
+    
     /// <summary>
     /// Function to test out the generic confirmation popup
     /// </summary>
@@ -456,5 +481,5 @@ public class QuickMenuController : MonoBehaviour
     public void testFunc3()
     {
         ToastNotification.ShowSuccess("testFunc3 has been called!");
-    }
+    } */
 }

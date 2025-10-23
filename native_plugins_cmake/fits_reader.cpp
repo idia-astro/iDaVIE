@@ -393,6 +393,7 @@ int FitsReadImageFloat(fitsfile *fptr, int dims, int64_t nelem, float **array, i
 /**
  * @brief Function to read a rectangular subset of the FITS image, which can be any size up to the full size of the image.
  *        This version is for floating point images.
+ *        It reads the file in chunks, limited to no more than 2^32 - 1 voxels at a time, to avoid CFITSIO issues with regards to sizeof(long).
  * 
  * @param fptr The fitsfile being worked on.
  * @param dims The number of axes in the FITS image.
@@ -667,6 +668,14 @@ void FreeFitsMemory(char* header, int* status)
     fits_free_memory(header, status);
 }
 
+/**
+ * @brief 
+ * Function to write debug logging to file.
+ * @param fileName The log file to be written to.
+ * @param content The content to be written to the file.
+ * @param type The type of message to write to the log file.
+ * @return int Returns the status. 0 if successful, 1 if an exception is thrown and caught.
+ */
 int WriteLogFile(const char * fileName, const char * content, int type) {
     std::ofstream file;
     std::string header;
