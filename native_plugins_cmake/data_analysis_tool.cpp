@@ -865,7 +865,7 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
         stats->maxX = source.minX;
         stats->maxY = source.minY;
         stats->maxZ = source.minZ;
-        stats->beamUnit = "";
+        stats->beamUnit = "JY/BEAM";
 
 
         for (int64_t k = source.minZ; k <= source.maxZ; k++)
@@ -997,7 +997,7 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
             stats->numVoxels = 0;
             stats->peak = NAN;
             stats->sum = NAN;
-            stats->beamUnit = "Jy/beam";
+            stats->beamUnit = "JY/BEAM";
             stats->cX = NAN;
             stats->cY = NAN;
             stats->cZ = NAN;
@@ -1050,12 +1050,6 @@ int GetZScale(const float* data, int64_t width, int64_t height, float* z1, float
 int FreeDataAnalysisMemory(void* ptrToDelete)
 {
     delete[] ptrToDelete;
-    return EXIT_SUCCESS;
-}
-
-int GetBeamUnit(const float* data, char** beamUnit)
-{
-    *beamUnit = "JY/BEAM";
     return EXIT_SUCCESS;
 }
 
