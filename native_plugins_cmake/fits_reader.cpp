@@ -189,16 +189,6 @@ int FitsWriteImageInt16(fitsfile* fptr, int dims, int64_t nelements, int16_t* ar
     return success;
 }
 
-/**
- * @brief Function writes a rectangular subset of the FITS image, which can be any size up to the full size of the image.
- * 
- * @param fptr The fitsfile being worked on.
- * @param fPix An array containing the indices of the first pixel (xyz, left bottom front) to be written.
- * @param lPix An array containing the indices of the last pixe (xyz, right top back) to be written.
- * @param array The array containing the data to be written. This is assumed to be at least the size of lPix - fPix.
- * @param status Value containing outcome of CFITSIO operation.
- * @return int 
- */
 int FitsWriteSubImageInt16(fitsfile* fptr, long* fPix, long* lPix, int16_t* array, int* status)
 {
     long* firstPix = new long[3];
@@ -213,17 +203,6 @@ int FitsWriteSubImageInt16(fitsfile* fptr, long* fPix, long* lPix, int16_t* arra
     return success;
 }
 
-/*
- * @brief Function that writes a new copy of a mask that was loaded as a rectangular subset.
- *
- * @param oldFileName The filepath of the new/destination mask.
- * @param fptr The fitsfile being worked on.
- * @param fPix An array containing the indices of the first pixel (xyz, left bottom front) to be written.
- * @param lPix An array containing the indices of the last pixe (xyz, right top back) to be written.
- * @param array The array containing the data to be written. This is assumed to be at least the size of lPix - fPix.
- * @param status Value containing outcome of CFITSIO operation.
- * @return int 
- */
 int FitsWriteNewCopySubImageInt16(char* newFileName, fitsfile* fptr, long* fPix, long* lPix, int16_t* array, char* historyTimestamp, int* status)
 {
     
@@ -390,21 +369,6 @@ int FitsReadImageFloat(fitsfile *fptr, int dims, int64_t nelem, float **array, i
     return success;
 }
 
-/**
- * @brief Function to read a rectangular subset of the FITS image, which can be any size up to the full size of the image.
- *        This version is for floating point images.
- *        It reads the file in chunks, limited to no more than 2^32 - 1 voxels at a time, to avoid CFITSIO issues with regards to sizeof(long).
- * 
- * @param fptr The fitsfile being worked on.
- * @param dims The number of axes in the FITS image.
- * @param zAxis The index of the z Axis in the FITS image.
- * @param startPix An array containing the indices of the first pixel (xyz, left bottom front) to be written.
- * @param finalPix An array containing the indices of the last pixe (xyz, right top back) to be written.
- * @param nelem The size of the final image loaded.
- * @param array The target array to which the data will be loaded.
- * @param status Value containing outcome of CFITSIO operation.
- * @return int 
- */
 int FitsReadSubImageFloat(fitsfile *fptr, int dims, int zAxis, long *startPix, long *finalPix, int64_t nelem, float **array, int *status)
 {
     
@@ -507,20 +471,6 @@ int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array,
     return success;
 }
 
-/**
- * @brief Function to read a rectangular subset of the FITS image, which can be any size up to the full size of the image.
- *        This version is for Int16 images.
- * 
- * @param fptr The fitsfile being worked on.
- * @param dims The number of axes in the FITS image.
- * @param zAxis The index of the z Axis in the FITS image.
- * @param startPix An array containing the indices of the first pixel (xyz, left bottom front) to be written.
- * @param finalPix An array containing the indices of the last pixe (xyz, right top back) to be written.
- * @param nelem The size of the final image loaded.
- * @param array The target array to which the data will be loaded.
- * @param status Value containing outcome of CFITSIO operation.
- * @return int 
- */
 int FitsReadSubImageInt16(fitsfile *fptr, int dims, int zAxis, long *startPix, long *finalPix, int64_t nelem, float **array, int *status)
 {
     int anynul;
@@ -668,14 +618,6 @@ void FreeFitsMemory(char* header, int* status)
     fits_free_memory(header, status);
 }
 
-/**
- * @brief 
- * Function to write debug logging to file.
- * @param fileName The log file to be written to.
- * @param content The content to be written to the file.
- * @param type The type of message to write to the log file.
- * @return int Returns the status. 0 if successful, 1 if an exception is thrown and caught.
- */
 int WriteLogFile(const char * fileName, const char * content, int type) {
     std::ofstream file;
     std::string header;
@@ -704,13 +646,6 @@ int WriteLogFile(const char * fileName, const char * content, int type) {
     }
 }
 
-/**
- * @brief 
- * Function to write header values for the fits file, called when writing moment maps.
- * Consider adding RA and DEC values, and x/y axis units as well.
- * @param newFitsFile The fitsfile to be written to.
- * @return int Returns the status. 0 if successful, see the usual table if not 0.
- */
 int writeMomMapFitsHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile, int mapNumber)
 {
     int status = 0;
@@ -888,15 +823,6 @@ int writeMomMapFitsHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile, int map
     return status;
 }
 
-/**
- * @brief 
- * Writes out an image as supplied by the pixels in imgPixs to filename in FITS format.
- * @param filename The destination file name.
- * @param imgPixs The data to be written out to the file. This data is expected to be in row-major form, same as FITS.
- * @param xDims The dimensions of the final file in the x axis (NAXIS1).
- * @param yDims The dimensions of the final file in the y axis (NAXIS2).
- * @return int Returns the status. 0 if successful, see the usual table if not 0.
- */
 int WriteMomentMap(fitsfile* mainFitsFile, char* filename, float* imagePixelArray, long xDims, long yDims, int mapNumber)
 {
     fitsfile* newFitsFile;

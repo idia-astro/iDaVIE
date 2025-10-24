@@ -94,8 +94,29 @@ DllExport int FitsCopyCubeSection(fitsfile *, fitsfile *, char *, int *);
 [[deprecated("Replaced by FitsWriteSubImageInt16, which is more flexible.")]]
 DllExport int FitsWriteImageInt16(fitsfile * , int , int64_t , int16_t* , int* );
 
+/**
+ * @brief Function writes a rectangular subset of the FITS image, which can be any size up to the full size of the image.
+ * 
+ * @param fptr The fitsfile being worked on.
+ * @param fPix An array containing the indices of the first pixel (xyz, left bottom front) to be written.
+ * @param lPix An array containing the indices of the last pixe (xyz, right top back) to be written.
+ * @param array The array containing the data to be written. This is assumed to be at least the size of lPix - fPix.
+ * @param status Value containing outcome of CFITSIO operation.
+ * @return int 
+ */
 DllExport int FitsWriteSubImageInt16(fitsfile * , long* , long* , int16_t* , int* );
 
+/*
+ * @brief Function that writes a new copy of a mask that was loaded as a rectangular subset.
+ *
+ * @param oldFileName The filepath of the new/destination mask.
+ * @param fptr The fitsfile being worked on.
+ * @param fPix An array containing the indices of the first pixel (xyz, left bottom front) to be written.
+ * @param lPix An array containing the indices of the last pixe (xyz, right top back) to be written.
+ * @param array The array containing the data to be written. This is assumed to be at least the size of lPix - fPix.
+ * @param status Value containing outcome of CFITSIO operation.
+ * @return int 
+ */
 DllExport int FitsWriteNewCopySubImageInt16(char* , fitsfile* , long* , long* , int16_t* , char* , int* );
 
 DllExport int FitsWriteHistory(fitsfile *, char *,  int *);
@@ -117,11 +138,40 @@ DllExport int FitsReadColString(fitsfile *, int , long ,
 [[deprecated("Replaced by FitsReadSubImageFloat, which is more flexible.")]]
 DllExport int FitsReadImageFloat(fitsfile *, int , int64_t , float **, int *);
 
+/**
+ * @brief Function to read a rectangular subset of the FITS image, which can be any size up to the full size of the image.
+ *        This version is for floating point images.
+ *        It reads the file in chunks, limited to no more than 2^32 - 1 voxels at a time, to avoid CFITSIO issues with regards to sizeof(long).
+ * 
+ * @param fptr The fitsfile being worked on.
+ * @param dims The number of axes in the FITS image.
+ * @param zAxis The index of the z Axis in the FITS image.
+ * @param startPix An array containing the indices of the first pixel (xyz, left bottom front) to be written.
+ * @param finalPix An array containing the indices of the last pixe (xyz, right top back) to be written.
+ * @param nelem The size of the final image loaded, the data point count.
+ * @param array The target array to which the data will be loaded.
+ * @param status Value containing outcome of CFITSIO operation.
+ * @return int The result code, 0 for success, a CFITSIO error code if not.
+ */
 DllExport int FitsReadSubImageFloat(fitsfile *, int, int, long *, long *, int64_t, float **, int *);
 
 [[deprecated("Replaced by FitsReadSubImageInt16, which is more flexible.")]]
 DllExport int FitsReadImageInt16(fitsfile *, int , int64_t , int16_t **, int *);
 
+/**
+ * @brief Function to read a rectangular subset of the FITS image, which can be any size up to the full size of the image.
+ *        This version is for Int16 images.
+ * 
+ * @param fptr The fitsfile being worked on.
+ * @param dims The number of axes in the FITS image.
+ * @param zAxis The index of the z Axis in the FITS image.
+ * @param startPix An array containing the indices of the first pixel (xyz, left bottom front) to be written.
+ * @param finalPix An array containing the indices of the last pixe (xyz, right top back) to be written.
+ * @param nelem The size of the final image loaded, the data point count.
+ * @param array The target array to which the data will be loaded.
+ * @param status Value containing outcome of CFITSIO operation.
+ * @return int The result code, 0 for success, a CFITSIO error coded if not.
+ */
 DllExport int FitsReadSubImageInt16(fitsfile *, int, int, long *, long *, int64_t, float **, int *);
 
 DllExport int FitsCreateHdrPtrForAst(fitsfile *, char **, int *, int *);
@@ -132,10 +182,34 @@ DllExport int FreeFitsPtrMemory(void* );
 
 DllExport void FreeFitsMemory(char* header, int* status);
 
+/**
+ * @brief 
+ * Function to write debug logging to file.
+ * @param fileName The log file to be written to.
+ * @param content The content to be written to the file.
+ * @param type The type of message to write to the log file.
+ * @return int Returns the status. 0 if successful, 1 if an exception is thrown and caught.
+ */
 DllExport int WriteLogFile(const char * fileName, const char * content, int type);
 
+/**
+ * @brief 
+ * Writes out an image as supplied by the pixels in imgPixs to filename in FITS format.
+ * @param filename The destination file name.
+ * @param imgPixs The data to be written out to the file. This data is expected to be in row-major form, same as FITS.
+ * @param xDims The dimensions of the final file in the x axis (NAXIS1).
+ * @param yDims The dimensions of the final file in the y axis (NAXIS2).
+ * @return int Returns the status. 0 if successful, see the usual table if not 0.
+ */
 DllExport int WriteMomentMap(fitsfile *, char*, float*, long, long, int);
 
+/**
+ * @brief 
+ * Function to write header values for the fits file, called when writing moment maps.
+ * Consider adding RA and DEC values, and x/y axis units as well.
+ * @param newFitsFile The fitsfile to be written to.
+ * @return int Returns the status. 0 if successful, see the usual table if not 0.
+ */
 int writeFitsHeader(fitsfile *, fitsfile *, int);
 
 }
