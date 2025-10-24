@@ -98,6 +98,7 @@ DllExport int GetMaskedSources(const int16_t*, int64_t, int64_t, int64_t, int*, 
 DllExport int GetSourceStats(const float*, const int16_t*, int64_t, int64_t, int64_t, SourceInfo, SourceStats*, AstFrameSet*);
 DllExport int GetZScale(const float*, int64_t, int64_t, float*, float*);
 DllExport int FreeDataAnalysisMemory(void* );
+DllExport int GetBeamUnit(const float *, char**);
 }
 
 #endif //NATIVE_PLUGINS_DATA_ANALYSIS_TOOL_H

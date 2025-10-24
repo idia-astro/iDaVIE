@@ -78,7 +78,7 @@ int FindMaxMin(const float *dataPtr, int64_t numberElements, float *maxResult, f
  * in the given float array. It ignores NaN values during statistical computation. The computation
  * is parallelized using OpenMP to improve performance for large arrays.
  *
- * @param dataPtr Pointer to the array of float values to analyze.
+ * @param dataPtr Pointer to the array of float values to analyse.
  * @param numberElements The number of elements in the data array.
  * @param maxResult Pointer to a float where the maximum value will be stored.
  * @param minResult Pointer to a float where the minimum value will be stored.
@@ -997,7 +997,7 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
             stats->numVoxels = 0;
             stats->peak = NAN;
             stats->sum = NAN;
-            stats->beamUnit = "";
+            stats->beamUnit = "Jy/beam";
             stats->cX = NAN;
             stats->cY = NAN;
             stats->cZ = NAN;
@@ -1050,6 +1050,12 @@ int GetZScale(const float* data, int64_t width, int64_t height, float* z1, float
 int FreeDataAnalysisMemory(void* ptrToDelete)
 {
     delete[] ptrToDelete;
+    return EXIT_SUCCESS;
+}
+
+int GetBeamUnit(const float* data, char** beamUnit)
+{
+    *beamUnit = "JY/BEAM";
     return EXIT_SUCCESS;
 }
 
