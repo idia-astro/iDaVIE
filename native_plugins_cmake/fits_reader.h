@@ -102,7 +102,7 @@ DllExport int FitsWriteImageInt16(fitsfile * , int , int64_t , int16_t* , int* )
  * @param lPix An array containing the indices of the last pixe (xyz, right top back) to be written.
  * @param array The array containing the data to be written. This is assumed to be at least the size of lPix - fPix.
  * @param status Value containing outcome of CFITSIO operation.
- * @return int 
+ * @return int The result code, 0 for success, a CFITSIO error code if not.
  */
 DllExport int FitsWriteSubImageInt16(fitsfile * , long* , long* , int16_t* , int* );
 
@@ -115,7 +115,7 @@ DllExport int FitsWriteSubImageInt16(fitsfile * , long* , long* , int16_t* , int
  * @param lPix An array containing the indices of the last pixe (xyz, right top back) to be written.
  * @param array The array containing the data to be written. This is assumed to be at least the size of lPix - fPix.
  * @param status Value containing outcome of CFITSIO operation.
- * @return int 
+ * @return int The result code, 0 for success, a CFITSIO error code if not.
  */
 DllExport int FitsWriteNewCopySubImageInt16(char* , fitsfile* , long* , long* , int16_t* , char* , int* );
 
@@ -123,6 +123,17 @@ DllExport int FitsWriteHistory(fitsfile *, char *,  int *);
 
 DllExport int FitsWriteKey(fitsfile * , int , char *, void *, char *, int *);
 
+/*
+ * @brief Function that writes a new value to keyname of fptr's header.
+ *
+ * @param fptr The fitsfile being worked on.
+ * @param datatype The datatype stored in keyname.
+ * @param keyname The string name of the key to update.
+ * @param value A pointer to the new value of keyname.
+ * @param comment A string containing the comment to add after this key in the header.
+ * @param status Value containing outcome of CFITSIO operation.
+ * @return int The result code, 0 for success, a CFITSIO error code if not.
+ */
 DllExport int FitsUpdateKey(fitsfile * , int , char* , void* , char* , int* );
 
 DllExport int FitsDeleteKey(fitsfile *, char*, int*);

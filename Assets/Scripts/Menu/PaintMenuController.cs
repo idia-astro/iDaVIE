@@ -303,7 +303,6 @@ public class PaintMenuController : MonoBehaviour
     /// </summary>
     public void SaveCancel()
     {
-        _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeEnabled);
         gameObject.SetActive(true);
         // savePopup.SetActive(false);
     }

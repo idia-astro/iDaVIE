@@ -1207,7 +1207,13 @@ namespace VolumeData
             {
                 // Save new mask because none exists yet
                 Debug.Log("Attempting to save new mask because none exist.");
-                FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _dataSet.FileName, out status);
+                string datasetFileName = _dataSet.FileName;
+                // Append the HDU if not 1 -- leads to crashes if file has only 1 HDU, and errors if data is in first HDU.
+                if (_dataSet.SelectedHdu != 1)
+                {
+                    datasetFileName += $"[{_dataSet.SelectedHdu}]";
+                }    
+                FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, datasetFileName, out status);
                 string directory = Path.GetDirectoryName(_dataSet.FileName);
                 _maskDataSet.FileName = $"!{directory}/{Path.GetFileNameWithoutExtension(_dataSet.FileName)}-mask.fits";
                 if (_maskDataSet.SaveMask(cubeFitsPtr, _maskDataSet.FileName, false) != 0)

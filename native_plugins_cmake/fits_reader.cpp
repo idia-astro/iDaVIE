@@ -158,7 +158,14 @@ int FitsCreateImg(fitsfile *fptr, int bitpix, int naxis, long *naxes, int *statu
 
 int FitsCopyHeader(fitsfile *infptr, fitsfile *outfptr, int *status)
 {
+    std::stringstream debug;
+    debug << "Copying fitsfile " << infptr->Fptr->filename << " header to fitsfile " << outfptr->Fptr->filename << ", with active HDU position " << infptr->HDUposition << ".";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     int success = fits_copy_header(infptr, outfptr, status);
+    debug.clear();
+    debug.str("");
+    debug << "Header copy gave result code " << success << ".";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     return success;
 }
 
@@ -312,6 +319,9 @@ int FitsWriteKey(fitsfile* fptr, int datatype, char *keyname, void *value, char 
 
 int FitsUpdateKey(fitsfile* fptr, int datatype, char* keyname, void* value, char* comment, int* status)
 {
+    std::stringstream debug;
+    debug << "Attempting to update " << keyname << " key to " << * (int*) value << ".";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     int success = fits_update_key(fptr, datatype, keyname, value, comment, status);
     return success;
 }
