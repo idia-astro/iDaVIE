@@ -374,6 +374,10 @@ public class FeatureMenuController : MonoBehaviour
                 for (var i = 0; i < _featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys.Length; i++)
                 {
                     var dataToAdd = _featureSetManager.SelectedFeature.FeatureSetParent.RawDataTypes[i] == "float" ? FormattableString.Invariant($"{Convert.ToDouble(_featureSetManager.SelectedFeature.RawData[i]):F3}") : _featureSetManager.SelectedFeature.RawData[i];
+                    if (i < 2)
+                    {
+                        dataToAdd += $" {_activeDataSet.GetDataSet().GetPixelUnit()}";
+                    }
                     textObject.GetComponent<TMP_Text>().text += $"{_featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys[i]} : {dataToAdd}{Environment.NewLine}";
                 }
             }

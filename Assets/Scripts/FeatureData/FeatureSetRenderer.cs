@@ -269,13 +269,13 @@ namespace DataFeatures
             RawDataKeys = new[] {"Sum", "Peak", "VSys (Channel)", "W20 (Channel)", $"VSys ({velocityUnit})", $"W20 ({velocityUnit})"};
             RawDataTypes = new[] {"float", "float", "float", "float", "float", "float"};
             var flag = "";
+            string beamUnitStr = VolumeRenderer.GetDataSet().GetPixelUnit();
             foreach (var item in sourceStatsDict)
             {
                 var sourceStats = item.Value;
                 var boxMin = new Vector3(sourceStats.minX + 1, sourceStats.minY + 1, sourceStats.minZ + 1);
                 var boxMax = new Vector3(sourceStats.maxX + 1, sourceStats.maxY + 1, sourceStats.maxZ + 1);
                 var featureName = $"Masked Source #{item.Key}";
-                string beamUnitStr = string.Empty;
                 if (sourceStats.beamUnit != IntPtr.Zero)
                 {
                     try
@@ -288,7 +288,7 @@ namespace DataFeatures
                     }
                 }
                 Debug.Log($"beamUnitStr = '{beamUnitStr}'");
-                var rawStrings = new [] {$"{sourceStats.sum} {beamUnitStr}", $"{sourceStats.peak} {beamUnitStr}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
+                var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
                 AddFeature(new Feature(boxMin, boxMax, FeatureColor, featureName, flag, FeatureList.Count, item.Key - 1, rawStrings, false));
             }
             FeatureMenuScrollerDataSource.InitData();
