@@ -107,6 +107,8 @@ namespace VideoMaker
         private float _directionTime = 0f;
         private float _upDirectionTime = 0f;
 
+        private float _FPSWarnThreshold = 20.0f;
+
         void Awake()
         {
             _logoMaterial = new Material(logoShader);
@@ -124,6 +126,18 @@ namespace VideoMaker
 
             _camera = GetComponent<Camera>();
             _camera.enabled = false;
+        }
+
+        void Update()
+        {
+            if (IsPlaying)
+            {
+                float FPS = 1.0f / Time.unscaledDeltaTime;
+                if (FPS < _FPSWarnThreshold)
+                {
+                    Debug.LogWarning($"FPS is {FPS}, lower than the expected minimum of {_FPSWarnThreshold}!");
+                }
+            }
         }
 
         IEnumerator Preview()
@@ -278,7 +292,9 @@ namespace VideoMaker
         
         protected virtual void OnPlaybackFinished()
         {
-            PlaybackFinished?.Invoke(this,  EventArgs.Empty);
+            PlaybackFinished?.Invoke(this, EventArgs.Empty);
+            // TODO: send a message back to the UI manager to configure the UI again.
+            // Something like VideoUiManager.ConfigureUIForPreview(false);
         }
 
         public void StartPreview()

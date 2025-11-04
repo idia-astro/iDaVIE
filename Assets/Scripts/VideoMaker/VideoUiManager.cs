@@ -11,6 +11,7 @@ using SFB;
 using JetBrains.Annotations;
 using Unity.VisualScripting;
 using Debug = UnityEngine.Debug;
+using System.Linq;
 
 namespace VideoMaker
 {
@@ -24,13 +25,43 @@ namespace VideoMaker
         public GameObject ProgressBar;
         public TMP_Text StatusText;
 
+        public GameObject PreviewButton;
+        public GameObject ExportButton;
+        public GameObject PauseButton;
+        public TMP_Text PauseButtonText;
+        public GameObject StopButton;
+
+        public Slider PreviewQualitySlider;
+        public TMP_Text PreviewQualityText;
+
+        public Button FileBrowseButton;
+        public Button ReloadButton;
+
         public GameObject VideoView;
         private RectTransform _videoDisplayRect;
         private Vector2 _videoDisplaySizeDelta;
-        
+
         private string _ffmpegPath;
-        
+
+        private string _currentFile = "";
+
         private VideoCameraController _cameraController;
+
+        // TODO: this is the camera controller's purview, should check a state there rather than here.
+        private bool _isPaused = false;
+
+        // Left for translation space, in future? Can't recall how that works for unity.
+        private const string pauseText = "Pause";
+        private const string resumeText = "Resume";
+
+        private readonly string[] qualTexts = {"Low", "Medium", "High"};
+        private PreviewQualities _previewQuality = PreviewQualities.HIGH;
+        public enum PreviewQualities
+        {
+            LOW,
+            MEDIUM,
+            HIGH
+        }
         
         void Awake()
         {
@@ -43,6 +74,8 @@ namespace VideoMaker
             _cameraController = GetComponent<VideoCameraController>();
             _cameraController.PlaybackUpdated  += OnPlaybackUpdated;
             _cameraController.PlaybackFinished += OnPlaybackFinshed;
+
+            PreviewQualitySlider.value = (float) _previewQuality;
         }
         
         public void OnPreviewClick()
@@ -51,6 +84,9 @@ namespace VideoMaker
             {
                 return;
             }
+
+            ConfigureUIForPreview(true);
+
             StartPlayback(PreviewMessage);
             _cameraController.StartPreview();
         }
@@ -62,6 +98,69 @@ namespace VideoMaker
                 return;
             }
             ValidateFfmpegPath();
+        }
+
+        /// <summary>
+        /// Function called when the user clicks the pause button.
+        /// </summary>
+        public void OnPauseClick()
+        {
+            _isPaused = !_isPaused;
+            if (_isPaused)
+            {
+                PauseButtonText.SetText(resumeText);
+            }
+            else
+            {
+                PauseButtonText.SetText(pauseText);
+            }
+            Debug.Log("Still a WIP, check back later...");
+        }
+
+        /// <summary>
+        /// Function called when the user clicks the stop button. Stops the preview from showing.
+        /// </summary>
+        public void OnStopClick()
+        {
+            Debug.Log("Still a WIP, check back later...");
+            ConfigureUIForPreview(false);
+        }
+
+        /// <summary>
+        /// Function that is called to configure the desktop UI buttons when the preview is started or ended.
+        /// </summary>
+        /// <param name="previewing">True if the preview is active, false if not.</param>
+        public void ConfigureUIForPreview(bool previewing)
+        {
+            PreviewButton.SetActive(!previewing);
+            ExportButton.SetActive(!previewing);
+            PauseButton.SetActive(previewing);
+            StopButton.SetActive(previewing);
+            FileBrowseButton.interactable = !previewing;
+            ReloadButton.interactable = !previewing;
+        }
+
+        /// <summary>
+        /// Function called when the value of the preview quality slider changes, used to change the UI in response.
+        /// </summary>
+        public void OnQualSliderValChanged()
+        {
+            _previewQuality = (PreviewQualities)PreviewQualitySlider.value;
+            Debug.Log($"Preview quality switched to {_previewQuality}");
+
+            PreviewQualityText.SetText(qualTexts[(int)_previewQuality]);
+            switch (_previewQuality)
+            {
+                case PreviewQualities.LOW:
+                    PreviewQualityText.color = Color.green;
+                    break;
+                case PreviewQualities.MEDIUM:
+                    PreviewQualityText.color = new Color(0.8f, 0.608f, 0.02f);
+                    break;
+                case PreviewQualities.HIGH:
+                    PreviewQualityText.color = Color.red;
+                    break;
+            }
         }
 
         private void StartPlayback(string statusText)
@@ -175,7 +274,7 @@ namespace VideoMaker
                 }
             });
         }
-        
+
         //Taken from CanvassDesktop.BrowseImageFile
         public void BrowseVideoScriptFile()
         {
@@ -194,10 +293,22 @@ namespace VideoMaker
                 {
                     PlayerPrefs.SetString("LastPathVideo", System.IO.Path.GetDirectoryName(paths[0]));
                     PlayerPrefs.Save();
-
-                    LoadVideoScriptFile(paths[0]);
+                    _currentFile = paths[0];
+                    LoadVideoScriptFile(_currentFile);
                 }
             });
+        }
+        
+        /// <summary>
+        /// Function called when the user presses the reload button on the desktop UI.
+        /// </summary>
+        public void ReloadVideoScriptFile()
+        {
+            Debug.Log($"Reloading file {_currentFile}.");
+            // TODO: provide visual feedback for user that file was reloaded.
+            // Notification text below progress bar, perhaps?
+            // Prefab fading script, pointed at the text, perhaps? Gippity provided work seems solid.
+            LoadVideoScriptFile(_currentFile);
         }
         
         private void LoadVideoScriptFile(string path)
