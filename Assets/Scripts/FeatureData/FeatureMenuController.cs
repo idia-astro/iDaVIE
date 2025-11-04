@@ -30,6 +30,7 @@ using System;
 using System.Linq;
 using PolyAndCode.UI;
 using UnityEngine.Serialization;
+using System.Runtime.InteropServices.ComTypes;
 
 public class FeatureMenuController : MonoBehaviour
 {
@@ -373,12 +374,13 @@ public class FeatureMenuController : MonoBehaviour
             {
                 for (var i = 0; i < _featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys.Length; i++)
                 {
+                    var key = _featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys[i];
                     var dataToAdd = _featureSetManager.SelectedFeature.FeatureSetParent.RawDataTypes[i] == "float" ? FormattableString.Invariant($"{Convert.ToDouble(_featureSetManager.SelectedFeature.RawData[i]):F3}") : _featureSetManager.SelectedFeature.RawData[i];
-                    if (i < 2)
+                    if (FeatureSetManager.UnitisedKeys.Contains(key.ToUpper()))
                     {
-                        dataToAdd += $" {_activeDataSet.GetDataSet().GetPixelUnit()}";
+                        dataToAdd += $" {_activeDataSet.GetDataSet().GetPixelUnit()}";  
                     }
-                    textObject.GetComponent<TMP_Text>().text += $"{_featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys[i]} : {dataToAdd}{Environment.NewLine}";
+                    textObject.GetComponent<TMP_Text>().text += $"{key} : {dataToAdd}{Environment.NewLine}";
                 }
             }
             var flag = _featureSetManager.SelectedFeature.Flag;
