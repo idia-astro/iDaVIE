@@ -865,8 +865,6 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
         stats->maxX = source.minX;
         stats->maxY = source.minY;
         stats->maxZ = source.minZ;
-        stats->beamUnit = "JY/BEAM";
-
 
         for (int64_t k = source.minZ; k <= source.maxZ; k++)
         {
@@ -913,7 +911,6 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
             stats->numVoxels = numVoxels;
             stats->peak = peakFlux;
             stats->sum = totalFlux;
-            stats->beamUnit = "JY/BEAM";
             stats->cX = sumX / totalPositiveFlux;
             stats->cY = sumY / totalPositiveFlux;
             stats->cZ = sumZ / totalPositiveFlux;
@@ -997,7 +994,6 @@ int GetSourceStats(const float* dataPtr, const int16_t* maskDataPtr, int64_t dim
             stats->numVoxels = 0;
             stats->peak = NAN;
             stats->sum = NAN;
-            stats->beamUnit = "JY/BEAM";
             stats->cX = NAN;
             stats->cY = NAN;
             stats->cZ = NAN;
