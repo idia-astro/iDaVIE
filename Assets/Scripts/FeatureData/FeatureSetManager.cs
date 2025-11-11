@@ -57,6 +57,8 @@ namespace DataFeatures
         public bool NeedToRespawnMenuList = true;
         public bool NeedToUpdateInfo;
 
+        public static readonly string[] UnitisedKeys = {"SUM", "PEAK"};
+
         private readonly GameObject[] _anchorColliders = new GameObject[8];
         public Feature SelectedFeature
         {
