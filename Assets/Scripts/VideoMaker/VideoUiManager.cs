@@ -23,14 +23,17 @@ namespace VideoMaker
         public TMP_Text VideoScriptFilePath;
         
         public GameObject ProgressBar;
+        private Slider _progressSlider;
         public TMP_Text StatusText;
 
         public GameObject PreviewButton;
         public GameObject ExportButton;
         public GameObject PauseButton;
+        private Button _pauseButton;
         public TMP_Text PauseButtonText;
         public GameObject StopButton;
-
+        private Button _stopButton;
+        
         public Slider PreviewQualitySlider;
         public TMP_Text PreviewQualityText;
 
@@ -66,6 +69,7 @@ namespace VideoMaker
         void Awake()
         {
             ProgressBar.SetActive(false);
+            _progressSlider = ProgressBar.GetComponent<Slider>();
             StatusText.gameObject.SetActive(false);
 
             _videoDisplayRect = VideoView.transform.Find("VideoDisplay").gameObject.GetComponent<RectTransform>();
@@ -74,10 +78,17 @@ namespace VideoMaker
             _cameraController = GetComponent<VideoCameraController>();
             _cameraController.PlaybackUpdated  += OnPlaybackUpdated;
             _cameraController.PlaybackFinished += OnPlaybackFinshed;
+            _cameraController.PlaybackUnstoppable += OnPlaybackUnstoppable;
+
+            _pauseButton = PauseButton.GetComponent<Button>();
+            _stopButton = StopButton.GetComponent<Button>();
 
             PreviewQualitySlider.value = (float) _previewQuality;
         }
         
+        /// <summary>
+        /// Function called when the user clicks the preview button.
+        /// </summary>
         public void OnPreviewClick()
         {
             if (_cameraController.IsPlaying)
@@ -85,12 +96,15 @@ namespace VideoMaker
                 return;
             }
 
-            ConfigureUIForPreview(true);
+            // ConfigureUIForPreview(true);
 
             StartPlayback(PreviewMessage);
             _cameraController.StartPreview();
         }
 
+        /// <summary>
+        /// Function called when the user clicks the export button.
+        /// </summary>
         public void OnExportClick()
         {
             if (_cameraController.IsPlaying)
@@ -105,16 +119,8 @@ namespace VideoMaker
         /// </summary>
         public void OnPauseClick()
         {
-            _isPaused = !_isPaused;
-            if (_isPaused)
-            {
-                PauseButtonText.SetText(resumeText);
-            }
-            else
-            {
-                PauseButtonText.SetText(pauseText);
-            }
-            Debug.Log("Still a WIP, check back later...");
+            _cameraController.IsPaused = !_cameraController.IsPaused;
+            PauseButtonText.SetText(_cameraController.IsPaused ? resumeText : pauseText);
         }
 
         /// <summary>
@@ -122,8 +128,9 @@ namespace VideoMaker
         /// </summary>
         public void OnStopClick()
         {
-            Debug.Log("Still a WIP, check back later...");
-            ConfigureUIForPreview(false);
+            _cameraController.StopPlayback();
+            // Debug.Log("Still a WIP, check back later...");
+            // ConfigureUIForPreview(false);
         }
 
         /// <summary>
@@ -134,6 +141,7 @@ namespace VideoMaker
         {
             PreviewButton.SetActive(!previewing);
             ExportButton.SetActive(!previewing);
+            PauseButtonText.SetText(_cameraController.IsPaused ? resumeText : pauseText);
             PauseButton.SetActive(previewing);
             StopButton.SetActive(previewing);
             FileBrowseButton.interactable = !previewing;
@@ -169,6 +177,7 @@ namespace VideoMaker
             VideoView.SetActive(true);
             ProgressBar.SetActive(true);
             StatusText.gameObject.SetActive(true);
+            ConfigureUIForPreview(true);
         }
         
         private void StartExport()
@@ -370,7 +379,7 @@ namespace VideoMaker
 
         private void OnPlaybackUpdated(object sender, VideoCameraController.PlaybackUpdatedEventArgs e)
         {
-            ProgressBar.GetComponent<Slider>().value = e.Progress;
+            _progressSlider.value = e.Progress;
         }
 
         private void OnPlaybackFinshed(object sender, EventArgs e)
@@ -378,6 +387,17 @@ namespace VideoMaker
             ProgressBar.SetActive(false);
             StatusText.gameObject.SetActive(false);
             VideoView.SetActive(false);
+            ConfigureUIForPreview(false);
+            
+            //This is in case OnPlaybackUnstoppable was called. Should this go somewhere else?
+            _pauseButton.interactable = true;
+            _stopButton.interactable = true;
+        }
+
+        private void OnPlaybackUnstoppable(object sender, EventArgs e)
+        {
+            _pauseButton.interactable = false;
+            _stopButton.interactable = false;
         }
     }
 }

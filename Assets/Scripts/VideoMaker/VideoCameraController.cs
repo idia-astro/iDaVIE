@@ -23,7 +23,21 @@ namespace VideoMaker
         
         public EventHandler PlaybackFinished;
         public EventHandler<PlaybackUpdatedEventArgs> PlaybackUpdated;
-
+        public EventHandler PlaybackUnstoppable;
+        
+        public enum PlayMode
+        {
+            //NoScript,
+            Standby,
+            Preview,
+            PreviewPaused,
+            ExportPlayback,
+            ExportPaused,
+            ExportCompile
+        }
+        
+        public PlayMode playMode = PlayMode.Standby;
+        
         private const int FfmpegConsoleCount = 58; //From limited observation, this is how many console messages are printed by ffmpeg
 
         public Shader logoShader;
@@ -73,8 +87,32 @@ namespace VideoMaker
                 });
             }
         }
-
-        public bool IsPlaying { get; private set; }
+        
+        //TODO factor out or do a playMode == Standby check? May be safer to keep it...
+        public bool IsPlaying { get; private set; } //TODO factor out
+        
+        /// <summary>
+        /// Sets playback to paused or unpaused if the current playMode permits.
+        /// Note this is not related to IsPlaying.
+        /// </summary>
+        public bool IsPaused
+        {
+            get
+            {
+                return playMode == PlayMode.PreviewPaused || playMode == PlayMode.ExportPaused;
+            }
+            set
+            {
+                playMode = (playMode, value) switch
+                {
+                    (PlayMode.Preview, true) => PlayMode.PreviewPaused,
+                    (PlayMode.PreviewPaused, false) => PlayMode.Preview,
+                    (PlayMode.ExportPlayback, true) => PlayMode.ExportPaused,
+                    (PlayMode.ExportPaused, false) => PlayMode.ExportPlayback,
+                    _ => playMode,
+                };
+            }
+        }
 
         private int _frameCounter = 0;
         private int _frameTotal = 0;
@@ -139,18 +177,47 @@ namespace VideoMaker
                 }
             }
         }
+        
+        /// <summary>
+        /// Stops playback for either preview or export play modes.
+        /// </summary>
+        /// <returns> true if playback is stopped or already in standby, false if playback could not be stopped.</returns>
+        public bool StopPlayback()
+        {
+            if (playMode == PlayMode.ExportCompile)
+            {
+                return false;
+            }
+
+            playMode = PlayMode.Standby;
+            return true;
+        }
 
         IEnumerator Preview()
         {
             if (VideoScript is null)
             {
+                playMode = PlayMode.Standby;
                 yield break;
             }
 
+            playMode = PlayMode.Preview;
+            
             StartPlayback();
 
             while (_time < VideoScript.Duration)
             {
+                if (playMode == PlayMode.PreviewPaused)
+                {
+                    yield return null;
+                    continue;
+                }
+
+                if (playMode == PlayMode.Standby)
+                {
+                    break;
+                }
+                
                 OnPlaybackUpdated(_time / VideoScript.Duration);
                 UpdatePlayback(Time.deltaTime);
                 yield return null;
@@ -163,16 +230,19 @@ namespace VideoMaker
         {
             if (VideoScript is null)
             {
+                playMode = PlayMode.ExportPlayback;
                 yield break;
             }
 
+            playMode = PlayMode.ExportPlayback;
+            
             // Kill the encoder thread if running from a previous execution
             if (_exportThread != null && (_threadIsProcessing || _exportThread.IsAlive))
             {
                 _threadIsProcessing = false;
                 _exportThread.Join();
             }
-
+            
             _frameCounter = 0;
 
             _terminateThreadWhenDone = false;
@@ -193,6 +263,18 @@ namespace VideoMaker
 
             while (_time < VideoScript.Duration)
             {
+                //TODO use events rather than polling?
+                if (playMode == PlayMode.ExportPaused)
+                {
+                    yield return null;
+                    continue;
+                }
+
+                if (playMode == PlayMode.Standby)
+                {
+                    break;
+                }
+                
                 OnPlaybackUpdated(_frameCounter / (float)_frameTotal);
                 UpdatePlayback(deltaTime);
                 yield return null;
@@ -201,13 +283,17 @@ namespace VideoMaker
             _camera.enabled = false;
             _captureFrames = false;
             _terminateThreadWhenDone = true;
-
-            //TODO check if status changes to Export and change text on progress bar
+            
+            playMode = playMode != PlayMode.Standby ? PlayMode.ExportCompile : playMode;
+            OnPlaybackUnstoppable(); //In the next few frames pause and stop won't do anything
+            
             while (_threadIsProcessing)
             {
                 OnPlaybackUpdated(_frameCounter / (float)_frameTotal);
                 yield return null;
             }
+
+            playMode = PlayMode.Standby;
             EndPlayback();
         }
 
@@ -297,6 +383,11 @@ namespace VideoMaker
             // Something like VideoUiManager.ConfigureUIForPreview(false);
         }
 
+        protected virtual void OnPlaybackUnstoppable()
+        {
+            PlaybackUnstoppable?.Invoke(this, EventArgs.Empty);
+        }
+
         public void StartPreview()
         {
             if (IsPlaying)
@@ -374,32 +465,35 @@ namespace VideoMaker
                 }
             }
             
-            string command = $"-framerate {VideoScript.FrameRate} -i ./frames/frame%0{_frameDigits}d.png -c:v libx264 -pix_fmt yuv420p {VideoFileName}_{DateTime.Now:yyyyMMdd_Hmmssf}.mp4";
+            //If playback has been stopped, this must be cancelled
+            if (playMode == PlayMode.ExportCompile)
+            {
+                string command = $"-framerate {VideoScript.FrameRate} -i ./frames/frame%0{_frameDigits}d.png -c:v libx264 -pix_fmt yuv420p {VideoFileName}_{DateTime.Now:yyyyMMdd_Hmmssf}.mp4";
             
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = FfmpegPath,
-                Arguments = command,
-                WorkingDirectory = _videoPath,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            };
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = FfmpegPath,
+                    Arguments = command,
+                    WorkingDirectory = _videoPath,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
 
-            using (var process = new Process { StartInfo = startInfo })
-            {
-                process.EnableRaisingEvents = true;
-                process.Start();
-                process.BeginErrorReadLine();
-                process.BeginOutputReadLine();
-                process.OutputDataReceived += (s, e) => { if (e.Data != null) print(e.Data); };
-                process.ErrorDataReceived += (s, e) => { if (e.Data != null) { print(e.Data); _frameCounter++; } };
-                process.WaitForExit();
+                using (var process = new Process { StartInfo = startInfo })
+                {
+                    process.EnableRaisingEvents = true;
+                    process.Start();
+                    process.BeginErrorReadLine();
+                    process.BeginOutputReadLine();
+                    process.OutputDataReceived += (s, e) => { if (e.Data != null) print(e.Data); };
+                    process.ErrorDataReceived += (s, e) => { if (e.Data != null) { print(e.Data); _frameCounter++; } };
+                    process.WaitForExit();
+                }
             }
-
-            _threadIsProcessing = false;
             
+            _threadIsProcessing = false;
             Directory.Delete(_framePath, recursive: true);
         }
     }
