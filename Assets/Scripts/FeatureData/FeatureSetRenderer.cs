@@ -27,6 +27,7 @@ using UnityEngine;
 using System.Linq;
 using System.Globalization;
 using System.Text;
+using System.Runtime.InteropServices;
 
 namespace DataFeatures
 {
@@ -268,6 +269,7 @@ namespace DataFeatures
             RawDataKeys = new[] {"Sum", "Peak", "VSys (Channel)", "W20 (Channel)", $"VSys ({velocityUnit})", $"W20 ({velocityUnit})"};
             RawDataTypes = new[] {"float", "float", "float", "float", "float", "float"};
             var flag = "";
+            string beamUnitStr = VolumeRenderer.GetDataSet().GetPixelUnit();
             foreach (var item in sourceStatsDict)
             {
                 var sourceStats = item.Value;
