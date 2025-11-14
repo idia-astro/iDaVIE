@@ -172,7 +172,7 @@ public class VolumeInputController : MonoBehaviour
     private float scalingTimer = 0f;
 
     private bool _paintMenuOn = false;
-    private bool _shapeMenuOn = false;
+    // private bool _shapeMenuOn = false;
     private bool _savePopupOn = false;
     private bool _exportPopupOn = false;
     private bool _shapeSelection = false;
@@ -532,11 +532,11 @@ public class VolumeInputController : MonoBehaviour
         }
 
         _paintMenuOn = CanvassQuickMenu.GetComponent<QuickMenuController>().paintMenu.activeSelf;
-        _shapeMenuOn = CanvassPaintMenu.GetComponent<PaintMenuController>().shapeMenu.activeSelf;
+        // _shapeMenuOn = CanvassPaintMenu.GetComponent<PaintMenuController>().shapeMenu.activeSelf;
         _savePopupOn = CanvassQuickMenu.GetComponent<QuickMenuController>().savePopup.activeSelf;
         _exportPopupOn = CanvassQuickMenu.GetComponent<QuickMenuController>().exportPopup.activeSelf;
 
-        if (newState && !_paintMenuOn && !_shapeMenuOn && !_savePopupOn && !_exportPopupOn)
+        if (newState && !_paintMenuOn && !_savePopupOn && !_exportPopupOn)
         {
             StartRequestQuickMenu(fromSource == SteamVR_Input_Sources.LeftHand ? 0 : 1);
         }
