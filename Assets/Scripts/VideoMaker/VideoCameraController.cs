@@ -37,7 +37,12 @@ namespace VideoMaker
         }
         
         public PlayMode playMode = PlayMode.Standby;
-        
+
+        public bool IsPlayModePreview => playMode is PlayMode.Preview or PlayMode.PreviewPaused;
+
+        public bool IsPlayModeExport =>
+            playMode is PlayMode.ExportPlayback or PlayMode.ExportPaused or PlayMode.ExportCompile;
+
         private const int FfmpegConsoleCount = 58; //From limited observation, this is how many console messages are printed by ffmpeg
 
         public Shader logoShader;
@@ -59,12 +64,6 @@ namespace VideoMaker
             set
             {
                 _videoScript = value;
-                
-                //Setting RenderMaterial properties
-                RenderTexture tex = GetComponent<Camera>().targetTexture;
-                tex.Release();
-                tex.height = value.Height;
-                tex.width = value.Width;
                 
                 //Setting logo properties in shader
                 //Length of u compoent of logo UV. Length of V is given by LogoScale
@@ -99,7 +98,7 @@ namespace VideoMaker
         {
             get
             {
-                return playMode == PlayMode.PreviewPaused || playMode == PlayMode.ExportPaused;
+                return playMode is PlayMode.PreviewPaused or PlayMode.ExportPaused;
             }
             set
             {
@@ -111,6 +110,23 @@ namespace VideoMaker
                     (PlayMode.ExportPaused, false) => PlayMode.ExportPlayback,
                     _ => playMode,
                 };
+            }
+        }
+
+        private float _previewQuality = 1f;
+        public float PreviewQuality
+        {
+            get
+            {
+                return _previewQuality;
+            }
+            set
+            {
+                _previewQuality = value;
+                if (IsPlayModePreview)
+                {
+                    SetVideoResolutionScale(_previewQuality);
+                }
             }
         }
 
@@ -176,6 +192,18 @@ namespace VideoMaker
                     Debug.LogWarning($"FPS is {FPS}, lower than the expected minimum of {_FPSWarnThreshold}!");
                 }
             }
+        }
+
+        private void SetVideoResolutionScale(float scale = 1f)
+        {
+            if (_videoScript is null)
+            {
+                return;
+            }
+            RenderTexture tex = _camera.targetTexture;
+            tex.Release();
+            tex.height = (int)(_videoScript.Height * scale);
+            tex.width = (int)(_videoScript.Width * scale);
         }
         
         /// <summary>
@@ -344,6 +372,8 @@ namespace VideoMaker
 
         public void StartPlayback()
         {
+            SetVideoResolutionScale(IsPlayModePreview ? _previewQuality : 1f);
+            
             _camera.enabled = true;
             IsPlaying = true;
 

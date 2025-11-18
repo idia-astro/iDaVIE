@@ -33,9 +33,9 @@ namespace VideoMaker
         public TMP_Text PauseButtonText;
         public GameObject StopButton;
         private Button _stopButton;
-        
+
+        public GameObject PreviewQualityContainer;
         public Slider PreviewQualitySlider;
-        public TMP_Text PreviewQualityText;
 
         public Button FileBrowseButton;
         public Button ReloadButton;
@@ -56,15 +56,7 @@ namespace VideoMaker
         // Left for translation space, in future? Can't recall how that works for unity.
         private const string pauseText = "Pause";
         private const string resumeText = "Resume";
-
-        private readonly string[] qualTexts = {"Low", "Medium", "High"};
-        private PreviewQualities _previewQuality = PreviewQualities.HIGH;
-        public enum PreviewQualities
-        {
-            LOW,
-            MEDIUM,
-            HIGH
-        }
+        
         
         void Awake()
         {
@@ -82,8 +74,9 @@ namespace VideoMaker
 
             _pauseButton = PauseButton.GetComponent<Button>();
             _stopButton = StopButton.GetComponent<Button>();
-
-            PreviewQualitySlider.value = (float) _previewQuality;
+            
+            PreviewQualityContainer.SetActive(false);
+            PreviewQualitySlider.value = _cameraController.PreviewQuality;
         }
         
         /// <summary>
@@ -96,9 +89,7 @@ namespace VideoMaker
                 return;
             }
 
-            // ConfigureUIForPreview(true);
-
-            StartPlayback(PreviewMessage);
+            StartPlayback(PreviewMessage, true);
             _cameraController.StartPreview();
         }
 
@@ -129,23 +120,24 @@ namespace VideoMaker
         public void OnStopClick()
         {
             _cameraController.StopPlayback();
-            // Debug.Log("Still a WIP, check back later...");
-            // ConfigureUIForPreview(false);
         }
 
         /// <summary>
         /// Function that is called to configure the desktop UI buttons when the preview is started or ended.
         /// </summary>
-        /// <param name="previewing">True if the preview is active, false if not.</param>
-        public void ConfigureUIForPreview(bool previewing)
+        /// <param name="isPlaying">True if the video playback is active, false if not.</param>
+        /// <param name="isPreview">True if the playback is in preview mode, false if not.</param>
+        public void ConfigureUIForPreview(bool isPlaying, bool isPreview)
         {
-            PreviewButton.SetActive(!previewing);
-            ExportButton.SetActive(!previewing);
+            PreviewButton.SetActive(!isPlaying);
+            ExportButton.SetActive(!isPlaying);
             PauseButtonText.SetText(_cameraController.IsPaused ? resumeText : pauseText);
-            PauseButton.SetActive(previewing);
-            StopButton.SetActive(previewing);
-            FileBrowseButton.interactable = !previewing;
-            ReloadButton.interactable = !previewing;
+            PauseButton.SetActive(isPlaying);
+            StopButton.SetActive(isPlaying);
+            FileBrowseButton.interactable = !isPlaying;
+            ReloadButton.interactable = !isPlaying;
+            PreviewQualityContainer.SetActive(isPreview);
+            PreviewQualitySlider.value = _cameraController.PreviewQuality;
         }
 
         /// <summary>
@@ -153,36 +145,21 @@ namespace VideoMaker
         /// </summary>
         public void OnQualSliderValChanged()
         {
-            _previewQuality = (PreviewQualities)PreviewQualitySlider.value;
-            Debug.Log($"Preview quality switched to {_previewQuality}");
-
-            PreviewQualityText.SetText(qualTexts[(int)_previewQuality]);
-            switch (_previewQuality)
-            {
-                case PreviewQualities.LOW:
-                    PreviewQualityText.color = Color.green;
-                    break;
-                case PreviewQualities.MEDIUM:
-                    PreviewQualityText.color = new Color(0.8f, 0.608f, 0.02f);
-                    break;
-                case PreviewQualities.HIGH:
-                    PreviewQualityText.color = Color.red;
-                    break;
-            }
+            _cameraController.PreviewQuality = PreviewQualitySlider.value;
         }
 
-        private void StartPlayback(string statusText)
+        private void StartPlayback(string statusText, bool isPreview)
         {
             StatusText.text = statusText;
             VideoView.SetActive(true);
             ProgressBar.SetActive(true);
             StatusText.gameObject.SetActive(true);
-            ConfigureUIForPreview(true);
+            ConfigureUIForPreview(true, isPreview);
         }
         
         private void StartExport()
         {
-            StartPlayback(ExportMessage);
+            StartPlayback(ExportMessage, false);
             _cameraController.StartExport();
         }
         
@@ -235,7 +212,6 @@ namespace VideoMaker
             print(_ffmpegPath);
             if (File.Exists(_ffmpegPath) && TestFfmpegExe() == FfmpegTestResults.Valid)
             {
-                // StartCoroutine(Export());
                 _cameraController.FfmpegPath = _ffmpegPath;
                 StartExport();
                 return;
@@ -387,7 +363,7 @@ namespace VideoMaker
             ProgressBar.SetActive(false);
             StatusText.gameObject.SetActive(false);
             VideoView.SetActive(false);
-            ConfigureUIForPreview(false);
+            ConfigureUIForPreview(false, false);
             
             //This is in case OnPlaybackUnstoppable was called. Should this go somewhere else?
             _pauseButton.interactable = true;
