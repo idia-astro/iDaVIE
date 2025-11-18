@@ -39741,6 +39741,7 @@ MonoBehaviour:
   PauseButton: {fileID: 1003957669}
   PauseButtonText: {fileID: 709784282}
   StopButton: {fileID: 1055452870}
+  PreviewQualityContainer: {fileID: 1505852756}
   PreviewQualitySlider: {fileID: 240601024}
   FileBrowseButton: {fileID: 813484248}
   ReloadButton: {fileID: 488296629}
@@ -63060,7 +63061,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1940072654}
   m_HandleRect: {fileID: 1940072653}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
