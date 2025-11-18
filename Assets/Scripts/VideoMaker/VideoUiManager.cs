@@ -266,7 +266,14 @@ namespace VideoMaker
             string lastPath = PlayerPrefs.GetString("LastPathVideo");
             if (!Directory.Exists(lastPath))
             {
-                lastPath = "";
+                var directory = new DirectoryInfo(Application.dataPath);
+                lastPath = System.IO.Path.Combine(directory.Parent.FullName, "Outputs/VideoScripts");
+
+                if (!Directory.Exists(lastPath))
+                {
+                    //TODO Should I create the directory if it doesn't exist?
+                    lastPath = System.IO.Path.Combine(directory.Parent.FullName, "Outputs");
+                }
             }
             var extensions = new[]{
                 new ExtensionFilter("Video scripts ", "idvs"), //excluding "json" for now
