@@ -22,18 +22,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
 using System.Globalization;
 using System.IO;
 using TMPro;
-using Valve.Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
-using Valve;
 using Valve.VR;
 using DataFeatures;
-using VoTableReader;
 using System.Linq;
 using System.Runtime.InteropServices;
 using SFB;
@@ -57,6 +53,8 @@ public class CanvassDesktop : MonoBehaviour
     public GameObject WelcomeMenu;
     public GameObject LoadingText;
     public TextMeshProUGUI loadTextLabel;
+
+    public TMP_Text versionText;
 
     public GameObject progressBar;
 
@@ -150,6 +148,8 @@ public class CanvassDesktop : MonoBehaviour
         maxThresholdLabel = renderingPanelContent.gameObject.transform.Find("Rendering_container").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content")
             .gameObject.transform.Find("Settings").gameObject.transform.Find("Threshold_container").gameObject.transform.Find("Threshold_max").gameObject.transform
             .Find("Max_label").GetComponent<TextMeshProUGUI>();
+
+        versionText.SetText(Application.version);
     }
     
     private void PopulateRestfreqencyDropdown()
