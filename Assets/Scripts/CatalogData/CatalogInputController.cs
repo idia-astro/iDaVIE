@@ -25,7 +25,6 @@ using CatalogData;
 using LineRenderer;
 using TMPro;
 using UnityEngine;
-using UnityEngine.XR;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
 using VolumeData;
@@ -226,7 +225,7 @@ public class CatalogInputController : MonoBehaviour
         _inputState = InputState.Moving;
         _targetVignetteIntensity = 1;
     }
-   
+
     private void StateTransitionMovingToScaling()
     {
         _inputState = InputState.Scaling;
@@ -315,7 +314,7 @@ public class CatalogInputController : MonoBehaviour
             }
 
             _currentVignetteIntensity += maxChange;
-           
+
             foreach (var dataSet in _catalogDataSets)
             {
                 dataSet.VignetteIntensity = _currentVignetteIntensity;

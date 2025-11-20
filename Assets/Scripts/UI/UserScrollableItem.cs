@@ -22,16 +22,12 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using Valve.VR.Extras;
 
 public class UserScrollableItem : EventTrigger
     {
-      
         private BoxCollider _boxCollider;
         private RectTransform _rectTransform;
         private VolumeInputController _volumeInputController;
-     
-
 
     private void Start()
         {
@@ -50,7 +46,5 @@ public class UserScrollableItem : EventTrigger
             _boxCollider.center = new Vector3(rect.width / 2 - rect.width * pivot.x, rect.height / 2 - rect.height * pivot.y, _rectTransform.anchoredPosition3D.z);
             gameObject.AddComponent<Button>();
             gameObject.tag = "ScrollView";
-
         }
-
 }

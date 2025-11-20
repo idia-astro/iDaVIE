@@ -22,7 +22,6 @@
 // Adapted from the SteamVR Unity plugin v1.0 SteamVR_LaserPointer code
 
 using UnityEngine;
-using UnityEngine.EventSystems;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
 
@@ -105,7 +104,6 @@ public class LaserPointer : MonoBehaviour
 
     public virtual void OnPointerIn(PointerEventArgs e)
     {
-       
         if (PointerIn != null)
         {
             if (e.Target.tag == "ScrollView" && e.HandType == _volumeInputController.PrimaryHand)

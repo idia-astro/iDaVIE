@@ -49,7 +49,6 @@ public class PointerController : MonoBehaviour
 
     private void OnUiInteractionChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
-      
         // Mouse down
         if (newState)
         {

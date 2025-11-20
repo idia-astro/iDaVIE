@@ -19,18 +19,16 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using DataFeatures;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using DataFeatures;
+using PolyAndCode.UI;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 using VolumeData;
-using System.IO;
-using System;
-using System.Linq;
-using PolyAndCode.UI;
-using UnityEngine.Serialization;
-using System.Runtime.InteropServices.ComTypes;
 
 public class FeatureMenuController : MonoBehaviour
 {

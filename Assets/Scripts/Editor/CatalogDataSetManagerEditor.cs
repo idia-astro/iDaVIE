@@ -19,10 +19,9 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using UnityEngine;
 using CatalogData;
 using UnityEditor;
-
+using UnityEngine;
 
 [CustomEditor(typeof(CatalogDataSetManager))]
 public class CatalogDataSetManagerEditor : Editor

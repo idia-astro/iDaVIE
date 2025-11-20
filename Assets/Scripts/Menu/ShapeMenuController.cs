@@ -19,9 +19,6 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using DataFeatures;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
@@ -170,6 +167,4 @@ public class ShapeMenuController : MonoBehaviour
         shapesManager.applyMask(_activeDataSet, _volumeInputController, false, false);
         shapesManager.ClearShapes();    
     }
-
-
 }

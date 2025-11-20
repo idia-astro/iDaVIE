@@ -48,7 +48,7 @@ public class Colorbar : MonoBehaviour
             _colormapSprites = null;
         }
         
-         _colorbarImage = GetComponentInChildren<Image>();
+        _colorbarImage = GetComponentInChildren<Image>();
         _rectTransform = GetComponent<RectTransform>();
         BuildTicks();
         ApplyColormap();

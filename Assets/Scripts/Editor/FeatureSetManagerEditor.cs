@@ -19,10 +19,9 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using UnityEngine;
-using System.Collections;
 using DataFeatures;
 using UnityEditor;
+using UnityEngine;
 using VolumeData;
 
 

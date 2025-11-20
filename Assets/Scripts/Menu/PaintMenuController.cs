@@ -19,9 +19,6 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using DataFeatures;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
@@ -30,6 +27,8 @@ public class PaintMenuController : MonoBehaviour
 {
     public GameObject volumeDatasetRendererObj = null;
     public GameObject notificationText = null;
+
+    public GameObject userConfirmPopupPrefab;
 
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
@@ -106,63 +105,82 @@ public class PaintMenuController : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// Function that is called to toggle the mask outline.
+    /// </summary>
     public void ShowOutline()
     {
 
-        this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Outline").gameObject.transform.Find("Image_out_on").gameObject.SetActive(false);
-        this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Outline").gameObject.transform.Find("Image_out_off").gameObject.SetActive(false);
+        var maskOn = this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Outline").gameObject.transform.Find("Image_out_on");
+        var maskOff = this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Outline").gameObject.transform.Find("Image_out_off");
+        maskOn.gameObject.SetActive(false);
+        maskOff.gameObject.SetActive(false);
 
         if (getFirstActiveDataSet().DisplayMask)
         {
             getFirstActiveDataSet().DisplayMask = false;
             notificationText.GetComponent<Text>().text = "Outline disabled";
-            this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Outline").gameObject.transform.Find("Image_out_on").gameObject.SetActive(true);
+            maskOff.gameObject.SetActive(true);
 
         }
         else
         {
             getFirstActiveDataSet().DisplayMask = true;
             notificationText.GetComponent<Text>().text = "Outline enabled";
-            this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Outline").gameObject.transform.Find("Image_out_off").gameObject.SetActive(true);
+            maskOn.gameObject.SetActive(true);
         }
     }
 
+    /// <summary>
+    /// Function that is called when the user cycles through the mask modes using the menu button.
+    /// </summary>
     public void ToggleMask()
     {
         if (maskstatus == 3)
             maskstatus = -1;
         maskstatus++;
 
-        this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_nf").gameObject.SetActive(false);
-        this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f1").gameObject.SetActive(false);
-        this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f2").gameObject.SetActive(false);
-        this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f3").gameObject.SetActive(false);
+        var Image_nf = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_nf").gameObject;
+        var Image_f1 = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f1").gameObject;
+        var Image_f2 = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f2").gameObject;
+        var Image_f3 = gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f3").gameObject;
+
+        Image_nf.SetActive(false);
+        Image_f1.SetActive(false);
+        Image_f2.SetActive(false);
+        Image_f3.SetActive(false);
+
+        Debug.Log("Toggling mask to maskstatus of " + maskstatus + ".");
 
         switch (maskstatus)
         {
             case 0:
                 setMask(MaskMode.Disabled);
                 notificationText.GetComponent<Text>().text = "Mask disabled";
-                this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_nf").gameObject.SetActive(true);
+                Image_nf.SetActive(true);
                 break;
             case 1:
                 setMask(MaskMode.Enabled);
                 notificationText.GetComponent<Text>().text = "Mask enabled";
-                this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f1").gameObject.SetActive(true);
+                Image_f1.SetActive(true);
                 break;
             case 2:
                 setMask(MaskMode.Inverted);
                 notificationText.GetComponent<Text>().text = "Mask inverted";
-                this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f2").gameObject.SetActive(true);
+                Image_f2.SetActive(true);
                 break;
             case 3:
                 setMask(MaskMode.Isolated);
-                notificationText.GetComponent<Text>().text = "Mask Isolated";
-                this.gameObject.transform.Find("Content").gameObject.transform.Find("SecondRow").gameObject.transform.Find("Mask").gameObject.transform.Find("Image_f3").gameObject.SetActive(true);
+                notificationText.GetComponent<Text>().text = "Mask isolated";
+                Image_f3.SetActive(true);
                 break;
         }
-
     }
+
+    /// <summary>
+    /// Function that is called when the user sets the mask mode through voice commands.
+    /// </summary>
+    /// <param name="mode">The mask mode to switch to.</param>
     private void setMask(MaskMode mode)
     {
         if (_activeDataSet)
@@ -248,6 +266,9 @@ public class PaintMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Function used to generate popup to save or overwrite existing mask data.
+    /// </summary>
     public void SaveMask()
     {
         if (_activeDataSet.IsMaskNew)
@@ -256,39 +277,40 @@ public class PaintMenuController : MonoBehaviour
         }
         else
         {
-            savePopup.transform.SetParent(this.transform.parent, false);
-            savePopup.transform.localPosition = this.transform.localPosition;
-            savePopup.transform.localRotation = this.transform.localRotation;
-            savePopup.transform.localScale = this.transform.localScale;
+            var newSavePopup = Instantiate(userConfirmPopupPrefab, this.transform.parent);
+            newSavePopup.transform.localPosition = this.transform.localPosition;
+            newSavePopup.transform.localRotation = this.transform.localRotation;
+            newSavePopup.transform.localScale = this.transform.localScale;
 
-            savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform
-                .Find("Cancel").GetComponent<Button>().onClick.RemoveAllListeners();
-            savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform
-                .Find("Overwrite").GetComponent<Button>().onClick.RemoveAllListeners();
-            savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform
-                .Find("NewFile").GetComponent<Button>().onClick.RemoveAllListeners();
+            var control = newSavePopup.GetComponent<UserConfirmationPopupController>();
+            control.setMessageBody("");
+            control.setHeaderText("Save mask");
+            control.addButton("New file", "Save the current mask as a new file", this.SaveNewMask);
+            control.addButton("Overwrite", "Overwrite the existing mask file", this.SaveOverwriteMask);
+            control.addButton("Cancel", "Cancel the save and return to painting", this.SaveCancel);
 
-            savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform
-                .Find("Cancel").GetComponent<Button>().onClick.AddListener(SaveCancel);
-            savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform
-                .Find("Overwrite").GetComponent<Button>().onClick.AddListener(SaveOverwriteMask);
-            savePopup.transform.Find("Content").gameObject.transform.Find("FirstRow").gameObject.transform
-                .Find("NewFile").GetComponent<Button>().onClick.AddListener(SaveNewMask);
-
-            _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents
-                .PaintModeDisabled);
-            this.gameObject.SetActive(false);
-            savePopup.SetActive(true);
+            if (_volumeInputController.InteractionStateMachine.State == VolumeInputController.InteractionState.Painting)
+            {
+                _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeDisabled);
+            }
+            gameObject.SetActive(false);
+            newSavePopup.SetActive(true);
         }
-
     }
 
+    /// <summary>
+    /// Function called when SaveMask()'s popup returns a cancel command.
+    /// </summary>
     public void SaveCancel()
     {
-        paintMenu.SetActive(true);
-        savePopup.SetActive(false);
+        gameObject.SetActive(true);
+        // savePopup.SetActive(false);
     }
 
+
+    /// <summary>
+    /// Function called when SaveMask()'s popup returns an overwrite command.
+    /// </summary>
     public void SaveOverwriteMask()
     {
         _activeDataSet?.SaveMask(true);
@@ -297,8 +319,12 @@ public class PaintMenuController : MonoBehaviour
         SaveCancel();
     }
 
+
+    /// <summary>
+    /// Function called when SaveMask()'s popup returns a new mask command.
+    /// </summary>
     public void SaveNewMask()
-    { 
+    {
         _activeDataSet?.SaveMask(false);
         _volumeInputController.VibrateController(_volumeInputController.PrimaryHand);
         SaveCancel();
@@ -308,12 +334,17 @@ public class PaintMenuController : MonoBehaviour
     {
         _volumeInputController.AddNewSource();
     }
+
+    /// <summary>
+    /// Function that is called when the user presses the button to select a source ID.
+    /// Forwards input to the input controller for state management.
+    /// </summary>
     public void EditSourceId()
     {
-        _volumeInputController.InteractionStateMachine.Fire(VolumeInputController.InteractionEvents.StartEditSource);
+        _volumeInputController.StartEditSourceID();
     }
 
-     public void OpenShapeMenu()
+    public void OpenShapeMenu()
     {
         shapeMenu.transform.SetParent(this.transform.parent, false);
         shapeMenu.transform.localPosition = this.transform.localPosition;

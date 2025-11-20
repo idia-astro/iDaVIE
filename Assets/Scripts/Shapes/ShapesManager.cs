@@ -1,16 +1,32 @@
 /*
- * ShapeManager class manages state of all shapes in the scene, keeping track of selected and non-selected shapes
- * as actions performed by the user to allow undo functionality
-*/
-
-using DataFeatures;
-using System.Collections;
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
 using System.Collections.Generic;
-using System.Threading;
 using UnityEngine;
-using UnityEngine.UI;
 using VolumeData;
 
+/// <summary>
+/// ShapeManager class manages state of all shapes in the scene, keeping track of selected and non-selected shapes
+/// as actions performed by the user to allow undo functionality
+/// </summary>
 public class ShapesManager : MonoBehaviour {
     public ShapeMenuController shapeMenuController;
     public GameObject cube;
@@ -101,8 +117,8 @@ public class ShapesManager : MonoBehaviour {
     }
 
     public void AddShape(GameObject shape) {
-         activeShapes.Add(shape);
-         actions.Push(new ShapeAction(shape));
+        activeShapes.Add(shape);
+        actions.Push(new ShapeAction(shape));
     }
 
     //Generates unique name for shape to be added into the scene
@@ -124,21 +140,21 @@ public class ShapesManager : MonoBehaviour {
     public void IncreaseScale() {
         if(state == ShapeState.selecting) return;
         if(state == ShapeState.selected) {
-           Vector3 scale = currentShape.transform.localScale;
-           Vector3 scaleVector = new Vector3(0,0,0);
-           if(currentShape.name.Contains("Cuboid")) scaleVector = new Vector3(0.01f,0.01f,0.01f);
-           else scaleVector = new Vector3(0.001f,0.001f,0.001f);
-           scale = scale + scaleVector;
-           currentShape.transform.localScale = scale;
-           return;
+            Vector3 scale = currentShape.transform.localScale;
+            Vector3 scaleVector = new Vector3(0,0,0);
+            if(currentShape.name.Contains("Cuboid")) scaleVector = new Vector3(0.01f,0.01f,0.01f);
+            else scaleVector = new Vector3(0.001f,0.001f,0.001f);
+            scale = scale + scaleVector;
+            currentShape.transform.localScale = scale;
+            return;
         }
         foreach(GameObject shape in selectedShapes) {
-           Vector3 scale = shape.transform.localScale;
-           Vector3 scaleVector = new Vector3(0,0,0);
-           if(shape.name.Contains("Cuboid")) scaleVector = new Vector3(0.01f,0.01f,0.01f);
-           else scaleVector = new Vector3(0.001f,0.001f,0.001f);
-           scale = scale + scaleVector;
-           shape.transform.localScale = scale;
+            Vector3 scale = shape.transform.localScale;
+            Vector3 scaleVector = new Vector3(0,0,0);
+            if(shape.name.Contains("Cuboid")) scaleVector = new Vector3(0.01f,0.01f,0.01f);
+            else scaleVector = new Vector3(0.001f,0.001f,0.001f);
+            scale = scale + scaleVector;
+            shape.transform.localScale = scale;
         }
     }
 
@@ -146,23 +162,23 @@ public class ShapesManager : MonoBehaviour {
     public void DecreaseScale() {
         if(state == ShapeState.selecting) return;
         if(state == ShapeState.selected) {
-           Vector3 scale = currentShape.transform.localScale;
-           Vector3 scaleVector = new Vector3(0,0,0);
-           if(currentShape.name.Contains("Cuboid")) scaleVector = new Vector3(0.01f,0.01f,0.01f);
-           else scaleVector = new Vector3(0.001f,0.001f,0.001f);
-           scale = scale - scaleVector;
-           if(scale.x < 0.002f | scale.y < 0.002f | scale.z < 0.002f) scale = new Vector3(0.001f,0.001f,0.001f);
-           currentShape.transform.localScale = scale;
-           return;
+            Vector3 scale = currentShape.transform.localScale;
+            Vector3 scaleVector = new Vector3(0,0,0);
+            if(currentShape.name.Contains("Cuboid")) scaleVector = new Vector3(0.01f,0.01f,0.01f);
+            else scaleVector = new Vector3(0.001f,0.001f,0.001f);
+            scale = scale - scaleVector;
+            if(scale.x < 0.002f | scale.y < 0.002f | scale.z < 0.002f) scale = new Vector3(0.001f,0.001f,0.001f);
+            currentShape.transform.localScale = scale;
+            return;
         }
         foreach(GameObject shape in selectedShapes) {
-           Vector3 scale = shape.transform.localScale;
-           Vector3 scaleVector = new Vector3(0,0,0);
-           if(shape.name.Contains("Cuboid")) scaleVector = new Vector3(0.01f,0.01f,0.01f);
-           else scaleVector = new Vector3(0.001f,0.001f,0.001f);
-           scale = scale - scaleVector;
-           if(scale.x < 0.002f | scale.y < 0.002f | scale.z < 0.002f) scale = new Vector3(0.001f,0.001f,0.001f);
-           shape.transform.localScale = scale;
+            Vector3 scale = shape.transform.localScale;
+            Vector3 scaleVector = new Vector3(0,0,0);
+            if(shape.name.Contains("Cuboid")) scaleVector = new Vector3(0.01f,0.01f,0.01f);
+            else scaleVector = new Vector3(0.001f,0.001f,0.001f);
+            scale = scale - scaleVector;
+            if(scale.x < 0.002f | scale.y < 0.002f | scale.z < 0.002f) scale = new Vector3(0.001f,0.001f,0.001f);
+            shape.transform.localScale = scale;
         }
     }
 
@@ -302,7 +318,7 @@ public class ShapesManager : MonoBehaviour {
             for(float i = min.x; i < max.x; i+=xStep/4) {
                 for(float j = min.y; j < max.y; j+=yStep/4) {
                     for(float k = min.z; k < max.z; k+=zStep/4)
-                     {
+                    {
                         Vector3 pos = new Vector3(i,j,k);
                         //each position needs to be transformed to match the correct orientation of the shape's bounding box
                         pos = pos - boundingBox.transform.position;
@@ -314,8 +330,6 @@ public class ShapesManager : MonoBehaviour {
                             {
                                 _activeDataSet.SetCursorPosition(pos,1);
                                 _activeDataSet.PaintCursor((short) _volumeInputController.SourceId);
-                                
-                                 
                             }
                             else{
                                 _activeDataSet.SetCursorPosition(pos,1);

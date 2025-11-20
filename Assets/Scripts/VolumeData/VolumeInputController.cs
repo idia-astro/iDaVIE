@@ -21,18 +21,16 @@
  */
 using System;
 using System.Collections.Generic;
-using Stateless;
-using VolumeData;
-using TMPro;
-using UnityEngine;
-using UnityEngine.XR;
-using Valve.VR;
-using Valve.VR.InteractionSystem;
 using System.Diagnostics;
 using System.Linq;
 using DataFeatures;
 using LineRenderer;
-using UnityEngine.Serialization;
+using Stateless;
+using TMPro;
+using UnityEngine;
+using Valve.VR;
+using Valve.VR.InteractionSystem;
+using VolumeData;
 using Debug = UnityEngine.Debug;
 using VRHand = Valve.VR.InteractionSystem.Hand;
 
@@ -353,7 +351,7 @@ public class VolumeInputController : MonoBehaviour
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuLeft")?.RemoveOnStateDownListener(OnMenuLeftPressed, SteamVR_Input_Sources.RightHand);
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.RemoveOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.LeftHand);
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.RemoveOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.RightHand);
-             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.RemoveOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.LeftHand);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.RemoveOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.LeftHand);
             SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.RemoveOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.RightHand);
         }
     }
@@ -362,7 +360,7 @@ public class VolumeInputController : MonoBehaviour
     {
         if (_locomotionState == LocomotionState.EditingThresholdMax || 
             _locomotionState == LocomotionState.EditingThresholdMin ||
-             _locomotionState == LocomotionState.EditingZAxis)
+            _locomotionState == LocomotionState.EditingZAxis)
         {
             EndEditing();
         }
@@ -394,14 +392,14 @@ public class VolumeInputController : MonoBehaviour
 
     private void OnMenuUpReleased(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
-         if (fromSource == PrimaryHand && scrollSelected)
-         {
+        if (fromSource == PrimaryHand && scrollSelected)
+        {
             scrollUp = false;
-         }
-         else if(fromSource == PrimaryHand && _shapeSelection) {
+        }
+        else if(fromSource == PrimaryHand && _shapeSelection) {
             scalingUp = false;
             scalingTimer = 0f;
-         }
+        }
     }
 
     private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
@@ -586,19 +584,22 @@ public class VolumeInputController : MonoBehaviour
         {
             return;
         }
+
+        // Skip input if in source ID editing mode (only trigger is accepted then)
+        if (newState && InteractionStateMachine.State == InteractionState.EditingSourceId)
+        {
+            Debug.Log("Pinch button does nothing in this state.");
+            return;
+        }
         
-        if(_shapeSelection) {
-            if(newState)
+        if (_shapeSelection)
+        {
+            if (newState)
             {
-                if(shapesManager.isShapeSelected()) PlaceShape();
+                if (shapesManager.isShapeSelected()) PlaceShape();
                 shapesManager.SelectShape();
             }
             return;
-        }
-
-        if (newState && InteractionStateMachine.State == InteractionState.EditingSourceId)
-        {
-            Debug.Log("Pinch Started");
         }
 
         InteractionStateMachine.Fire(newState ? InteractionEvents.InteractionStarted : InteractionEvents.InteractionEnded);
@@ -1068,7 +1069,7 @@ public class VolumeInputController : MonoBehaviour
         // Edit the region bounds in Editing state, but not for mask feature sets
         else if (currentState == InteractionState.Editing && HasEditingAnchor && _editingFeature.FeatureSetParent.FeatureSetType != FeatureSetType.Mask)
         {
-            var voxelPosition = dataSet.GetVoxelPosition(cursorPosWorldSpace);
+            var voxelPosition = dataSet.GetVoxelPositionWorldSpace(cursorPosWorldSpace);
             var newCornerMin = _editingFeature.CornerMin;
             var newCornerMax = _editingFeature.CornerMax;
 
@@ -1163,20 +1164,20 @@ public class VolumeInputController : MonoBehaviour
             dataSet.GetFitsLengthsAst(regionMin, regionMax + Vector3.one, out xLength, out yLength, out zLength, out angle);
             string depthUnit = dataSet.GetAxisUnit(3);
             stringToReturn += $"Angle: {FormatAngle(angle)}{Environment.NewLine}"
-                              + $"Depth: {dataSet.GetFormattedCoord(Math.Abs(zLength), 3),15} {dataSet.GetAstAttribute("Unit(3)")}";
+                            + $"Depth: {dataSet.GetFormattedCoord(Math.Abs(zLength), 3),15} {dataSet.GetAstAttribute("Unit(3)")}";
         }
 
         return stringToReturn;
     }
 
     /// <summary>
-    /// Checks if the cursor is outside the volume cube
+    /// Checks if the cursor is outside the volume cube.
     /// </summary>
-    /// <param name="dataSetRenderer"></param>
-    /// <returns></returns>
+    /// <param name="dataSetRenderer">The renderer that determines the volume cube bounds.</param>
+    /// <returns>True if the cursor is outside the cube, false otherwise.</returns>
     public static bool IsCursorOutsideCube(VolumeDataSetRenderer dataSetRenderer)
     {
-        return (dataSetRenderer.CursorVoxel.x < 0 || dataSetRenderer.CursorVoxel.y < 0 || dataSetRenderer.CursorVoxel.z < 0 || dataSetRenderer.CursorVoxel.x >= dataSetRenderer.Data.XDim || dataSetRenderer.CursorVoxel.y >= dataSetRenderer.Data.YDim || dataSetRenderer.CursorVoxel.z >= dataSetRenderer.Data.ZDim);
+        return (dataSetRenderer.CursorVoxel.x < 1 || dataSetRenderer.CursorVoxel.y < 1 || dataSetRenderer.CursorVoxel.z < 1 || dataSetRenderer.CursorVoxel.x > dataSetRenderer.Data.XDim || dataSetRenderer.CursorVoxel.y > dataSetRenderer.Data.YDim || dataSetRenderer.CursorVoxel.z > dataSetRenderer.Data.ZDim);
     }
     
     /// <summary>
@@ -1206,14 +1207,22 @@ public class VolumeInputController : MonoBehaviour
         {
             double physX, physY, physZ, normX, normY;
             double normZ = 0;
-            dataSet.GetFitsCoordsAst(voxelCoordinate.x, voxelCoordinate.y, voxelCoordinate.z, out physX, out physY, out physZ);
+            var dataCoordinate = dataSetRenderer.GetVoxelPositionDataSpace();
+            dataSet.GetFitsCoordsAst(dataCoordinate.x, dataCoordinate.y, dataCoordinate.z, out physX, out physY, out physZ);
             dataSet.GetNormCoords(physX, physY, physZ, out normX, out normY, out normZ);
             stringToReturn += $"WCS: ({dataSet.GetFormattedCoord(normX, 1)}, {dataSet.GetFormattedCoord(normY, 2)}){Environment.NewLine}"
-                              + $"{dataSet.GetAstAttribute("System(3)")}: {dataSet.GetFormattedCoord(normZ, 3),10} {dataSet.GetAstAttribute("Unit(3)")}{Environment.NewLine}";
+                            + $"{dataSet.GetAstAttribute("System(3)")}: {dataSet.GetFormattedCoord(normZ, 3),10} {dataSet.GetAstAttribute("Unit(3)")}{Environment.NewLine}";
         }
+
+        stringToReturn += $"World: ({voxelCoordinate.x,5}, {voxelCoordinate.y,5}, {voxelCoordinate.z,5}){Environment.NewLine}";
         
-        stringToReturn += $"Image: ({voxelCoordinate.x,5}, {voxelCoordinate.y,5}, {voxelCoordinate.z,5}){Environment.NewLine}"
-                        + $"Value: {dataSetRenderer.CursorValue,16} {dataSet.GetPixelUnit()}";
+        if (dataSet.isSubset())
+        {
+            Vector3Int dataVoxel = dataSetRenderer.GetVoxelPositionDataSpace();
+            stringToReturn += $"Data: ({dataVoxel.x,5}, {dataVoxel.y,5}, {dataVoxel.z,5}){Environment.NewLine}";
+        }
+
+        stringToReturn += $"Value: {dataSetRenderer.CursorValue,16} {dataSet.GetPixelUnit()}";
 
         if (dataSet.HasRestFrequency)
             stringToReturn += $"{Environment.NewLine}{dataSet.GetConvertedDepth(voxelCoordinate.z)}";
@@ -1264,6 +1273,11 @@ public class VolumeInputController : MonoBehaviour
         return VRFamily.Unknown;
     }
 
+    /// <summary>
+    /// Teleports the cube to place a given bounds directly in the user's view.
+    /// </summary>
+    /// <param name="boundsMin">Lower front left corner of the bounds.</param>
+    /// <param name="boundsMax">Top rear right corner of the bounds.</param>
     public void Teleport(Vector3 boundsMin, Vector3 boundsMax)
     {
         float targetSize = 0.3f;
@@ -1373,13 +1387,33 @@ public class VolumeInputController : MonoBehaviour
             InteractionStateMachine.Fire(InteractionEvents.CancelEditSource);
         }
     }
+
+    /// <summary>
+    /// Function called when trying to change source ID, used to control state machine when interacting with paint mode.
+    /// </summary>
+    public void StartEditSourceID()
+    {
+        if (InteractionStateMachine.State == InteractionState.IdlePainting)
+        {
+            Debug.Log("Starting source ID editing mode");
+            InteractionStateMachine.Fire(InteractionEvents.StartEditSource);
+        }
+        else if (InteractionStateMachine.State == InteractionState.EditingSourceId)
+        {
+            Debug.Log("Already in source ID editing mode.");
+        }
+        else
+        {
+            Debug.Log($"Attempted to enter source ID editing mode from incorrect state!");
+        }
+    }
     
     public void SetBrushAdditive()
     {
         AdditiveBrush = true;
         if (SourceId <= 0)
         {
-            InteractionStateMachine.Fire(InteractionEvents.StartEditSource);    
+            InteractionStateMachine.Fire(InteractionEvents.StartEditSource);
         }
     }
 
@@ -1410,7 +1444,7 @@ public class VolumeInputController : MonoBehaviour
     }
 
     private void OnTriggerChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState) {
-         if(_shapeSelection) {
+        if(_shapeSelection) {
             GameObject moveableShape = shapesManager.GetMoveableShape();
             if(moveableShape != null) {
                 if(newState) {

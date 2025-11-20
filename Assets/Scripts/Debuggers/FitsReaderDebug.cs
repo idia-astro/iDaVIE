@@ -19,9 +19,9 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using AOT;
 using System;
 using System.Runtime.InteropServices;
+using AOT;
 using UnityEngine;
 
 public class FitsReaderDebug : MonoBehaviour
@@ -55,6 +55,6 @@ public class FitsReaderDebug : MonoBehaviour
             "</color>"
             );
 
-        UnityEngine.Debug.Log(debug_string);
+        Debug.Log(debug_string);
     }
 }

@@ -20,16 +20,8 @@
  *
  */
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using Valve.Newtonsoft.Json;
-using VoTableReader;
-using UnityEngine;
-using System.Globalization;
-using System.Text;
-using System.Runtime.InteropServices;
-using System.Linq;
 using Valve.Newtonsoft.Json.Linq;
 
 namespace DataFeatures

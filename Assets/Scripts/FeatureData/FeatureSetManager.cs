@@ -20,13 +20,11 @@
  *
  */
 using System;
-using System.IO;
 using System.Collections.Generic;
-using System.Linq;
-using VolumeData;
+using System.IO;
 using UnityEngine;
 using UnityEngine.Serialization;
-using VoTableReader;
+using VolumeData;
 
 namespace DataFeatures
 {
