@@ -30,7 +30,6 @@ using UnityEngine.UI;
 using TMPro;
 using DataFeatures;
 using LineRenderer;
-using Unity.VisualScripting;
 using Debug = UnityEngine.Debug;
 
 namespace VolumeData
@@ -206,7 +205,7 @@ namespace VolumeData
         private Material _maskMaterialInstance;
         private MomentMapRenderer _momentMapRenderer;
 
-        public VolumeInputController _volumeInputController;
+        public VolumeInputController volumeInputController;
 
         private Vector3Int _previousPaintLocation;
         private short _previousPaintValue;
@@ -370,7 +369,7 @@ namespace VolumeData
                 _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);
             else
                 _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, IntPtr.Zero, CubeDepthAxis, CubeSlice);
-            _volumeInputController = FindObjectOfType<VolumeInputController>();
+            volumeInputController = FindObjectOfType<VolumeInputController>();
             _featureManager = GetComponentInChildren<FeatureSetManager>();
             if (_featureManager == null)
                 Debug.Log($"No FeatureManager attached to VolumeDataSetRenderer. Attach prefab for use of Features.");
@@ -881,11 +880,11 @@ namespace VolumeData
 
         public void TeleportToRegion()
         {
-            if (_volumeInputController && _featureManager && _featureManager.SelectedFeature != null)
+            if (volumeInputController && _featureManager && _featureManager.SelectedFeature != null)
             {
                 var boundsMin = _featureManager.SelectedFeature.CornerMin;
                 var boundsMax = _featureManager.SelectedFeature.CornerMax;
-                _volumeInputController.Teleport(boundsMin - (0.5f * Vector3.one), boundsMax + (0.5f * Vector3.one));
+                volumeInputController.Teleport(boundsMin - (0.5f * Vector3.one), boundsMax + (0.5f * Vector3.one));
             }
         }
 

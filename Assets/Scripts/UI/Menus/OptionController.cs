@@ -19,12 +19,8 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using DataFeatures;
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 using Valve.VR;
 using VolumeData;
 
@@ -92,12 +88,12 @@ public class OptionController : MonoBehaviour
         if (hand == 0)
         {
             hand = 1;
-            _activeDataSet._volumeInputController.PrimaryHand = SteamVR_Input_Sources.LeftHand;
+            _activeDataSet.volumeInputController.PrimaryHand = SteamVR_Input_Sources.LeftHand;
         }
         else
         {
             hand = 0;
-            _activeDataSet._volumeInputController.PrimaryHand = SteamVR_Input_Sources.RightHand;
+            _activeDataSet.volumeInputController.PrimaryHand = SteamVR_Input_Sources.RightHand;
         }
         LabelHand.text = (Hand)hand + "";
     }
