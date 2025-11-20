@@ -155,7 +155,7 @@ namespace VideoMaker
                                     start: start,
                                     end: end,
                                     controlPoint: 0.5f * ( start + end) - 0.25f *(endL * endDir + startL * startDir)
-                                );
+                                ){Easing = EasingIO};
                                 
                                 break;
                             default:
