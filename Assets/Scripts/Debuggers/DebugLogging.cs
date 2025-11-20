@@ -34,6 +34,7 @@ using UnityEngine.UI;
 public class DebugLogging : MonoBehaviour
 {
     public TMP_InputField logOutput;
+    public Scrollbar debugScrollbar;
     public Button saveButton;
 
     public const string defaultFile = "iDaVIE_Log.log";
@@ -77,7 +78,7 @@ public class DebugLogging : MonoBehaviour
         // Check if default config file was created.
         int newConfig = PlayerPrefs.GetInt("NewConfigFileCreated");
         string configPath = PlayerPrefs.GetString("ConfigFilePath");
-        
+
         // If new default config, inform user and set new to false.
         if (newConfig != 0)
         {
@@ -90,6 +91,9 @@ public class DebugLogging : MonoBehaviour
         {
             Debug.Log($"Using configuration file at {configPath}");
         }
+        
+        Canvas.ForceUpdateCanvases();
+        logOutput.Rebuild(CanvasUpdate.Prelayout);
     }
 
     void OnEnable()
@@ -141,6 +145,7 @@ public class DebugLogging : MonoBehaviour
         }
 
         logOutput.text = builder.ToString();
+        debugScrollbar.value = 1.0f;
     }
 
     /// <summary>
