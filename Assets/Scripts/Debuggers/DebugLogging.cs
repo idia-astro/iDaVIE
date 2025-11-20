@@ -37,6 +37,7 @@ using VolumeData;
 public class DebugLogging : MonoBehaviour
 {
     public TMP_InputField logOutput;
+    public Scrollbar debugScrollbar;
     public Button saveButton;
 
     public const string defaultFile = "iDaVIE_Log";
@@ -112,30 +113,35 @@ public class DebugLogging : MonoBehaviour
         }
         catch (Exception ex)
         {
-            UnityEngine.Debug.Log("Error moving autosave logs!");
-            UnityEngine.Debug.Log(ex);
+            Debug.Log("Error moving autosave logs!");
+            Debug.Log(ex);
         }
 
         // Initializing the event handler
-        UnityEngine.Debug.Log("Start debug logging.");
+        Debug.Log("Start debug logging.");
+        Debug.Log($"iDaVIE Version: {Application.version}");
+        DetermineHardware();
         saveButton.onClick.AddListener(saveToFileClick);
 
         // Check if default config file was created.
         int newConfig = PlayerPrefs.GetInt("NewConfigFileCreated");
         string configPath = PlayerPrefs.GetString("ConfigFilePath");
-        
+
         // If new default config, inform user and set new to false.
         if (newConfig != 0)
         {
-            UnityEngine.Debug.Log($"Default configuration file created at {configPath}");
+            Debug.Log($"Default configuration file created at {configPath}");
             PlayerPrefs.SetInt("NewConfigFileCreated", 0);
             PlayerPrefs.Save();
         }
         // Else, inform user of current location of config file in use.
         else
         {
-            UnityEngine.Debug.Log($"Using configuration file at {configPath}");
+            Debug.Log($"Using configuration file at {configPath}");
         }
+        
+        Canvas.ForceUpdateCanvases();
+        logOutput.Rebuild(CanvasUpdate.Prelayout);
     }
 
     void OnEnable()
@@ -146,6 +152,20 @@ public class DebugLogging : MonoBehaviour
     void OnDisable()
     {
         Application.logMessageReceived -= HandleLog;
+    }
+
+    /// <summary>
+    /// Function checks hardware information and reports it to the log, neatly formatted.
+    /// </summary>
+    void DetermineHardware()
+    {
+        string cpuModel = SystemInfo.processorType;
+        int systemMemory = SystemInfo.systemMemorySize;
+        string gpuModel = SystemInfo.graphicsDeviceName;
+        int gpuMemory = SystemInfo.graphicsMemorySize;
+
+        string output = $"System information:\n\t\t\tCPU Model: {cpuModel}\n\t\t\tRAM: {systemMemory} MB\n\t\t\tGPU Model: {gpuModel}\n\t\t\tVideo Memory: {gpuMemory} MB";
+        Debug.Log(output);
     }
 
     /// <summary>
@@ -173,6 +193,7 @@ public class DebugLogging : MonoBehaviour
         }
 
         logOutput.text = builder.ToString();
+        debugScrollbar.value = 1.0f;
     }
 
     /// <summary>
@@ -230,11 +251,5 @@ public class DebugLogging : MonoBehaviour
         StreamWriter writer = new StreamWriter(autosavePath, true);
         writer.Write(message + "\n");
         writer.Close();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }

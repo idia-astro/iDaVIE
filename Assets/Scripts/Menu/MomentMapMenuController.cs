@@ -20,11 +20,7 @@
 //
 //
 using System;
-using System.Collections;
-using System.Collections.Generic;
-
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using TMPro;
 using UnityEngine;
@@ -203,10 +199,14 @@ public class MomentMapMenuController : MonoBehaviour
         }
         getFirstActiveDataSet().GetMomentMapRenderer().CalculateMomentMaps();
         ThresholdTypeText.text = (ThresholdType)thresholdType + "";
-    }  
+    }
 
+    /// <summary>
+    /// Saves the moment maps 0 and 1 to a single png file, with graph axes values added.
+    /// </summary>
     public void SaveToImage()
     {
+        getFirstActiveDataSet().volumeInputController.VibrateController(getFirstActiveDataSet().volumeInputController.PrimaryHand);
         var directory = new DirectoryInfo(Application.dataPath);
         var directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/MomentMaps");
         try
@@ -232,7 +232,7 @@ public class MomentMapMenuController : MonoBehaviour
         RenderTexture.active = null;
         byte[] bytes_mom = renderedTexture.EncodeToPNG();
         File.WriteAllBytes(path, bytes_mom);
-        
+
         Debug.Log($"Moment maps saved to {path} as single PNG.");
         ToastNotification.ShowSuccess($"Moment maps saved to {path} as single PNG.");
     }
@@ -267,6 +267,7 @@ public class MomentMapMenuController : MonoBehaviour
     /// </summary>
     public void SaveToFits()
     {
+        getFirstActiveDataSet().volumeInputController.VibrateController(getFirstActiveDataSet().volumeInputController.PrimaryHand);
         var directory = new DirectoryInfo(Application.dataPath);
         var directoryPath = Path.Combine(directory.Parent.FullName, "Outputs/MomentMaps");
         try

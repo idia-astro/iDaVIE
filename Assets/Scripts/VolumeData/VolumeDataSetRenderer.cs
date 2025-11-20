@@ -209,7 +209,7 @@ namespace VolumeData
         private Material _maskMaterialInstance;
         private MomentMapRenderer _momentMapRenderer;
 
-        public VolumeInputController _volumeInputController;
+        public VolumeInputController volumeInputController;
 
         private Vector3Int _previousPaintLocation;
         private short _previousPaintValue;
@@ -928,11 +928,11 @@ namespace VolumeData
 
         public void TeleportToRegion()
         {
-            if (_volumeInputController && _featureManager && _featureManager.SelectedFeature != null)
+            if (volumeInputController && _featureManager && _featureManager.SelectedFeature != null)
             {
                 var boundsMin = _featureManager.SelectedFeature.CornerMin;
                 var boundsMax = _featureManager.SelectedFeature.CornerMax;
-                _volumeInputController.Teleport(boundsMin - (0.5f * Vector3.one), boundsMax + (0.5f * Vector3.one));
+                volumeInputController.Teleport(boundsMin - (0.5f * Vector3.one), boundsMax + (0.5f * Vector3.one));
             }
         }
 
