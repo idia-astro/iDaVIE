@@ -26,6 +26,8 @@ namespace VideoMaker
         private Slider _progressSlider;
         public TMP_Text StatusText;
 
+        public GameObject PlayContainer;
+        public TMP_Text PlayText;
         public GameObject PreviewButton;
         public GameObject ExportButton;
         public GameObject PauseButton;
@@ -57,6 +59,8 @@ namespace VideoMaker
         private const string pauseText = "Pause";
         private const string resumeText = "Resume";
         
+        private const string playingText = "Playing";
+        private const string pausedText = "Paused";
         
         void Awake()
         {
@@ -75,6 +79,7 @@ namespace VideoMaker
             _pauseButton = PauseButton.GetComponent<Button>();
             _stopButton = StopButton.GetComponent<Button>();
             
+            PlayContainer.SetActive(false);
             PreviewQualityContainer.SetActive(false);
             PreviewQualitySlider.value = _cameraController.PreviewQuality;
         }
@@ -112,6 +117,7 @@ namespace VideoMaker
         {
             _cameraController.IsPaused = !_cameraController.IsPaused;
             PauseButtonText.SetText(_cameraController.IsPaused ? resumeText : pauseText);
+            PlayText.text =  _cameraController.IsPaused ? pausedText : playingText;
         }
 
         /// <summary>
@@ -138,6 +144,7 @@ namespace VideoMaker
             ReloadButton.interactable = !isPlaying;
             PreviewQualityContainer.SetActive(isPreview);
             PreviewQualitySlider.value = _cameraController.PreviewQuality;
+            PlayText.text = playingText;
         }
 
         /// <summary>
@@ -358,6 +365,7 @@ namespace VideoMaker
 
             _cameraController.VideoFileName = videoFileName;
             _cameraController.VideoScript = videoScript;
+            PlayContainer.SetActive(true);
         }
 
         private void OnPlaybackUpdated(object sender, VideoCameraController.PlaybackUpdatedEventArgs e)

@@ -10657,7 +10657,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 1720, y: 0}
+  m_AnchoredPosition: {x: 2583, y: 0}
   m_SizeDelta: {x: -863, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &227366651
@@ -39653,7 +39653,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playMode: 0
   logoShader: {fileID: 4800000, guid: 7adde34bc3531a04bbdd63ee007fa554, type: 3}
-  logoTexture: {fileID: 2800000, guid: 0d148dc778ac3cc42abd456bb53adf1d, type: 3}
+  logoTexture: {fileID: 2800000, guid: 044cd135de590c040a3cc7d08b6462d8, type: 3}
   VideoScriptFilePath: {fileID: 573058380}
 --- !u!81 &823534367
 AudioListener:
@@ -39736,6 +39736,8 @@ MonoBehaviour:
   VideoScriptFilePath: {fileID: 573058380}
   ProgressBar: {fileID: 1969116326}
   StatusText: {fileID: 1147665677}
+  PlayContainer: {fileID: 449881830}
+  PlayText: {fileID: 2122252680}
   PreviewButton: {fileID: 239765418}
   ExportButton: {fileID: 1799353899}
   PauseButton: {fileID: 1003957669}
@@ -64228,7 +64230,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: -1720, y: 0}
+  m_AnchoredPosition: {x: -2583, y: 0}
   m_SizeDelta: {x: 850, y: 676}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1322749777
@@ -69998,7 +70000,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1034650424}
   m_HandleRect: {fileID: 1034650423}
   m_Direction: 0
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
