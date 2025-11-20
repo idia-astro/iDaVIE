@@ -20,10 +20,9 @@
  *
  */
 using System.Collections;
-using System.Collections.Generic;
-using VolumeData;
 using UnityEngine;
 using Valve.VR;
+using VolumeData;
 
 public class BenchmarkManager : MonoBehaviour
 {

@@ -1444,7 +1444,7 @@ public class VolumeInputController : MonoBehaviour
     }
 
     private void OnTriggerChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState) {
-         if(_shapeSelection) {
+        if(_shapeSelection) {
             GameObject moveableShape = shapesManager.GetMoveableShape();
             if(moveableShape != null) {
                 if(newState) {

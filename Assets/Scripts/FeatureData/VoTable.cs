@@ -26,11 +26,11 @@ https://github.com/WorldWideTelescope/wwt-windows-client/blob/master/WWTExplorer
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
-using System.IO;
-using System.Linq;
 using DataFeatures;
 using UnityEngine;
 
@@ -222,11 +222,11 @@ namespace VoTableReader
             {
                 if (first)
                 {
-                     first = false;
+                    first = false;
                 }
                 else
                 {
-                   sb.Append("\t");
+                    sb.Append("\t");
                 }
 
                 sb.Append(col.Name);
@@ -449,7 +449,7 @@ namespace VoTableReader
             for (var i = 0; i < sourceDataHeaders.Count; i++)
             {
                 if (i < initialHeaderCount)
-                   xmlFields[i] = new XElement("FIELD", new XAttribute("datatype", "float"), new XAttribute("name", sourceDataHeaders[i]));
+                    xmlFields[i] = new XElement("FIELD", new XAttribute("datatype", "float"), new XAttribute("name", sourceDataHeaders[i]));
                 else
                     xmlFields[i] = new XElement("FIELD", new XAttribute("arraysize", "30"), new XAttribute("datatype", "char"), new XAttribute("name", sourceDataHeaders[i]));
             }

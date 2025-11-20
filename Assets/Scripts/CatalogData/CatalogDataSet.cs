@@ -26,8 +26,8 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
-using UnityEngine;
 using System.Text;
+using UnityEngine;
 
 namespace CatalogData
 {

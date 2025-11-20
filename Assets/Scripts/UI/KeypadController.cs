@@ -19,19 +19,11 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
-using System;
-using System.Diagnostics;
-using System.Linq;
+using UnityEngine;
 
 public class KeypadController : MonoBehaviour
 {
-
-
     public TextMeshProUGUI previewText;
     public TextMeshProUGUI targetText = null;
     public GameObject targetObj = null;

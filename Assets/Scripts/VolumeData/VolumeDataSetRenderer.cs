@@ -375,7 +375,7 @@ namespace VolumeData
                 //subsetBounds guaranteed to be full cube if not selected by user
                 _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, subsetBounds, trueBounds, IntPtr.Zero, CubeDepthAxis, CubeSlice, SelectedHdu);
 
-            _volumeInputController = FindObjectOfType<VolumeInputController>();
+            volumeInputController = FindObjectOfType<VolumeInputController>();
             _featureManager = GetComponentInChildren<FeatureSetManager>();
             if (_featureManager == null)
                 Debug.Log($"No FeatureManager attached to VolumeDataSetRenderer. Attach prefab for use of Features.");

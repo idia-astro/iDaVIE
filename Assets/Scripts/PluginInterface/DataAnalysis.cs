@@ -20,11 +20,9 @@
  *
  */
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using fts;
-using Unity.Collections;
 using UnityEngine;
 
 [PluginAttr("idavie_native")]

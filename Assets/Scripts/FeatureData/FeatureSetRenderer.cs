@@ -21,13 +21,12 @@
  */
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text;
+using UnityEngine;
 using VolumeData;
 using VoTableReader;
-using UnityEngine;
-using System.Linq;
-using System.Globalization;
-using System.Text;
-using System.Runtime.InteropServices;
 
 namespace DataFeatures
 {
@@ -327,7 +326,6 @@ namespace DataFeatures
                         Debug.LogError($"Error creating feature astframe!");
                         return;
                     }
-                     
                 }
                 else if (setCoordinates.Contains(SourceMappingOptions.Freq))
                 {

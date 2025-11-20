@@ -19,9 +19,6 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;

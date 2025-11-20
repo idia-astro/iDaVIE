@@ -19,17 +19,13 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using System.Collections;
-using System.Collections.Generic;
 using System;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
- 
 
 public class ColourMapListCreator : MonoBehaviour
 {
-  
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
     
@@ -41,7 +37,7 @@ public class ColourMapListCreator : MonoBehaviour
 
     [SerializeField]
     private RectTransform content = null;
-  
+
     private VolumeCommandController _volumeCommandController;
     private float _maxYPosition = 0;// Use to set the size of content to encapsulate all spawned items
     
@@ -77,14 +73,13 @@ public class ColourMapListCreator : MonoBehaviour
             _maxYPosition = spawnY;
         }
         content.sizeDelta = new Vector2(content.offsetMin.x, _maxYPosition);        //Encapsulate all spawned items with content size
-       
 }
 
 
     // Update is called once per frame
     void Update()
     {
-      
+        
     }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
@@ -101,6 +96,4 @@ public class ColourMapListCreator : MonoBehaviour
         return null;
 
     }
-
-  
 }

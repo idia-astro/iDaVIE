@@ -32,7 +32,7 @@ using UnityEngine.UI;
 using VolumeData;
 
 /// <summary>
-/// 
+/// Class to manage the output of the debug logs to file.
 /// </summary>
 public class DebugLogging : MonoBehaviour
 {

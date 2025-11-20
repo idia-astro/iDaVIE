@@ -19,22 +19,15 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using DataFeatures;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
-using Valve.VR;
-using VolumeData;
-
-using Valve.VR.InteractionSystem;
 using System;
 using System.Globalization;
 using System.Linq;
+using UnityEngine;
+using UnityEngine.UI;
+using VolumeData;
 
 public class RenderingController : MonoBehaviour
 {
-
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
 
@@ -78,7 +71,7 @@ public class RenderingController : MonoBehaviour
 
         LabelColormap.gameObject.GetComponent<Text>().text = ColorMapUtils.FromHashCode(colorIndex) + "";
         LabelScalingType.gameObject.GetComponent<Text>().text = (ScalingType)scalingIndex + "";
-       
+
         _volumeCommandController = FindObjectOfType<VolumeCommandController>();
     }
 
@@ -170,7 +163,7 @@ public class RenderingController : MonoBehaviour
     {
 
         LabelColormap.gameObject.GetComponent<Text>().text = colorMap + "";
-         _volumeCommandController.setColorMap(colorMap);
+        _volumeCommandController.setColorMap(colorMap);
     }
 
     public void ResetColorMap()
