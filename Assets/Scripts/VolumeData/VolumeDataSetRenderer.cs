@@ -631,28 +631,6 @@ namespace VolumeData
         }
 
         /// <summary>
-        /// Converts a world space position to a position in the datacube's frame of reference.
-        /// </summary>
-        /// <param name="worldLoc">The world space position to convert.</param>
-        /// <returns>A position in the data cube frame of reference, equivalent to the world space position at the time this function is called.</returns>
-        public Vector3 ConvertWorldPositionToDataCubePosition(Vector3 worldLoc)
-        {
-            Vector3 dataCubePos = transform.InverseTransformPoint(worldLoc);
-            return dataCubePos;
-        }
-
-        /// <summary>
-        /// Converts a world space rotation to a rotation in the datacube's frame of reference.
-        /// </summary>
-        /// <param name="worldLoc">The world space rotation to convert.</param>
-        /// <returns>A rotation in the data cube frame of reference, equivalent to the world space rotation at the time this function is called.</returns>
-        public Quaternion ConvertWorldRotationToDatacubeRotation(Quaternion worldRot)
-        {
-            Quaternion dataCubeRot = Quaternion.Inverse(transform.rotation) * worldRot;
-            return dataCubeRot;
-        }
-
-        /// <summary>
         /// A function that calculates the cursor position and sends it to both the cursor, and the information sent on hover. Note the information on hover
         /// is in the data space, so needs an offset if a subset was loaded, while the cursor is in object/VR space, so real location (no offset).
         /// </summary>
