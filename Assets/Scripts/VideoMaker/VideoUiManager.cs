@@ -316,9 +316,6 @@ namespace VideoMaker
             {
                 return;
             }
-            
-            string videoFileName = System.IO.Path.GetFileNameWithoutExtension(path);
-            VideoScriptFilePath.text = System.IO.Path.GetFileName(path);
 
             VideoScriptData videoScript;
             
@@ -341,13 +338,17 @@ namespace VideoMaker
                 }
                 //TODO use async?
             }
-
-            if (videoScript is null)
+            
+            //TODO use proper error messaging when refactoring.
+            if (videoScript is null || videoScript.Duration == 0)
             {
                 UnityEngine.Debug.LogWarning("VideoScript failed to construct actions.");
                 return;
             }
-
+            
+            string videoFileName = System.IO.Path.GetFileNameWithoutExtension(path);
+            VideoScriptFilePath.text = System.IO.Path.GetFileName(path);
+                
             if (videoScript.Height / (float)videoScript.Width > _videoDisplaySizeDelta.y / _videoDisplaySizeDelta.x)
             {
                 _videoDisplayRect.sizeDelta = new Vector2(
