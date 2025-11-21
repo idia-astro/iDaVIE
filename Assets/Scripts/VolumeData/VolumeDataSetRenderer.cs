@@ -191,6 +191,7 @@ namespace VolumeData
         public Int16 HighlightedSource;
         public Vector3Int RegionStartVoxel { get; private set; }
         public Vector3Int RegionEndVoxel { get; private set; }
+        private Vector3Int _vidCursorLocVoxel { get; set; }
 
         public TextMeshProUGUI loadText;
         public Slider progressBar;
@@ -200,7 +201,7 @@ namespace VolumeData
         public FeatureSetManager FeatureSetManagerPrefab;
 
         private PolyLine _measuringLine;
-        private CuboidLine _cubeOutline, _voxelOutline, _regionOutline;
+        private CuboidLine _cubeOutline, _voxelOutline, _regionOutline, _videoCursorPositionOutline;
 
         private FeatureSetManager _featureManager = null;
 
@@ -214,6 +215,7 @@ namespace VolumeData
         private Vector3Int _previousPaintLocation;
         private short _previousPaintValue;
         private int _previousBrushSize = 1;
+        private float _videoCursorLocSize = 0.06f;
 
         private VolumeDataSet _dataSet = null;
         private VolumeDataSet _maskDataSet = null;
@@ -368,6 +370,7 @@ namespace VolumeData
             ColorMap = config.defaultColorMap;
             ScalingType = config.defaultScalingType;
             VignetteFadeEnd = config.tunnellingVignetteEnd;
+            _videoCursorLocSize = config.videoCursorLocHighlightSize;
             
             if (RandomVolume)
                 _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);
@@ -441,6 +444,15 @@ namespace VolumeData
                 Parent = transform,
                 Center = Vector3.zero,
                 Color = Color.green,
+                Bounds = Vector3.one
+            };
+
+            _vidCursorLocVoxel = new Vector3Int(-1, -1, -1);
+            _videoCursorPositionOutline = new CuboidLine
+            {
+                Parent = transform,
+                Center = Vector3.zero,
+                Color = Color.cyan,
                 Bounds = Vector3.one
             };
             
@@ -577,18 +589,16 @@ namespace VolumeData
                 CropToRegion(Vector3.one, new Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
             }
         }
-        
+
         public VolumeDataSet GetDataSet()
         {
             return _dataSet;
         }
 
-
         public MomentMapRenderer GetMomentMapRenderer()
         {
             return _momentMapRenderer;
         }
-
 
         public void ShiftColorMap(int delta)
         {
@@ -596,6 +606,28 @@ namespace VolumeData
             int currentIndex = ColorMap.GetHashCode();
             int newIndex = (currentIndex + delta + numColorMaps) % numColorMaps;
             ColorMap = ColorMapUtils.FromHashCode(newIndex);
+        }
+
+        /// <summary>
+        /// Converts a world space position to a position in the datacube's frame of reference.
+        /// </summary>
+        /// <param name="worldLoc">The world space position to convert.</param>
+        /// <returns>A position in the data cube frame of reference, equivalent to the world space position at the time this function is called.</returns>
+        public Vector3 ConvertWorldPositionToDataCubePosition(Vector3 worldLoc)
+        {
+            Vector3 dataCubePos = transform.InverseTransformPoint(worldLoc);
+            return dataCubePos;
+        }
+
+        /// <summary>
+        /// Converts a world space rotation to a rotation in the datacube's frame of reference.
+        /// </summary>
+        /// <param name="worldLoc">The world space rotation to convert.</param>
+        /// <returns>A rotation in the data cube frame of reference, equivalent to the world space rotation at the time this function is called.</returns>
+        public Quaternion ConvertWorldRotationToDatacubeRotation(Quaternion worldRot)
+        {
+            Quaternion dataCubeRot = Quaternion.Inverse(transform.rotation) * worldRot;
+            return dataCubeRot;
         }
 
         /// <summary>
@@ -661,6 +693,47 @@ namespace VolumeData
         }
 
         /// <summary>
+        /// Function is called to determine a new voxel to highlight for a cursor location in the video recording mode.
+        /// </summary>
+        /// <param name="vidCursorLocPos">The position of the cursor location, relative to the cube.</param>
+        public void SetVideoCursorLocPosition(Vector3 vidCursorLocPos)
+        {
+            ;
+            // No need to convert to relative locations, since it already is relative to the cube.
+            // Vector3 objectSpacePosition = transform.InverseTransformPoint(vidCursorLocPos);
+            Vector3 positionCubeSpace = new Vector3((0.5f + vidCursorLocPos.x) * _dataSet.XDim, (0.5f + vidCursorLocPos.y) * _dataSet.YDim, (0.5f + vidCursorLocPos.z) * _dataSet.ZDim);
+            Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
+            Vector3 voxelCenterCubeSpace = voxelCornerCubeSpace + 0.5f * Vector3.one;
+            Vector3Int newVidCursorLocVoxel = new Vector3Int(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1);
+            if (!newVidCursorLocVoxel.Equals(_vidCursorLocVoxel))
+            {
+                _vidCursorLocVoxel = newVidCursorLocVoxel;
+                Vector3 voxelCenterObjectSpace = new Vector3(voxelCenterCubeSpace.x / _dataSet.XDim - 0.5f, voxelCenterCubeSpace.y / _dataSet.YDim - 0.5f,
+                        voxelCenterCubeSpace.z / _dataSet.ZDim - 0.5f);
+                if (_videoCursorPositionOutline != null)
+                {
+                    _videoCursorPositionOutline.Center = voxelCenterObjectSpace;
+                    // _videoCursorPositionOutline.Bounds = _videoCursorLocSize * new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
+                    _videoCursorPositionOutline.Bounds = 1 * new Vector3(_videoCursorLocSize, _videoCursorLocSize, _videoCursorLocSize);
+                }
+                _videoCursorPositionOutline?.Activate();
+            }
+            else
+            {
+                DeactivateVideoCursorLocPosition();
+            }
+        }
+
+        /// <summary>
+        /// This function is called to switch off the cursor outline.
+        /// </summary>
+        public void DeactivateVideoCursorLocPosition()
+        {
+            _videoCursorPositionOutline?.Deactivate();
+            _vidCursorLocVoxel = new Vector3Int(int.MinValue, int.MinValue, int.MinValue);
+        }
+
+        /// <summary>
         /// This function is used to get the cursor location in data space (i.e., including subcube offsets).
         /// </summary>
         /// <param name="cursorPosWorldSpace">Where in the world space is the user pointing?</param>
@@ -692,8 +765,8 @@ namespace VolumeData
             }
 
             Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim,
-                                                                            (objectSpacePosition.y + 0.5f) * _dataSet.YDim,
-                                                                            (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
+                                                    (objectSpacePosition.y + 0.5f) * _dataSet.YDim,
+                                                    (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
             Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
             Vector3Int newVoxelCursor = new Vector3Int(
                 Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),
@@ -1302,6 +1375,7 @@ namespace VolumeData
             _cubeOutline?.Destroy();
             _regionOutline?.Destroy();
             _voxelOutline?.Destroy();
+            _videoCursorPositionOutline?.Destroy();
         }
     }
 

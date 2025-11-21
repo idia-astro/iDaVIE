@@ -38,6 +38,7 @@ public class QuickMenuController : MonoBehaviour
     public GameObject voiceCommandsListCanvas;
     public GameObject settingsMenu;
 
+    public GameObject videoRecordingMenu;
 
     public GameObject colorMapListCanvas;
     public GameObject savePopup;
@@ -142,13 +143,36 @@ public class QuickMenuController : MonoBehaviour
         spawnMenu(settingsMenu);
     }
     
+    /// <summary>
+    /// Called when the user selects the voice command button on the quick menu, opening the list of voice commands.
+    /// </summary>
     public void OpenListOfVoiceCommands()
     {
         spawnMenu(voiceCommandsListCanvas);
     }
 
     /// <summary>
-    /// Function that is called when user selects the colour map button on the main menu
+    /// Called when the user selects the video recording mode button on the quick menu, opening the video recording mode menu.
+    /// </summary>
+    public void OpenVideoRecordingMenu()
+    {
+        if (!gameObject.activeSelf)
+        {
+            gameObject.SetActive(true);
+            Update();
+        }
+
+        videoRecordingMenu.transform.SetParent(this.transform.parent, false);
+        videoRecordingMenu.transform.localPosition = this.transform.localPosition;
+        videoRecordingMenu.transform.localRotation = this.transform.localRotation;
+        videoRecordingMenu.transform.localScale = this.transform.localScale;
+
+        gameObject.SetActive(false);
+        videoRecordingMenu.SetActive(true);
+    }
+
+    /// <summary>
+    /// Function that is called when user selects the colour map button on the main menu.
     /// </summary>
     public void OpenListOfColourMaps()
     {
@@ -317,7 +341,6 @@ public class QuickMenuController : MonoBehaviour
         }
         else
         {
-
             paintMenu.transform.SetParent(this.transform.parent, false);
             paintMenu.transform.localPosition = this.transform.localPosition;
             paintMenu.transform.localRotation = this.transform.localRotation;
@@ -328,6 +351,9 @@ public class QuickMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Called when the user clicks on the Plots button in the quick menu, opening the plots menu.
+    /// </summary>
     public void OpenPlotsMenu()
     {
         spawnMenu(plotsMenu);

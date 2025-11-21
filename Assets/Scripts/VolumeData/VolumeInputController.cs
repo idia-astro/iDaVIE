@@ -54,7 +54,7 @@ public class VolumeInputController : MonoBehaviour
         EditingThresholdMax,
         EditingZAxis
     }
-    
+
     public enum InteractionState
     {
         IdleSelecting,
@@ -62,7 +62,8 @@ public class VolumeInputController : MonoBehaviour
         EditingSourceId,
         Creating,
         Editing,
-        Painting
+        Painting,
+        VideoCamPosRecording
     }
 
     public enum InteractionEvents
@@ -73,7 +74,9 @@ public class VolumeInputController : MonoBehaviour
         PaintModeDisabled,
         StartEditSource,
         EndEditSource,
-        CancelEditSource
+        CancelEditSource,
+        StartVideoRecording,
+        EndVideoRecording
     }
 
     [Flags]
@@ -127,6 +130,8 @@ public class VolumeInputController : MonoBehaviour
 
     public event Action PushToTalkButtonPressed;
     public event Action PushToTalkButtonReleased;
+
+    public VideoPosRecorder _videoPosRecorder { get;  set; } = null;
     
     
     // Interactions
@@ -174,6 +179,12 @@ public class VolumeInputController : MonoBehaviour
     private bool _savePopupOn = false;
     private bool _exportPopupOn = false;
     private bool _shapeSelection = false;
+
+    /// <summary>
+    /// Timer for video position recording mode to ensure that the buttons don't register multiple presses.
+    /// </summary>
+    float _deltaT = 0.0f;
+    float _resetTime = 0.5f;
 
     [SerializeField]
     public GameObject toastNotificationPrefab = null;
@@ -300,6 +311,7 @@ public class VolumeInputController : MonoBehaviour
         InteractionStateMachine.Configure(InteractionState.IdleSelecting)
             .OnEntryFrom(InteractionEvents.PaintModeDisabled, ExitPaintMode)
             .Permit(InteractionEvents.PaintModeEnabled, InteractionState.IdlePainting)
+            .Permit(InteractionEvents.StartVideoRecording, InteractionState.VideoCamPosRecording)
             .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Creating, () => !HasHoverAnchor)
             .PermitIf(InteractionEvents.InteractionStarted, InteractionState.Editing, () => HasHoverAnchor);
 
@@ -329,6 +341,11 @@ public class VolumeInputController : MonoBehaviour
             .OnEntry(StartRegionEditing)
             .OnExit(EndRegionEditing)
             .Permit(InteractionEvents.InteractionEnded, InteractionState.IdleSelecting);
+
+        InteractionStateMachine.Configure(InteractionState.VideoCamPosRecording)
+            .OnEntry(StartVideoCamPosRecording)
+            .OnExit(EndVideoCamPosRecording)
+            .Permit(InteractionEvents.EndVideoRecording, InteractionState.IdleSelecting);
     }
 
     private void OnDisable()
@@ -529,12 +546,7 @@ public class VolumeInputController : MonoBehaviour
             return;
         }
 
-        _paintMenuOn = CanvassQuickMenu.GetComponent<QuickMenuController>().paintMenu.activeSelf;
-        _shapeMenuOn = CanvassPaintMenu.GetComponent<PaintMenuController>().shapeMenu.activeSelf;
-        _savePopupOn = CanvassQuickMenu.GetComponent<QuickMenuController>().savePopup.activeSelf;
-        _exportPopupOn = CanvassQuickMenu.GetComponent<QuickMenuController>().exportPopup.activeSelf;
-
-        if (newState && !_paintMenuOn && !_shapeMenuOn && !_savePopupOn && !_exportPopupOn)
+        if (newState && InteractionStateMachine.State == InteractionState.IdleSelecting)
         {
             StartRequestQuickMenu(fromSource == SteamVR_Input_Sources.LeftHand ? 0 : 1);
         }
@@ -576,7 +588,6 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
-
     private void OnPinchChanged(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
     {
         // Skip input from secondary hand
@@ -602,7 +613,23 @@ public class VolumeInputController : MonoBehaviour
             return;
         }
 
-        InteractionStateMachine.Fire(newState ? InteractionEvents.InteractionStarted : InteractionEvents.InteractionEnded);
+        if (InteractionStateMachine.State == InteractionState.VideoCamPosRecording)
+        {
+            // If timer has not yet reached reset, don't activate any buttons.
+            if (_deltaT > _resetTime)
+            {
+                // Else, reset timer and activate buttons where appropriate
+                _deltaT = 0.00000f;
+                // If pressing down on button, add location
+                if (newState)
+                    AddNewLocation(fromSource);
+                // else if letting go, do nothing.
+            }
+        }
+        else
+        {
+            InteractionStateMachine.Fire(newState ? InteractionEvents.InteractionStarted : InteractionEvents.InteractionEnded);
+        }
     }
 
     private void StateTransitionMovingToIdle()
@@ -813,6 +840,11 @@ public class VolumeInputController : MonoBehaviour
             }
         }
 
+        if (InteractionStateMachine.State == InteractionState.VideoCamPosRecording)
+        {
+            // Add previous frame time to timer
+            _deltaT += Time.smoothDeltaTime;
+        }
         ToastNotification.Update();
     }
 
@@ -1305,6 +1337,24 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Teleports the data cube to be in the same position as it was, relative to the camera, when the user saved the location. Used by the list of video positions.
+    /// </summary>
+    /// <param name="pos">The position of the camera relative to the cube when saved.</param>
+    /// <param name="rotEulerAngles">The rotation of the camera relative to the cube when saved.</param>
+    public void TeleportToVidRecLoc(Vector3 pos, Vector3 rotEulerAngles)
+    {
+        var activeDataSet = ActiveDataSet;
+        if (activeDataSet != null && Camera.main != null)
+        {
+            var dataSetTransform = activeDataSet.transform;
+            var cameraTransform = Camera.main.transform;
+
+            dataSetTransform.rotation = cameraTransform.rotation * Quaternion.Inverse(Quaternion.Euler(rotEulerAngles));
+            dataSetTransform.position = cameraTransform.position - dataSetTransform.TransformVector(pos);
+        }
+    }
+
     public void VibrateController(SteamVR_Input_Sources hand, float duration = 0.25f, float frequency = 100.0f, float amplitude = 1.0f)
     {
         _player.leftHand.hapticAction.Execute(0, duration, frequency, amplitude, hand);
@@ -1373,6 +1423,36 @@ public class VolumeInputController : MonoBehaviour
     public void ToggleCursorInfoVisibility()
     {
         ShowCursorInfo = !ShowCursorInfo;
+    }
+
+    /// <summary>
+    /// A function to add a new location to _videoPosRecorder's list, which can be either the user pressing a button, or by voice command.
+    /// </summary>
+    /// <param name="fromSource">The hand that triggered this command – will always be PrimaryHand</param>
+    public void AddNewLocation(SteamVR_Input_Sources fromSource)
+    {
+        VideoPosRecorder.videoLocRecMode mode = _videoPosRecorder.GetRecordingMode();
+        switch (mode)
+        {
+            case VideoPosRecorder.videoLocRecMode.CURSOR:
+                Vector3 cursorPos = ActiveDataSet.ConvertWorldPositionToDataCubePosition(_handTransforms[PrimaryHandIndex].position);
+                Vector3 cursorRot = Vector3.zero;
+                _videoPosRecorder.addLocation(cursorPos, cursorRot, mode);
+                Debug.Log($"Recording new cursor location at {{{cursorPos}, {cursorRot}}}");
+                VibrateController(fromSource, 0.1f);
+                break;
+            case VideoPosRecorder.videoLocRecMode.HEAD:
+                Vector3 headPos = ActiveDataSet.ConvertWorldPositionToDataCubePosition(Camera.main.transform.position);
+
+                Vector3 headRot = ActiveDataSet.ConvertWorldRotationToDatacubeRotation(Camera.main.transform.rotation).eulerAngles;
+                _videoPosRecorder.addLocation(headPos, headRot, mode);
+                Debug.Log($"Recording new head location at {{{headPos}, {headRot}}}");
+                VibrateController(fromSource, 0.1f);
+                break;
+            default:
+                Debug.LogError("Invalid video recording mode: how did you manage this?");
+                break;
+        }
     }
 
     public void AddNewSource()
@@ -1458,7 +1538,6 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
-
     public void ChangeShapeSelection() {
         _shapeSelection = !_shapeSelection;
     }
@@ -1477,14 +1556,31 @@ public class VolumeInputController : MonoBehaviour
         shapesManager.SetSelectableShape(shape);
     }
 
+    /// <summary>
+    /// Function that is called when the user enters the video recording mode. Initialises the button press timer.
+    /// </summary>
+    public void StartVideoCamPosRecording()
+    {
+        _deltaT = 0.0f;
+        Debug.Log("Entering video position recording mode.");
+    }
+
+    /// <summary>
+    /// Function that is called when the user exits the video recording mode. Merely logs for the moment.
+    /// </summary>
+    public void EndVideoCamPosRecording()
+    {
+        Debug.Log("Exiting video position recording mode.");
+    }
+
     //Places the selected shape into the scene
     public void PlaceShape() {
         GameObject shape = shapesManager.GetCurrentShape();
         GameObject selectedShape = shapesManager.GetSelectedShape();
-        if(selectedShape == null) return;
-        GameObject shapeCopy = Instantiate(shape,selectedShape.transform.position,selectedShape.transform.rotation);
+        if (selectedShape == null) return;
+        GameObject shapeCopy = Instantiate(shape, selectedShape.transform.position, selectedShape.transform.rotation);
         shapeCopy.name = shapesManager.GetShapeName(shapeCopy);
-        if(shapeCopy.name.Contains("Cylinder")) {
+        if (shapeCopy.name.Contains("Cylinder")) {
             var collider = shapeCopy.GetComponent<CapsuleCollider>();
             collider.enabled = true;
         }

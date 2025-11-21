@@ -32,8 +32,6 @@ namespace VolumeData
     public class VolumeCommandController : MonoBehaviour
     {
         public GameObject mainCanvassDesktop;
-
-        public VolumeInputController VolumeInputController;
         public QuickMenuController QuickMenuController;
         public PaintMenuController PaintMenuController;
         public MomentMapMenuController momentMapMenuController;
@@ -94,6 +92,9 @@ namespace VolumeData
             public static readonly string SaveSubCube = "export sub cube";
             public static readonly string NextSourceList = "next source list";
             public static readonly string PreviousSourceList = "previous source list";
+            public static readonly string ExportVideoScript = "export video script";
+            public static readonly string EnterVideoMode = "video mode";
+            public static readonly string RecordVideoPosition = "record position";
 
             public static readonly string[] All =
             {
@@ -103,12 +104,14 @@ namespace VolumeData
                 ProjectionAverage, SamplingModeAverage, SamplingModeMaximum, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline,
                 HideMaskOutline, TakePicture, CursorInfo, LinearScale,
                 LogScale, SqrtScale, AddNewSource, SetSourceId, Undo, Redo, SaveSubCube,
-                NextSourceList, PreviousSourceList
+                NextSourceList, PreviousSourceList,
+                ExportVideoScript, EnterVideoMode, RecordVideoPosition
             };
         }
 
         private KeywordRecognizer _speechKeywordRecognizer;
         private VolumeInputController _volumeInputController;
+        private VideoRecordMenuController _videoRecordMenuController;
 
         private VolumeDataSetRenderer _activeDataSet;
 
@@ -122,6 +125,7 @@ namespace VolumeData
             _speechKeywordRecognizer = new KeywordRecognizer(Keywords.All, _config.voiceCommandConfidenceLevel);
             _speechKeywordRecognizer.OnPhraseRecognized += OnPhraseRecognized;
             _volumeInputController = FindObjectOfType<VolumeInputController>();
+            _videoRecordMenuController = FindObjectOfType<VideoRecordMenuController>(true);
 
             if (!_config.usePushToTalk)
             {
@@ -355,6 +359,18 @@ namespace VolumeData
             {
                 NextSourceList();
             }
+            else if (args == Keywords.EnterVideoMode)
+            {
+                QuickMenuController.OpenVideoRecordingMenu();
+            }
+            else if (args == Keywords.RecordVideoPosition)
+            {
+                _volumeInputController.AddNewLocation(_volumeInputController.PrimaryHand);
+            }
+            else if (args == Keywords.ExportVideoScript)
+            {
+                _videoRecordMenuController.ExportToFile();
+            }
         }
 
         // Update is called once per frame
@@ -560,12 +576,12 @@ namespace VolumeData
 
         public void SetBrushAdditive()
         {
-            VolumeInputController.SetBrushAdditive();
+            _volumeInputController.SetBrushAdditive();
         }
 
         public void SetBrushSubtractive()
         {
-            VolumeInputController.SetBrushSubtractive();
+            _volumeInputController.SetBrushSubtractive();
         }
 
         public void ShowMaskOutline()
