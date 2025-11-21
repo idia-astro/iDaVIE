@@ -22,13 +22,33 @@
 
 #include "fits_reader.h"
 
+// #include <chrono>
+#include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <limits>
+#include <regex>
+#include <sstream>
+#include <string>
+
 int FitsOpenFileReadOnly(fitsfile **fptr, char* filename,  int *status)
 {
-    return fits_open_file(fptr, filename, READONLY, status);
+    std::stringstream debug;
+    debug << "Opening file " << filename << " in read-only mode.";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    int result = fits_open_file(fptr, filename, READONLY, status);
+    debug.clear();
+    debug.str("");
+    debug << "Opened file " << filename << " with result " << result << ".";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    return result;
 }
 
 int FitsOpenFileReadWrite(fitsfile** fptr, char* filename, int* status)
 {
+    std::stringstream debug;
+    debug << "Opening file " << filename << " in read-write mode.";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     return fits_open_file(fptr, filename, READWRITE, status);
 }
 
@@ -39,12 +59,34 @@ int FitsCreateFile(fitsfile** fptr, char* filename, int* status)
 
 int FitsCloseFile(fitsfile *fptr, int *status)
 {
-    return fits_close_file(fptr, status);
+    if (fptr == nullptr)
+    {
+        std::stringstream debug;
+        debug << "Fitsfile is already closed! Aborting.";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);    
+        return -1;
+    }
+    std::stringstream debug;
+    debug << "Closing fitsfile " << fptr->Fptr->filename << ".";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    auto val = fits_close_file(fptr, status);
+    fptr = nullptr;
+    return val;
 }
 
 int FitsFlushFile(fitsfile* fptr, int* status)
 {
     return fits_flush_file(fptr, status);
+}
+
+int FitsGetHduCount(fitsfile *fptr, int *hdunum, int *status)
+{
+    return fits_get_num_hdus(fptr, hdunum, status);
+}
+
+int FitsGetCurrentHdu(fitsfile *fptr, int *hdunum)
+{
+    return fits_get_hdu_num(fptr,  hdunum);
 }
 
 int FitsMovabsHdu(fitsfile *fptr, int hdunum, int *hdutype, int *status)
@@ -116,7 +158,14 @@ int FitsCreateImg(fitsfile *fptr, int bitpix, int naxis, long *naxes, int *statu
 
 int FitsCopyHeader(fitsfile *infptr, fitsfile *outfptr, int *status)
 {
+    std::stringstream debug;
+    debug << "Copying fitsfile " << infptr->Fptr->filename << " header to fitsfile " << outfptr->Fptr->filename << ", with active HDU position " << infptr->HDUposition << ".";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     int success = fits_copy_header(infptr, outfptr, status);
+    debug.clear();
+    debug.str("");
+    debug << "Header copy gave result code " << success << ".";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     return success;
 }
 
@@ -137,8 +186,122 @@ int FitsWriteImageInt16(fitsfile* fptr, int dims, int64_t nelements, int16_t* ar
     long* startPix = new long[dims];
     for (int i = 0; i < dims; i++)
         startPix[i] = 1;
+    
+    std::stringstream debug;
+    debug << "Writing mask image with " << dims << " dimensions and " << nelements << " elements, starting from [1, 1, 1].";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    
     int success = fits_write_pix(fptr, TSHORT, startPix, nelements, array, status);
     delete[] startPix;
+    return success;
+}
+
+int FitsWriteSubImageInt16(fitsfile* fptr, long* fPix, long* lPix, int16_t* array, int* status)
+{
+    long* firstPix = new long[3];
+    for (int i = 0; i < 3; i++)
+        firstPix[i] = fPix[i];
+    
+    std::stringstream debug;
+    debug << "Writing mask sub image from [" << firstPix[0] << ", " << firstPix[1] << ", " << firstPix[2] << "] to [" << lPix[0] << ", " << lPix[1] << ", " << lPix[2] << "].";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    
+    int success = fits_write_subset(fptr, TSHORT, firstPix, lPix, array, status);
+    return success;
+}
+
+int FitsWriteNewCopySubImageInt16(char* newFileName, fitsfile* fptr, long* fPix, long* lPix, int16_t* array, char* historyTimestamp, int* status)
+{
+    
+    std::stringstream debug;
+
+    // Use system calls to copy oldFileName to the new file location.
+    auto oldFileName = fptr->Fptr->filename;
+    
+    //Remove exclamation mark if present, CFITSIO dark magic does not agree with Windows calls
+    std::string file(newFileName);
+    if (file.front() == '!')
+        file = file.substr(1);
+    try{
+        std::filesystem::copy_file(oldFileName, file.c_str());
+        debug.clear();
+        debug.str("");
+        debug << "Copied mask from " << oldFileName << " to " << file << ".";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    }
+    catch (std::exception& e){
+        debug.clear();
+        debug.str("");
+        debug << "Failed to copy mask file from " << oldFileName << " to " << file << "." << std::endl;
+        debug << "Exception " << e.what() << " thrown.";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    }
+    
+    // Open the now new file with CFITSIO.
+    fitsfile* fptr2;
+    int success = fits_open_file(&fptr2, file.c_str(), READWRITE, status);
+    if (success != 0)
+    {
+        debug.clear();
+        debug.str("");
+        debug << "Failed attempting to open fits file " << file << " with status code " << status << ".";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        return success;
+    }
+    
+    // Write as subset.
+    long* firstPix = new long[3];
+    for (int i = 0; i < 3; i++)
+        firstPix[i] = fPix[i];
+    
+    debug.clear();
+    debug.str("");
+    debug << "Writing new mask sub image from [" << firstPix[0] << ", " << firstPix[1] << ", " << firstPix[2] << "] to [" << lPix[0] << ", " << lPix[1] << ", " << lPix[2] << "].";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    
+    // Write new data to copied file.
+    success = fits_write_subset(fptr2, TSHORT, firstPix, lPix, array, status);
+    debug.clear();
+    debug.str("");
+    if (success != 0)
+        debug << "Failed writing new mask subimage with result code " << success << ".";
+    else
+        debug << "Completed new mask sub image writing with result code " << success << ".";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+
+    // Update file history with latest timestamp
+    success = FitsWriteHistory(fptr2, historyTimestamp, status);
+    if (success != 0)
+    {
+        debug.clear();
+        debug.str("");
+        debug << "Failed attempting to write file history with result code " << success << ".";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        return success;
+    }
+
+    // Flush file buffer to make sure it is written.
+    success = FitsFlushFile(fptr2, status);
+    if (success != 0)
+    {
+        debug.clear();
+        debug.str("");
+        debug << "Failed attempting to flush file with result code " << success << ".";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        return success;
+    }
+
+    // Close the file to free up the memory and keep CFITSIO happy.
+    success = FitsCloseFile(fptr2, status);
+    if (success != 0)
+    {
+        debug.clear();
+        debug.str("");
+        debug << "Failed attempting to close fits file " << file << " with status code " << success << ".";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        return success;
+    }
+
     return success;
 }
 
@@ -156,6 +319,9 @@ int FitsWriteKey(fitsfile* fptr, int datatype, char *keyname, void *value, char 
 
 int FitsUpdateKey(fitsfile* fptr, int datatype, char* keyname, void* value, char* comment, int* status)
 {
+    std::stringstream debug;
+    debug << "Attempting to update " << keyname << " key to " << * (int*) value << ".";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     int success = fits_update_key(fptr, datatype, keyname, value, comment, status);
     return success;
 }
@@ -202,24 +368,100 @@ int FitsReadImageFloat(fitsfile *fptr, int dims, int64_t nelem, float **array, i
     int64_t* startPix = new int64_t[dims];
     for (int i = 0; i < dims; i++)
         startPix[i] = 1;
+    
+    std::stringstream debug;
+    debug << "Reading cube image with " << dims << " dimensions and " << nelem << " elements.";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    
     int success = fits_read_pixll(fptr, TFLOAT, startPix, nelem, &nulval, dataarray, &anynul, status);
     delete[] startPix;
     *array = dataarray;
     return success;
 }
 
-int FitsReadSubImageFloat(fitsfile *fptr, int dims, long *startPix, long *finalPix, int64_t nelem, float **array, int *status)
+int FitsReadSubImageFloat(fitsfile *fptr, int dims, int zAxis, long *startPix, long *finalPix, int64_t nelem, float **array, int *status)
 {
+    
+    std::stringstream debug;
+    debug << "Reading file with " << dims << " dimensions, sized [" << finalPix[0] - startPix[0] + 1 << ", " << finalPix[1] - startPix[1] + 1 << ", " << finalPix[2] - startPix[2] + 1 << "].";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     int anynul;
     float nulval = 0;
-    float* dataarray = new float[nelem];
     long* increment = new long[dims];
     for (int i = 0; i < dims; i++)
         increment[i] = 1;
-    int success = fits_read_subset(fptr, TFLOAT, startPix, finalPix, increment, &nulval, dataarray, &anynul, status);
+    
+    // Calculate the size of a 2D slice
+    int64_t sliceSize = (finalPix[0] - startPix[0] + 1) * (finalPix[1] - startPix[1] + 1);
+    float* dataarray = new float[nelem];
+    /**
+     * @brief slicesInChunk specifies the number of slices to read at a time.
+     */
+    long slicesInChunk = std::max((long) 1, (long) std::floor(std::numeric_limits<long>::max() / sliceSize));
+    long finalZ = finalPix[zAxis];
+    debug.clear();
+    debug.str("");
+    debug << "Reading file in chunks of " << slicesInChunk << " channels at a time." << std::endl;
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+
+    // auto start = std::chrono::high_resolution_clock::now();
+    // Loop over the third dimension
+    int64_t offset = 0;
+    for (long z = startPix[zAxis]; z <= finalPix[zAxis]; z+=slicesInChunk)
+    {
+        // Set the start and end pixels for the current slice
+        long* sliceStartPix = new long[dims];
+        long* sliceFinalPix = new long[dims];
+        for (int i = 0; i < dims; i++)
+        {
+            sliceStartPix[i] = startPix[i];
+            sliceFinalPix[i] = finalPix[i];
+        }
+        sliceStartPix[zAxis] = z;
+        sliceFinalPix[zAxis] = std::min(z + slicesInChunk - 1, finalZ);
+
+        // Read the current slice directly into the final dataarray
+        debug.clear();
+        debug.str("");
+        debug << "Reading cube sub image from [" << sliceStartPix[0] << ", " << sliceStartPix[1] << ", " << sliceStartPix[2] << "] to [" << sliceFinalPix[0] << ", " << sliceFinalPix[1] << ", " << sliceFinalPix[2] << "].";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        
+        debug.clear();
+        debug.str("");
+        debug << "Attempting to call `fits_read_subset( " << fptr << ", " << TFLOAT << ", sliceStartPix, sliceFinalPix, " << increment << ", nulval, dataarray + " << offset << ", " << status << ")";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        
+        int success = fits_read_subset(fptr, TFLOAT, sliceStartPix, sliceFinalPix, increment, &nulval, dataarray + offset, &anynul, status);
+        debug.clear();
+        debug.str("");
+        debug << "Received result code " << success << std::endl;
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        
+        if (success != 0)
+        {
+            delete[] increment;
+            delete[] sliceStartPix;
+            delete[] sliceFinalPix;
+            return success;
+        }
+
+        // Calculate the offset in the dataarray
+        // int64_t offset = sliceSize * (z - startPix[2]);
+        int64_t nelem = (sliceFinalPix[0] - sliceStartPix[0] + 1) * (sliceFinalPix[1] - sliceStartPix[1] + 1) * (sliceFinalPix[2] - sliceStartPix[2] + 1);
+        offset += nelem;
+        delete[] sliceStartPix;
+        delete[] sliceFinalPix;
+    }
+
+    // auto end = std::chrono::high_resolution_clock::now();
+    // auto microsecs = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    // std::stringstream time;
+    // time << "Time taken for loading entire file through fits_read_subset(): " << microsecs.count() << " µs.";
+    // WriteLogFile(defaultDebugFile.data(), time.str().c_str(), 0);
+
     delete[] increment;
     *array = dataarray;
-    return success;
+    return 0;
 }
 
 int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array, int *status)
@@ -230,10 +472,80 @@ int FitsReadImageInt16(fitsfile *fptr, int dims, int64_t nelem, int16_t **array,
     int64_t* startPix = new int64_t[dims];
     for (int i = 0; i < dims; i++)
         startPix[i] = 1;
+    std::stringstream debug;
+    debug << "Reading mask image with " << dims << " dimensions and " << nelem << " elements.";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     int success = fits_read_pixll(fptr, TSHORT, startPix, nelem, &nulval, dataarray, &anynul, status);
     delete[] startPix;
     *array = dataarray;
     return success;
+}
+
+int FitsReadSubImageInt16(fitsfile *fptr, int dims, int zAxis, long *startPix, long *finalPix, int64_t nelem, float **array, int *status)
+{
+    int anynul;
+    float nulval = 0;
+    long* increment = new long[dims];
+    for (int i = 0; i < dims; i++)
+        increment[i] = 1;
+    
+    // Calculate the size of a 2D slice
+    int64_t sliceSize = (finalPix[0] - startPix[0] + 1) * (finalPix[1] - startPix[1] + 1);
+    float* dataarray = new float[nelem];
+    
+    /**
+     * @brief slicesInChunk specifies the number of slices to read at a time.
+     */
+    long slicesInChunk = std::max((long) 1, (long) std::floor(std::numeric_limits<long>::max() / sliceSize));
+    long finalZ = finalPix[2];
+
+    // auto start = std::chrono::high_resolution_clock::now();
+    // Loop over the third dimension
+    int64_t offset = 0;
+    for (long z = startPix[2]; z <= finalPix[2]; z+=slicesInChunk)
+    {
+        // Set the start and end pixels for the current slice
+        long* sliceStartPix = new long[dims];
+        long* sliceFinalPix = new long[dims];
+        for (int i = 0; i < dims; i++)
+        {
+            sliceStartPix[i] = startPix[i];
+            sliceFinalPix[i] = finalPix[i];
+        }
+        sliceStartPix[zAxis] = z;
+        sliceFinalPix[zAxis] = std::min(z + slicesInChunk, finalZ);
+
+        // Read the current slice directly into the final dataarray
+        std::stringstream debug;
+        debug << "Reading mask sub image from [" << sliceStartPix[0] << ", " << sliceStartPix[1] << ", " << sliceStartPix[2] << "] to [" << sliceFinalPix[0] << ", " << sliceFinalPix[1] << ", " << sliceFinalPix[2] << "].";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        int success = fits_read_subset(fptr, TSHORT, sliceStartPix, sliceFinalPix, increment, &nulval, dataarray + offset, &anynul, status);
+        
+        if (success != 0)
+        {
+            delete[] increment;
+            delete[] sliceStartPix;
+            delete[] sliceFinalPix;
+            return success;
+        }
+
+        // Calculate the offset in the dataarray
+        // int64_t offset = sliceSize * (z - startPix[2]);
+        int64_t nelem = (sliceFinalPix[0] - sliceStartPix[0] + 1) * (sliceFinalPix[1] - sliceStartPix[1] + 1) * (sliceFinalPix[2] - sliceStartPix[2] + 1);
+        offset += nelem;
+        delete[] sliceStartPix;
+        delete[] sliceFinalPix;
+    }
+
+    // auto end = std::chrono::high_resolution_clock::now();
+    // auto microsecs = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    // std::stringstream time;
+    // time << "Time taken for loading entire file through fits_read_subset(): " << microsecs.count() << " µs.";
+    // WriteLogFile(defaultDebugFile.data(), time.str().c_str(), 0);
+
+    delete[] increment;
+    *array = dataarray;
+    return 0;
 }
 
 int FitsCreateHdrPtrForAst(fitsfile *fptr, char **header, int *nkeys, int *status)    //need to free header string with FreeFitsMemory() after use
@@ -296,6 +608,9 @@ int FitsCreateHdrPtrForAst(fitsfile *fptr, char **header, int *nkeys, int *statu
 int CreateEmptyImageInt16(int64_t sizeX, int64_t sizeY, int64_t sizeZ, int16_t** array)
 {
     int64_t nelem = sizeX * sizeY * sizeZ;
+    std::stringstream debug;
+    debug << "Creating empty mask file with dimensions [" << sizeX << ", " << sizeY << ", " << sizeZ << "].";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     int16_t* dataarray = new int16_t[nelem];
     std::memset(dataarray, 0, nelem * sizeof(int16_t));
     *array = dataarray;
@@ -341,19 +656,12 @@ int WriteLogFile(const char * fileName, const char * content, int type) {
     }
 }
 
-/**
- * @brief 
- * Function to write header values for the fits file, called when writing moment maps.
- * Consider adding RA and DEC values, and x/y axis units as well.
- * @param newFitsFile The fitsfile to be written to.
- * @return int Returns the status. 0 if successful, see the usual table if not 0.
- */
 int writeMomMapFitsHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile, int mapNumber)
 {
     int status = 0;
 
     std::string comment = "The software that processed this data";
-    std::string val = "i-DaVIE-v";
+    std::string val = "iDaVIE";
     auto refVal = val.data();
     fits_write_key(newFitsFile, TSTRING, "SOFTNAME", refVal, comment.c_str(), &status);
     if (status)
@@ -525,15 +833,6 @@ int writeMomMapFitsHeader(fitsfile* mainFitsFile, fitsfile *newFitsFile, int map
     return status;
 }
 
-/**
- * @brief 
- * Writes out an image as supplied by the pixels in imgPixs to filename in FITS format.
- * @param filename The destination file name.
- * @param imgPixs The data to be written out to the file. This data is expected to be in row-major form, same as FITS.
- * @param xDims The dimensions of the final file in the x axis (NAXIS1).
- * @param yDims The dimensions of the final file in the y axis (NAXIS2).
- * @return int Returns the status. 0 if successful, see the usual table if not 0.
- */
 int WriteMomentMap(fitsfile* mainFitsFile, char* filename, float* imagePixelArray, long xDims, long yDims, int mapNumber)
 {
     fitsfile* newFitsFile;

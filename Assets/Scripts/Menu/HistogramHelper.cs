@@ -19,16 +19,11 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
+using System.IO;
 using OxyPlot;
 using OxyPlot.Annotations;
-using OxyPlot.Axes;
 using OxyPlot.Series;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class HistogramHelper : MonoBehaviour
 {

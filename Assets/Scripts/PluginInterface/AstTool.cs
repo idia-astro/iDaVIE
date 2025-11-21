@@ -19,11 +19,8 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using System.Runtime.InteropServices;
 using System;
+using System.Runtime.InteropServices;
 using System.Text;
 
 public class AstTool

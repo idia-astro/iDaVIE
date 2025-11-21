@@ -19,11 +19,9 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using UnityEngine;
-using System.Collections;
-using VolumeData;
 using UnityEditor;
-
+using UnityEngine;
+using VolumeData;
 
 [CustomEditor(typeof(VolumeCommandController))]
 public class VolumeCommandControllerEditor : Editor

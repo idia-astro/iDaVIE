@@ -35,6 +35,7 @@ namespace VolumeData
         public QuickMenuController QuickMenuController;
         public PaintMenuController PaintMenuController;
         public MomentMapMenuController momentMapMenuController;
+        public FeatureMenuController featureMenuController;
         
         public bool IsVoiceRecognitionActive => _speechKeywordRecognizer.IsRunning;
 
@@ -89,6 +90,8 @@ namespace VolumeData
             public static readonly string Undo = "undo";
             public static readonly string Redo = "redo";
             public static readonly string SaveSubCube = "export sub cube";
+            public static readonly string NextSourceList = "next source list";
+            public static readonly string PreviousSourceList = "previous source list";
             public static readonly string ExportVideoScript = "export video script";
             public static readonly string EnterVideoMode = "video mode";
             public static readonly string RecordVideoPosition = "record position";
@@ -101,10 +104,11 @@ namespace VolumeData
                 ProjectionAverage, SamplingModeAverage, SamplingModeMaximum, PaintMode, ExitPaintMode, BrushAdd, BrushErase, ShowMaskOutline,
                 HideMaskOutline, TakePicture, CursorInfo, LinearScale,
                 LogScale, SqrtScale, AddNewSource, SetSourceId, Undo, Redo, SaveSubCube,
+                NextSourceList, PreviousSourceList,
                 ExportVideoScript, EnterVideoMode, RecordVideoPosition
             };
         }
-   
+
         private KeywordRecognizer _speechKeywordRecognizer;
         private VolumeInputController _volumeInputController;
         private VideoRecordMenuController _videoRecordMenuController;
@@ -347,6 +351,14 @@ namespace VolumeData
             {
                 SaveSubCube();
             }
+            else if (args == Keywords.PreviousSourceList)
+            {
+                PreviousSourceList();
+            }
+            else if (args == Keywords.NextSourceList)
+            {
+                NextSourceList();
+            }
             else if (args == Keywords.EnterVideoMode)
             {
                 QuickMenuController.OpenVideoRecordingMenu();
@@ -369,6 +381,22 @@ namespace VolumeData
             {
                 _activeDataSet = firstActive;
             }
+        }
+
+        /// <summary>
+        /// Function forwarding to featureMenuController, to display the next source list.
+        /// </summary>
+        void NextSourceList()
+        {
+            featureMenuController.DisplayNextSet();
+        }
+
+        /// <summary>
+        /// Function forwarding to featureMenuController, to display the previous source list.
+        /// </summary>
+        void PreviousSourceList()
+        {
+            featureMenuController.DisplayPreviousSet();
         }
 
         public void AddDataSet(VolumeDataSetRenderer setToAdd)

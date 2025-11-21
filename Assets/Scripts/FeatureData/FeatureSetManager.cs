@@ -20,13 +20,11 @@
  *
  */
 using System;
-using System.IO;
 using System.Collections.Generic;
-using System.Linq;
-using VolumeData;
+using System.IO;
 using UnityEngine;
 using UnityEngine.Serialization;
-using VoTableReader;
+using VolumeData;
 
 namespace DataFeatures
 {
@@ -56,6 +54,8 @@ namespace DataFeatures
         
         public bool NeedToRespawnMenuList = true;
         public bool NeedToUpdateInfo;
+
+        public static readonly string[] UnitisedKeys = {"SUM", "PEAK"};
 
         private readonly GameObject[] _anchorColliders = new GameObject[8];
         public Feature SelectedFeature

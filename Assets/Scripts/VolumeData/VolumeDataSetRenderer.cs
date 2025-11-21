@@ -25,11 +25,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
 using DataFeatures;
 using LineRenderer;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
 
 namespace VolumeData
@@ -107,6 +107,10 @@ namespace VolumeData
 
         [Header("File Input")] public string FileName;
         public string MaskFileName;
+        public int[] subsetBounds = {-1, -1, -1, -1, -1, -1};
+        public int SelectedHdu = 1;
+        
+        public int[] trueBounds;
         public Material RayMarchingMaterial;
         public Material MaskMaterial;
 
@@ -206,7 +210,7 @@ namespace VolumeData
         private Material _maskMaterialInstance;
         private MomentMapRenderer _momentMapRenderer;
 
-        public VolumeInputController _volumeInputController;
+        public VolumeInputController volumeInputController;
 
         private Vector3Int _previousPaintLocation;
         private short _previousPaintValue;
@@ -217,7 +221,7 @@ namespace VolumeData
         private VolumeDataSet _maskDataSet = null;
 
         public bool IsMaskNew { get; private set; } = false;
-        
+        private string lastSavedMaskPath = "";
         public VolumeDataSet Mask => _maskDataSet;
         public VolumeDataSet Data => _dataSet;
         
@@ -371,8 +375,10 @@ namespace VolumeData
             if (RandomVolume)
                 _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);
             else
-                _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, IntPtr.Zero, CubeDepthAxis, CubeSlice);
-            _volumeInputController = FindObjectOfType<VolumeInputController>();
+                //subsetBounds guaranteed to be full cube if not selected by user
+                _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, subsetBounds, trueBounds, IntPtr.Zero, CubeDepthAxis, CubeSlice, SelectedHdu);
+
+            volumeInputController = FindObjectOfType<VolumeInputController>();
             _featureManager = GetComponentInChildren<FeatureSetManager>();
             if (_featureManager == null)
                 Debug.Log($"No FeatureManager attached to VolumeDataSetRenderer. Attach prefab for use of Features.");
@@ -389,7 +395,9 @@ namespace VolumeData
 
             if (!String.IsNullOrEmpty(MaskFileName))
             {
-                _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, _dataSet.FitsData);
+                //subsetBounds guaranteed to be full cube if not selected by user
+                _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, subsetBounds, trueBounds, _dataSet.FitsData);
+
                 // Mask data is always point-filtered
                 _maskDataSet.GenerateVolumeTexture(FilterMode.Point, XFactor, YFactor, ZFactor);
             }
@@ -622,13 +630,44 @@ namespace VolumeData
             return dataCubeRot;
         }
 
+        /// <summary>
+        /// Converts a world space position to a position in the datacube's frame of reference.
+        /// </summary>
+        /// <param name="worldLoc">The world space position to convert.</param>
+        /// <returns>A position in the data cube frame of reference, equivalent to the world space position at the time this function is called.</returns>
+        public Vector3 ConvertWorldPositionToDataCubePosition(Vector3 worldLoc)
+        {
+            Vector3 dataCubePos = transform.InverseTransformPoint(worldLoc);
+            return dataCubePos;
+        }
+
+        /// <summary>
+        /// Converts a world space rotation to a rotation in the datacube's frame of reference.
+        /// </summary>
+        /// <param name="worldLoc">The world space rotation to convert.</param>
+        /// <returns>A rotation in the data cube frame of reference, equivalent to the world space rotation at the time this function is called.</returns>
+        public Quaternion ConvertWorldRotationToDatacubeRotation(Quaternion worldRot)
+        {
+            Quaternion dataCubeRot = Quaternion.Inverse(transform.rotation) * worldRot;
+            return dataCubeRot;
+        }
+
+        /// <summary>
+        /// A function that calculates the cursor position and sends it to both the cursor, and the information sent on hover. Note the information on hover
+        /// is in the data space, so needs an offset if a subset was loaded, while the cursor is in object/VR space, so real location (no offset).
+        /// </summary>
+        /// <param name="cursor">The location of the cursor in the world space.</param>
+        /// <param name="brushSize">The size of the cursor, in data space.</param>
         public void SetCursorPosition(Vector3 cursor, int brushSize)
         {
             Vector3 objectSpacePosition = transform.InverseTransformPoint(cursor);
             Bounds objectBounds = new Bounds(Vector3.zero, Vector3.one);
-            if ((objectBounds.Contains(objectSpacePosition) || Config.Instance.displayCursorInfoOutsideCube) && _dataSet != null)
+            bool cursorInDataCube = objectBounds.Contains(objectSpacePosition);
+            if ((cursorInDataCube || Config.Instance.displayCursorInfoOutsideCube) && _dataSet != null)
             {
-                Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
+                Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim,
+                                                                                (objectSpacePosition.y + 0.5f) * _dataSet.YDim,
+                                                                                (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
                 Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
                 Vector3 voxelCenterCubeSpace = voxelCornerCubeSpace + 0.5f * Vector3.one;
                 Vector3Int newVoxelCursor = new Vector3Int(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, Mathf.RoundToInt(voxelCornerCubeSpace.y) + 1, Mathf.RoundToInt(voxelCornerCubeSpace.z) + 1);
@@ -637,9 +676,14 @@ namespace VolumeData
                 {
                     _previousBrushSize = brushSize;
                     CursorVoxel = newVoxelCursor;
-                    CursorValue = _dataSet.GetDataValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
-                    if (_maskDataSet != null)
+                    CursorValue = (cursorInDataCube) ? _dataSet.GetDataValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z) : Single.NaN;
+                    if (/*GlobalDebugIsOn &&*/Double.IsNaN(CursorValue))
                     {
+                        // Debug.Log("NAN value at CursorVoxel [" + CursorVoxel.x.ToString() + ", " + CursorVoxel.y.ToString() + ", " + CursorVoxel.z.ToString() + "]!");
+                    }
+                    if (_maskDataSet != null && cursorInDataCube)
+                    {
+                        // Debug.Log("Trying to access mask value at [" + CursorVoxel.x.ToString() + ", " + CursorVoxel.y.ToString() + ", " + CursorVoxel.z.ToString() + "].");
                         CursorSource = _maskDataSet.GetMaskValue(CursorVoxel.x, CursorVoxel.y, CursorVoxel.z);
                     }
                     else
@@ -647,8 +691,11 @@ namespace VolumeData
                         CursorSource = 0;
                     }
 
-                    Vector3 voxelCenterObjectSpace = new Vector3(voxelCenterCubeSpace.x / _dataSet.XDim - 0.5f, voxelCenterCubeSpace.y / _dataSet.YDim - 0.5f,
-                        voxelCenterCubeSpace.z / _dataSet.ZDim - 0.5f);
+                    // Determine the actual voxelCursor's location in the VR space (not data space)
+                    Vector3 voxelCenterObjectSpace = new Vector3(voxelCenterCubeSpace.x / _dataSet.XDim - 0.5f,
+                                                                voxelCenterCubeSpace.y / _dataSet.YDim - 0.5f,
+                                                                voxelCenterCubeSpace.z / _dataSet.ZDim - 0.5f);
+                    // Check is needed if the cursor information display is allowed outside the cube 
                     if (_voxelOutline != null)
                     {
                         _voxelOutline.Center = voxelCenterObjectSpace;
@@ -708,7 +755,24 @@ namespace VolumeData
             _vidCursorLocVoxel = new Vector3Int(int.MinValue, int.MinValue, int.MinValue);
         }
 
-        public Vector3Int GetVoxelPosition(Vector3 cursorPosWorldSpace)
+        /// <summary>
+        /// This function is used to get the cursor location in data space (i.e., including subcube offsets).
+        /// </summary>
+        /// <param name="cursorPosWorldSpace">Where in the world space is the user pointing?</param>
+        /// <returns>An indexed location in data space.</returns>
+        public Vector3Int GetVoxelPositionDataSpace()
+        {
+            Vector3Int offset = new Vector3Int(_dataSet.subsetBounds[0], _dataSet.subsetBounds[2], _dataSet.subsetBounds[4]);
+
+            return CursorVoxel + offset - new Vector3Int(1, 1, 1);
+        }
+        
+        /// <summary>
+        /// This function is to be used to get the cursor location in world space (as compared to data space above)
+        /// </summary>
+        /// <param name="cursorPosWorldSpace">Where in the world space is the user pointing?</param>
+        /// <returns>An indexed location in world space.</returns>
+        public Vector3Int GetVoxelPositionWorldSpace(Vector3 cursorPosWorldSpace)
         {
             Vector3 objectSpacePosition = transform.InverseTransformPoint(cursorPosWorldSpace);
             objectSpacePosition = new Vector3(
@@ -722,7 +786,9 @@ namespace VolumeData
                 return Vector3Int.zero;
             }
 
-            Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim, (objectSpacePosition.y + 0.5f) * _dataSet.YDim, (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
+            Vector3 positionCubeSpace = new Vector3((objectSpacePosition.x + 0.5f) * _dataSet.XDim,
+                                                    (objectSpacePosition.y + 0.5f) * _dataSet.YDim,
+                                                    (objectSpacePosition.z + 0.5f) * _dataSet.ZDim);
             Vector3 voxelCornerCubeSpace = new Vector3(Mathf.Floor(positionCubeSpace.x), Mathf.Floor(positionCubeSpace.y), Mathf.Floor(positionCubeSpace.z));
             Vector3Int newVoxelCursor = new Vector3Int(
                 Mathf.Clamp(Mathf.RoundToInt(voxelCornerCubeSpace.x) + 1, 1, (int)_dataSet.XDim),
@@ -733,11 +799,16 @@ namespace VolumeData
             return newVoxelCursor;
         }
 
+        /// <summary>
+        /// This function sets the bounds of the selected region in world space.
+        /// </summary>
+        /// <param name="cursor">Where in the world space is the user pointing?</param>
+        /// <param name="start">Is this the creation of a selection, or updating its values?</param>
         public void SetRegionPosition(Vector3 cursor, bool start)
         {
             if (_dataSet != null)
             {
-                var newVoxelCursor = GetVoxelPosition(cursor);
+                var newVoxelCursor = GetVoxelPositionWorldSpace(cursor);
                 var existingVoxel = start ? RegionStartVoxel : RegionEndVoxel;
                 if (!newVoxelCursor.Equals(existingVoxel))
                 {
@@ -952,11 +1023,11 @@ namespace VolumeData
 
         public void TeleportToRegion()
         {
-            if (_volumeInputController && _featureManager && _featureManager.SelectedFeature != null)
+            if (volumeInputController && _featureManager && _featureManager.SelectedFeature != null)
             {
                 var boundsMin = _featureManager.SelectedFeature.CornerMin;
                 var boundsMax = _featureManager.SelectedFeature.CornerMax;
-                _volumeInputController.Teleport(boundsMin - (0.5f * Vector3.one), boundsMax + (0.5f * Vector3.one));
+                volumeInputController.Teleport(boundsMin - (0.5f * Vector3.one), boundsMax + (0.5f * Vector3.one));
             }
         }
 
@@ -997,12 +1068,8 @@ namespace VolumeData
 
                 if (_regionOutline.Active)
                 {
-                    Vector3 regionStartObjectSpace = new Vector3((float)(RegionStartVoxel.x) / _dataSet.XDim - 0.5f,
-                        (float)(RegionStartVoxel.y) / _dataSet.YDim - 0.5f,
-                        (float)(RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
-                    Vector3 regionEndObjectSpace = new Vector3((float)(RegionEndVoxel.x) / _dataSet.XDim - 0.5f,
-                        (float)(RegionEndVoxel.y) / _dataSet.YDim - 0.5f,
-                        (float)(RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
+                    Vector3 regionStartObjectSpace = new Vector3((float)(RegionStartVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionStartVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionStartVoxel.z) / _dataSet.ZDim - 0.5f);
+                    Vector3 regionEndObjectSpace = new Vector3((float)(RegionEndVoxel.x) / _dataSet.XDim - 0.5f, (float)(RegionEndVoxel.y) / _dataSet.YDim - 0.5f, (float)(RegionEndVoxel.z) / _dataSet.ZDim - 0.5f);
                     Vector3 padding = new Vector3(1.0f / _dataSet.XDim, 1.0f / _dataSet.YDim, 1.0f / _dataSet.ZDim);
                     var highlightMin = Vector3.Min(regionStartObjectSpace, regionEndObjectSpace) - padding;
                     var highlightMax = Vector3.Max(regionStartObjectSpace, regionEndObjectSpace);
@@ -1024,23 +1091,15 @@ namespace VolumeData
                     _maskMaterialInstance.SetColor(MaterialID.MaskVoxelColor, MaskVoxelColor);
                     _maskMaterialInstance.SetInt(MaterialID.HighlightedSource, HighlightedSource);
 
-                    // Calculate and update voxel corner offsets
-                    var offsets = new Vector4[4];
-                    var modelMatrix = transform.localToWorldMatrix;
-                    offsets[0] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize *
-                                                            new Vector3(-1.0f / _maskDataSet.XDim,
-                                                                -1.0f / _maskDataSet.YDim, -1.0f / _maskDataSet.ZDim));
-                    offsets[1] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize *
-                                                            new Vector3(-1.0f / _maskDataSet.XDim,
-                                                                -1.0f / _maskDataSet.YDim, +1.0f / _maskDataSet.ZDim));
-                    offsets[2] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize *
-                                                            new Vector3(-1.0f / _maskDataSet.XDim,
-                                                                +1.0f / _maskDataSet.YDim, -1.0f / _maskDataSet.ZDim));
-                    offsets[3] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize *
-                                                            new Vector3(-1.0f / _maskDataSet.XDim,
-                                                                +1.0f / _maskDataSet.YDim, +1.0f / _maskDataSet.ZDim));
-                    _maskMaterialInstance.SetVectorArray(MaterialID.MaskVoxelOffsets, offsets);
-                    _maskMaterialInstance.SetMatrix(MaterialID.ModelMatrix, modelMatrix);
+                // Calculate and update voxel corner offsets
+                var offsets = new Vector4[4];
+                var modelMatrix = transform.localToWorldMatrix;
+                offsets[0] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new Vector3(-1.0f / _maskDataSet.XDim, -1.0f / _maskDataSet.YDim, -1.0f / _maskDataSet.ZDim));
+                offsets[1] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new Vector3(-1.0f / _maskDataSet.XDim, -1.0f / _maskDataSet.YDim, +1.0f / _maskDataSet.ZDim));
+                offsets[2] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new Vector3(-1.0f / _maskDataSet.XDim, +1.0f / _maskDataSet.YDim, -1.0f / _maskDataSet.ZDim));
+                offsets[3] = modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * new Vector3(-1.0f / _maskDataSet.XDim, +1.0f / _maskDataSet.YDim, +1.0f / _maskDataSet.ZDim));
+                _maskMaterialInstance.SetVectorArray(MaterialID.MaskVoxelOffsets, offsets);
+                _maskMaterialInstance.SetMatrix(MaterialID.ModelMatrix, modelMatrix);
 
                 }
                 else
@@ -1159,9 +1218,15 @@ namespace VolumeData
             return true;
         }
 
+        /// <summary>
+        /// Paint a mask value in the current cursor location.
+        /// </summary>
+        /// <param name="value">The value to paint on the mask.</param>
+        /// <returns>True if successful, false if not.</returns>
         public bool PaintCursor(short value)
         {
             var maskCursorLimit = (_previousBrushSize - 1) / 2;
+            Debug.Log("Painting at cursor value [" + CursorVoxel.x + ", " + CursorVoxel.y + ", " + CursorVoxel.z + "].");
             for (int i = -maskCursorLimit; i <= maskCursorLimit; i++)
             {
                 for (int j = -maskCursorLimit; j <= maskCursorLimit; j++)
@@ -1208,11 +1273,22 @@ namespace VolumeData
         
         public void SaveSubCube()
         {
-            IntPtr subCubeHeader = IntPtr.Zero;
-            var cornerMin = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMin);
-            var cornerMax = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMax);
+            Vector3Int cornerMin, cornerMax;
+            if (_featureManager.SelectedFeature != null)
+            {
+                cornerMin = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMin);
+                cornerMax = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMax);
+            }
+            else
+            {
+                ToastNotification.ShowWarning("No feature selected, saving entire loaded cube as subcube.");
+                cornerMin = new Vector3Int(1, 1, 1);
+                cornerMax = GetCubeDimensions();
+            }
+            Debug.Log("Saving subcube from " + cornerMin.ToString() + " to " + cornerMax.ToString() + ".");
             _dataSet.SaveSubCubeFromOriginal(cornerMin, cornerMax, _maskDataSet);
         }
+
         public void SaveMask(bool overwrite)
         {
             if (_maskDataSet == null)
@@ -1225,10 +1301,17 @@ namespace VolumeData
             if (IsMaskNew)
             {
                 // Save new mask because none exists yet
-                FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _dataSet.FileName, out status);
+                Debug.Log("Attempting to save new mask because none exist.");
+                string datasetFileName = _dataSet.FileName;
+                // Append the HDU if not 1 -- leads to crashes if file has only 1 HDU, and errors if data is in first HDU.
+                if (_dataSet.SelectedHdu != 1)
+                {
+                    datasetFileName += $"[{_dataSet.SelectedHdu}]";
+                }    
+                FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, datasetFileName, out status);
                 string directory = Path.GetDirectoryName(_dataSet.FileName);
-                _maskDataSet.FileName = $"{directory}/{Path.GetFileNameWithoutExtension(_dataSet.FileName)}-mask.fits";
-                if (_maskDataSet.SaveMask(cubeFitsPtr, $"!{_maskDataSet.FileName}") != 0)
+                _maskDataSet.FileName = $"!{directory}/{Path.GetFileNameWithoutExtension(_dataSet.FileName)}-mask.fits";
+                if (_maskDataSet.SaveMask(cubeFitsPtr, _maskDataSet.FileName, false) != 0)
                 {
                     ToastNotification.ShowError("Error saving new mask!");
                 }
@@ -1237,10 +1320,12 @@ namespace VolumeData
                     ToastNotification.ShowSuccess($"New mask saved to {Path.GetFileName(_maskDataSet.FileName)}");
                 }
                 IsMaskNew = false;
+                this.lastSavedMaskPath = _maskDataSet.FileName;
             }
             else if (!overwrite)
             {
                 // Save a copy
+                Debug.Log("Attempting to save new mask copy.");
                 FitsReader.FitsOpenFileReadOnly(out cubeFitsPtr, _maskDataSet.FileName, out status);
                 Regex regex = new Regex(@"_copy_\d{8}_\d{5}");
                 string fileName = Path.GetFileNameWithoutExtension(_maskDataSet.FileName);
@@ -1256,30 +1341,47 @@ namespace VolumeData
                 }
                 string directory = Path.GetDirectoryName(_maskDataSet.FileName);
                 string fullPath = $"!{directory}/{fileName}.fits";
-                if (_maskDataSet.SaveMask(cubeFitsPtr, fullPath) != 0)
+                if (_maskDataSet.SaveMask(cubeFitsPtr, fullPath, true) != 0)
                 {
                     ToastNotification.ShowError("Error saving mask copy!");
                 }
                 else
                 {
+                    this.lastSavedMaskPath = fullPath;
                     ToastNotification.ShowSuccess($"New mask saved to {fileName}");
                 }
             }
             else
             {
                 // Overwrite existing mask
+                Debug.Log("Attempting to overwrite existing mask.");
                 FitsReader.FitsOpenFileReadWrite(out cubeFitsPtr, _maskDataSet.FileName, out status);
-                if (_maskDataSet.SaveMask(cubeFitsPtr, null) != 0)
+                if (_maskDataSet.SaveMask(cubeFitsPtr, null, false) != 0)
                 {
                     ToastNotification.ShowError("Error overwriting existing mask!");
                 }
                 else
                 {
+                    this.lastSavedMaskPath = _maskDataSet.FileName;
                     ToastNotification.ShowSuccess($"Mask saved to disk");
                 }
+                Debug.Log("Overwriting mask complete, VolumeDataSetRenderer::SaveMask().");
             }
             if (cubeFitsPtr != IntPtr.Zero)
+            {
+                Debug.Log("cubeFitsPtr != IntPtr.Zero, closing file.");
                 FitsReader.FitsCloseFile(cubeFitsPtr, out status);
+            }
+        }
+
+        /// <summary>
+        /// Returns the filepath of the previous mask saved by this renderer.
+        /// </summary>
+        /// <returns>String of the filepath.</returns>
+        public string GetMaskSavedFilePath()
+        {
+            var result = this.lastSavedMaskPath;
+            return result;
         }
 
         public void AddSelectionToList()

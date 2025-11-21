@@ -19,16 +19,12 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using VolumeData;
- 
 
 public class VoiceCommandListCreator : MonoBehaviour
 {
-  
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
     
@@ -43,12 +39,10 @@ public class VoiceCommandListCreator : MonoBehaviour
 
     private VolumeCommandController _volumeCommandController;
     private float _maxYPosition = 0;    // Use to set the size of content to encapsulate all spawned items
-  
+
     // Start is called before the first frame update
     void Start()
     {
-       
-
         _volumeCommandController = FindObjectOfType<VolumeCommandController>();
 
         int i = 0;
@@ -65,7 +59,7 @@ public class VoiceCommandListCreator : MonoBehaviour
 
             //get ItemDetails Component
             VoiceCommandListItem itemDetails = SpawnedItem.GetComponent<VoiceCommandListItem>();
-          
+
             itemDetails.executeCommand.GetComponent<Button>().onClick.RemoveAllListeners();
             itemDetails.executeCommand.GetComponent<Button>().onClick.AddListener(delegate { _volumeCommandController.ExecuteVoiceCommandFromList(keyword); });
             
@@ -78,14 +72,13 @@ public class VoiceCommandListCreator : MonoBehaviour
             _maxYPosition = spawnY;
         }
         content.sizeDelta = new Vector2(content.offsetMin.x, _maxYPosition);        //Encapsulate all spawned items with content size
-        
 }
 
 
     // Update is called once per frame
     void Update()
     {
-      
+        
     }
 
     private VolumeDataSetRenderer getFirstActiveDataSet()
@@ -100,8 +93,5 @@ public class VoiceCommandListCreator : MonoBehaviour
             }
         }
         return null;
-
     }
-
-  
 }

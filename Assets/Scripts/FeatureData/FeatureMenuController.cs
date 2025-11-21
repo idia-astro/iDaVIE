@@ -19,17 +19,16 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
-using DataFeatures;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using DataFeatures;
+using PolyAndCode.UI;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 using VolumeData;
-using System.IO;
-using System;
-using System.Linq;
-using PolyAndCode.UI;
-using UnityEngine.Serialization;
 
 public class FeatureMenuController : MonoBehaviour
 {
@@ -373,8 +372,13 @@ public class FeatureMenuController : MonoBehaviour
             {
                 for (var i = 0; i < _featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys.Length; i++)
                 {
+                    var key = _featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys[i];
                     var dataToAdd = _featureSetManager.SelectedFeature.FeatureSetParent.RawDataTypes[i] == "float" ? FormattableString.Invariant($"{Convert.ToDouble(_featureSetManager.SelectedFeature.RawData[i]):F3}") : _featureSetManager.SelectedFeature.RawData[i];
-                    textObject.GetComponent<TMP_Text>().text += $"{_featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys[i]} : {dataToAdd}{Environment.NewLine}";
+                    if (FeatureSetManager.UnitisedKeys.Contains(key.ToUpper()))
+                    {
+                        dataToAdd += $" {_activeDataSet.GetDataSet().GetPixelUnit()}";  
+                    }
+                    textObject.GetComponent<TMP_Text>().text += $"{key} : {dataToAdd}{Environment.NewLine}";
                 }
             }
             var flag = _featureSetManager.SelectedFeature.Flag;

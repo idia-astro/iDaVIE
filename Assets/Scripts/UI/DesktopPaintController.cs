@@ -1,25 +1,34 @@
-//Assigned to the display which contains the raw image showing the user the slices of the cube
-//Assigned there because the display of this image marks the entering of the paint mode in VR first and it makes manipulation of the texture easy
-//Light must ignore slice indicator
+/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
 using TMPro;
-using Valve.Newtonsoft.Json.Linq;
-using UnityEngine;
-using UnityEngine.UI;
-using VolumeData;
-using Valve;
-using Valve.VR;
-using DataFeatures;
-using VoTableReader;
-using System.Linq;
-using SFB;
-using UnityEngine.EventSystems;
 using Unity.Collections;
 using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using VolumeData;
 
 public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
 {
@@ -124,7 +133,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         if (imageRect == null)
             imageRect = GetComponent<RectTransform>();
 
-         originalUVRect = rawImage.uvRect;
+        originalUVRect = rawImage.uvRect;
 
         dataRenderer = canvassDesktop.GetFirstActiveRenderer();
 
@@ -138,7 +147,6 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
 
         maxVal = effectiveMax;
         minVal = effectiveMin;
-       
 
         maskSet = dataRenderer.Mask;
         maskCube = maskSet.RegionCube;
@@ -728,10 +736,10 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
                 {
                     if(axis == 0) //x axis
                     {
-                       if(maskSet.GetMaskValue2(sliceIndex,x,y) == sourceID) {
-                            currentRegionSlice.SetPixel(x,y,currentSourceColor);
-                       } 
-                       else currentRegionSlice.SetPixel(x,y,maskColor);
+                        if(maskSet.GetMaskValue2(sliceIndex,x,y) == sourceID) {
+                                currentRegionSlice.SetPixel(x,y,currentSourceColor);
+                        } 
+                        else currentRegionSlice.SetPixel(x,y,maskColor);
                     }
 
                     if(axis == 1)
@@ -756,7 +764,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
 
     }
 
-     public Color GetColorFromColormap(int rowIndex, float value)
+    public Color GetColorFromColormap(int rowIndex, float value)
     {
         if (colormap == null)
         {

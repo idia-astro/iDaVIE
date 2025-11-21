@@ -65,7 +65,7 @@ public class ToastNotification
                 spawnedItem.transform.Find("TopPanel").gameObject.GetComponent<Image>().color = notifications[i].bgColor;
                 spawnedItem.transform.Find("TopPanel").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().text = notifications[i].text;
                 spawnedItem.transform.Find("TopPanel").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().color = notifications[i].textColor;
-               
+
                 notifications.RemoveAt(0);
             }
         }
@@ -115,7 +115,7 @@ public class ToastNotification
 
         if (_volumeInputController == null)
             _volumeInputController = GameObject.FindObjectOfType<VolumeInputController>();
-       
+
         Vector3 playerPos = Camera.main.transform.position;
         Vector3 playerDirection = Camera.main.transform.forward;
         float spawnDistance = 0.5f;
