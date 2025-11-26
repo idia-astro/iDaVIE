@@ -4,8 +4,6 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Xml.Schema;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Schema;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
