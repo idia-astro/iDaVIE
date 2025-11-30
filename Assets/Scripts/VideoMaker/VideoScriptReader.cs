@@ -201,8 +201,8 @@ namespace VideoMaker
                             rotations: command.iterations
                             ){Easing = new EasingInLinOut(
                             order: 2, 
-                            timeIn: 0.25f / command.iterations, 
-                            timeOut: 0.25f / command.iterations)
+                            timeIn: command.iterations < 1f ? 0.25f : 0.25f / command.iterations, 
+                            timeOut: command.iterations < 1f ? 0.25f : 0.25f / command.iterations)
                         }){Duration = orbitDuration});
                         directionActions.Add(new DirectionActionLookAt(command.centrePoint.position){Duration = orbitDuration});
                         upDirectionActions.Add(new DirectionActionHold(axis){Duration = orbitDuration});
