@@ -2,8 +2,17 @@ using UnityEngine;
 
 namespace VideoMaker
 {
+    /// <summary>
+    /// Base easing class with a linear curve.
+    /// Easing functions are used to re-time animations, usually to imitate acceleration and deceleration.
+    /// </summary>
     public class Easing
     {
+        /// <summary>
+        /// Main method to call for retiming. The input should be normalized.
+        /// </summary>
+        /// <param name="valueIn">Normalized value in.</param>
+        /// <returns>Normalized, retimed value out.</returns>
         public float GetValue(float valueIn)
         {
             if (valueIn < 0)
@@ -16,13 +25,21 @@ namespace VideoMaker
             }
             return OnGetValue(valueIn);
         }
-
+        
+        /// <summary>
+        /// This method is to be overriden by derived classes.
+        /// </summary>
+        /// <param name="valueIn">Normalized value in.</param>
+        /// <returns>Normalized, retimed value out.</returns>
         protected virtual float OnGetValue(float valueIn)
         {
             return valueIn;
         }
     }
-
+    
+    /// <summary>
+    /// Slow-in easing using a monomial of a given order.
+    /// </summary>
     public class EasingIn : Easing
     {
         private int _order;
@@ -38,6 +55,9 @@ namespace VideoMaker
         }
     }
 
+    /// <summary>
+    /// Slow-out easing using a transformed monomial of a given order.
+    /// </summary>
     public class EasingOut : Easing
     {
         private int _order;
@@ -53,6 +73,9 @@ namespace VideoMaker
         }
     }
 
+    /// <summary>
+    /// Slow-in and slow-out easing using a piecewise defined function of monomials of a given order.
+    /// </summary>
     public class EasingInOut : Easing
     {
         private int _order;
@@ -72,13 +95,23 @@ namespace VideoMaker
         }
     }
 
-    //TODO replace AccelDecel with this
+    /// <summary>
+    /// Slow-in, steady middle and slow-out.
+    /// Uses a piecewise defined funtion with a monomial function of given order for the first iterval, a linear function for the middle interval and a transformed monomial function of the same order for the last interval.
+    /// </summary>
     public class EasingInLinOut : Easing
     {
         private int _order;
         private float _t1;
         private float _t2;
     
+        /// <summary>
+        /// Construct the Easing object given an <c>order</c> for the ease-in and ease-out mononomials and the durations for these parts.
+        /// The sum of the (normalized) durations of the ease-in and ease-out parts should not exceed 1.
+        /// </summary>
+        /// <param name="order">Order of the ease-in and ease-out intervals.</param>
+        /// <param name="timeIn">The normalized duration of the ease-in part of the easing.</param>
+        /// <param name="timeOut">The normalized duration of the ease-out part of the easing.</param>
         public EasingInLinOut(int order, float timeIn, float timeOut)
         {
             _order = order;
@@ -108,35 +141,4 @@ namespace VideoMaker
                 ) / mag;
         }
     }
-
-    // public class EasingAccelDecel : Easing
-    // {
-    //     private float _t1;
-    //     private float _t2;
-
-    //     public EasingAccelDecel(float t1, float t2)
-    //     {
-    //         _t1 = t1;
-    //         _t2 = t2;
-    //     }
-
-    //     protected override float OnGetValue(float valueIn)
-    //     {
-    //         float mag = 0.5f * (1 + _t2 - _t1);
-
-    //         if (valueIn < _t1 && _t1 > 0f)
-    //         {
-    //             return 0.5f * valueIn * valueIn / _t1 / mag;
-    //         }
-    //         if (valueIn < _t2)
-    //         {
-    //             return (valueIn - 0.5f * _t1) / mag;
-    //         }
-    //         return (
-    //             _t2 - 0.5f * _t1
-    //             + valueIn * (1 - 0.5f * valueIn) / (1 - _t2)
-    //             - _t2 * (1 - 0.5f * _t2) / (1 - _t2)
-    //             ) / mag;
-    //     }
-    // }
 }

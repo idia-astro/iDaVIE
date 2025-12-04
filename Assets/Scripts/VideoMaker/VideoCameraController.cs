@@ -14,8 +14,15 @@ using Debug = UnityEngine.Debug;
 
 namespace VideoMaker
 {
+    /// <summary>
+    /// This class is responsible for moving the camera during video preview, capturing video frames and calling FFmpeg to compile the frames into a video.
+    /// This script should be attached to the camera directly and needs to be triggered externally by the VideoUiManager to perform its functions.
+    /// </summary>
     public class VideoCameraController : MonoBehaviour
     {
+        /// <summary>
+        /// EventArgs class to be used with the PlaybackUpdated event.
+        /// </summary>
         public class PlaybackUpdatedEventArgs : EventArgs
         {
             public float Progress { get; set; }
@@ -55,6 +62,10 @@ namespace VideoMaker
         private Camera _camera;
 
         private VideoScriptData _videoScript = null;
+        /// <summary>
+        /// This property represents the current VideoScriptData for the video.
+        /// Setting this property also sets the logo position in the logo overlay shader.
+        /// </summary>
         public VideoScriptData VideoScript
         {
             get
@@ -162,7 +173,7 @@ namespace VideoMaker
         private float _upDirectionTime = 0f;
 
         private float _FPSWarnThreshold = 20.0f;
-
+        
         void Awake()
         {
             _logoMaterial = new Material(logoShader);
@@ -193,7 +204,10 @@ namespace VideoMaker
                 }
             }
         }
-
+        
+        /// <summary>
+        /// Sets the resolution of the render material for the camera (and thus the video preview) to a factor <c>scale</c> of the maximum resolution as defined in the VideoScriptData. </summary>
+        /// <param name="scale">The fraction used to scale the resolution defined in the VideoScriptData.</param>
         private void SetVideoResolutionScale(float scale = 1f)
         {
             if (_videoScript is null)
@@ -220,7 +234,12 @@ namespace VideoMaker
             playMode = PlayMode.Standby;
             return true;
         }
-
+        
+        /// <summary>
+        /// Coroutine used for the desktop preview mode (the video is not recorded).
+        /// The framerate of the preview matches the update loop.
+        /// </summary>
+        /// <returns></returns>
         IEnumerator Preview()
         {
             if (VideoScript is null)
@@ -253,7 +272,13 @@ namespace VideoMaker
 
             EndPlayback();
         }
-
+        
+        /// <summary>
+        /// Coroutine to preview and export the video.
+        /// This will initiate a thread which is used to export video frames and call FFmpeg to compile the video.
+        /// Each frame of the update loop is used to render a single frame for the video, thus the video preview may progress at a different speed to the output.
+         /// </summary>
+        /// <returns></returns>
         IEnumerator Export()
         {
             if (VideoScript is null)
@@ -324,7 +349,11 @@ namespace VideoMaker
             playMode = PlayMode.Standby;
             EndPlayback();
         }
-
+        
+        /// <summary>
+        /// Updates the playback for the current video by a given time <c>deltaTime</c>.
+        /// </summary>
+        /// <param name="deltaTime">How much time to progress the video.</param>
         private void UpdatePlayback(float deltaTime)
         {
             (Vector3 position, Vector3 pathForward, Vector3 pathUp) = _positionAction.GetPositionDirection(_positionTime);
@@ -343,6 +372,14 @@ namespace VideoMaker
         }
 
         //TODO remove this as actions have been refactored to use continuous time
+        /// <summary>
+        /// Update the given <c>action</c> by an amount of time <c>deltaTime</c> and switch to the next action in the <c>actionQueue</c> if the current action is completed.
+        /// </summary>
+        /// <param name="deltaTime"></param>
+        /// <param name="time"></param>
+        /// <param name="action"></param>
+        /// <param name="actionQueue"></param>
+        /// <typeparam name="T"></typeparam>
         private void UpdateActionTime<T>(float deltaTime, ref float time, ref T action, ref Queue<T> actionQueue) where T : Action
         {
             time += deltaTime;
@@ -361,6 +398,12 @@ namespace VideoMaker
             }
         }
 
+        /// <summary>
+        /// Set the transform of the camera given a <c>position</c> and directions.
+        /// </summary>
+        /// <param name="position">New position of the camera.</param>
+        /// <param name="direction">Direction the camera should look in.</param>
+        /// <param name="upDirection">The up direction used for the camera look-at. This will not necessarily be the exact up direction of the new camera transform.</param>
         private void UpdateTransform(Vector3 position, Vector3 direction, Vector3 upDirection)
         {
             position = _cubeTransform.TransformPoint(position);
@@ -369,7 +412,10 @@ namespace VideoMaker
             
             gameObject.transform.SetPositionAndRotation(position, Quaternion.LookRotation(direction, upDirection));
         }
-
+        
+        /// <summary>
+        /// Sets various variables in preparation for video playback.
+        /// </summary>
         public void StartPlayback()
         {
             SetVideoResolutionScale(IsPlayModePreview ? _previewQuality : 1f);
@@ -393,19 +439,29 @@ namespace VideoMaker
             _directionTime = 0f;
             _upDirectionTime = 0f;
         }
-
+        
+        /// <summary>
+        /// Sets variables to reflect the not playing state and emits a signal.
+        /// </summary>
         public void EndPlayback()
         {
             _camera.enabled = false;
             IsPlaying = false;
             OnPlaybackFinished();
         }
-
+        
+        /// <summary>
+        /// Method used to invoke the <c>PlaybackUpdated</c> event.
+        /// </summary>
+        /// <param name="progress">The fraction of the video playback that has progressed.</param>
         protected virtual void OnPlaybackUpdated(float progress)
         {
             PlaybackUpdated?.Invoke(this, new PlaybackUpdatedEventArgs(){Progress = progress});
         }
         
+        /// <summary>
+        /// Method used to invoke the <c>PlaybackFinished</c> event.
+        /// </summary>
         protected virtual void OnPlaybackFinished()
         {
             PlaybackFinished?.Invoke(this, EventArgs.Empty);
@@ -413,11 +469,17 @@ namespace VideoMaker
             // Something like VideoUiManager.ConfigureUIForPreview(false);
         }
 
+        /// <summary>
+        /// Method used to invoke the <c>PlaybackUnstoppable</c>.
+        /// </summary>
         protected virtual void OnPlaybackUnstoppable()
         {
             PlaybackUnstoppable?.Invoke(this, EventArgs.Empty);
         }
-
+        
+        /// <summary>
+        /// Method used to start the <c>Preview</c> coroutine.
+        /// </summary>
         public void StartPreview()
         {
             if (IsPlaying)
@@ -426,7 +488,10 @@ namespace VideoMaker
             }
             StartCoroutine(Preview());
         }
-
+        
+        /// <summary>
+        /// Method used to start the <c>Export</c> coroutine.
+        /// </summary>
         public void StartExport()
         {
             if (IsPlaying)
@@ -436,6 +501,13 @@ namespace VideoMaker
             StartCoroutine(Export());
         }
         
+        /// <summary>
+        /// Method used to override the camera render.
+        /// Places the logo on the render texture.
+        /// If exporting, then a higher-fidelity, linear color setting is used for the render texture to preserve the color values on export.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="destination"></param>
         private void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
             Graphics.Blit(source, destination, _logoMaterial);
@@ -463,6 +535,10 @@ namespace VideoMaker
             RenderTexture.active = destination; //TODO rather set to null?
         }
 
+        /// <summary>
+        /// This method is called on a separate thread when exporting.
+        /// Exports frames to images on disk and compiles these into a video using FFmpeg once all frames have been captured.
+        /// </summary>
         private void SaveFrames()
         {
             if (Directory.Exists(_framePath))
