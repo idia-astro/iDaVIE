@@ -8,9 +8,12 @@ using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
-
 namespace VideoMaker
 {
+    /// <summary>
+    /// This class contains all the information needed for the VideoCameraController to create the video.
+    /// It is intended to be instantiated using the methods in the VideoScriptReader class.
+    /// </summary>
     public class VideoScriptData
     {
         //TODO define default values as constants for videSettings to use. Later use defaults from schema.
@@ -37,7 +40,12 @@ namespace VideoMaker
         public PositionAction[] PositionActions;
         public DirectionAction[] DirectionActions;
         public DirectionAction[] UpDirectionActions;
-
+        
+        /// <summary>
+        /// This function returns the appropriate LogoPosition corresponding the given value from a video script.
+        /// </summary>
+        /// <param name="pos">Value for the position as defined in a video script.</param>
+        /// <returns>LogoPosition enum value for the appropriate logo position. The defualt return is LogoPosition.Invalid if the given position is not appropriate.</returns>
         public static LogoPosition ParsePosition(string pos)
         {
             if (pos.Equals("BR", StringComparison.OrdinalIgnoreCase) || 
@@ -88,12 +96,22 @@ namespace VideoMaker
         }
     }
 
+    /// <summary>
+    /// This class contains methods used to read video scripts (for now only IDVS, but with the addition of JSON in the future) and return a corresponding VideoScriptData instance.
+    /// </summary>
     public static class VideoScriptReader
     {
         private static readonly VideoLocation DefaultLocation = new VideoLocation("", Vector3.zero, Vector3.zero);
 
         private static readonly Easing EasingIO = new EasingInOut(order: 2);
         
+        /// <summary>
+        /// Read the data from an IDVS stream and return a corresponding VideoScriptData instance.
+        /// This includes constructing VideoMaker.Action instances from the IDVS commands.
+        /// </summary>
+        /// <param name="videoIdvsScriptStream">Stream for the IDVS file.</param>
+        /// <param name="filePath">Path to the IDVS file.</param>
+        /// <returns>VideoScriptData instance with data constructed using the IDVS file.</returns>
         public static VideoScriptData ReadIdvsVideoScript(StreamReader videoIdvsScriptStream, string filePath)
         {
             VideoScriptData data = new();

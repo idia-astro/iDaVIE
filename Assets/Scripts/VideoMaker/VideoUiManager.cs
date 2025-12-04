@@ -15,6 +15,10 @@ using System.Linq;
 
 namespace VideoMaker
 {
+    /// <summary>
+    /// This class is responsible for taking inputs from the desktop UI and altering the desktop UI to match the current video playback state.
+    /// It is also responsible for interfacing with the VideoCameraController, and thus this script should be attached to a Camera with a VideoCameraController script attached as well.
+    /// </summary>
     public class VideoUiManager : MonoBehaviour
     {
         private const string ExportMessage = "Exporting Video";
@@ -85,7 +89,7 @@ namespace VideoMaker
         }
         
         /// <summary>
-        /// Function called when the user clicks the preview button.
+        /// Method called when the user clicks the preview button.
         /// </summary>
         public void OnPreviewClick()
         {
@@ -99,7 +103,7 @@ namespace VideoMaker
         }
 
         /// <summary>
-        /// Function called when the user clicks the export button.
+        /// Method called when the user clicks the export button.
         /// </summary>
         public void OnExportClick()
         {
@@ -111,7 +115,7 @@ namespace VideoMaker
         }
 
         /// <summary>
-        /// Function called when the user clicks the pause button.
+        /// Method called when the user clicks the pause button.
         /// </summary>
         public void OnPauseClick()
         {
@@ -121,7 +125,7 @@ namespace VideoMaker
         }
 
         /// <summary>
-        /// Function called when the user clicks the stop button. Stops the preview from showing.
+        /// Method called when the user clicks the stop button. Stops the preview from showing.
         /// </summary>
         public void OnStopClick()
         {
@@ -129,7 +133,7 @@ namespace VideoMaker
         }
 
         /// <summary>
-        /// Function that is called to configure the desktop UI buttons when the preview is started or ended.
+        /// Method that is called to configure the desktop UI buttons when the preview is started or ended.
         /// </summary>
         /// <param name="isPlaying">True if the video playback is active, false if not.</param>
         /// <param name="isPreview">True if the playback is in preview mode, false if not.</param>
@@ -148,13 +152,16 @@ namespace VideoMaker
         }
 
         /// <summary>
-        /// Function called when the value of the preview quality slider changes, used to change the UI in response.
+        /// Method called when the value of the preview quality slider changes, used to change the UI in response.
         /// </summary>
         public void OnQualSliderValChanged()
         {
             _cameraController.PreviewQuality = PreviewQualitySlider.value;
         }
-
+		
+		/// <summary>
+        /// Set-up UI elements for video playback.
+        /// </summary>
         private void StartPlayback(string statusText, bool isPreview)
         {
             StatusText.text = statusText;
@@ -164,6 +171,10 @@ namespace VideoMaker
             ConfigureUIForPreview(true, isPreview);
         }
         
+        /// <summary>
+        /// Set UI for export playback mode and start export playback.
+		/// This method is called after FFmpeg validation.
+        /// </summary>
         private void StartExport()
         {
             StartPlayback(ExportMessage, false);
@@ -177,7 +188,12 @@ namespace VideoMaker
             NotFffmpeg,
             ExeError,
         }
-
+        
+        /// <summary>
+        /// Test if FFmpeg executable is actually FFmpeg and functions as expected.
+        /// This method assumes the path to the FFmpeg executable is valid.
+        /// </summary>
+        /// <returns>Result of the test.</returns>
         private FfmpegTestResults TestFfmpegExe()
         {
             try
@@ -213,6 +229,9 @@ namespace VideoMaker
             }
         }
         
+        /// <summary>
+        /// Test if Ffmpeg is valid (first path, then executable) and start export playback if it is.
+        /// </summary>
         public void ValidateFfmpegPath()
         {
             _ffmpegPath = PlayerPrefs.GetString("FfmpegPath");
@@ -266,8 +285,12 @@ namespace VideoMaker
                 }
             });
         }
-
-        //Taken from CanvassDesktop.BrowseImageFile
+        
+        /// <summary>
+        /// Open a file browser to find and select the video script file.
+        /// 
+        /// Taken from CanvassDesktop.BrowseImageFile
+        /// </summary>
         public void BrowseVideoScriptFile()
         {
             string lastPath = PlayerPrefs.GetString("LastPathVideo");
@@ -299,7 +322,7 @@ namespace VideoMaker
         }
         
         /// <summary>
-        /// Function called when the user presses the reload button on the desktop UI.
+        /// Method called when the user presses the reload button on the desktop UI.
         /// </summary>
         public void ReloadVideoScriptFile()
         {
@@ -310,6 +333,10 @@ namespace VideoMaker
             LoadVideoScriptFile(_currentFile);
         }
         
+        /// <summary>
+        /// Method to load a video script file given the filepath.
+        /// </summary>
+        /// <param name="path">Filepath of the video script file.</param>
         private void LoadVideoScriptFile(string path)
         {
             if (path == null)
@@ -368,12 +395,24 @@ namespace VideoMaker
             _cameraController.VideoScript = videoScript;
             PlayContainer.SetActive(true);
         }
-
+        
+        /// <summary>
+        /// Method connected to the PlabackUpdated event of the VideoCameraController.
+        /// Updates the playback progress bar.
+        /// </summary>
+        /// <param name="sender">Sender of the signal.</param>
+        /// <param name="e">EventArgs for the signal, including the progress fraction.</param>
         private void OnPlaybackUpdated(object sender, VideoCameraController.PlaybackUpdatedEventArgs e)
         {
             _progressSlider.value = e.Progress;
         }
-
+        
+        /// <summary>
+        /// Method connected to the PlaybackFinished event of the VideoCameraController.
+        /// Used to update the UI state for no current video playback.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void OnPlaybackFinshed(object sender, EventArgs e)
         {
             ProgressBar.SetActive(false);
@@ -385,7 +424,13 @@ namespace VideoMaker
             _pauseButton.interactable = true;
             _stopButton.interactable = true;
         }
-
+        
+        /// <summary>
+        /// Method connected to the PlaybackUnstoppable event of the VideoCameraController.
+        /// This turns of interactability for the pause/resume and stop button. 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void OnPlaybackUnstoppable(object sender, EventArgs e)
         {
             _pauseButton.interactable = false;
