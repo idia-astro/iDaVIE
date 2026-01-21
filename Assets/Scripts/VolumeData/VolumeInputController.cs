@@ -245,19 +245,19 @@ public class VolumeInputController : MonoBehaviour
         _quickMenuAction.AddOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.RightHand);
         _hands[0].uiInteractAction.AddOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
         _hands[1].uiInteractAction.AddOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
-        // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.AddOnStateDownListener(OnMenuUpPressed, SteamVR_Input_Sources.LeftHand);
-        // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.AddOnStateDownListener(OnMenuUpPressed, SteamVR_Input_Sources.RightHand);
-        // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateDownListener(OnMenuDownPressed, SteamVR_Input_Sources.LeftHand);
-        // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateDownListener(OnMenuDownPressed, SteamVR_Input_Sources.RightHand);
-        // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuLeft")?.AddOnStateDownListener(OnMenuLeftPressed, SteamVR_Input_Sources.LeftHand);
-        // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuLeft")?.AddOnStateDownListener(OnMenuLeftPressed, SteamVR_Input_Sources.RightHand);
-        // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.AddOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.LeftHand);
-        // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.AddOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.RightHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.AddOnStateDownListener(OnMenuUpPressed, SteamVR_Input_Sources.LeftHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.AddOnStateDownListener(OnMenuUpPressed, SteamVR_Input_Sources.RightHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateDownListener(OnMenuDownPressed, SteamVR_Input_Sources.LeftHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateDownListener(OnMenuDownPressed, SteamVR_Input_Sources.RightHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuLeft")?.AddOnStateDownListener(OnMenuLeftPressed, SteamVR_Input_Sources.LeftHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuLeft")?.AddOnStateDownListener(OnMenuLeftPressed, SteamVR_Input_Sources.RightHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.AddOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.LeftHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.AddOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.RightHand);
 
-        // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.AddOnStateUpListener(OnMenuUpReleased, SteamVR_Input_Sources.LeftHand);
-        // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.AddOnStateUpListener(OnMenuUpReleased, SteamVR_Input_Sources.RightHand);
-        // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateUpListener(OnMenuDownReleased, SteamVR_Input_Sources.LeftHand);
-        // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateUpListener(OnMenuDownReleased, SteamVR_Input_Sources.RightHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.AddOnStateUpListener(OnMenuUpReleased, SteamVR_Input_Sources.LeftHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.AddOnStateUpListener(OnMenuUpReleased, SteamVR_Input_Sources.RightHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateUpListener(OnMenuDownReleased, SteamVR_Input_Sources.LeftHand);
+        SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.AddOnStateUpListener(OnMenuDownReleased, SteamVR_Input_Sources.RightHand);
 
         // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.AddOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.LeftHand);
         // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.AddOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.RightHand);
@@ -360,14 +360,14 @@ public class VolumeInputController : MonoBehaviour
             _quickMenuAction.RemoveOnChangeListener(OnQuickMenuChanged, SteamVR_Input_Sources.RightHand);
             _hands[0].uiInteractAction.RemoveOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
             _hands[1].uiInteractAction.RemoveOnStateDownListener(OnUiInteractDown, SteamVR_Input_Sources.Any);
-            // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.RemoveOnStateDownListener(OnMenuUpPressed, SteamVR_Input_Sources.LeftHand);
-            // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.RemoveOnStateDownListener(OnMenuUpPressed, SteamVR_Input_Sources.RightHand);
-            // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.RemoveOnStateDownListener(OnMenuDownPressed, SteamVR_Input_Sources.LeftHand);
-            // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.RemoveOnStateDownListener(OnMenuDownPressed, SteamVR_Input_Sources.RightHand);
-            // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuLeft")?.RemoveOnStateDownListener(OnMenuLeftPressed, SteamVR_Input_Sources.LeftHand);
-            // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuLeft")?.RemoveOnStateDownListener(OnMenuLeftPressed, SteamVR_Input_Sources.RightHand);
-            // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.RemoveOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.LeftHand);
-            // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.RemoveOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.RightHand);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.RemoveOnStateDownListener(OnMenuUpPressed, SteamVR_Input_Sources.LeftHand);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuUp")?.RemoveOnStateDownListener(OnMenuUpPressed, SteamVR_Input_Sources.RightHand);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.RemoveOnStateDownListener(OnMenuDownPressed, SteamVR_Input_Sources.LeftHand);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuDown")?.RemoveOnStateDownListener(OnMenuDownPressed, SteamVR_Input_Sources.RightHand);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuLeft")?.RemoveOnStateDownListener(OnMenuLeftPressed, SteamVR_Input_Sources.LeftHand);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuLeft")?.RemoveOnStateDownListener(OnMenuLeftPressed, SteamVR_Input_Sources.RightHand);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.RemoveOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.LeftHand);
+            SteamVR_Input.GetAction<SteamVR_Action_Boolean>("MenuRight")?.RemoveOnStateDownListener(OnMenuRightPressed, SteamVR_Input_Sources.RightHand);
             // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.RemoveOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.LeftHand);
             // SteamVR_Input.GetAction<SteamVR_Action_Boolean>("InteractUI")?.RemoveOnChangeListener(OnTriggerChanged, SteamVR_Input_Sources.RightHand);
         }
@@ -388,91 +388,91 @@ public class VolumeInputController : MonoBehaviour
         }
     }
 
-    // private void OnMenuUpPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
-    // {
-    //     if(_shapeSelection && fromSource == PrimaryHand) {
-    //         ShowSelectableShape(shapesManager.GetNextShape());
-    //         scalingDown = false;
-    //         scalingUp = true;
-    //     }
-    //     else if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
-    //     {
-    //         IncreaseBrushSize();
-    //     }
+    private void OnMenuUpPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        if(_shapeSelection && fromSource == PrimaryHand) {
+            // ShowSelectableShape(shapesManager.GetNextShape());
+            scalingDown = false;
+            scalingUp = true;
+        }
+        else if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
+        {
+            IncreaseBrushSize();
+        }
 
-    //     else if (fromSource == PrimaryHand && scrollSelected)
-    //     {
-    //         scrollDown = false;
-    //         scrollUp = true;
-    //     }
-    // }
+        else if (fromSource == PrimaryHand && scrollSelected)
+        {
+            scrollDown = false;
+            scrollUp = true;
+        }
+    }
 
-    // private void OnMenuUpReleased(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
-    // {
-    //     if (fromSource == PrimaryHand && scrollSelected)
-    //     {
-    //         scrollUp = false;
-    //     }
-    //     else if(fromSource == PrimaryHand && _shapeSelection) {
-    //         scalingUp = false;
-    //         scalingTimer = 0f;
-    //     }
-    // }
+    private void OnMenuUpReleased(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        if (fromSource == PrimaryHand && scrollSelected)
+        {
+            scrollUp = false;
+        }
+        else if(fromSource == PrimaryHand && _shapeSelection) {
+            scalingUp = false;
+            scalingTimer = 0f;
+        }
+    }
 
-    // private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
-    // {
-    //     if(_shapeSelection && fromSource == PrimaryHand) {
-    //         ShowSelectableShape(shapesManager.GetPreviousShape());
-    //         scalingUp = false;
-    //         scalingDown = true;
-    //     }
-    //     else if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
-    //     {
-    //         DecreaseBrushSize();
-    //     }
-    //     else if (fromSource == PrimaryHand && scrollSelected)
-    //     {
-    //         scrollUp = false;
-    //         scrollDown = true;
-    //     }
-    // }
+    private void OnMenuDownPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        if(_shapeSelection && fromSource == PrimaryHand) {
+            // ShowSelectableShape(shapesManager.GetPreviousShape());
+            scalingUp = false;
+            scalingDown = true;
+        }
+        else if (fromSource == PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
+        {
+            DecreaseBrushSize();
+        }
+        else if (fromSource == PrimaryHand && scrollSelected)
+        {
+            scrollUp = false;
+            scrollDown = true;
+        }
+    }
 
-    // private void OnMenuDownReleased(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
-    // {
-    //     if (fromSource == PrimaryHand && scrollSelected)
-    //     {
-    //         scrollDown = false;
-    //     }
-    //     else if(fromSource == PrimaryHand && _shapeSelection) {
-    //         scalingDown = false;
-    //         scalingTimer = 0f;
-    //     }
-    // }
+    private void OnMenuDownReleased(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        if (fromSource == PrimaryHand && scrollSelected)
+        {
+            scrollDown = false;
+        }
+        else if(fromSource == PrimaryHand && _shapeSelection) {
+            scalingDown = false;
+            scalingTimer = 0f;
+        }
+    }
 
-    // private void OnMenuLeftPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
-    // {
-    //     if(fromSource == PrimaryHand && _shapeSelection) {
-    //         shapesManager.ChangeShapeMode();
-    //         return;
-    //     }
+    private void OnMenuLeftPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        // if(fromSource == PrimaryHand && _shapeSelection) {
+        //     shapesManager.ChangeShapeMode();
+        //     return;
+        // }
 
-    //     if (fromSource != PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
-    //     {
-    //         UndoBrushStroke(fromSource);
-    //     }
-    // }
+        if (fromSource != PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
+        {
+            UndoBrushStroke(fromSource);
+        }
+    }
     
-    // private void OnMenuRightPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
-    // {
-	// 	if(fromSource == PrimaryHand && _shapeSelection) {
-    //         shapesManager.ChangeShapeMode();
-    //         return;
-    //     }
-    //     if (fromSource != PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
-    //     {
-    //         RedoBrushStroke(fromSource);  
-    //     }
-    // }
+    private void OnMenuRightPressed(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+		if(fromSource == PrimaryHand && _shapeSelection) {
+            // shapesManager.ChangeShapeMode();
+            return;
+        }
+        if (fromSource != PrimaryHand && InteractionStateMachine.State == InteractionState.IdlePainting)
+        {
+            RedoBrushStroke(fromSource);  
+        }
+    }
 
     public void RedoBrushStroke(SteamVR_Input_Sources fromSource)
     {

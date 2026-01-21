@@ -87,18 +87,18 @@ public class PaintMenuController : MonoBehaviour
         {
             if (_topPanelText != null) _topPanelText.text = "Erase Mode";
         }
-        // else if (_volumeInputController.SourceId <= 0)
-        // {
-        //     _topPanelText.text = "Please select a Source ID to paint";
-        //     _shapeSelectionButton.GetComponent<Button>().enabled = false;
-        //     _shapeSelectionButton.GetComponent<Image>().color = Color.gray;
-        // }
-        // else
-        // {
-        //     _topPanelText.text = $"Paint Mode (Source ID {_volumeInputController.SourceId})";
-        //     _shapeSelectionButton.GetComponent<Button>().enabled = true;
-        //     _shapeSelectionButton.GetComponent<Image>().color = Color.white;
-        // }
+        else if (_volumeInputController.SourceId <= 0)
+        {
+            _topPanelText.text = "Please select a Source ID to paint";
+            // _shapeSelectionButton.GetComponent<Button>().enabled = false;
+            // _shapeSelectionButton.GetComponent<Image>().color = Color.gray;
+        }
+        else
+        {
+            _topPanelText.text = $"Paint Mode (Source ID {_volumeInputController.SourceId})";
+            // _shapeSelectionButton.GetComponent<Button>().enabled = true;
+            // _shapeSelectionButton.GetComponent<Image>().color = Color.white;
+        }
 
     }
     
