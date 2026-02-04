@@ -820,7 +820,7 @@ public class VolumeInputController : MonoBehaviour
             if (ScrollObject != null)
             {
                 var handler = ScrollObject.GetComponent<CustomDragHandler>();
-                if (handler != null) handler.MoveDown();
+                handler?.MoveDown();
             }
         }
         if (scrollUp)
@@ -828,7 +828,7 @@ public class VolumeInputController : MonoBehaviour
             if (ScrollObject != null)
             {
                 var handler = ScrollObject.GetComponent<CustomDragHandler>();
-                if (handler != null) handler.MoveUp();
+                handler?.MoveUp();
             }
         }
 

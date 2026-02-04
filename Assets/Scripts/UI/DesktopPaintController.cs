@@ -335,12 +335,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     {
         Destroy(sliceIndicator);
         Destroy(sliceCamera);
-        var slider = sliceSlider?.GetComponent<Slider>();
-        if (slider != null)
-        {
-            // avoid invoking callbacks while disabling
-            slider.SetValueWithoutNotify(0);
-        }
+        sliceSlider?.GetComponent<Slider>().SetValueWithoutNotify(0);
     }
 
 
@@ -356,7 +351,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     //Updates the displayed texture with the current settings
     public void UpdateTexture()
     {
-        if (regionCube == null)
+        if (regionCube is null)
         {
             Debug.LogWarning("UpdateTexture called but regionCube is null");
             rawImage.texture = null;
@@ -369,7 +364,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         currentRegionSlice = GetSlice(regionCube, axis, sliceIndex);
         currentMaskSlice = GetFloatSlice(maskCube, axis, sliceIndex);
         rawImage.texture = currentRegionSlice;
-        if (currentRegionSlice != null)
+        if (currentRegionSlice is null)
         {
             HighlightMask();
             sliceText.text = "" + (sliceIndex + 1); //+1 so it does not start on 0

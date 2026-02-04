@@ -65,7 +65,7 @@ public class ToastNotification
                 Initialize();
             }
 
-            if (spawnedItem == null)
+            if (spawnedItem is null)
             {
                 Debug.LogWarning("ToastNotification: failed to create spawnedItem; aborting notification processing.");
                 break;
@@ -73,20 +73,13 @@ public class ToastNotification
 
             var note = notifications[0];
             var topPanel = spawnedItem.transform.Find("TopPanel");
-            if (topPanel != null)
-            {
-                var img = topPanel.GetComponent<Image>();
-                if (img != null) img.color = note.bgColor;
+            var img = topPanel?.GetComponent<Image>();
+            img?.color = note.bgColor;
 
-                var textTransform = topPanel.Find("Text");
-                var textComp = textTransform != null ? textTransform.GetComponent<TextMeshProUGUI>() : null;
-                if (textComp != null)
-                {
-                    textComp.text = note.text;
-                    textComp.color = note.textColor;
-                }
-            }
-
+            var textTransform = topPanel?.Find("Text");
+            var textComp = textTransform?.GetComponent<TextMeshProUGUI>();
+            textComp?.text = note.text;
+            textComp?.color = note.textColor;
             notifications.RemoveAt(0);
         }
     }
@@ -133,8 +126,7 @@ public class ToastNotification
             staticToastNotification = gameObject.AddComponent<StaticToastNotification>();
         }
 
-        if (_volumeInputController == null)
-            _volumeInputController = GameObject.FindObjectOfType<VolumeInputController>();
+        _volumeInputController ??= GameObject.FindObjectOfType<VolumeInputController>();
         if (_volumeInputController == null)
         {
             Debug.LogWarning("ToastNotification.Initialize: VolumeInputController not found; cannot show toast.");
@@ -176,14 +168,12 @@ public class ToastNotification
         spawnedItem.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
 
         var counterText = spawnedItem.transform.Find("CounterContainer")?.Find("Counter")?.Find("Text")?.GetComponent<TextMeshProUGUI>();
-        if (counterText != null)
-            counterText.text = notifications.Count.ToString();
+        counterText?.text = notifications.Count.ToString();
 
         var canvasGroup = spawnedItem.GetComponent<CanvasGroup>();
-        if (canvasGroup != null) canvasGroup.alpha = 0;
+        canvasGroup?.alpha = 0;
 
-        if (staticToastNotification != null)
-            staticToastNotification.StartCoroutine(FadeInToast());
+        staticToastNotification?.StartCoroutine(FadeInToast());
     }
 
     public static void ShowToast(string message, Color bgColor, Color textColor)
