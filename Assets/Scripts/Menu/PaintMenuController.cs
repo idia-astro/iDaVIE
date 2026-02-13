@@ -55,9 +55,14 @@ public class PaintMenuController : MonoBehaviour
         _dataSets = volumeDatasetRendererObj?.GetComponentsInChildren<VolumeDataSetRenderer>(true);
         _volumeInputController = FindObjectOfType<VolumeInputController>();
         
-        _volumeInputController.InteractionStateMachine is { } interactionStateMachine 
-        ? interactionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeEnabled)
-        : Debug.LogWarning("PaintMenuController: VolumeInputController or its InteractionStateMachine is null on enable.");
+        if (_volumeInputController?.InteractionStateMachine is { } interactionStateMachine)
+        {
+            interactionStateMachine.Fire(VolumeInputController.InteractionEvents.PaintModeEnabled);
+        }
+        else
+        {
+            Debug.LogWarning("PaintMenuController: VolumeInputController or its InteractionStateMachine is null on enable.");
+        }
 
         var topTextTransform = gameObject.transform.Find("TopPanel")?.Find("Text");
         _topPanelText = topTextTransform?.GetComponent<Text>();
@@ -75,13 +80,13 @@ public class PaintMenuController : MonoBehaviour
             _activeDataSet = firstActive;
         }
 
-        if (!_volumeInputController?.AdditiveBrush)
+        if (!_volumeInputController.AdditiveBrush)
         {
-            _topPanelText?.text = "Erase Mode";
+            _topPanelText.text = "Erase Mode";
         }
         else if (_volumeInputController.SourceId <= 0)
         {
-            _topPanelText?.text = "Please select a Source ID to paint";
+            _topPanelText.text = "Please select a Source ID to paint";
             // _shapeSelectionButton.GetComponent<Button>().enabled = false;
             // _shapeSelectionButton.GetComponent<Image>().color = Color.gray;
         }
