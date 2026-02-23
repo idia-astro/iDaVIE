@@ -97,6 +97,8 @@ public class CanvassDesktop : MonoBehaviour
 
     public MenuBarBehaviour MenuBarBehaviour;
 
+    public CubeBenchmark benchmark;
+
     private void Awake()
     {
         // Change the culture to invariant to avoid issues with parsing floats
@@ -538,6 +540,10 @@ public class CanvassDesktop : MonoBehaviour
 
     public void LoadFileFromFileSystem()
     {
+        int nx = (int)axisSize[1];
+        int ny = (int)axisSize[2];
+        int nz = (int)axisSize[3];
+        benchmark.StartLoadBenchmark(Path.GetFileName(imagePath), nx, ny, nz);
         StartCoroutine(LoadCubeCoroutine(imagePath, maskPath));
     }
 
@@ -720,6 +726,9 @@ public class CanvassDesktop : MonoBehaviour
         progressBar.GetComponent<Slider>().value = 6;
         yield return new WaitForSeconds(0.001f);
         postLoadFileFileSystem();
+        var rdr = newCube.GetComponent<VolumeDataSetRenderer>();
+        benchmark.EndLoadBenchmark(rdr.DownsampleX, rdr.DownsampleY, rdr.DownsampleZ);
+        benchmark.BeginFpsBenchmark(newCube.transform);
     }
 
     public void OnRatioDropdownValueChanged(int optionIndex)

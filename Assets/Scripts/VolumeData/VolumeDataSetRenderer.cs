@@ -224,6 +224,9 @@ namespace VolumeData
         public IntPtr AstFrame { get =>_dataSet.AstFrameSet; } 
         public string StdOfRest => _dataSet.GetStdOfRest();
 
+        public int DownsampleX => _currentXFactor;
+        public int DownsampleY => _currentYFactor;
+        public int DownsampleZ => _currentZFactor;
         private int _currentXFactor, _currentYFactor, _currentZFactor;
         public bool IsFullResolution => _currentXFactor * _currentYFactor * _currentZFactor == 1;
 
