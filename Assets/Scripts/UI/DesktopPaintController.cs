@@ -335,7 +335,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     {
         Destroy(sliceIndicator);
         Destroy(sliceCamera);
-        sliceSlider.GetComponent<Slider>().value = 0;
+        sliceSlider?.GetComponent<Slider>().SetValueWithoutNotify(0);
     }
 
 
@@ -351,16 +351,39 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     //Updates the displayed texture with the current settings
     public void UpdateTexture()
     {
+        if (regionCube is null)
+        {
+            Debug.LogWarning("UpdateTexture called but regionCube is null");
+            rawImage.texture = null;
+            sliceText.text = "";
+            currentRegionSlice = null;
+            currentMaskSlice = null;
+            return;
+        }
+
         currentRegionSlice = GetSlice(regionCube, axis, sliceIndex);
         currentMaskSlice = GetFloatSlice(maskCube, axis, sliceIndex);
         rawImage.texture = currentRegionSlice;
-        HighlightMask();
-        sliceText.text = "" + (sliceIndex + 1); //+1 so it does not start on 0
+        if (currentRegionSlice is null)
+        {
+            HighlightMask();
+            sliceText.text = "" + (sliceIndex + 1); //+1 so it does not start on 0
+        }
+        else
+        {
+            sliceText.text = "";
+        }
     }
 
     //return the slice from a texture3d based on the selected axis and index
     public Texture2D GetSlice(Texture3D texture3D, int axis, int sliceIndex)
     {
+        if (texture3D == null)
+        {
+            Debug.LogWarning("GetSlice called with null Texture3D");
+            return null;
+        }
+
         int width = texture3D.width;
         int height = texture3D.height;
         int depth = texture3D.depth;
@@ -459,6 +482,12 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
     //Get pixel values of a slice
     public float[,] GetFloatSlice(Texture3D texture3D, int axis, int sliceIndex)
     {
+        if (texture3D == null)
+        {
+            Debug.LogWarning("GetFloatSlice called with null Texture3D");
+            return null;
+        }
+
         int width = texture3D.width;
         int height = texture3D.height;
         int depth = texture3D.depth;

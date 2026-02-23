@@ -56,18 +56,31 @@ public class ToastNotification
 
     public static void Update()
     {
-        for (int i=0; i<notifications.Count;i++)
+        // Process queued notifications one at a time. Be defensive: initialization may fail,
+        // so verify `spawnedItem` and children before accessing.
+        while (notifications.Count > 0)
         {
             if (GameObject.FindGameObjectWithTag("ToastNotification") == null)
             {
                 Initialize();
-
-                spawnedItem.transform.Find("TopPanel").gameObject.GetComponent<Image>().color = notifications[i].bgColor;
-                spawnedItem.transform.Find("TopPanel").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().text = notifications[i].text;
-                spawnedItem.transform.Find("TopPanel").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().color = notifications[i].textColor;
-
-                notifications.RemoveAt(0);
             }
+
+            if (spawnedItem is null)
+            {
+                Debug.LogWarning("ToastNotification: failed to create spawnedItem; aborting notification processing.");
+                break;
+            }
+
+            var note = notifications[0];
+            var topPanel = spawnedItem.transform.Find("TopPanel");
+            var img = topPanel?.GetComponent<Image>();
+            img?.color = note.bgColor;
+
+            var textTransform = topPanel?.Find("Text");
+            var textComp = textTransform?.GetComponent<TextMeshProUGUI>();
+            textComp?.text = note.text;
+            textComp?.color = note.textColor;
+            notifications.RemoveAt(0);
         }
     }
 
@@ -113,8 +126,30 @@ public class ToastNotification
             staticToastNotification = gameObject.AddComponent<StaticToastNotification>();
         }
 
+        _volumeInputController ??= GameObject.FindObjectOfType<VolumeInputController>();
         if (_volumeInputController == null)
-            _volumeInputController = GameObject.FindObjectOfType<VolumeInputController>();
+        {
+            Debug.LogWarning("ToastNotification.Initialize: VolumeInputController not found; cannot show toast.");
+            return;
+        }
+
+        if (Camera.main == null)
+        {
+            Debug.LogWarning("ToastNotification.Initialize: Camera.main is null; cannot position toast.");
+            return;
+        }
+
+        if (_volumeInputController.toastNotificationPrefab == null)
+        {
+            Debug.LogWarning("ToastNotification.Initialize: toastNotificationPrefab is null on VolumeInputController.");
+            return;
+        }
+
+        if (_volumeInputController.followHead == null)
+        {
+            Debug.LogWarning("ToastNotification.Initialize: followHead is null on VolumeInputController.");
+            return;
+        }
 
         Vector3 playerPos = Camera.main.transform.position;
         Vector3 playerDirection = Camera.main.transform.forward;
@@ -122,14 +157,23 @@ public class ToastNotification
         Vector3 spawnPos = playerPos + playerDirection * spawnDistance;
 
         spawnedItem = GameObject.Instantiate(_volumeInputController.toastNotificationPrefab, spawnPos, Quaternion.identity, _volumeInputController.followHead.transform);
+        if (spawnedItem == null)
+        {
+            Debug.LogWarning("ToastNotification.Initialize: Instantiate returned null spawnedItem.");
+            return;
+        }
+
         spawnedItem.transform.localRotation = new Quaternion(0, 0, 0,1);
         spawnedItem.transform.localPosition = new Vector3(-0.10f, 0.08f, spawnedItem.transform.localPosition.z);
         spawnedItem.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
 
-        spawnedItem.transform.Find("CounterContainer").Find("Counter").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().text = notifications.Count.ToString();
+        var counterText = spawnedItem.transform.Find("CounterContainer")?.Find("Counter")?.Find("Text")?.GetComponent<TextMeshProUGUI>();
+        counterText?.text = notifications.Count.ToString();
+
         var canvasGroup = spawnedItem.GetComponent<CanvasGroup>();
-        canvasGroup.alpha = 0;
-        staticToastNotification.StartCoroutine(FadeInToast());
+        canvasGroup?.alpha = 0;
+
+        staticToastNotification?.StartCoroutine(FadeInToast());
     }
 
     public static void ShowToast(string message, Color bgColor, Color textColor)
