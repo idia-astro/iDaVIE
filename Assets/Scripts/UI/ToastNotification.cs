@@ -74,12 +74,12 @@ public class ToastNotification
             var note = notifications[0];
             var topPanel = spawnedItem.transform.Find("TopPanel");
             var img = topPanel?.GetComponent<Image>();
-            img?.color = note.bgColor;
+            img.color = note.bgColor;
 
             var textTransform = topPanel?.Find("Text");
             var textComp = textTransform?.GetComponent<TextMeshProUGUI>();
-            textComp?.text = note.text;
-            textComp?.color = note.textColor;
+            textComp.text = note.text;
+            textComp.color = note.textColor;
             notifications.RemoveAt(0);
         }
     }
@@ -168,10 +168,10 @@ public class ToastNotification
         spawnedItem.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
 
         var counterText = spawnedItem.transform.Find("CounterContainer")?.Find("Counter")?.Find("Text")?.GetComponent<TextMeshProUGUI>();
-        counterText?.text = notifications.Count.ToString();
+        counterText.text = notifications.Count.ToString();
 
         var canvasGroup = spawnedItem.GetComponent<CanvasGroup>();
-        canvasGroup?.alpha = 0;
+        canvasGroup.alpha = 0;
 
         staticToastNotification?.StartCoroutine(FadeInToast());
     }

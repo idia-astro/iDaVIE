@@ -121,7 +121,7 @@ public class ShapeMenuController : MonoBehaviour
             return;
         }
         shapesManager.StartShapes();
-        _volumeInputController.ShowSelectableShape(shapesManager.GetCurrentShape());
+        // _volumeInputController.ShowSelectableShape(shapesManager.GetCurrentShape());
     }
 
     public void DeleteSelectedShapes() {
