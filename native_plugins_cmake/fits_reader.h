@@ -24,7 +24,7 @@
 
 #define DllExport __declspec (dllexport)
 
-#include <cfitsio/fitsio.h>
+#include <fitsio.h>
 #include <cstring>
 #include <iostream>
 #include <cstring>

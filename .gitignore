@@ -207,6 +207,9 @@ ipch/
 # Visual Studio Trace Files
 *.e2e
 
+# Visual Studio Code solution files
+*.slnx
+
 # TFS 2012 Local Workspace
 $tf/
 
