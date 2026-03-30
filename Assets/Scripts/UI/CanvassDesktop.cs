@@ -65,9 +65,35 @@ public class CanvassDesktop : MonoBehaviour
     private string _textPopUp = "";
     private VolumeInputController _volumeInputController;
     private VolumeCommandController _volumeCommandController;
+<<<<<<< Updated upstream
     private string _imagePath = "";
     private string _maskPath = "";
     private string _sourcesPath = "";
+=======
+    string imagePath = "";
+    string maskPath = "";
+    string sourcesPath = "";
+
+    private double imageNAxis = 0;
+    private double imageSize = 1;
+    private double maskNAxis = 0;
+    private double maskSize = 1;
+
+    IDictionary<string, string> _headerDictionary;
+
+    Dictionary<double, double> axisSize = null;
+    Dictionary<double, double> maskAxisSize = null;
+
+    private int ratioDropdownIndex = 0;
+
+    private ColorMapEnum activeColorMap = ColorMapEnum.None;
+
+    private Slider minThreshold;
+    private TextMeshProUGUI minThresholdLabel;
+
+    private Slider maxThreshold;
+    private TextMeshProUGUI maxThresholdLabel;
+>>>>>>> Stashed changes
     
     
     private int _hduSelectionIndex = 0;     //This is the index of the HDU selected in the dropdown. 0 often means HDU 1
@@ -354,11 +380,26 @@ public class CanvassDesktop : MonoBehaviour
             _axisSize = new Dictionary<double, double>();
             
 
+<<<<<<< Updated upstream
             //if there are more than 1 HDUs in the fits file, enable the dropdown and populate it with names
             FitsReader.FitsGetHduCount(fptr, out int hduNum, out status);
             var hduNames = new List<string>();
             var hduName = new StringBuilder(80);
             for (var i = 0; i < hduNum; i++)
+=======
+            List<double> list = new List<double>();
+
+            //set the path of selected file to the ui
+            informationPanelContent.gameObject.transform.Find("ImageFile_container").gameObject.transform.Find("ImageFilePath_text").GetComponent<TextMeshProUGUI>().text =
+                System.IO.Path.GetFileName(imagePath);
+
+            //visualize the header into the scroll view
+            string _header = "";
+            _headerDictionary = FitsReader.ExtractHeaders(fptr, out status);
+            FitsReader.FitsCloseFile(fptr, out status);
+
+            foreach (KeyValuePair<string, string> entry in _headerDictionary)
+>>>>>>> Stashed changes
             {
                 FitsReader.FitsMovabsHdu(fptr, i + 1, out _, out status);
                 hduName.Clear();
@@ -1111,7 +1152,7 @@ public class CanvassDesktop : MonoBehaviour
         }
         
         _volumeCommandController.AddDataSet(newCube.GetComponent<VolumeDataSetRenderer>());
-        StartCoroutine(newCube.GetComponent<VolumeDataSetRenderer>()._startFunc());
+        StartCoroutine(newCube.GetComponent<VolumeDataSetRenderer>()._startFunc(_headerDictionary));
 
         while (!newCube.GetComponent<VolumeDataSetRenderer>().started)
         {

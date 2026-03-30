@@ -230,6 +230,7 @@ namespace VolumeData
             return volumeDataSet;
         }
 
+<<<<<<< Updated upstream
         /// <summary>
         /// Function that retrives and loads the data from the actual file on the hard disk.
         /// </summary>
@@ -242,6 +243,9 @@ namespace VolumeData
         /// <param name="selectedHdu">The index of the HDU to be read.</param>
         /// <returns>A VolumeDataSet containing the data loaded from the file.</returns>
         public static VolumeDataSet LoadDataFromFitsFile(string fileName, int[] subBounds, int[] trueBounds, IntPtr imageDataPtr = default(IntPtr), int index2 = 2, int sliceDim = 1, int selectedHdu = 1)
+=======
+        public static VolumeDataSet LoadDataFromFitsFile(string fileName, IntPtr imageDataPtr = default(IntPtr), int index2 = 2, int sliceDim = 1, CubeLoadProfiler profiler = null)
+>>>>>>> Stashed changes
         {
             VolumeDataSet volumeDataSetRes = new VolumeDataSet();
             volumeDataSetRes.IsMask =  imageDataPtr != IntPtr.Zero;
@@ -278,7 +282,12 @@ namespace VolumeData
             {
                 Debug.Log("Warning... AstFrameSet Error. See Unity Editor logs");
             }
+<<<<<<< Updated upstream
             if (!volumeDataSetRes.IsMask)
+=======
+            profiler.LogMilestone("Update");
+            if (!volumeDataSet.IsMask)
+>>>>>>> Stashed changes
             {
                 volumeDataSetRes.HeaderDictionary = FitsReader.ExtractHeaders(fptr, out status);
                 volumeDataSetRes.ParseHeaderDict();
@@ -312,12 +321,25 @@ namespace VolumeData
                 FitsReader.FitsCloseFile(fptr, out status);
                 return null;
             }
+            profiler.LogMilestone("Update");
 
+<<<<<<< Updated upstream
             volumeDataSetRes.cubeSize = new long[cubeDimensions];
             Marshal.Copy(dataPtr, volumeDataSetRes.cubeSize, 0, cubeDimensions);
             
             // Check if the provided subset is wholly within the given file
             if (subBounds[1] > volumeDataSetRes.trueSize[1] || subBounds[3] > volumeDataSetRes.trueSize[3] || subBounds[5] > volumeDataSetRes.trueSize[5])
+=======
+            volumeDataSet.cubeSize = new long[cubeDimensions];
+            Marshal.Copy(dataPtr, volumeDataSet.cubeSize, 0, cubeDimensions);
+            profiler.LogMilestone("Update");
+
+            if (dataPtr != IntPtr.Zero)
+                FitsReader.FreeFitsPtrMemory(dataPtr);
+            long numberDataPoints = volumeDataSet.cubeSize[0] * volumeDataSet.cubeSize[1] * volumeDataSet.cubeSize[index2];
+            IntPtr fitsDataPtr = IntPtr.Zero;
+            if (volumeDataSet.IsMask)
+>>>>>>> Stashed changes
             {
                 Debug.Log("Fits Read cube error with subset bounds not possible!");
                 FitsReader.FitsCloseFile(fptr, out status);
@@ -334,6 +356,8 @@ namespace VolumeData
                     }
                     break;
                 }
+                profiler.LogMilestone("Update");
+
             }
             if (dataPtr != IntPtr.Zero)
                     FitsReader.FreeFitsPtrMemory(dataPtr);
@@ -346,11 +370,17 @@ namespace VolumeData
                 int[] finalPix = new int[cubeDimensions];
                 for (var i = 0; i < cubeDimensions; i++)
                 {
+<<<<<<< Updated upstream
                     if (i < 3)
                     {
                         startPix[i] = subBounds[i * 2];
                         finalPix[i] = subBounds[(i * 2) + 1];
                     }
+=======
+                    startPix[i] = 1;
+                    if (i < 4)
+                        finalPix[i] = (int)volumeDataSet.cubeSize[i];
+>>>>>>> Stashed changes
                     else
                     {
                         startPix[i] = 1;
@@ -375,7 +405,13 @@ namespace VolumeData
                 IntPtr finalPixPtr = Marshal.AllocHGlobal(sizeof(int) * finalPix.Length);
                 Marshal.Copy(startPix, 0, startPixPtr, startPix.Length);
                 Marshal.Copy(finalPix, 0, finalPixPtr, finalPix.Length);
+<<<<<<< Updated upstream
                 if (FitsReader.FitsReadSubImageInt16(fptr, cubeDimensions, index2, startPixPtr, finalPixPtr, numberDataPoints, out fitsDataPtr, out status) != 0)
+=======
+                profiler.LogMilestone("Update");
+
+                if (FitsReader.FitsReadSubImageFloat(fptr, cubeDimensions, startPixPtr, finalPixPtr, numberDataPoints, out fitsDataPtr, out status) != 0)
+>>>>>>> Stashed changes
                 {
                     Debug.Log($"Fits Read mask cube data error {FitsReader.FitsErrorMessage(status)}");
                     FitsReader.FitsCloseFile(fptr, out status);
@@ -427,6 +463,7 @@ namespace VolumeData
                     FitsReader.FitsCloseFile(fptr, out status);
                     return null;
                 }
+                profiler.LogMilestone("Update");
 
                 if (startPixPtr == IntPtr.Zero)
                     Marshal.FreeHGlobal(startPixPtr);
@@ -449,8 +486,15 @@ namespace VolumeData
                 Marshal.Copy(histogramPtr, volumeDataSetRes.FullHistogram, 0, histogramSize);
                 if (histogramPtr != IntPtr.Zero)
                     DataAnalysis.FreeDataAnalysisMemory(histogramPtr);
+<<<<<<< Updated upstream
                 volumeDataSetRes.HasFitsRestFrequency =
                     volumeDataSetRes.HeaderDictionary.ContainsKey("RESTFRQ") || volumeDataSetRes.HeaderDictionary.ContainsKey("RESTFREQ");
+=======
+                profiler.LogMilestone("Update");
+
+                volumeDataSet.HasFitsRestFrequency =
+                    volumeDataSet.HeaderDictionary.ContainsKey("RESTFRQ") || volumeDataSet.HeaderDictionary.ContainsKey("RESTFREQ");
+>>>>>>> Stashed changes
             }
 
             if (volumeDataSetRes.HasFitsRestFrequency)
@@ -482,8 +526,14 @@ namespace VolumeData
             volumeDataSetRes.AstFrameSet = astFrameSet;
             
             //Create alternate AstFrame with frequency or velocity depending on primary's unit
+<<<<<<< Updated upstream
             volumeDataSetRes.CreateAltSpecFrame();
             
+=======
+            volumeDataSet.CreateAltSpecFrame();
+            profiler.LogMilestone("Update");
+
+>>>>>>> Stashed changes
             //Check if AstFrameSet or AltSpecSet have velocity
             string primaryFrameZUnit = volumeDataSetRes.GetAstAttribute("System(3)");
             volumeDataSetRes.AstframeIsFreq = primaryFrameZUnit.Equals("FREQ") 
@@ -712,7 +762,7 @@ namespace VolumeData
         /// <param name="xDownsample"></param>
         /// <param name="yDownsample"></param>
         /// <param name="zDownsample"></param>
-        public void GenerateVolumeTexture(FilterMode textureFilter, int xDownsample, int yDownsample, int zDownsample)
+        public void GenerateVolumeTexture(FilterMode textureFilter, int xDownsample, int yDownsample, int zDownsample, CubeLoadProfiler profiler = null)
         {
             TextureFormat textureFormat;
             int elementSize;
@@ -738,6 +788,8 @@ namespace VolumeData
                     {
                         Debug.Log("Data cube downsample error!");
                     }
+                    if (profiler != null)
+                        profiler.LogMilestone("Mask cube downsampled");
                 }
                 else
                 {
@@ -746,6 +798,8 @@ namespace VolumeData
                     {
                         Debug.Log("Data cube downsample error!");
                     }
+                    if (profiler != null)
+                        profiler.LogMilestone("Data cube downsampled");
                 }
 
                 downsampled = true;

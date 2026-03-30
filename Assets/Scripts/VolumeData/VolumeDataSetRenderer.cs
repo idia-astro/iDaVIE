@@ -254,7 +254,9 @@ namespace VolumeData
         [Header("Benchmarking")]
         public bool RandomVolume = false;
         public int RandomCubeSize = 512;
-        
+        public CubeLoadProfiler CubeLoadProfiler;
+
+
         #region Material Property IDs
         private struct MaterialID
         {
@@ -350,13 +352,24 @@ namespace VolumeData
             }
         }
 
+
         public void Start()
         {
             started = false;
         }
 
-        public IEnumerator _startFunc()
+        public IEnumerator _startFunc(IDictionary<string, string> headerDictionary)
         {
+            int xdim, ydim, zdim;
+            xdim = int.Parse(headerDictionary["NAXIS1"]);
+            ydim = int.Parse(headerDictionary["NAXIS2"]);
+            zdim = int.Parse(headerDictionary["NAXIS3"]);
+            CubeLoadProfiler.StartBenchmark(
+                $"{Path.GetFileName(FileName)}_{xdim}x{ydim}x{zdim}",
+                xdim,
+                ydim,
+                zdim
+            );
             // Apply settings from config
             var config = Config.Instance;
             Debug.Log("Loading data for the new cube.");
@@ -370,6 +383,7 @@ namespace VolumeData
             ColorMap = config.defaultColorMap;
             ScalingType = config.defaultScalingType;
             VignetteFadeEnd = config.tunnellingVignetteEnd;
+<<<<<<< Updated upstream
             _videoCursorLocSize = config.videoCursorLocHighlightSize;
             
             if (RandomVolume)
@@ -379,36 +393,59 @@ namespace VolumeData
                 _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, subsetBounds, trueBounds, IntPtr.Zero, CubeDepthAxis, CubeSlice, SelectedHdu);
 
             volumeInputController = FindObjectOfType<VolumeInputController>();
+=======
+            CubeLoadProfiler.LogMilestone("Update");
+
+
+            if (RandomVolume)
+                _dataSet = VolumeDataSet.LoadRandomFitsCube(0, RandomCubeSize, RandomCubeSize, RandomCubeSize, RandomCubeSize);
+            else
+                _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, IntPtr.Zero, CubeDepthAxis, CubeSlice, CubeLoadProfiler);
+            CubeLoadProfiler.LogMilestone("Data file loaded");
+            _volumeInputController = FindObjectOfType<VolumeInputController>();
+>>>>>>> Stashed changes
             _featureManager = GetComponentInChildren<FeatureSetManager>();
             if (_featureManager == null)
                 Debug.Log($"No FeatureManager attached to VolumeDataSetRenderer. Attach prefab for use of Features.");
             GenerateDownsampledCube();
+            CubeLoadProfiler.LogMilestone("Data texture built");
             _baseXFactor = _currentXFactor;
             _baseYFactor = _currentYFactor;
             _baseZFactor = _currentZFactor;
             ScaleMax = _dataSet.MaxValue;
             ScaleMin = _dataSet.MinValue;
-            
+            CubeLoadProfiler.LogMilestone("Update");
+
             Debug.Log("Loading image data complete, loading data for the mask.");
             StartCoroutine(updateStatus("Loading mask...", 4));
             yield return new WaitForSeconds(0.001f);
 
             if (!String.IsNullOrEmpty(MaskFileName))
             {
+<<<<<<< Updated upstream
                 //subsetBounds guaranteed to be full cube if not selected by user
                 _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, subsetBounds, trueBounds, _dataSet.FitsData);
+=======
+                _maskDataSet = VolumeDataSet.LoadDataFromFitsFile(MaskFileName, _dataSet.FitsData, 2, 1, CubeLoadProfiler);
+                CubeLoadProfiler.LogMilestone("Mask file loaded");
+>>>>>>> Stashed changes
 
                 // Mask data is always point-filtered
-                _maskDataSet.GenerateVolumeTexture(FilterMode.Point, XFactor, YFactor, ZFactor);
+                _maskDataSet.GenerateVolumeTexture(FilterMode.Point, XFactor, YFactor, ZFactor, CubeLoadProfiler);
+                CubeLoadProfiler.LogMilestone("Mask texture built");
             }
 
             Debug.Log("Loading mask data complete.");
             StartCoroutine(updateStatus("Preparing UI...", 5));
+            CubeLoadProfiler.LogMilestone("Update");
+
             yield return new WaitForSeconds(0.001f);
 
             _renderer = GetComponent<MeshRenderer>();
             _materialInstance = Instantiate(RayMarchingMaterial);
             _materialInstance.SetTexture(MaterialID.DataCube, _dataSet.DataCube);
+            //CubeLoadProfiler.LogMilestone("Data texture sent to GPU", 2);
+
             _materialInstance.SetInt(MaterialID.NumColorMaps, ColorMapUtils.NumColorMaps);
             _materialInstance.SetFloat(MaterialID.FoveationStart, FoveationStart);
             _materialInstance.SetFloat(MaterialID.FoveationEnd, FoveationEnd);
@@ -418,6 +455,7 @@ namespace VolumeData
             {
                 _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.DataCube);
             }
+            CubeLoadProfiler.LogMilestone("Textures sent to GPU");
             _renderer.material = _materialInstance;
 
             // Set initial values (for resetting later)
@@ -433,9 +471,10 @@ namespace VolumeData
                 Center = Vector3.zero,
                 Bounds = Vector3.one
             };
-            
+
             _cubeOutline.Activate();
             Feature.SetCubeColors(_cubeOutline, Color.white, true);
+            CubeLoadProfiler.LogMilestone("Update");
 
             // Voxel axes
             CursorVoxel = new Vector3Int(-1, -1, -1);
@@ -447,6 +486,7 @@ namespace VolumeData
                 Bounds = Vector3.one
             };
 
+<<<<<<< Updated upstream
             _vidCursorLocVoxel = new Vector3Int(-1, -1, -1);
             _videoCursorPositionOutline = new CuboidLine
             {
@@ -456,6 +496,8 @@ namespace VolumeData
                 Bounds = Vector3.one
             };
             
+=======
+>>>>>>> Stashed changes
             // Region axes
             _regionOutline = new CuboidLine
             {
@@ -464,7 +506,7 @@ namespace VolumeData
                 Color = Color.green,
                 Bounds = Vector3.one
             };
-            
+
             _measuringLine = new PolyLine
             {
                 Parent = transform,
@@ -479,6 +521,7 @@ namespace VolumeData
                     var maskFeatureSet = _featureManager.CreateMaskFeatureSet();
                     _maskDataSet?.FillFeatureSet(maskFeatureSet);
                 }
+                CubeLoadProfiler.LogMilestone("Mask features generated");
             }
 
             //No wcs info if AstFrameSet has only 1 frame
@@ -502,7 +545,7 @@ namespace VolumeData
             {
                 Debug.Log("Problem loading WCS.");
             }
-            
+
             if (_dataSet.HasFitsRestFrequency)
             {
                 RestFrequencyGHz = _dataSet.FitsRestFrequency;
@@ -511,9 +554,10 @@ namespace VolumeData
             {
                 _restFrequencyGHz = 0.0;
             }
-            
+            CubeLoadProfiler.LogMilestone("Update");
+
             PopulateRestFrequenyList();
-            
+
             _momentMapRenderer = gameObject.AddComponent(typeof(MomentMapRenderer)) as MomentMapRenderer;
             if (_momentMapRenderer)
             {
@@ -524,15 +568,15 @@ namespace VolumeData
                 if (_maskDataSet != null)
                 {
                     _momentMapRenderer.MaskCube = _maskDataSet.DataCube;
-                }    
+                }
             }
-            
+
             if (IsFullResolution)
             {
                 CropToRegion(Vector3.one, new Vector3(_dataSet.XDim, _dataSet.YDim, _dataSet.ZDim));
                 IsCropped = false;
             }
-            
+
             Shader.WarmupAllShaders();
 
             CurrentCropMin = new Vector3Int(0, 0, 0);
@@ -540,6 +584,7 @@ namespace VolumeData
 
             started = true;
             yield return 0;
+            CubeLoadProfiler.EndBenchmark(XFactor, YFactor, ZFactor);
         }
 
         /// <summary>
@@ -571,7 +616,7 @@ namespace VolumeData
                 _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
             }
 
-            _dataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
+            _dataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor, CubeLoadProfiler);
             _currentXFactor = XFactor;
             _currentYFactor = YFactor;
             _currentZFactor = ZFactor;
@@ -1160,7 +1205,7 @@ namespace VolumeData
                     _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
                 }
 
-                _maskDataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor);
+                _maskDataSet.GenerateVolumeTexture(TextureFilter, XFactor, YFactor, ZFactor, CubeLoadProfiler);
                 _materialInstance.SetTexture(MaterialID.MaskCube, _maskDataSet.DataCube);
                 
                 // Re-crop both datasets to ensure that they match correctly
