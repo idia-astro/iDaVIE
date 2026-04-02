@@ -80,9 +80,9 @@ public class PaintMenuController : MonoBehaviour
             _activeDataSet = firstActive;
         }
 
-        if (!_volumeInputController?.AdditiveBrush)
+        if (!_volumeInputController.AdditiveBrush)
         {
-            _topPanelText?.text = "Erase Mode";
+            _topPanelText.text = "Erase Mode";
         }
         else if (_volumeInputController.SourceId <= 0)
         {
