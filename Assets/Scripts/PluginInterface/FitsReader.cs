@@ -262,9 +262,13 @@ public class FitsReader
     public static extern int FitsCopyFile(IntPtr infptr, IntPtr outfptr, out int status);
 
     [DllImport("idavie_native")]
+    public static extern int FitsCopyImageSection(string inFile, string outFile, string section, string historyTimeStamp, int selectedHDU, out int status);
+
+    [DllImport("idavie_native")]
     public static extern int FitsCopyCubeSection(IntPtr infptr, IntPtr outfptr, string section, out int status);
 
     [DllImport("idavie_native")]
+    [Obsolete("Replaced by FitsWriteSubImageInt16, which is more flexible.")]
     public static extern int FitsWriteImageInt16(IntPtr fptr, int dims, long nelements, IntPtr array, out int status);
 
     [DllImport("idavie_native")]

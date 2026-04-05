@@ -54,6 +54,9 @@ int FitsOpenFileReadWrite(fitsfile** fptr, char* filename, int* status)
 
 int FitsCreateFile(fitsfile** fptr, char* filename, int* status)
 {
+    std::stringstream debug;
+    debug << "Creating file " << filename << ".";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
     return fits_create_file(fptr, filename, status);
 }
 
@@ -172,6 +175,84 @@ int FitsCopyHeader(fitsfile *infptr, fitsfile *outfptr, int *status)
 int FitsCopyFile(fitsfile *infptr, fitsfile *outfptr, int *status)
 {
     int success = fits_copy_file(infptr, outfptr, 1, 1, 1, status);
+    return success;
+}
+
+int FitsCopyImageSection(char * inFile, char * outFile, char * section, char * historyTimeStamp, int selectedHDU, int * status)
+{
+    std::stringstream debug;
+    debug << "Copying image section " << section << " from " << inFile << " to " << outFile << ", targeting HDU #" << selectedHDU << ".";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    fitsfile * infptr;
+    fitsfile * outfptr;
+    int success = FitsOpenFileReadOnly(&infptr, inFile, status);
+    if (success != 0)
+    {
+        debug.clear();
+        debug.str("");
+        debug << "Failed attempting to open fits file " << inFile << " with status code " << success << ".";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        return success;
+    }
+
+    success = FitsCreateFile(&outfptr, outFile, status);
+    if (success != 0)
+    {
+        debug.clear();
+        debug.str("");
+        debug << "Failed attempting to create fits file " << outFile << " with status code " << success << ".";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        FitsCloseFile(infptr, status);
+        FitsCloseFile(outfptr, status);
+        return success;
+    }
+
+    if (selectedHDU != 1)
+    {
+        success = FitsMovabsHdu(infptr, selectedHDU, nullptr, status);
+        if (success != 0)
+        {
+            debug.clear();
+            debug.str("");
+            debug << "Failed attempting to move to HDU " << selectedHDU << " in fits file " << inFile << " with status code " << success << ".";
+            WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+            FitsCloseFile(infptr, status);
+            FitsCloseFile(outfptr, status);
+            return success;
+        }
+    }
+    
+    success = FitsCopyCubeSection(infptr, outfptr, section, status);
+    if (success != 0)
+    {
+        debug.clear();
+        debug.str("");
+        debug << "Failed attempting to copy image section " << section << " from " << inFile << " to " << outFile << " with status code " << success << ".";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        FitsCloseFile(infptr, status);
+        FitsCloseFile(outfptr, status);
+        return success;
+    }
+    debug.clear();
+    debug.str("");
+    debug << "Successfully copied image section " << section << " from " << inFile << " to " << outFile << " with status code " << success << ".";
+    WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+    
+    success = FitsWriteHistory(outfptr, historyTimeStamp, status);
+    if (success != 0)
+    {
+        debug.clear();
+        debug.str("");
+        debug << "Failed attempting to write history " << historyTimeStamp << " to " << outFile << " with status code " << success << ".";
+        WriteLogFile(defaultDebugFile.data(), debug.str().c_str(), 0);
+        FitsCloseFile(infptr, status);
+        FitsCloseFile(outfptr, status);
+        return success;
+    }
+
+    FitsFlushFile(outfptr, status);
+    FitsCloseFile(infptr, status);
+    FitsCloseFile(outfptr, status);
     return success;
 }
 
