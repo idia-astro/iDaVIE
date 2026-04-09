@@ -1416,67 +1416,82 @@ namespace VolumeData
             return new Vector3Int(x, y, z);
         }
         
-        public int SaveSubCubeFromOriginal(Vector3Int cornerMin, Vector3Int cornerMax, VolumeDataSet maskDataSet)
+        /// <summary>
+        /// Saves a subcube from cornerMin to cornerMax of this data file, as a separate file.
+        /// </summary>
+        /// <param name="cornerMin">The first voxel index to be saved. Should be dataspace indices.</param>
+        /// <param name="cornerMax">The last voxel index to be saved. Should be dataspace indices.</param>
+        /// <param name="cornerMinWorld">The first voxel index to be saved. Should be worldspace indices. Used for mask data extraction.</param>
+        /// <param name="cornerMaxWorld">The last voxel index to be saved. Should be worldspace indices. Used for mask data extraction.</param>
+        /// <param name="maskDataSet">The mask dataset attached to this dataset.</param>
+        /// <returns>0 if successful, a FITS error otherwise.</returns>
+        public int SaveSubCubeFromOriginal(Vector3Int cornerMin, Vector3Int cornerMax, Vector3Int cornerMinWorld, Vector3Int cornerMaxWorld, VolumeDataSet maskDataSet)
         {
-            IntPtr oldFitsPtr = IntPtr.Zero;
-            IntPtr newFitsPtr = IntPtr.Zero;
             int status = 0;
             var directoryPath = Path.GetDirectoryName(FileName);
             var timeStamp = DateTime.Now.ToString("yyyyMMdd_Hmmss");
             var newFilename = $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}.fits";
             var filePath = Path.Combine(directoryPath, newFilename);
             var maskFilePath = Path.Combine(directoryPath, $"{Path.GetFileNameWithoutExtension(FileName)}_subCube_{timeStamp}_mask.fits");
-            Vector3Int offset = new Vector3Int(this.subsetBounds[0] - 1, this.subsetBounds[2] - 1, this.subsetBounds[4] - 1);
             // Works only with 3D cubes for now... need 4D askap capability
-            Debug.Log("Attempting to load file:" + FileName);
-            if (FitsReader.FitsOpenFile(out oldFitsPtr, FileName, out status, true) == 0)
+            string section = $"{cornerMin.x}:{cornerMax.x},{cornerMin.y}:{cornerMax.y},{cornerMin.z}:{cornerMax.z}";
+            var timeStampNow = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
+            string historyTimeStamp = $"Saved by iDaVIE at {timeStampNow}";
+            Debug.Log("Attempting to copy image section " + section + " from file: " + FileName + " to " + newFilename + ".");
+            if (FitsReader.FitsCopyImageSection(FileName, filePath, section, historyTimeStamp, SelectedHdu, out status) == 0)
             {
-                Debug.Log("Old file opened successfully.");
-                if (FitsReader.FitsCreateFile(out newFitsPtr, filePath, out status) == 0)
+                if (maskDataSet != null)
                 {
-                    Debug.Log("New file created successfully.");
-                    FitsReader.FitsCopyFile(oldFitsPtr, newFitsPtr, out status);
-                    Debug.Log("File copy attempted.");
-                    if (maskDataSet != null)
+                    var newFitsPtr = IntPtr.Zero;
+                    if (FitsReader.FitsOpenFile(out newFitsPtr, filePath, out status, true) == 0)
+                        SaveSubMask(maskFilePath, cornerMinWorld, cornerMaxWorld, newFitsPtr, maskDataSet);
+                    else
                     {
-                        SaveSubMask(maskFilePath, cornerMin, cornerMax, newFitsPtr, maskDataSet);
+                        Debug.LogWarning($"Error opening new subcube fits file (Error #{status.ToString()})!");
                     }
                     FitsReader.FitsCloseFile(newFitsPtr, out status);
                 }
-                FitsReader.FitsCloseFile(oldFitsPtr, out status);
-            }
-            else
-                Debug.LogWarning("Could not open old file!");
-
-            if (status != 0)
-            {
-                ToastNotification.ShowError($"Error saving sub-cube (Error #{status.ToString()})");
-            }
-            else
-            {
-                ToastNotification.ShowSuccess($"Sub-cube saved to ${newFilename}");
+                ToastNotification.ShowSuccess($"Sub-cube saved to {filePath}");
+                Debug.Log($"Successfully copied image section {section} from file: {FileName} to {filePath}.");
                 if (maskDataSet != null)
                 {
-                    ToastNotification.ShowSuccess($"Submask saved to ${Path.GetFileName(maskFilePath)}");
+                    ToastNotification.ShowSuccess($"Submask saved to {Path.GetFileName(maskFilePath)}");
+                    Debug.Log($"Saved submask to {Path.GetFileName(maskFilePath)}");
                 }
+            }
+            else
+            {
+                Debug.LogWarning("Could not copy image section!");
+                ToastNotification.ShowError($"Error saving sub-cube (Error #{status.ToString()})");
             }
 
             return status;
         }
 
-        public int SaveSubMask(string filePath, Vector3Int cornerMin, Vector3Int cornerMax, IntPtr subCubeFitsPtr, VolumeDataSet maskDataSet)
+        /// <summary>
+        /// Saves the submask of the current mask, from cornerMin to cornerMax in the world space.
+        /// This mask data is in the current image data, and is therefore in the world space.
+        /// </summary>
+        /// <param name="filePath">The filepath destination of the new submask file.</param>
+        /// <param name="cornerMinWorld">The first pixel to be saved.</param>
+        /// <param name="cornerMaxWorld">The last pixel to be saved.</param>
+        /// <param name="subCubeFitsPtr">The file pointer of the subcube, used to retrieve header information from.</param>
+        /// <param name="maskDataSet">The mask dataset from which to extract the data to be saved.</param>
+        /// <returns>0 if successful, a FITS error otherwise.</returns>
+        public int SaveSubMask(string filePath, Vector3Int cornerMinWorld, Vector3Int cornerMaxWorld, IntPtr subCubeFitsPtr, VolumeDataSet maskDataSet)
         {
             IntPtr subMaskFilePtr = IntPtr.Zero;
             IntPtr subCubeData = IntPtr.Zero;
             int status = 0;
+            Vector3Int regionVector = cornerMaxWorld - cornerMinWorld + Vector3Int.one;
+            int regionVolume = regionVector.x * regionVector.y * regionVector.z;
+            
             if (FitsReader.FitsCreateFile(out subMaskFilePtr, filePath, out status) == 0)
             {
                 if (FitsReader.FitsCopyHeader(subCubeFitsPtr, subMaskFilePtr, out status) == 0)
                 {
-                    if (DataAnalysis.MaskCropAndDownsample(maskDataSet.FitsData, out subCubeData, maskDataSet.XDim, maskDataSet.YDim, maskDataSet.ZDim, cornerMin.x, cornerMin.y, cornerMin.z, cornerMax.x, cornerMax.y, cornerMax.z, 1, 1, 1) == 0)
+                    if (DataAnalysis.MaskCropAndDownsample(maskDataSet.FitsData, out subCubeData, maskDataSet.XDim, maskDataSet.YDim, maskDataSet.ZDim, cornerMinWorld.x, cornerMinWorld.y, cornerMinWorld.z, cornerMaxWorld.x, cornerMaxWorld.y, cornerMaxWorld.z, 1, 1, 1) == 0)
                     {
-                        Vector3Int regionVector = cornerMax - cornerMin;
-                        int regionVolume = regionVector.x * regionVector.y * regionVector.z;
                         IntPtr keyValue = Marshal.AllocHGlobal(sizeof(int));
                         Marshal.WriteInt32(keyValue, 16);
                         if (FitsReader.FitsUpdateKey(subMaskFilePtr, 21, "BITPIX", keyValue, null, out status) == 0)
@@ -1504,20 +1519,36 @@ namespace VolumeData
                                 }
                             }
                             
-                            if (naxis != IntPtr.Zero)
-                                {
-                                    Marshal.FreeHGlobal(naxis);
-                                    naxis = IntPtr.Zero;
-                                }
                             if (FitsReader.FitsDeleteKey(subMaskFilePtr, "BUNIT", out status) != 0)
                             {
                                 Debug.Log("Could not delete unit key. It probably does not exist!");
                                 status = 0;
                             }
-                            FitsReader.FitsWriteImageInt16(subMaskFilePtr, 3, regionVolume, subCubeData, out status);
+                            //fptr, fPix, lPix, array, out
+                            int[] startPix = new int[Marshal.ReadInt32(naxis)];
+                            int[] finalPix = new int[Marshal.ReadInt32(naxis)];
+                            startPix[0] = 1;
+                            startPix[1] = 1;
+                            startPix[2] = 1;
+                            finalPix[0] = regionVector.x;
+                            finalPix[1] = regionVector.y;
+                            finalPix[2] = regionVector.z;
+
+                            IntPtr startPixPtr = Marshal.AllocHGlobal(sizeof(int) * startPix.Length);
+                            IntPtr finalPixPtr = Marshal.AllocHGlobal(sizeof(int) * finalPix.Length);
+                            Marshal.Copy(startPix, 0, startPixPtr, startPix.Length);
+                            Marshal.Copy(finalPix, 0, finalPixPtr, finalPix.Length);
+                            FitsReader.FitsWriteSubImageInt16(subMaskFilePtr, startPixPtr, finalPixPtr, subCubeData, out status);
                             if (status != 0)
                             {
                                 Debug.LogError($"Fits save mask cube data error #{status.ToString()}");
+                                ToastNotification.ShowError($"Fits save mask cube data error #{status.ToString()}");
+                            }
+                            
+                            if (naxis != IntPtr.Zero)
+                            {
+                                Marshal.FreeHGlobal(naxis);
+                                naxis = IntPtr.Zero;
                             }
                         }
                         if (keyValue != IntPtr.Zero)
