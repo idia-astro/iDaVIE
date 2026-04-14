@@ -1280,7 +1280,7 @@ namespace VolumeData
             if (elements > int.MaxValue)
             {
 				long oversize = Mathf.RoundToInt((elements / int.MaxValue) * 100);
-                ToastNotification.ShowError($"Selected subcube ({featureSize.x} x {featureSize.y} x {featureSize.z}) {oversize}% too big for CFITSIO, select a smaller subcube with no more than {int.MaxValue} elements.");
+                ToastNotification.ShowError($"Selected subcube ({featureSize.x} x {featureSize.y} x {featureSize.z}) {oversize}% of maximum size supported by CFITSIO, select a smaller subcube with no more than {int.MaxValue} elements.");
                 return;
             }
             Debug.Log("Saving subcube from " + cornerMin.ToString() + " to " + cornerMax.ToString() + ".");
