@@ -89,6 +89,28 @@ DllExport int FitsCopyHeader(fitsfile *, fitsfile *, int *);
 
 DllExport int FitsCopyFile(fitsfile *, fitsfile *, int *);
 
+/**
+ * @brief Function writes a rectangular subset of the FITS image, which can be any size up to the full size of the image. This function is intended for use when saving a subcube.
+ * 
+ * @param oldFileName The fitsfile being worked on.
+ * @param filename The destination file name.
+ * @param section A char array containing the data bounds to be written to the file, in the form "Na1:Na2, Nb1:Nb2, ... Nx1:Nx2".
+ * @param historyTimeStamp A char array containing the history data to be written to the file header.
+ * @param selectedHDU The index of the active HDU.
+ * @param status Value containing outcome of CFITSIO operation.
+ * @return int The result code, 0 for success, a CFITSIO error coded if not.
+ */
+DllExport int FitsCopyImageSection(char * , char* , char* , char* , int , int* );
+
+/**
+ * @brief Function writes a rectangular subset of the FITS image, which can be any size up to the full size of the image. This function is intended for use when saving a subcube.
+ * 
+ * @param infptr The source file.
+ * @param outfptr The destination file.
+ * @param section A char array containing the data bounds to be written to the file, in the form "Na1:Na2, Nb1:Nb2, ... Nx1:Nx2".
+ * @param status Value containing outcome of CFITSIO operation.
+ * @return int The result code, 0 for success, a CFITSIO error coded if not.
+ */
 DllExport int FitsCopyCubeSection(fitsfile *, fitsfile *, char *, int *); 
 
 [[deprecated("Replaced by FitsWriteSubImageInt16, which is more flexible.")]]
@@ -114,6 +136,7 @@ DllExport int FitsWriteSubImageInt16(fitsfile * , long* , long* , int16_t* , int
  * @param fPix An array containing the indices of the first pixel (xyz, left bottom front) to be written.
  * @param lPix An array containing the indices of the last pixe (xyz, right top back) to be written.
  * @param array The array containing the data to be written. This is assumed to be at least the size of lPix - fPix.
+ * @param historyTimeStamp A char array containing the history data to be written to the file header.
  * @param status Value containing outcome of CFITSIO operation.
  * @return int The result code, 0 for success, a CFITSIO error code if not.
  */

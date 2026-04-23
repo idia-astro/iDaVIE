@@ -736,13 +736,22 @@ namespace VolumeData
         /// <summary>
         /// This function is used to get the cursor location in data space (i.e., including subcube offsets).
         /// </summary>
-        /// <param name="cursorPosWorldSpace">Where in the world space is the user pointing?</param>
         /// <returns>An indexed location in data space.</returns>
         public Vector3Int GetVoxelPositionDataSpace()
         {
             Vector3Int offset = new Vector3Int(_dataSet.subsetBounds[0], _dataSet.subsetBounds[2], _dataSet.subsetBounds[4]);
-
             return CursorVoxel + offset - new Vector3Int(1, 1, 1);
+        }
+
+        /// <summary>
+        /// This function is used to get a location in data space (i.e., including subcube offsets) that corresponds to a provided world space position.
+        /// </summary>
+        /// <param name="worldSpacePos">Where world space position needs to be converted?</param>
+        /// <returns>An indexed location in data space.</returns>
+        public Vector3Int GetVoxelPositionDataSpace(Vector3 worldSpacePos)
+        {
+            Vector3Int offset = new Vector3Int(_dataSet.subsetBounds[0], _dataSet.subsetBounds[2], _dataSet.subsetBounds[4]);
+            return Vector3Int.FloorToInt(worldSpacePos + offset - new Vector3Int(1, 1, 1));
         }
         
         /// <summary>
@@ -1251,20 +1260,31 @@ namespace VolumeData
         
         public void SaveSubCube()
         {
-            Vector3Int cornerMin, cornerMax;
+            Vector3Int cornerMin, cornerMax, cornerMinWorld, cornerMaxWorld, featureSize;
             if (_featureManager.SelectedFeature != null)
             {
-                cornerMin = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMin);
-                cornerMax = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMax);
+                cornerMinWorld = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMin);
+                cornerMaxWorld = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMax);
+                cornerMin = GetVoxelPositionDataSpace(cornerMinWorld);
+                cornerMax = GetVoxelPositionDataSpace(cornerMaxWorld);
             }
             else
             {
                 ToastNotification.ShowWarning("No feature selected, saving entire loaded cube as subcube.");
-                cornerMin = new Vector3Int(1, 1, 1);
-                cornerMax = GetCubeDimensions();
+                cornerMin = cornerMinWorld = new Vector3Int(1, 1, 1);
+                cornerMax = cornerMaxWorld = GetCubeDimensions();
+            }
+
+            featureSize = cornerMax - cornerMin + Vector3Int.one;
+            long elements = (long) featureSize.x * (long) featureSize.y * (long) featureSize.z;
+            if (elements > int.MaxValue)
+            {
+				long oversize = Mathf.RoundToInt((elements / int.MaxValue) * 100);
+                ToastNotification.ShowError($"Selected subcube ({featureSize.x} x {featureSize.y} x {featureSize.z}) {oversize}% of maximum size supported by CFITSIO, select a smaller subcube with no more than {int.MaxValue} elements.");
+                return;
             }
             Debug.Log("Saving subcube from " + cornerMin.ToString() + " to " + cornerMax.ToString() + ".");
-            _dataSet.SaveSubCubeFromOriginal(cornerMin, cornerMax, _maskDataSet);
+            _dataSet.SaveSubCubeFromOriginal(cornerMin, cornerMax, cornerMinWorld, cornerMaxWorld, _maskDataSet);
         }
 
         public void SaveMask(bool overwrite)
