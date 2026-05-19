@@ -47,19 +47,33 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Test SonarCloud API access
+      - name: Validate SonarCloud token
         run: |
           set -euo pipefail
 
           auth_response="$(curl -fsS --retry 3 --retry-delay 5 --retry-connrefused --connect-timeout 10 \
             --header "Authorization: Bearer ${SONAR_TOKEN}" \
             "${SONAR_HOST_URL%/}/api/authentication/validate")"
-          echo "${auth_response}" | grep -q '"valid"[[:space:]]*:[[:space:]]*true'
 
-          curl -fsS --retry 3 --retry-delay 5 --retry-connrefused --connect-timeout 10 \
+          echo "${auth_response}"
+          if ! echo "${auth_response}" | grep -q '"valid"[[:space:]]*:[[:space:]]*true'; then
+            echo "::error::SONAR_TOKEN is present but SonarCloud did not accept it."
+            exit 1
+          fi
+
+      - name: Validate SonarCloud project key
+        run: |
+          set -euo pipefail
+
+          if ! curl -fsS --retry 3 --retry-delay 5 --retry-connrefused --connect-timeout 10 \
             --header "Authorization: Bearer ${SONAR_TOKEN}" \
             --get "${SONAR_HOST_URL%/}/api/components/show" \
-            --data-urlencode "component=${SONAR_PROJECT_KEY}" > /dev/null
+            --data-urlencode "component=${SONAR_PROJECT_KEY}" > sonar-project-api.json; then
+            echo "::error::Cannot find or access SonarCloud project '${SONAR_PROJECT_KEY}'. Confirm the project key in SonarCloud."
+            exit 1
+          fi
+
+          cat sonar-project-api.json
 
       - name: Analyze with SonarQube
         uses: SonarSource/sonarqube-scan-action@v8.1.0
