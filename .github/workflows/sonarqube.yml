@@ -15,17 +15,55 @@ permissions:
 jobs:
   analysis:
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+
+    env:
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+      SONAR_ORGANIZATION: epic-team-beta
+      SONAR_PROJECT_KEY: EPIC-Team-Beta_iDaVIE
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
     steps:
-      - uses: actions/checkout@v6
+      - name: Check SonarCloud configuration
+        run: |
+          set -euo pipefail
+
+          : "${SONAR_TOKEN:?Missing SONAR_TOKEN repository secret}"
+
+          case "${SONAR_HOST_URL}" in
+            http://*|https://*) ;;
+            *)
+              echo "::error::SONAR_HOST_URL must start with http:// or https://"
+              exit 1
+              ;;
+          esac
+
+          echo "Using Sonar host: ${SONAR_HOST_URL}"
+          echo "Using Sonar organization: ${SONAR_ORGANIZATION}"
+          echo "Using Sonar project key: ${SONAR_PROJECT_KEY}"
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - name: Test SonarCloud API access
+        run: |
+          set -euo pipefail
+
+          auth_response="$(curl -fsS --retry 3 --retry-delay 5 --retry-connrefused --connect-timeout 10 \
+            --header "Authorization: Bearer ${SONAR_TOKEN}" \
+            "${SONAR_HOST_URL%/}/api/authentication/validate")"
+          echo "${auth_response}" | grep -q '"valid"[[:space:]]*:[[:space:]]*true'
+
+          curl -fsS --retry 3 --retry-delay 5 --retry-connrefused --connect-timeout 10 \
+            --header "Authorization: Bearer ${SONAR_TOKEN}" \
+            --get "${SONAR_HOST_URL%/}/api/components/show" \
+            --data-urlencode "component=${SONAR_PROJECT_KEY}" > /dev/null
 
       - name: Analyze with SonarQube
         uses: SonarSource/sonarqube-scan-action@v8.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
-        with:
-          args: >
-            -Dsonar.projectKey=YOUR_PROJECT_KEY

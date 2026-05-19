@@ -1,4 +1,4 @@
-name: SonarQube
+name: CI
 
 on:
   workflow_dispatch:
@@ -13,36 +13,19 @@ permissions:
 
 jobs:
   smoke-test:
-    name: SonarQube smoke test
+    name: Repository smoke test
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-
-    env:
-      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     steps:
-      - name: Validate SonarQube configuration
+      - uses: actions/checkout@v6
+
+      - name: Validate Unity project layout
         run: |
           set -euo pipefail
-          : "${SONAR_HOST_URL:?Missing repository variable SONAR_HOST_URL}"
-          : "${SONAR_TOKEN:?Missing repository secret SONAR_TOKEN}"
 
-      - name: Check SonarQube authentication
-        run: |
-          set -euo pipefail
-          response="$(curl -fsS --retry 3 --retry-delay 5 --retry-connrefused --connect-timeout 10 \
-            --header "Authorization: Bearer ${SONAR_TOKEN}" \
-            "${SONAR_HOST_URL%/}/api/authentication/validate")"
-
-          echo "${response}" | grep -q '"valid"[[:space:]]*:[[:space:]]*true'
-
-      - name: Check SonarQube system status
-        run: |
-          set -euo pipefail
-          response="$(curl -fsS --retry 3 --retry-delay 5 --retry-connrefused --connect-timeout 10 \
-            --header "Authorization: Bearer ${SONAR_TOKEN}" \
-            "${SONAR_HOST_URL%/}/api/system/status")"
-
-          echo "${response}"
-          echo "${response}" | grep -q '"status"[[:space:]]*:[[:space:]]*"UP"'
+          test -d Assets
+          test -d Assets/Scripts
+          test -d ProjectSettings
+          test -f ProjectSettings/ProjectVersion.txt
+          test -d native_plugins_cmake
+          find Assets/Scripts -name '*.cs' -print -quit | grep -q .
