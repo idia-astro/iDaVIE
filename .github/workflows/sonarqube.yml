@@ -96,12 +96,6 @@ jobs:
               "epic-team-beta_iDaVIE" \
               "EPIC-Team-Beta_idavie" \
               "epic-team-beta_idavie" \
-              "iDaVIE" \
-              "idavie" \
-              "idia-astro_iDaVIE" \
-              "Amelithic_iDaVIE" \
-              "StixxyTape_iDaVIE" \
-              "sean-o-sullivan_iDaVIE" \
               | awk 'NF && !seen[$0]++'
           )"
 
@@ -126,7 +120,7 @@ jobs:
           ${candidates}
           EOF
 
-          echo "::error::Could not find a SonarCloud project visible to this token. Confirm the project key in SonarCloud or replace SONAR_TOKEN if it belongs to a fork/account."
+          echo "::error::Could not find a SonarCloud project for EPIC-Team-Beta/iDaVIE visible to this token. Import EPIC-Team-Beta/iDaVIE into the EPIC SonarCloud org, then set SONAR_PROJECT_KEY/SONAR_ORGANIZATION from that project."
           exit 1
 
       - name: Create SonarQube scanner config
