@@ -89,15 +89,45 @@ jobs:
         run: |
           set -euo pipefail
 
-          if ! curl -fsS --retry 3 --retry-delay 5 --retry-connrefused --connect-timeout 10 \
-            --header "Authorization: Bearer ${SONAR_TOKEN}" \
-            --get "${SONAR_HOST_URL%/}/api/components/show" \
-            --data-urlencode "component=${SONAR_PROJECT_KEY}" > sonar-project-api.json; then
-            echo "::error::Cannot find or access SonarCloud project '${SONAR_PROJECT_KEY}'. Confirm the project key in SonarCloud."
-            exit 1
-          fi
+          candidates="$(
+            printf '%s\n' \
+              "${SONAR_PROJECT_KEY}" \
+              "EPIC-Team-Beta_iDaVIE" \
+              "epic-team-beta_iDaVIE" \
+              "EPIC-Team-Beta_idavie" \
+              "epic-team-beta_idavie" \
+              "iDaVIE" \
+              "idavie" \
+              "idia-astro_iDaVIE" \
+              "Amelithic_iDaVIE" \
+              "StixxyTape_iDaVIE" \
+              "sean-o-sullivan_iDaVIE" \
+              | awk 'NF && !seen[$0]++'
+          )"
 
-          cat sonar-project-api.json
+          echo "Probing likely SonarCloud project keys:"
+          while IFS= read -r candidate; do
+            status="$(curl -sS --retry 3 --retry-delay 5 --retry-connrefused --connect-timeout 10 \
+              --header "Authorization: Bearer ${SONAR_TOKEN}" \
+              --get "${SONAR_HOST_URL%/}/api/components/show" \
+              --data-urlencode "component=${candidate}" \
+              --output sonar-project-api.json \
+              --write-out "%{http_code}")"
+
+            echo "  ${candidate}: HTTP ${status}"
+
+            if [ "${status}" = "200" ]; then
+              echo "Resolved SonarCloud project key: ${candidate}"
+              echo "SONAR_PROJECT_KEY=${candidate}" >> "${GITHUB_ENV}"
+              cat sonar-project-api.json
+              exit 0
+            fi
+          done <<EOF
+          ${candidates}
+          EOF
+
+          echo "::error::Could not find a SonarCloud project visible to this token. Confirm the project key in SonarCloud or replace SONAR_TOKEN if it belongs to a fork/account."
+          exit 1
 
       - name: Create SonarQube scanner config
         run: |
