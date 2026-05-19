@@ -19,8 +19,8 @@ jobs:
 
     env:
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
-      SONAR_ORGANIZATION: epic-team-beta
-      SONAR_PROJECT_KEY: EPIC-Team-Beta_iDaVIE
+      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'epic-team-beta' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'EPIC-Team-Beta_iDaVIE' }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     steps:
@@ -74,6 +74,19 @@ jobs:
           fi
 
           cat sonar-project-api.json
+
+      - name: Create SonarQube scanner config
+        run: |
+          set -euo pipefail
+
+          {
+            echo "sonar.projectKey=${SONAR_PROJECT_KEY}"
+            echo "sonar.organization=${SONAR_ORGANIZATION}"
+            echo "sonar.projectName=iDaVIE"
+            echo "sonar.sources=Assets/Scripts,native_plugins_cmake"
+            echo "sonar.exclusions=**/*.meta,**/Library/**,**/Temp/**,**/Obj/**,**/Build/**,**/Logs/**"
+            echo "sonar.sourceEncoding=UTF-8"
+          } > sonar-project.properties
 
       - name: Analyze with SonarQube
         uses: SonarSource/sonarqube-scan-action@v8.1.0
