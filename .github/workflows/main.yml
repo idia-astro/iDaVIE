@@ -1,31 +1,26 @@
 name: SonarQube
-
 on:
   push:
     branches:
-      - "**"
+      - "Interaction-Systems"
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
-
 permissions:
   contents: read
   pull-requests: read
-
 env:
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
   SONAR_PROJECT_KEY: EPIC-Team-Beta_iDaVIE
   SONAR_ORGANIZATION: epic-team-beta
   SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
   SONAR_ANALYSIS_PROJECT: ci/sonar/iDaVIE.SonarAnalysis.csproj
-
 jobs:
   analysis:
     name: Analyze
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -33,6 +28,12 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x
+
+      - name: Add Unity NuGet source
+        run: |
+          dotnet nuget add source \
+            https://unitynuget-proxy.azurewebsites.net/index.json \
+            --name unity-proxy
 
       - name: Install SonarScanner for .NET
         run: |
@@ -46,6 +47,7 @@ jobs:
             /o:"${SONAR_ORGANIZATION}" \
             /d:sonar.token="${SONAR_TOKEN}" \
             /d:sonar.host.url="${SONAR_HOST_URL}" \
+            /d:sonar.inclusions="Assets/Scripts/Menu/**,Assets/Scripts/VoiceCommands/**,Assets/Scripts/VRKeyboard/**,Assets/Scripts/VolumeData/VolumeInputController.cs,Assets/Scripts/VolumeData/VolumeCommandController.cs,Assets/Scripts/Editor/**" \
             /d:sonar.exclusions="**/*.meta,**/Library/**,**/Temp/**,**/Obj/**,**/Build/**,**/Logs/**"
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -55,7 +57,7 @@ jobs:
           dotnet build "${SONAR_ANALYSIS_PROJECT}" \
             --no-incremental \
             -p:TreatWarningsAsErrors=false
-            
+
       - name: End SonarQube analysis
         if: always()
         run: dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
