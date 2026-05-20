@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 2
+  tags:
+  - projectile
+  - FxTemporaire
+  - customSet
+  - PowerUI
+  - VRKeyboard
+  - anchor
+  - cursor
+  - ScrollView
+  - keypad
+  - ToastNotification
+  - CanvasDesktop
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - Cube
+  - Water
+  - UI
+  - 
+  - 
+  - PowerUI
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0

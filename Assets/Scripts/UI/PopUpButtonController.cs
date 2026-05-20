@@ -1,0 +1,94 @@
+/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
+using System.Collections;
+using TMPro;
+using UnityEngine;
+
+/// <summary>
+/// This class is used to control the behaviour of the buttons on a popup.
+/// </summary>
+public class PopUpButtonController : MonoBehaviour
+{
+    public TextMeshProUGUI ButtonText;
+    public TextMeshProUGUI HoverText;
+
+    public BoxCollider collider;
+
+    public RectTransform transform;
+
+    public IEnumerator hidemenu;
+    public System.Action callback;
+    public string buttonText { get; set; } = "Text displayed on the button";
+    public string hoverText { get; set; } = "Text displayed when user hovers over button";
+
+    public void init()
+    {
+        collider.size = new Vector3(transform.rect.width, transform.rect.height, 1);
+    }
+
+    /// <summary>
+    /// This function sets the label on the button.
+    /// </summary>
+    /// <param name="butText">The button label.</param>
+    public void setButtonText(string butText)
+    {
+        this.buttonText = butText;
+        this.ButtonText.text = buttonText;
+    }
+
+    /// <summary>
+    /// This function is called by the onSelect event for this button.
+    /// </summary>
+    public void setHoverText()
+    {
+        HoverText.text = this.hoverText;
+    }
+
+    /// <summary>
+    /// This function is called by the onDeselect event for this button.
+    /// </summary>
+    public void emptyHoverText()
+    {
+        HoverText.text = "";
+    }
+
+    /// <summary>
+    /// This function sets the TMPText object that is used
+    /// to display the text when the user hovers over the button.
+    /// </summary>
+    /// <param name="tmpText">The TMPText field.</param>
+    public void setHoverObject(TextMeshProUGUI tmpText)
+    {
+        HoverText = tmpText;
+    }
+
+    /// <summary>
+    /// This function is called when user clicks this button
+    /// and invokes the callback attached to this button.
+    /// </summary>
+    public void invokeCallback()
+    {
+        Debug.Log("Calling callback of button labelled " + buttonText + ".");
+        StartCoroutine(hidemenu);
+        callback();
+    }
+}

@@ -1,0 +1,42 @@
+{
+  "ColorMap": "Plasma",
+  "RenderType": "Line",
+  "UniformOpacity": false,
+  "UniformPointSize": true,
+  "Uniforms": {
+    "Scale": 0.001,
+    "PointSize": 0.1,
+    "Opacity": 0.4,
+    "ColorString": "#FFFFFF"
+  },
+  "Mapping": {
+    "Cmap": {
+      "Source": "Weight"
+    },
+    "Opacity": {
+      "Source": "Weight",
+      "Clamped": true,
+      "MinVal": 0.1,
+      "MaxVal": 1.0,
+      "Scale": 1
+    },
+    "X": {
+      "Source": "X1"
+    },
+    "Y": {
+      "Source": "Y1"
+    },
+    "Z": {
+      "Source": "Z1"
+    },
+    "X2": {
+      "Source": "X2"
+    },
+    "Y2": {
+      "Source": "Y2"
+    },
+    "Z2": {
+      "Source": "Z2"
+    }
+  }
+}

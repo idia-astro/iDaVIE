@@ -1,0 +1,207 @@
+﻿/*
+ * iDaVIE (immersive Data Visualisation Interactive Explorer)
+ * Copyright (C) 2024 IDIA, INAF-OACT
+ *
+ * This file is part of the iDaVIE project.
+ *
+ * iDaVIE is free software: you can redistribute it and/or modify it under the terms 
+ * of the GNU Lesser General Public License (LGPL) as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with 
+ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Additional information and disclaimers regarding liability and third-party 
+ * components can be found in the DISCLAIMER and NOTICE files included with this project.
+ *
+ */
+using System.Collections;
+using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+struct Notification
+{
+    public string text;
+    public Color textColor;
+    public Color bgColor;
+
+    public Notification( string t, Color bc, Color tc)
+    {
+        this.text = t;
+        this.textColor = tc;
+        this.bgColor = bc;
+    }
+}
+
+public class ToastNotification 
+{
+    public class StaticToastNotification : MonoBehaviour { }
+
+
+    //Variable reference for the class
+    private static StaticToastNotification staticToastNotification;
+
+    private static VolumeInputController _volumeInputController = null;
+    private static GameObject spawnedItem = null;
+    private static float fadeSpeed = 1.0f;
+    private static float stayAlive = 3;
+
+    private static List<Notification> notifications = new List<Notification>();
+
+    public static void Update()
+    {
+        // Process queued notifications one at a time. Be defensive: initialization may fail,
+        // so verify `spawnedItem` and children before accessing.
+        while (notifications.Count > 0)
+        {
+            if (GameObject.FindGameObjectWithTag("ToastNotification") == null)
+            {
+                Initialize();
+            }
+
+            if (spawnedItem is null)
+            {
+                Debug.LogWarning("ToastNotification: failed to create spawnedItem; aborting notification processing.");
+                break;
+            }
+
+            var note = notifications[0];
+            var topPanel = spawnedItem.transform.Find("TopPanel");
+            var img = topPanel?.GetComponent<Image>();
+            img.color = note.bgColor;
+
+            var textTransform = topPanel?.Find("Text");
+            var textComp = textTransform?.GetComponent<TextMeshProUGUI>();
+            textComp.text = note.text;
+            textComp.color = note.textColor;
+            notifications.RemoveAt(0);
+        }
+    }
+
+    public static IEnumerator FadeInToast()
+    {
+        var canvasGroup = spawnedItem.GetComponent<CanvasGroup>();
+        while (canvasGroup.alpha < 1.0f)
+        {
+            canvasGroup.alpha += fadeSpeed * Time.deltaTime;
+            yield return null;
+        }
+
+        canvasGroup.alpha = 1.0f;
+        
+        yield return new WaitForSeconds(stayAlive);
+        staticToastNotification.StopCoroutine(FadeInToast());
+        staticToastNotification.StartCoroutine(FadeOutToast());
+
+    }
+
+    public static IEnumerator FadeOutToast()
+    {
+        var canvasGroup = spawnedItem.GetComponent<CanvasGroup>();
+        while (canvasGroup.alpha > 0.0f)
+        {
+            canvasGroup.alpha -= fadeSpeed * Time.deltaTime;
+            yield return null;
+        }
+        canvasGroup.alpha = 0.0f;
+        staticToastNotification.StopCoroutine(FadeOutToast());
+        yield return new WaitForSeconds(0.01f);
+        Object.Destroy(spawnedItem);
+    }
+
+    public static void Initialize()
+    {
+        //Hack to use Coroutine
+        if (staticToastNotification == null)
+        {
+            //Create an empty object called StaticToastNotification
+            GameObject gameObject = new GameObject("StaticToastNotification");
+            //Add this script to the object
+            staticToastNotification = gameObject.AddComponent<StaticToastNotification>();
+        }
+
+        _volumeInputController ??= GameObject.FindObjectOfType<VolumeInputController>();
+        if (_volumeInputController == null)
+        {
+            Debug.LogWarning("ToastNotification.Initialize: VolumeInputController not found; cannot show toast.");
+            return;
+        }
+
+        if (Camera.main == null)
+        {
+            Debug.LogWarning("ToastNotification.Initialize: Camera.main is null; cannot position toast.");
+            return;
+        }
+
+        if (_volumeInputController.toastNotificationPrefab == null)
+        {
+            Debug.LogWarning("ToastNotification.Initialize: toastNotificationPrefab is null on VolumeInputController.");
+            return;
+        }
+
+        if (_volumeInputController.followHead == null)
+        {
+            Debug.LogWarning("ToastNotification.Initialize: followHead is null on VolumeInputController.");
+            return;
+        }
+
+        Vector3 playerPos = Camera.main.transform.position;
+        Vector3 playerDirection = Camera.main.transform.forward;
+        float spawnDistance = 0.5f;
+        Vector3 spawnPos = playerPos + playerDirection * spawnDistance;
+
+        spawnedItem = GameObject.Instantiate(_volumeInputController.toastNotificationPrefab, spawnPos, Quaternion.identity, _volumeInputController.followHead.transform);
+        if (spawnedItem == null)
+        {
+            Debug.LogWarning("ToastNotification.Initialize: Instantiate returned null spawnedItem.");
+            return;
+        }
+
+        spawnedItem.transform.localRotation = new Quaternion(0, 0, 0,1);
+        spawnedItem.transform.localPosition = new Vector3(-0.10f, 0.08f, spawnedItem.transform.localPosition.z);
+        spawnedItem.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
+
+        var counterText = spawnedItem.transform.Find("CounterContainer")?.Find("Counter")?.Find("Text")?.GetComponent<TextMeshProUGUI>();
+        counterText.text = notifications.Count.ToString();
+
+        var canvasGroup = spawnedItem.GetComponent<CanvasGroup>();
+        canvasGroup.alpha = 0;
+
+        staticToastNotification?.StartCoroutine(FadeInToast());
+    }
+
+    public static void ShowToast(string message, Color bgColor, Color textColor)
+    {
+        notifications.Add(new Notification(message, bgColor, textColor));
+        if(spawnedItem)
+            spawnedItem.transform.Find("CounterContainer").Find("Counter").Find("Text").gameObject.GetComponent<TextMeshProUGUI>().text = notifications.Count.ToString();
+    }
+
+    public static void ShowError(string message)
+    {
+        ShowToast(message, new Color(0.77f, 0, 0.14f, 1), Color.white);
+        Debug.LogError(message);
+    }
+
+    public static void ShowSuccess(string message)
+    {
+        ShowToast(message, new Color(0.23f, 0.41f, 0.005f, 1), Color.white);
+    }
+
+    public static void ShowInfo(string message)
+    {
+        ShowToast(message, Color.grey, Color.white);
+    }
+
+    public static void ShowWarning(string message)
+    {
+        ShowToast(message, Color.yellow, Color.black );
+        Debug.LogWarning(message);
+    }
+}
