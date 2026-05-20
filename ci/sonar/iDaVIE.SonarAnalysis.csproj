@@ -9,12 +9,10 @@
     <NoWarn>$(NoWarn);CS0649;CS0169;CS8618</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="OxyPlot.Core" Version="2.1.0" />
     <Compile Include="UnityAnalysisStubs.cs" />
-    <Compile Include="../../Assets/Scripts/Menu/**/*.cs" Link="Assets/Scripts/Menu/%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="../../Assets/Scripts/VoiceCommands/**/*.cs" Link="Assets/Scripts/VoiceCommands/%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="../../Assets/Scripts/VRKeyboard/**/*.cs" Link="Assets/Scripts/VRKeyboard/%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="../../Assets/Scripts/UI/**/*.cs" Link="Assets/Scripts/UI/%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="../../Assets/Scripts/VolumeData/VolumeInputController.cs" Link="Assets/Scripts/VolumeData/VolumeInputController.cs" />
-    <Compile Include="../../Assets/Scripts/VolumeData/VolumeCommandController.cs" Link="Assets/Scripts/VolumeData/VolumeCommandController.cs" />
+    <Compile Include="../../Assets/Scripts/**/*.cs"
+             Exclude="../../Assets/Scripts/PluginInterface/NativePluginLoader.cs;../../Assets/Scripts/Menu/VideoRecPointListController.cs;../../Assets/Scripts/Menu/HistogramHelper.cs"
+             Link="Assets/Scripts/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

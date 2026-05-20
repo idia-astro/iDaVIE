@@ -387,6 +387,23 @@ namespace UnityEngine
     }
 }
 
+namespace UnityEngine.EventSystems
+{
+    public class PointerEventData
+    {
+    }
+    
+    public interface IPointerEnterHandler
+    {
+        void OnPointerEnter(PointerEventData eventData);
+    }
+    
+    public interface IPointerExitHandler
+    {
+        void OnPointerExit(PointerEventData eventData);
+    }
+}
+
 namespace UnityEngine.UI
 {
     public class Slider : UnityEngine.Component
@@ -568,43 +585,5 @@ namespace DataFeatures
 
         public void AddFeature(Feature feature) => FeatureList.Add(feature);
         public void SpawnFeaturesFromSourceStats(Dictionary<int, DataAnalysis.SourceStats> sourceStats) { }
-    }
-}
-
-public class VolumeInputController : UnityEngine.MonoBehaviour
-{
-    public void Teleport(UnityEngine.Vector3 boundsMin, UnityEngine.Vector3 boundsMax) { }
-}
-
-public class MomentMapMenuController : UnityEngine.MonoBehaviour
-{
-    public enum ThresholdType
-    {
-        Mask,
-        Range
-    }
-
-    public enum LimitType
-    {
-        ZScale,
-        Percentile
-    }
-}
-
-namespace VolumeData
-{
-    public class VolumeCommandController : UnityEngine.MonoBehaviour
-    {
-        public MomentMapMenuController momentMapMenuController { get; set; } = new MomentMapMenuController();
-    }
-
-    public class MomentMapRenderer : UnityEngine.MonoBehaviour
-    {
-        public UnityEngine.Texture3D DataCube { get; set; }
-        public UnityEngine.Texture3D MaskCube { get; set; }
-        public bool Inverted { get; set; }
-        public MomentMapMenuController momentMapMenuController { get; set; }
-
-        public void CalculateMomentMaps() { }
     }
 }
