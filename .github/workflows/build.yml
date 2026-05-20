@@ -8,18 +8,58 @@ on:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   analysis:
     name: Analyze
     runs-on: ubuntu-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'epic-team-beta' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'EPIC-Team-Beta_iDaVIE' }}
+      SONAR_ANALYSIS_PROJECT: ci/sonar/iDaVIE.SonarAnalysis.csproj
+      SONAR_OWNED_FILES: Assets/Scripts/PluginInterface/**/*.cs,Assets/Scripts/VolumeData/VolumeDataSet.cs,Assets/Scripts/VolumeData/VolumeDataSetRenderer.cs,Assets/Scripts/Tools/Delegates.cs,Assets/Scripts/Tools/BenchmarkManager.cs,Assets/Scripts/VolumeData/Config.cs
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v8.1.0
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Install SonarScanner for .NET
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Begin SonarQube analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SONAR_TOKEN}" ]; then
+            echo "::error::Missing repository secret SONAR_TOKEN"
+            exit 1
+          fi
+
+          dotnet sonarscanner begin \
+            /k:"${SONAR_PROJECT_KEY}" \
+            /o:"${SONAR_ORGANIZATION}" \
+            /d:sonar.host.url="${SONAR_HOST_URL}" \
+            /d:sonar.token="${SONAR_TOKEN}" \
+            /d:sonar.inclusions="${SONAR_OWNED_FILES}" \
+            /d:sonar.exclusions="ci/sonar/**,**/*.meta,**/Library/**,**/Temp/**,**/Obj/**,**/Build/**,**/Logs/**"
+
+      - name: Build analysis project
+        run: dotnet build "${SONAR_ANALYSIS_PROJECT}" --no-incremental -p:TreatWarningsAsErrors=false
+
+      - name: End SonarQube analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
