@@ -7,6 +7,8 @@ namespace UnityEngine
     public class Object
     {
         public static implicit operator bool(Object value) => value != null;
+        public static void Destroy(Object target) { }
+        public static void DestroyImmediate(Object target) { }
     }
 
     public class ScriptableObject : Object
@@ -22,6 +24,7 @@ namespace UnityEngine
 
     public class GameObject : Object
     {
+        public string name { get; set; }
         public Transform transform { get; } = new Transform();
 
         public GameObject()
@@ -30,6 +33,7 @@ namespace UnityEngine
 
         public GameObject(string name)
         {
+            this.name = name;
         }
 
         public T AddComponent<T>() where T : new() => new T();
@@ -210,6 +214,37 @@ namespace UnityEngine
         public int y;
         public int z;
 
+        public int this[int index]
+        {
+            get
+            {
+                return index switch
+                {
+                    0 => x,
+                    1 => y,
+                    2 => z,
+                    _ => throw new IndexOutOfRangeException()
+                };
+            }
+            set
+            {
+                switch (index)
+                {
+                    case 0:
+                        x = value;
+                        break;
+                    case 1:
+                        y = value;
+                        break;
+                    case 2:
+                        z = value;
+                        break;
+                    default:
+                        throw new IndexOutOfRangeException();
+                }
+            }
+        }
+
         public Vector3Int(int x, int y, int z)
         {
             this.x = x;
@@ -234,6 +269,17 @@ namespace UnityEngine
 
         public static Vector3Int operator -(Vector3Int left, Vector3Int right) =>
             new Vector3Int(left.x - right.x, left.y - right.y, left.z - right.z);
+
+        public static bool operator ==(Vector3Int left, Vector3Int right) =>
+            left.x == right.x && left.y == right.y && left.z == right.z;
+
+        public static bool operator !=(Vector3Int left, Vector3Int right) => !(left == right);
+
+        public override bool Equals(object obj) => obj is Vector3Int value && this == value;
+
+        public override int GetHashCode() => HashCode.Combine(x, y, z);
+
+        public override string ToString() => $"({x}, {y}, {z})";
 
         public static implicit operator Vector3(Vector3Int value) => new Vector3(value.x, value.y, value.z);
     }
@@ -340,6 +386,7 @@ namespace UnityEngine
 
     public class Texture : Object
     {
+        public FilterMode filterMode { get; set; }
     }
 
     public class Texture2D : Texture
@@ -684,11 +731,17 @@ namespace DataFeatures
         public int Id { get; set; }
         public string Name { get; set; }
         public bool Visible { get; set; }
+        public string[] RawData { get; set; }
         public UnityEngine.Vector3 CornerMin { get; set; }
         public UnityEngine.Vector3 CornerMax { get; set; }
 
         public UnityEngine.Vector3 GetMinBounds() => CornerMin;
         public UnityEngine.Vector3 GetMaxBounds() => CornerMax;
+        public void SetBounds(UnityEngine.Vector3 cornerMin, UnityEngine.Vector3 cornerMax)
+        {
+            CornerMin = cornerMin;
+            CornerMax = cornerMax;
+        }
 
         public static void SetCubeColors(LineRenderer.CuboidLine line, UnityEngine.Color color, bool active) { }
     }
@@ -718,5 +771,52 @@ namespace DataFeatures
 
         public void AddFeature(Feature feature) => FeatureList.Add(feature);
         public void SpawnFeaturesFromSourceStats(Dictionary<int, DataAnalysis.SourceStats> sourceStats) { }
+    }
+}
+
+public class VolumeInputController : UnityEngine.MonoBehaviour
+{
+    public void Teleport(UnityEngine.Vector3 boundsMin, UnityEngine.Vector3 boundsMax) { }
+}
+
+public class MomentMapMenuController : UnityEngine.MonoBehaviour
+{
+    public enum ThresholdType
+    {
+        Mask,
+        Threshold
+    }
+
+    public enum LimitType
+    {
+        ZScale,
+        MinMax
+    }
+}
+
+public static class ToastNotification
+{
+    public static void ShowInfo(string message) { }
+    public static void ShowWarning(string message) { }
+    public static void ShowError(string message) { }
+    public static void ShowSuccess(string message) { }
+}
+
+namespace VolumeData
+{
+    public class MomentMapRenderer : UnityEngine.MonoBehaviour
+    {
+        public UnityEngine.Texture3D DataCube { get; set; }
+        public UnityEngine.Texture3D MaskCube { get; set; }
+        public bool Inverted { get; set; }
+        public MomentMapMenuController momentMapMenuController { get; set; }
+
+        public void CalculateMomentMaps() { }
+        public void UpdatePlotWindow() { }
+    }
+
+    public class VolumeCommandController : UnityEngine.MonoBehaviour
+    {
+        public MomentMapMenuController momentMapMenuController { get; set; } = new MomentMapMenuController();
     }
 }

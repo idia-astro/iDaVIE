@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AssemblyName>iDaVIE.SonarAnalysis</AssemblyName>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <NoWarn>CS0618;CS0162;CS0649;CS0414;CS0169;CS8019</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="ci/sonar/UnityAnalysisStubs.cs" />
+    <Compile Include="Assets/Scripts/Tools/ColorMapEnum.cs" />
+    <Compile Include="Assets/Scripts/PluginInterface/**/*.cs" />
+    <Compile Include="Assets/Scripts/VolumeData/VolumeDataSet.cs" />
+    <Compile Include="Assets/Scripts/VolumeData/VolumeDataSetRenderer.cs" />
+    <Compile Include="Assets/Scripts/Tools/Delegates.cs" />
+    <Compile Include="Assets/Scripts/Tools/BenchmarkManager.cs" />
+    <Compile Include="Assets/Scripts/VolumeData/Config.cs" />
+  </ItemGroup>
+</Project>
