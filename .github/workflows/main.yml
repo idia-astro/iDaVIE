@@ -2,7 +2,7 @@ name: SonarQube
 on:
   push:
     branches:
-      - "Interaction-Systems"
+      - "main"
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
