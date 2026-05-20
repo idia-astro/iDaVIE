@@ -25,9 +25,8 @@ jobs:
             -Dsonar.host.url=https://sonarcloud.io
             -Dsonar.projectKey=EPIC-Team-Beta_iDaVIE
             -Dsonar.organization=epic-team-beta
-            -Dsonar.inclusions=Assets/Scripts/EMPTY/**     
             -Dsonar.exclusions=**/*.meta,**/Library/**,**/Temp/**,**/Obj/**,**/Build/**,**/Logs/**
-#            -Dsonar.inclusions=Assets/Scripts/Menu/**,Assets/Scripts/VoiceCommands/**,Assets/Scripts/VRKeyboard/**,Assets/Scripts/VolumeData/VolumeInputController.cs,Assets/Scripts/VolumeData/VolumeCommandController.cs,Assets/Scripts/Editor/**
+            -Dsonar.inclusions=Assets/Scripts/Menu/**,Assets/Scripts/VoiceCommands/**,Assets/Scripts/VRKeyboard/**,Assets/Scripts/VolumeData/VolumeInputController.cs,Assets/Scripts/VolumeData/VolumeCommandController.cs,Assets/Scripts/Editor/**
             
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
