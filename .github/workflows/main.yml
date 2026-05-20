@@ -18,6 +18,7 @@ env:
   SONAR_ORGANIZATION: epic-team-beta
   SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
   SONAR_ANALYSIS_PROJECT: ci/sonar/iDaVIE.SonarAnalysis.csproj
+  SONAR_OWNED_FILES: Assets/Scripts/PluginInterface/**/*.cs,Assets/Scripts/VolumeData/VolumeDataSet.cs,Assets/Scripts/VolumeData/VolumeDataSetRenderer.cs,Assets/Scripts/Tools/Delegates.cs,Assets/Scripts/Tools/BenchmarkManager.cs,Assets/Scripts/VolumeData/Config.cs
 
 jobs:
   analysis:
@@ -46,16 +47,14 @@ jobs:
             /o:"${SONAR_ORGANIZATION}" \
             /d:sonar.token="${SONAR_TOKEN}" \
             /d:sonar.host.url="${SONAR_HOST_URL}" \
+            /d:sonar.inclusions="${SONAR_OWNED_FILES}" \
             /d:sonar.exclusions="**/*.meta,**/Library/**,**/Temp/**,**/Obj/**,**/Build/**,**/Logs/**"
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Build C# analysis project
-        run: |
-          dotnet build "${SONAR_ANALYSIS_PROJECT}" \
-            --no-incremental \
-            -p:TreatWarningsAsErrors=false
-            
+        run: dotnet build "${SONAR_ANALYSIS_PROJECT}" --no-incremental -p:TreatWarningsAsErrors=false
+
       - name: End SonarQube analysis
         if: always()
         run: dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"

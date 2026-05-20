@@ -9,6 +9,17 @@ namespace UnityEngine
         public static implicit operator bool(Object value) => value != null;
     }
 
+    public class ScriptableObject : Object
+    {
+        public static T CreateInstance<T>() where T : ScriptableObject, new() => new T();
+    }
+
+    public interface ISerializationCallbackReceiver
+    {
+        void OnBeforeSerialize();
+        void OnAfterDeserialize();
+    }
+
     public class GameObject : Object
     {
         public Transform transform { get; } = new Transform();
@@ -79,6 +90,32 @@ namespace UnityEngine
     {
     }
 
+    public sealed class TooltipAttribute : Attribute
+    {
+        public TooltipAttribute(string tooltip)
+        {
+        }
+    }
+
+    public sealed class HideInInspector : Attribute
+    {
+    }
+
+    public sealed class RequireComponentAttribute : Attribute
+    {
+        public RequireComponentAttribute(Type requiredComponent)
+        {
+        }
+
+        public RequireComponentAttribute(Type requiredComponent, Type requiredComponent2)
+        {
+        }
+
+        public RequireComponentAttribute(Type requiredComponent, Type requiredComponent2, Type requiredComponent3)
+        {
+        }
+    }
+
     public enum Space
     {
         Self,
@@ -100,6 +137,32 @@ namespace UnityEngine
     public enum MeshTopology
     {
         Points
+    }
+
+    public struct Vector2
+    {
+        public float x;
+        public float y;
+
+        public Vector2(float x, float y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+
+        public static Vector2 zero => new Vector2(0, 0);
+        public static Vector2 one => new Vector2(1, 1);
+
+        public static Vector2 operator +(Vector2 left, Vector2 right) =>
+            new Vector2(left.x + right.x, left.y + right.y);
+
+        public static Vector2 operator -(Vector2 left, Vector2 right) =>
+            new Vector2(left.x - right.x, left.y - right.y);
+
+        public static Vector2 operator *(Vector2 value, float scale) =>
+            new Vector2(value.x * scale, value.y * scale);
+
+        public static Vector2 operator *(float scale, Vector2 value) => value * scale;
     }
 
     public struct Vector3
@@ -239,6 +302,28 @@ namespace UnityEngine
         public static Color cyan => new Color(0, 1, 1);
     }
 
+    public struct Color32
+    {
+        public byte r;
+        public byte g;
+        public byte b;
+        public byte a;
+
+        public Color32(byte r, byte g, byte b, byte a = 255)
+        {
+            this.r = r;
+            this.g = g;
+            this.b = b;
+            this.a = a;
+        }
+
+        public static implicit operator Color(Color32 value) =>
+            new Color(value.r / 255f, value.g / 255f, value.b / 255f, value.a / 255f);
+
+        public static implicit operator Color32(Color value) =>
+            new Color32((byte)(value.r * 255), (byte)(value.g * 255), (byte)(value.b * 255), (byte)(value.a * 255));
+    }
+
     public class Transform : Object
     {
         public Vector3 localPosition { get; set; }
@@ -291,6 +376,21 @@ namespace UnityEngine
     {
     }
 
+    public class Mesh : Object
+    {
+    }
+
+    public class MeshFilter : Component
+    {
+        public Mesh mesh { get; set; }
+        public Mesh sharedMesh { get; set; }
+    }
+
+    public class Camera : Behaviour
+    {
+        public static Camera main { get; set; }
+    }
+
     public class ComputeBuffer : Object
     {
         public int count { get; }
@@ -303,6 +403,16 @@ namespace UnityEngine
         public void SetData<T>(IList<T> data) { }
         public void SetData<T>(IList<T> data, int managedBufferStartIndex, int computeBufferStartIndex, int count) { }
         public void Release() { }
+    }
+
+    public class ComputeShader : Object
+    {
+        public int FindKernel(string name) => 0;
+        public void SetBuffer(int kernelIndex, string name, ComputeBuffer buffer) { }
+        public void SetBuffer(int kernelIndex, int nameId, ComputeBuffer buffer) { }
+        public void SetInt(string name, int value) { }
+        public void SetFloat(string name, float value) { }
+        public void Dispatch(int kernelIndex, int threadGroupsX, int threadGroupsY, int threadGroupsZ) { }
     }
 
     public class Material : Object
@@ -322,6 +432,10 @@ namespace UnityEngine
     public class MeshRenderer : Component
     {
         public Material material { get; set; }
+    }
+
+    public class Canvas : Behaviour
+    {
     }
 
     public static class Shader
@@ -378,6 +492,31 @@ namespace UnityEngine
         public static void Log(object message) { }
         public static void LogWarning(object message) { }
         public static void LogError(object message) { }
+    }
+
+    public class UnityEvent
+    {
+        public void AddListener(Action call) { }
+        public void RemoveListener(Action call) { }
+        public void Invoke() { }
+    }
+
+    public class UnityEvent<T0>
+    {
+        public void AddListener(Action<T0> call) { }
+        public void RemoveListener(Action<T0> call) { }
+        public void Invoke(T0 arg0) { }
+    }
+}
+
+namespace UnityEngine.Events
+{
+    public class UnityEvent : UnityEngine.UnityEvent
+    {
+    }
+
+    public class UnityEvent<T0> : UnityEngine.UnityEvent<T0>
+    {
     }
 }
 
