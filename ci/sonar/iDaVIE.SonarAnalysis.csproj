@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <NoWarn>$(NoWarn);CS0649;CS0169;CS8618</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="UnityAnalysisStubs.cs" />
+    <Compile Include="../../Assets/Scripts/Menu/**/*.cs" Link="Assets/Scripts/Menu/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../Assets/Scripts/VoiceCommands/**/*.cs" Link="Assets/Scripts/VoiceCommands/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../Assets/Scripts/VRKeyboard/**/*.cs" Link="Assets/Scripts/VRKeyboard/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../Assets/Scripts/UI/**/*.cs" Link="Assets/Scripts/UI/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../Assets/Scripts/VolumeData/VolumeInputController.cs" Link="Assets/Scripts/VolumeData/VolumeInputController.cs" />
+    <Compile Include="../../Assets/Scripts/VolumeData/VolumeCommandController.cs" Link="Assets/Scripts/VolumeData/VolumeCommandController.cs" />
+  </ItemGroup>
+</Project>
