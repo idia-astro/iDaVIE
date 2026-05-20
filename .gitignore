@@ -84,7 +84,7 @@ Assets/AssetStoreTools*
 ExportedObj/
 .consulo/
 *.csproj
-!ci/sonar/iDaVIE.SonarAnalysis.csproj
+!iDaVIE.SonarAnalysis.csproj
 *.unityproj
 *.sln
 *.suo
@@ -503,7 +503,7 @@ config.json
 ExportedObj/
 .consulo/
 *.csproj
-!ci/sonar/iDaVIE.SonarAnalysis.csproj
+!iDaVIE.SonarAnalysis.csproj
 *.unityproj
 *.sln
 *.suo
