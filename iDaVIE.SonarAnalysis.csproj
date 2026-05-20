@@ -14,12 +14,29 @@
 
   <ItemGroup>
     <Compile Include="ci/sonar/UnityAnalysisStubs.cs" />
+    <Compile Include="ci/sonar/AnalysisDependencyStubs.cs" />
     <Compile Include="Assets/Scripts/Tools/ColorMapEnum.cs" />
     <Compile Include="Assets/Scripts/PluginInterface/**/*.cs" />
     <Compile Include="Assets/Scripts/VolumeData/VolumeDataSet.cs" />
     <Compile Include="Assets/Scripts/VolumeData/VolumeDataSetRenderer.cs" />
+    <Compile Include="Assets/Scripts/VolumeData/VolumeInputController.cs" />
+    <Compile Include="Assets/Scripts/VolumeData/VolumeCommandController.cs" />
+    <Compile Include="Assets/Scripts/VolumeData/MomentMapRenderer.cs" />
     <Compile Include="Assets/Scripts/Tools/Delegates.cs" />
     <Compile Include="Assets/Scripts/Tools/BenchmarkManager.cs" />
     <Compile Include="Assets/Scripts/VolumeData/Config.cs" />
+    <Compile Include="Assets/Scripts/Menu/QuickMenuController.cs" />
+    <Compile Include="Assets/Scripts/Menu/PaintMenuController.cs" />
+    <Compile Include="Assets/Scripts/Menu/SourceRow.cs" />
+    <Compile Include="Assets/Scripts/Menu/TabsManager.cs" />
+    <Compile Include="Assets/Scripts/VoiceCommands/**/*.cs" />
+    <Compile Include="Assets/Scripts/FeatureData/**/*.cs" />
+    <Compile Include="Assets/Scripts/UI/CanvassDesktop.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets/Resources/MomentMapGenerator.compute" />
+    <Content Include="Assets/Shaders/Volumes/**/*" />
+    <Content Include="Assets/Prefabs/DesktopGUI/**/*.prefab" />
   </ItemGroup>
 </Project>

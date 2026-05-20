@@ -22,7 +22,9 @@ jobs:
       SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'epic-team-beta' }}
       SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'EPIC-Team-Beta_iDaVIE' }}
       SONAR_ANALYSIS_PROJECT: iDaVIE.SonarAnalysis.csproj
-      SONAR_OWNED_FILES: Assets/Scripts/PluginInterface/**/*.cs,Assets/Scripts/VolumeData/VolumeDataSet.cs,Assets/Scripts/VolumeData/VolumeDataSetRenderer.cs,Assets/Scripts/Tools/Delegates.cs,Assets/Scripts/Tools/BenchmarkManager.cs,Assets/Scripts/VolumeData/Config.cs
+      SONAR_NATIVE_COMPILE_COMMANDS: ci/sonar/native_compile_commands.json
+      SONAR_SOURCE_INCLUSIONS: Assets/Scripts/PluginInterface/**/*.cs,Assets/Scripts/VolumeData/VolumeDataSet.cs,Assets/Scripts/VolumeData/VolumeDataSetRenderer.cs,Assets/Scripts/VolumeData/VolumeInputController.cs,Assets/Scripts/VolumeData/VolumeCommandController.cs,Assets/Scripts/VolumeData/MomentMapRenderer.cs,Assets/Scripts/Tools/Delegates.cs,Assets/Scripts/Tools/BenchmarkManager.cs,Assets/Scripts/VolumeData/Config.cs,Assets/Scripts/Menu/**/*.cs,Assets/Scripts/VoiceCommands/**/*.cs,Assets/Scripts/FeatureData/**/*.cs,Assets/Scripts/UI/**/*.cs,Assets/Resources/MomentMapGenerator.compute,Assets/Shaders/Volumes/**/*,Assets/Prefabs/DesktopGUI/**/*.prefab,native_plugins_cmake/**/*.cpp,native_plugins_cmake/**/*.cc,native_plugins_cmake/**/*.h
+      SONAR_TEXT_INCLUSIONS: Assets/Resources/MomentMapGenerator.compute,Assets/Shaders/Volumes/**/*,Assets/Prefabs/DesktopGUI/**/*.prefab
 
     steps:
       - uses: actions/checkout@v6
@@ -36,6 +38,9 @@ jobs:
 
       - name: Install SonarScanner for .NET
         run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Prepare native CFamily compile database
+        run: python3 ci/sonar/write_native_compile_commands.py
 
       - name: Begin SonarQube analysis
         env:
@@ -53,7 +58,11 @@ jobs:
             /o:"${SONAR_ORGANIZATION}" \
             /d:sonar.host.url="${SONAR_HOST_URL}" \
             /d:sonar.token="${SONAR_TOKEN}" \
-            /d:sonar.inclusions="${SONAR_OWNED_FILES}" \
+            /d:sonar.inclusions="${SONAR_SOURCE_INCLUSIONS}" \
+            /d:sonar.scanner.scanAll=true \
+            /d:sonar.cfamily.compile-commands="${SONAR_NATIVE_COMPILE_COMMANDS}" \
+            /d:sonar.text.inclusions.activate=true \
+            /d:sonar.text.inclusions="${SONAR_TEXT_INCLUSIONS}" \
             /d:sonar.exclusions="**/*.meta,**/Library/**,**/Temp/**,**/Obj/**,**/Build/**,**/Logs/**"
 
       - name: Build analysis project
