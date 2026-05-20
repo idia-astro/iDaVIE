@@ -10,11 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Pulls in UnityEngine core definitions, including ISerializationCallbackReceiver -->
-    <PackageReference Include="UnityEngine.Modules" Version="2022.3.15" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Include="UnityAnalysisStubs.cs" />
     <Compile Include="../../Assets/Scripts/Tools/ColorMapEnum.cs" Link="Assets/Scripts/Tools/ColorMapEnum.cs" />
     <Compile Include="../../Assets/Scripts/PluginInterface/**/*.cs" Link="Assets/Scripts/PluginInterface/%(RecursiveDir)%(Filename)%(Extension)" />
