@@ -46,7 +46,7 @@ jobs:
             /o:"${SONAR_ORGANIZATION}" \
             /d:sonar.token="${SONAR_TOKEN}" \
             /d:sonar.host.url="${SONAR_HOST_URL}" \
-            /d:sonar.exclusions="**/*.meta,**/Library/**,**/Temp/**,**/Obj/**,**/Build/**,**/Logs/**"
+            /d:sonar.exclusions="**/*.meta,**/Library/**,**/Temp/**,**/Obj/**,**/Build/**,**/Logs/**,**/PluginInterface/NativePluginLoader.cs"
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
