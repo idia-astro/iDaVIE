@@ -189,13 +189,29 @@ The diagnosis above translates into the following splits. ST5 owns only the Feat
 
 **VolumeDataSetRenderer → (ST3 work):**
 
-1. `VolumeRenderer` (MonoBehaviour) — owns `Update`/`OnRenderObject` and shader binding only.
-2. `VolumeCoordinateService` (Pure Fabrication, Unity-free) — owns all `Convert*` / `GetVoxelPosition*` / `VolumePositionToLocalPosition` maths. Satisfies §4.2.3.
-3. `RegionSelection` (aggregate) — region start/end voxels, `UpdateRegionBounds`, cursor/video-cursor state.
-4. `MaskEditingService` — `InitialiseMask`, `PaintMask`, `PaintCursor`, `FinishBrushStroke`, undo/redo handoff.
-5. `VolumePersistenceService` — `SaveSubCube`, `SaveMask` with a Strategy for new/copy/overwrite modes.
-6. `IRestFrequencyCatalogue` — replaces direct `Config.Instance.restFrequenciesGHz` use.
-7. `IFeatureSelector` (consumes ST5's interface) — replaces direct `_featureManager` references.
+The four named splits below come straight from brief §6.3 ("Split VolumeDataSetRenderer into VolumeMaterialBinder, VolumeTextureManager, VolumeCameraDriver, FoveatedSamplingPolicy"). The remaining ST3 services cover concerns the §6.3 list does not name but the legacy class still owns (cursor/region state, mask brush orchestration, save dispatch, coordinate maths, rest-frequency catalogue); each is justified by the per-method hotspot table in §2 above.
+
+§6.3 mandated splits:
+
+1. `VolumeMaterialBinder` (Pure Fabrication, Unity-light) — owns the per-frame push of threshold / scaling / colour-map / projection / vignette uniforms from `IRenderSettings`.
+2. `VolumeTextureManager` (Pure Fabrication) — owns the ray + mask `Material` instances, the volume `Texture3D` re-uploaded on `IRawVoxelAccess.CurrentGeneration` changes, and the `IMaskGpuBuffers` handle. Single owner of every Unity GPU resource the renderer uses.
+3. `VolumeCameraDriver` (Pure Fabrication) — owns transform-derived shader state (model matrix, region highlight bounds, mask voxel offsets). The only ST3 collaborator that reads `Transform`.
+4. `FoveatedSamplingPolicy` (Pure Fabrication, stateless) — owns the foveation step-budget decision. Pinned to `MaxRayMarchSteps` when foveation is disabled so the shader needs no conditional.
+
+§6.3 mandated Strategy:
+
+5. `IMaskMode` interface + `DisabledMaskMode` / `EnabledMaskMode` / `InvertedMaskMode` / `IsolatedMaskMode` strategies behind `MaskModeRegistry`. The cross-team `MaskMode` enum (shared_interfaces.md §3.1, resolution line 9) stays as the public dispatch key; each enum member maps to one strategy. Adding a fifth mode is a new enum value + a new `IMaskMode` class + a registry entry — no edit to `VolumeDataSetRenderer`. **OCP satisfied for the modes the brief calls out.**
+
+Other ST3 services (concerns §6.3 does not name but the legacy class owns):
+
+6. `VolumeCoordinateService` (Pure Fabrication, Unity-free) — owns all `Convert*` / `GetVoxelPosition*` / `VolumePositionToLocalPosition` maths. Satisfies §4.2.3.
+7. `RegionSelection` (aggregate) — region start/end voxels, `UpdateRegionBounds`, cursor/video-cursor state. Consumed by `VolumeCameraDriver` for the highlight uniforms.
+8. `MaskEditingService` — `InitialiseMask`, `PaintMask`, `PaintCursor`, `FinishBrushStroke`, undo/redo handoff through ST2's `IMaskMutationService`.
+9. `VolumePersistenceService` — `SaveSubCube`, `SaveMask` with a Strategy for new/copy/overwrite modes.
+10. `IRestFrequencyCatalogue` — replaces direct `Config.Instance.restFrequenciesGHz` use.
+11. `IFeatureSelector` (consumes ST5's interface) — replaces direct `_featureManager` references.
+
+`VolumeDataSetRenderer.cs` itself remains as a thin `MonoBehaviour` (~120 LOC) that composes the four §6.3 splits and the `MaskModeRegistry`. Its only behaviour is the Unity lifecycle (`Awake` / `Update` / `OnRenderObject` / `OnDestroy`) and a per-frame dirty-flag pull.
 
 **FeatureSetRenderer → (ST5 work, this sub-team):**
 

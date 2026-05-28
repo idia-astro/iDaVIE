@@ -23,14 +23,22 @@ These files are **skeletons** — signatures, fields, short bodies, `// TODO` ma
 
 ### `Assets/Scripts/VolumeData/VolumeDataSetRenderer.cs` (1402 LOC) → ST3
 
+Splits follow brief §6.3 verbatim for the four named classes (`VolumeMaterialBinder`, `VolumeTextureManager`, `VolumeCameraDriver`, `FoveatedSamplingPolicy`) and the `IMaskMode` Strategy; concerns the §6.3 list does not name retain their own services (coord maths, region/cursor, mask brush, persistence, rest-frequency catalogue).
+
 | Legacy method / concern | Refactored home |
 |---|---|
-| `Update`, `OnRenderObject`, shader binding, `Start`/`_startFunc` (trimmed) | `Rendering/VolumeDataSetRenderer.cs` (post-refactor — thin MonoBehaviour, ≤ 200 LOC target) |
+| `Update`, `OnRenderObject`, `Start`/`_startFunc` (trimmed) — Unity lifecycle and per-frame dirty-flag pull | `Rendering/VolumeDataSetRenderer.cs` (post-refactor — thin MonoBehaviour, ~120 LOC, composes the four §6.3 splits) |
+| Threshold / scaling / colour-map / projection / vignette shader uniforms (legacy `Update`:1022 main body) | `Rendering/VolumeMaterialBinder.cs` (§6.3 split) |
+| Material instantiation, `Texture3D` upload from `IRawVoxelAccess`, `IMaskGpuBuffers` ownership (legacy `RegenerateCubes`:580, `InitialiseMask`:1158, OnDestroy GPU teardown) | `Rendering/VolumeTextureManager.cs` (§6.3 split) |
+| Model matrix, region-highlight bounds, mask voxel offsets (legacy `BindRegionHighlight`/`BindMaskParameters` inside `Update`:1056–1095) | `Rendering/VolumeCameraDriver.cs` (§6.3 split) |
+| Foveation step-budget binding (legacy `Update`:1042–1054) | `Rendering/FoveatedSamplingPolicy.cs` (§6.3 split) |
+| Mask-mode dispatch (legacy switch on `MaskMode` enum inside `Update`:1097–1104 + `OnRenderObject`:1142–1156) | `Rendering/IMaskMode.cs` + `Rendering/MaskModes.cs` (Strategy + `MaskModeRegistry`; §6.3 OCP requirement) |
 | `ConvertWorldPositionToDataCubePosition`, `ConvertWorldRotationToDatacubeRotation`, `GetVoxelPositionDataSpace`, `GetVoxelPositionWorldSpace`, `VolumePositionToLocalPosition`, `LocalPositionToVolumePosition`, `GetCubeDimensions` | `Rendering/VolumeCoordinateService.cs` (Unity-free; §4.2.3) |
 | `SetCursorPosition`, `SetVideoCursorLocPosition`, `DeactivateVideoCursorLocPosition`, `SetRegionPosition`, `SetRegionBounds`, `UpdateRegionBounds`, `ClearRegion`, `ClearMeasure` | `Rendering/RegionSelection.cs` |
 | `InitialiseMask`, `PaintMask`, `PaintCursor`, `FinishBrushStroke` | `Rendering/MaskEditingService.cs` |
 | `SaveSubCube`, `SaveMask`, `GetMaskSavedFilePath` | `Rendering/VolumePersistenceService.cs` |
 | `RestFrequencyGHzList`, `PopulateRestFrequenyList`, `RestFrequencyGHzListIndex` setter | `Rendering/IRestFrequencyCatalogue.cs` (port; concrete realised in ST1 Infrastructure from `Config`) |
+| Shader property-ID cache (legacy private `MaterialID` static class inside the god class) | `Rendering/ShaderIds.cs` (shared by every binder) |
 
 ## Cross-team boundaries used (`External/`)
 

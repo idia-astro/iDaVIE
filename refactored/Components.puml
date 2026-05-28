@@ -65,14 +65,37 @@ package "External (cross-team contracts)" #ECEFF1 {
 package "refactored/Rendering/  (ST3)" #E3F2FD {
 
   ' ── Unity ACL — the only MonoBehaviour in this package ───────────────────
-  component "VolumeDataSetRenderer\n«MonoBehaviour»" as VDR {
+  component "VolumeDataSetRenderer\n«MonoBehaviour»\n(composes the four §6.3 splits)" as VDR {
     portin P_VDR_Settings
     portin P_VDR_Vol
     portin P_VDR_Region
     portin P_VDR_MaskBuf
   }
 
-  ' ── Domain / application services (Unity-free) ───────────────────────────
+  ' ── §6.3 split (1/4): per-frame uniform binding from IRenderSettings ─────
+  component "VolumeMaterialBinder" as VMB
+
+  ' ── §6.3 split (2/4): Unity GPU resource ownership (Material + Texture3D) ─
+  component "VolumeTextureManager" as VTM {
+    portin P_VTM_Vol
+    portin P_VTM_MaskBuf
+  }
+
+  ' ── §6.3 split (3/4): transform-derived shader state ─────────────────────
+  component "VolumeCameraDriver" as VCD {
+    portin P_VCD_Vol
+    portin P_VCD_Region
+  }
+
+  ' ── §6.3 split (4/4): foveation step-budget policy ───────────────────────
+  component "FoveatedSamplingPolicy" as FSP
+
+  ' ── §6.3 Strategy: IMaskMode (Apply / Inverse / Isolate + Disabled) ──────
+  component "MaskModeRegistry\n+ {DisabledMaskMode,\n   EnabledMaskMode,\n   InvertedMaskMode,\n   IsolatedMaskMode}" as MMR
+  interface "IMaskMode\n«internal»" as I_MaskMode
+  MMR -up- I_MaskMode
+
+  ' ── Domain / application services (Unity-free; concerns §6.3 does not name)
   component "VolumeCoordinateService" as VCS {
     portin P_VCS_Vol
   }
@@ -104,6 +127,17 @@ package "refactored/Rendering/  (ST3)" #E3F2FD {
   ' MaskEditState adapter so no Unity type crosses the IVolumeDataSet edge.
   component "MaskGpuBuffersAdapter\n(Unity ACL — composition root)" as MGB_Impl
   MGB_Impl -up- I_MaskBuf
+
+  ' ── §6.3 splits: VolumeDataSetRenderer composition ───────────────────────
+  VDR ..> VMB : <<delegates uniform binding>>
+  VDR ..> VTM : <<owns materials + textures via>>
+  VDR ..> VCD : <<delegates transform-derived state>>
+  VDR ..> FSP : <<delegates foveation>>
+  VDR ..> MMR : <<dispatches MaskMode via>>
+  I_Vol     )-- P_VTM_Vol
+  I_MaskBuf )-- P_VTM_MaskBuf
+  I_Vol     )-- P_VCD_Vol
+  REG       )-- P_VCD_Region
 }
 
 ' ══════════════════════════════════════════════════════════════════════════

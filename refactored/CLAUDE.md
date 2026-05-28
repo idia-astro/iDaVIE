@@ -127,6 +127,8 @@ If something is unclear, stop. Name what's confusing. Ask.
 Simplicity is a priority.
 Informational files for sub-teams are located in the info directory.
 
+ST3 (Rendering Engine) class names follow brief §6.3 verbatim: `VolumeDataSetRenderer` decomposes into `VolumeMaterialBinder`, `VolumeTextureManager`, `VolumeCameraDriver`, `FoveatedSamplingPolicy`, and an `IMaskMode` Strategy (with `MaskModeRegistry` mapping the cross-team `MaskMode` enum to concrete strategies). Concerns the §6.3 list does not name retain their own services (`VolumeCoordinateService`, `RegionSelection`, `MaskEditingService`, `VolumePersistenceService`, `IRestFrequencyCatalogue`). The cross-team `MaskMode` enum from `shared_interfaces.md` §3.1 (resolution line 9) remains the dispatch key; `IMaskMode` is ST3-internal and does not cross team boundaries.
+
 ## Code Style Notes
 
 - All source files carry the LGPL-3.0 header block — preserve it in new files.
