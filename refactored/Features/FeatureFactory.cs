@@ -225,27 +225,24 @@ namespace iDaVIE.Features
         public void PopulateFromSourceStats(FeatureSet target)
         {
             IReadOnlyDictionary<int, SourceStats> all = _stats.GetAllStats();
+            var buffer = new List<IFeature>(all.Count);
             foreach (var (originId, src) in all)
             {
-                var center = new CartesianCoord(
-                    (src.BoundsMin.X + src.BoundsMax.X) / 2,
-                    (src.BoundsMin.Y + src.BoundsMax.Y) / 2,
-                    (src.BoundsMin.Z + src.BoundsMax.Z) / 2);
-                var size = new CartesianCoord(
-                    src.BoundsMax.X - src.BoundsMin.X,
-                    src.BoundsMax.Y - src.BoundsMin.Y,
-                    src.BoundsMax.Z - src.BoundsMin.Z);
-
                 var feature = new Feature(originId, $"Masked Source #{originId}", flag: "",
-                                          center, size, rawDataValues: System.Array.Empty<string>());
+                                          center: src.BoundsMin.Midpoint(src.BoundsMax),
+                                          size:   src.BoundsMin.Extent(src.BoundsMax),
+                                          rawDataValues: System.Array.Empty<string>());
 
                 // Establish Invariant 5.4: Statistics non-null on a Mask feature BEFORE exposure.
                 feature.UpdateStatistics(new FeatureStatistics(
                     src.VoxelCount, src.TotalFlux, src.PeakFlux, src.FluxWeightedCentroid,
                     src.ChannelW20, src.VeloW20, src.ChannelVsys, src.VeloVsys));
 
-                target.AddFeature(feature);
+                buffer.Add(feature);
             }
+            // Bulk attach — one all-dirty signal instead of N (matches PopulateFromTable's
+            // hot-path rule documented on FeatureSet.AddFeatures).
+            target.AddFeatures(buffer);
             // Caller raises FeatureSetChanged.
         }
     }

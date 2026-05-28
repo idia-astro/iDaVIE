@@ -45,7 +45,9 @@ namespace iDaVIE.Features
         public bool IsSelected
         {
             get => _isSelected;
-            set { _isSelected = value; _listener.OnFeatureDirty(OriginId); }
+            // Internal: only SelectionService inside iDaVIE.Features may mutate
+            // selection; cross-team holders see the read-only IFeature surface.
+            internal set { _isSelected = value; _listener.OnFeatureDirty(OriginId); }
         }
 
         internal void SetFlag(string flag)

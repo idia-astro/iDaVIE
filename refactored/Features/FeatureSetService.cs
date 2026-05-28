@@ -75,14 +75,8 @@ namespace iDaVIE.Features
             if (owningSet.Type == FeatureSetType.Mask)
                 throw new InvalidOperationException("Mask feature bounds are owned by ISourceStatsProvider.");
 
-            // TODO: replace with CartesianCoord helpers Add/Sub/Scale once they land in shared types
-            var center = new CartesianCoord((boundsMin.X + boundsMax.X) / 2,
-                                            (boundsMin.Y + boundsMax.Y) / 2,
-                                            (boundsMin.Z + boundsMax.Z) / 2);
-            var size = new CartesianCoord(boundsMax.X - boundsMin.X,
-                                          boundsMax.Y - boundsMin.Y,
-                                          boundsMax.Z - boundsMin.Z);
-            ((Feature)feature).UpdateGeometry(center, size);
+            ((Feature)feature).UpdateGeometry(boundsMin.Midpoint(boundsMax),
+                                              boundsMin.Extent(boundsMax));
             FeatureSetChanged?.Invoke();
         }
 
@@ -132,8 +126,8 @@ namespace iDaVIE.Features
             if (boundsMin.X > boundsMax.X || boundsMin.Y > boundsMax.Y || boundsMin.Z > boundsMax.Z)
                 throw new ArgumentException("boundsMin must be ≤ boundsMax on each axis.", nameof(boundsMin));
 
-            var center = Midpoint(boundsMin, boundsMax);
-            var size   = Extent(boundsMin, boundsMax);
+            var center = boundsMin.Midpoint(boundsMax);
+            var size   = boundsMin.Extent(boundsMax);
 
             var selectionBox = _sets[FeatureSetType.SelectionBox].FirstOrDefault();
             if (selectionBox == null)
@@ -208,12 +202,8 @@ namespace iDaVIE.Features
             if (selectionBox != null && selectionBox.Features.Count > 0)
             {
                 var only = selectionBox.Features[0];
-                var min = new CartesianCoord(only.Center.X - only.Size.X / 2,
-                                             only.Center.Y - only.Size.Y / 2,
-                                             only.Center.Z - only.Size.Z / 2);
-                var max = new CartesianCoord(only.Center.X + only.Size.X / 2,
-                                             only.Center.Y + only.Size.Y / 2,
-                                             only.Center.Z + only.Size.Z / 2);
+                var min  = only.BoundsMin();
+                var max  = only.BoundsMax();
                 dto.SelectionBoxBounds = new SubcubeBoundsDto
                 {
                     XMin = min.X, XMax = max.X,
@@ -287,15 +277,16 @@ namespace iDaVIE.Features
 
         private static FeatureEntryDto SnapshotFeature(IFeature f)
         {
-            var hx = f.Size.X / 2; var hy = f.Size.Y / 2; var hz = f.Size.Z / 2;
+            var min = f.BoundsMin();
+            var max = f.BoundsMax();
             return new FeatureEntryDto
             {
                 OriginId   = f.OriginId,
                 Name       = f.Name,
                 Flag       = f.Flag,
                 CenterX    = f.Center.X, CenterY = f.Center.Y, CenterZ = f.Center.Z,
-                BoundsMinX = f.Center.X - hx, BoundsMinY = f.Center.Y - hy, BoundsMinZ = f.Center.Z - hz,
-                BoundsMaxX = f.Center.X + hx, BoundsMaxY = f.Center.Y + hy, BoundsMaxZ = f.Center.Z + hz,
+                BoundsMinX = min.X, BoundsMinY = min.Y, BoundsMinZ = min.Z,
+                BoundsMaxX = max.X, BoundsMaxY = max.Y, BoundsMaxZ = max.Z,
             };
         }
 
@@ -322,12 +313,6 @@ namespace iDaVIE.Features
             if (mapping  == null) throw new ArgumentNullException(nameof(mapping));
             _importedMetadata[set.Index] = new ImportProvenance(filePath, mapping);
         }
-
-        private static CartesianCoord Midpoint(CartesianCoord min, CartesianCoord max)
-            => new((min.X + max.X) / 2, (min.Y + max.Y) / 2, (min.Z + max.Z) / 2);
-
-        private static CartesianCoord Extent(CartesianCoord min, CartesianCoord max)
-            => new(max.X - min.X, max.Y - min.Y, max.Z - min.Z);
 
         private readonly record struct ImportProvenance(string FilePath, FeatureImportMapping Mapping);
 
@@ -382,8 +367,8 @@ namespace iDaVIE.Features
             else if (existing != null && stats != null)
             {
                 // Branch 4 — Updated source: refresh geometry + statistics.
-                var center = Midpoint(stats.BoundsMin, stats.BoundsMax);
-                var size   = Extent(stats.BoundsMin, stats.BoundsMax);
+                var center = stats.BoundsMin.Midpoint(stats.BoundsMax);
+                var size   = stats.BoundsMin.Extent(stats.BoundsMax);
                 ((Feature)existing).UpdateGeometry(center, size);
                 ((Feature)existing).UpdateStatistics(new FeatureStatistics(
                     stats.VoxelCount, stats.TotalFlux, stats.PeakFlux, stats.FluxWeightedCentroid,
@@ -395,8 +380,8 @@ namespace iDaVIE.Features
 
         private static Feature BuildMaskFeature(int originId, SourceStats stats)
         {
-            var center = Midpoint(stats.BoundsMin, stats.BoundsMax);
-            var size   = Extent(stats.BoundsMin, stats.BoundsMax);
+            var center = stats.BoundsMin.Midpoint(stats.BoundsMax);
+            var size   = stats.BoundsMin.Extent(stats.BoundsMax);
             var feature = new Feature(originId, $"Masked Source #{originId}", flag: string.Empty,
                                       center, size, rawDataValues: Array.Empty<string>());
             feature.UpdateStatistics(new FeatureStatistics(

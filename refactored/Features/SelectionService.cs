@@ -61,22 +61,9 @@ namespace iDaVIE.Features
                 if (!set.IsVisible) continue;
                 foreach (var feature in set.Features)
                 {
-                    // Integer half-size — consistent with the integer CartesianCoord
-                    // precision documented in ST5_domain_design.md §4.2.
-                    int hx = feature.Size.X / 2;
-                    int hy = feature.Size.Y / 2;
-                    int hz = feature.Size.Z / 2;
-
-                    if (cursorVoxelSpace.X >= feature.Center.X - hx &&
-                        cursorVoxelSpace.X <= feature.Center.X + hx &&
-                        cursorVoxelSpace.Y >= feature.Center.Y - hy &&
-                        cursorVoxelSpace.Y <= feature.Center.Y + hy &&
-                        cursorVoxelSpace.Z >= feature.Center.Z - hz &&
-                        cursorVoxelSpace.Z <= feature.Center.Z + hz)
-                    {
-                        SelectFeature(feature, set);
-                        return true;
-                    }
+                    if (!feature.Contains(cursorVoxelSpace)) continue;
+                    SelectFeature(feature, set);
+                    return true;
                 }
             }
             return false;

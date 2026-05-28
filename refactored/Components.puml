@@ -157,6 +157,13 @@ package "refactored/Features/  (ST5)" #E8F5E9 {
     FAGG -up- I_FSet
     FAGG -up- I_FStats
     FAGG ).. I_Dirty : notifies
+
+    ' CartesianCoordOps — static extension methods on CartesianCoord and IFeature
+    ' (Midpoint / Extent / BoundsMin / BoundsMax / Contains). Named per
+    ' ST5_domain_design.md §4.2; Information Expert helpers, kept off the
+    ' cross-team contract because CartesianCoord is an ST1-owned kernel struct.
+    component "CartesianCoordOps\n«utility»" as CCO
+    FAGG ..> CCO : <<bounds arithmetic>>
   }
 
   ' ── Application layer (orchestrators; Unity-free) ────────────────────────

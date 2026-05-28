@@ -73,16 +73,15 @@ namespace iDaVIE.Features
                 var centroid = statsCentroid ?? feature.Center;
                 var world    = _coords.Transform(centroid);
 
-                var hx = feature.Size.X / 2;
-                var hy = feature.Size.Y / 2;
-                var hz = feature.Size.Z / 2;
+                var min = feature.BoundsMin();
+                var max = feature.BoundsMax();
 
                 var row = new XElement("TR",
                     Td(feature.OriginId + 1),
                     Td(feature.Center.X), Td(feature.Center.Y), Td(feature.Center.Z),
-                    Td(feature.Center.X - hx), Td(feature.Center.X + hx),
-                    Td(feature.Center.Y - hy), Td(feature.Center.Y + hy),
-                    Td(feature.Center.Z - hz), Td(feature.Center.Z + hz),
+                    Td(min.X), Td(max.X),
+                    Td(min.Y), Td(max.Y),
+                    Td(min.Z), Td(max.Z),
                     Td(world.IsValid ? world.RightAscension * 180.0 / Math.PI : double.NaN),
                     Td(world.IsValid ? world.Declination    * 180.0 / Math.PI : double.NaN),
                     Td(world.IsValid ? world.SpectralValue                    : double.NaN),
