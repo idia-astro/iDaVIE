@@ -131,3 +131,10 @@ Simplicity is a priority.
 - All source files carry the LGPL-3.0 header block — preserve it in new files.
 - Namespaces follow directory names (`VolumeData`, `DataFeatures`, `CatalogData`, `fts` for plugin loader).
 - Pull requests must include documentation in the code and a clear description of changes.
+
+# Needed additional documents
+Any refactor effort must be accompanied by the assignment specification PDF. If it is not provided, the user should be notified that it is necessary.
+
+# Current refactor
+The worked refactor is focused on refactoring VolumeDataSetRenderer and FeatureSetRenderer, as well as any related and dependent classes owned by other sub-teams.
+Every sub-team must have at least one class refactored.
