@@ -1,0 +1,252 @@
+@startuml refactored_Components
+skinparam dpi 80
+
+' UML Component Diagram — refactored/ skeletons (ST3 + ST5 worked examples).
+'
+' Scope:
+'   Every component shipped under refactored/ (Rendering/ for ST3 and Features/
+'   for ST5) as a black box with its provided (lollipop) and required (socket)
+'   interfaces. Cross-team neighbours reach in via the External/ reference
+'   declarations only.
+'
+' Packaging mirrors refactored/README.md §1 (the Rendering/Features split) and
+' ST5_domain_design.md §7 (Domain / Application / Unity ACL layering).
+'
+' Reading order:
+'   - Lollipop on a component edge       = provided interface.
+'   - Socket on a component edge         = required interface.
+'   - A lollipop docked into a socket    = wiring satisfied at composition root.
+'   - «internal» on an interface label   = scoped to the owning assembly (DD-5);
+'                                          cross-team consumers may not bind it.
+
+skinparam componentBackgroundColor #FAFAFA
+skinparam componentBorderColor #444
+skinparam interfaceBackgroundColor #FFFFFF
+skinparam interfaceBorderColor #444
+skinparam packageBackgroundColor #FFFFFF
+skinparam linetype polyline
+hide stereotype
+
+' ══════════════════════════════════════════════════════════════════════════
+' EXTERNAL — reference declarations (refactored/External/), owned elsewhere
+' ══════════════════════════════════════════════════════════════════════════
+
+package "External (cross-team contracts)" #ECEFF1 {
+
+  package "ST1 — Kernel" #FFFFFF {
+    component "VolumeDataSet aggregate\n(owned by ST1)" as ST1_Volume
+    interface "IVolumeDataSet" as I_Vol
+    ST1_Volume -up- I_Vol
+  }
+
+  package "ST2 — Data plug-in adapters" #FFFFFF {
+    component "FITS / WCS / DataAnalysis\nadapters (owned by ST2)" as ST2_Plugins
+    interface "ICoordinateTransformer"  as I_Coords
+    interface "ISourceStatsProvider"    as I_Stats
+    interface "IMaskMutationService"    as I_MaskMut
+    interface "IFitsMaskWriter\n+ IFitsCubeReader" as I_FitsIO
+    ST2_Plugins -up- I_Coords
+    ST2_Plugins -up- I_Stats
+    ST2_Plugins -up- I_MaskMut
+    ST2_Plugins -up- I_FitsIO
+  }
+
+  package "ST3 — Rendering contracts" #FFFFFF {
+    component "IRenderSettings provider\n(owned by ST3 application layer)" as ST3_Settings
+    interface "IRenderSettings" as I_RSet
+    ST3_Settings -up- I_RSet
+  }
+}
+
+' ══════════════════════════════════════════════════════════════════════════
+' refactored/Rendering/  — ST3 worked example
+' ══════════════════════════════════════════════════════════════════════════
+
+package "refactored/Rendering/  (ST3)" #E3F2FD {
+
+  ' ── Unity ACL — the only MonoBehaviour in this package ───────────────────
+  component "VolumeDataSetRenderer\n«MonoBehaviour»" as VDR {
+    portin P_VDR_Settings
+    portin P_VDR_Vol
+    portin P_VDR_Region
+    portin P_VDR_MaskBuf
+  }
+
+  ' ── Domain / application services (Unity-free) ───────────────────────────
+  component "VolumeCoordinateService" as VCS {
+    portin P_VCS_Vol
+  }
+
+  component "RegionSelection" as REG {
+    portin P_REG_Vol
+    portin P_REG_Coords
+  }
+
+  component "MaskEditingService" as MES {
+    portin P_MES_MaskMut
+  }
+
+  component "VolumePersistenceService" as VPS {
+    portin P_VPS_Vol
+    portin P_VPS_FitsIO
+  }
+
+  ' ── Provided interfaces ──────────────────────────────────────────────────
+  interface "IRestFrequencyCatalogue" as I_RFC
+  interface "IMaskGpuBuffers\n«internal»"  as I_MaskBuf
+
+  ' IRestFrequencyCatalogue port: declared in this package, realised by ST1
+  ' infrastructure from Config (per refactored/README.md §legacy mapping).
+  component "RestFrequencyCatalogue\n(realised by ST1 Infrastructure)" as RFC_Impl
+  RFC_Impl -up- I_RFC
+
+  ' IMaskGpuBuffers port: realised in the Unity ACL alongside the ST2
+  ' MaskEditState adapter so no Unity type crosses the IVolumeDataSet edge.
+  component "MaskGpuBuffersAdapter\n(Unity ACL — composition root)" as MGB_Impl
+  MGB_Impl -up- I_MaskBuf
+}
+
+' ══════════════════════════════════════════════════════════════════════════
+' refactored/Features/  — ST5 worked example
+' ══════════════════════════════════════════════════════════════════════════
+
+package "refactored/Features/  (ST5)" #E8F5E9 {
+
+  ' ── Domain layer (aggregates; Unity-free) ────────────────────────────────
+  package "Domain" #FFFFFF {
+    component "Feature / FeatureSet /\nFeatureStatistics" as FAGG
+    interface "IFeature"           as I_Feat
+    interface "IFeatureSet"        as I_FSet
+    interface "IFeatureStatistics" as I_FStats
+    interface "IFeatureDirtyListener\n«internal»" as I_Dirty
+    FAGG -up- I_Feat
+    FAGG -up- I_FSet
+    FAGG -up- I_FStats
+    FAGG ).. I_Dirty : notifies
+  }
+
+  ' ── Application layer (orchestrators; Unity-free) ────────────────────────
+  package "Application" #FFFFFF {
+
+    component "FeatureSetService" as FSS {
+      portin P_FSS_Stats
+      portin P_FSS_Bind
+      portin P_FSS_Factory
+      portin P_FSS_Vol
+    }
+    interface "IFeatureSetQuery"            as I_FSQ
+    interface "IFeatureSetCatalog\n«internal»" as I_FSC
+    FSS -up- I_FSQ
+    FSS -up- I_FSC
+
+    component "FeatureFactory" as FAC {
+      portin P_FAC_Coords
+    }
+    interface "IFeatureFactory\n«internal»" as I_Fac
+    FAC -up- I_Fac
+
+    component "FeatureImportService" as FIS {
+      portin P_FIS_Reader
+      portin P_FIS_Catalog
+      portin P_FIS_Bind
+      portin P_FIS_Factory
+    }
+    interface "IFeatureImportService" as I_FIS
+    FIS -up- I_FIS
+
+    interface "IVisualiserBinder\n«internal»" as I_Bind
+  }
+
+  ' ── Infrastructure (catalogue I/O; Unity-free) ───────────────────────────
+  package "Infrastructure" #FFFFFF {
+    component "VoTableSaver" as VOS {
+      portin P_VOS_Coords
+    }
+    interface "IFeatureCatalogueReader" as I_CRead
+    interface "IFeatureCatalogueWriter" as I_CWrite
+    VOS -up- I_CWrite
+    component "(catalogue readers —\nVOTable / FITS table)" as CRead_Impl
+    CRead_Impl -up- I_CRead
+  }
+
+  ' ── Unity ACL (the only ST5 layer permitted to touch UnityEngine) ────────
+  package "Unity ACL" #FFFFFF {
+    component "FeatureVisualiser\n«MonoBehaviour»\n(owns ComputeBuffer)" as FV
+    component "VisualiserBinder" as VB
+    VB -up- I_Bind
+    VB ..> FV : instantiates
+    FV -up- I_Dirty
+  }
+}
+
+' ══════════════════════════════════════════════════════════════════════════
+' WIRING — provided lollipops docked into required sockets
+' ══════════════════════════════════════════════════════════════════════════
+
+' ── Rendering: cross-team inputs ─────────────────────────────────────────
+I_RSet    )-- P_VDR_Settings
+I_Vol     )-- P_VDR_Vol
+I_Vol     )-- P_VCS_Vol
+I_Vol     )-- P_REG_Vol
+I_Vol     )-- P_VPS_Vol
+I_MaskMut )-- P_MES_MaskMut
+I_FitsIO  )-- P_VPS_FitsIO
+
+' ── Rendering: intra-package wiring ──────────────────────────────────────
+REG ..> P_REG_Coords : <<binds>>
+VCS ..> P_REG_Coords
+' VolumeDataSetRenderer pulls in the ST3-internal ports it owns:
+REG       )-- P_VDR_Region
+I_MaskBuf )-- P_VDR_MaskBuf
+
+' ── Features: cross-team inputs ──────────────────────────────────────────
+I_Stats  )-- P_FSS_Stats
+I_Vol    )-- P_FSS_Vol
+I_Coords )-- P_FAC_Coords
+I_Coords )-- P_VOS_Coords
+
+' ── Features: ST5-internal wiring ────────────────────────────────────────
+I_Bind   )-- P_FSS_Bind
+I_Fac    )-- P_FSS_Factory
+
+I_CRead  )-- P_FIS_Reader
+I_FSC    )-- P_FIS_Catalog
+I_Bind   )-- P_FIS_Bind
+I_Fac    )-- P_FIS_Factory
+
+' VisualiserBinder hands a per-set IFeatureDirtyListener back to FeatureSetService
+' via the IVisualiserBinder lollipop; FeatureSet then stores it on Listener.
+VB ..> FAGG : binds a FeatureVisualiser per FeatureSet
+
+' ── ST3 ↔ ST5 cross-package reads ────────────────────────────────────────
+' VolumeDataSetRenderer does NOT read ST5 directly post-refactor; feature
+' interaction crosses the boundary via IFeatureSelectionService (lives in
+' ST5_interface.md §3, not declared in refactored/).
+note right of VDR
+  Feature interaction (legacy
+  TeleportToRegion, selection
+  hover) moved out — handled
+  by IFeatureSelectionService
+  (ST5), not by this class.
+end note
+
+' ══════════════════════════════════════════════════════════════════════════
+' LEGEND
+' ══════════════════════════════════════════════════════════════════════════
+
+legend right
+  |= Symbol      |= Meaning                                                   |
+  | component    | Black-box implementation unit (a class or cohesive cluster)|
+  | lollipop ()  | Provided interface                                         |
+  | socket       | Required interface (injected at composition root)          |
+  | «internal»   | Assembly-scoped interface; cross-team consumers may NOT bind|
+  | «MonoBehaviour» | Unity ACL — single class touching UnityEngine in its package|
+  | ..>          | Dependency / read-only consumption                         |
+  ----
+  Cross-team boundary = the External package edge. Only public lollipops
+  cross it; «internal» interfaces stay inside their owning assembly per DD-5.
+  refactored/Features/FeatureSetRenderer.cs is intentionally empty — the
+  legacy class was decomposed across this diagram and not replaced.
+endlegend
+
+@enduml
