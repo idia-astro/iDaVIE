@@ -57,4 +57,15 @@ These two files are **reference declarations** — they reproduce the contract s
 
 ## Build status
 
-These skeletons reference types from `iDaVIE.Kernel.Contracts.Types` (`CartesianCoord`, `FeatureColour`, `VolumeExtents`, `SubcubeBounds`) and `iDaVIE.Data` (`SourceStats`, `ISourceStatsProvider`, `ICoordinateTransformer`, `IMaskMutationService`) that are declared in `shared_interfaces.md` but do not yet exist as source. The skeletons are **not buildable in the current repository** — they evidence target shape, not a parallel build.
+These skeletons reference types declared in `shared_interfaces.md` but not yet realised as source:
+
+| Namespace | Types referenced |
+|---|---|
+| `iDaVIE.Kernel.Contracts` | `IVolumeDataSet`, `IMaskEditState`, `LoadStatus` |
+| `iDaVIE.Kernel.Contracts.Types` | `CartesianCoord`, `FeatureColour`, `VolumeExtents`, `SubcubeBounds`, `DataStats`, `HistogramData`, `AxisUnits` |
+| `iDaVIE.Kernel.Contracts.Plugins` | `IRawVoxelAccess`, `VoxelBufferDescriptor` |
+| `iDaVIE.Data` | `ICoordinateTransformer`, `WorldCoord`, `IMaskMutationService`, `BrushStroke`, `StrokePaintConfig`, `VoxelCoord2D`, `BrushPaintMode`, `PaintConfig`, `SourceEntry` |
+| `iDaVIE.Features` | `SourceStats`, `ISourceStatsProvider`, `IDataAnalysisPlugin` (per shared_interfaces.md §5.5 — ST5 owns the declaration, ST2 realises) |
+| `iDaVIE.Rendering.Contracts` | `IRenderSettings`, `IRenderSettingsMutator`, `MaskMode`, `ScalingType`, `ProjectionMode`, `ColorMapEnum` |
+
+The skeletons are **not buildable in the current repository** — they evidence target shape, not a parallel build. Stub reference declarations for the most-consumed cross-team types live in `External/IVolumeDataSet.cs` and `External/ICoordinateTransformer.cs` so the ST3/ST5 splits compile-as-illustrated.

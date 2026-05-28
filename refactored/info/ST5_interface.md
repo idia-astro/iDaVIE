@@ -159,8 +159,8 @@ public interface IFeatureSelectionService
 {
     IFeature? SelectedFeature { get; }
     IFeatureSet? SelectedFeatureSet { get; }
-    /// <summary>Selects the first feature whose AABB contains cursorWorldSpace.</summary>
-    bool SelectAtCursor(CartesianCoord cursorWorldSpace);
+    /// <summary>Selects the first feature whose AABB contains cursorVoxelSpace.</summary>
+    bool SelectAtCursor(CartesianCoord cursorVoxelSpace);
     void SelectFeature(IFeature feature, IFeatureSet owningSet);
     void DeselectFeature();
     event Action<IFeature?> SelectionChanged;

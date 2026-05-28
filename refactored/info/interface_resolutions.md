@@ -1,0 +1,31 @@
+- we'll use ST6 design for logentry, not ST1
+- we'll use ST1 design for ILogEntry, not ST6 bc more things
+- IDesktopShell - we'll use ST1 design for this as it's more general
+- LoadStatus is the name for this method (ST1/ST6)
+- IVolumeDataSet - use ST1 
+- IVolumeLoader - use ST1
+- IRawVoxelAccess - use ST1
+- IDataAnalysis - use ST5
+- MaskMode - use ST3
+- IMaskEditState - use ST6
+- VolumeStateDTO - use ST1
+- SubcubeBounds - use ST6
+- MomentMapResult - owned by ST3, use ST3 design
+- BrushStroke - use ST6
+- IMaskMutationService - use ST2
+- ISourceStatsProvider - use ST5
+- SourceStats - use ST5
+- MaskStateDTO - use ST2
+- IRenderSettings - use ST3
+- IRenderSettingsMutator - use ST3
+- RenderStateDTO - use ST3
+- LocomotionState - use ST4 design
+- InteractionState - use ST4
+- IInteractioStateProvider - use ST4
+- InteractionStateDTO - use ST4
+- BrushConfig - use ST4
+- FeatureImportMapping - use ST5 name
+- FeatureImportService - use ST5
+- DesktStateDto - use ST6
+- IWorkspaceSaveComman - use ST7
+- for all ST7 section, ST7 wins by default

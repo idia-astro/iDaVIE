@@ -134,3 +134,59 @@ ST3 (Rendering Engine) class names follow brief §6.3 verbatim: `VolumeDataSetRe
 - All source files carry the LGPL-3.0 header block — preserve it in new files.
 - Namespaces follow directory names (`VolumeData`, `DataFeatures`, `CatalogData`, `fts` for plugin loader).
 - Pull requests must include documentation in the code and a clear description of changes.
+
+## Info package contents (`refactored/info/`)
+
+Self-contained starter pack for any sub-team picking up the worked refactor. Categorised by role.
+
+### Charter — the binding requirements
+| File | Role |
+|---|---|
+| `iDaVIE_Refactoring_Assignment_FINAL_1.pdf` | The brief. Source of `§4.2` mandatory architectural constraints, `§6.3` mandated splits, learning outcomes. Every other doc here cites it. |
+| `T2 Baseline Report.pdf` | Pre-refactor metric evidence (CK, CodeScene, NDepend, SonarQube). Justifies which classes must be refactored and quantifies the violation budget. |
+
+### Canonical architecture (cross-team)
+| File | Role |
+|---|---|
+| `global_model.md` | Acyclic ownership graph (kernel-up ST1→ST2→ST3→ST4→ST5→ST6→ST7) and the named concrete classes each team owns. Cited by `shared_interfaces.md` §0, §4, §8. |
+| `interface_resolutions.md` | The 31 resolution-line decisions that picked an owner/shape when multiple teams submitted competing designs. Cited by every "(resolution line N)" reference in `shared_interfaces.md`. |
+| `shared_interfaces.md` | Single source of truth for every C# type crossing a sub-team boundary, after `interface_resolutions.md` is applied. Teams adopt these signatures verbatim. |
+
+### ST5 worked example (template for other teams)
+| File | Role |
+|---|---|
+| `ST5_refactoring_proposal.md` | Full ST5 deliverable. The final-state description of the FeatureSetRenderer refactor. |
+| `ST5_domain_design.md` | DD-2/DD-5/DD-14 design decisions + invariants (e.g. Invariant 5.4 referenced by `Features/FeatureFactory.cs`). |
+| `ST5_interface.md` | ST5-side cross-team contract. Subset of `shared_interfaces.md` filtered to types ST5 publishes/consumes. |
+| `ST5_Feature_System_BDD_post_refactor.{svg,png}` | Feature-system Block Definition Diagram (SysML), post-refactor target state. |
+| `ST5_Feature_System_Component_post_refactor.{svg,png}` | Feature-system component diagram, post-refactor target state. |
+| `ST5_Integration_Overview.{svg,png}` | How ST5 integrates with ST1/ST2/ST3/ST6 across the cross-team boundary. |
+
+### Diagram references from neighbouring teams
+| File | Role |
+|---|---|
+| `T3_Rendering_Engine_Components.svg` | ST3 component diagram — analogous structure to ST5's component diagram. |
+| `T6_Desktop_GUI_Client_Shell.svg` | ST6 desktop-shell component diagram. |
+
+### Worked refactor — per-method evidence and plan
+| File | Role |
+|---|---|
+| `refactor_plan.md` | Per-method hotspot table for `VolumeDataSetRenderer` and `FeatureSetRenderer`. The SRP/OCP/DIP/GRASP violations and the proposed split per method. |
+| `README.md` | Walkthrough of the `refactored/` skeleton — legacy-method → new-home mapping plus the build-status note. |
+
+### Tier-3 documents that belong here when needed
+Not currently present, but other sub-teams should pull from the parent repository if their refactor touches the relevant area:
+- `ST1_concepts.md`, `ST1_responsibilities.md`, `ST1_plugin_abi.md`, `ST1_fitness_functions.md`, `ST1_conformance_suite.md` — kernel ABI, plug-in versioning, fitness functions every team is bound by.
+- `ST7_responsibilities.md` — persistence boundary; needed by any team adding a new capture port DTO.
+- `STn_conceptual_model.{md,puml}` per neighbouring team — cross-reference for nomenclature.
+- `iDaVIE_Acronym_Glossary.pdf` — abbreviation glossary.
+- `UNITY6_MIGRATION_REPORT.md` — strategic driver cited in `refactor_plan.md §1.4`.
+
+### How a new sub-team should read this package
+1. **`iDaVIE_Refactoring_Assignment_FINAL_1.pdf §4.2` and `§6.3`** — non-negotiable constraints and mandated splits.
+2. **`global_model.md §2`** — confirm your team is positioned correctly in the acyclic ownership graph.
+3. **`shared_interfaces.md` §0 + your team's §** — every type crossing your boundary.
+4. **`interface_resolutions.md`** — *why* the shape in `shared_interfaces.md` is the way it is.
+5. **`T2 Baseline Report.pdf` §3, §4, §6.2, §6.3** — find your team's CRITICAL classes and the per-pair temporal coupling that justifies an interface seam.
+6. **ST5 worked example** — use the proposal + domain-design + diagrams + the `refactored/Features/` skeleton as a template for the depth and shape of *your* deliverable.
+7. **`refactor_plan.md`** — read as a worked example of per-method hotspot tables; produce an equivalent for your class.

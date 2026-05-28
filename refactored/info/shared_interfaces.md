@@ -1454,7 +1454,7 @@ namespace iDaVIE.Features
         IFeature?    SelectedFeature    { get; }
         IFeatureSet? SelectedFeatureSet { get; }
 
-        bool SelectAtCursor(CartesianCoord cursorWorldSpace);
+        bool SelectAtCursor(CartesianCoord cursorVoxelSpace);
         void SelectFeature(IFeature feature, IFeatureSet owningSet);
         void DeselectFeature();
 
