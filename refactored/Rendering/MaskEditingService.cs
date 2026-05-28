@@ -4,26 +4,31 @@
 //
 // Refactor delta:
 //   - Pure C# orchestrator. Native mask voxel mutation goes through ST2's
-//     IMaskMutationService port; no FitsReader / native IntPtr at this layer.
-//   - Brush iteration logic (the 3-D for-loop in legacy PaintCursor:1213) is
-//     kept here but now batches voxels into a single IMaskMutationService.PaintVoxels
-//     call so the native boundary is crossed once per cursor click, not 27 times
-//     for a brush size of 3.
+//     IMaskMutationService port (shared_interfaces.md §2); no FitsReader /
+//     native IntPtr at this layer.
+//   - The 3-D brush stamp from legacy PaintCursor:1213 is rasterised into a
+//     BrushStroke (slice-local VoxelCoord2D list) and applied in a single
+//     IMaskMutationService.ApplyBrush call, so the native boundary is crossed
+//     once per cursor click instead of 27 times for a brush size of 3.
 //   - Information Expert — undo / redo history lives on ST2 per
 //     Delegates.BrushHistoryChanged; this class is stateless except for the
 //     in-progress brush stroke.
 
-using iDaVIE.Data;                       // IMaskMutationService, BrushStroke
+using System.Collections.Generic;
+using iDaVIE.Data;                       // IMaskMutationService, BrushStroke, StrokePaintConfig, VoxelCoord2D, BrushPaintMode
 using iDaVIE.Kernel.Contracts.Types;     // CartesianCoord
 
 namespace iDaVIE.Rendering
 {
     public sealed class MaskEditingService
     {
+        // Axis convention matches IMaskEditState.GetMaskSlice / BrushStroke.Axis:
+        // 0 = X, 1 = Y, 2 = Z. Cursor paints stamp along the Z slice (the user's
+        // brush rasterises into successive XY slices in legacy behaviour).
+        private const int CursorPaintAxis = 2;
+
         private readonly IMaskMutationService _mask;
         private readonly RegionSelection      _region;
-        private CartesianCoord _previousPaintLocation;
-        private short          _previousPaintValue;
 
         public MaskEditingService(IMaskMutationService mask, RegionSelection region)
         {
@@ -32,28 +37,43 @@ namespace iDaVIE.Rendering
         }
 
         /// <summary>Stamp a brush of (BrushSize)³ voxels centred on the cursor.</summary>
-        public void PaintCursor(short value)
+        public void PaintCursor(short sourceId, BrushPaintMode paintMode)
         {
             var radius = (_region.BrushSize - 1) / 2;
             var c      = _region.CursorVoxel;
 
             // Batch the entire brush stamp into one ST2 call. The legacy
-            // implementation called PaintMaskVoxel(...) up to 27 times per
-            // click (3-D nested for-loops in VolumeDataSetRenderer.cs:1217).
-            // TODO: accumulate voxels into IReadOnlyList<CartesianCoord> and
-            //       call _mask.PaintVoxels(voxels, value). The early-out
-            //       "already painted at this location" check from PaintMask:1199
-            //       moves into the accumulator as a set-membership filter.
+            // implementation called PaintMaskVoxel up to 27 times per click
+            // (3-D nested for-loops in VolumeDataSetRenderer.cs:1217).
+            // The early-out "already painted at this location" check from
+            // PaintMask:1199 moves into ST2's IMaskMutationService.ApplyBrush
+            // (the receiver owns the per-stroke deduplication invariant).
+            // TODO: walk z = c.Z - radius .. c.Z + radius, build one BrushStroke
+            //       per z slice with the XY footprint as VoxelCoord2D entries,
+            //       and call _mask.ApplyBrush for each slice.
+            var config = new StrokePaintConfig(
+                SourceId : sourceId,
+                Additive : true,
+                PaintMode: paintMode);
+
+            for (var dz = -radius; dz <= radius; dz++)
+            {
+                var voxels = new List<VoxelCoord2D>((2 * radius + 1) * (2 * radius + 1));
+                for (var dy = -radius; dy <= radius; dy++)
+                for (var dx = -radius; dx <= radius; dx++)
+                    voxels.Add(new VoxelCoord2D(c.X + dx, c.Y + dy));
+
+                _mask.ApplyBrush(new BrushStroke(
+                    axis      : CursorPaintAxis,
+                    sliceIndex: c.Z + dz,
+                    voxelCoords: voxels,
+                    paintConfig: config));
+            }
         }
 
-        public void FinishBrushStroke() => _mask.FlushStroke();
+        public void FinishBrushStroke() => _mask.FinishStroke();
 
         /// <summary>Allocate an empty mask when one wasn't loaded with the cube.</summary>
-        public void InitialiseEmptyMask()
-        {
-            // Replaces legacy InitialiseMask:1158. Native allocation now sits behind
-            // IMaskMutationService.CreateEmpty(); no Texture3D ownership leaks here.
-            _mask.CreateEmpty();
-        }
+        public void InitialiseEmptyMask() => _mask.InitialiseMask();
     }
 }

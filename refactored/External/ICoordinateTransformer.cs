@@ -1,32 +1,45 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // ST2-OWNED ports consumed by the ST5 Feature System and by the ST3 Rendering
 // Engine. Reproduced as reference declarations only — authoritative versions
-// live in shared_interfaces.md §2 / §5.5 and ship with ST2's data-plugin assembly.
+// live in shared_interfaces.md §2 and ship with ST2's data-plugin assembly.
+//
+// SourceStats / ISourceStatsProvider / IDataAnalysisPlugin live in
+// iDaVIE.Features per shared_interfaces.md §5.5 (resolution lines 8, 16, 17) —
+// declared in Features/SourceStats.cs.
 //
 // Consumed in this refactor by:
-//   • Features/FeatureFactory.cs            (ICoordinateTransformer for WCS projection;
-//                                            ISourceStatsProvider for Mask features)
-//   • Features/FeatureSetService.cs         (ISourceStatsProvider.SourceStatsUpdated)
-//   • Features/VoTableSaver.cs              (both — flux-weighted centroids + sky coords)
+//   • Features/FeatureFactory.cs            (ICoordinateTransformer for WCS projection)
+//   • Features/VoTableSaver.cs              (ICoordinateTransformer — sky coords)
 //   • Rendering/MaskEditingService.cs       (IMaskMutationService)
-//   • Rendering/VolumePersistenceService.cs (IFitsMaskWriter, IFitsCubeReader)
+//   • Rendering/VolumePersistenceService.cs (IFitsMaskWriter, IFitsCubeReader — ST3-internal)
 
-using System;
 using System.Collections.Generic;
-using iDaVIE.Kernel.Contracts.Types;     // CartesianCoord
+using System.Numerics;                       // System.Numerics.Vector2 — plain .NET, not UnityEngine
+using iDaVIE.Kernel.Contracts.Types;         // CartesianCoord, SubcubeBounds
+using iDaVIE.Rendering.Contracts;            // MaskMode (ST3)
 
 namespace iDaVIE.Data
 {
-    /// <summary>WCS world-coordinate payload — RA/Dec/spectral with unit strings.
-    /// Inbound only across the ST2/ST5 boundary; not re-exposed by ST5.</summary>
+    /// <summary>World (sky + spectral) coordinate per shared_interfaces.md §2.
+    /// Single spectral unit; RA/Dec carry no unit string because the WCS engine
+    /// always normalises to degrees at this seam.</summary>
     public readonly record struct WorldCoord(
-        double Ra, double Dec, double Spectral,
-        string RaUnit, string DecUnit, string SpectralUnit)
+        double RightAscension,
+        double Declination,
+        double SpectralValue,
+        string SpectralUnit)
     {
         public static readonly WorldCoord Invalid =
-            new(double.NaN, double.NaN, double.NaN, "", "", "");
+            new(double.NaN, double.NaN, double.NaN, string.Empty);
+
+        public bool IsValid =>
+            !double.IsNaN(RightAscension) &&
+            !double.IsNaN(Declination)    &&
+            !double.IsNaN(SpectralValue);
     }
 
+    /// <summary>Narrow ISP facade for ST5 (M-06). Realised by WcsTransformPlugin
+    /// on the same engine that backs IWcsPlugin / IWcsMapping.</summary>
     public interface ICoordinateTransformer
     {
         /// <summary>Voxel → world coordinate. Returns WorldCoord.Invalid if the
@@ -34,58 +47,85 @@ namespace iDaVIE.Data
         WorldCoord Transform(CartesianCoord pixelCoord);
     }
 
-    /// <summary>Stats payload POCO; mapped from legacy DataAnalysis.SourceStats
-    /// fields per the "// ← x" comments in ST5_interface.md §3.</summary>
-    public sealed class SourceStats
+    // ── Mask mutation (shared_interfaces.md §2, resolution line 15) ─────────
+
+    /// <summary>BrushStroke takes ST6's resolution-line-14 shape: axis + slice
+    /// index + pre-rasterised voxels in slice-local (U,V) coordinates + the
+    /// subset of brush configuration ST2 actually consumes.</summary>
+    public readonly struct BrushStroke
     {
-        public long           VoxelCount           { get; init; }   // ← numVoxels
-        public CartesianCoord BoundsMin            { get; init; }   // ← minX/Y/Z
-        public CartesianCoord BoundsMax            { get; init; }   // ← maxX/Y/Z
-        public double         TotalFlux            { get; init; }   // ← sum
-        public double         PeakFlux             { get; init; }   // ← peak
-        public CartesianCoord FluxWeightedCentroid { get; init; }   // ← cX/Y/Z
-        public double         ChannelW20           { get; init; }
-        public double         VeloW20              { get; init; }
-        public double         ChannelVsys          { get; init; }
-        public double         VeloVsys             { get; init; }
-        public IReadOnlyList<double> SpectralProfile { get; init; } = Array.Empty<double>();
-        public int            ZStartChannel        { get; init; }
+        public readonly int                          Axis;
+        public readonly int                          SliceIndex;
+        public readonly IReadOnlyList<VoxelCoord2D>  VoxelCoords;
+        public readonly StrokePaintConfig            PaintConfig;
+
+        public BrushStroke(int axis, int sliceIndex,
+                           IReadOnlyList<VoxelCoord2D> voxelCoords,
+                           StrokePaintConfig paintConfig)
+        {
+            Axis = axis; SliceIndex = sliceIndex;
+            VoxelCoords = voxelCoords; PaintConfig = paintConfig;
+        }
     }
 
-    public interface ISourceStatsProvider
+    public readonly struct VoxelCoord2D
     {
-        SourceStats?                            GetStatsForSource(int originId);
-        IReadOnlyDictionary<int, SourceStats>   GetAllStats();
-        event Action<int>                       SourceStatsUpdated;
+        public readonly int U;
+        public readonly int V;
+        public VoxelCoord2D(int u, int v) { U = u; V = v; }
     }
 
-    // --- Forward declarations for completeness; full schemas in shared_interfaces.md ---
+    public enum BrushPaintMode { Add, Remove, Replace }
 
-    /// <summary>Raw voxel sampling — sub-port held by IVolumeDataSet (M-27).</summary>
-    public interface IRawVoxelAccess
+    /// <summary>The subset of BrushConfig that ST2 needs to apply a pre-rasterised
+    /// stroke. Radius is excluded — it is already baked into the voxel list.</summary>
+    public readonly record struct StrokePaintConfig(
+        int            SourceId,
+        bool           Additive,
+        BrushPaintMode PaintMode);
+
+    /// <summary>Minimal payload accompanying PaintPolygon when ST4's full
+    /// BrushConfig isn't appropriate.</summary>
+    public readonly record struct PaintConfig(short SourceId, bool Additive);
+
+    /// <summary>Source-id entry returned by GetMaskedSources for ST6's source list panel.</summary>
+    public readonly struct SourceEntry
     {
-        float GetValue(CartesianCoord voxel);
+        public readonly short MaskValue;
+        public SourceEntry(short maskValue) { MaskValue = maskValue; }
     }
 
-    /// <summary>Mask reading sub-port held by IVolumeDataSet (shared_interfaces §1.7).</summary>
-    public interface IMaskEditState
-    {
-        short GetMaskValue(int x, int y, int z);
-        short[] GetMaskSlice(int axis, int sliceIndex);
-    }
-
-    /// <summary>Mask mutation surface — kept narrow per resolution line 15.
-    /// Used by ST3's MaskEditingService.</summary>
+    /// <summary>Single entry point for all mask edits (ST2 design — resolution
+    /// line 15). PaintPolygon is retained because both desktop polygon paint and
+    /// ST6's rasterised BrushStroke path are needed.</summary>
     public interface IMaskMutationService
     {
-        void CreateEmpty();
-        void PaintVoxels(IReadOnlyList<CartesianCoord> voxels, short value);
-        void FlushStroke();
-        bool CanUndo { get; }
-        bool CanRedo { get; }
+        void ApplyBrush(BrushStroke stroke);
+        void FinishStroke();
+
+        void PaintPolygon(
+            int                    axis,
+            int                    sliceIndex,
+            IReadOnlyList<Vector2> polygon,
+            PaintConfig            config);
+
         void Undo();
         void Redo();
+
+        void InitialiseMask();
+
+        /// <summary>Writes the buffer to FITS. overwrite=true ⇒ write to the open mask path.</summary>
+        int SaveMask(bool overwrite);
+
+        MaskMode MaskMode     { get; set; }
+        bool     DisplayMask  { get; set; }
+        short    NewSourceId  { get; set; }
+        short    CursorSource { get; set; }
+
+        IReadOnlyList<SourceEntry> GetMaskedSources();
     }
+
+    // ── ST3-internal ports (not in shared_interfaces.md) ────────────────────
 
     /// <summary>FITS mask writer port — three save modes serve VolumePersistenceService.</summary>
     public interface IFitsMaskWriter
@@ -98,7 +138,7 @@ namespace iDaVIE.Data
     /// <summary>FITS cube reader port — exposes the SaveSubCubeFromOriginal capability.</summary>
     public interface IFitsCubeReader
     {
-        void SaveSubCube(string cubeFilePath, iDaVIE.Kernel.Contracts.Types.SubcubeBounds bounds,
+        void SaveSubCube(string cubeFilePath, SubcubeBounds bounds,
                          string? maskFilePath, string outputPath);
     }
 }

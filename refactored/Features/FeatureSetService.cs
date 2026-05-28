@@ -9,9 +9,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using iDaVIE.Data;                       // ISourceStatsProvider, SourceStats
 using iDaVIE.Kernel.Contracts;           // IVolumeDataSet
 using iDaVIE.Kernel.Contracts.Types;     // CartesianCoord, FeatureColour
+// ISourceStatsProvider, SourceStats live in iDaVIE.Features (this namespace) per shared_interfaces.md §5.5.
 
 namespace iDaVIE.Features
 {

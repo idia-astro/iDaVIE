@@ -16,8 +16,9 @@
 //     in ST5_domain_design.md §5.4).
 
 using System.Collections.Generic;
-using iDaVIE.Data;                       // SourceStats, ISourceStatsProvider, ICoordinateTransformer
+using iDaVIE.Data;                       // ICoordinateTransformer
 using iDaVIE.Kernel.Contracts.Types;     // CartesianCoord
+// SourceStats, ISourceStatsProvider live in iDaVIE.Features (this namespace) per shared_interfaces.md §5.5.
 
 namespace iDaVIE.Features
 {

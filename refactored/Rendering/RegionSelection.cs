@@ -15,9 +15,8 @@
 // UpdateRegionBounds, ClearRegion, ClearMeasure, etc.
 
 using System;
-using iDaVIE.Kernel.Contracts;            // IVolumeDataSet
+using iDaVIE.Kernel.Contracts;            // IVolumeDataSet, IMaskEditState (shared_interfaces §1.6, §1.7)
 using iDaVIE.Kernel.Contracts.Types;      // CartesianCoord
-using iDaVIE.Data;                        // IMaskEditState (mask sampling at cursor)
 
 namespace iDaVIE.Rendering
 {
@@ -59,8 +58,10 @@ namespace iDaVIE.Rendering
             // Legacy implementation: SetCursorPosition at FeatureSetRenderer.cs:639.
             // Refactored to:
             //   1. CursorVoxel = _coords.ClampedVoxelFromCubePosition(cubePosition).
-            //   2. CursorValue = _volume.RawVoxelAccess.GetValue(CursorVoxel)        // ST2 port
-            //   3. CursorSource = _volume.MaskEditState.GetMaskValue(CursorVoxel)    // ST2 port
+            //   2. CursorValue = _volume.RawVoxelAccess.GetSlice(CursorVoxel.Z)[      // ST2 port (shared §1.4):
+            //                       CursorVoxel.Y * extents.NAxis1 + CursorVoxel.X]   //   no per-voxel scalar API; sample via the row-major slice.
+            //   3. CursorSource = _volume.MaskEditState.GetMaskValue(                 // ST2 port (shared §1.7).
+            //                       CursorVoxel.X, CursorVoxel.Y, CursorVoxel.Z)
             //   4. BrushSize = brushSize.
             //   5. Raise CursorMoved (RegionOutlineRenderer listens and updates
             //      its Unity-side CuboidLine).

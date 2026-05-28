@@ -9,7 +9,8 @@
 //     writer interface — only writers need these dependencies.
 //   - No UnityEngine reference; pure I/O.
 
-using iDaVIE.Data;                       // ISourceStatsProvider, ICoordinateTransformer
+using iDaVIE.Data;                       // ICoordinateTransformer
+// ISourceStatsProvider lives in iDaVIE.Features (this namespace) per shared_interfaces.md §5.5.
 
 namespace iDaVIE.Features
 {
