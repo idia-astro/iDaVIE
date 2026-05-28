@@ -179,6 +179,7 @@ namespace iDaVIE.Kernel.Contracts
 namespace iDaVIE.Kernel.Contracts
 {
     using System;
+    using iDaVIE.Features;               // IFeature — SelectionChanged payload
     using iDaVIE.Kernel.Contracts.Types;
     using iDaVIE.Kernel.Contracts.Plugins;
     using iDaVIE.Rendering.Contracts;   // MomentMapResult lives here per resolution line 13
@@ -204,7 +205,11 @@ namespace iDaVIE.Kernel.Contracts
         public delegate void BrushHistoryChanged(bool canUndo, bool canRedo);
 
         public delegate void FeatureSetChanged();
-        public delegate void SelectionChanged();
+        /// <summary>Payload is the newly-selected feature, or null on deselect.
+        /// Matches IFeatureSelectionService.SelectionChanged — consumers that need
+        /// the typed payload should subscribe to the service event directly;
+        /// this delegate is for broadcast-bus observers that hold only Delegates.</summary>
+        public delegate void SelectionChanged(IFeature? feature);
     }
 }
 ```
@@ -759,6 +764,18 @@ namespace iDaVIE.Data
         /// transform is undefined at the given position.
         /// </summary>
         WorldCoord Transform(CartesianCoord pixelCoord);
+
+        /// <summary>
+        /// World → voxel coordinate. Inverse of <see cref="Transform"/>; used by ST5's
+        /// Imported-catalogue path to project Ra/Dec + spectral inputs back to cube voxel
+        /// space. The realisation MUST honour the spectral unit and frame of <paramref name="worldCoord"/>
+        /// (the legacy implementation called <c>AstTool.Invert</c> + <c>Transform3D</c> through
+        /// the configured alternate-spectral frame). Throws <see cref="System.InvalidOperationException"/>
+        /// if no WCS frame is currently loaded; returns the nearest-integer voxel coordinate
+        /// otherwise (callers requiring sub-voxel precision should consume the underlying
+        /// <see cref="IWcsMapping"/> directly).
+        /// </summary>
+        CartesianCoord PixelOf(WorldCoord worldCoord);
     }
 
     /// <summary>
@@ -1751,7 +1768,8 @@ ST7 ──► ST4 (IInteractionStateCapture)
 ST7 ──► ST5 (IFeatureStateCapture)
 ST7 ──► ST6 (IDesktopStateCapture)
 
-ST1 ──► (no outbound cross-team edges; kernel is the floor)
+ST1 ──► ST5 (IFeature — payload type of Delegates.SelectionChanged; interface reference only,
+             analogous to the existing ST1→ST3 reference for MomentMapResult in MomentMapReady)
 ```
 
 The two new ST2 ↔ {ST3, ST4} edges are *value-type-only* references (no behavioural coupling, no event subscription). They do not introduce package-level cycles: `MaskMode` and `BrushPaintMode` are leaf enums with no dependencies of their own. Graph remains acyclic — brief §4.2 constraint 2 satisfied.

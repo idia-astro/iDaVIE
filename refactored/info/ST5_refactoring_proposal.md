@@ -559,7 +559,7 @@ internal sealed class SelectionService : IFeatureSelectionService
     public IFeature? SelectedFeature { get; private set; }
     public IFeatureSet? SelectedFeatureSet { get; private set; }
 
-    public bool SelectAtCursor(CartesianCoord cursorWorldSpace)
+    public bool SelectAtCursor(CartesianCoord cursorVoxelSpace)
     {
         // Linear AABB containment scan. iDaVIE catalogue sizes (≤ low thousands
         // of features per set) make a spatial index unnecessary — four
@@ -579,9 +579,9 @@ internal sealed class SelectionService : IFeatureSelectionService
             {
                 var min = feature.Center.Sub(feature.Size.Scale(0.5f));
                 var max = feature.Center.Add(feature.Size.Scale(0.5f));
-                if (cursorWorldSpace.X >= min.X && cursorWorldSpace.X <= max.X &&
-                    cursorWorldSpace.Y >= min.Y && cursorWorldSpace.Y <= max.Y &&
-                    cursorWorldSpace.Z >= min.Z && cursorWorldSpace.Z <= max.Z)
+                if (cursorVoxelSpace.X >= min.X && cursorVoxelSpace.X <= max.X &&
+                    cursorVoxelSpace.Y >= min.Y && cursorVoxelSpace.Y <= max.Y &&
+                    cursorVoxelSpace.Z >= min.Z && cursorVoxelSpace.Z <= max.Z)
                 {
                     SelectFeature(feature, set);
                     return true;
@@ -636,7 +636,7 @@ internal sealed class SelectionAnchorRenderer : MonoBehaviour, ISelectionVisuali
 
 ### `IActiveFeatureSetTypeProvider` — replaces `GameObject.Find` in selection (ST5-internal)
 
-`SelectionService.SelectAtCursor(CartesianCoord cursorWorldSpace)` needs to know which feature-set type the user is currently working with so it can prioritise that type during spatial search. Currently `FeatureSetManager` calls `GameObject.Find("SourcesMenu")` at runtime. Replace with an internal interface implemented by ST5's own source-list menu controller (the refactored `FeatureMenuController`, owned by ST5 per brief §6.5 "source-list statistics"):
+`SelectionService.SelectAtCursor(CartesianCoord cursorVoxelSpace)` needs to know which feature-set type the user is currently working with so it can prioritise that type during spatial search. Currently `FeatureSetManager` calls `GameObject.Find("SourcesMenu")` at runtime. Replace with an internal interface implemented by ST5's own source-list menu controller (the refactored `FeatureMenuController`, owned by ST5 per brief §6.5 "source-list statistics"):
 
 ```csharp
 // ST5-internal — both producer (FeatureMenuController) and consumer

@@ -45,6 +45,11 @@ namespace iDaVIE.Data
         /// <summary>Voxel → world coordinate. Returns WorldCoord.Invalid if the
         /// transform is undefined at the given position.</summary>
         WorldCoord Transform(CartesianCoord pixelCoord);
+
+        /// <summary>World → voxel coordinate (nearest-integer). Used by FeatureFactory
+        /// on the Imported flow to project Ra/Dec + spectral catalogue inputs back to
+        /// cube voxel space. Throws InvalidOperationException if no WCS frame is loaded.</summary>
+        CartesianCoord PixelOf(WorldCoord worldCoord);
     }
 
     // ── Mask mutation (shared_interfaces.md §2, resolution line 15) ─────────

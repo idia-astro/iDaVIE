@@ -344,6 +344,13 @@ public interface ICoordinateTransformer
     /// (all-NaN values, empty unit string) if the transform is undefined at
     /// the given position. See `shared_interfaces.md` §2.</summary>
     WorldCoord Transform(CartesianCoord pixelCoord);
+
+    /// <summary>World → voxel coordinate. Inverse of <see cref="Transform"/>;
+    /// used by <c>FeatureFactory.PopulateFromTable</c> on the Imported flow to
+    /// project Ra/Dec + spectral catalogue inputs back to cube voxel space.
+    /// Throws <see cref="System.InvalidOperationException"/> if no WCS frame
+    /// is loaded. See `shared_interfaces.md` §2.</summary>
+    CartesianCoord PixelOf(WorldCoord worldCoord);
 }
 
 public interface IDataAnalysisPlugin
