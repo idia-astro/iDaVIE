@@ -51,10 +51,9 @@ namespace iDaVIE.UI
 {
     public sealed class SourcesTabViewModel : IDisposable
     {
-        private readonly IFeatureSetQuery         _featureSetQuery;
-        private readonly IFeatureSelectionService _selectionService;
-
-        private FeatureSetType _activeFeatureSetType = FeatureSetType.Imported;
+        private readonly IFeatureSetQuery              _featureSetQuery;
+        private readonly IFeatureSelectionService      _selectionService;
+        private readonly IActiveFeatureSetTypeProvider _activeType;
 
         // Replaces NeedToRespawnMenuList polling flag + FeatureMenuScrollerDataSource.InitData() calls.
         // View subscribes and re-renders the feature list when fired.
@@ -66,15 +65,16 @@ namespace iDaVIE.UI
 
         // Replaces GameObject.Find("SourcesMenu") + GetComponentInChildren<FeatureMenuController>()
         // inside FeatureSetManager.SelectFeature() (lines 274–276 of the legacy file).
-        // The View sets this when the user switches tabs; SelectFeatureAtCursor() reads it
-        // to apply the same priority rules the legacy code derived from the active Unity panel.
-        public FeatureSetType ActiveFeatureSetType
+        // The View sets this when the user switches tabs; the writer is forwarded to
+        // IActiveFeatureSetTypeProvider so SelectionService (and any VR menu reader)
+        // see the same value — no GUI can drift away from the other.
+        public FeatureSetType? ActiveFeatureSetType
         {
-            get => _activeFeatureSetType;
+            get => _activeType.ActiveType;
             set
             {
-                if (_activeFeatureSetType == value) return;
-                _activeFeatureSetType = value;
+                if (_activeType.ActiveType == value) return;
+                _activeType.ActiveType = value;
                 FeatureListChanged?.Invoke();
             }
         }
@@ -83,14 +83,17 @@ namespace iDaVIE.UI
         public IFeatureSet? SelectedFeatureSet => _selectionService.SelectedFeatureSet;
 
         public SourcesTabViewModel(
-            IFeatureSetQuery         featureSetQuery,
-            IFeatureSelectionService selectionService)
+            IFeatureSetQuery              featureSetQuery,
+            IFeatureSelectionService      selectionService,
+            IActiveFeatureSetTypeProvider activeType)
         {
             _featureSetQuery  = featureSetQuery  ?? throw new ArgumentNullException(nameof(featureSetQuery));
             _selectionService = selectionService ?? throw new ArgumentNullException(nameof(selectionService));
+            _activeType       = activeType       ?? throw new ArgumentNullException(nameof(activeType));
 
             _featureSetQuery.FeatureSetChanged += OnFeatureSetChanged;
             _selectionService.SelectionChanged += OnSelectionChanged;
+            _activeType.ActiveTypeChanged      += OnFeatureSetChanged;
         }
 
         // Replaces FeatureSetManager.SelectFeature(Vector3 cursorWorldSpace), lines 267–313.
@@ -123,8 +126,9 @@ namespace iDaVIE.UI
 
         public void Dispose()
         {
-            _featureSetQuery.FeatureSetChanged  -= OnFeatureSetChanged;
-            _selectionService.SelectionChanged  -= OnSelectionChanged;
+            _featureSetQuery.FeatureSetChanged -= OnFeatureSetChanged;
+            _selectionService.SelectionChanged -= OnSelectionChanged;
+            _activeType.ActiveTypeChanged      -= OnFeatureSetChanged;
         }
     }
 }

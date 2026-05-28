@@ -17,11 +17,11 @@ namespace iDaVIE.Rendering
 {
     public sealed class VolumeCameraDriver
     {
-        private readonly IVolumeDataSet  _volume;
-        private readonly RegionSelection _region;
-        private readonly float           _selectionSaturateFactor;
+        private readonly IVolumeDataSet   _volume;
+        private readonly IRegionSelection _region;
+        private readonly float            _selectionSaturateFactor;
 
-        public VolumeCameraDriver(IVolumeDataSet volume, RegionSelection region,
+        public VolumeCameraDriver(IVolumeDataSet volume, IRegionSelection region,
                                   float selectionSaturateFactor)
         {
             _volume                   = volume;

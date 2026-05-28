@@ -5,7 +5,9 @@
 //
 // Refactor delta:
 //   - Renderer no longer holds the catalogue. It holds a port; the concrete
-//     is realised in ST1 Infrastructure from Config.restFrequenciesGHz.
+//     is realised at the ST3 composition root from Config.restFrequenciesGHz.
+//     ST1 cannot realise an iDaVIE.Rendering port — that would back-edge from
+//     the kernel to a higher layer (see global_model.md ownership graph).
 //   - DIP — depends on an interface, not on the Config singleton.
 //
 // The catalogue carries three classes of entries per the legacy code:

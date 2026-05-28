@@ -28,9 +28,9 @@ namespace iDaVIE.Rendering
         private const int CursorPaintAxis = 2;
 
         private readonly IMaskMutationService _mask;
-        private readonly RegionSelection      _region;
+        private readonly IRegionSelection     _region;
 
-        public MaskEditingService(IMaskMutationService mask, RegionSelection region)
+        public MaskEditingService(IMaskMutationService mask, IRegionSelection region)
         {
             _mask   = mask;
             _region = region;

@@ -20,7 +20,7 @@ using iDaVIE.Kernel.Contracts.Types;      // CartesianCoord
 
 namespace iDaVIE.Rendering
 {
-    public sealed class RegionSelection
+    public sealed class RegionSelection : IRegionSelection
     {
         private readonly IVolumeDataSet _volume;
         private readonly VolumeCoordinateService _coords;

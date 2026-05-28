@@ -56,4 +56,23 @@ namespace iDaVIE.Features
         Task<SpectralProfileResult> ComputeForRegionAsync(
             CartesianCoord boundsMin, CartesianCoord boundsMax);
     }
+
+    /// <summary>Single authoritative store for "which FeatureSetType is the user
+    /// currently working with" — read by SelectionService (ST5 spatial-search
+    /// prioritisation) and written by both FeatureMenuController (ST5 VR menu)
+    /// and SourcesTabViewModel (ST6 desktop tab strip). Promoting both read and
+    /// write onto one port keeps the two GUIs from drifting out of sync — a
+    /// single setter call from either side is observed by every consumer.
+    ///
+    /// ActiveType = null means no source-list panel is currently open; spatial
+    /// search then scans every loaded set in FeatureSetType-declaration order.
+    ///
+    /// ISP trade-off (mirrors IRestFrequencyCatalogue's read+write surface):
+    /// the read-only consumer (SelectionService) ignores the setter; the writers
+    /// (FeatureMenuController, SourcesTabViewModel) ignore the event subscriber.</summary>
+    public interface IActiveFeatureSetTypeProvider
+    {
+        FeatureSetType? ActiveType { get; set; }
+        event System.Action ActiveTypeChanged;
+    }
 }

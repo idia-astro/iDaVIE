@@ -13,6 +13,7 @@
 
 using System;
 using System.Collections.Generic;
+using iDaVIE.Data;                    // BrushPaintMode (ST2-owned; single source of truth)
 using iDaVIE.Kernel.Contracts.Types;  // CartesianCoord (ST1 shared types, M-21)
 
 namespace iDaVIE.Interaction
@@ -22,8 +23,12 @@ namespace iDaVIE.Interaction
     public enum LocomotionState  { Idle, Moving, ScalingRotating }
     public enum InteractionState { Idle, ParameterEditing, CreatingSelection, EditingRegion, SourceEditing, PaintingStroke }
     public enum QuickMenuPanel   { None, QuickMenu, PaintMenu }
-    public enum BrushPaintMode   { Add, Remove, Replace }
     public enum ShapeType        { Cube, Sphere, Cylinder, Cuboid }
+
+    // BrushPaintMode is iDaVIE.Data.BrushPaintMode (above using). It was previously
+    // duplicated here; consolidated so VolumeCommandController.CommitShapeGesture can
+    // build a StrokePaintConfig directly from BrushConfig without a per-call mapper.
+    // ST4 already depends on iDaVIE.Data for IMaskMutationService, so no new edge.
 
     // NOTE: shared_interfaces.md §4.3 defines a minimal 8-value VoiceCommand for the
     // cross-team boundary (NextSource, PreviousSource, Confirm, Cancel, Undo,
@@ -108,7 +113,7 @@ namespace iDaVIE.Interaction
         public float   BrushRadius              { get; set; }
         public bool    BrushAdditive            { get; set; }
         public int     BrushSourceId            { get; set; }
-        public string  BrushPaintMode           { get; set; } = nameof(Interaction.BrushPaintMode.Add);
+        public string  BrushPaintMode           { get; set; } = nameof(iDaVIE.Data.BrushPaintMode.Add);
         public string? ActiveVoiceLocale        { get; set; }
         public bool    PushToTalkEnabled        { get; set; }
         public float   VoiceConfidenceThreshold { get; set; }
@@ -192,7 +197,7 @@ namespace iDaVIE.Interaction
         bool             IsPaintModeActive { get; }
         bool             IsQuickMenuOpen   { get; }
         QuickMenuPanel   ActiveMenuPanel   { get; }
-        event Action     InteractionStateChanged;
+        event Action?    InteractionStateChanged;
     }
 
     /// <summary>

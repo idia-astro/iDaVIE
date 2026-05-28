@@ -129,21 +129,28 @@ package "refactored/Rendering/  (ST3)" #E3F2FD {
   interface "IRenderSettings\n+ IRenderSettingsMutator" as I_RSet
   interface "IRestFrequencyCatalogue" as I_RFC
   interface "IMomentMapRenderer" as I_MMR
+  interface "IRegionSelection\n«internal»" as I_Reg
   interface "IMaskGpuBuffers\n«internal»"  as I_MaskBuf
 
   ' IRenderSettings + Mutator: realised by the composition root from Config.
   component "RenderSettings\n(composition-root POCO\nrealising IRenderSettings\n+ IRenderSettingsMutator)" as RSet_Impl
   RSet_Impl -up- I_RSet
 
-  ' IRestFrequencyCatalogue port declared here; realised by ST1 Infrastructure
-  ' from Config (per refactored/info/README.md §legacy mapping).
-  component "RestFrequencyCatalogue\n(realised by ST1 Infrastructure)" as RFC_Impl
+  ' IRestFrequencyCatalogue: port and concrete both owned by ST3. Composition
+  ' root reads Config.restFrequenciesGHz so the kernel does not back-edge into
+  ' an iDaVIE.Rendering port.
+  component "RestFrequencyCatalogue\n(ST3 composition root,\nreads Config)" as RFC_Impl
   RFC_Impl -up- I_RFC
 
   ' IMomentMapRenderer (M-08, resolution line 13): owned by ST3, consumed by
   ' ST5's MomentMapServiceAdapter. Concrete realisation not in this skeleton.
   component "MomentMapRenderer\n(MonoBehaviour — not in skeleton)" as MMR_Impl
   MMR_Impl -up- I_MMR
+
+  ' IRegionSelection: ST3-internal read view of RegionSelection, consumed by
+  ' VolumeCameraDriver, MaskEditingService, and VolumeDataSetRenderer.Bind so
+  ' downstream binders depend on the interface, not the concrete class.
+  REG -up- I_Reg
 
   ' IMaskGpuBuffers port: realised in the Unity ACL alongside the ST2
   ' MaskEditState adapter so no Unity type crosses the IVolumeDataSet edge.
@@ -159,7 +166,7 @@ package "refactored/Rendering/  (ST3)" #E3F2FD {
   I_Vol     )-- P_VTM_Vol
   I_MaskBuf )-- P_VTM_MaskBuf
   I_Vol     )-- P_VCD_Vol
-  REG       )-- P_VCD_Region
+  I_Reg     )-- P_VCD_Region
 }
 
 ' ══════════════════════════════════════════════════════════════════════════
@@ -241,11 +248,11 @@ package "refactored/Features/  (ST5)" #E8F5E9 {
     MMSA -up- I_MMS
 
     ' FeatureMenuController (ST5-owned per brief §6.5) provides voice-command
-    ' source-list navigation and the active FeatureSetType. Skeleton stub —
-    ' the controller body lives in ST5's VR menu code, not in this refactor.
+    ' source-list navigation and the shared active-FeatureSetType state.
+    ' Skeleton stub — the controller body lives in ST5's VR menu code.
     component "FeatureMenuController\n(brief §6.5 — stub)" as FMC
-    interface "IFeatureListNavigation"            as I_FLN
-    interface "IActiveFeatureSetTypeProvider\n«internal»" as I_Active
+    interface "IFeatureListNavigation"        as I_FLN
+    interface "IActiveFeatureSetTypeProvider" as I_Active
     FMC -up- I_FLN
     FMC -up- I_Active
 
@@ -352,6 +359,7 @@ package "refactored/UI/  (ST6)" #F3E5F5 {
   component "SourcesTabViewModel\n«pure C# VM»" as STVM {
     portin P_STVM_FSQ
     portin P_STVM_FSel
+    portin P_STVM_Active
   }
 
   ' CanvassDesktop (the Unity view) and the ToastAdapter MonoBehaviour
@@ -384,7 +392,7 @@ I_FitsIO  )-- P_VPS_FitsIO
 REG ..> P_REG_Coords : <<binds>>
 VCS ..> P_REG_Coords
 ' VolumeDataSetRenderer pulls in the ST3-internal ports it owns:
-REG       )-- P_VDR_Region
+I_Reg     )-- P_VDR_Region
 I_MaskBuf )-- P_VDR_MaskBuf
 
 ' ── Features: cross-team inputs ──────────────────────────────────────────
@@ -442,8 +450,9 @@ I_VReg    )-- P_QMP_VReg
 I_RSet  )-- P_RTVM_RSet
 I_RSet  )-- P_RTVM_RMut
 I_RFC   )-- P_RTVM_RFC
-I_FSQ   )-- P_STVM_FSQ
-I_FSel  )-- P_STVM_FSel
+I_FSQ    )-- P_STVM_FSQ
+I_FSel   )-- P_STVM_FSel
+I_Active )-- P_STVM_Active
 
 ' CanvassDesktop also reads IInteractionStateProvider (ST4) and subscribes to
 ' IRenderSettings.SettingsChanged so it can refresh on FSM/render transitions.

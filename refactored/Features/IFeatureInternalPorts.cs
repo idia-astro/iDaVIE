@@ -59,18 +59,9 @@ namespace iDaVIE.Features
         void PopulateFromSourceStats(FeatureSet target);
     }
 
-    /// <summary>Exposes which FeatureSetType the user is currently working with.
-    /// Realised by FeatureMenuController (ST5-owned per brief §6.5 "source-list
-    /// statistics"). Both producer and consumer (SelectionService) are ST5-internal,
-    /// so this interface is not part of the cross-team contract.
-    ///
-    /// SelectionService uses ActiveType to prioritise the active type's sets during
-    /// spatial search; null means no source-list panel is open, so it scans every
-    /// loaded set in FeatureSetType-declaration order.</summary>
-    internal interface IActiveFeatureSetTypeProvider
-    {
-        FeatureSetType? ActiveType { get; }
-    }
+    // IActiveFeatureSetTypeProvider lives in IFeatureApplicationServices.cs — it
+    // is cross-team because ST6's SourcesTabViewModel also pushes its active tab
+    // through the same writer (single authoritative source).
 
     /// <summary>Scene-side anchor renderer for bounding-box corner handles.
     /// Extracts the 8 _anchorColliders managed by the legacy FeatureSetManager into

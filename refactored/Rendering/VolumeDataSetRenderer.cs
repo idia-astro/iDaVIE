@@ -33,7 +33,7 @@ namespace iDaVIE.Rendering
         // Injected by the composition root in Bind.
         private IRenderSettings        _settings;
         private IVolumeDataSet         _volume;
-        private RegionSelection        _region;
+        private IRegionSelection       _region;
         private VolumeTextureManager   _textures;
         private VolumeMaterialBinder   _materialBinder;
         private VolumeCameraDriver     _cameraDriver;
@@ -42,7 +42,7 @@ namespace iDaVIE.Rendering
         private bool                   _settingsDirty;
 
         public void Bind(IRenderSettings settings, IVolumeDataSet volume,
-                         RegionSelection region, IMaskGpuBuffers maskBuffers)
+                         IRegionSelection region, IMaskGpuBuffers maskBuffers)
         {
             _settings       = settings;
             _volume         = volume;
