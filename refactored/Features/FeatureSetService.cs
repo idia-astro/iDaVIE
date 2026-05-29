@@ -9,7 +9,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using iDaVIE.Kernel.Contracts;             // IVolumeDataSet
+using iDaVIE.Kernel.Contracts;             // IVolumeDataSet, LoadStatus, EnumString
 using iDaVIE.Kernel.Contracts.Persistence; // SubcubeBoundsDto
 using iDaVIE.Kernel.Contracts.Types;       // CartesianCoord, FeatureColour
 // ISourceStatsProvider, SourceStats live in iDaVIE.Features (this namespace) per shared_interfaces.md §5.5.
@@ -31,6 +31,15 @@ namespace iDaVIE.Features
             [FeatureSetType.Imported]     = new(),
             [FeatureSetType.UserDefined]  = new(),
             [FeatureSetType.SelectionBox] = new(),
+        };
+
+        // Explicit FeatureSetType-declaration order for GetAllFeatureSets, so the
+        // SelectionService spatial-search fallback order (ST5_domain_design.md §8.3)
+        // is guaranteed rather than relying on Dictionary enumeration order.
+        private static readonly FeatureSetType[] TypeOrder =
+        {
+            FeatureSetType.Mask, FeatureSetType.Imported,
+            FeatureSetType.UserDefined, FeatureSetType.SelectionBox,
         };
 
         // Provenance of Imported sets so Capture() can write file-path + mapping
@@ -58,7 +67,7 @@ namespace iDaVIE.Features
         // ── IFeatureSetQuery ────────────────────────────────────────────────
 
         public IReadOnlyList<IFeatureSet> GetAllFeatureSets()
-            => _sets.Values.SelectMany(l => l).Cast<IFeatureSet>().ToList();
+            => TypeOrder.SelectMany(t => _sets[t]).Cast<IFeatureSet>().ToList();
 
         public IReadOnlyList<IFeatureSet> GetFeatureSetsByType(FeatureSetType type)
             => _sets[type].Cast<IFeatureSet>().ToList();
@@ -71,6 +80,9 @@ namespace iDaVIE.Features
 
         public void SetFeatureBounds(IFeature feature, CartesianCoord boundsMin, CartesianCoord boundsMax)
         {
+            if (boundsMin.X > boundsMax.X || boundsMin.Y > boundsMax.Y || boundsMin.Z > boundsMax.Z)
+                throw new ArgumentException("boundsMin must be ≤ boundsMax on each axis.", nameof(boundsMin));
+
             var owningSet = FindOwningSet(feature);
             if (owningSet.Type == FeatureSetType.Mask)
                 throw new InvalidOperationException("Mask feature bounds are owned by ISourceStatsProvider.");
@@ -180,7 +192,7 @@ namespace iDaVIE.Features
 
             // Imported sets re-derive features from the source file + mapping on Restore.
             // ImportFilePath and ImportMapping are populated by FeatureImportService at
-            // creation time via the IImportedSetMetadata seam (registered alongside CreateSet).
+            // creation time via RecordImportProvenance (called alongside CreateSet).
             foreach (var set in _sets[FeatureSetType.Imported])
             {
                 _importedMetadata.TryGetValue(set.Index, out var meta);
@@ -232,18 +244,17 @@ namespace iDaVIE.Features
 
             foreach (var entry in dto.FeatureSets)
             {
-                // Unknown future enum values fall back to UserDefined per the
-                // forward-compatibility note in shared_interfaces.md §4.4.
-                var type = Enum.TryParse<FeatureSetType>(entry.Type, out var parsed)
-                    ? parsed
-                    : FeatureSetType.UserDefined;
+                // Unknown future enum values fall back to UserDefined via the shared ST1
+                // Kernel helper (EnumString.TryParseOrDefault; ST5_interface.md §3 /
+                // shared_interfaces.md §1.9) — one parse policy across all capture ports.
+                var type = EnumString.TryParseOrDefault(entry.Type, FeatureSetType.UserDefined);
 
                 if (type == FeatureSetType.Mask) continue;   // not snapshotted by ST5
 
                 if (type == FeatureSetType.Imported)
                 {
                     // Import path: file + mapping → features re-derived. Delegated to
-                    // FeatureImportService via the IImportedSetRestore seam to avoid a
+                    // FeatureImportService via the IImportRestorer seam to avoid a
                     // circular FeatureSetService ↔ FeatureImportService construction.
                     if (entry.ImportFilePath != null && entry.ImportMapping != null)
                         _importRestorer?.RestoreImported(entry.ImportFilePath, entry.ImportMapping,
@@ -316,10 +327,33 @@ namespace iDaVIE.Features
 
         private readonly record struct ImportProvenance(string FilePath, FeatureImportMapping Mapping);
 
+        // ── Dataset lifecycle ───────────────────────────────────────────────
+
+        /// <summary>Clears every feature set when the active volume is unloaded.
+        /// Wired by the composition root to ST1's <see cref="DatasetUnloadedHandler"/>
+        /// (the service holds IVolumeDataSet but cannot subscribe to a lifecycle event
+        /// through the read-only aggregate). Mask sets re-derive on the next load via
+        /// the SourceStatsUpdated bootstrap below.</summary>
+        internal void ResetCatalogue()
+        {
+            foreach (var list in _sets.Values)
+            {
+                foreach (var set in list) set.ClearFeatures();
+                list.Clear();
+            }
+            _importedMetadata.Clear();
+            FeatureSetChanged?.Invoke();
+        }
+
         // ── Mask creation flow ──────────────────────────────────────────────
 
         private void OnSourceStatsUpdated(int originId)
         {
+            // Validate cube state: ignore stats churn while no volume is loaded
+            // (e.g. during teardown) so the Mask set is not bootstrapped against a
+            // stale snapshot — the catalogue is cleared via ResetCatalogue on unload.
+            if (_volume.Status != LoadStatus.Loaded) return;
+
             var maskSet = _sets[FeatureSetType.Mask].FirstOrDefault();
 
             // Branch 1 — Bootstrap: no Mask set yet. Either first-stats-load (originId

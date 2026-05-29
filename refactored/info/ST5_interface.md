@@ -14,6 +14,7 @@ The public contract surface is defined entirely by interfaces and plain C# value
 | `IFeatureSetQuery` | Interface | ST4, ST6 | Query + display mutation + set-membership mutation + per-feature mutation + `FeatureSetChanged` event |
 | `IFeatureSelectionService` | Interface | ST4, ST6 | Cursor selection, direct selection, selection-changed event |
 | `IFeatureListNavigation` | Interface | ST4 | `DisplayNextSet()` / `DisplayPreviousSet()` for the source-list voice commands (M-11) |
+| `IActiveFeatureSetTypeProvider` | Interface | ST6 | Shared active source-list tab type (read/write + change event); written by ST5's VR menu and ST6's desktop tab strip, read by ST5's `SelectionService`, so the two GUIs stay in sync |
 | `IFeatureImportService` | Interface | ST6 | File-based import of Imported sets; column-mapping persistence |
 | `IMomentMapService` | Interface | ST6 | Moment-map generation (GPU-backed via the ACL) |
 | `ISpectralProfileService` | Interface | ST6 | Region → spectral profile (via `IDataAnalysisPlugin`) |
@@ -175,6 +176,17 @@ public interface IFeatureListNavigation
     void DisplayPreviousSet();
 }
 
+/// <summary>Shared "active source-list tab type" state. Read by ST5's SelectionService
+/// to prioritise spatial search; written by ST5's FeatureMenuController (VR tab) and
+/// ST6's SourcesTabViewModel (desktop tab strip) through the one writer so the two GUIs
+/// cannot drift apart. ActiveType == null means no source-list panel is open — spatial
+/// search then scans every loaded set in FeatureSetType-declaration order.</summary>
+public interface IActiveFeatureSetTypeProvider
+{
+    FeatureSetType? ActiveType { get; set; }
+    event Action ActiveTypeChanged;
+}
+
 public interface IMomentMapService
 {
     /// <summary>momentOrder: 0 = integrated intensity, 1 = velocity field.
@@ -261,8 +273,8 @@ public interface IFeatureCatalogueWriter
 //
 // FeatureSetEntryDto.Type is serialised as an enum-name string for forward
 // compatibility; on Restore, ST5 MUST use
-// InteractionStateDto.TryParseOrDefault(dto.Type, FeatureSetType.UserDefined)
-// (declared in iDaVIE.Interaction; see `shared_interfaces.md` §4.4) so that
+// EnumString.TryParseOrDefault(dto.Type, FeatureSetType.UserDefined)
+// (declared in iDaVIE.Kernel.Contracts; see `shared_interfaces.md` §1.9) so that
 // workspaces saved with a future FeatureSetType member degrade gracefully on
 // older builds rather than throwing.
 

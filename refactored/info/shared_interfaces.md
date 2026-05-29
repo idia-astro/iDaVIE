@@ -642,6 +642,30 @@ namespace iDaVIE.Kernel.Contracts.Persistence
 }
 ```
 
+### 1.9 `EnumString` — forward-compatible enum parsing (ST1 — cross-cutting)
+
+A cross-cutting utility for persistence capture-port DTOs. Every team that serialises
+an enum as a string (ST4's `InteractionStateDto`, ST5's `FeatureSetEntryDto.Type`,
+ST6's `DesktopStateDto`, …) parses it back through this helper on `Restore`, so a
+workspace saved by a newer build with an unknown enum member degrades to a fallback
+rather than throwing. It lives in ST1 Kernel — not on any one team's DTO — so all
+consumers depend only on the kernel floor and the dependency graph stays acyclic
+(an ST5 → ST4 reference to a helper on `InteractionStateDto` would have cycled against
+the existing ST4 → ST5 edge).
+
+```csharp
+namespace iDaVIE.Kernel.Contracts
+{
+    public static class EnumString
+    {
+        /// <summary>Returns <paramref name="fallback"/> when <paramref name="value"/> is
+        /// null, empty, or not a known member of <typeparamref name="T"/>.</summary>
+        public static T TryParseOrDefault<T>(string? value, T fallback) where T : struct, System.Enum
+            => System.Enum.TryParse<T>(value, ignoreCase: false, out var result) ? result : fallback;
+    }
+}
+```
+
 ---
 
 ## 2. ST2 — Data I/O & FITS/WCS plug-ins
@@ -1298,7 +1322,7 @@ namespace iDaVIE.Interaction
     {
         // FSM positions — serialised as enum name strings for forward compatibility.
         // On Restore, unknown values MUST fall back to the Idle member of the respective
-        // enum rather than throwing. Use TryParseOrDefault below.
+        // enum rather than throwing — use EnumString.TryParseOrDefault (§1.9).
         public string CurrentLocomotionState  { get; set; } = nameof(LocomotionState.Idle);
         public string CurrentInteractionState { get; set; } = nameof(InteractionState.Idle);
 
@@ -1318,15 +1342,6 @@ namespace iDaVIE.Interaction
         public string ActiveMenuPanel { get; set; } = nameof(QuickMenuPanel.None);
 
         public int SchemaVersion { get; set; } = 1;
-
-        /// <summary>
-        /// Safe parser for forward-compatible enum strings. Returns
-        /// <paramref name="fallback"/> when the stored string is null, empty, or not a
-        /// known member of <typeparamref name="T"/>. Other capture-port DTOs that gain
-        /// enum-as-string fields during IR-01 completion SHOULD adopt the same pattern.
-        /// </summary>
-        public static T TryParseOrDefault<T>(string? value, T fallback) where T : struct, System.Enum
-            => System.Enum.TryParse<T>(value, ignoreCase: false, out var result) ? result : fallback;
     }
 
     public interface IInteractionStateCapture
@@ -1653,7 +1668,7 @@ namespace iDaVIE.UI
     /// ST6's design (resolution line 29). Minimum viable field list — drafted to unblock
     /// ST7 round-trip testing (IR-01). Plain C# — no UnityEngine in the DTO (brief §4.2
     /// constraint 3). Any enum-as-string field added post Day-9 SHOULD use
-    /// <see cref="iDaVIE.Interaction.InteractionStateDto.TryParseOrDefault{T}"/> on restore.
+    /// <see cref="iDaVIE.Kernel.Contracts.EnumString.TryParseOrDefault{T}"/> on restore.
     /// </summary>
     public sealed class DesktopStateDto
     {

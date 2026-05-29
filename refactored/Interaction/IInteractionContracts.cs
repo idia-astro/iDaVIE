@@ -119,6 +119,8 @@ namespace iDaVIE.Interaction
         public float   VoiceConfidenceThreshold { get; set; }
         public string  ActiveMenuPanel          { get; set; } = nameof(QuickMenuPanel.None);
         public int     SchemaVersion            { get; set; } = 1;
+        // Enum-string fields above are parsed on Restore via the shared
+        // iDaVIE.Kernel.Contracts.EnumString.TryParseOrDefault (shared_interfaces.md §1.9).
     }
 
     // ── ISP sub-interfaces for IControllerEventStream ────────────────────────

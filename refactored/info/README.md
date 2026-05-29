@@ -74,7 +74,7 @@ One `.asmdef` per namespace; these are the canonical declaration sites on disk t
 | Namespace | Canonical source |
 |---|---|
 | `iDaVIE.Kernel` | `Kernel/Config.cs`, `Kernel/KernelCompositionRoot.cs`, `Kernel/PluginRegistry.cs`, `Kernel/Delegates.cs`, `Kernel/DebugLogSink.cs` |
-| `iDaVIE.Kernel.Contracts` | `Kernel/Contracts/I{PluginRegistry,VolumeLoader,VolumeRegistry,LogSink,DesktopShell,VolumeStateCapture}.cs` + `External/IVolumeDataSet.cs` (`IVolumeDataSet`, `IMaskEditState`, `LoadStatus`) |
+| `iDaVIE.Kernel.Contracts` | `Kernel/Contracts/I{PluginRegistry,VolumeLoader,VolumeRegistry,LogSink,DesktopShell,VolumeStateCapture}.cs`, `Kernel/Contracts/EnumString.cs` + `External/IVolumeDataSet.cs` (`IVolumeDataSet`, `IMaskEditState`, `LoadStatus`) |
 | `iDaVIE.Kernel.Contracts.Types` | `Kernel/BoundaryValueTypes.cs` (`CartesianCoord`, `FeatureColour`, `VolumeExtents`, `SubcubeBounds`, `DataStats`, `HistogramData`, `AxisUnits`) |
 | `iDaVIE.Kernel.Contracts.Plugins` | `Kernel/Contracts/Plugins/{IFitsPlugin, IWcsPlugin}.cs` + `External/IVolumeDataSet.cs` (`IRawVoxelAccess`, `VoxelBufferDescriptor`) |
 | `iDaVIE.Data` | `Data/{FitsReaderPlugin, WcsTransformPlugin, DataAnalysisPlugin, MaskEditService, NativePluginLoader}.cs` + `External/ICoordinateTransformer.cs` (`ICoordinateTransformer`, `WorldCoord`, `IMaskMutationService`, `BrushStroke`, `VoxelCoord2D`, `BrushPaintMode`, `PaintConfig`, `SourceEntry`) |

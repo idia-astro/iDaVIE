@@ -9,6 +9,7 @@
 //
 // Canonical signatures: ST5_interface.md §3; shared_interfaces.md §5.3.
 
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using iDaVIE.Kernel.Contracts.Types;   // CartesianCoord
 using iDaVIE.Rendering.Contracts;      // MomentMapResult (ST3, resolution line 13)
@@ -56,6 +57,12 @@ namespace iDaVIE.Features
         Task<SpectralProfileResult> ComputeForRegionAsync(
             CartesianCoord boundsMin, CartesianCoord boundsMax);
     }
+
+    /// <summary>Spectral-profile result provided by ST5 to ST6 (ST5_interface.md §3).
+    /// Profile[i] is the flux at channel ZStartChannel + i.</summary>
+    public readonly record struct SpectralProfileResult(
+        IReadOnlyList<double> Profile, int ZStartChannel,
+        double TotalFlux, double PeakFlux);
 
     /// <summary>Single authoritative store for "which FeatureSetType is the user
     /// currently working with" — read by SelectionService (ST5 spatial-search

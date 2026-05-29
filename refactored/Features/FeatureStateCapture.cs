@@ -40,7 +40,7 @@ namespace iDaVIE.Features
 
         /// <summary>Serialised as enum-name string for forward compatibility.
         /// On Restore, unknown values fall back to UserDefined via
-        /// InteractionStateDto.TryParseOrDefault (shared_interfaces.md §4.4).</summary>
+        /// EnumString.TryParseOrDefault (iDaVIE.Kernel.Contracts; shared_interfaces.md §1.9).</summary>
         public string Type { get; set; } = nameof(FeatureSetType.UserDefined);
 
         public FeatureColour DisplayColour { get; set; }

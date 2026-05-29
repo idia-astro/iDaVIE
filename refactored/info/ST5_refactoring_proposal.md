@@ -634,23 +634,24 @@ internal sealed class SelectionAnchorRenderer : MonoBehaviour, ISelectionVisuali
 
 `SelectionAnchorRenderer` is wired to the scene via Unity Inspector serialization — no `GameObject.Find` calls. The composition root passes the `MonoBehaviour` as `ISelectionVisualiser` when constructing `SelectionService`, so the Application layer holds no `UnityEngine` type.
 
-### `IActiveFeatureSetTypeProvider` — replaces `GameObject.Find` in selection (ST5-internal)
+### `IActiveFeatureSetTypeProvider` — replaces `GameObject.Find` in selection (cross-team — provided to ST6)
 
 `SelectionService.SelectAtCursor(CartesianCoord cursorVoxelSpace)` needs to know which feature-set type the user is currently working with so it can prioritise that type during spatial search. Currently `FeatureSetManager` calls `GameObject.Find("SourcesMenu")` at runtime. Replace with an internal interface implemented by ST5's own source-list menu controller (the refactored `FeatureMenuController`, owned by ST5 per brief §6.5 "source-list statistics"):
 
 ```csharp
-// ST5-internal — both producer (FeatureMenuController) and consumer
-// (SelectionService) are ST5-owned.
-internal interface IActiveFeatureSetTypeProvider
+// Cross-team — provided to ST6 (ST5_interface.md §1, §3). Written by ST5's
+// FeatureMenuController and ST6's SourcesTabViewModel; read by SelectionService.
+public interface IActiveFeatureSetTypeProvider
 {
     /// <summary>The user's current working type, or null if no source-list
     /// panel is currently open. SelectionService falls back to scanning all
     /// sets in FeatureSetType-declaration order on null.</summary>
-    FeatureSetType? ActiveType { get; }
+    FeatureSetType? ActiveType { get; set; }
+    event System.Action ActiveTypeChanged;
 }
 ```
 
-The "active type" is interaction state set by the source-list menu (tab click) and by the `DisplayNextSet`/`DisplayPreviousSet` voice commands. The source-list menu is ST5-owned per brief §6.5; voice commands route through ST4's voice subsystem but flip a property that the ST5-owned source-list menu controller exposes — so the producer of this signal is ST5's `FeatureMenuController`, not a cross-team interface. `SelectionService` holds a constructor-injected reference. The scene object lookup happens once at composition-root wiring time via Unity Inspector, never at query time. `ActiveType` returns null when no source-list panel is currently open — `SelectionService` then falls back to scanning all loaded sets in `FeatureSetType`-declaration order.
+The "active type" is interaction state set by the source-list menu (tab click) and by the `DisplayNextSet`/`DisplayPreviousSet` voice commands. The source-list menu is ST5-owned per brief §6.5; voice commands route through ST4's voice subsystem but flip a property the ST5-owned source-list menu controller exposes. ST6's desktop tab strip (`SourcesTabViewModel`) writes the same property, so `IActiveFeatureSetTypeProvider` is a cross-team ST5 export (provided to ST6) with one authoritative writer surface that keeps the VR and desktop GUIs in sync. `SelectionService` holds a constructor-injected reference. The scene object lookup happens once at composition-root wiring time via Unity Inspector, never at query time. `ActiveType` returns null when no source-list panel is currently open — `SelectionService` then falls back to scanning all loaded sets in `FeatureSetType`-declaration order.
 
 ### `FeatureVisualiser` — GPU rendering (replaces `FeatureSetRenderer`)
 
