@@ -14,7 +14,7 @@
 //   • Rendering/VolumePersistenceService.cs (IFitsMaskWriter, IFitsCubeReader — ST3-internal)
 
 using System.Collections.Generic;
-using System.Numerics;                       // System.Numerics.Vector2 — plain .NET, not UnityEngine
+using System.Numerics;                       // System.Numerics.Vector2 — plain .NET, not an engine type
 using iDaVIE.Kernel.Contracts.Types;         // CartesianCoord, SubcubeBounds
 using iDaVIE.Rendering.Contracts;            // MaskMode (ST3)
 

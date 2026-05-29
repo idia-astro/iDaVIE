@@ -14,11 +14,28 @@ namespace iDaVIE.Kernel.Contracts.Plugins
     public enum FitsOpenMode { ReadOnly, ReadWrite }
 
     /// <summary>Opaque handle returned by IFitsPlugin.OpenAsync.</summary>
-    public interface IFitsFileHandle { }
+    public interface IFitsFileHandle : System.IDisposable
+    {
+        string FilePath { get; }
+        int HduIndex { get; }
+        int HduCount { get; }
+        bool IsReadWrite { get; }
+    }
 
     /// <summary>Managed payload returned by ReadFullCubeAsync / ReadSubcubeAsync.</summary>
-    public readonly record struct FitsVoxelBuffer(
-        IntPtr DataPtr, long Length, VolumeExtents Extents, CartesianCoord RegionOffset);
+    public sealed class FitsVoxelBuffer
+    {
+        public float[] Data { get; init; } = System.Array.Empty<float>();
+        public int SizeX { get; init; }
+        public int SizeY { get; init; }
+        public int SizeZ { get; init; }
+        public CartesianCoord RegionOffset { get; init; }
+
+        // Compatibility helpers for earlier skeleton drafts.
+        public IntPtr DataPtr { get; init; }
+        public long Length => Data.Length > 0 ? Data.Length : SizeX * SizeY * SizeZ;
+        public VolumeExtents Extents => new(SizeX, SizeY, SizeZ);
+    }
 
     public interface IFitsPlugin
     {

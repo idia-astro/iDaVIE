@@ -6,7 +6,7 @@ using System;
 using iDaVIE.Data.Contracts;            // MaskStateDto
 using iDaVIE.Features;                  // FeatureStateDto
 using iDaVIE.Interaction;               // InteractionStateDto
-using iDaVIE.Kernel.Contracts;          // VolumeStateDto
+using iDaVIE.Kernel.Contracts.Persistence; // VolumeStateDto
 using iDaVIE.Rendering.Contracts;       // RenderStateDto
 using iDaVIE.UI.Contracts;              // DesktopStateDto
 

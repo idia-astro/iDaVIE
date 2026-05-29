@@ -8,9 +8,20 @@ namespace iDaVIE.Kernel.Contracts
     public interface IPluginRegistry
     {
         /// <summary>Returns the registered plug-in of the requested contract type,
-        /// or throws InvalidOperationException if no plug-in realises it.</summary>
+        /// or throws PluginNotFoundException if no plug-in realises it.</summary>
         T GetPlugin<T>() where T : class;
 
+        void RegisterPlugin<T>(T plugin) where T : class;
+        bool IsRegistered<T>() where T : class;
+
         bool TryGetPlugin<T>(out T plugin) where T : class;
+    }
+
+    public sealed class PluginNotFoundException : System.Exception
+    {
+        public PluginNotFoundException(System.Type contractType)
+            : base($"No plug-in registered for contract '{contractType.FullName}'.")
+        {
+        }
     }
 }

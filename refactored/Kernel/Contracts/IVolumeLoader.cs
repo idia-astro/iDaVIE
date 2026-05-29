@@ -11,12 +11,26 @@ namespace iDaVIE.Kernel.Contracts
     public interface IVolumeLoader
     {
         /// <summary>Loads a FITS cube from disk. Raises DatasetLoaded once complete.</summary>
-        Task LoadAsync(string filePath, int hduIndex);
+        Task<IVolumeDataSet> LoadAsync(
+            string path,
+            int hduIndex = 0,
+            SubcubeBounds? initialSubcube = null,
+            System.Threading.CancellationToken cancellationToken = default);
 
-        /// <summary>Releases the current volume and raises DatasetUnloaded.</summary>
-        Task UnloadAsync();
+        /// <summary>Synchronous unload for shutdown paths that can guarantee no native I/O is in flight.</summary>
+        void Unload(IVolumeDataSet volume);
+
+        /// <summary>Releases a loaded volume and raises DatasetUnloaded.</summary>
+        Task UnloadAsync(IVolumeDataSet volume,
+            System.Threading.CancellationToken cancellationToken = default);
 
         /// <summary>Crops the active volume to a new subcube. Raises SubcubeChanged.</summary>
+        Task SetSubcubeAsync(IVolumeDataSet volume, SubcubeBounds newSubcube,
+            System.Threading.CancellationToken cancellationToken = default);
+
+        // Compatibility overloads retained for earlier ST6 skeletons.
+        Task LoadAsync(string filePath, int hduIndex);
+        Task UnloadAsync();
         Task SetSubcubeAsync(SubcubeBounds bounds);
 
         event Kernel.DatasetLoadedHandler    DatasetLoaded;

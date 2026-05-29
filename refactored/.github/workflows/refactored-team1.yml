@@ -1,0 +1,65 @@
+name: Refactored Team 1 Checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  team1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required docs
+        run: |
+          test -f refactored/docs/architecture/overview.md
+          test -f refactored/docs/architecture/dependency-policy.md
+          test -f refactored/docs/architecture/plugin-abi.md
+          test -f refactored/docs/architecture/fitness-functions.md
+          test -f refactored/docs/adr/ADR-001-contract-ownership.md
+          test -f refactored/docs/adr/ADR-002-delegate-centralisation.md
+          test -f refactored/docs/adr/ADR-003-plugin-abi-versioning.md
+          test -f refactored/docs/adr/ADR-004-no-package-cycles.md
+          test -f refactored/docs/adr/ADR-005-config-injection.md
+          test -f refactored/docs/adr/ADR-006-logging-sink.md
+          test -f refactored/docs/adr/ADR-007-native-plugin-isolation.md
+
+      - name: No Team 1 throw-only stubs
+        run: |
+          ! grep -R "NotImplementedException" \
+            refactored/Kernel \
+            refactored/External \
+            refactored/Rendering/VolumeDataSet.cs \
+            refactored/Data/FitsReaderPlugin.cs \
+            refactored/Data/WcsTransformPlugin.cs \
+            refactored/Data/DataAnalysisPlugin.cs \
+            refactored/Data/NativePluginLoader.cs
+
+      - name: Kernel contracts stay Unity free
+        run: |
+          ! grep -R -E "UnityEngine|Valve\\." \
+            refactored/Kernel \
+            refactored/External \
+            refactored/Rendering/VolumeDataSet.cs
+
+      - name: No singleton or static native reach in Team 1
+        run: |
+          ! grep -R -E "Config\\.Instance|GameObject\\.Find|FitsReader\\.|AstTool\\.|DataAnalysis\\." \
+            refactored/Kernel \
+            refactored/External \
+            refactored/Rendering/VolumeDataSet.cs \
+            refactored/Data/FitsReaderPlugin.cs \
+            refactored/Data/WcsTransformPlugin.cs \
+            refactored/Data/DataAnalysisPlugin.cs \
+            refactored/Data/NativePluginLoader.cs
+
+      - name: Compile when project files exist
+        run: |
+          projects="$(find refactored -name '*.csproj')"
+          if [ -n "$projects" ]; then
+            for project in $projects; do
+              dotnet build "$project"
+            done
+          else
+            echo "No refactored .csproj present; static checks completed."
+          fi

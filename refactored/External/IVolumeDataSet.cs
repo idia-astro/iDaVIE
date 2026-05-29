@@ -21,6 +21,12 @@ namespace iDaVIE.Kernel.Contracts
 {
     public enum LoadStatus { Unloaded, Loading, Loaded, Error }
 
+    public sealed class VolumeLoadException : Exception
+    {
+        public VolumeLoadException(string message) : base(message) { }
+        public VolumeLoadException(string message, Exception inner) : base(message, inner) { }
+    }
+
     /// <summary>Read-only cross-team view of the volume aggregate.
     /// Mutation goes through IVolumeLoader (ST1). Native sub-ports
     /// (RawVoxelAccess, MaskEditState) are reached through this aggregate per M-27.</summary>
