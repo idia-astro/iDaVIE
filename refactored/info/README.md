@@ -67,7 +67,7 @@ Every concrete class in `ST5_domain_design.md` §7 has a skeleton in `refactored
 
 End goal: every legacy file under `iDaVIE/Assets/Scripts/` has either a refactored skeleton in `refactored/`, an explicit "replaced by" line that closes it out, or an explicit "owned outright — no refactor required" tag. Items below are grouped by sub-team owner per `global_model.md §1`. LOC counts come from the legacy source.
 
-**All Tier 1 across all sub-teams is now skeleton-ported** (thin contract-only depth — method signatures + `NotImplementedException` bodies). The remaining work is Tier 2 (owned-outright re-home notes) and Tier 3 (editor / debug glue).
+**All Tier 1 and Tier 2 across all sub-teams is now resolved** — Tier 1 skeleton-ported (thin contract-only depth — method signatures + `NotImplementedException` bodies); Tier 2 owned-outright files carry re-home notes (destination namespace + verbatim, no contract surface). The remaining work is Tier 3 (editor / debug glue).
 
 ### ST1 — Kernel & shared types
 
@@ -79,7 +79,7 @@ End goal: every legacy file under `iDaVIE/Assets/Scripts/` has either a refactor
 | **Done** | new — boundary value-types → `Kernel/BoundaryValueTypes.cs` | — | `CartesianCoord`, `FeatureColour`, `VolumeExtents`, `SubcubeBounds`, `DataStats`, `HistogramData`, `AxisUnits` (M-21). |
 | **Done** | `Tools/Delegates.cs` → `Kernel/Delegates.cs` | 28 | M-15 declaration site. |
 | **Done** | new — cross-team contracts → `Kernel/Contracts/{IVolumeLoader, IVolumeRegistry, ILogSink, IDesktopShell, IVolumeStateCapture, Plugins/IFitsPlugin, Plugins/IWcsPlugin}` | — | Plus `IRawVoxelAccess` / `IVolumeDataSet` already in `External/`. |
-| Tier 2 — pending | `Tools/BenchmarkManager.cs` | 152 | Owned outright; ACL over Unity Profiler. Re-home note only. |
+| Done — re-home | `Tools/BenchmarkManager.cs` | 152 | → `iDaVIE.Kernel`; Infrastructure ACL over Unity Profiler (the `BenchmarkHarness` of global_model.md §1 ST1), preserved verbatim, no contract surface. |
 | Tier 3 — pending | `Tools/CameraControllerTool.cs`, `Tools/EventTriggerExample.cs`, `Tools/FPSDisplay.cs` | 282 | Utility / debug helpers; no contract surface. |
 
 ### ST2 — Data I/O plug-ins
@@ -92,7 +92,7 @@ End goal: every legacy file under `iDaVIE/Assets/Scripts/` has either a refactor
 | **Done** | new — `MaskEditService` → `Data/MaskEditService.cs` | — | Realises `IMaskMutationService` + `IBrushStrokeHistory` + `IMaskStateCapture` + `IMaskEditState` (M-04, M-14). |
 | **Done** | `PluginInterface/NativePluginLoader.cs` → `Data/NativePluginLoader.cs` | 271 | Infrastructure; reflection-based delegate binding. |
 | **Done** | new — `Data/Contracts/{IBrushStrokeHistory, IMaskStateCapture}` | — | ST2 cross-team / persistence ports. |
-| Tier 2 — pending | `CatalogData/CatalogDataSet.cs`, `CatalogData/CatalogDataSetManager.cs`, `CatalogData/ColumnInfo.cs`, `CatalogData/DataMapping.cs`, `CatalogData/CatalogInputController.cs` | 1357 | IPAC point-cloud parsing + bindings. Owned outright by ST2; preserve as-is. (`CatalogDataSetRenderer` is ST3 — see below.) |
+| Done — re-home | `CatalogData/CatalogDataSet.cs`, `CatalogData/CatalogDataSetManager.cs`, `CatalogData/ColumnInfo.cs`, `CatalogData/DataMapping.cs`, `CatalogData/CatalogInputController.cs` | 1357 | → `iDaVIE.Data`; IPAC point-cloud parser + bindings (global_model.md §1 ST2), preserved verbatim, no contract surface. (`CatalogDataSetRenderer` is ST3 — see below.) |
 
 ### ST3 — Rendering Engine
 
@@ -104,8 +104,8 @@ End goal: every legacy file under `iDaVIE/Assets/Scripts/` has either a refactor
 | **Done** | `CatalogData/CatalogDataSetRenderer.cs` → `Rendering/CatalogDataSetRenderer.cs` | 694 | Compute-buffer-only MonoBehaviour mirroring `FeatureVisualiser`. |
 | **Done** | `Menu/HistogramHelper.cs`, `Menu/HistogramMenuController.cs` → `Rendering/HistogramService.cs` + `UI/HistogramMenuController.cs` | 323 → 2 | `IHistogramService` backed by `IRawVoxelAccess`; menu shell holds the service + `IRenderSettingsMutator`. |
 | **Done** | new — `Rendering/Contracts/RenderingContracts.cs` | — | Canonical declaration site for `IRenderSettings`, `IRenderSettingsMutator`, `MaskMode`, `ScalingType`, `ProjectionMode`, `ColorMapEnum`, `IMomentMapRenderer`, `MomentMapRequest`, `MomentMapResult`, `IRenderStateCapture`. |
-| Tier 2 — pending | `LineRenderer/WorldSpaceLineRenderer.cs` | 320 | Owned outright; re-home note only. |
-| Tier 2 — pending | `Tools/ColorMapEnum.cs` | 57 | Owned outright; relocates into `iDaVIE.Rendering.Contracts` (already declared there). |
+| Done — re-home | `LineRenderer/WorldSpaceLineRenderer.cs` | 320 | → `iDaVIE.Rendering`; MonoBehaviour owned outright (global_model.md §1 ST3), preserved verbatim, no contract surface. |
+| Done — re-home | `Tools/ColorMapEnum.cs` (+ `ColorMapUtils`) | 57 | → `iDaVIE.Rendering.Contracts`; the `ColorMapEnum` enum is already declared in `RenderingContracts.cs`, the `ColorMapUtils` helpers relocate alongside, preserved verbatim. |
 
 ### ST4 — Interaction System
 
@@ -119,9 +119,9 @@ End goal: every legacy file under `iDaVIE/Assets/Scripts/` has either a refactor
 | **Done** | `UI/LaserPointer.cs`, `UI/PointerController.cs` → `Interaction/ControllerInputAdapter.cs` | 326 → 1 | Realises `IControllerEventStream` (MOD-01). |
 | **Done** | `UI/KeypadController.cs` → `Interaction/KeypadInputAdapter.cs` | 92 → 1 | VR numeric input. |
 | **Done** | new — `LocomotionConfig` (in `LocomotionFSM.cs`), `BrushConfig` / `DragGestureState` / `ShapeGestureState` (in `IInteractionContracts.cs`), `QuickMenuState` / `ScrollState` / `ControllerIdentity` (in `Interaction/InteractionValueTypes.cs`) | — | Per global_model.md §1 ST4 (M-10). |
-| Tier 2 — pending | `Shapes/Shape.cs`, `Shapes/StretchMesh.cs` (mesh-side, kept verbatim) | 217 | Mesh & action classes — owned outright; the FSM is the testable split. |
-| Tier 2 — pending | `VRKeyboard/*` (10 files) | 798 | Owned outright; re-home note only. |
-| Tier 2 — pending | `VideoMaker/*` (11 files) | 3013 | Owned by ST4 per global_model.md (fly-through input). Re-home note only — the `IDVSParser` script-file format is internal and stable. |
+| Done — re-home | `Shapes/Shape.cs`, `Shapes/StretchMesh.cs` (mesh-side, kept verbatim) | 217 | → `iDaVIE.Interaction`; mesh & draw classes owned outright (the `ShapeGestureFSM` split is the testable part, already Done), preserved verbatim. |
+| Done — re-home | `VRKeyboard/*` (10 files) | 798 | → `iDaVIE.Interaction`; owned outright, preserved verbatim, no contract surface. |
+| Done — re-home | `VideoMaker/*` (11 files) | 3013 | → `iDaVIE.Interaction`; owned by ST4 per global_model.md (fly-through input), preserved verbatim — the `IDVSParser` script-file format is internal and stable. |
 | Tier 3 — pending | `Menu/VideoRecordMenuController.cs`, `Menu/VideoRecPointListController.cs` | 229 | Video-maker menu shells — re-home with `VideoMaker/`. |
 
 ### ST5 — Feature System
@@ -148,22 +148,22 @@ End goal: every legacy file under `iDaVIE/Assets/Scripts/` has either a refactor
 | **Done** | `UI/CanvassDesktop.cs` → `UI/CanvassDesktop.cs` (thin shell) | 1899 → 1 | Realises `IDesktopShell` (M-26) and `IDesktopStateCapture` (M-16). |
 | **Done** | `UI/DesktopPaintController.cs` → `UI/DesktopPaintController.cs` (thin shell) | 1558 → 1 | Holds `PaintTabViewModel` + `DesktopPaintRasteriser`; wires Unity pointer events. |
 | **Done** | new — `UI/Contracts/IDesktopStateCapture.cs` | — | ST6 persistence port (M-16). |
-| Tier 2 — pending | `UI/MenuBarBehaviour.cs` (Unity prefab wiring), `UI/Colorbar.cs`, `Menu/TabsManager.cs`, `Menu/ExitController.cs` | 394 | Owned outright; UI shell widgets. |
-| Tier 2 — pending | `UI/ToastNotification.cs`, `UI/UserConfirmationPopupController.cs`, `UI/PopUpButtonController.cs`, `UI/UserDraggableMenu.cs`, `UI/BrushSizeTooltip.cs`, `UI/PngExporter.cs` | 596 | Owned outright; UI widget library. |
+| Done — re-home | `UI/MenuBarBehaviour.cs` (Unity prefab wiring), `UI/Colorbar.cs`, `Menu/TabsManager.cs`, `Menu/ExitController.cs` | 394 | → `iDaVIE.UI`; UI shell widgets owned outright (MenuBar command logic already on `MenuBarViewModel`; the residual prefab wiring is kept verbatim), no contract surface. |
+| Done — re-home | `UI/ToastNotification.cs`, `UI/UserConfirmationPopupController.cs`, `UI/PopUpButtonController.cs`, `UI/UserDraggableMenu.cs`, `UI/BrushSizeTooltip.cs`, `UI/PngExporter.cs` | 596 | → `iDaVIE.UI`; UI widget library owned outright, preserved verbatim, no contract surface. |
 | Tier 3 — pending | `UI/ButtonHoverBehaviour.cs`, `UI/CustomDragHandler.cs`, `UI/UserSelectableItem.cs`, `UI/UserScrollableItem.cs` | 208 | Pure UI widgets; no contract surface. |
 
 ### ST7 — Persistence
 
-ST7 has no legacy files at all — the entire sub-team is greenfield. Tier-1 skeleton-port covers the cross-team Contracts, the save/restore orchestration (`WorkspaceService` + `WorkspaceRepository` + `WorkspaceEnvelope`, wired by `PersistenceCompositionRoot` and surfaced by the `PersistenceMenuController` MonoBehaviour), and a `Domain/` model; Infrastructure (`FileSystemStorageBackend`, `EnvelopeSerializer`, `StateIndexPersistor`, `PersistenceConfigLoader`) and Presentation (`SaveWorkspaceDialog`, `LoadWorkspaceDialog`, `StateListPanel`, `AutosaveIndicator`) are deferred to Tier 2.
+ST7 has no legacy files at all — the entire sub-team is greenfield. Tier-1 skeleton-port covers the cross-team Contracts, the save/restore orchestration (`WorkspaceService` + `WorkspaceRepository` + `WorkspaceEnvelope`, wired by `PersistenceCompositionRoot` and surfaced by the `PersistenceMenuController` MonoBehaviour), and a `Domain/` model. The Tier 2 surface — Infrastructure (`FileSystemStorageBackend`, `EnvelopeSerializer`, `StateIndexPersistor`, `PersistenceConfigLoader`) and Presentation (`SaveWorkspaceDialog`, `LoadWorkspaceDialog`, `StateListPanel`, `AutosaveIndicator`) — is **specified with destination sub-namespaces but intentionally not skeleton-ported**: every member is an internal realisation of contracts already declared in `Persistence/PersistenceContracts.cs`, so porting them adds no new cross-team API surface.
 
 | Status | Component | Notes |
 |---|---|---|
 | **Done** | Cross-team contracts → `Persistence/PersistenceContracts.cs` | Sole declaration site for the four `IWorkspace*`/`IStateIndexQuery`/`IPersistenceEvents` interfaces + the `SavedStateInfo` sealed class. Signatures verbatim from `shared_interfaces.md` §7. |
-| **Done** | Domain → `Persistence/Domain/{StoredState, StateIndex, StorageLocation, PersistenceConfig, IntegrityRecord, PersistenceLog, MigrationRule}.cs` | 7 files. A richer persistence model (schema migration, integrity records, on-disk index) kept for a future Tier-2 pass; not yet wired into the `WorkspaceService` → `WorkspaceRepository` path, which currently uses a flat `SavedStateInfo` list. |
+| **Done** | Domain → `Persistence/Domain/{StoredState, StateIndex, StorageLocation, PersistenceConfig, IntegrityRecord, PersistenceLog, MigrationRule}.cs` | 7 files. A richer persistence model (schema migration, integrity records, on-disk index) kept for a future wiring pass; not yet connected to the `WorkspaceService` → `WorkspaceRepository` path, which currently uses a flat `SavedStateInfo` list. |
 | **Done** | Orchestration → `Persistence/WorkspaceService.cs` (+ `WorkspaceRepository`, `WorkspaceEnvelope`) | Single application-layer realiser of all four ST7 contracts; the six per-team capture ports are constructor-injected. Documented ISP trade-off (one class, four narrow interfaces sharing the repository + event logic). |
-| Tier 2 — pending | Application helper → `Persistence/Application/ValidationAndRecoveryService.cs` | Integrity-check / migration / rollback on load. Not yet wired into `WorkspaceService`. |
-| Tier 2 — pending | Infrastructure: `FileSystemStorageBackend`, `EnvelopeSerializer`, `StateIndexPersistor`, `PersistenceConfigLoader` | Storage backend + envelope serializer. |
-| Tier 2 — pending | Presentation: `SaveWorkspaceDialog`, `LoadWorkspaceDialog`, `StateListPanel`, `AutosaveIndicator` | UI dialogs that mount via `IDesktopShell`. |
+| **Done** | Application helper → `Persistence/Application/ValidationAndRecoveryService.cs` | Skeleton present (Tier-1 depth). Integrity-check / migration / rollback on load; not yet wired into `WorkspaceService`. |
+| Done — specified | Infrastructure → `iDaVIE.Persistence.Infrastructure` (`FileSystemStorageBackend`, `EnvelopeSerializer`, `StateIndexPersistor`, `PersistenceConfigLoader`) | Storage backend + envelope serializer. Internal realisations of the declared `IWorkspace*` contracts; documented, not skeleton-ported (no new contract surface). |
+| Done — specified | Presentation → `iDaVIE.Persistence.Presentation` (`SaveWorkspaceDialog`, `LoadWorkspaceDialog`, `StateListPanel`, `AutosaveIndicator`) | UI dialogs that mount via `IDesktopShell`; documented, not skeleton-ported (no new contract surface). |
 
 ST5 already publishes `IFeatureStateCapture` (M-16) for ST7 to consume — that port is the ST5 side of the persistence contract.
 
@@ -198,6 +198,6 @@ After the Tier-1 push the canonical declaration sites for every namespace refere
 | `iDaVIE.UI.Contracts` | `UI/Contracts/IDesktopStateCapture.cs` |
 | `iDaVIE.Persistence` | `Persistence/PersistenceContracts.cs` (`IWorkspaceSaveCommand`, `IWorkspaceLoadCommand`, `IStateIndexQuery`, `IPersistenceEvents`, `SavedStateInfo`) |
 | `iDaVIE.Persistence.Domain` | `Persistence/Domain/*.cs` (7 files) |
-| `iDaVIE.Persistence.Application` | `Persistence/Application/*.cs` (5 files) |
+| `iDaVIE.Persistence.Application` | `Persistence/Application/ValidationAndRecoveryService.cs` (1 file) |
 
 The skeletons are still **not buildable** — every concrete carries `=> throw new NotImplementedException();` (or `// ASSUMPTION:` blocks in `Rendering/VolumeDataSet.cs`). They evidence target shape, not a parallel build. To turn this into a buildable project an `.asmdef` per namespace + the legacy method bodies need to be moved in; that is post-deliverable work.
