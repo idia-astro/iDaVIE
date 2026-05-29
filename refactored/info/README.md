@@ -67,6 +67,8 @@ Every concrete class in `ST5_domain_design.md` §7 has a skeleton in `refactored
 
 Every legacy file under `Assets/Scripts/` is now accounted for — each has a refactored skeleton in `refactored/`, a "replaced by" closeout, or an owned-outright re-home note (the per-method legacy → new-home mapping is in "Mapping back to the legacy files" above). The skeletons evidence target *shape*, not a parallel build: every concrete carries `=> throw new NotImplementedException();` (or `// ASSUMPTION:` blocks in `Rendering/VolumeDataSet.cs`), there is no `.asmdef`, and the `External/` files are reference declarations standing in for assemblies their owning teams ship. What remains is the post-deliverable work of turning that shape into compiling, tested code.
 
+Two milestones sit on that path. The nearer one — **a compiled artifact for NDepend** — needs only the *shape* to compile, not to run, and is reachable from the skeletons alone (see "Compiling for NDepend analysis" below). The further one — a functioning, tested build — is the full seven-step sequence under "Ordered steps".
+
 ### Assembly map
 
 One `.asmdef` per namespace; these are the canonical declaration sites on disk today:
@@ -91,9 +93,34 @@ One `.asmdef` per namespace; these are the canonical declaration sites on disk t
 
 ST7 Infrastructure (`iDaVIE.Persistence.Infrastructure`) and Presentation (`iDaVIE.Persistence.Presentation`) are specified but not yet on disk (see the ST5/ST7 notes above); they gain `.asmdef`s when their concretes land in step 4.
 
+### Compiling for NDepend analysis (minimal path)
+
+NDepend analyses **compiled assemblies** (or a `.sln`/`.csproj`): it reads IL and metadata, so the code must *compile* but need not *run*. Every `=> throw new NotImplementedException();` stub compiles and is measured exactly like a finished body — NDepend's coupling, cohesion, and dependency-cycle metrics derive from signatures, fields, and `using` edges, not runtime behaviour. The NDepend artifact is therefore reachable from the skeletons **without moving any legacy body in**: of the seven "Ordered steps" below, only step 1 (build files) is a prerequisite, and even that is reduced. Steps 2–7 are not required for analysis. What *is* required:
+
+1. **Build files — one project per assembly-map row.** Either `.asmdef`s compiled by Unity (route A) or hand-written `.csproj`s (route B). Target the framework Unity uses (`netstandard2.1`), C# `langversion` 9+. Wire each project's `references` bottom-up along the acyclic graph in `global_model.md §2`, exactly as functional step 1 — this is also where a back-edge fails to compile (brief §4.2 constraint 2), which is itself a result NDepend will corroborate.
+
+2. **Keep the `External/` stubs — do *not* replace them.** This is the one point where the NDepend path diverges from functional step 1. The reference declarations in `External/` supply `IVolumeDataSet` and `ICoordinateTransformer` so `iDaVIE.Rendering` and `iDaVIE.Features` compile in isolation with no live ST1/ST2 assemblies present. Replacing them (functional step 1) is only needed when integrating against the real teams.
+
+3. **Resolve the third-party references.** The skeletons compile against managed assemblies they do not ship:
+   - UnityEngine and its modules (`CoreModule`, `UI`, `IMGUIModule`) — 21 `MonoBehaviour`s across 28 files.
+   - `Unity.TextMeshPro` (`TMPro`).
+   - SteamVR — `Valve.VR`, `Valve.VR.InteractionSystem`.
+   - `Valve.Newtonsoft.Json` (`Persistence/WorkspaceRepository.cs`).
+   - `System.Text.Json` (`Features/FeatureImportService.cs`) — **not shipped by Unity**; add the NuGet package or port that one call site to `Valve.Newtonsoft.Json`.
+   - `System.Numerics`.
+   Route A resolves Unity/TMPro/SteamVR automatically from the project's `Packages`; route B references them from a local Unity install's `Managed/` folder.
+
+4. **Compile-clean pass.** The skeletons are not yet error-free C# — fix every diagnostic the compiler raises. Known blocker today: five files (`Features/FeatureStateCapture.cs`, `Features/FeatureSetService.cs`, `Persistence/PersistenceCompositionRoot.cs`, `Persistence/WorkspaceService.cs`, `Persistence/WorkspaceEnvelope.cs`) carry `using iDaVIE.Kernel.Contracts.Persistence;`, but that namespace does not exist — `IVolumeStateCapture` is declared in `iDaVIE.Kernel.Contracts` (`Kernel/Contracts/IVolumeStateCapture.cs`). Either correct the `using` or move the type into a `.Persistence` namespace; the assembly map above assumes the former.
+
+5. **Run NDepend against the output.** Feed NDepend the generated `.sln`/`.csproj` or the compiled `iDaVIE.*.dll` set. In the NDepend project, scope the **application assemblies** to `iDaVIE.*` and mark UnityEngine / TMPro / Valve / `System.*` as third-party, so cohesion/coupling/cycle metrics report the refactored code only — matching the `T2 Baseline Report.pdf` methodology so the before/after numbers are comparable.
+
+**Route A — Unity-driven (recommended).** Drop the skeleton tree into the iDaVIE Unity project's `Assets/` (or a stripped copy) with the `.asmdef`s from step 1; Unity restores UnityEngine/TMPro/SteamVR and emits `iDaVIE.*.dll` to `Library/ScriptAssemblies/`, plus `.csproj`/`.sln` for NDepend. **Route B — standalone `.csproj`.** Reference Unity's managed DLLs from a local install and `System.Text.Json`/Newtonsoft from NuGet; no editor needed, but the reference paths are maintained by hand.
+
 ### Ordered steps
 
-1. **Assembly definitions (`.asmdef` per namespace).** Add one assembly definition per row of the map above, with `references` wired strictly bottom-up along the acyclic ownership graph in `global_model.md §2` (ST1 → ST2 → ST3 → ST4 → ST5 → ST6 → ST7; the `*.Contracts` assemblies carry no outbound team references). This step is the enforcement point for brief §4.2 constraint 2 — a back-edge fails to compile instead of slipping past review. Replace the two `External/` reference declarations (`IVolumeDataSet`, `ICoordinateTransformer`) with real references to the owning assemblies (`iDaVIE.Kernel.Contracts`, `iDaVIE.Data`); they exist only so ST3/ST5 compile in isolation.
+The full sequence to a functioning, tested build. For the NDepend artifact alone, see "Compiling for NDepend analysis" above — only step 1 (reduced per that note) applies.
+
+1. **Assembly definitions (`.asmdef` per namespace).** Add one assembly definition per row of the map above, with `references` wired strictly bottom-up along the acyclic ownership graph in `global_model.md §2` (ST1 → ST2 → ST3 → ST4 → ST5 → ST6 → ST7; the `*.Contracts` assemblies carry no outbound team references). This step is the enforcement point for brief §4.2 constraint 2 — a back-edge fails to compile instead of slipping past review. Replace the two `External/` reference declarations (`IVolumeDataSet`, `ICoordinateTransformer`) with real references to the owning assemblies (`iDaVIE.Kernel.Contracts`, `iDaVIE.Data`); they exist only so ST3/ST5 compile in isolation. (For the NDepend artifact, *keep* the stubs — see "Compiling for NDepend analysis" step 2.)
 
 2. **Settle the open design questions.** Resolve the `// ASSUMPTION:` blocks in `Rendering/VolumeDataSet.cs` (file-I/O ownership ST1 vs ST2; histogram lazy evaluation; WCS-frame ownership) with ST1/ST2 before any body moves — they decide which class owns which field. This needs a per-method hotspot table for `VolumeDataSet`, which `refactor_plan.md` does not yet provide (flagged), built the same way as its existing `VolumeDataSetRenderer` / `FeatureSetRenderer` tables.
 
