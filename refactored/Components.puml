@@ -5,20 +5,28 @@ skinparam dpi 80
 '
 ' Scope:
 '   Every component shipped under refactored/ as a black box with its provided
-'   (lollipop) and required (socket) interfaces. The four worked packages —
-'   Rendering/ (ST3), Features/ (ST5), Interaction/ (ST4), UI/ (ST6) — are drawn
-'   as first-class internal packages. External/ holds the upstream cross-team
-'   contracts (ST1 Kernel, ST2 Data plug-in adapters) plus ST7 as a downstream
-'   persistence sink. The brief's §6.3 splits of VolumeDataSetRenderer and the
-'   ST5_domain_design.md §7 Domain/Application/Unity ACL layering are visible
-'   directly in the package nesting.
+'   (lollipop) and required (socket / dependency) interfaces. After the Tier-1
+'   push (see info/README.md) all seven sub-teams are skeleton-ported, so all
+'   seven worked packages are now first-class:
+'       Kernel/       (ST1)   Data/        (ST2)   Rendering/   (ST3)
+'       Interaction/  (ST4)   Features/    (ST5)   UI/          (ST6)
+'       Persistence/  (ST7)
+'   External/ no longer hosts ST1/ST2 as black boxes — it is now just the two
+'   reference-declaration files (IVolumeDataSet, ICoordinateTransformer) that
+'   reproduce kernel/data contract shape so the skeletons compile-as-illustrated;
+'   those types belong to iDaVIE.Kernel.Contracts / iDaVIE.Data and are drawn
+'   inside the Kernel and Data packages here.
 '
 ' Reading order:
-'   - Lollipop on a component edge       = provided interface.
-'   - Socket on a component edge         = required interface.
-'   - A lollipop docked into a socket    = wiring satisfied at composition root.
-'   - «internal» on an interface label   = scoped to the owning assembly (DD-5);
-'                                          cross-team consumers may not bind it.
+'   - Lollipop on a component edge       = provided interface (realised here).
+'   - Socket / labelled ..> on a consumer = required interface (injected at a
+'                                            composition root).
+'   - «internal» on an interface label    = scoped to the owning assembly (DD-5);
+'                                            cross-team consumers may not bind it.
+'   - A realisation line crossing a package edge = the interface is DECLARED by
+'                                            one team and REALISED by another
+'                                            (e.g. IVolumeDataSet declared ST1,
+'                                            realised by ST3's VolumeDataSet).
 
 skinparam componentBackgroundColor #FAFAFA
 skinparam componentBorderColor #444
@@ -29,449 +37,443 @@ skinparam linetype polyline
 hide stereotype
 
 ' ══════════════════════════════════════════════════════════════════════════
-' EXTERNAL — reference declarations (refactored/External/), owned elsewhere
+' refactored/Kernel/  — ST1 (kernel, shared contracts, composition root)
 ' ══════════════════════════════════════════════════════════════════════════
 
-package "External (cross-team contracts)" #ECEFF1 {
+package "refactored/Kernel/  (ST1)" #ECEFF1 {
 
-  package "ST1 — Kernel" #FFFFFF {
-    component "VolumeDataSet aggregate\n+ IVolumeRegistry\n(owned by ST1)" as ST1_Volume
-    interface "IVolumeDataSet" as I_Vol
-    interface "IVolumeRegistry" as I_VReg
-    ST1_Volume -up- I_Vol
-    ST1_Volume -up- I_VReg
-  }
+  component "KernelCompositionRoot\n(global root — sole new() site;\nBootstrap wires ST1→…→ST7)" as KCR
+  component "Config\n«internal sealed»" as CFG
+  component "PluginRegistry\n«internal sealed»" as PREG
 
-  package "ST2 — Data plug-in adapters" #FFFFFF {
-    component "FITS / WCS / DataAnalysis\nadapters (owned by ST2)" as ST2_Plugins
-    interface "ICoordinateTransformer"  as I_Coords
-    interface "ISourceStatsProvider"    as I_Stats
-    interface "IMaskMutationService"    as I_MaskMut
-    interface "IFitsMaskWriter\n+ IFitsCubeReader" as I_FitsIO
-    interface "IDataAnalysisPlugin"     as I_DAP
-    ST2_Plugins -up- I_Coords
-    ST2_Plugins -up- I_Stats
-    ST2_Plugins -up- I_MaskMut
-    ST2_Plugins -up- I_FitsIO
-    ST2_Plugins -up- I_DAP
-  }
+  ' Contracts declared by ST1 (Kernel/Contracts/** + External/ reference decls).
+  interface "IConfig"             as I_Cfg
+  interface "IPluginRegistry"     as I_PReg
+  interface "IVolumeRegistry"     as I_VReg
+  interface "IVolumeLoader"       as I_VLoad
+  interface "ILogSink"            as I_Log
+  interface "IDesktopShell"       as I_Shell
+  interface "IVolumeStateCapture" as I_VCap
+  interface "IVolumeDataSet\n(decl ST1 — realised ST3)" as I_Vol
+  interface "IRawVoxelAccess\n(decl ST1 — realised ST2)" as I_Raw
+  interface "IMaskEditState\n(decl ST1 — realised ST2)"  as I_MaskEdit
+  interface "IFitsPlugin\n+ IWcsPlugin\n(decl ST1 — realised ST2)" as I_PluginAbi
 
-  package "ST7 — Persistence (sink)" #FFFFFF {
-    component "WorkspaceSerializer\n(owned by ST7)" as ST7_WS
-    interface "IWorkspaceSaveCommand\n+ IWorkspaceLoadCommand" as I_WS
-    ST7_WS -up- I_WS
-    note right of ST7_WS
-      Consumes (does not provide):
-      • IFeatureStateCapture       (ST5)
-      • IInteractionStateCapture   (ST4)
-      M-16 uniform Capture/Restore.
-    end note
-  }
+  CFG  -up- I_Cfg
+  PREG -up- I_PReg
+  note bottom of KCR
+    Exposes IVolumeRegistry / IVolumeLoader / ILogSink / IDesktopShell as
+    facade properties. Concrete IVolumeRegistry + IVolumeLoader are built in
+    Bootstrap (no skeleton class); ILogSink realised by DebugLogging (Tier-3);
+    IDesktopShell realised by ST6 CanvassDesktop. Boundary value-types
+    (CartesianCoord, VolumeExtents, DataStats, HistogramData, AxisUnits …)
+    live in Kernel/BoundaryValueTypes.cs and are used by every team.
+  end note
 }
 
 ' ══════════════════════════════════════════════════════════════════════════
-' refactored/Rendering/  — ST3 worked example
+' refactored/Data/  — ST2 (FITS / WCS / DataAnalysis plug-in adapters)
+' ══════════════════════════════════════════════════════════════════════════
+
+package "refactored/Data/  (ST2)" #E1F5FE {
+
+  component "FitsReaderPlugin\n«internal sealed»\n(CFITSIO ACL)" as FITS
+  component "WcsTransformPlugin\n«internal sealed»\n(Starlink AST ACL)" as WCS
+  component "DataAnalysisPlugin\n«internal sealed»" as DAN
+  component "MaskEditService\n«internal sealed»" as MEDIT
+  component "NativePluginLoader\n(infrastructure)" as NPL
+
+  interface "ICoordinateTransformer" as I_Coords
+  interface "ISourceStatsProvider"   as I_Stats
+  interface "IDataAnalysisPlugin"    as I_DAP
+  interface "IMaskMutationService"   as I_MaskMut
+  interface "IBrushStrokeHistory"    as I_Brush
+  interface "IMaskStateCapture"      as I_MaskCap
+  interface "IFitsMaskWriter\n+ IFitsCubeReader" as I_FitsIO
+  interface "IFitsBinaryTableSource\n«internal»" as I_FitsTbl
+
+  FITS  -up- I_PluginAbi
+  FITS  -up- I_Raw
+  FITS  -up- I_FitsTbl
+  FITS  .up.> I_FitsIO : <<FITS write/read\n— realiser TBD>>
+  WCS   -up- I_PluginAbi
+  WCS   -up- I_Coords
+  DAN   -up- I_Stats
+  DAN   -up- I_DAP
+  MEDIT -up- I_MaskMut
+  MEDIT -up- I_MaskEdit
+  MEDIT -up- I_Brush
+  MEDIT -up- I_MaskCap
+}
+
+' ══════════════════════════════════════════════════════════════════════════
+' refactored/Rendering/  — ST3
 ' ══════════════════════════════════════════════════════════════════════════
 
 package "refactored/Rendering/  (ST3)" #E3F2FD {
 
-  ' ── Unity ACL — the only MonoBehaviour in this package ───────────────────
-  component "VolumeDataSetRenderer\n«MonoBehaviour»\n(composes the four §6.3 splits)" as VDR {
-    portin P_VDR_Settings
-    portin P_VDR_Vol
-    portin P_VDR_Region
-    portin P_VDR_MaskBuf
-  }
+  ' ── Unity ACL — thin MonoBehaviour composing the four §6.3 splits ────────
+  component "VolumeDataSetRenderer\n«MonoBehaviour»\n(~120 LOC, composes splits)" as VDR
 
-  ' ── §6.3 split (1/4): per-frame uniform binding from IRenderSettings ─────
+  ' ── §6.3 mandated splits ─────────────────────────────────────────────────
   component "VolumeMaterialBinder" as VMB
-
-  ' ── §6.3 split (2/4): Unity GPU resource ownership (Material + Texture3D) ─
-  component "VolumeTextureManager" as VTM {
-    portin P_VTM_Vol
-    portin P_VTM_MaskBuf
-  }
-
-  ' ── §6.3 split (3/4): transform-derived shader state ─────────────────────
-  component "VolumeCameraDriver" as VCD {
-    portin P_VCD_Vol
-    portin P_VCD_Region
-  }
-
-  ' ── §6.3 split (4/4): foveation step-budget policy ───────────────────────
+  component "VolumeTextureManager\n(owns Material + Texture3D;\nexposes IMaskGpuBuffers)" as VTM
+  component "VolumeCameraDriver" as VCD
   component "FoveatedSamplingPolicy" as FSP
-
-  ' ── §6.3 Strategy: IMaskMode (Apply / Inverse / Isolate + Disabled) ──────
-  component "MaskModeRegistry\n+ {DisabledMaskMode,\n   EnabledMaskMode,\n   InvertedMaskMode,\n   IsolatedMaskMode}" as MMR
-  interface "IMaskMode\n«internal»" as I_MaskMode
+  component "MaskModeRegistry\n+ {Disabled/Enabled/\n  Inverted/Isolated}MaskMode" as MMR
+  interface "IMaskMode «internal»"      as I_MaskMode
+  interface "IMaskGpuBuffers «internal»" as I_MaskBuf
   MMR -up- I_MaskMode
+  VTM -up- I_MaskBuf
 
-  ' ── Domain / application services (Unity-free; concerns §6.3 does not name)
-  component "VolumeCoordinateService" as VCS {
-    portin P_VCS_Vol
-  }
-
-  component "RegionSelection" as REG {
-    portin P_REG_Vol
-    portin P_REG_Coords
-  }
-
-  component "MaskEditingService" as MES {
-    portin P_MES_MaskMut
-  }
-
-  component "VolumePersistenceService" as VPS {
-    portin P_VPS_Vol
-    portin P_VPS_FitsIO
-  }
-
-  ' ── Provided cross-team contracts realised in this package ───────────────
-  interface "IRenderSettings\n+ IRenderSettingsMutator" as I_RSet
-  interface "IRestFrequencyCatalogue" as I_RFC
-  interface "IMomentMapRenderer" as I_MMR
-  interface "IRegionSelection\n«internal»" as I_Reg
-  interface "IMaskGpuBuffers\n«internal»"  as I_MaskBuf
-
-  ' IRenderSettings + Mutator: realised by the composition root from Config.
-  component "RenderSettings\n(composition-root POCO\nrealising IRenderSettings\n+ IRenderSettingsMutator)" as RSet_Impl
-  RSet_Impl -up- I_RSet
-
-  ' IRestFrequencyCatalogue: port and concrete both owned by ST3. Composition
-  ' root reads Config.restFrequenciesGHz so the kernel does not back-edge into
-  ' an iDaVIE.Rendering port.
-  component "RestFrequencyCatalogue\n(ST3 composition root,\nreads Config)" as RFC_Impl
-  RFC_Impl -up- I_RFC
-
-  ' IMomentMapRenderer (M-08, resolution line 13): owned by ST3, consumed by
-  ' ST5's MomentMapServiceAdapter. Concrete realisation not in this skeleton.
-  component "MomentMapRenderer\n(MonoBehaviour — not in skeleton)" as MMR_Impl
-  MMR_Impl -up- I_MMR
-
-  ' IRegionSelection: ST3-internal read view of RegionSelection, consumed by
-  ' VolumeCameraDriver, MaskEditingService, and VolumeDataSetRenderer.Bind so
-  ' downstream binders depend on the interface, not the concrete class.
+  ' ── Unnamed-by-§6.3 services (Unity-free) ────────────────────────────────
+  component "VolumeCoordinateService" as VCS
+  component "RegionSelection" as REG
+  component "MaskEditingService" as MES
+  component "VolumePersistenceService" as VPS
+  interface "IRegionSelection «internal»" as I_Reg
   REG -up- I_Reg
 
-  ' IMaskGpuBuffers port: realised in the Unity ACL alongside the ST2
-  ' MaskEditState adapter so no Unity type crosses the IVolumeDataSet edge.
-  component "MaskGpuBuffersAdapter\n(Unity ACL — composition root)" as MGB_Impl
-  MGB_Impl -up- I_MaskBuf
+  ' ── Kernel contract realised here (ST3 owns the domain aggregate) ────────
+  component "VolumeDataSet\n«internal sealed»\n(realises ST1 IVolumeDataSet)" as VDS
+  VDS .up.> I_Vol
 
-  ' ── §6.3 splits: VolumeDataSetRenderer composition ───────────────────────
-  VDR ..> VMB : <<delegates uniform binding>>
-  VDR ..> VTM : <<owns materials + textures via>>
-  VDR ..> VCD : <<delegates transform-derived state>>
-  VDR ..> FSP : <<delegates foveation>>
-  VDR ..> MMR : <<dispatches MaskMode via>>
-  I_Vol     )-- P_VTM_Vol
-  I_MaskBuf )-- P_VTM_MaskBuf
-  I_Vol     )-- P_VCD_Vol
-  I_Reg     )-- P_VCD_Region
+  ' ── Other ST3 concretes ──────────────────────────────────────────────────
+  component "MomentMapRenderer\n«MonoBehaviour»" as MMRND
+  component "CatalogDataSetRenderer\n«MonoBehaviour»" as CDR
+  component "HistogramService\n«internal sealed»" as HSV
+
+  ' ── ST3 cross-team contracts (Rendering/Contracts) ───────────────────────
+  interface "IRenderSettings\n+ IRenderSettingsMutator" as I_RSet
+  interface "IRenderStateCapture"     as I_RCap
+  interface "IMomentMapRenderer"      as I_MMR
+  interface "IHistogramService"       as I_Hist
+  interface "IRestFrequencyCatalogue" as I_RFC
+  component "RenderSettings\n(composition-root POCO)" as RSET
+  RSET -up- I_RSet
+  RSET .up.> I_RCap
+  RSET .up.> I_RFC : <<reads Config>>
+  MMRND -up- I_MMR
+  HSV   -up- I_Hist
+
+  ' ── §6.3 composition ─────────────────────────────────────────────────────
+  VDR ..> VMB
+  VDR ..> VTM
+  VDR ..> VCD
+  VDR ..> FSP
+  VDR ..> MMR
+  VCD ..> I_Reg
+  MES ..> I_Reg
+  REG ..> VCS : <<coord maths>>
 }
 
 ' ══════════════════════════════════════════════════════════════════════════
-' refactored/Features/  — ST5 worked example
-' ══════════════════════════════════════════════════════════════════════════
-
-package "refactored/Features/  (ST5)" #E8F5E9 {
-
-  ' ── Domain layer (aggregates; Unity-free) ────────────────────────────────
-  package "Domain" #FFFFFF {
-    component "Feature / FeatureSet /\nFeatureStatistics" as FAGG
-    interface "IFeature"           as I_Feat
-    interface "IFeatureSet"        as I_FSet
-    interface "IFeatureStatistics" as I_FStats
-    interface "IFeatureDirtyListener\n«internal»" as I_Dirty
-    FAGG -up- I_Feat
-    FAGG -up- I_FSet
-    FAGG -up- I_FStats
-    FAGG ).. I_Dirty : notifies
-
-    ' CartesianCoordOps — extension methods on CartesianCoord and IFeature
-    ' (Midpoint / Extent / BoundsMin / BoundsMax / Contains). Named per
-    ' ST5_domain_design.md §4.2; Information Expert helpers, kept off the
-    ' cross-team contract because CartesianCoord is an ST1-owned kernel struct.
-    component "CartesianCoordOps\n«utility»" as CCO
-    FAGG ..> CCO : <<bounds arithmetic>>
-  }
-
-  ' ── Application layer (orchestrators; Unity-free) ────────────────────────
-  package "Application" #FFFFFF {
-
-    component "FeatureSetService" as FSS {
-      portin P_FSS_Stats
-      portin P_FSS_Bind
-      portin P_FSS_Factory
-      portin P_FSS_Vol
-    }
-    interface "IFeatureSetQuery"               as I_FSQ
-    interface "IFeatureStateCapture"           as I_FSCap
-    interface "IFeatureSetCatalog\n«internal»" as I_FSC
-    FSS -up- I_FSQ
-    FSS -up- I_FSCap
-    FSS -up- I_FSC
-
-    component "FeatureFactory" as FAC {
-      portin P_FAC_Coords
-      portin P_FAC_Stats
-      portin P_FAC_Vol
-    }
-    interface "IFeatureFactory\n«internal»" as I_Fac
-    FAC -up- I_Fac
-
-    component "FeatureImportService" as FIS {
-      portin P_FIS_Reader
-      portin P_FIS_Catalog
-      portin P_FIS_Bind
-      portin P_FIS_Factory
-    }
-    interface "IFeatureImportService" as I_FIS
-    FIS -up- I_FIS
-
-    component "SelectionService" as SEL {
-      portin P_SEL_Active
-      portin P_SEL_SetQ
-    }
-    interface "IFeatureSelectionService" as I_FSel
-    SEL -up- I_FSel
-
-    component "SpectralProfileService" as SPS {
-      portin P_SPS_DAP
-    }
-    interface "ISpectralProfileService" as I_SPS
-    SPS -up- I_SPS
-
-    component "MomentMapServiceAdapter" as MMSA {
-      portin P_MMSA_MMR
-    }
-    interface "IMomentMapService" as I_MMS
-    MMSA -up- I_MMS
-
-    ' FeatureMenuController (ST5-owned per brief §6.5) provides voice-command
-    ' source-list navigation and the shared active-FeatureSetType state.
-    ' Skeleton stub — the controller body lives in ST5's VR menu code.
-    component "FeatureMenuController\n(brief §6.5 — stub)" as FMC
-    interface "IFeatureListNavigation"        as I_FLN
-    interface "IActiveFeatureSetTypeProvider" as I_Active
-    FMC -up- I_FLN
-    FMC -up- I_Active
-
-    interface "IVisualiserBinder\n«internal»"     as I_Bind
-    interface "ISelectionVisualiser\n«internal»"  as I_SelVis
-    interface "IImportRestorer\n«internal»"       as I_Restore
-  }
-
-  ' ── Infrastructure (catalogue I/O; Unity-free) ───────────────────────────
-  package "Infrastructure" #FFFFFF {
-    component "VoTableSaver" as VOS {
-      portin P_VOS_Coords
-      portin P_VOS_Stats
-    }
-    interface "IFeatureCatalogueReader" as I_CRead
-    interface "IFeatureCatalogueWriter" as I_CWrite
-    VOS -up- I_CWrite
-    component "(catalogue readers —\nVOTable / FITS table)" as CRead_Impl
-    CRead_Impl -up- I_CRead
-  }
-
-  ' ── Unity ACL (the only ST5 layer permitted to touch UnityEngine) ────────
-  package "Unity ACL" #FFFFFF {
-    component "FeatureVisualiser\n«MonoBehaviour»\n(owns ComputeBuffer)" as FV
-    component "VisualiserBinder" as VB
-    component "SelectionAnchorRenderer\n«MonoBehaviour»" as SAR
-    VB  -up- I_Bind
-    SAR -up- I_SelVis
-    VB ..> FV : instantiates
-    FV -up- I_Dirty
-  }
-}
-
-' ══════════════════════════════════════════════════════════════════════════
-' refactored/Interaction/  — ST4 worked example
+' refactored/Interaction/  — ST4
 ' ══════════════════════════════════════════════════════════════════════════
 
 package "refactored/Interaction/  (ST4)" #FFF3E0 {
 
-  ' ── Unity ACL — MonoBehaviours owned by ST4 ──────────────────────────────
-  component "VolumeInputController\n«MonoBehaviour»\n(thin dispatcher)" as VIC {
-    portin P_VIC_Ctrl
-    portin P_VIC_Voice
-    portin P_VIC_VReg
-    portin P_VIC_RSet
-    portin P_VIC_RMut
-    portin P_VIC_FSQ
-    portin P_VIC_FSel
-  }
-
-  component "VolumeCommandController\n«MonoBehaviour»" as VCC {
-    portin P_VCC_MaskMut
-    portin P_VCC_RMut
-    portin P_VCC_VReg
-    portin P_VCC_FSQ
-    portin P_VCC_FLN
-    portin P_VCC_WS
-  }
-
-  component "QuickMenuController\n+ PaintMenuController\n«MonoBehaviour»" as QMP {
-    portin P_QMP_VReg
-  }
-
-  component "InteractionStateManager\n«MonoBehaviour»\n(realises ST4 cross-team\ncontracts)" as ISM
+  component "VolumeInputController\n«MonoBehaviour»\n(thin dispatcher)" as VIC
+  component "VolumeCommandController\n«MonoBehaviour»" as VCC
+  component "QuickMenuController\n+ PaintMenuController\n«MonoBehaviour»" as QMP
+  component "ShapeMenuController\n«MonoBehaviour»" as SMC
+  component "InteractionStateManager\n«MonoBehaviour»" as ISM
 
   ' ── Pure-C# FSMs (no UnityEngine) ────────────────────────────────────────
-  component "LocomotionFSM\n+ {IdleState,\n   MovingState,\n   ScalingRotatingState}" as LFSM
-  component "InteractionFSM\n+ DragGestureState\n+ ShapeGestureState" as IFSM
+  component "LocomotionFSM\n+ {Idle/Moving/\n  ScalingRotating}State" as LFSM
+  component "InteractionFSM\n+ Drag/Shape gesture state" as IFSM
+  component "ShapeGestureFSM" as SGF
 
-  ' ── Provided interfaces (cross-team contracts owned by ST4) ──────────────
-  interface "IInteractionStateProvider" as I_ISP
-  interface "IInteractionStateCapture"  as I_ISCap
+  ' ── ACL adapters realising platform-neutral streams ──────────────────────
+  component "ControllerInputAdapter\n«MonoBehaviour» (ACL)" as CIA
+  component "VoiceCommandService\n«internal sealed»\n+ VoiceCommandRegistry" as VCSV
+  component "KeypadInputAdapter\n«MonoBehaviour»" as KIA
+
   interface "IControllerEventStream"    as I_Ctrl
   interface "IVoiceCommandStream"       as I_Voice
-  ISM -up- I_ISP
-  ISM -up- I_ISCap
+  interface "IInteractionStateProvider" as I_ISP
+  interface "IInteractionStateCapture"  as I_ISCap
+  CIA  -up- I_Ctrl
+  VCSV -up- I_Voice
+  ISM  -up- I_ISP
+  ISM  -up- I_ISCap
 
-  ' SteamVR / Windows.Speech ACL adapters realise the platform-neutral streams.
-  component "SteamVRInputAdapter\n«MonoBehaviour» (ACL)" as SVRA
-  component "VoiceRecogniserAdapter\n«MonoBehaviour» (ACL)" as VRA
-  SVRA -up- I_Ctrl
-  VRA  -up- I_Voice
-
-  ' Composition relationships
-  VIC ..> LFSM : <<delegates locomotion>>
-  VIC ..> IFSM : <<delegates interaction>>
-  VIC ..> ISM  : <<notifies on FSM transition>>
+  VIC ..> LFSM
+  VIC ..> IFSM
+  VIC ..> ISM
   IFSM ..> VCC : <<commits via>>
+  SMC ..> SGF
 }
 
 ' ══════════════════════════════════════════════════════════════════════════
-' refactored/UI/  — ST6 worked example
+' refactored/Features/  — ST5  (Domain / Application / Infrastructure / ACL)
 ' ══════════════════════════════════════════════════════════════════════════
 
-package "refactored/UI/  (ST6)" #F3E5F5 {
+package "refactored/Features/  (ST5)" #E8F5E9 {
 
-  ' ── ViewModels — pure C# (no UnityEngine import) ─────────────────────────
-  component "RenderTabViewModel\n«pure C# VM»" as RTVM {
-    portin P_RTVM_RSet
-    portin P_RTVM_RMut
-    portin P_RTVM_RFC
+  package "Domain" #FFFFFF {
+    component "Feature / FeatureSet /\nFeatureStatistics" as FAGG
+    component "CartesianCoordOps\n«utility»" as CCO
+    interface "IFeature"           as I_Feat
+    interface "IFeatureSet"        as I_FSet
+    interface "IFeatureStatistics" as I_FStats
+    interface "IFeatureDirtyListener «internal»" as I_Dirty
+    FAGG -up- I_Feat
+    FAGG -up- I_FSet
+    FAGG -up- I_FStats
+    FAGG ).. I_Dirty : notifies
+    FAGG ..> CCO
   }
 
-  component "SourcesTabViewModel\n«pure C# VM»" as STVM {
-    portin P_STVM_FSQ
-    portin P_STVM_FSel
-    portin P_STVM_Active
+  package "Application" #FFFFFF {
+    component "FeatureSetService\n(IFeatureSetQuery +\nIFeatureSetCatalog +\nIFeatureStateCapture)" as FSS
+    component "FeatureFactory" as FAC
+    component "FeatureImportService\n(+ IImportRestorer)" as FIS
+    component "SelectionService" as SEL
+    component "SpectralProfileService" as SPS
+    component "MomentMapServiceAdapter" as MMSA
+
+    interface "IFeatureSetQuery"          as I_FSQ
+    interface "IFeatureSelectionService"  as I_FSel
+    interface "IFeatureStateCapture"      as I_FSCap
+    interface "IFeatureImportService"     as I_FIS
+    interface "ISpectralProfileService"   as I_SPS
+    interface "IMomentMapService"         as I_MMS
+    interface "IActiveFeatureSetTypeProvider" as I_Active
+    interface "IFeatureFactory «internal»"    as I_Fac
+    interface "IFeatureSetCatalog «internal»" as I_FSC
+    interface "IImportRestorer «internal»"    as I_Restore
+    interface "IVisualiserBinder «internal»"  as I_Bind
+    interface "ISelectionVisualiser «internal»" as I_SelVis
+
+    FSS -up- I_FSQ
+    FSS -up- I_FSCap
+    FSS -up- I_FSC
+    FAC -up- I_Fac
+    FIS -up- I_FIS
+    FIS -up- I_Restore
+    SEL -up- I_FSel
+    SPS -up- I_SPS
+    MMSA -up- I_MMS
   }
 
-  ' CanvassDesktop (the Unity view) and the ToastAdapter MonoBehaviour
-  ' subscribe to the events these ViewModels raise. Their bodies are
-  ' ST6-internal Unity code and live outside refactored/.
-  component "CanvassDesktop\n«MonoBehaviour» (view —\nnot in skeleton)" as CDV
-  CDV ..> RTVM : <<subscribes>>
-  CDV ..> STVM : <<subscribes>>
+  package "Infrastructure" #FFFFFF {
+    component "VoTableReader\n+ FitsTableReader" as CRead_Impl
+    component "VoTableSaver" as VOS
+    interface "IFeatureCatalogueReader" as I_CRead
+    interface "IFeatureCatalogueWriter" as I_CWrite
+    CRead_Impl -up- I_CRead
+    VOS -up- I_CWrite
+  }
 
-  ' IDesktopStateCapture (M-16) is owned by ST6; declared here as a stub
-  ' provided interface so the ST6 ↔ ST7 capture edge is visible.
+  package "Unity ACL" #FFFFFF {
+    component "FeatureVisualiser\n«MonoBehaviour»\n(owns ComputeBuffer;\nrealises IFeatureDirtyListener)" as FV
+    component "SelectionAnchorRenderer\n«MonoBehaviour»" as SAR
+    FV  .up.> I_Dirty
+    SAR -up- I_SelVis
+    FV  .up.> I_Bind : <<binder hands per-set listener back>>
+  }
+}
+
+' ══════════════════════════════════════════════════════════════════════════
+' refactored/UI/  — ST6 (desktop shell + ViewModels) + ST3/ST5 VR menu shells
+' ══════════════════════════════════════════════════════════════════════════
+
+package "refactored/UI/  (ST6 + hosted VR menus)" #F3E5F5 {
+
+  ' ── ST6 desktop shell + pure-C# ViewModels ───────────────────────────────
+  component "CanvassDesktop\n«MonoBehaviour» (thin shell)\nIDesktopShell + IDesktopStateCapture" as CDV
+  component "RenderTabViewModel\n«pure C# VM»"      as RTVM
+  component "SourcesTabViewModel\n«pure C# VM»"     as STVM
+  component "StatsTabViewModel\n«pure C# VM»"       as SVM
+  component "PaintTabViewModel\n«pure C# VM»\n+ DesktopPaintRasteriser" as PVM
+  component "InformationTabViewModel\n«pure C# VM»" as IVM
+  component "MenuBarViewModel\n«pure C# VM»"        as MVM
+  component "DebugTabViewModel\n«pure C# VM»"       as DVM
+  component "DesktopPaintController\n«MonoBehaviour» (thin shell)" as DPC
+
+  interface "IDesktopShell\n(decl ST1)"   as I_ShellHere
   interface "IDesktopStateCapture" as I_DCap
   CDV -up- I_DCap
+  CDV .up.> I_ShellHere
+  CDV ..> RTVM
+  CDV ..> STVM
+  CDV ..> SVM
+  CDV ..> PVM
+  CDV ..> IVM
+  CDV ..> MVM
+  CDV ..> DVM
+  DPC ..> PVM
+
+  ' ── VR menu shells hosted here but OWNED by other teams ──────────────────
+  component "FeatureMenuController\n«MonoBehaviour» (ST5)\nrealises IFeatureListNavigation" as FMC
+  component "FeatureMenuCell\n«MonoBehaviour» (ST5)" as FMCELL
+  component "MomentMapMenuController\n«MonoBehaviour» (ST5)" as MMMC
+  component "SpectralProfileHelper\n«MonoBehaviour» (ST5)" as SPH
+  component "HistogramMenuController\n«MonoBehaviour» (ST3)" as HMC
+  interface "IFeatureListNavigation" as I_FLN
+  FMC -up- I_FLN
 }
 
 ' ══════════════════════════════════════════════════════════════════════════
-' WIRING — provided lollipops docked into required sockets
+' refactored/Persistence/  — ST7 (greenfield; Application / Domain layered)
 ' ══════════════════════════════════════════════════════════════════════════
 
-' ── Rendering: cross-team inputs ─────────────────────────────────────────
-I_RSet    )-- P_VDR_Settings
-I_Vol     )-- P_VDR_Vol
-I_Vol     )-- P_VCS_Vol
-I_Vol     )-- P_REG_Vol
-I_Vol     )-- P_VPS_Vol
-I_MaskMut )-- P_MES_MaskMut
-I_FitsIO  )-- P_VPS_FitsIO
+package "refactored/Persistence/  (ST7)" #FBE9E7 {
 
-' ── Rendering: intra-package wiring ──────────────────────────────────────
-REG ..> P_REG_Coords : <<binds>>
-VCS ..> P_REG_Coords
-' VolumeDataSetRenderer pulls in the ST3-internal ports it owns:
-I_Reg     )-- P_VDR_Region
-I_MaskBuf )-- P_VDR_MaskBuf
+  component "WorkspaceService\n«internal sealed»\n(facade realising all four\nST7 contracts — wired by\nPersistenceCompositionRoot)" as WS
+  component "PersistenceCompositionRoot" as PCR
+  component "PersistenceMenuController\n«MonoBehaviour»" as PMC
 
-' ── Features: cross-team inputs ──────────────────────────────────────────
-I_Stats  )-- P_FSS_Stats
-I_Vol    )-- P_FSS_Vol
-I_Coords )-- P_FAC_Coords
-I_Stats  )-- P_FAC_Stats
-I_Vol    )-- P_FAC_Vol
-I_Coords )-- P_VOS_Coords
-I_Stats  )-- P_VOS_Stats
-I_DAP    )-- P_SPS_DAP
-I_MMR    )-- P_MMSA_MMR
+  package "Application (use cases)" #FFFFFF {
+    component "SaveUseCase" as SUC
+    component "LoadUseCase" as LUC
+    component "StateManagementService" as SMS
+    component "PersistenceEventDispatcher" as PED
+    component "ValidationAndRecoveryService" as VRS
+  }
+  package "Domain" #FFFFFF {
+    component "StoredState / StateIndex /\nStorageLocation / IntegrityRecord /\nPersistenceLog / PersistenceConfig /\nMigrationRule" as PDOM
+    component "WorkspaceRepository\n+ WorkspaceEnvelope" as WREPO
+  }
 
-' ── Features: ST5-internal wiring ────────────────────────────────────────
-I_Bind   )-- P_FSS_Bind
-I_Fac    )-- P_FSS_Factory
+  interface "IWorkspaceSaveCommand" as I_WSave
+  interface "IWorkspaceLoadCommand" as I_WLoad
+  interface "IStateIndexQuery"      as I_WIdx
+  interface "IPersistenceEvents"    as I_WEvt
+  WS -up- I_WSave
+  WS -up- I_WLoad
+  WS -up- I_WIdx
+  WS -up- I_WEvt
 
-I_CRead  )-- P_FIS_Reader
-I_FSC    )-- P_FIS_Catalog
-I_Bind   )-- P_FIS_Bind
-I_Fac    )-- P_FIS_Factory
+  PCR ..> WS : composes
+  WS ..> WREPO
+  note bottom of WS
+    Skeleton redundancy to resolve (NOT a wiring this diagram endorses):
+    the four use-cases (SaveUseCase/LoadUseCase/StateManagementService/
+    PersistenceEventDispatcher) ALSO each realise one ST7 contract, but the
+    composition root only constructs WorkspaceService. Additionally the four
+    contracts are declared twice — iPersistenceContracts.cs AND the per-file
+    IWorkspace*/IStateIndexQuery/IPersistenceEvents.cs siblings.
+  end note
+}
 
-I_Active )-- P_SEL_Active
-I_FSQ    )-- P_SEL_SetQ
-SEL ..> I_SelVis : <<draws anchors via>>
+' ══════════════════════════════════════════════════════════════════════════
+' External/ — reference declarations only (reproduced contract shape)
+' ══════════════════════════════════════════════════════════════════════════
+note as N_External
+  refactored/External/ holds two reference-declaration files —
+  IVolumeDataSet.cs (→ iDaVIE.Kernel.Contracts: IVolumeDataSet,
+  IMaskEditState, IRawVoxelAccess) and ICoordinateTransformer.cs
+  (→ iDaVIE.Data: ICoordinateTransformer, IMaskMutationService,
+  IFitsMaskWriter, IFitsCubeReader). They reproduce ST1/ST2 contract
+  shape so the ST3/ST5 skeletons compile-as-illustrated; ownership stays
+  with ST1 / ST2, hence they are drawn inside Kernel / Data above.
+end note
 
-' Setter-injected at composition root — breaks the FSS↔FIS construction cycle
-' for the Imported-set Restore path (ST5_domain_design.md §6.3).
-FIS ..> I_Restore : realises
+' ══════════════════════════════════════════════════════════════════════════
+' WIRING — cross-team required interfaces (consumers ..> provided interface)
+' ══════════════════════════════════════════════════════════════════════════
+
+' ── Rendering (ST3) consumes ST1/ST2 ─────────────────────────────────────
+VDR ..> I_RSet
+VDR ..> I_Vol
+VDR ..> I_Reg
+VDR ..> I_MaskBuf
+VTM ..> I_Vol
+VTM ..> I_MaskBuf
+VCD ..> I_Vol
+VCS ..> I_Vol
+REG ..> I_Vol
+VPS ..> I_Vol
+VPS ..> I_FitsIO
+MES ..> I_MaskMut
+HSV ..> I_Raw
+
+' ── Interaction (ST4) consumes ST1/ST3/ST5/ST7 ───────────────────────────
+VIC ..> I_Ctrl
+VIC ..> I_Voice
+VIC ..> I_VReg
+VIC ..> I_RSet
+VIC ..> I_FSQ
+VIC ..> I_FSel
+VCC ..> I_MaskMut
+VCC ..> I_RSet
+VCC ..> I_VReg
+VCC ..> I_FSQ
+VCC ..> I_FLN
+VCC ..> I_WSave
+VCC ..> I_WLoad
+QMP ..> I_VReg
+
+' ── Features (ST5) consumes ST1/ST2/ST3 ──────────────────────────────────
+FSS ..> I_Bind
+FSS ..> I_Fac
+FSS ..> I_Stats
+FSS ..> I_Vol
+FAC ..> I_Coords
+FAC ..> I_Stats
+FAC ..> I_Vol
+FIS ..> I_CRead
+FIS ..> I_FSC
+FIS ..> I_Bind
+FIS ..> I_Fac
+FIS ..> I_FSQ
+SEL ..> I_SelVis
+SEL ..> I_FSQ
+SEL ..> I_Active
+SPS ..> I_DAP
+MMSA ..> I_MMR
+VOS ..> I_Coords
+VOS ..> I_Stats
+CRead_Impl ..> I_FitsTbl : <<FitsTableReader>>
 FSS ..> I_Restore : <<replays on Restore>>
 
-' VisualiserBinder hands a per-set IFeatureDirtyListener back to FeatureSetService
-' via the IVisualiserBinder lollipop; FeatureSet then stores it on Listener.
-VB ..> FAGG : binds a FeatureVisualiser per FeatureSet
+' ── UI (ST6 ViewModels + hosted menus) consumes ST3/ST4/ST5/ST1 ──────────
+RTVM ..> I_RSet
+RTVM ..> I_RFC
+STVM ..> I_FSQ
+STVM ..> I_FSel
+STVM ..> I_Active
+SVM  ..> I_Hist
+SVM  ..> I_RSet
+PVM  ..> I_MaskMut
+PVM  ..> I_Raw
+PVM  ..> I_ISP
+IVM  ..> I_Vol
+IVM  ..> I_VLoad
+MVM  ..> I_VLoad
+MVM  ..> I_FIS
+MVM  ..> I_WSave
+DVM  ..> I_Log
+CDV  ..> I_ISP
+FMC  ..> I_FSQ
+FMC  ..> I_FSel
+FMC  ..> I_CWrite
+FMC  ..> I_Active
+FMCELL ..> I_FSQ
+FMCELL ..> I_FSel
+MMMC ..> I_MMS
+SPH  ..> I_SPS
+SPH  ..> I_FSel
+HMC  ..> I_Hist
+HMC  ..> I_RSet
 
-' ── Interaction (ST4): cross-team inputs ─────────────────────────────────
-I_Ctrl    )-- P_VIC_Ctrl
-I_Voice   )-- P_VIC_Voice
-I_VReg    )-- P_VIC_VReg
-I_RSet    )-- P_VIC_RSet
-I_RSet    )-- P_VIC_RMut
-I_FSQ     )-- P_VIC_FSQ
-I_FSel    )-- P_VIC_FSel
+' ── Persistence (ST7) consumes one capture port per team ST1–ST6 (M-16) ──
+WS ..> I_VCap   : ST1
+WS ..> I_MaskCap : ST2
+WS ..> I_RCap   : ST3
+WS ..> I_ISCap  : ST4
+WS ..> I_FSCap  : ST5
+WS ..> I_DCap   : ST6
+WS ..> I_Cfg
+WS ..> I_Log
+PMC ..> I_WSave
+PMC ..> I_WLoad
 
-I_MaskMut )-- P_VCC_MaskMut
-I_RSet    )-- P_VCC_RMut
-I_VReg    )-- P_VCC_VReg
-I_FSQ     )-- P_VCC_FSQ
-I_FLN     )-- P_VCC_FLN
-I_WS      )-- P_VCC_WS
-
-I_VReg    )-- P_QMP_VReg
-
-' ── UI (ST6): cross-team inputs ──────────────────────────────────────────
-I_RSet  )-- P_RTVM_RSet
-I_RSet  )-- P_RTVM_RMut
-I_RFC   )-- P_RTVM_RFC
-I_FSQ    )-- P_STVM_FSQ
-I_FSel   )-- P_STVM_FSel
-I_Active )-- P_STVM_Active
-
-' CanvassDesktop also reads IInteractionStateProvider (ST4) and subscribes to
-' IRenderSettings.SettingsChanged so it can refresh on FSM/render transitions.
-CDV ..> I_ISP : <<subscribes>>
-
-' ── ST7 capture sinks (M-16 uniform Capture/Restore) ─────────────────────
-ST7_WS ..> I_FSCap : <<captures Feature state>>
-ST7_WS ..> I_ISCap : <<captures Interaction state>>
-ST7_WS ..> I_DCap  : <<captures Desktop state>>
-
-' ── Boundary note: feature interaction moved out of VolumeDataSetRenderer ─
-note right of VDR
-  Feature interaction (legacy
-  TeleportToRegion, selection
-  hover) moved out — handled
-  by IFeatureSelectionService
-  (ST5), driven by ST4's
-  VolumeInputController.
-end note
+' ── Kernel composition root drives Bootstrap of every MonoBehaviour ──────
+KCR ..> I_Cfg
+KCR ..> I_PReg
 
 ' ══════════════════════════════════════════════════════════════════════════
 ' LEGEND
@@ -480,20 +482,27 @@ end note
 legend right
   |= Symbol      |= Meaning                                                   |
   | component    | Black-box implementation unit (a class or cohesive cluster)|
-  | lollipop ()  | Provided interface                                         |
-  | socket       | Required interface (injected at composition root)          |
+  | lollipop ()  | Provided interface (realised by the attached component)    |
+  | ..>          | Required interface / dependency (injected at a composition root)|
   | «internal»   | Assembly-scoped interface; cross-team consumers may NOT bind|
-  | «MonoBehaviour» | Unity ACL — single class touching UnityEngine in its package|
+  | «MonoBehaviour» | Unity ACL — touches UnityEngine within its package      |
   | «pure C# VM» | ViewModel with no UnityEngine import                       |
-  | ..>          | Dependency / read-only consumption                         |
+  | (decl STn — realised STm) | Interface DECLARED by one team, REALISED by another |
   ----
-  Cross-team boundary = the External package edge. Only public lollipops
-  cross it; «internal» interfaces stay inside their owning assembly per DD-5.
-  refactored/Features/FeatureSetRenderer.cs is intentionally empty — the
-  legacy class was decomposed across the Features package and not replaced.
-  CanvassDesktop (ST6 view) and SteamVRInputAdapter / VoiceRecogniserAdapter
-  (ST4 ACL adapters) are stubs — their bodies live in scene-side Unity code
-  outside refactored/.
+  All seven sub-teams are now skeleton-ported (info/README.md). Cross-team
+  contracts are declared by their owning team and realised wherever the
+  concrete lives — e.g. IVolumeDataSet is ST1-declared, ST3-realised
+  (Rendering/VolumeDataSet); IDesktopShell is ST1-declared, ST6-realised
+  (UI/CanvassDesktop). «internal» interfaces stay inside their owning
+  assembly per DD-5.
+  ST5 VR menu shells (FeatureMenuController/Cell, MomentMapMenuController,
+  SpectralProfileHelper) and the ST3 HistogramMenuController live physically
+  under UI/ but are owned by ST5 / ST3.
+  Realisers absent from the skeleton (built at a composition root): concrete
+  IVolumeRegistry / IVolumeLoader (Kernel Bootstrap), RenderSettings POCO
+  (IRenderSettings/Mutator/IRenderStateCapture/IRestFrequencyCatalogue),
+  IFitsMaskWriter / IFitsCubeReader, IVolumeStateCapture, ILogSink
+  (DebugLogging, Tier-3).
 endlegend
 
 @enduml
