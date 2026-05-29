@@ -154,13 +154,14 @@ End goal: every legacy file under `iDaVIE/Assets/Scripts/` has either a refactor
 
 ### ST7 — Persistence
 
-ST7 has no legacy files at all — the entire sub-team is greenfield. Tier-1 skeleton-port covers Contracts + Domain + Application (16 files); Infrastructure (`FileSystemStorageBackend`, `EnvelopeSerializer`, `StateIndexPersistor`, `PersistenceConfigLoader`) and Presentation (`SaveWorkspaceDialog`, `LoadWorkspaceDialog`, `StateListPanel`, `AutosaveIndicator`) are deferred to Tier 2.
+ST7 has no legacy files at all — the entire sub-team is greenfield. Tier-1 skeleton-port covers the cross-team Contracts, the save/restore orchestration (`WorkspaceService` + `WorkspaceRepository` + `WorkspaceEnvelope`, wired by `PersistenceCompositionRoot` and surfaced by the `PersistenceMenuController` MonoBehaviour), and a `Domain/` model; Infrastructure (`FileSystemStorageBackend`, `EnvelopeSerializer`, `StateIndexPersistor`, `PersistenceConfigLoader`) and Presentation (`SaveWorkspaceDialog`, `LoadWorkspaceDialog`, `StateListPanel`, `AutosaveIndicator`) are deferred to Tier 2.
 
 | Status | Component | Notes |
 |---|---|---|
-| **Done** | Cross-team contracts → `Persistence/{IWorkspaceSaveCommand, IWorkspaceLoadCommand, IStateIndexQuery, IPersistenceEvents}.cs` | + `SavedStateInfo` record struct. |
-| **Done** | Domain → `Persistence/Domain/{StoredState, StateIndex, StorageLocation, PersistenceConfig, IntegrityRecord, PersistenceLog, MigrationRule}.cs` | 7 files. |
-| **Done** | Application → `Persistence/Application/{SaveUseCase, LoadUseCase, StateManagementService, ValidationAndRecoveryService, PersistenceEventDispatcher}.cs` | 5 files. Each per-team capture port is constructor-injected. |
+| **Done** | Cross-team contracts → `Persistence/PersistenceContracts.cs` | Sole declaration site for the four `IWorkspace*`/`IStateIndexQuery`/`IPersistenceEvents` interfaces + the `SavedStateInfo` sealed class. Signatures verbatim from `shared_interfaces.md` §7. |
+| **Done** | Domain → `Persistence/Domain/{StoredState, StateIndex, StorageLocation, PersistenceConfig, IntegrityRecord, PersistenceLog, MigrationRule}.cs` | 7 files. A richer persistence model (schema migration, integrity records, on-disk index) kept for a future Tier-2 pass; not yet wired into the `WorkspaceService` → `WorkspaceRepository` path, which currently uses a flat `SavedStateInfo` list. |
+| **Done** | Orchestration → `Persistence/WorkspaceService.cs` (+ `WorkspaceRepository`, `WorkspaceEnvelope`) | Single application-layer realiser of all four ST7 contracts; the six per-team capture ports are constructor-injected. Documented ISP trade-off (one class, four narrow interfaces sharing the repository + event logic). |
+| Tier 2 — pending | Application helper → `Persistence/Application/ValidationAndRecoveryService.cs` | Integrity-check / migration / rollback on load. Not yet wired into `WorkspaceService`. |
 | Tier 2 — pending | Infrastructure: `FileSystemStorageBackend`, `EnvelopeSerializer`, `StateIndexPersistor`, `PersistenceConfigLoader` | Storage backend + envelope serializer. |
 | Tier 2 — pending | Presentation: `SaveWorkspaceDialog`, `LoadWorkspaceDialog`, `StateListPanel`, `AutosaveIndicator` | UI dialogs that mount via `IDesktopShell`. |
 
@@ -195,7 +196,7 @@ After the Tier-1 push the canonical declaration sites for every namespace refere
 | `iDaVIE.Features` | `Features/*.cs` (full ST5 catalogue) |
 | `iDaVIE.UI` | `UI/*.cs` (5 ViewModels + 2 thin shells + rasteriser + ST5 menu shells + ST3 histogram menu) |
 | `iDaVIE.UI.Contracts` | `UI/Contracts/IDesktopStateCapture.cs` |
-| `iDaVIE.Persistence` | `Persistence/{IWorkspaceSaveCommand, IWorkspaceLoadCommand, IStateIndexQuery, IPersistenceEvents}.cs` |
+| `iDaVIE.Persistence` | `Persistence/PersistenceContracts.cs` (`IWorkspaceSaveCommand`, `IWorkspaceLoadCommand`, `IStateIndexQuery`, `IPersistenceEvents`, `SavedStateInfo`) |
 | `iDaVIE.Persistence.Domain` | `Persistence/Domain/*.cs` (7 files) |
 | `iDaVIE.Persistence.Application` | `Persistence/Application/*.cs` (5 files) |
 

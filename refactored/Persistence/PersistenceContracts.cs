@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
-// IPersistenceContracts — cross-team interface surface ST7 publishes.
+// PersistenceContracts — sole declaration site for the cross-team interface
+// surface ST7 publishes (IWorkspaceSaveCommand, IWorkspaceLoadCommand,
+// IStateIndexQuery, IPersistenceEvents) plus the SavedStateInfo DTO.
 // Canonical signatures from shared_interfaces.md §7; "ST7 wins by default"
 // (interface_resolutions.md line 31).
 //

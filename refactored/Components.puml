@@ -321,16 +321,12 @@ package "refactored/UI/  (ST6 + hosted VR menus)" #F3E5F5 {
 
 package "refactored/Persistence/  (ST7)" #FBE9E7 {
 
-  component "WorkspaceService\n«internal sealed»\n(facade realising all four\nST7 contracts — wired by\nPersistenceCompositionRoot)" as WS
+  component "WorkspaceService\n«internal sealed»\n(SOLE realiser of all four\nST7 contracts — wired by\nPersistenceCompositionRoot)" as WS
   component "PersistenceCompositionRoot" as PCR
   component "PersistenceMenuController\n«MonoBehaviour»" as PMC
 
-  package "Application (use cases)" #FFFFFF {
-    component "SaveUseCase" as SUC
-    component "LoadUseCase" as LUC
-    component "StateManagementService" as SMS
-    component "PersistenceEventDispatcher" as PED
-    component "ValidationAndRecoveryService" as VRS
+  package "Application (helper)" #FFFFFF {
+    component "ValidationAndRecoveryService\n(integrity / migration / rollback;\nnot yet wired into WorkspaceService)" as VRS
   }
   package "Domain" #FFFFFF {
     component "StoredState / StateIndex /\nStorageLocation / IntegrityRecord /\nPersistenceLog / PersistenceConfig /\nMigrationRule" as PDOM
@@ -349,12 +345,11 @@ package "refactored/Persistence/  (ST7)" #FBE9E7 {
   PCR ..> WS : composes
   WS ..> WREPO
   note bottom of WS
-    Skeleton redundancy to resolve (NOT a wiring this diagram endorses):
-    the four use-cases (SaveUseCase/LoadUseCase/StateManagementService/
-    PersistenceEventDispatcher) ALSO each realise one ST7 contract, but the
-    composition root only constructs WorkspaceService. Additionally the four
-    contracts are declared twice — iPersistenceContracts.cs AND the per-file
-    IWorkspace*/IStateIndexQuery/IPersistenceEvents.cs siblings.
+    WorkspaceService is now the single realiser of the four ST7 contracts:
+    the parallel Application use-cases (SaveUseCase / LoadUseCase /
+    StateManagementService / PersistenceEventDispatcher) that re-realised
+    them have been removed. Contracts are also declared exactly once, in
+    PersistenceContracts.cs.
   end note
 }
 
