@@ -1,35 +1,37 @@
-// iDaVIE — immersive Data Visualisation Interactive Explorer
-// Copyright (C) 2024 IDIA, INAF-OACT
 // SPDX-License-Identifier: LGPL-3.0-or-later
-//
-// Sub-Team 7 — Persistence & Workspace State
-// PersistenceCompositionRoot: the sole place that calls `new` on ST7 concretes.
+// PersistenceCompositionRoot — sole site that calls `new` on ST7 concretes.
 // Follows the same pattern as ST1's KernelCompositionRoot.
-// ST7-internal — does not cross the cross-team boundary.
+// ST7-internal; does not cross the cross-team boundary.
+//
+// Legacy: no equivalent exists. Object construction for the existing
+// subsystems is scattered: VolumeDataSetRenderer.Start() (line 353) does
+// FindObjectOfType, AddComponent, and Config.Instance reads inline — a
+// Creator + DIP violation that this root corrects for ST7.
+//
+// Refactor delta:
+//   - GRASP Creator: PersistenceCompositionRoot is the only class allowed to
+//     instantiate WorkspaceRepository and WorkspaceService. All consumers
+//     receive the four ST7 interfaces (SaveCommand, LoadCommand, IndexQuery,
+//     Events) — never the concrete WorkspaceService type.
+//   - DIP: all six capture ports arrive as constructor parameters (injected by
+//     ST1's KernelCompositionRoot); no singleton access anywhere in ST7.
+//   - The four ST7-owned interfaces are exposed as properties so
+//     KernelCompositionRoot can register them in IPluginRegistry without
+//     knowing the WorkspaceService concrete type.
+
+using iDaVIE.Data;                              // IMaskStateCapture (ST2)
+using iDaVIE.Features;                          // IFeatureStateCapture (ST5)
+using iDaVIE.Interaction;                       // IInteractionStateCapture (ST4)
+using iDaVIE.Kernel.Contracts;                  // Config, ILogSink
+using iDaVIE.Kernel.Contracts.Persistence;      // IVolumeStateCapture (ST1)
+using iDaVIE.Rendering.Contracts;               // IRenderStateCapture (ST3)
+using iDaVIE.UI;                                // IDesktopStateCapture (ST6)
 
 namespace iDaVIE.Persistence.Internal
 {
-    using iDaVIE.Data;                              // IMaskStateCapture (ST2)
-    using iDaVIE.Features;                          // IFeatureStateCapture (ST5)
-    using iDaVIE.Interaction;                       // IInteractionStateCapture (ST4)
-    using iDaVIE.Kernel.Contracts;                  // Config, ILogSink
-    using iDaVIE.Kernel.Contracts.Persistence;      // IVolumeStateCapture (ST1)
-    using iDaVIE.Rendering.Contracts;               // IRenderStateCapture (ST3)
-    using iDaVIE.UI;                                // IDesktopStateCapture (ST6)
-
-    /// <summary>
-    /// Constructs the ST7 object graph from injected cross-team interfaces.
-    /// Called once at application startup by ST1's <c>KernelCompositionRoot</c>.
-    ///
-    /// <para>
-    /// Exposes the four ST7-owned interfaces as properties so the composition
-    /// root can register them in <c>IPluginRegistry</c> without knowing the
-    /// <see cref="WorkspaceService"/> concrete type.
-    /// </para>
-    /// </summary>
     internal sealed class PersistenceCompositionRoot
     {
-        // The single WorkspaceService instance realises all four ST7 interfaces.
+        // Single WorkspaceService instance realises all four ST7 interfaces.
         private readonly WorkspaceService _service;
 
         public IPersistenceEvents    Events      => _service;

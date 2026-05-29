@@ -1,40 +1,39 @@
-// iDaVIE — immersive Data Visualisation Interactive Explorer
-// Copyright (C) 2024 IDIA, INAF-OACT
 // SPDX-License-Identifier: LGPL-3.0-or-later
-//
-// Sub-Team 7 — Persistence & Workspace State
-// PersistenceMenuController: Unity anti-corruption layer.
+// PersistenceMenuController — Unity anti-corruption layer for the persistence UI.
 // The ONLY MonoBehaviour in ST7; all domain logic lives in WorkspaceService.
-// Mounts the save/load/list UI panels into ST6's desktop shell via IDesktopShell.
+//
+// Legacy: no persistence UI exists. The only user-facing save action is
+// CanvassDesktop.SaveMaskButton_Click (line ~890 in CanvassDesktop.cs) which
+// calls VolumeDataSetRenderer.SaveMask() directly — a GUI → renderer coupling
+// with no event feedback and no state-index display.
+//
+// Refactor delta:
+//   - SRP: translates Unity lifecycle events and button callbacks into calls on
+//     the four ST7 domain interfaces. Owns no domain logic, no file paths, no
+//     serialisation knowledge.
+//   - DIP: all ST7 interfaces are resolved from IPluginRegistry in Start().
+//     No direct reference to WorkspaceService or WorkspaceRepository.
+//   - This is the only file in Persistence/ that may import UnityEngine types
+//     (brief §4.2 constraint 3 — domain code must not depend on UnityEngine).
+//   - IDesktopShell is imported from ST1 (not ST6) to mount the persistence
+//     panels, dissolving the ST6 ↔ ST7 cycle (M-26, global_model.md §2).
+//   - OCP: new persistence events (e.g. a future AutoSaveTriggered) add a
+//     subscriber method here and a new event on IPersistenceEvents — no
+//     existing branches in this file change.
+
+using System.Collections.Generic;
+using iDaVIE.Kernel.Contracts;    // IDesktopShell, ILogSink
+using UnityEngine;
 
 namespace iDaVIE.Persistence
 {
-    using System.Collections.Generic;
-    using iDaVIE.Kernel.Contracts;    // IDesktopShell, ILogSink
-    using UnityEngine;
-
-    /// <summary>
-    /// Unity anti-corruption layer for the persistence UI.
-    ///
-    /// <para><b>SRP:</b> Translates Unity lifecycle events and UI button callbacks
-    /// into calls on the ST7 domain interfaces. Owns no domain logic.</para>
-    ///
-    /// <para><b>DIP:</b> All ST7 interfaces are resolved from <c>IPluginRegistry</c>
-    /// in <c>Start()</c>. No direct reference to <see cref="WorkspaceService"/>
-    /// or <see cref="Internal.WorkspaceRepository"/>.</para>
-    ///
-    /// <para>This is the only file in <c>Persistence/</c> that may reference
-    /// <c>UnityEngine</c> types — brief §4.2 constraint 3.</para>
-    /// </summary>
     public sealed class PersistenceMenuController : MonoBehaviour
     {
-        // ── Injected by KernelCompositionRoot or Unity Inspector ─────────────
-
         [SerializeField] private string _saveDialogPanelId  = "persistence-save";
         [SerializeField] private string _loadDialogPanelId  = "persistence-load";
         [SerializeField] private string _statusToastPanelId = "persistence-toast";
 
-        // Resolved in Start() via IPluginRegistry.
+        // Resolved in Start() via IPluginRegistry — no FindObjectOfType, no singletons.
         private IWorkspaceSaveCommand? _saveCommand;
         private IWorkspaceLoadCommand? _loadCommand;
         private IStateIndexQuery?      _indexQuery;
@@ -42,11 +41,11 @@ namespace iDaVIE.Persistence
         private IDesktopShell?         _shell;
         private ILogSink?              _log;
 
-        // ── Unity lifecycle ───────────────────────────────────────────────────
-
         private void Start()
         {
-            // TODO: resolve interfaces from IPluginRegistry once KernelCompositionRoot is wired.
+            // TODO: resolve from IPluginRegistry once KernelCompositionRoot is wired.
+            // Replaces the VolumeDataSetRenderer.Start() pattern of FindObjectOfType
+            // and Config.Instance reads (lines 353–537).
             // _saveCommand = pluginRegistry.GetPlugin<IWorkspaceSaveCommand>();
             // _loadCommand = pluginRegistry.GetPlugin<IWorkspaceLoadCommand>();
             // _indexQuery  = pluginRegistry.GetPlugin<IStateIndexQuery>();
@@ -58,40 +57,27 @@ namespace iDaVIE.Persistence
             MountPanels();
         }
 
-        private void OnDestroy()
-        {
-            UnsubscribeFromEvents();
-        }
+        private void OnDestroy() => UnsubscribeFromEvents();
 
-        // ── UI callbacks (called by Unity button OnClick events) ──────────────
+        // ── UI callbacks (wired to Unity button OnClick events) ───────────────
 
-        /// <summary>Called when the user clicks the Save button.</summary>
-        public void OnSaveButtonClicked()
-        {
-            _saveCommand?.Save();
-        }
+        // Replaces CanvassDesktop.SaveMaskButton_Click → VolumeDataSetRenderer.SaveMask().
+        // Now fire-and-forget; result arrives via IPersistenceEvents.
+        public void OnSaveButtonClicked() => _saveCommand?.Save();
 
-        /// <summary>Called when the user selects a state from the list and clicks Load.</summary>
-        public void OnLoadButtonClicked(string stateId)
-        {
-            _loadCommand?.Load(stateId);
-        }
+        // Replaces the absent "load workspace" button — new feature.
+        public void OnLoadButtonClicked(string stateId) => _loadCommand?.Load(stateId);
 
-        /// <summary>Called when the user clicks Delete on a state-list entry.</summary>
+        // Delete is not on the cross-team IStateIndexQuery surface.
+        // TODO: expose via a narrow IWorkspaceDeleteCommand (ST7-03 open item).
         public void OnDeleteButtonClicked(string stateId)
         {
-            // Delete is not on IStateIndexQuery — wire via a dedicated internal port.
-            // TODO: expose via IWorkspaceDeleteCommand or resolve WorkspaceService directly.
             _log?.LogWarning(nameof(PersistenceMenuController),
-                $"Delete requested for stateId={stateId}; wire IWorkspaceDeleteCommand.");
+                $"Delete requested for stateId={stateId}; wire IWorkspaceDeleteCommand (ST7-03).");
             RefreshStateList();
         }
 
-        /// <summary>Called when the save/load dialog is opened.</summary>
-        public void OnDialogOpened()
-        {
-            RefreshStateList();
-        }
+        public void OnDialogOpened() => RefreshStateList();
 
         // ── Private helpers ───────────────────────────────────────────────────
 
@@ -119,7 +105,7 @@ namespace iDaVIE.Persistence
 
         private void MountPanels()
         {
-            // TODO: mount via IDesktopShell once the concrete token type is agreed (IR-01).
+            // TODO: mount via IDesktopShell once cast-token type is agreed (IR-01).
             // _shell?.MountPanel(_saveDialogPanelId, saveDialogGameObject);
             // _shell?.MountPanel(_loadDialogPanelId, loadDialogGameObject);
         }
@@ -128,7 +114,7 @@ namespace iDaVIE.Persistence
         {
             if (_indexQuery == null) return;
             IReadOnlyList<SavedStateInfo> states = _indexQuery.GetAll();
-            // TODO: populate the UI list widget with `states`.
+            // TODO: populate UI list widget with `states`.
             _log?.LogInfo(nameof(PersistenceMenuController),
                 $"State list refreshed: {states.Count} entries.");
         }
@@ -146,10 +132,7 @@ namespace iDaVIE.Persistence
         }
 
         private void OnSaveFailed(string reason)
-        {
-            _log?.LogError(nameof(PersistenceMenuController), $"Save failed: {reason}");
-            // TODO: show error toast via IDesktopShell.
-        }
+            => _log?.LogError(nameof(PersistenceMenuController), $"Save failed: {reason}");
 
         private void OnLoadStarted()
             => _log?.LogInfo(nameof(PersistenceMenuController), "Load started...");
@@ -161,9 +144,6 @@ namespace iDaVIE.Persistence
         }
 
         private void OnLoadFailed(string reason)
-        {
-            _log?.LogError(nameof(PersistenceMenuController), $"Load failed: {reason}");
-            // TODO: show error toast via IDesktopShell.
-        }
+            => _log?.LogError(nameof(PersistenceMenuController), $"Load failed: {reason}");
     }
 }

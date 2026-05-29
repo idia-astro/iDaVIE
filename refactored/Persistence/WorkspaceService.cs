@@ -1,48 +1,52 @@
-// iDaVIE — immersive Data Visualisation Interactive Explorer
-// Copyright (C) 2024 IDIA, INAF-OACT
 // SPDX-License-Identifier: LGPL-3.0-or-later
-//
-// Sub-Team 7 — Persistence & Workspace State
-// WorkspaceService: application-layer orchestrator.
+// WorkspaceService — application-layer orchestrator for workspace save/restore.
 // Realises IWorkspaceSaveCommand, IWorkspaceLoadCommand, IStateIndexQuery,
-// and IPersistenceEvents — the four interfaces ST7 publishes (shared_interfaces.md §7).
+// and IPersistenceEvents (shared_interfaces.md §7).
+//
+// Legacy: no equivalent exists. The closest prior art is the manual sequence a
+// user must perform today to "save" state: File → Save Mask (VolumeDataSet line
+// ~1380), then manually note the FITS path and re-open it next session. Feature
+// sets, render settings, interaction state, and desktop layout are lost on close.
+//
+// Refactor delta:
+//   - SRP: this class owns only the save/restore orchestration. Serialisation
+//     lives in WorkspaceRepository; UI notification is via IPersistenceEvents;
+//     state capture/restore is delegated to the six injected capture ports.
+//   - DIP: all six capture ports are constructor-injected interfaces — no
+//     Config.Instance, no FindObjectOfType, no static AstTool/FitsReader calls.
+//     Conforms to brief §4.2 constraint 4 (every boundary is an interface).
+//   - OCP: adding a seventh capture port requires one new constructor parameter
+//     and one Capture/Restore call. No switch statements or enums to modify.
+//   - Restore order is ST1 → ST2 → ST3 → ST4 → ST5 → ST6, matching the
+//     acyclic ownership graph (global_model.md §2): volumes must exist before
+//     mask/render/interaction/feature/desktop state can be meaningfully restored.
+//   - ISP trade-off: WorkspaceService realises all four ST7 interfaces on one
+//     class because all four share the WorkspaceRepository instance and the
+//     event-raise logic. Splitting into four classes would require a shared
+//     coordinator — recreating the same coupling at one level up. Documented
+//     trade-off per brief §4.2 constraint 1.
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using iDaVIE.Data;                              // IMaskStateCapture (ST2)
+using iDaVIE.Features;                          // IFeatureStateCapture (ST5)
+using iDaVIE.Interaction;                       // IInteractionStateCapture (ST4)
+using iDaVIE.Kernel.Contracts;                  // ILogSink
+using iDaVIE.Kernel.Contracts.Persistence;      // IVolumeStateCapture (ST1)
+using iDaVIE.Persistence.Internal;
+using iDaVIE.Rendering.Contracts;               // IRenderStateCapture (ST3)
+using iDaVIE.UI;                                // IDesktopStateCapture (ST6)
 
 namespace iDaVIE.Persistence
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using iDaVIE.Data;                              // IMaskStateCapture  (ST2)
-    using iDaVIE.Features;                          // IFeatureStateCapture (ST5)
-    using iDaVIE.Interaction;                       // IInteractionStateCapture (ST4)
-    using iDaVIE.Kernel.Contracts;                  // Config, ILogSink
-    using iDaVIE.Kernel.Contracts.Persistence;      // IVolumeStateCapture (ST1)
-    using iDaVIE.Persistence.Internal;
-    using iDaVIE.Rendering.Contracts;               // IRenderStateCapture (ST3)
-    using iDaVIE.UI;                                // IDesktopStateCapture (ST6)
-
-    /// <summary>
-    /// Orchestrates workspace save and restore by composing the six capture ports
-    /// (one per team ST1–ST6) into a single <see cref="WorkspaceEnvelope"/> and
-    /// delegating disk I/O to <see cref="WorkspaceRepository"/>.
-    ///
-    /// <para><b>SRP:</b> This class owns only the save/restore orchestration use
-    /// case. Serialisation lives in <see cref="WorkspaceRepository"/>; UI
-    /// notification is via <see cref="IPersistenceEvents"/>.</para>
-    ///
-    /// <para><b>DIP:</b> All six capture ports are injected — no singleton access,
-    /// no direct reference to concretes from other sub-teams.</para>
-    ///
-    /// <para><b>OCP:</b> Adding a new capture port requires adding a constructor
-    /// parameter and one Capture/Restore call — no switch statements to modify.</para>
-    /// </summary>
     internal sealed class WorkspaceService :
         IWorkspaceSaveCommand,
         IWorkspaceLoadCommand,
         IStateIndexQuery,
         IPersistenceEvents
     {
-        // ── Injected capture ports (one per team ST1–ST6) ───────────────────
+        // ── Injected capture ports (one per team ST1–ST6) ─────────────────────
 
         private readonly IVolumeStateCapture      _volumeCapture;      // ST1
         private readonly IMaskStateCapture        _maskCapture;        // ST2
@@ -51,23 +55,16 @@ namespace iDaVIE.Persistence
         private readonly IFeatureStateCapture     _featureCapture;     // ST5
         private readonly IDesktopStateCapture     _desktopCapture;     // ST6
 
-        // ── ST7-internal infrastructure ──────────────────────────────────────
-
         private readonly WorkspaceRepository _repository;
         private readonly ILogSink            _log;
 
-        // ── IPersistenceEvents implementation ────────────────────────────────
-        // Nullable backing fields; interface declares non-nullable.
-        // Invoked via ?.Invoke() so null (no subscribers) is safe.
-
+        // IPersistenceEvents — nullable backing fields; ?.Invoke() is safe with no subscribers.
         public event Action?         SaveStarted;
         public event Action<string>? SaveCompleted;
         public event Action<string>? SaveFailed;
         public event Action?         LoadStarted;
         public event Action?         LoadCompleted;
         public event Action<string>? LoadFailed;
-
-        // ── Constructor ──────────────────────────────────────────────────────
 
         public WorkspaceService(
             IVolumeStateCapture      volumeCapture,
@@ -89,14 +86,12 @@ namespace iDaVIE.Persistence
             _log                = log                ?? throw new ArgumentNullException(nameof(log));
         }
 
-        // ── IWorkspaceSaveCommand ────────────────────────────────────────────
+        // ── IWorkspaceSaveCommand ─────────────────────────────────────────────
 
-        /// <inheritdoc/>
         public void Save()
         {
             SaveStarted?.Invoke();
             _log.LogInfo(nameof(WorkspaceService), "Save pipeline started.");
-
             try
             {
                 var stateId = Guid.NewGuid().ToString("N");
@@ -108,8 +103,7 @@ namespace iDaVIE.Persistence
                     DisplayName           = name,
                     SavedAtUtc            = DateTime.UtcNow,
                     EnvelopeSchemaVersion = 1,
-
-                    // --- capture each sub-team's state ---
+                    // Capture each sub-team's state via its injected port.
                     VolumeState      = _volumeCapture.Capture(),
                     MaskState        = _maskCapture.Capture(),
                     RenderState      = _renderCapture.Capture(),
@@ -119,9 +113,8 @@ namespace iDaVIE.Persistence
                 };
 
                 _repository.Save(envelope);
-
                 _log.LogInfo(nameof(WorkspaceService),
-                    $"Save pipeline completed: stateId={stateId}, displayName={name}");
+                    $"Save completed: stateId={stateId}");
                 SaveCompleted?.Invoke(stateId);
             }
             catch (Exception ex)
@@ -132,9 +125,8 @@ namespace iDaVIE.Persistence
             }
         }
 
-        // ── IWorkspaceLoadCommand ────────────────────────────────────────────
+        // ── IWorkspaceLoadCommand ─────────────────────────────────────────────
 
-        /// <inheritdoc/>
         public void Load(string stateId)
         {
             if (string.IsNullOrWhiteSpace(stateId))
@@ -145,11 +137,9 @@ namespace iDaVIE.Persistence
 
             LoadStarted?.Invoke();
             _log.LogInfo(nameof(WorkspaceService), $"Load pipeline started: stateId={stateId}");
-
             try
             {
                 var envelope = _repository.Load(stateId);
-
                 if (envelope == null)
                 {
                     var msg = $"Workspace not found or integrity check failed: stateId={stateId}";
@@ -158,8 +148,7 @@ namespace iDaVIE.Persistence
                     return;
                 }
 
-                // Restore order matters: ST1 first (volumes must exist before
-                // mask, render, interaction, features, and desktop state restore).
+                // Restore order follows global_model.md §2 acyclic graph: ST1 first.
                 if (envelope.VolumeState      != null) _volumeCapture.Restore(envelope.VolumeState);
                 if (envelope.MaskState        != null) _maskCapture.Restore(envelope.MaskState);
                 if (envelope.RenderState      != null) _renderCapture.Restore(envelope.RenderState);
@@ -167,8 +156,7 @@ namespace iDaVIE.Persistence
                 if (envelope.FeatureState     != null) _featureCapture.Restore(envelope.FeatureState);
                 if (envelope.DesktopState     != null) _desktopCapture.Restore(envelope.DesktopState);
 
-                _log.LogInfo(nameof(WorkspaceService),
-                    $"Load pipeline completed: stateId={stateId}");
+                _log.LogInfo(nameof(WorkspaceService), $"Load completed: stateId={stateId}");
                 LoadCompleted?.Invoke();
             }
             catch (Exception ex)
@@ -179,33 +167,24 @@ namespace iDaVIE.Persistence
             }
         }
 
-        // ── IStateIndexQuery ─────────────────────────────────────────────────
+        // ── IStateIndexQuery ──────────────────────────────────────────────────
 
-        /// <inheritdoc/>
-        public IReadOnlyList<SavedStateInfo> GetAll()
-            => _repository.GetIndex();
+        public IReadOnlyList<SavedStateInfo> GetAll() => _repository.GetIndex();
 
-        /// <inheritdoc/>
         public IReadOnlyList<SavedStateInfo> Search(string searchTerm)
         {
             var all = _repository.GetIndex();
             if (string.IsNullOrWhiteSpace(searchTerm)) return all;
-
-            return all
-                .Where(s => s.DisplayName.Contains(
-                    searchTerm, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            return all.Where(s => s.DisplayName.Contains(
+                searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
-        /// <summary>
-        /// Deletes a saved state from disk and the index.
-        /// Not part of the cross-team <see cref="IStateIndexQuery"/> surface;
-        /// called by <see cref="PersistenceMenuController"/> via the concrete type.
-        /// </summary>
+        // Not on the cross-team IStateIndexQuery surface; called by
+        // PersistenceMenuController which holds the concrete WorkspaceService type.
         public void Delete(string stateId)
         {
             _repository.Delete(stateId);
-            _log.LogInfo(nameof(WorkspaceService), $"Deleted state: {stateId}");
+            _log.LogInfo(nameof(WorkspaceService), $"Deleted: stateId={stateId}");
         }
     }
 }

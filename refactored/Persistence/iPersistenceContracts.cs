@@ -1,143 +1,66 @@
-// iDaVIE — immersive Data Visualisation Interactive Explorer
-// Copyright (C) 2024 IDIA, INAF-OACT
 // SPDX-License-Identifier: LGPL-3.0-or-later
+// IPersistenceContracts — cross-team interface surface ST7 publishes.
+// Canonical signatures from shared_interfaces.md §7; "ST7 wins by default"
+// (interface_resolutions.md line 31).
 //
-// Sub-Team 7 — Persistence & Workspace State
-// Cross-team interface declarations (ST7 owns; ST4 and ST6 consume).
-// Canonical signatures are in shared_interfaces.md §7; this file reproduces
-// them verbatim so the ST7 skeleton compiles-as-illustrated.
+// Legacy: no persistence subsystem exists in Assets/Scripts/. The only
+// persistence-adjacent code is VolumeDataSet.SaveMask(path) (line ~1380),
+// which writes the mask FITS file only and has no wider state capture.
+//
+// Refactor delta:
+//   - Four narrow interfaces replace a hypothetical single save-service class,
+//     satisfying ISP: ST4 only receives IWorkspaceSaveCommand +
+//     IWorkspaceLoadCommand; ST6 additionally receives IStateIndexQuery +
+//     IPersistenceEvents. No consumer is forced to depend on members it
+//     does not use.
+//   - Fire-and-forget command pattern decouples callers from I/O timing —
+//     Save() and Load() return immediately; outcomes arrive via IPersistenceEvents.
+//   - SavedStateInfo is a plain-C# sealed class; no UnityEngine types cross
+//     this boundary (brief §4.2 constraint 3).
+//   - DIP: every consumer holds an interface, not a concrete class.
+
+using System;
+using System.Collections.Generic;
 
 namespace iDaVIE.Persistence
 {
-    using System;
-    using System.Collections.Generic;
-
-    // -------------------------------------------------------------------------
-    // §3.7  IWorkspaceSaveCommand
-    // Consumed by: ST4 (voice/quick-menu), ST6 (desktop save button)
-    // -------------------------------------------------------------------------
-
-    /// <summary>
-    /// Fire-and-forget save trigger. Outcome is delivered asynchronously via
-    /// <see cref="IPersistenceEvents"/>.
-    /// </summary>
+    // Consumed by: ST4 (voice/quick-menu trigger), ST6 (desktop save button).
     public interface IWorkspaceSaveCommand
     {
-        /// <summary>
-        /// Initiates a workspace snapshot. Non-blocking — returns immediately.
-        /// <para>
-        /// On completion, <see cref="IPersistenceEvents.SaveCompleted"/> fires
-        /// with the new <c>stateId</c>; on failure,
-        /// <see cref="IPersistenceEvents.SaveFailed"/> fires with a
-        /// human-readable reason string.
-        /// </para>
-        /// </summary>
+        /// <summary>Fire-and-forget. Outcome reported via IPersistenceEvents.</summary>
         void Save();
     }
 
-    // -------------------------------------------------------------------------
-    // §3.7  IWorkspaceLoadCommand
-    // Consumed by: ST4 (voice restore), ST6 (desktop load button)
-    // -------------------------------------------------------------------------
-
-    /// <summary>
-    /// Triggers restoration of a previously saved workspace.
-    /// The <paramref name="stateId"/> is the opaque key returned by
-    /// <see cref="IStateIndexQuery"/> or supplied by <see cref="IPersistenceEvents.SaveCompleted"/>.
-    /// </summary>
+    // Consumed by: ST4 (voice restore), ST6 (desktop load button).
     public interface IWorkspaceLoadCommand
     {
-        /// <summary>
-        /// Initiates a workspace restore. Non-blocking — returns immediately.
-        /// <para>
-        /// On success, <see cref="IPersistenceEvents.LoadCompleted"/> fires.
-        /// On failure, <see cref="IPersistenceEvents.LoadFailed"/> fires with
-        /// a human-readable reason.
-        /// </para>
-        /// </summary>
-        /// <param name="stateId">Opaque identifier from <see cref="SavedStateInfo.StateId"/>.</param>
+        /// <summary>Triggers load by opaque stateId obtained from IStateIndexQuery.</summary>
         void Load(string stateId);
     }
 
-    // -------------------------------------------------------------------------
-    // §3.7  SavedStateInfo  (value object)
-    // -------------------------------------------------------------------------
-
-    /// <summary>
-    /// Metadata record returned by <see cref="IStateIndexQuery"/>.
-    /// All fields are plain C# — no <c>UnityEngine</c> types (brief §4.2 constraint 3).
-    /// </summary>
     public sealed class SavedStateInfo
     {
-        /// <summary>Opaque, stable identifier for the saved state (GUID string).</summary>
-        public string StateId { get; init; } = string.Empty;
-
-        /// <summary>Human-readable label chosen at save time (or auto-generated).</summary>
-        public string DisplayName { get; init; } = string.Empty;
-
-        /// <summary>UTC timestamp recorded when the snapshot was written to disk.</summary>
-        public DateTime SavedAtUtc { get; init; }
+        public string   StateId     { get; init; } = string.Empty;
+        public string   DisplayName { get; init; } = string.Empty;
+        public DateTime SavedAtUtc  { get; init; }
     }
 
-    // -------------------------------------------------------------------------
-    // §3.7  IStateIndexQuery
-    // Consumed by: ST6 (save/load dialog list)
-    // -------------------------------------------------------------------------
-
-    /// <summary>
-    /// Read-only access to the on-disk index of saved workspace states.
-    /// The index is updated by <see cref="WorkspaceService"/> after every
-    /// successful save; consumers do not write to it.
-    /// </summary>
+    // Consumed by: ST6 (save/load dialog list). Not exposed to ST4.
     public interface IStateIndexQuery
     {
-        /// <summary>Returns all saved states, newest first.</summary>
         IReadOnlyList<SavedStateInfo> GetAll();
-
-        /// <summary>
-        /// Returns states whose <see cref="SavedStateInfo.DisplayName"/> contains
-        /// <paramref name="searchTerm"/> (case-insensitive substring match).
-        /// </summary>
         IReadOnlyList<SavedStateInfo> Search(string searchTerm);
     }
 
-    // -------------------------------------------------------------------------
-    // §3.7  IPersistenceEvents
-    // Consumed by: ST6 (UI feedback — spinner, toast messages)
-    // -------------------------------------------------------------------------
-
-    /// <summary>
-    /// Observable lifecycle events raised by <see cref="WorkspaceService"/>.
-    /// ST6 subscribes to drive the save/load progress UI.
-    /// All events are raised on the Unity main thread.
-    /// </summary>
+    // Consumed by: ST6 (progress spinner, toast messages). Not exposed to ST4.
     public interface IPersistenceEvents
     {
-        /// <summary>Raised immediately before the snapshot pipeline begins.</summary>
-        event Action SaveStarted;
+        event Action         SaveStarted;
+        event Action<string> SaveCompleted;   // payload: stateId of the new state
+        event Action<string> SaveFailed;      // payload: human-readable error
 
-        /// <summary>
-        /// Raised when the snapshot has been written successfully.
-        /// Payload is the <c>stateId</c> of the new state (for UI confirmation).
-        /// </summary>
-        event Action<string> SaveCompleted;
-
-        /// <summary>
-        /// Raised when the save pipeline fails.
-        /// Payload is a human-readable error message suitable for display.
-        /// </summary>
-        event Action<string> SaveFailed;
-
-        /// <summary>Raised immediately before the restore pipeline begins.</summary>
-        event Action LoadStarted;
-
-        /// <summary>Raised when restoration has completed successfully.</summary>
-        event Action LoadCompleted;
-
-        /// <summary>
-        /// Raised when the restore pipeline fails.
-        /// Payload is a human-readable error message.
-        /// </summary>
-        event Action<string> LoadFailed;
+        event Action         LoadStarted;
+        event Action         LoadCompleted;
+        event Action<string> LoadFailed;      // payload: human-readable error
     }
 }
