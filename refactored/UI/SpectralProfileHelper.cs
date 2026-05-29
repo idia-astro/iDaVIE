@@ -76,22 +76,10 @@ namespace iDaVIE.UI
 
         private void UpdateUI(SpectralProfileResult result)
         {
-            // OxyPlot rendering — verbatim from legacy CreateSpectralProfileImg
-            // (l. 116-150) but driven by SpectralProfileResult.Profile /
-            // ZStartChannel instead of the unmanaged spectralProfilePtr. The
-            // result struct shape (ST5_interface.md §3) replaces the manual
-            // Marshal.Copy / native FreeDataAnalysisMemory pair.
-            _ = result; // Skeleton omits OxyPlot.PlotModel construction.
-            // _menuController.UpdateUI(sprite); — preserved entry point.
+            // OxyPlot rendering is now owned by SpectralProfileMenuController (split out
+            // of this helper). The result struct shape (ST5_interface.md §3) replaces the
+            // manual Marshal.Copy / native FreeDataAnalysisMemory pair the legacy helper used.
+            _menuController.Render(result);
         }
-    }
-
-    // Forward declaration only — the actual SpectralProfileMenuController lives
-    // in Assets/Scripts/Menu and is not part of the ST5 refactor skeleton (it
-    // is a thin sprite-display wrapper). Declared here so the helper compiles
-    // as illustrated.
-    internal sealed class SpectralProfileMenuController : MonoBehaviour
-    {
-        public void UpdateUI(Sprite sprite) { /* preserved from legacy */ }
     }
 }

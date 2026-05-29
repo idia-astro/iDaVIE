@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // ILogSink — ST1 cross-cutting log sink (global_model.md §1 ST1). Consumed by
-// ST6's debug console; realised by Debuggers/DebugLogging (Tier-3 pending).
+// ST6's debug console; realised by Kernel/DebugLogSink (ST1).
 
 using System;
 
