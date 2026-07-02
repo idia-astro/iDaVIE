@@ -71,7 +71,7 @@ target_link_libraries(idavie_native cfitsio cminpack::cminpack libast libast_err
 SET(CMAKE_FIND_LIBRARY_PREFIXES "")
 SET(CMAKE_FIND_LIBRARY_SUFFIXES ".dll")
 find_library(CFITSIO_RUNTIME "cfitsio")
-find_library(ZLIB_RUNTIME "zlib1")
+find_library(ZLIB_RUNTIME "z")
 find_library(CMINPACK_RUNTIME "cminpack")
 
 install(TARGETS idavie_native
