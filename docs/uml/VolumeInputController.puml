@@ -1,0 +1,256 @@
+@startuml VolumeInputController
+title VolumeInputController — Proposed Decomposition
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    BorderColor #555555
+    ArrowColor #555555
+}
+skinparam package {
+    BackgroundColor #F5F5F5
+    BorderColor #AAAAAA
+}
+hide empty members
+
+' ─── Enumerations ─────────────────────────────────────────────────────────────
+
+enum InteractionState {
+    IdleSelecting
+    IdlePainting
+    EditingSourceId
+    Creating
+    Editing
+    Painting
+    VideoCamPosRecording
+}
+
+enum InteractionEvents {
+    InteractionStarted
+    InteractionEnded
+    PaintModeEnabled
+    PaintModeDisabled
+    StartEditSource
+    EndEditSource
+    CancelEditSource
+    StartVideoRecording
+    EndVideoRecording
+}
+
+enum LocomotionState {
+    Idle
+    Moving
+    Scaling
+    EditingThresholdMin
+    EditingThresholdMax
+    EditingZAxis
+}
+
+' ─── SteamVR and Unity lifecycle ─────────────────────────────────────────────
+
+package "SteamVR and Unity" {
+
+    class VRInputWiring {
+        + PrimaryHand : SteamVR_Input_Sources
+        + PrimaryHandIndex : int
+        - _player : Player
+        - _hands : VRHand[]
+        - _handTransforms : Transform[]
+        - _grabGripAction : SteamVR_Action_Boolean
+        - _grabPinchAction : SteamVR_Action_Boolean
+        - _quickMenuAction : SteamVR_Action_Boolean
+        - _vrFamily : VRFamily
+        + <<event>> PushToTalkButtonPressed
+        + <<event>> PushToTalkButtonReleased
+        .. Unity lifecycle ..
+        - OnEnable() : void
+        - OnDisable() : void
+        .. SteamVR action callbacks ..
+        - OnGripChanged(fromAction : SteamVR_Action_Boolean, fromSource : SteamVR_Input_Sources, newState : bool) : void
+        - OnPinchChanged(fromAction : SteamVR_Action_Boolean, fromSource : SteamVR_Input_Sources, newState : bool) : void
+        - OnQuickMenuChanged(fromAction : SteamVR_Action_Boolean, fromSource : SteamVR_Input_Sources, newState : bool) : void
+        - OnUiInteractDown(fromAction : SteamVR_Action_Boolean, fromSource : SteamVR_Input_Sources) : void
+        - OnMenuUpPressed(fromAction : SteamVR_Action_Boolean, fromSource : SteamVR_Input_Sources) : void
+        - OnMenuUpReleased(fromAction : SteamVR_Action_Boolean, fromSource : SteamVR_Input_Sources) : void
+        - OnMenuDownPressed(fromAction : SteamVR_Action_Boolean, fromSource : SteamVR_Input_Sources) : void
+        - OnMenuDownReleased(fromAction : SteamVR_Action_Boolean, fromSource : SteamVR_Input_Sources) : void
+        - OnMenuLeftPressed(fromAction : SteamVR_Action_Boolean, fromSource : SteamVR_Input_Sources) : void
+        - OnMenuRightPressed(fromAction : SteamVR_Action_Boolean, fromSource : SteamVR_Input_Sources) : void
+        .. Haptics ..
+        + VibrateController(hand : SteamVR_Input_Sources, duration : float, frequency : float, amplitude : float) : void
+        - {static} DetermineVRFamily() : VRFamily
+    }
+
+}
+
+' ─── VR locomotion ────────────────────────────────────────────────────────────
+
+package "Locomotion" {
+
+    class VRLocomotionController {
+        + InPlaceScaling : bool
+        + ScalingEnabled : bool
+        + RotationAxisCutoff : float
+        - _locomotionState : LocomotionState
+        - _startDataSetScales : float[]
+        - _currentGripPositions : Vector3[]
+        - _startGripSeparation : Vector3
+        - _startGripCenter : Vector3
+        - _startGripForwardAxis : Vector3
+        - _previousControllerHeight : float
+        - _rotationYawCumulative : float
+        - _rotationRollCumulative : float
+        .. State transitions ..
+        - StateTransitionMovingToIdle() : void
+        - StateTransitionIdleToMoving() : void
+        - StateTransitionMovingToScaling() : void
+        - StateTransitionScalingToMoving() : void
+        .. Per-frame updates ..
+        - UpdateMoving() : void
+        - UpdateScaling() : void
+        - UpdateEditingThreshold(editingMax : bool) : void
+        - UpdateEditingZAxis() : void
+        - UpdateScalingText(dataSet : VolumeDataSetRenderer) : void
+        .. Public control ..
+        + StartThresholdEditing(editingMax : bool) : void
+        + EndEditing() : void
+        + StartZAxisEditing() : void
+        .. Teleport ..
+        + Teleport(boundsMin : Vector3, boundsMax : Vector3) : void
+        + TeleportToVidRecLoc(pos : Vector3, rotEulerAngles : Vector3) : void
+    }
+
+    class VignetteFeedback {
+        + VignetteFadeSpeed : float
+        - _tunnellingVignetteOn : bool
+        - _currentVignetteIntensity : float
+        - _targetVignetteIntensity : float
+        - _maxVignetteIntensity : float
+        - UpdateVignette() : void
+    }
+
+}
+
+' ─── Brush painting ───────────────────────────────────────────────────────────
+
+package "Brush Painting" {
+
+    class BrushPaintingController {
+        + AdditiveBrush : bool
+        + BrushSize : int
+        + SourceId : short
+        - _paintMenuOn : bool
+        + IncreaseBrushSize() : void
+        + DecreaseBrushSize() : void
+        + ResetBrushSize() : void
+        + SetBrushAdditive() : void
+        + SetBrushSubtractive() : void
+        + UndoBrushStroke(fromSource : SteamVR_Input_Sources) : void
+        + RedoBrushStroke(fromSource : SteamVR_Input_Sources) : void
+        - UpdatePaintCursor() : void
+    }
+
+}
+
+' ─── Interaction state machine and feature editing ────────────────────────────
+
+package "Interaction and Feature Editing" {
+
+    class FeatureInteractionController {
+        + InteractionStateMachine : StateMachine<InteractionState, InteractionEvents>
+        - _hoveredFeature : Feature
+        - _editingFeature : Feature
+        - _hoveredAnchor : FeatureAnchor
+        - _editingAnchor : FeatureAnchor
+        + HasHoverAnchor : bool
+        + HasEditingAnchor : bool
+        + ShowCursorInfo : bool
+        - _isQuickMenu : bool
+        - _selectionStopwatch : Stopwatch
+        - _handInfoComponents : TextMeshPro[]
+        - _coordDecimalPlaces : Vector3Int
+        .. State machine setup ..
+        - CreateInteractionStateMachine() : void
+        - EnterPaintMode() : void
+        - ExitPaintMode() : void
+        - StartRegionEditing() : void
+        - EndRegionEditing() : void
+        - StartSelection() : void
+        - EndSelection() : void
+        - StartRequestQuickMenu(handIndex : int) : void
+        - EndRequestQuickMenu() : void
+        .. Per-frame update ..
+        - UpdateInteractions() : void
+        .. Feature editing ..
+        + SetHoveredFeature(featureSetManager : FeatureSetManager, featureAnchor : FeatureAnchor) : void
+        + ClearHoveredFeature(featureSetManager : FeatureSetManager, featureAnchor : FeatureAnchor) : void
+        + AddNewSource() : void
+        + StartEditSourceID() : void
+        + UpdateSourceId() : void
+        + AddNewLocation(fromSource : SteamVR_Input_Sources) : void
+        + ToggleCursorInfoVisibility() : void
+        .. HUD formatting ..
+        - {static} GetFormattedCursorString(dataSetRenderer : VolumeDataSetRenderer, displayOutsideCube : bool) : string
+        - {static} IsCursorOutsideCube(dataSetRenderer : VolumeDataSetRenderer) : bool
+        - {static} GetSelectionString(dataSetRenderer : VolumeDataSetRenderer) : string
+        - {static} FormatAngle(angleInRad : double) : string
+    }
+
+}
+
+' ─── Video recording ──────────────────────────────────────────────────────────
+
+package "Video Recording" {
+
+    class VideoRecordingController {
+        + _videoPosRecorder : VideoPosRecorder
+        - _deltaT : float
+        - _resetTime : float
+        + StartVideoCamPosRecording() : void
+        + EndVideoCamPosRecording() : void
+    }
+
+}
+
+' ─── Orchestrator ─────────────────────────────────────────────────────────────
+
+class VolumeInputController <<MonoBehaviour>> {
+    .. Dataset references ..
+    + _volumeDataSets : VolumeDataSetRenderer[]
+    + volumeDatasetManager : GameObject
+    + ActiveDataSet : VolumeDataSetRenderer
+    .. UI references ..
+    + CanvassQuickMenu : GameObject
+    + toastNotificationPrefab : GameObject
+    + followHead : GameObject
+    .. Scroll state ..
+    + scrollSelected : bool
+    + scrollUp : bool
+    + scrollDown : bool
+    + ScrollObject : GameObject
+    .. Unity lifecycle ..
+    - Start() : void
+    - Update() : void
+    - OnDestroy() : void
+    .. General ..
+    + UpdateDataSets() : void
+    + TakePicture() : void
+    + SaveSubCube() : void
+    + ChangeShapeSelection() : void
+}
+
+' ─── Relationships ────────────────────────────────────────────────────────────
+
+VolumeInputController *-- VRInputWiring
+VolumeInputController *-- VRLocomotionController
+VolumeInputController *-- VignetteFeedback
+VolumeInputController *-- BrushPaintingController
+VolumeInputController *-- FeatureInteractionController
+VolumeInputController *-- VideoRecordingController
+
+VRLocomotionController --> LocomotionState : uses
+FeatureInteractionController --> InteractionState : uses
+FeatureInteractionController --> InteractionEvents : uses
+
+VolumeInputController --> VolumeDataSetRenderer : drives
+
+@enduml

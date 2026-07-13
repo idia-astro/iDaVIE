@@ -1,0 +1,206 @@
+@startuml debug-tab-before
+title Debug Tab — BEFORE refactoring\n(current state in Assets/Scripts/Debuggers/DebugLogging.cs)
+
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor #FFFDE7
+    BorderColor #F57F17
+    ArrowColor #5D4037
+}
+skinparam note {
+    BackgroundColor #FFF9C4
+    BorderColor #F57F17
+}
+
+' ─────────────────────────────────────────
+' Unity runtime boundary (external, not owned)
+' ─────────────────────────────────────────
+package "Unity runtime — not owned" <<Rectangle>> #EDE7F6 {
+
+    class Application <<static, UnityEngine>> {
+        +{static} event logMessageReceived(string, string, LogType)
+        +{static} version: string
+        +{static} dataPath: string
+    }
+
+    class UnityEngine_Debug <<static, UnityEngine>> {
+        +{static} Log(message: object): void
+        +{static} LogWarning(message: object): void
+        +{static} LogError(message: object): void
+    }
+
+    class TMP_InputField <<UnityEngine.UI / TMPro>> {
+        +text: string
+        +Rebuild(update: CanvasUpdate): void
+    }
+
+    class Scrollbar <<UnityEngine.UI>> {
+        +value: float
+    }
+
+    class Button <<UnityEngine.UI>> {
+        +onClick.AddListener(action: UnityAction): void
+    }
+
+    class PlayerPrefs <<static, UnityEngine>> {
+        +{static} GetString(key: string): string
+        +{static} SetString(key: string, value: string): void
+        +{static} GetInt(key: string): int
+        +{static} Save(): void
+    }
+}
+
+note top of Application
+  <b>Code smell S1:</b> ""logMessageReceived"" is a
+  process-wide static event with one subscriber
+  (""DebugLogging.HandleLog""). No interface, no
+  test double possible — the entire debug-tab flow
+  cannot be exercised without a live Unity scene.
+end note
+
+' ─────────────────────────────────────────
+' Third-party / BCL collaborators
+' ─────────────────────────────────────────
+class StandaloneFileBrowser <<static, SFB>> #E8F5E9 {
+    +{static} SaveFilePanelAsync(title, dir, defaultName, filters, callback): void
+}
+
+class StreamWriter <<System.IO>> #FCE4EC {
+    +<<ctor>>(path: string, append: bool)
+    +Write(value: string): void
+    +Close(): void
+}
+
+class StringBuilder <<System.Text>> #FCE4EC {
+    +Append(s: string): StringBuilder
+    +ToString(): string
+}
+
+class Queue <<System.Collections (non-generic)>> #FCE4EC {
+    +Enqueue(item: object): void
+    +Count: int
+}
+
+note right of Queue
+  <b>Code smell S3:</b> non-generic ""Queue""
+  stores ""object"" — no type safety, no
+  capacity bound. Unbounded memory growth
+  under high-frequency log streams.
+end note
+
+note right of StreamWriter
+  <b>Code smell S4:</b> opened and closed
+  on <b>every</b> log message inside
+  ""AutoSave()"" — one syscall + file handle
+  allocation per ""Debug.Log*"" call.
+end note
+
+' ─────────────────────────────────────────
+' Application singleton (existing iDaVIE)
+' ─────────────────────────────────────────
+class Config <<singleton, VolumeData>> #E3F2FD {
+    +{static} Instance: Config
+    +numberOfLogsToKeep: int
+}
+
+' ─────────────────────────────────────────
+' Producer-side callers (44 Debug.Log* call sites)
+' ─────────────────────────────────────────
+class CanvassDesktop_Caller <<MonoBehaviour, 40 sites>> #E3F2FD {
+    ' Calls Debug.Log / LogWarning / LogError
+    ' at 40 distinct line numbers — see log-origin-trace.md.
+}
+
+class DataAnalysis_Caller <<static P/Invoke wrapper, 4 sites>> #E3F2FD {
+    ' Calls Debug.Log on P/Invoke error paths
+    ' (DataAnalysis.cs:187, 202, 217, 234).
+}
+
+note bottom of CanvassDesktop_Caller
+  <b>Code smell S9:</b> 44 unstructured ""Debug.Log*""
+  call sites in production code. No source string,
+  no structured level, no timestamp — captured as
+  ""(string logString, string stackTrace, LogType type)""
+  by ""DebugLogging.HandleLog""; the level is then
+  string-concatenated into the message text.
+end note
+
+' ─────────────────────────────────────────
+' God class — Debug Tab responsibilities
+' ─────────────────────────────────────────
+class DebugLogging <<MonoBehaviour>> #FFCCBC {
+    ' ── Inspector-wired UI handles ───────
+    -logOutput: TMP_InputField
+    -debugScrollbar: Scrollbar
+    -saveButton: Button
+
+    ' ── Storage / paths ──────────────────
+    -debugLogQueue: Queue
+    -autosavePath: string
+    -directoryPath: string
+    -pluginSavePath: string
+    -maxLogs: int
+
+    ' ── Lifecycle ────────────────────────
+    +Start(): void
+    +OnEnable(): void
+    +OnDisable(): void
+
+    ' ── Concern 1: hardware reporting ────
+    +DetermineHardware(): void
+
+    ' ── Concern 2: capture + display ─────
+    +HandleLog(logString: string, stackTrace: string, type: LogType): void
+
+    ' ── Concern 3: autosave ──────────────
+    +AutoSave(message: string): void
+
+    ' ── Concern 4: manual export ─────────
+    +saveToFileClick(): void
+    +SaveToFile(dest: string): void
+}
+
+note bottom of DebugLogging
+  <b>Mixed concerns in one MonoBehaviour (255 lines):</b>
+  1. Lifecycle init + log-rotation (""Start()"" CC = 9)
+  2. Capture + display (""HandleLog"" — O(N) full rebuild)
+  3. Autosave (""AutoSave"" — ""StreamWriter"" open/close per message)
+  4. Manual export (""saveToFileClick"" + ""SaveToFile"")
+  Violates SRP; LCOM_HS = 0.95 (4 disjoint clusters);
+  CK passes 5/6 thresholds — the failure is LCOM, the
+  real failure is testability (S1).
+end note
+
+' ─────────────────────────────────────────
+' Relationships
+' ─────────────────────────────────────────
+
+MonoBehaviour <|-- DebugLogging : extends
+
+' Producer side — all log calls funnel through the static class
+CanvassDesktop_Caller --> UnityEngine_Debug : "Debug.Log* (×40)"
+DataAnalysis_Caller  --> UnityEngine_Debug : "Debug.Log* (×4)"
+UnityEngine_Debug --> Application : "fires globally\nlogMessageReceived(s, s, type)"
+
+' The canonical untestable hook
+Application --> DebugLogging : "<<static event>>\nHandleLog(s, s, type)\n★ no interface / no double"
+
+' DebugLogging's nine downstream collaborators
+DebugLogging --> Queue                  : "Enqueue\n(unbounded, non-generic)"
+DebugLogging --> StringBuilder          : "Append / ToString\nO(N) full rebuild"
+DebugLogging --> StreamWriter           : "new / Write / Close\nper message"
+DebugLogging --> TMP_InputField         : ".text = entire history"
+DebugLogging --> Scrollbar              : ".value = 1f every message"
+DebugLogging --> Button                 : "onClick.AddListener"
+DebugLogging --> StandaloneFileBrowser  : "SaveFilePanelAsync"
+DebugLogging --> PlayerPrefs            : "LastDebugPath"
+DebugLogging --> Config                 : "numberOfLogsToKeep"
+
+' MonoBehaviour parent placeholder (Unity)
+class MonoBehaviour <<Unity>> #EDE7F6 {
+    +Start(): void
+    +OnEnable(): void
+    +OnDisable(): void
+}
+
+@enduml

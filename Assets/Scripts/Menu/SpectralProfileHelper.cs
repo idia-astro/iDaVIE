@@ -21,6 +21,7 @@
  */
 using System.IO;
 using System.Linq;
+using iDaVIE.Infrastructure.Unity;
 using UnityEngine;
 using VolumeData;
 
@@ -46,9 +47,9 @@ public class SpectralProfileHelper : MonoBehaviour
             if (VolumeDataSetManager != null)
             {
                 activeDataSet = getFirstActiveDataSet();
-                if (activeDataSet != null)
+                if (activeDataSet != null && activeDataSet.FeatureVisualiser != null)
                 {
-                    activeDataSet.FeatureSetManagerPrefab.MaskFeatureSelected += OnMaskedSourceSelected;
+                    activeDataSet.FeatureVisualiser.MaskFeatureSelected += OnMaskedSourceSelected;
                     _isInitialized = true;
                 }
             }
@@ -57,9 +58,9 @@ public class SpectralProfileHelper : MonoBehaviour
     
     void OnDestroy()
     {
-        if (activeDataSet != null)
+        if (activeDataSet != null && activeDataSet.FeatureVisualiser != null)
         {
-            activeDataSet.FeatureSetManagerPrefab.MaskFeatureSelected -= OnMaskedSourceSelected;
+            activeDataSet.FeatureVisualiser.MaskFeatureSelected -= OnMaskedSourceSelected;
         }
     }
 
@@ -104,7 +105,7 @@ public class SpectralProfileHelper : MonoBehaviour
     public void OnMaskedSourceSelected()
     {
         var sourceStats =
-            activeDataSet.Mask.SourceStatsDict.ElementAt(activeDataSet.FeatureSetManagerPrefab.SelectedFeature.Index).Value;
+            activeDataSet.Mask.SourceStatsDict.ElementAt(activeDataSet.FeatureVisualiser.Service.SelectedFeature.Index).Value;
         CreateSpectralProfileImg(sourceStats);
 
     }

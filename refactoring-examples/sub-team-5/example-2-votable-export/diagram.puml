@@ -1,0 +1,194 @@
+@startuml VOTable Export — Before and After
+
+' ── Style ──────────────────────────────────────────────────────────────────
+skinparam classAttributeIconSize 0
+skinparam classFontName Arial
+skinparam classFontSize 11
+skinparam ArrowColor #444444
+skinparam ClassBackgroundColor #FAFAFA
+skinparam ClassBorderColor #AAAAAA
+skinparam PackageBackgroundColor #F0F4FA
+skinparam PackageBorderColor #2E4D87
+skinparam PackageFontStyle bold
+skinparam PackageFontColor #1F3864
+skinparam NoteBackgroundColor #FFFBDB
+skinparam NoteBorderColor #CCAA00
+
+' ═══════════════════════════════════════════════════════════════════════════
+' BEFORE
+' ═══════════════════════════════════════════════════════════════════════════
+package "BEFORE — VoTableReader namespace\n(ADR-008 violation: DataFeatures / VoTableReader)" #FFE8E8 {
+
+    class VoTableSaver <<static>> #FFD0D0 {
+        + {static} SaveFeatureSetAsVoTable(\n    featureSet : FeatureSetRenderer,\n    filePath : string) : void
+    }
+
+    class FeatureSetRenderer <<MonoBehaviour>> {
+        + VolumeRenderer : VolumeDataSetRenderer
+        + FeatureList : List<Feature>
+        + RawDataKeys : string[]
+    }
+
+    class VolumeDataSetRenderer <<MonoBehaviour>> {
+        + AstFrame : IntPtr
+        + SourceStatsDict : Dictionary<int, SourceStats>
+        + Data : VolumeDataSet
+    }
+
+    class AstTool <<static, DLL>> #FFDEDE {
+        + {static} Transform3D(frame : IntPtr, x, y, z, ...) : void
+        + {static} Norm(frame : IntPtr, ra, dec, z, ...) : void
+    }
+}
+
+note top of VoTableSaver
+  <b>ADR violations</b>
+  [ADR-002] UnityEngine import above Infrastructure
+  [ADR-002] IntPtr (native DLL handle) in domain call sites
+  [ADR-003] Static class — not injectable, not mockable
+  [ADR-006] MonoBehaviour parameter — untestable in isolation
+  [ADR-008] Wrong namespace (VoTableReader / DataFeatures)
+  [ADR-011] FeatureSetManager calls VoTableSaver directly
+  ──
+  <b>Design smells</b>
+  Law of Demeter: renderer.VolumeRenderer.SourceStatsDict
+  No format seam — OCP violation
+end note
+
+VoTableSaver ..> FeatureSetRenderer     : <<parameter>>
+VoTableSaver ..> VolumeDataSetRenderer  : navigates via renderer
+VoTableSaver ..> AstTool                : static calls (DLL, IntPtr)
+
+
+' ═══════════════════════════════════════════════════════════════════════════
+' AFTER — iDaVIE.Domain.Feature  (ADR-008 compliant)
+' ═══════════════════════════════════════════════════════════════════════════
+package "iDaVIE.Domain.Feature" #E8F4E8 {
+
+    interface IAstFrame #D0EED0 {
+        ' Opaque handle — no IntPtr visible to domain (ADR-002)
+    }
+
+    interface ICoordinateTransformer #D0EED0 {
+        + Transform(frame : IAstFrame, x, y, z,\n    out ra, out dec, out zPhys) : void
+        + Normalise(frame : IAstFrame, ra, dec, zPhys,\n    out normRa, out normDec, out normZ) : void
+    }
+
+    interface IVoTableExporter #D0EED0 {
+        + Export(featureSet : FeatureSet,\n        transformer : ICoordinateTransformer) : string
+    }
+
+    interface IFeaturePersistenceService #D0EED0 {
+        + ExportToVoTable(featureSet : FeatureSet) : string
+        + AppendFeatureToAscii(feature, fileName) : void
+        + AsciiOutputExists(fileName) : bool
+    }
+
+    class FeatureCatalog #C8E6C8 {
+        - _persistence : IFeaturePersistenceService
+        + FeatureCatalog(persistence : IFeaturePersistenceService)
+        + ExportToVoTable(set : FeatureSet) : string
+    }
+
+    class FeatureSet <<domain aggregate>> {
+        + AstFrame : IAstFrame
+        + Features : ReadOnlyCollection<Feature>
+        + ZAxisLabel : string
+        + RawDataKeys : string[]
+    }
+
+    class Feature <<domain entity>> {
+        + Id : int
+        + Center : Vec3
+        + CornerMin : Vec3
+        + CornerMax : Vec3
+        + Flag : string
+        + RawData : string[]
+    }
+}
+
+note right of IAstFrame
+  <b>ADR-002 fix</b>
+  Replaces bare IntPtr.
+  Infrastructure wraps the
+  real IntPtr in AstFrameHandle.
+  Domain code never sees IntPtr.
+end note
+
+note right of ICoordinateTransformer
+  <b>Cross-team boundary</b>
+  Defined here (Sub-team 5)
+  Implemented by Sub-team 2:
+  AstToolCoordinateTransformer
+  in iDaVIE.Infrastructure.NativePlugins
+end note
+
+' ═══════════════════════════════════════════════════════════════════════════
+' AFTER — iDaVIE.Application.Feature  (ADR-008 compliant)
+' ═══════════════════════════════════════════════════════════════════════════
+package "iDaVIE.Application.Feature" #EAF0FB {
+    class FeatureSetService <<application service>> {
+        + ExportToVoTable(set : FeatureSet) : string
+    }
+}
+
+' ═══════════════════════════════════════════════════════════════════════════
+' AFTER — iDaVIE.Infrastructure.Persistence  (ADR-008 compliant)
+' ═══════════════════════════════════════════════════════════════════════════
+package "iDaVIE.Infrastructure.Persistence" #FFF8E8 {
+    class VoTableExportService #FFF0C8 {
+        + Export(featureSet : FeatureSet,\n        transformer : ICoordinateTransformer) : string
+        - BuildHeaders(featureSet) : List<string>
+        - BuildDocument(headers, featureSet) : XDocument
+        - BuildRow(feature, normRa, normDec, normZ) : XElement
+    }
+
+    class FeaturePersistenceService #FFF0C8 {
+        - _exporter : IVoTableExporter
+        - _transformer : ICoordinateTransformer
+        + FeaturePersistenceService(\n    exporter : IVoTableExporter,\n    transformer : ICoordinateTransformer)
+        + ExportToVoTable(featureSet : FeatureSet) : string
+        + AppendFeatureToAscii(feature, fileName) : void
+        + AsciiOutputExists(fileName) : bool
+    }
+}
+
+' ═══════════════════════════════════════════════════════════════════════════
+' AFTER — iDaVIE.Infrastructure.NativePlugins  (ADR-008 compliant)
+' ═══════════════════════════════════════════════════════════════════════════
+package "iDaVIE.Infrastructure.NativePlugins\n(Sub-team 2 ownership)" #F5F0FA {
+    class AstFrameHandle #EDE0F8 {
+        - _ptr : IntPtr
+        + AstFrameHandle(ptr : IntPtr)
+    }
+    class AstToolCoordinateTransformer #EDE0F8 {
+        + Transform(frame : IAstFrame, ...) : void
+        + Normalise(frame : IAstFrame, ...) : void
+    }
+}
+
+' ── Dependency arrows (after state) ──────────────────────────────────────────
+FeatureSetService        o--> FeatureCatalog                  : <<inject>>
+FeatureCatalog           o--> IFeaturePersistenceService      : <<inject>>
+FeaturePersistenceService ..|> IFeaturePersistenceService     : implements
+FeaturePersistenceService o--> IVoTableExporter               : <<inject>>
+FeaturePersistenceService o--> ICoordinateTransformer         : <<inject>>
+VoTableExportService    ..|> IVoTableExporter                 : implements
+VoTableExportService    --> FeatureSet                        : reads
+VoTableExportService    --> Feature                           : reads
+VoTableExportService    ..> ICoordinateTransformer            : <<uses>>
+FeatureCatalog          --> FeatureSet                        : owns
+AstFrameHandle          ..|> IAstFrame                        : implements
+AstToolCoordinateTransformer ..|> ICoordinateTransformer      : implements
+AstToolCoordinateTransformer ..> AstFrameHandle               : unwraps IntPtr
+
+note bottom of VoTableExportService
+  <b>Zero UnityEngine imports (ADR-002)</b>
+  Uses only System.Xml.Linq
+  Namespace: iDaVIE.Infrastructure.Persistence
+  Depends inward on iDaVIE.Domain.Feature ✓
+  Fully unit-testable: inject StubCoordinateTransformer
+  and NullAstFrame for deterministic RA/Dec/Z
+end note
+
+@enduml

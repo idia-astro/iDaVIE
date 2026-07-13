@@ -1,0 +1,33 @@
+{
+    "name": "iDaVIE.Rendering.Tests",
+    "rootNamespace": "iDaVIE.Rendering",
+    "references": [
+        "iDaVIE.Rendering",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+
+    "_comments": {
+        "name": "Must match the assembly name referenced in test files (using iDaVIE.Rendering.Tests)",
+        "references/iDaVIE.Rendering": "The production rendering assembly — FoveatedSamplingPolicy, IMaskMode, etc.",
+        "references/UnityEngine.TestRunner": "Provides [UnityTest], IEnumerator coroutine support (play-mode tests)",
+        "references/UnityEditor.TestRunner": "Provides [Test], [SetUp], [TearDown] (edit-mode tests)",
+        "includePlatforms/Editor": "Tests only run inside Unity Editor — never in a player build",
+        "autoReferenced/false": "Prevents Unity auto-adding this assembly to the main build",
+        "overrideReferences/true": "Required when listing precompiledReferences explicitly",
+        "precompiledReferences/nunit.framework.dll": "NUnit assertion library — ships with Unity Test Framework"
+    }
+}

@@ -1,0 +1,1093 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# iDaVIE Team Alpha — Unified CI Pipeline
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Job topology (left → right = dependency order; parallel tracks run together):
+#
+#  detect-changes ─────────────────────────────────────────────────────────────┐
+#       └── human-review-required  (PR only — intentional blocking gate)       │
+#                                                                               │
+#  build-unity ─────────────────────────────────────────────────────────────── ┤
+#       └── unity-tests                                                         │──── pr-comment
+#                                                                               │     (PR only,
+#  build-dotnet ──┬── arch-tests       ─────────────────────────────────────── ┤      if: always)
+#  (fail-fast)    ├── ck-metrics ──── sprint-metrics  (push/main only)          │
+#                 ├── circular-deps   ─────────────────────────────────────── ──┤
+#                 └── sonar           ─────────────────────────────────────── ──┤
+#                                                                               │
+#  diagram-validation  (warn-only, continue-on-error) ────────────────────── ──┤
+#  document-checks     ──────────────────────────────────────────────────────── ┘
+#
+# ══════════════════════════════════════════════════════════════════════════════
+# SECRETS — add these in Settings → Secrets and variables → Actions:
+#
+#   UNITY_LICENSE    Base64-encoded Unity .ulf licence file
+#                    Obtain via: https://game.ci/docs/github/activation
+#   UNITY_EMAIL      Unity account email address
+#   UNITY_PASSWORD   Unity account password
+#   SONAR_TOKEN      SonarQube Cloud user token
+#                    Obtain via: sonarcloud.io → My Account → Security
+#   SONAR_ORG        SonarQube Cloud organisation slug  (e.g. "team-alpha-uni")
+#   GITHUB_TOKEN     Provided automatically — no action needed
+#
+# ══════════════════════════════════════════════════════════════════════════════
+# POST-SETUP CHECKLIST — must be done manually after pushing this file:
+#
+#   [ ] 1. Add the five secrets above (Settings → Secrets → Actions).
+#
+#   [ ] 2. Update SONAR_PROJECT_KEY below (search "TODO-SONAR").
+#
+#   [ ] 3. Branch protection on 'main'
+#          Settings → Branches → Add rule → pattern: main
+#            ✓ Require a pull request before merging
+#            ✓ Require status checks to pass:
+#                build-dotnet
+#                arch-tests
+#                ck-metrics
+#                circular-deps
+#                sonar               (add once SONAR_TOKEN is configured)
+#                human-review-required
+#            ✓ Require approvals: 1
+#            ✓ Do not allow bypassing the above settings
+#
+#   [ ] 4. Human review gate — who can approve diagram / document PRs?
+#          Option A (simpler): require 1 approval from any team member
+#            → the branch protection rule above already covers this
+#          Option B (stricter, recommended): use CODEOWNERS
+#            Create file  .github/CODEOWNERS  with content:
+#              *.puml       @your-org/tech-leads
+#              *.mmd        @your-org/tech-leads
+#              *.drawio     @your-org/tech-leads
+#              *.md         @your-org/sub-team-leads
+#              *.pdf        @your-org/sub-team-leads
+#            Then in branch protection:
+#              ✓ Require review from Code Owners
+#            Tech Leads and sub-team leads must be GitHub teams in your org.
+#
+#   [ ] 5. Create 'metrics-history/' folder (commit an empty .gitkeep)
+#          so the sprint-metrics bot has a place to write snapshots.
+#
+# ══════════════════════════════════════════════════════════════════════════════
+
+name: CI — iDaVIE Team Alpha
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+# Default: read-only. Jobs that write (sprint-metrics, pr-comment) escalate.
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  DOTNET_VERSION: "8.0.x"
+  PYTHON_VERSION: "3.12"
+  # TODO-SONAR: replace with your actual SonarQube Cloud project key
+  SONAR_PROJECT_KEY: "idavie-team-alpha-refactoring"
+
+# ════════════════════════════════════════════════════════════════════════════
+# JOB 0 — DETECT CHANGES
+# Identifies which file categories changed so downstream jobs can react.
+# Uses dorny/paths-filter which works correctly for both push and PR events.
+# ════════════════════════════════════════════════════════════════════════════
+jobs:
+  detect-changes:
+    name: "Detect — changed file categories"
+    runs-on: ubuntu-latest
+    outputs:
+      uml:    ${{ steps.filter.outputs.uml }}
+      docs:   ${{ steps.filter.outputs.docs }}
+      csharp: ${{ steps.filter.outputs.csharp }}
+      unity:  ${{ steps.filter.outputs.unity }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Filter changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            uml:
+              - '**/*.puml'
+              - '**/*.plantuml'
+              - '**/*.mmd'
+              - '**/*.mermaid'
+              - '**/*.drawio'
+            docs:
+              - '**/*.md'
+              - '**/*.pdf'
+              - 'docs/**'
+            csharp:
+              - 'refactoring-examples/**/*.cs'
+              - 'arch-tests/**/*.cs'
+              - 'tools/**/*.py'
+            unity:
+              - 'Assets/**'
+              - 'Packages/**'
+              - 'ProjectSettings/**'
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 1 — HUMAN REVIEW GATE  ⛔  INTENTIONAL BLOCKING GATE
+  #
+  # This job ALWAYS FAILS when UML diagrams or documents are changed in a PR.
+  # That is by design — it is not a bug or misconfiguration.
+  #
+  # Automated tools cannot judge whether a diagram accurately represents the
+  # architecture or whether a document meets the assignment requirements.
+  # A human expert must do this.
+  #
+  # HOW THE GATE WORKS:
+  #   1. This job fails whenever .puml / .mmd / .drawio / .md / .pdf files
+  #      are in the PR diff.
+  #   2. Because "human-review-required" is a required status check (see
+  #      setup checklist item 3), the PR cannot be merged while it is red.
+  #   3. A Tech Lead or Quality Champion reviews the PR, confirms the
+  #      diagrams/documents are correct, and approves the PR in GitHub.
+  #   4. With the required approval in place, GitHub allows the merge
+  #      despite the failing status check — this is the intended workflow.
+  #
+  # THIS GATE CAN NEVER BE AUTOMATICALLY BYPASSED.
+  # Even if PlantUML syntax validation passes, the human gate still fires.
+  # ════════════════════════════════════════════════════════════════════════════
+  human-review-required:
+    name: "Human Gate — diagram and document review required"
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Evaluate human-review gate
+        shell: bash
+        env:
+          UML_CHANGED:  ${{ needs.detect-changes.outputs.uml }}
+          DOCS_CHANGED: ${{ needs.detect-changes.outputs.docs }}
+        run: |
+          FAIL=0
+
+          if [ "$UML_CHANGED" = "true" ]; then
+            echo ""
+            echo "╔══════════════════════════════════════════════════════════════╗"
+            echo "║         ⛔  HUMAN REVIEW REQUIRED — UML DIAGRAMS            ║"
+            echo "╠══════════════════════════════════════════════════════════════╣"
+            echo "║                                                              ║"
+            echo "║  This PR contains changes to UML diagram files              ║"
+            echo "║  (.puml  .plantuml  .mmd  .mermaid  .drawio).               ║"
+            echo "║                                                              ║"
+            echo "║  Diagrams CANNOT be merged automatically.                   ║"
+            echo "║                                                              ║"
+            echo "║  Required action:                                            ║"
+            echo "║    A Tech Lead or Quality Champion must:                     ║"
+            echo "║      1. Review the diagram changes in the Files tab          ║"
+            echo "║      2. Approve this PR using GitHub's review mechanism      ║"
+            echo "║                                                              ║"
+            echo "║  This is an INTENTIONAL GATE — not a CI bug.                ║"
+            echo "╚══════════════════════════════════════════════════════════════╝"
+            echo ""
+            echo "::error title=Human Review Required — UML Diagrams::UML diagram changes (.puml/.mmd/.drawio) require human review before merge. A Tech Lead or Quality Champion must inspect the diagram and manually approve this PR. This is an intentional gate."
+            FAIL=1
+          fi
+
+          if [ "$DOCS_CHANGED" = "true" ]; then
+            echo ""
+            echo "╔══════════════════════════════════════════════════════════════╗"
+            echo "║         ⛔  HUMAN REVIEW REQUIRED — DOCUMENTS               ║"
+            echo "╠══════════════════════════════════════════════════════════════╣"
+            echo "║                                                              ║"
+            echo "║  This PR contains changes to document files                 ║"
+            echo "║  (.md  .pdf  or files under docs/).                         ║"
+            echo "║                                                              ║"
+            echo "║  Documents CANNOT be merged automatically.                  ║"
+            echo "║                                                              ║"
+            echo "║  Required action:                                            ║"
+            echo "║    A sub-team lead must:                                     ║"
+            echo "║      1. Verify the document content in this PR               ║"
+            echo "║      2. Approve this PR using GitHub's review mechanism      ║"
+            echo "║                                                              ║"
+            echo "║  This is an INTENTIONAL GATE — not a CI bug.                ║"
+            echo "╚══════════════════════════════════════════════════════════════╝"
+            echo ""
+            echo "::error title=Human Review Required — Documents::Document changes (.md/.pdf) require human review before merge. A sub-team lead must verify this content before it is merged. This is an intentional gate."
+            FAIL=1
+          fi
+
+          if [ "$FAIL" -eq 0 ]; then
+            echo "✓ No diagram or document changes in this PR."
+            echo "  Human review gate passed automatically."
+          fi
+
+          exit $FAIL
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 2 — UNITY BUILD
+  # Skipped silently when UNITY_LICENSE secret is not configured.
+  # Uses GameCI unity-builder; caches the Library folder to cut rebuild time.
+  # ════════════════════════════════════════════════════════════════════════════
+  build-unity:
+    name: "Unity Build — StandaloneWindows64"
+    runs-on: ubuntu-latest
+    if: ${{ secrets.UNITY_LICENSE != '' }}
+    outputs:
+      result: ${{ job.status }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Unity Library folder
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: UnityLibrary-${{ hashFiles('Packages/manifest.json', 'ProjectSettings/**') }}
+          restore-keys: UnityLibrary-
+
+      - name: Build — StandaloneWindows64
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE:  ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL:    ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion:   auto
+          targetPlatform: StandaloneWindows64
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iDaVIE-StandaloneWindows64
+          path: build/StandaloneWindows64
+          if-no-files-found: error
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 3 — UNITY TESTS
+  # Runs EditMode then PlayMode. Both use continue-on-error so a test failure
+  # is surfaced in the PR comment rather than silently skipping PlayMode.
+  # ════════════════════════════════════════════════════════════════════════════
+  unity-tests:
+    name: "Unity Tests — EditMode & PlayMode"
+    runs-on: ubuntu-latest
+    needs: build-unity
+    if: ${{ secrets.UNITY_LICENSE != '' }}
+    outputs:
+      editmode: ${{ steps.editmode.outcome }}
+      playmode:  ${{ steps.playmode.outcome }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Restore Unity Library cache
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: UnityLibrary-${{ hashFiles('Packages/manifest.json', 'ProjectSettings/**') }}
+          restore-keys: UnityLibrary-
+
+      - name: Run EditMode tests
+        id: editmode
+        uses: game-ci/unity-test-runner@v4
+        continue-on-error: true
+        env:
+          UNITY_LICENSE:  ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL:    ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion:  auto
+          testMode:      editmode
+          artifactsPath: test-results/editmode
+          checkName:     "Unity EditMode Results"
+
+      - name: Run PlayMode tests
+        id: playmode
+        uses: game-ci/unity-test-runner@v4
+        continue-on-error: true
+        env:
+          UNITY_LICENSE:  ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL:    ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion:  auto
+          testMode:      playmode
+          artifactsPath: test-results/playmode
+          checkName:     "Unity PlayMode Results"
+
+      - name: Upload test result XML files
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unity-test-results
+          path: test-results/
+          if-no-files-found: ignore
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 4 — DOTNET BUILD  (fail-fast gate)
+  # If this fails, every dotnet analysis job (arch-tests, ck-metrics,
+  # circular-deps, sonar) is automatically skipped by GitHub Actions.
+  # ════════════════════════════════════════════════════════════════════════════
+  build-dotnet:
+    name: "Dotnet Build — refactoring examples (fail-fast gate)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: "**/*.csproj"
+
+      - name: Restore NuGet packages
+        run: dotnet restore refactoring-examples
+
+      - name: Build — Release (warnings promoted to errors)
+        run: dotnet build refactoring-examples --no-restore -c Release -warnaserror
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-build
+          path: refactoring-examples/**/bin/Release/**
+          if-no-files-found: warn
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 5 — ARCHITECTURE TESTS  (blocks PRs)
+  # Runs the NetArchTest suite in /arch-tests. Expected rules:
+  #   • Domain layer has no dependency on Application, Infrastructure, Presentation
+  #   • Domain layer has no dependency on UnityEngine.* or SteamVR.*
+  #   • Application layer has no dependency on Infrastructure or Presentation
+  # See /arch-tests/README.md for how to add rules.
+  # ════════════════════════════════════════════════════════════════════════════
+  arch-tests:
+    name: "Architecture — layer rules & domain isolation (NetArchTest)"
+    runs-on: ubuntu-latest
+    needs: build-dotnet
+    outputs:
+      passed:  ${{ steps.run.outputs.passed }}
+      summary: ${{ steps.run.outputs.summary }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: "**/*.csproj"
+
+      - name: Restore NuGet packages
+        run: |
+          dotnet restore refactoring-examples
+          dotnet restore arch-tests
+
+      - name: Run NetArchTest suite
+        id: run
+        shell: bash
+        run: |
+          set +e
+          dotnet test arch-tests \
+            --no-restore \
+            --logger "console;verbosity=detailed" \
+            2>&1 | tee arch-results.txt
+          CODE=$?
+
+          PASS=$(grep -cE "^\s+Passed" arch-results.txt 2>/dev/null || echo 0)
+          FAIL=$(grep -cE "^\s+Failed" arch-results.txt 2>/dev/null || echo 0)
+
+          echo "passed=$([ $CODE -eq 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "summary=${PASS} rule(s) passed, ${FAIL} failed" >> "$GITHUB_OUTPUT"
+          exit $CODE
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 6 — CK METRICS  (blocks PRs)
+  # Thresholds applied only to domain-layer classes (layer = "domain"):
+  #   WMC  ≤ 20   (Weighted Methods per Class)
+  #   CBO  ≤ 14   (Coupling Between Objects)
+  #   RFC  ≤ 50   (Response For a Class)
+  #   LCOM ≤ 0.5  (Lack of Cohesion in Methods, Henderson-Sellers)
+  # ════════════════════════════════════════════════════════════════════════════
+  ck-metrics:
+    name: "CK Metrics — WMC / CBO / RFC / LCOM thresholds"
+    runs-on: ubuntu-latest
+    needs: build-dotnet
+    outputs:
+      passed: ${{ steps.check.outputs.passed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Compute CK metrics from source
+        run: python tools/check_ck_metrics.py refactoring-examples > ck-metrics.json
+
+      - name: Evaluate thresholds and build report table
+        id: check
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+
+          LIMITS = {"domain": {"wmc": 20, "cbo": 14, "rfc": 50, "lcom": 0.5}}
+
+          data  = json.load(open("ck-metrics.json"))
+          rows  = []
+          fails = []
+
+          for item in sorted(data, key=lambda x: x["class"]):
+              lim = LIMITS.get(item.get("layer", ""), {})
+              bad = []
+              if lim.get("wmc")  and item["wmc"]  > lim["wmc"]:  bad.append(f"WMC={item['wmc']} > {lim['wmc']}")
+              if lim.get("cbo")  and item["cbo"]  > lim["cbo"]:  bad.append(f"CBO={item['cbo']} > {lim['cbo']}")
+              if lim.get("rfc")  and item["rfc"]  > lim["rfc"]:  bad.append(f"RFC={item['rfc']} > {lim['rfc']}")
+              if lim.get("lcom") and item["lcom"] > lim["lcom"]: bad.append(f"LCOM={item['lcom']:.2f} > {lim['lcom']}")
+              marker = " ⚠ " + ", ".join(bad) if bad else " ✓"
+              layer  = item.get("layer", "-")
+              rows.append(
+                  f"| `{item['class']}` | {layer} | {item['wmc']} | {item['cbo']}"
+                  f" | {item['rfc']} | {item['lcom']:.2f} |{marker} |"
+              )
+              if bad:
+                  fails.append(f"{item['class']}: " + ", ".join(bad))
+
+          header = (
+              "| Class | Layer | WMC | CBO | RFC | LCOM | Status |\n"
+              "|---|---|---|---|---|---|---|"
+          )
+          table = header + "\n" + ("\n".join(rows) if rows else "| _(no classes found)_ | | | | | | |")
+
+          with open("ck-table.md", "w") as f:
+              f.write(table)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"passed={'false' if fails else 'true'}\n")
+
+          if fails:
+              print(f"CK threshold violations ({len(fails)} class(es)):")
+              for v in fails:
+                  print(f"  ✗ {v}")
+              sys.exit(1)
+
+          print(f"All CK metrics within thresholds ({len(data)} class(es) scanned).")
+          PY
+
+      - name: Upload metrics artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ck-metrics
+          path: |
+            ck-metrics.json
+            ck-table.md
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 7 — CIRCULAR DEPENDENCIES  (blocks PRs)
+  # Scans all *.cs files under /refactoring-examples, builds a directed graph
+  # of namespace → namespace dependencies via 'using' directives, then runs
+  # Tarjan's SCC algorithm. Any SCC with more than one node is a cycle.
+  # ════════════════════════════════════════════════════════════════════════════
+  circular-deps:
+    name: "Circular deps — zero tolerance at namespace level"
+    runs-on: ubuntu-latest
+    needs: build-dotnet
+    outputs:
+      passed: ${{ steps.check.outputs.passed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Detect circular namespace dependencies
+        id: check
+        shell: bash
+        run: |
+          python3 - refactoring-examples <<'PY'
+          import re, sys
+          from pathlib import Path
+          from collections import defaultdict
+
+          src = Path(sys.argv[1])
+          ns_uses: dict[str, set[str]] = defaultdict(set)
+
+          for f in src.rglob("*.cs"):
+              if any(p in {"obj", "bin"} for p in f.parts):
+                  continue
+              text = f.read_text(encoding="utf-8", errors="ignore")
+              ns_m = re.search(r'^\s*namespace\s+([\w.]+)', text, re.MULTILINE)
+              if not ns_m:
+                  continue
+              ns = ns_m.group(1)
+              for dep in re.findall(r'^\s*using\s+([\w.]+)\s*;', text, re.MULTILINE):
+                  if dep != ns:
+                      ns_uses[ns].add(dep)
+
+          # Tarjan's strongly-connected components algorithm
+          idx_ctr  = [0]
+          stack, on_stack = [], set()
+          index, lowlink  = {}, {}
+          cycles: list[list[str]] = []
+
+          def scc(v: str) -> None:
+              index[v] = lowlink[v] = idx_ctr[0]
+              idx_ctr[0] += 1
+              stack.append(v)
+              on_stack.add(v)
+              for w in ns_uses.get(v, []):
+                  if w not in index:
+                      scc(w)
+                      lowlink[v] = min(lowlink[v], lowlink.get(w, lowlink[v]))
+                  elif w in on_stack:
+                      lowlink[v] = min(lowlink[v], index[w])
+              if lowlink[v] == index[v]:
+                  comp: list[str] = []
+                  while True:
+                      w = stack.pop()
+                      on_stack.discard(w)
+                      comp.append(w)
+                      if w == v:
+                          break
+                  if len(comp) > 1:
+                      cycles.append(comp)
+
+          sys.setrecursionlimit(5000)
+          all_ns = set(ns_uses) | {d for deps in ns_uses.values() for d in deps}
+          for v in all_ns:
+              if v not in index:
+                  scc(v)
+
+          if cycles:
+              print(f"Found {len(cycles)} circular namespace dependency cycle(s):")
+              for c in cycles:
+                  print("  ✗", " ↔ ".join(sorted(c)))
+              sys.exit(1)
+
+          print(f"No circular namespace dependencies ({len(all_ns)} namespace(s) scanned).")
+          PY
+
+          CODE=$?
+          echo "passed=$([ $CODE -eq 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          exit $CODE
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 8 — SONARQUBE CLOUD  (blocks PRs)
+  # Skipped silently when SONAR_TOKEN is not configured.
+  # The quality gate is evaluated server-side; this job fails if it is not met.
+  # ════════════════════════════════════════════════════════════════════════════
+  sonar:
+    name: "SonarQube — static analysis & quality gate"
+    runs-on: ubuntu-latest
+    needs: build-dotnet
+    if: ${{ secrets.SONAR_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # SonarQube needs full history for blame/new-code analysis
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: "**/*.csproj"
+
+      - name: Restore NuGet packages
+        run: dotnet restore refactoring-examples
+
+      - name: Install SonarScanner for .NET
+        run: dotnet tool install -g dotnet-sonarscanner
+
+      - name: Begin SonarQube analysis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN:  ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet sonarscanner begin \
+            /k:"${{ env.SONAR_PROJECT_KEY }}" \
+            /o:"${{ secrets.SONAR_ORG }}" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+            /d:sonar.sources="refactoring-examples"
+
+      - name: Build for SonarQube instrumentation
+        run: dotnet build refactoring-examples --no-restore -c Release
+
+      - name: End analysis and wait for quality gate result
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN:  ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 9 — DIAGRAM VALIDATION  ⚠  WARN-ONLY  (does NOT block PRs)
+  # Syntax errors are surfaced as warnings so the author can fix them, but
+  # they do not block the merge. Correctness of diagrams is enforced by the
+  # human-review-required gate (Job 1), not by automated syntax checking.
+  # ════════════════════════════════════════════════════════════════════════════
+  diagram-validation:
+    name: "Diagrams — PlantUML & Mermaid syntax (warn-only)"
+    runs-on: ubuntu-latest
+    continue-on-error: true       # ← warn-only: job failure does not block PR
+    outputs:
+      status: ${{ steps.result.outputs.status }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17 (required by PlantUML jar)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Download PlantUML jar
+        run: |
+          curl -fsSL -o /tmp/plantuml.jar \
+            https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar
+
+      - name: Set up Node 20 (required by Mermaid CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Mermaid CLI
+        run: npm install -g @mermaid-js/mermaid-cli
+
+      - name: Validate PlantUML files
+        id: plantuml
+        continue-on-error: true
+        shell: bash
+        run: |
+          mapfile -d '' files < <(find . \( -name "*.puml" -o -name "*.plantuml" \) \
+            -not -path "./.git/*" -print0)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No PlantUML files found — skipping."
+            exit 0
+          fi
+          echo "Validating ${#files[@]} PlantUML file(s)..."
+          FAIL=0
+          for f in "${files[@]}"; do
+            out=$(java -jar /tmp/plantuml.jar -syntax "$f" 2>&1)
+            if echo "$out" | grep -qi "error"; then
+              echo "::warning file=$f::PlantUML syntax error"
+              echo "$out"
+              FAIL=1
+            else
+              echo "  ✓ $f"
+            fi
+          done
+          exit $FAIL
+
+      - name: Validate Mermaid files
+        id: mermaid
+        continue-on-error: true
+        shell: bash
+        run: |
+          mapfile -d '' files < <(find . \( -name "*.mmd" -o -name "*.mermaid" \) \
+            -not -path "./.git/*" -print0)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No Mermaid files found — skipping."
+            exit 0
+          fi
+          echo "Validating ${#files[@]} Mermaid file(s)..."
+          TMP=$(mktemp /tmp/mermaid-out-XXXX.svg)
+          FAIL=0
+          for f in "${files[@]}"; do
+            if mmdc -i "$f" -o "$TMP" 2>&1; then
+              echo "  ✓ $f"
+            else
+              echo "::warning file=$f::Mermaid syntax error"
+              FAIL=1
+            fi
+          done
+          rm -f "$TMP"
+          exit $FAIL
+
+      - name: Record diagram validation result
+        id: result
+        if: always()
+        shell: bash
+        run: |
+          PUML="${{ steps.plantuml.outcome }}"
+          MMD="${{ steps.mermaid.outcome }}"
+          if [ "$PUML" = "success" ] && [ "$MMD" = "success" ]; then
+            echo "status=passed"   >> "$GITHUB_OUTPUT"
+          else
+            echo "status=warnings" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 10 — DOCUMENT CHECKS  (blocks PRs on missing required folders)
+  # Empty markdown files generate warnings only; missing required folders fail.
+  # ════════════════════════════════════════════════════════════════════════════
+  document-checks:
+    name: "Docs — required folders and non-empty markdown"
+    runs-on: ubuntu-latest
+    outputs:
+      passed: ${{ steps.result.outputs.passed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify required deliverable folders exist
+        id: folders
+        shell: bash
+        run: |
+          MISSING=()
+          for dir in refactoring-examples arch-tests tools; do
+            [ -d "$dir" ] || MISSING+=("$dir")
+          done
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            for d in "${MISSING[@]}"; do
+              echo "::error::Required deliverable folder is missing: $d"
+            done
+            exit 1
+          fi
+          echo "✓ All required deliverable folders are present."
+
+      - name: Check markdown files are non-empty
+        shell: bash
+        run: |
+          EMPTY=()
+          while IFS= read -r -d '' f; do
+            [ -s "$f" ] || EMPTY+=("$f")
+          done < <(find . -name "*.md" -not -path "./.git/*" \
+                          -not -path "*/node_modules/*" -print0)
+          for f in "${EMPTY[@]}"; do
+            echo "::warning file=$f::Markdown file exists but is empty"
+          done
+          echo "Markdown scan complete — ${#EMPTY[@]} empty file(s) found."
+
+      - name: Record result
+        id: result
+        if: always()
+        shell: bash
+        run: |
+          echo "passed=${{ steps.folders.outcome == 'success' && 'true' || 'false' }}" \
+            >> "$GITHUB_OUTPUT"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 11 — SPRINT METRICS DASHBOARD
+  # Runs only on push to main. Generates a timestamped JSON snapshot of CK
+  # metrics and commits it to /metrics-history so the team can track progress
+  # sprint-over-sprint using any JSON-aware visualisation tool.
+  # The commit message contains [skip ci] to prevent an infinite loop.
+  # ════════════════════════════════════════════════════════════════════════════
+  sprint-metrics:
+    name: "Sprint Metrics — commit CK snapshot to metrics-history"
+    runs-on: ubuntu-latest
+    needs: ck-metrics
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Download CK metrics artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ck-metrics
+          path: /tmp/ck
+
+      - name: Generate metrics snapshot JSON
+        shell: bash
+        env:
+          GITHUB_SHA:        ${{ github.sha }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+          GITHUB_REF_NAME:   ${{ github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import json, datetime, os, pathlib
+
+          raw   = json.load(open("/tmp/ck/ck-metrics.json"))
+          dom   = [c for c in raw if c.get("layer") == "domain"]
+          avg   = lambda key: round(sum(c[key] for c in raw) / max(len(raw), 1), 3)
+
+          snapshot = {
+              "generated_at": datetime.datetime.utcnow().isoformat() + "Z",
+              "commit":       os.environ["GITHUB_SHA"],
+              "run_number":   int(os.environ["GITHUB_RUN_NUMBER"]),
+              "ref":          os.environ["GITHUB_REF_NAME"],
+              "summary": {
+                  "total_classes":       len(raw),
+                  "domain_classes":      len(dom),
+                  "avg_wmc":             avg("wmc"),
+                  "avg_cbo":             avg("cbo"),
+                  "avg_rfc":             avg("rfc"),
+                  "avg_lcom":            avg("lcom"),
+                  "domain_violations":   sum(
+                      1 for c in dom
+                      if c["wmc"] > 20 or c["cbo"] > 14
+                      or c["rfc"] > 50 or c["lcom"] > 0.5
+                  ),
+              },
+              "classes": raw,
+          }
+
+          pathlib.Path("metrics-history").mkdir(exist_ok=True)
+          ts  = datetime.datetime.utcnow().strftime("%Y-%m-%d-%H%M")
+          run = os.environ["GITHUB_RUN_NUMBER"]
+          out = f"metrics-history/{ts}-run{run}.json"
+          with open(out, "w") as f:
+              json.dump(snapshot, f, indent=2)
+
+          s = snapshot["summary"]
+          print(f"Snapshot written → {out}")
+          print(f"  Total classes   : {s['total_classes']}")
+          print(f"  Domain classes  : {s['domain_classes']}")
+          print(f"  Avg WMC / CBO   : {s['avg_wmc']} / {s['avg_cbo']}")
+          print(f"  Avg RFC / LCOM  : {s['avg_rfc']} / {s['avg_lcom']}")
+          print(f"  Domain violations: {s['domain_violations']}")
+          PY
+
+      - name: Commit and push snapshot
+        shell: bash
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add metrics-history/
+          if git diff --cached --quiet; then
+            echo "Nothing new to commit."
+          else
+            git commit -m "chore: sprint metrics snapshot run #${{ github.run_number }} [skip ci]"
+            git push
+          fi
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 12 — PR COMMENT
+  # Posts (or updates) a single unified comment on every pull request.
+  # Runs with if: always() so it fires even when upstream jobs fail or skip.
+  # The comment is identified by the sentinel string "iDaVIE CI Report" and
+  # updated in-place rather than creating a new comment on every push.
+  # ════════════════════════════════════════════════════════════════════════════
+  pr-comment:
+    name: "PR — post unified analysis summary comment"
+    runs-on: ubuntu-latest
+    if: always() && github.event_name == 'pull_request'
+    needs:
+      - build-dotnet
+      - build-unity
+      - unity-tests
+      - arch-tests
+      - ck-metrics
+      - circular-deps
+      - sonar
+      - diagram-validation
+      - document-checks
+      - human-review-required
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Download CK metrics table
+        uses: actions/download-artifact@v4
+        with:
+          name: ck-metrics
+          path: /tmp/ck
+        continue-on-error: true   # artifact absent when build-dotnet failed
+
+      - name: Build comment body
+        shell: bash
+        env:
+          BUILD_DOTNET:     ${{ needs.build-dotnet.result }}
+          BUILD_UNITY:      ${{ needs.build-unity.result }}
+          UNITY_EDITMODE:   ${{ needs.unity-tests.outputs.editmode }}
+          UNITY_PLAYMODE:   ${{ needs.unity-tests.outputs.playmode }}
+          ARCH_PASSED:      ${{ needs.arch-tests.outputs.passed }}
+          ARCH_SUMMARY:     ${{ needs.arch-tests.outputs.summary }}
+          CK_PASSED:        ${{ needs.ck-metrics.outputs.passed }}
+          CIRC_PASSED:      ${{ needs.circular-deps.outputs.passed }}
+          SONAR_RESULT:     ${{ needs.sonar.result }}
+          DIAG_STATUS:      ${{ needs.diagram-validation.outputs.status }}
+          DOCS_PASSED:      ${{ needs.document-checks.outputs.passed }}
+          HUMAN_RESULT:     ${{ needs.human-review-required.result }}
+          PR_NUMBER:        ${{ github.event.number }}
+          RUN_URL:          ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RUN_NUMBER:       ${{ github.run_number }}
+        run: |
+          python3 - <<'PY'
+          import os, pathlib
+
+          def icon(v: str) -> str:
+              if v in ("true", "success"):           return "✅"
+              if v in ("false", "failure"):           return "❌"
+              if v in ("warnings",):                  return "⚠️"
+              if v in ("skipped", "cancelled", ""):   return "⏭"
+              return "❓"
+
+          e = os.environ
+
+          build_dotnet  = e.get("BUILD_DOTNET", "")
+          build_unity   = e.get("BUILD_UNITY", "")
+          edit_out      = e.get("UNITY_EDITMODE", "")
+          play_out      = e.get("UNITY_PLAYMODE", "")
+          arch_passed   = e.get("ARCH_PASSED", "")
+          arch_summary  = e.get("ARCH_SUMMARY", "—")
+          ck_passed     = e.get("CK_PASSED", "")
+          circ_passed   = e.get("CIRC_PASSED", "")
+          sonar_result  = e.get("SONAR_RESULT", "")
+          diag_status   = e.get("DIAG_STATUS", "")
+          docs_passed   = e.get("DOCS_PASSED", "")
+          human_result  = e.get("HUMAN_RESULT", "")
+          run_url       = e.get("RUN_URL", "#")
+          run_number    = e.get("RUN_NUMBER", "?")
+          pr_number     = e.get("PR_NUMBER", "?")
+
+          # Determine which checks are blocking and whether all passed
+          blocking_checks = {
+              "build-dotnet": build_dotnet == "success",
+              "arch-tests":   arch_passed == "true",
+              "ck-metrics":   ck_passed == "true",
+              "circular-deps": circ_passed == "true",
+          }
+          if sonar_result not in ("skipped", "cancelled", ""):
+              blocking_checks["sonar"] = sonar_result == "success"
+          if human_result == "failure":
+              blocking_checks["human-review"] = False
+
+          all_pass = all(blocking_checks.values())
+          badge    = "🟢 All blocking checks passed" if all_pass else "🔴 One or more blocking checks failed"
+
+          # List explicit blockers for the summary section
+          blockers = []
+          if build_dotnet not in ("success", "skipped", ""):
+              blockers.append("Dotnet build failed — all dotnet analysis was skipped")
+          if arch_passed == "false":
+              blockers.append("Architecture violations detected (see NetArchTest output)")
+          if ck_passed == "false":
+              blockers.append("CK metric thresholds exceeded in domain classes")
+          if circ_passed == "false":
+              blockers.append("Circular namespace dependencies found")
+          if sonar_result == "failure":
+              blockers.append("SonarQube quality gate failed")
+          if human_result == "failure":
+              blockers.append("Human review required — a Tech Lead or Quality Champion must approve this PR")
+
+          lines = [
+              f"## iDaVIE CI Report — {badge}",
+              f"",
+              f"_Run [#{run_number}]({run_url}) &nbsp;·&nbsp; PR #{pr_number}_",
+              f"",
+          ]
+
+          if blockers:
+              lines += ["### ❌ Blocking failures", ""]
+              lines += [f"- {b}" for b in blockers]
+              lines += [""]
+
+          # Main status table
+          def unity_note(outcome: str, label: str) -> str:
+              if outcome in ("", "skipped"):
+                  return f"{label} — skipped (UNITY_LICENSE not configured)"
+              return label
+
+          sonar_note = {
+              "success": "Quality gate passed",
+              "failure": "Quality gate failed",
+              "skipped": "Skipped — SONAR_TOKEN not configured",
+          }.get(sonar_result, sonar_result or "skipped")
+
+          lines += [
+              "### Check results",
+              "",
+              "| Check | Result | Notes |",
+              "|---|---|---|",
+              f"| Dotnet build (fail-fast gate) | {icon(build_dotnet)} | {build_dotnet or 'skipped'} |",
+              f"| Unity build | {icon(build_unity)} | {unity_note(build_unity, build_unity or 'skipped')} |",
+              f"| Unity EditMode tests | {icon(edit_out)} | {unity_note(edit_out, edit_out or 'skipped')} |",
+              f"| Unity PlayMode tests | {icon(play_out)} | {unity_note(play_out, play_out or 'skipped')} |",
+              f"| Architecture — NetArchTest | {icon(arch_passed)} | {arch_summary} |",
+              f"| CK Metrics (WMC≤20 CBO≤14 RFC≤50 LCOM≤0.5) | {icon(ck_passed)} | Domain layer only |",
+              f"| Circular namespace dependencies | {icon(circ_passed)} | Tarjan SCC analysis |",
+              f"| SonarQube Cloud quality gate | {icon(sonar_result)} | {sonar_note} |",
+              f"| Diagram syntax (PlantUML / Mermaid) | {icon(diag_status)} | Warn-only — does not block merge |",
+              f"| Required folders & non-empty docs | {icon(docs_passed)} | |",
+              f"| **⛔ Human review gate** | {icon(human_result)} | {'Approval required — see below' if human_result == 'failure' else 'Not triggered this PR'} |",
+              "",
+          ]
+
+          # CK metrics detail table
+          ck_table_path = pathlib.Path("/tmp/ck/ck-table.md")
+          if ck_table_path.exists():
+              lines += [
+                  "<details>",
+                  "<summary>📊 CK Metrics detail — click to expand</summary>",
+                  "",
+                  ck_table_path.read_text(),
+                  "",
+                  "</details>",
+                  "",
+              ]
+
+          # Human review gate explanation
+          if human_result == "failure":
+              lines += [
+                  "---",
+                  "### ⛔ Human Review Gate — action required",
+                  "",
+                  "This PR contains changes to **UML diagrams** and/or **documents** that require",
+                  "human expert review before merge.",
+                  "",
+                  "**This is an intentional gate, not a CI bug.**",
+                  "",
+                  "To merge this PR:",
+                  "1. A **Tech Lead** or **Quality Champion** reviews the diagram/document changes in the _Files_ tab",
+                  "2. They approve the PR via GitHub's _Review changes_ → _Approve_ mechanism",
+                  "3. With the required approval in place, GitHub will allow the merge despite the failing status check",
+                  "",
+                  "Questions? See the `human-review-required` job log for details on which files triggered the gate.",
+                  "",
+              ]
+
+          body = "\n".join(lines)
+          with open("/tmp/pr-comment.md", "w") as f:
+              f.write(body)
+          print(f"Comment body ready ({len(body):,} chars, {len(lines)} lines).")
+          PY
+
+      - name: Post or update PR comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs   = require('fs');
+            const body = fs.readFileSync('/tmp/pr-comment.md', 'utf8');
+            const SENTINEL = 'iDaVIE CI Report';
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner:        context.repo.owner,
+              repo:         context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(
+              c => c.user.type === 'Bot' && c.body.includes(SENTINEL)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner:      context.repo.owner,
+                repo:       context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+              core.info(`Updated comment #${existing.id}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner:        context.repo.owner,
+                repo:         context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+              core.info('Created new comment');
+            }

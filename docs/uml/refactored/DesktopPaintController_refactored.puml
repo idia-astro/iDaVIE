@@ -1,0 +1,241 @@
+@startuml DesktopPaintController_refactored
+title DesktopPaintController — ISO/IEC 25010:2023 Refactored Design
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    BorderColor #444444
+    ArrowColor #444444
+}
+skinparam interface {
+    BackgroundColor #E8F4E8
+    BorderColor #2E7D32
+}
+skinparam package {
+    BackgroundColor #FAFAFA
+    BorderColor #999999
+}
+hide empty members
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Unity pointer interfaces (unchanged — framework contracts)
+' ──────────────────────────────────────────────────────────────────────────────
+
+interface IPointerDownHandler {
+    + OnPointerDown(eventData : PointerEventData) : void
+}
+
+interface IPointerUpHandler {
+    + OnPointerUp(eventData : PointerEventData) : void
+}
+
+interface IDragHandler {
+    + OnDrag(eventData : PointerEventData) : void
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Value objects (ISO 25010: Analysability)
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Value Objects" #EEF4FF {
+
+    class SliceCoordinate <<value>> {
+        + Axis : int
+        + SliceIndex : int
+        + Bounds : Vector2Int
+    }
+
+    class PolygonPoint <<value>> {
+        + LocalPosition : Vector2
+        + LocalPixel : Vector2
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Interfaces (ISO 25010: Reusability, Modularity)
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Interfaces" #E8F4E8 {
+
+    interface ISliceViewController {
+        + CurrentSlice : SliceCoordinate
+        + GetSliceTexture(axis : int, sliceIndex : int) : Texture2D
+        + GetSliceData(axis : int, sliceIndex : int) : float[,]
+        + NavigateToPrevious() : void
+        + NavigateToNext() : void
+        + ChangeAxis(axisIndex : int) : void
+        + Reset() : void
+        + ResetCamera() : void
+        + Initialise(dataSet : VolumeDataSet, maskDataSet : VolumeDataSet) : void
+        + RefreshTexture() : void
+        + HighlightMask() : void
+        + RestorePreviousMask() : void
+    }
+
+    interface IPolygonSelector {
+        + Points : IReadOnlyList<PolygonPoint>
+        + IsClosed : bool
+        + AddPoint(localPosition : Vector2, localPixel : Vector2) : void
+        + UndoLastPoint() : void
+        + Clear() : void
+        + CheckForClosure() : bool
+        + Fill(sliceData : float[,], dimensions : Vector2Int) : bool[,]
+        + IsPointInPolygon(point : Vector2) : bool
+    }
+
+    interface IMaskPaintingService {
+        + Apply(mask : bool[,], slice : SliceCoordinate, sourceId : short, additive : bool) : void
+        + ApplySubtractive(mask : bool[,], slice : SliceCoordinate) : void
+        + UpdateLastStroke() : void
+        + Save(overwrite : bool) : void
+    }
+
+    interface ISliceIndicator {
+        + Spawn(sliceView : ISliceViewController) : void
+        + UpdatePosition(slice : SliceCoordinate) : void
+        + Reset() : void
+    }
+
+    interface IColorMappingService {
+        + SetSourceId(sourceId : short) : void
+        + SetValueRange(min : float, max : float) : void
+        + ApplyColormap(mapName : string) : void
+        + GetColor(sourceIndex : int, value : float) : Color
+        + RefreshSourceColors() : void
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Services (ISO 25010: Modularity, Testability)
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Services" #FFF8E8 {
+
+    class SliceViewService <<service>> {
+        - _cameraX : Camera
+        - _cameraY : Camera
+        - _cameraZ : Camera
+        - _regionCube : Texture3D
+        - _maskCube : Texture3D
+        - _currentSlice : SliceCoordinate
+        + CurrentSlice : SliceCoordinate
+        + SliceViewService(cameraX : Camera, cameraY : Camera, cameraZ : Camera)
+        + Initialise(dataSet : VolumeDataSet, maskDataSet : VolumeDataSet) : void
+        + GetSliceTexture(axis : int, sliceIndex : int) : Texture2D
+        + GetSliceData(axis : int, sliceIndex : int) : float[,]
+        + NavigateToPrevious() : void
+        + NavigateToNext() : void
+        + ChangeAxis(axisIndex : int) : void
+        + Reset() : void
+        + ResetCamera() : void
+        + RefreshTexture() : void
+        + HighlightMask() : void
+        + RestorePreviousMask() : void
+        - SetSliceSliderRange(min : int, max : int) : void
+    }
+
+    class PolygonSelectorService <<service>> {
+        - _points : List<PolygonPoint>
+        - _isClosed : bool
+        + Points : IReadOnlyList<PolygonPoint>
+        + IsClosed : bool
+        + AddPoint(localPosition : Vector2, localPixel : Vector2) : void
+        + UndoLastPoint() : void
+        + Clear() : void
+        + CheckForClosure() : bool
+        + Fill(sliceData : float[,], dimensions : Vector2Int) : bool[,]
+        + IsPointInPolygon(point : Vector2) : bool
+        - SubtractiveSelect(sliceData : float[,], dimensions : Vector2Int) : bool[,]
+        - IsMouseOverImage(eventData : PointerEventData) : bool
+    }
+
+    class MaskPaintingService <<service>> {
+        - _dataSet : VolumeDataSet
+        + MaskPaintingService(dataSet : VolumeDataSet)
+        + Apply(mask : bool[,], slice : SliceCoordinate, sourceId : short, additive : bool) : void
+        + ApplySubtractive(mask : bool[,], slice : SliceCoordinate) : void
+        + UpdateLastStroke() : void
+        + Save(overwrite : bool) : void
+    }
+
+    class SliceIndicatorService <<service>> {
+        - _indicatorObject : GameObject
+        + Spawn(sliceView : ISliceViewController) : void
+        + UpdatePosition(slice : SliceCoordinate) : void
+        + Reset() : void
+    }
+
+    class ColorMappingService <<service>> {
+        - _sourceId : short
+        - _minValue : float
+        - _maxValue : float
+        - _currentMap : string
+        + SetSourceId(sourceId : short) : void
+        + SetValueRange(min : float, max : float) : void
+        + ApplyColormap(mapName : string) : void
+        + GetColor(sourceIndex : int, value : float) : Color
+        + RefreshSourceColors() : void
+        + AddSource() : void
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Pointer event adapter — translates Unity pointer events into domain calls
+' (ISO 25010: Modularity — Unity event coupling isolated in one small class)
+' ──────────────────────────────────────────────────────────────────────────────
+
+class PointerInputAdapter <<service>> {
+    - _selector : IPolygonSelector
+    - _sliceView : ISliceViewController
+    + PointerInputAdapter(selector : IPolygonSelector, sliceView : ISliceViewController)
+    + OnPointerDown(eventData : PointerEventData) : void
+    + OnPointerUp(eventData : PointerEventData) : void
+    + OnDrag(eventData : PointerEventData) : void
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Orchestrator — thin MonoBehaviour (ISO 25010: Modularity)
+' ──────────────────────────────────────────────────────────────────────────────
+
+class DesktopPaintController <<MonoBehaviour>> {
+    - _sliceView : ISliceViewController
+    - _polygonSelector : IPolygonSelector
+    - _maskPainter : IMaskPaintingService
+    - _sliceIndicator : ISliceIndicator
+    - _colorMapper : IColorMappingService
+    - _pointerAdapter : PointerInputAdapter
+    + volumeDatasetManager : GameObject
+    - Awake() : void
+    - Update() : void
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Realizations and dependencies
+' ──────────────────────────────────────────────────────────────────────────────
+
+SliceViewService       ..|> ISliceViewController
+PolygonSelectorService ..|> IPolygonSelector
+MaskPaintingService    ..|> IMaskPaintingService
+SliceIndicatorService  ..|> ISliceIndicator
+ColorMappingService    ..|> IColorMappingService
+
+PointerInputAdapter    ..|> IPointerDownHandler
+PointerInputAdapter    ..|> IPointerUpHandler
+PointerInputAdapter    ..|> IDragHandler
+
+DesktopPaintController *-- PointerInputAdapter
+DesktopPaintController o-- ISliceViewController
+DesktopPaintController o-- IPolygonSelector
+DesktopPaintController o-- IMaskPaintingService
+DesktopPaintController o-- ISliceIndicator
+DesktopPaintController o-- IColorMappingService
+
+PointerInputAdapter --> IPolygonSelector : delegates to
+PointerInputAdapter --> ISliceViewController : delegates to
+
+MaskPaintingService --> VolumeDataSet : paints into
+SliceViewService    --> SliceCoordinate : tracks
+
+@enduml

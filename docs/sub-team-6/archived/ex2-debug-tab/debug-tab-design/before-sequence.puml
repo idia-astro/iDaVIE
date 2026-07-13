@@ -1,0 +1,247 @@
+@startuml debug-tab-before-sequence
+title Debug Tab — BEFORE refactoring: "Log line emitted → visible in Debug tab"\n(current path in Assets/Scripts/Debuggers/DebugLogging.cs @ branch team6)
+
+skinparam sequence {
+    ArrowColor #5D4037
+    LifeLineBorderColor #F57F17
+    LifeLineBackgroundColor #FFF9C4
+    ParticipantBackgroundColor #FFFDE7
+    ParticipantBorderColor #F57F17
+    ActorBackgroundColor #E3F2FD
+    ActorBorderColor #1976D2
+    BoxBackgroundColor #FAFAFA
+    BoxBorderColor #BDBDBD
+}
+skinparam note {
+    BackgroundColor #FFF9C4
+    BorderColor #F57F17
+}
+
+' ── Lifelines ─────────────────────────────────────────────────────────────
+actor "Desktop\nUser" as User
+
+box "Producer side (44 call sites — CanvassDesktop, DataAnalysis, …)" #E3F2FD
+    participant "AnySubsystem\n<<MonoBehaviour / static>>" as Sub
+end box
+
+box "Unity runtime — not owned" #EDE7F6
+    participant "UnityEngine.Debug\n<<static>>" as UEDebug
+    participant "Application\n<<static, owns logMessageReceived>>" as App
+end box
+
+box "DebugLogging.cs (255-line MonoBehaviour)" #FFCCBC
+    participant "DebugLogging" as DL
+end box
+
+box "Unity UI (scene assets — inspector-wired)" #FAFAFA
+    participant "saveButton\n<<Button>>" as SaveBtn
+    participant "logOutput\n<<TMP_InputField>>" as TMP
+    participant "debugScrollbar\n<<Scrollbar>>" as Scroll
+end box
+
+box "Third-party / BCL" #FCE4EC
+    participant "StandaloneFileBrowser\n<<SFB>>" as SFB
+    participant "StreamWriter\n<<System.IO>>" as SW
+    participant "PlayerPrefs\n<<static>>" as PP
+end box
+
+' ══════════════════════════════════════════════════════════════════════════
+== Phase A — Startup (DebugLogging initialises) ==
+' ══════════════════════════════════════════════════════════════════════════
+
+DL -> DL : ""Start()""  //:52//\n(called by Unity ""MonoBehaviour"" lifecycle)
+activate DL
+
+DL -> DL : build ""directoryPath = Outputs/Logs/""\nrelative to ""Application.dataPath""  //:55–56//
+DL -> DL : read ""Config.Instance.numberOfLogsToKeep""  //:62//
+
+note right of DL
+  **S8** Lifecycle init is bundled with
+  log-rotation, autosave path setup,
+  ""saveButton"" wiring, hardware reporting,
+  and three immediate ""Debug.Log"" calls.
+  Four responsibilities in one method.
+end note
+
+DL -> DL : log-rotation loop\n(""Directory.GetFiles"" + ""File.Move/Delete"")  //:68–109//
+
+DL -> DL : ""autosavePath = Outputs/Logs/iDaVIE_Log_0_{ts}.log""  //:112//
+DL -> SaveBtn ++ : ""onClick.AddListener(saveToFileClick)""  //:124//
+return wired
+
+DL -> DL : ""DetermineHardware()""  //:122, 160–169//\n(CPU / RAM / GPU info via ""SystemInfo.*"")
+DL -> UEDebug : ""Debug.Log("Start debug logging.")""  //:121//
+DL -> UEDebug : ""Debug.Log("iDaVIE Version: " + Application.version)""  //:123//
+
+note right of UEDebug
+  These three startup ""Debug.Log"" calls
+  re-enter ""HandleLog"" immediately
+  (see Phase C) — recursion through the
+  static event with no guard.
+end note
+
+== End of Phase A — autosave path open, save button wired ==
+
+' ══════════════════════════════════════════════════════════════════════════
+== Phase B — Subscription is wired (OnEnable) ==
+' ══════════════════════════════════════════════════════════════════════════
+
+DL -> DL : ""OnEnable()""  //:147//
+DL -> App : ""logMessageReceived += HandleLog""  //:149//
+
+note right of App #FFCDD2
+  **S1** ★ The canonical untestable hook.
+  Static process-wide event. One subscriber
+  (""DebugLogging.HandleLog""). No interface,
+  no abstraction, no way to inject a
+  substitute log source — the entire
+  Debug-tab flow requires a live Unity scene.
+end note
+
+deactivate DL
+
+== End of Phase B — HandleLog is now a global listener ==
+
+' ══════════════════════════════════════════════════════════════════════════
+== Phase C — A log line is emitted (repeats per call site, 44 in total) ==
+' ══════════════════════════════════════════════════════════════════════════
+
+Sub -> UEDebug ++ : ""Debug.Log(message)"" /\n""Debug.LogWarning"" /\n""Debug.LogError""\n//e.g. CanvassDesktop.cs:351, 844, 1024//
+
+note right of Sub #FFCDD2
+  **S9** 44 unstructured ""Debug.Log*"" call sites
+  catalogued in ""log-origin-trace.md"":
+  · 9 native / plug-in errors
+  · 3 warnings
+  · 8 info
+  · 24 validation noise (deleted in after-state)
+  No source, no level enum end-to-end, no timestamp.
+end note
+
+UEDebug -> App ++ : fires ""logMessageReceived""\n(""logString"", ""stackTrace"", ""LogType type"")
+return (no return value)
+return (no return value)
+
+App -> DL ++ : ""HandleLog(logString, stackTrace, type)""  //:177//
+
+note right of DL
+  **S2** Handler receives raw 3-tuple:
+  no source class, no timestamp, no
+  correlation ID. ""LogType"" → string via
+  enum ""ToString()"" — the level is lost
+  as a typed value the moment it enters
+  the handler.
+end note
+
+DL -> DL : ""logMessage = "[" + type + "] : " + logString""  //:179//
+
+DL -> DL : ""debugLogQueue.Enqueue(logMessage)""  //:180//
+
+note right of DL #FFCDD2
+  **S3** ""debugLogQueue"" is
+  ""System.Collections.Queue"" — non-generic,
+  stores ""object"". No type safety, no
+  capacity bound. Per-frame ""Debug.Log""
+  callers grow this unbounded.
+end note
+
+DL -> DL : ""AutoSave(logMessage)""  //:181, 249–254//
+
+DL -> SW ++ : ""new StreamWriter(autosavePath, append: true)""  //:250//
+DL -> SW : ""writer.Write(message + "\\n")""  //:252//
+DL -> SW : ""writer.Close()""  //:253//
+return file handle released
+
+note right of SW #FFCDD2
+  **S4** ""StreamWriter"" opened and closed on
+  <b>every single</b> log message.
+  Per-message syscall + file-handle allocation
+  on the Unity main thread. Under high-frequency
+  logging this is the dominant cost.
+end note
+
+alt type == LogType.Exception
+    DL -> DL : ""debugLogQueue.Enqueue(stackTrace)""  //:183–187//
+    DL -> SW ++ : second ""StreamWriter"" open/Write/Close\nfor the stack trace  //:185//
+    return
+end
+
+DL -> DL : ""foreach (item in debugLogQueue)\nsb.Append(item).Append('\\n')""  //:189–195//
+
+note right of DL #FFCDD2
+  **S5** O(N) full-queue rebuild on every
+  message. With 1 000 entries, every new
+  log call iterates all 1 000 previous
+  entries. Performance degrades linearly
+  with session log volume.
+end note
+
+DL -> TMP : ""logOutput.text = sb.ToString()""  //:195//
+
+note right of TMP #FFCDD2
+  **S6** Replaces the entire ""TMP_InputField""
+  string on every log event. TextMesh Pro
+  must re-layout the whole text — expensive
+  for large logs.
+end note
+
+DL -> Scroll : ""debugScrollbar.value = 1.0f""  //:196//
+
+note right of Scroll #FFCDD2
+  **S7** Scroll forced to bottom every
+  message regardless of where the user is
+  reading. Cannot inspect older entries
+  while new ones are arriving.
+end note
+
+DL --> User : new log line appears at the bottom\nof the Debug tab scroll area
+deactivate DL
+
+== End of Phase C — one log line displayed; one file syscall; one O(N) rebuild ==
+
+' ══════════════════════════════════════════════════════════════════════════
+== Phase D — User manually saves the log ==
+' ══════════════════════════════════════════════════════════════════════════
+
+User -> SaveBtn ++ : click **Save**
+SaveBtn -> DL ++ : ""onClick"" (Inspector-wired)\n""saveToFileClick()""  //:203//
+deactivate SaveBtn
+
+DL -> PP ++ : ""GetString("LastDebugPath")""  //:205//
+return last path
+
+DL -> SFB ++ : ""SaveFilePanelAsync(.., callback)""  //:217//
+return (async returns immediately)
+
+SFB -> User : native OS save dialog appears
+User -> SFB : confirms destination
+SFB -->> DL : callback(dest)  //:217//
+
+DL -> SW ++ : ""new StreamWriter(dest, append: false)""  //:236//
+DL -> DL : ""foreach (item in debugLogQueue)\nsb.Append(item).Append('\\n')""  //:238–241//
+DL -> SW : ""writer.Write(sb.ToString())""  //:241//
+DL -> SW : ""writer.Close()""  //:242//
+return file written
+
+DL -> PP : ""SetString("LastDebugPath", dest)""\n""PlayerPrefs.Save()""  //:lambda//
+
+DL --> User : log saved (no toast / no confirmation)
+deactivate DL
+
+== End of Phase D — manual export complete ==
+
+' ── Smell legend ───────────────────────────────────────────────────────────
+legend right
+  | **#** | Smell | Principle / metric violated |
+  | S1 | Static ""Application.logMessageReceived"" hook — untestable | DIP · NFR-TST-1 testability |
+  | S2 | Unstructured ""(string, string, LogType)"" — no source, no timestamp | Information Expert |
+  | S3 | Non-generic ""Queue"" — unbounded, untyped | Robustness · LCOM contributor |
+  | S4 | ""StreamWriter"" open/Write/Close per message | Performance · SRP (I/O ⊂ handler) |
+  | S5 | O(N) full-queue rebuild on every ""HandleLog"" | Performance |
+  | S6 | ""TMP_InputField.text"" whole-string replacement per message | Modularity (View ⊂ handler) |
+  | S7 | Scroll forced to bottom regardless of reader position | Usability |
+  | S8 | Four responsibilities in one ""MonoBehaviour"" | SRP · **LCOM_HS = 0.95** ❌ |
+  | S9 | 44 ""Debug.Log*"" call sites in production code | DIP · ACL (§4.2 #3) |
+endlegend
+
+@enduml

@@ -1,0 +1,248 @@
+@startuml class-before
+'
+' iDaVIE Sub-team 3 — Rendering Engine
+' VolumeDataSetRenderer — BEFORE (as-is)
+' Baseline commit: 1cd729f  |  Updated: 2026-05-25
+' Metrics measured by open-source static pipeline (tree-sitter C# + Python)
+' Full dependency detail: see diagrams/vdsr-dependencies.puml
+'
+
+title VolumeDataSetRenderer — BEFORE Refactoring\n(commit 1cd729f)
+
+skinparam linetype ortho
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam classBackgroundColor #D6EAF8
+skinparam classBorderColor #2471A3
+
+skinparam class {
+  BackgroundColor<<external>>  #FEF9E7
+  BorderColor<<external>>      #F39C12
+  BackgroundColor<<sibling>>   #EBF5FB
+  BorderColor<<sibling>>       #2E86C1
+  BackgroundColor<<cycle>>     #FADBD8
+  BorderColor<<cycle>>         #C0392B
+}
+
+' ══════════════════════════════════════════════════
+'  SUBJECT — VolumeDataSetRenderer
+' ══════════════════════════════════════════════════
+class VolumeDataSetRenderer {
+  ' ── Enums (defined in same file) ──────────────
+  ' enum ScalingType  { Linear, Log, Sqrt, Square, Power, Gamma }
+  ' enum MaskMode     { Disabled, Enabled, Inverted, Isolated }
+  ' enum ProjectionMode { MaximumIntensityProjection, AverageIntensityProjection }
+
+  ' ── Key public fields (14 mutable public fields total) ─
+  + MaxSteps : int
+  + MaximumCubeSizeInMB : long
+  + ProjectionMode : ProjectionMode
+  + TextureFilter : FilterMode
+  + FoveatedRendering : bool
+  + FoveationStart : float
+  + FoveationEnd : float
+  + MaskMode : MaskMode
+  + ColorMap : ColorMapEnum
+  + ScalingType : ScalingType
+  + RayMarchingMaterial : Material
+  + MaskMaterial : Material
+  + FileName : string
+  + MaskFileName : string
+  + volumeInputController : VolumeInputController
+  + FeatureSetManagerPrefab : FeatureSetManager
+  + loadText : TextMeshProUGUI
+  + progressBar : Slider
+  + started : bool
+
+  ' ── Private fields ─────────────────────────────
+  - _dataSet : VolumeDataSet
+  - _maskDataSet : VolumeDataSet
+  - _momentMapRenderer : MomentMapRenderer
+  - _featureManager : FeatureSetManager
+  - _renderer : MeshRenderer
+  - _materialInstance : Material
+  - _maskMaterialInstance : Material
+  - _measuringLine : PolyLine
+  - _cubeOutline : CuboidLine
+  - _voxelOutline : CuboidLine
+  - _regionOutline : CuboidLine
+  - _videoCursorPositionOutline : CuboidLine
+
+  ' ── Key methods (44 total; worst CC=28 _startFunc) ─
+  + Start()
+  + _startFunc() : IEnumerator          ' CC=28, 185 LOC — init / load
+  + Update()                            ' CC=12 — pushes 20+ shader props per frame
+  + OnRenderObject()                    ' mask draw call
+  + OnDestroy()
+  + SaveMask(overwrite : bool)          ' CC=19 — FITS file I/O
+  + SetCursorPosition(cursor, brush)    ' CC=17 — voxel cursor math
+  + SetRegionPosition(cursor, start)
+  + CropToRegion(cornerMin, cornerMax)
+  + LoadRegionData(start, end)
+  + InitialiseMask()
+  + PaintCursor(value : short) : bool
+  + FinishBrushStroke()
+  + SelectFeature(cursor)
+  + CropToFeature() : bool
+  + TeleportToRegion()
+  + RegenerateCubes()
+  + SaveSubCube()
+  + ShiftColorMap(delta : int)
+  + ResetCrop()
+  + ResetThresholds()
+  + ResetRestFrequency()
+  + .. (22 further methods) ..
+
+  ' ── Events / delegates ─────────────────────────
+  + OnColorMapChanged : ColorMapDelegate
+}
+
+note bottom of VolumeDataSetRenderer
+  <b>Confirmed CK Metrics (Understand tool)</b>
+  ─────────────────────────────────────
+  WMC (Count of Methods)      = 97    target ≤ 20  NIM=97 NIV=84
+  CBO (Count of Coupled Cls)  = 28    target ≤ 14
+  RFC (Count of All Methods)  = 97    target ≤ 50
+  LCOM (% Lack of Cohesion)   = 0.95  target ≤ 0.5
+  DIT (Max Inheritance Tree)  = 2     target ≤ 4
+  LOC                         = 1403
+  Public members              = 152   (14 mutable fields)
+  ─────────────────────────────────────
+  <b>8+ distinct responsibilities:</b>
+  1. Shader / material property management
+  2. 3D texture upload + memory budgeting
+  3. Camera / clip-plane calculations
+  4. Foveated rendering decisions
+  5. Region selection + crop
+  6. Cursor / voxel painting
+  7. Moment-map control
+  8. FITS mask file I/O
+  ─────────────────────────────────────
+  ⚠ Inside 46-file dependency cycle
+  ⚠ 2nd most depended-upon file in codebase
+end note
+
+' ══════════════════════════════════════════════════
+'  MUTUAL REFERENCES — bidirectional cycle (red)
+' ══════════════════════════════════════════════════
+class VolumeInputController <<cycle>> {
+  + volumeDataSetRenderer : ref
+  ..
+  VR hand / locomotion / interaction
+  Uses: Valve.VR (SteamVR)
+}
+
+class MomentMapRenderer <<cycle>> {
+  + DataCube : Texture3D
+  + MaskCube : Texture3D
+  ..
+  GPU moment-map compute
+}
+
+class VolumeCommandController <<cycle>> {
+  + momentMapMenuController : ref
+  ..
+  Voice + menu command dispatch
+}
+
+class Config <<cycle>> {
+  + {static} Instance : Config
+  ..
+  Singleton runtime settings
+  Uses: Valve.Newtonsoft.Json
+}
+
+VolumeDataSetRenderer <-[#C0392B,dashed,thickness=2]-> VolumeInputController   : mutual ref\n⚠ cycle
+VolumeDataSetRenderer <-[#C0392B,dashed,thickness=2]-> MomentMapRenderer        : mutual ref\n⚠ cycle
+VolumeDataSetRenderer <-[#C0392B,dashed,thickness=2]-> VolumeCommandController  : mutual ref\n⚠ cycle
+VolumeDataSetRenderer <-[#C0392B,dashed,thickness=2]-> Config                   : mutual ref\n⚠ cycle
+
+' ══════════════════════════════════════════════════
+'  KEY DIRECT DEPENDENCIES (Ce — selected for clarity)
+'  Full graph: see diagrams/vdsr-dependencies.puml
+' ══════════════════════════════════════════════════
+class VolumeDataSet <<sibling>> {
+  + DataCube : Texture3D
+  + RegionCube : Texture3D
+  + XDim, YDim, ZDim : uint
+  ..
+  FITS data · textures · WCS
+  ~92 references from VDR
+}
+
+class FeatureSetManager <<sibling>> {
+  + SelectedFeature : Feature
+  ..
+  Selection / mask feature sets
+}
+
+class MonoBehaviour <<external>> {
+  ..
+  Unity lifecycle base class
+  Start · Update · OnDestroy
+  OnRenderObject
+  GetComponent* · FindObjectOfType
+}
+
+class "UnityEngine types" as UE <<external>> {
+  Material · MeshRenderer
+  Shader · Graphics
+  ComputeBuffer · FilterMode
+  ..
+  ⚠ testability boundary
+}
+
+class "DataFeatures types" as DF <<sibling>> {
+  ColorMapEnum · ColorMapUtils
+  ColorMapDelegate · Feature
+  ..
+  5 files, Ce dependency
+}
+
+class "LineRenderer types" as LR <<sibling>> {
+  PolyLine · CuboidLine
+  ..
+  4 outline objects in VDR
+}
+
+class FitsReader <<sibling>> {
+  + {static} FitsOpenFileReadOnly()
+  + {static} FitsOpenFileReadWrite()
+  + {static} FitsCloseFile()
+  ..
+  P/Invoke native FITS DLL
+}
+
+class ToastNotification <<sibling>> {
+  + {static} ShowInfo()
+  + {static} ShowWarning()
+  + {static} ShowError()
+  + {static} ShowSuccess()
+}
+
+VolumeDataSetRenderer --|> MonoBehaviour                    : inherits
+VolumeDataSetRenderer --> VolumeDataSet                     : uses (field)\n_dataSet, _maskDataSet
+VolumeDataSetRenderer --> FeatureSetManager                 : uses (field + reflection)
+VolumeDataSetRenderer --> UE                                : uses\nMaterial × 2, MeshRenderer\nShader, Graphics, ComputeBuffer
+VolumeDataSetRenderer --> DF                                : uses\nColorMap fields + ColorMapDelegate event
+VolumeDataSetRenderer --> LR                                : uses\n4× CuboidLine, 1× PolyLine
+VolumeDataSetRenderer --> FitsReader                        : uses (static)\nSaveMask() FITS I/O
+VolumeDataSetRenderer --> ToastNotification                 : uses (static)
+
+' ══════════════════════════════════════════════════
+'  LEGEND
+' ══════════════════════════════════════════════════
+legend right
+  |= Style              |= Meaning                            |
+  | red dashed (bold)   | Mutual reference — ⚠ cycle         |
+  | solid arrow         | One-way dependency (Ce)             |
+  | blue background     | VolumeData namespace                |
+  | light blue          | VolumeData siblings / DataFeatures  |
+  | red background      | In dependency cycle with VDR        |
+  | yellow background   | Unity Engine (testability boundary) |
+  ──────────────────────────────────────────────
+  Full dependency graph → diagrams/vdsr-dependencies.puml
+  Target architecture  → diagrams/class-after.puml
+endlegend
+
+@enduml

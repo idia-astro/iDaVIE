@@ -1,0 +1,477 @@
+@startuml FeatureData
+' iDaVIE — FeatureData namespace class diagram
+' Generated from Assets/Scripts/FeatureData/
+
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+hide empty members
+
+' ═══════════════════════════════════════════════════════════════
+' VALUE TYPES  (DataFeatures namespace)
+' ═══════════════════════════════════════════════════════════════
+
+package "DataFeatures · Value Types" {
+
+    struct Vec3 {
+        + X : float
+        + Y : float
+        + Z : float
+        + {static} Zero : Vec3
+        + {static} One  : Vec3
+        + {static} Min(Vec3, Vec3) : Vec3
+        + {static} Max(Vec3, Vec3) : Vec3
+    }
+
+    struct FeatureColor {
+        + R : float
+        + G : float
+        + B : float
+        + A : float
+    }
+
+    enum FeatureSetType {
+        Unassigned
+        Mask
+        New
+        Imported
+        Selection
+    }
+}
+
+' ═══════════════════════════════════════════════════════════════
+' DOMAIN INTERFACES  (iDaVIE.Domain.Feature)
+' ═══════════════════════════════════════════════════════════════
+
+package "iDaVIE.Domain.Feature · Interfaces" {
+
+    interface IFeature {
+        + Index : int
+        + Id : int
+        + Name : string
+        + Flag : string
+        + RawData : string[]
+        + CubeColor : FeatureColor
+        + Visible : bool
+        + Selected : bool
+        + CornerMin : Vec3
+        + CornerMax : Vec3
+        + Center : Vec3
+        + Size : Vec3
+        + Volume : float
+        --
+        + SetBounds(Vec3, Vec3)
+        + ContainsPoint(Vec3) : bool
+        + IsOutsideVolume(Vec3, Vec3) : bool
+    }
+
+    interface IAstFrame
+
+    interface IFeatureRenderer {
+        + FeatureColor : FeatureColor
+        --
+        + AddFeature(Feature)
+        + RemoveFeature(Feature)
+        + ClearFeatures()
+        + SetFeatureAsDirty(int)
+    }
+
+    interface IFeaturePersistenceService {
+        + AppendFeatureToAscii(Feature, string)
+        + ExportToVoTable(FeatureSet) : string
+        + AsciiOutputExists(string) : bool
+    }
+
+    interface ICoordinateTransformer {
+        + Transform(IAstFrame, double x, double y, double z,\n  out double ra, out double dec, out double zPhys)
+        + Normalise(IAstFrame, double ra, double dec, double zPhys,\n  out double normRa, out double normDec, out double normZ)
+    }
+
+    interface IVoTableExporter {
+        + Export(FeatureSet, ICoordinateTransformer) : string
+    }
+
+    interface IFeatureDirtyNotifier {
+        + SetFeatureAsDirty(int)
+    }
+
+    class NullAstFrame {
+    }
+    NullAstFrame ..|> IAstFrame
+}
+
+' ═══════════════════════════════════════════════════════════════
+' DOMAIN ENTITIES  (DataFeatures namespace)
+' ═══════════════════════════════════════════════════════════════
+
+package "DataFeatures · Domain Entities" {
+
+    class Feature {
+        + Temporary : bool
+        + Comment : string
+        + Metric : float
+        + StatusChanged : bool
+        + FeatureSetParent : FeatureSet
+        --
+        + SetParent(FeatureSet)
+        + ClearParent()
+        + BoundsContains(Vec3) : bool
+        + BoundsVolume() : float
+    }
+    Feature ..|> IFeature
+
+    class FeatureSet {
+        + Name : string
+        + Index : int
+        + SetType : FeatureSetType
+        + Color : FeatureColor
+        + RawDataKeys : string[]
+        + RawDataTypes : string[]
+        + FileName : string
+        + AstFrame : IAstFrame
+        + ZAxisLabel : string
+        + Features : ReadOnlyCollection<Feature>
+        + event FeatureDirty : Action<int>
+        --
+        + Add(Feature)
+        + Remove(Feature) : bool
+        + Clear()
+        + ShowAll() / HideAll()
+        + ToggleVisibility()
+        + NotifyDirty(int)
+    }
+
+    class FeatureTable {
+        + Column : List<FeatureColumn>
+        + Columns : Dictionary<string, FeatureColumn>
+        + Rows : List<FeatureRow>
+        --
+        + {static} GetFeatureTableFromFile(string) : FeatureTable
+    }
+
+    class FeatureRow {
+        + ColumnData : object[]
+        + Owner : FeatureTable
+    }
+
+    class FeatureColumn {
+        + Name : string
+        + Index : int
+        + Unit : string
+    }
+
+    class FeatureMapping {
+        + Mapping : Mapping
+        --
+        + {static} GetMappingFromFile(string) : FeatureMapping
+        + SaveMappingToFile(string)
+    }
+
+    class Mapping {
+        + ID, Flag : MapEntry
+        + X, Y, Z : MapEntry
+        + RA, Dec, Vel, Freq, Redshift : MapEntry
+        + XMin, XMax, YMin, YMax, ZMin, ZMax : MapEntry
+        + ImportedColumns : string[]
+    }
+
+    class MapEntry {
+        + Source : string
+    }
+
+    class FeatureMapper <<static>> {
+    }
+}
+
+' ═══════════════════════════════════════════════════════════════
+' DOMAIN REGISTRY  (iDaVIE.Domain.Feature)
+' ═══════════════════════════════════════════════════════════════
+
+package "iDaVIE.Domain.Feature · Registry" {
+
+    class FeatureCatalog {
+        + {static} FeatureColors : FeatureColor[]
+        + {static} UnitisedKeys : string[]
+        + MaskSets : ReadOnlyCollection<FeatureSet>
+        + ImportedSets : ReadOnlyCollection<FeatureSet>
+        + UserSets : ReadOnlyCollection<FeatureSet>
+        + SelectionSet : FeatureSet
+        + SessionOutputFileName : string
+        + event SetRegistered : Action<FeatureSet>
+        + event SetRemoved : Action<FeatureSet>
+        --
+        + CreateMaskSet() : FeatureSet
+        + CreateImportedSet(string) : FeatureSet
+        + CreateUserSet() : FeatureSet
+        + EnsureSelectionSet() : FeatureSet
+        + Remove(FeatureSet) : bool
+        + AllSets() : IEnumerable<FeatureSet>
+        + AppendFeatureToSessionFile(Feature)
+        + ExportToVoTable(FeatureSet) : string
+    }
+}
+
+' ═══════════════════════════════════════════════════════════════
+' APPLICATION LAYER  (iDaVIE.Application.Feature)
+' ═══════════════════════════════════════════════════════════════
+
+package "iDaVIE.Application.Feature" {
+
+    interface IFeatureTableLoader {
+        + Load(string filePath, out string error) : FeatureTable
+    }
+
+    interface IFeatureStatisticsProvider {
+        + GetStatistics(Feature) : FeatureStatistics
+    }
+
+    class FeatureStatistics {
+        + VoxelCount : long
+        + TotalFlux : double
+        + PeakFlux : double
+        + CentroidX, CentroidY, CentroidZ : double
+        + W20, W50 : double
+        --
+        + CentroidInsideBounds(Feature) : bool
+        + FluxIsNonNegative() : bool
+        + W20GeqW50() : bool
+    }
+
+    class FeatureSetService {
+        + SelectedFeature : Feature
+        + LastImportError : string
+        + event FeatureSelectionChanged : Action<Feature, Feature>
+        + event MaskFeatureSelected : Action
+        + event FeatureSetImported : Action<FeatureSet>
+        --
+        + ImportFromFile(...) : FeatureSet
+        + CreateSelectionFeature(Vec3, Vec3) : Feature
+        + SelectAtPosition(Vec3) : bool
+        + Select(Feature)
+        + Deselect()
+        + AddSelectedFeatureToUserSet() : bool
+        + ExportToVoTable(FeatureSet) : string
+        + GetStatistics(Feature) : FeatureStatistics
+    }
+
+    interface IFeatureSystemPort {
+        + CreateSelectionFeature(SelectionRequest) : string
+        + UpdateFeatureRegion(RegionEditRequest)
+        + BeginPaintStroke(PaintStrokeRequest)
+        + ApplyPaintPoint(PaintPointRequest)
+        + EndPaintStroke(string)
+        + SelectFeature(string)
+    }
+
+    class FeatureSystemPort {
+    }
+    FeatureSystemPort ..|> IFeatureSystemPort
+
+    class SelectionRequest {
+        + BoundsMin : Vec3
+        + BoundsMax : Vec3
+    }
+
+    class RegionEditRequest {
+        + FeatureId : string
+        + NewBoundsMin : Vec3
+        + NewBoundsMax : Vec3
+    }
+
+    class PaintStrokeRequest {
+        + StrokeId : string
+    }
+
+    class PaintPointRequest {
+        + StrokeId : string
+        + Point : Vec3
+    }
+}
+
+' ═══════════════════════════════════════════════════════════════
+' INFRASTRUCTURE / PERSISTENCE
+' ═══════════════════════════════════════════════════════════════
+
+package "iDaVIE.Infrastructure.Persistence" {
+
+    class VoTableExportService {
+        + Export(FeatureSet, ICoordinateTransformer) : string
+    }
+    VoTableExportService ..|> IVoTableExporter
+}
+
+' ═══════════════════════════════════════════════════════════════
+' INFRASTRUCTURE / UNITY  (MonoBehaviours + null stubs)
+' ═══════════════════════════════════════════════════════════════
+
+package "iDaVIE.Infrastructure.Unity" {
+
+    class FeatureVisualiser <<MonoBehaviour>> {
+        + Catalog : FeatureCatalog
+        + Service : FeatureSetService
+        + event MaskFeatureSelected : Action
+        --
+        + SelectAtWorldPosition(Vector3) : bool
+        + SelectFeature(Feature)
+        + DeselectFeature()
+        + CreateSelectionFeature(Vector3, Vector3) : Feature
+        + ExportToVoTable(FeatureSet) : string
+        + ImportFeatureSetFromTable(...) : FeatureSetRenderer
+        + CreateRendererForSet(FeatureSet) : FeatureSetRenderer
+        + CreateSelectionRendererSet() : FeatureSetRenderer
+        + CreateMaskRendererSet() : FeatureSetRenderer
+    }
+
+    class NullFeaturePersistenceService <<stub>> { }
+    NullFeaturePersistenceService ..|> IFeaturePersistenceService
+
+    class NullFeatureRenderer <<stub>> { }
+    NullFeatureRenderer ..|> IFeatureRenderer
+
+    class NullFeatureTableLoader <<stub>> { }
+    NullFeatureTableLoader ..|> IFeatureTableLoader
+
+    class DataAnalysisStatisticsProvider <<adapter>> {
+        - _volumeRenderer : VolumeDataSetRenderer
+        --
+        + GetStatistics(Feature) : FeatureStatistics
+    }
+    DataAnalysisStatisticsProvider ..|> IFeatureStatisticsProvider
+}
+
+' ═══════════════════════════════════════════════════════════════
+' UI LAYER  (DataFeatures namespace — Unity UI MonoBehaviours)
+' ═══════════════════════════════════════════════════════════════
+
+package "DataFeatures · UI Layer" {
+
+    class FeatureSetRenderer <<MonoBehaviour>> {
+        + FeatureList : List<Feature>
+        + FeatureSetType : FeatureSetType
+        + RawDataKeys : string[]
+        + RawDataTypes : string[]
+        + FileName : string
+        + FeatureMenuScrollerDataSource : FeatureMenuDataSource
+        --
+        + Initialize(VolumeDataSetRenderer)
+        + AddFeature(Feature)
+        + RemoveFeature(Feature)
+        + ClearFeatures()
+        + SetFeatureAsDirty(int)
+        + ToggleVisibility()
+        + SetVisibilityOn() / SetVisibilityOff()
+        + SelectFeature(Feature)
+        + UpdateColor()
+        + SpawnFeaturesFromSourceStats(...)
+        + SpawnFeaturesFromTable(...)
+        + SaveAsVoTable(string)
+    }
+    FeatureSetRenderer ..|> IFeatureRenderer
+
+    class FeatureAnchor <<MonoBehaviour>> {
+        - _material : Material
+        --
+        + OnTriggerEnter(Collider)
+        + OnTriggerExit(Collider)
+    }
+
+    class FeatureMenuController <<MonoBehaviour>> {
+        + FeatureSetType : FeatureSetType
+        + CurrentFeatureSetIndex : int
+        --
+        + DisplayNextSet() / DisplayPreviousSet()
+        + DisplaySet(int)
+        + ChangeColor()
+        + ToggleListVisibility()
+        + ShowListInfo() / ShowInfo()
+        + UpdateInfo()
+        + SaveListAsVoTable()
+        + AddSelectedFeatureToNewSet()
+    }
+
+    class FeatureMenuDataSource <<MonoBehaviour>> {
+        + InitData()
+        + GetItemCount() : int
+        + SetCell(ICell, int)
+    }
+
+    class FeatureMenuCell <<MonoBehaviour>> {
+        + Feature : Feature
+        + CellIndex : int
+        --
+        + ConfigureCell(FeatureMenuListItemInfo, int)
+        + SetVisible()
+        + ToggleVisibility()
+        + ToggleFlagIndex()
+        + SetFlag(string)
+        + GoTo() / Teleport(Vector3, Vector3)
+        + Select()
+        + AddToNewList()
+        + RemoveFromList()
+    }
+
+    struct FeatureMenuListItemInfo {
+        + IdTextField : string
+        + SourceName : string
+        + FlagName : string
+        + ParentListIndex : int
+        + Feature : Feature
+    }
+}
+
+' ═══════════════════════════════════════════════════════════════
+' RELATIONSHIPS
+' ═══════════════════════════════════════════════════════════════
+
+' --- Domain entity relationships ---
+FeatureSet "1" o-- "0..*" Feature        : contains >
+Feature --> FeatureSet                   : parent >
+FeatureSet --> IAstFrame                 : uses >
+FeatureSet --> FeatureSetType            : typed by >
+FeatureSet --> FeatureColor              : color >
+Feature --> FeatureColor                 : color >
+Feature --> Vec3                         : bounds / center >
+
+' --- FeatureTable ---
+FeatureTable "1" *-- "0..*" FeatureColumn
+FeatureTable "1" *-- "0..*" FeatureRow
+FeatureRow --> FeatureTable : owner >
+
+' --- FeatureMapping ---
+FeatureMapping *-- Mapping
+Mapping "1" *-- "0..*" MapEntry
+
+' --- Catalog ---
+FeatureCatalog "1" *-- "0..*" FeatureSet : registry >
+FeatureCatalog --> IFeaturePersistenceService : delegates I/O >
+
+' --- Application service ---
+FeatureSetService --> FeatureCatalog             : uses >
+FeatureSetService --> IFeatureTableLoader        : uses >
+FeatureSetService --> IFeatureStatisticsProvider : uses >
+FeatureSetService ..> FeatureStatistics          : returns >
+
+' --- System port ---
+FeatureSystemPort --> FeatureSetService : delegates to >
+FeatureSystemPort --> FeatureCatalog    : queries >
+
+' --- VOTable export ---
+VoTableExportService --> ICoordinateTransformer : uses >
+VoTableExportService --> FeatureSet             : serialises >
+
+' --- Unity visualiser (composition root) ---
+FeatureVisualiser --> FeatureCatalog    : owns >
+FeatureVisualiser --> FeatureSetService : owns >
+FeatureVisualiser --> FeatureSetRenderer : creates >
+FeatureVisualiser --> FeatureAnchor      : manages >
+
+' --- Renderer / UI wiring ---
+FeatureSetRenderer --> FeatureMenuDataSource  : data source >
+FeatureMenuController --> FeatureVisualiser   : uses >
+FeatureMenuController --> FeatureSetRenderer  : manages list of >
+FeatureMenuDataSource --> FeatureSetRenderer  : observes >
+FeatureMenuCell --> Feature                   : displays >
+FeatureMenuCell --> FeatureVisualiser         : calls >
+FeatureMenuListItemInfo --> Feature           : references >
+
+@enduml

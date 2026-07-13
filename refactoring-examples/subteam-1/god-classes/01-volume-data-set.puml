@@ -1,0 +1,86 @@
+@startuml VolumeDataSet
+title VolumeDataSet — model + I/O + math + edit-history god class\n(1920 LOC, Assets/Scripts/VolumeData/VolumeDataSet.cs)
+skinparam classAttributeIconSize 0
+hide empty members
+
+class VolumeDataSet <<MonoBehaviour-free model>> #lightyellow {
+  .. data buffers ..
+  +FitsData : IntPtr
+  +FitsHeader : IntPtr
+  +DataCube : Texture3D
+  +RegionCube : Texture3D
+  +ExistingMaskBuffer : IntPtr
+  .. FITS / HDU ..
+  +FileName, SelectedHdu
+  +LoadDataFromFitsFile()
+  +LoadMaskFromFitsFile()
+  .. WCS / AST ..
+  +AstFrameSet : IntPtr
+  +AstAltSpecSet : IntPtr
+  +HasFitsRestFrequency, FitsRestFrequency
+  +VelocityDirection
+  .. subcube / region ..
+  +subsetBounds, trueSize
+  +RegionOffset
+  +CropDataSet()
+  .. histogram ..
+  +FullHistogram, Histogram
+  +MaxValue, MinValue, MeanValue, StanDev
+  +CalculateHistogram()
+  .. mask editing ..
+  +AddedMaskEntryCount
+  +PaintMaskVoxel()
+  +ConsolidateDownloadedMask()
+  +SaveMask()
+  .. brush undo/redo ..
+  -BrushStrokeTransaction
+  +UndoBrushStroke()
+  +RedoBrushStroke()
+}
+
+class VoxelEntry <<struct>>
+class BrushStrokeTransaction <<struct>>
+VolumeDataSet +-- VoxelEntry
+VolumeDataSet +-- BrushStrokeTransaction
+
+' Native plug-in surface (kernel boundary — flag for ABI work)
+class FitsReader <<P/Invoke>> #palegreen
+class AstTool <<P/Invoke>> #palegreen
+class DataAnalysis <<P/Invoke>> #palegreen
+VolumeDataSet ..> FitsReader   : reads/writes FITS + mask
+VolumeDataSet ..> AstTool      : WCS frame ops
+VolumeDataSet ..> DataAnalysis : histogram, downsample
+
+' Unity / framework boundary (ACL target)
+class Texture3D <<UnityEngine>> #mistyrose
+class GameObject <<UnityEngine>> #mistyrose
+VolumeDataSet ..> Texture3D  : owns 3D textures
+VolumeDataSet ..> GameObject
+
+' Inbound clients (fan-in)
+class VolumeDataSetRenderer
+class DesktopPaintController
+class CanvassDesktop
+class VolumeInputController
+class MomentMapRenderer
+class HistogramMenuController
+class MomentMapMenuController
+class SpectralProfileMenuController
+class SpectralProfileHelper
+class FeatureMenuCell
+class FeatureMenuController
+class VideoCameraController
+
+VolumeDataSetRenderer         ..> VolumeDataSet
+DesktopPaintController        ..> VolumeDataSet
+CanvassDesktop                ..> VolumeDataSet
+VolumeInputController         ..> VolumeDataSet
+MomentMapRenderer             ..> VolumeDataSet
+HistogramMenuController       ..> VolumeDataSet
+MomentMapMenuController       ..> VolumeDataSet
+SpectralProfileMenuController ..> VolumeDataSet
+SpectralProfileHelper         ..> VolumeDataSet
+FeatureMenuCell               ..> VolumeDataSet
+FeatureMenuController         ..> VolumeDataSet
+VideoCameraController         ..> VolumeDataSet
+@enduml

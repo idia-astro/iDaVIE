@@ -147,6 +147,21 @@ namespace VolumeData
         public MomentConfig momentMaps = new MomentConfig();
 
         public int numberOfLogsToKeep = 5;
+
+        // ── Persistence / autosave settings ──────────────────────────────────
+        /// <summary>How often (in seconds) the autosave service captures a snapshot.</summary>
+        public int autosaveIntervalSeconds = 20;
+
+        /// <summary>Maximum number of snapshots retained in the FIFO ring buffer.</summary>
+        public int snapshotCapacity = 10;
+
+        /// <summary>
+        /// Directory where workspace snapshots are stored.
+        /// Empty string = default: %APPDATA%/iDaVIE/workspaces/&lt;workspace-name&gt;/snapshots/
+        /// </summary>
+        public string workspaceSaveDirectory = "";
+        // ─────────────────────────────────────────────────────────────────────
+
         private static Config _instance;
 
         private static string DefaultPath

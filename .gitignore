@@ -468,6 +468,8 @@ Outputs/
 
 # Config
 config.json
+CLAUDE.md
+.claude/
 
 # The following is suggested from https://github.com/github/gitignore/blob/main/Unity.gitignore
 #
@@ -532,6 +534,8 @@ sysinfo.txt
 *.unitypackage
 *.app
 
+#MACOS
+*.dSYM
 # Crashlytics generated file
 crashlytics-build.properties
 
@@ -541,18 +545,8 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
-Footer
-© 2022 GitHub, Inc.
-Footer navigation
-Terms
-Privacy
-Security
-Status
-Docs
-Contact GitHub
-Pricing
-API
-Training
-Blog
-About
 
+.html
+
+# Allow hand-authored .csproj files in refactoring examples (not Unity-generated)
+!refactoring-examples/**/*.csproj

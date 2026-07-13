@@ -19,6 +19,7 @@
  * components can be found in the DISCLAIMER and NOTICE files included with this project.
  *
  */
+using iDaVIE.Infrastructure.Unity;
 using UnityEngine;
 
 namespace DataFeatures
@@ -41,10 +42,10 @@ namespace DataFeatures
         {
             if (other.CompareTag("cursor"))
             {
-                var featureSetManager = GetComponentInParent<FeatureSetManager>();
+                var featureVisualiser = GetComponentInParent<FeatureVisualiser>();
                 var inputController = FindObjectOfType<VolumeInputController>();
                 _material.SetColor(EmissionProperty, HoverColor);
-                inputController?.SetHoveredFeature(featureSetManager, this);
+                inputController?.SetHoveredFeature(featureVisualiser, this);
             }
         }
 
@@ -52,11 +53,11 @@ namespace DataFeatures
         {
             if (other.CompareTag("cursor"))
             {
-                var featureSetManager = GetComponentInParent<FeatureSetManager>();
+                var featureVisualiser = GetComponentInParent<FeatureVisualiser>();
                 var inputController = FindObjectOfType<VolumeInputController>();
                 _material.SetColor(EmissionProperty, DefaultColor);
-                inputController?.ClearHoveredFeature(featureSetManager, this);
-            } 
+                inputController?.ClearHoveredFeature(featureVisualiser, this);
+            }
         }
     }
 }

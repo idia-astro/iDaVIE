@@ -1,0 +1,351 @@
+@startuml feature-system-before
+title Feature System — BEFORE Refactoring\n(iDaVIE — DataFeatures namespace)
+
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor White
+  BorderColor #555
+  ArrowColor #333
+}
+
+' ── Enumerations ───────────────────────────────────────────────────────────────
+
+enum FeatureSetType {
+  Unassigned
+  Mask
+  New
+  Imported
+  Selection
+}
+
+enum CoordTypes {
+  cartesian
+  freqz
+  velz
+  redz
+}
+
+' ── Core Domain Class ──────────────────────────────────────────────────────────
+
+class Feature {
+  + Temporary : bool
+  + Comment : string
+  + Metric : float
+  + Index : int
+  + Id : int
+  + Name : string
+  + Flag : string
+  + RawData : string[]
+  + StatusChanged : bool
+  + FeatureSetParent : FeatureSetRenderer
+  - _selected : bool
+  - _color : Color
+  - _active : bool
+  - _unityBounds : Bounds
+  - _position : Vector3
+  - _corners : Vector3[2]
+  ..
+  + Feature(cubeMin, cubeMax, cubeColor, name, flag, index, id, rawData, startVisible)
+  + ShowAxes(show : bool) : void
+  + SetBounds(cornerMin : Vector3, cornerMax : Vector3) : void
+  + SetVoxel(voxel : Vector3Int) : void
+  + GetMinBounds() : Vector3
+  + GetMaxBounds() : Vector3
+  - UpdateCube() : void
+  + {static} SetCubeColors(cube, baseColor, colorAxes) : void
+  ..
+  + UnityBounds : Bounds <<get>>
+  + CornerMin : Vector3 <<get>>
+  + CornerMax : Vector3 <<get>>
+  + Center : Vector3 <<get/set>>
+  + Size : Vector3 <<get/set>>
+  + CubeColor : Color <<get/set>>
+  + Visible : bool <<get/set>>
+  + Selected : bool <<get/set>>
+}
+
+note right of Feature
+  <b>God-class smell:</b> mixes domain data,
+  spatial geometry, rendering state, and
+  UI selection state in one class.
+  Directly depends on UnityEngine.Vector3,
+  Bounds, Color (Unity types).
+end note
+
+
+' ── FeatureSetManager (MonoBehaviour) ─────────────────────────────────────────
+
+class FeatureSetManager <<MonoBehaviour>> {
+  + {static} FeatureColors : Color[]
+  + FeatureSetRendererPrefab : FeatureSetRenderer
+  + FeatureAnchorPrefab : GameObject
+  + FeatureFileToLoad : string
+  + FeatureMappingFile : string
+  + VolumeRenderer : VolumeDataSetRenderer
+  + OutputFileName : string
+  + NeedToRespawnMenuList : bool
+  + NeedToUpdateInfo : bool
+  + {static} UnitisedKeys : string[]
+  - _timeStamp : string
+  - _streamWriter : StreamWriter
+  - _selectedFeature : Feature
+  - _anchorColliders : GameObject[8]
+  ..
+  + SelectionFeatureSet : FeatureSetRenderer <<get>>
+  + MaskFeatureSetList : List<FeatureSetRenderer> <<get>>
+  + NewFeatureSetList : List<FeatureSetRenderer> <<get>>
+  + ImportedFeatureSetList : List<FeatureSetRenderer> <<get>>
+  + SelectedFeature : Feature <<get/set>>
+  ..
+  + event MaskFeatureSelected : Action
+  ..
+  - Awake() : void
+  + Update() : void
+  - UpdateAnchors() : void
+  - HideAnchors() : void
+  + CreateEmptyFeatureSet(name, tag, index, color, type) : FeatureSetRenderer
+  + CreateSelectionFeatureSet() : FeatureSetRenderer
+  + CreateMaskFeatureSet() : FeatureSetRenderer
+  - InitializeNewList() : void
+  + ImportFeatureSetFromTable(mapping, table, name, columnsMask, excludeExternal) : FeatureSetRenderer
+  + SelectFeature(cursorWorldSpace : Vector3) : bool
+  + SelectFeature(feature : Feature) : bool
+  - FindFeatureAtCursor(cursor, featureSetList) : Feature
+  + DeselectFeature() : void
+  + SelectNullFeature() : void
+  + CreateSelectionFeature(boundsMin, boundsMax) : bool
+  + AddFeatureToNewSet(feature, needMenuRespawn) : void
+  + AddSelectedFeatureToNewSet() : bool
+  + AddToList(feature, metric, comment) : bool
+  + AppendFeatureToFile(feature : Feature) : bool
+  + ExportFeatureSet(setToExport, FileName) : void
+}
+
+note right of FeatureSetManager
+  <b>Mixed concerns:</b> feature CRUD,
+  selection logic, anchor/UI management,
+  file I/O, and scene instantiation
+  all in one MonoBehaviour.
+  Deep Unity coupling (GameObject,
+  MonoBehaviour, Instantiate).
+end note
+
+' ── FeatureSetRenderer (MonoBehaviour) ────────────────────────────────────────
+
+class FeatureSetRenderer <<MonoBehaviour>> {
+  + FeatureSetType : FeatureSetType
+  + RawDataKeys : string[]
+  + RawDataTypes : string[]
+  + FileName : string
+  + Flags : string[]
+  + Index : int
+  + FeatureColor : Color
+  + featureSetVisible : bool
+  + LineRenderingMaterial : Material
+  + FeatureMenuScrollerDataSource : FeatureMenuDataSource
+  - {static} VerticesPerFeature : int = 24
+  - {static} BytesPerVertex : int = 32
+  - {static} DefaultFeatureCapacity : int = 16384
+  - _computeBufferVertices : ComputeBuffer
+  - _vertices : FeatureVertex[]
+  - _materialInstance : Material
+  - _dirtyFeatures : List<int>
+  ..
+  + ZType : CoordTypes <<get>>
+  + FeatureList : List<Feature> <<get>>
+  + VolumeRenderer : VolumeDataSetRenderer <<get>>
+  + FeatureManager : FeatureSetManager <<get>>
+  + FeatureNames : string[] <<get>>
+  + FeaturePositions : Vector3[] <<get>>
+  + BoxMinPositions : Vector3[] <<get>>
+  + BoxMaxPositions : Vector3[] <<get>>
+  ..
+  - Awake() : void
+  + Initialize() : void
+  + Update() : void
+  + AddFeature(featureToAdd : Feature) : void
+  + RemoveFeature(featureToRemove : Feature) : void
+  + ClearFeatures() : void
+  + ToggleVisibility() : void
+  + SetFeatureAsDirty(index : int = -1) : void
+  + SetVisibilityOn() : void
+  + SetVisibilityOff() : void
+  + SelectFeature(feature : Feature) : void
+  + UpdateColor() : void
+  + SpawnFeaturesFromSourceStats(sourceStatsDict) : void
+  + SpawnFeaturesFromTable(mapping, table, columnsMask, excludeExternal) : void
+  + {static} FeatureIsWithinVolume(feature, volume) : bool
+  - OnRenderObject() : void
+  - OnDestroy() : void
+  - {static} MakeAxisAlignedCube(position, size, color, visibility, offset, list) : void
+  + SaveAsVoTable(filePath : string) : void
+}
+
+note right of FeatureSetRenderer
+  <b>Mixed concerns:</b> combines GPU rendering
+  (ComputeBuffer, vertex pulling), feature
+  list management, VOTable import/export,
+  WCS coordinate transforms, and UI data
+  source — all in one MonoBehaviour.
+end note
+
+' ── FeatureMenuController (MonoBehaviour) ─────────────────────────────────────
+
+class FeatureMenuController <<MonoBehaviour>> {
+  + volumeDatasetRendererObj : GameObject
+  + RecyclableScrollViewPrefab : GameObject
+  + InfoWindow : GameObject
+  + RecyclableScrollView : RecyclableScrollRect
+  + ListTitle : TMP_Text
+  + ListColorDisplay : Image
+  + SaveConfirmation : TMP_Text
+  + FeatureSetType : FeatureSetType
+  - _activeDataSet : VolumeDataSetRenderer
+  - _dataSets : VolumeDataSetRenderer[]
+  - _featureSetManager : FeatureSetManager
+  - _featureSetRendererList : List<FeatureSetRenderer>
+  - _isListInitialized : bool
+  + CurrentFeatureSetIndex : int <<get>>
+  ..
+  - OnEnable() : void
+  - OnDisable() : void
+  + Update() : void
+  + DisplayNextSet() : void
+  + DisplayPreviousSet() : void
+  + DisplaySet(setIndex : int) : void
+  + RefreshListColor() : void
+  + ChangeColor() : void
+}
+
+' ── FeatureAnchor (MonoBehaviour) ─────────────────────────────────────────────
+
+class FeatureAnchor <<MonoBehaviour>> {
+  - _material : Material
+  - {static} DefaultColor : Color
+  - {static} HoverColor : Color
+  - {static} EmissionProperty : int
+  ..
+  - Start() : void
+  - OnTriggerEnter(other : Collider) : void
+  - OnTriggerExit(other : Collider) : void
+}
+
+' ── FeatureTable / FeatureMapper ──────────────────────────────────────────────
+
+class FeatureTable {
+  + Column : List<FeatureColumn>
+  + Columns : Dictionary<string, FeatureColumn>
+  + Rows : List<FeatureRow>
+  ..
+  + {static} GetFeatureTableFromFile(fileName : string) : FeatureTable
+  - {static} GetFeatureTableFromVoTable(voTable) : FeatureTable
+  - {static} GetFeatureTableFromFits(fitsPtr) : FeatureTable
+}
+
+class FeatureColumn {
+  + Name : string
+  + Index : int
+  + Unit : string
+}
+
+class FeatureRow {
+  + ColumnData : object[]
+}
+
+class FeatureMapping {
+  + Mapping : Mapping
+  ..
+  + {static} GetMappingFromFile(fileName : string) : FeatureMapping
+  + SaveMappingToFile(fileName : string) : void
+}
+
+class Mapping {
+  + ID : MapEntry
+  + X : MapEntry
+  + Y : MapEntry
+  + Z : MapEntry
+  + RA : MapEntry
+  + Dec : MapEntry
+  + Vel : MapEntry
+  + Freq : MapEntry
+  + Redshift : MapEntry
+  + XMin : MapEntry
+  + XMax : MapEntry
+  + YMin : MapEntry
+  + YMax : MapEntry
+  + ZMin : MapEntry
+  + ZMax : MapEntry
+  + Flag : MapEntry
+  + ImportedColumns : string[]
+}
+
+class MapEntry {
+  + Source : string
+}
+
+' ── VoTable (external, in VoTableReader namespace) ────────────────────────────
+
+class VoTable <<external>> {
+  + Columns : Dictionary<string, VoColumn>
+  + Column : List<VoColumn>
+  + Rows : List<VoRow>
+  + LoadFilename : string
+  + error : bool
+  + errorText : string
+  ..
+  + {static} GetVOTableFromFile(fileName) : VoTable
+  + LoadFromXML(xml : XmlDocument) : void
+  + Save(filename : string) : bool
+}
+
+' ── FeatureMenuDataSource (referenced, not detailed) ──────────────────────────
+
+class FeatureMenuDataSource <<MonoBehaviour>> {
+  + InitData() : void
+}
+
+' ── External Unity / Volume dependencies (stubs) ──────────────────────────────
+
+class VolumeDataSetRenderer <<external/Unity>> {
+  + Data : VolumeDataSet
+  + AstFrame : IntPtr
+  + StdOfRest : string
+  + GetCubeDimensions() : Vector3
+  + GetDataSet() : VolumeDataSet
+}
+
+' ── Relationships ──────────────────────────────────────────────────────────────
+
+FeatureSetManager "1" o-- "0..1" Feature : _selectedFeature
+FeatureSetManager "1" *-- "0..1" FeatureSetRenderer : SelectionFeatureSet
+FeatureSetManager "1" o-- "0..*" FeatureSetRenderer : MaskFeatureSetList
+FeatureSetManager "1" o-- "0..*" FeatureSetRenderer : NewFeatureSetList
+FeatureSetManager "1" o-- "0..*" FeatureSetRenderer : ImportedFeatureSetList
+FeatureSetManager --> VolumeDataSetRenderer : uses
+FeatureSetManager "1" *-- "8" FeatureAnchor : _anchorColliders
+
+FeatureSetRenderer "1" o-- "0..*" Feature : FeatureList
+FeatureSetRenderer --> FeatureSetManager : FeatureManager
+FeatureSetRenderer --> VolumeDataSetRenderer : VolumeRenderer
+FeatureSetRenderer --> FeatureMenuDataSource : FeatureMenuScrollerDataSource
+FeatureSetRenderer ..> FeatureTable : <<uses in SpawnFeaturesFromTable>>
+FeatureSetRenderer ..> VoTable : <<calls SaveAsVoTable>>
+
+FeatureMenuController --> FeatureSetManager : _featureSetManager
+FeatureMenuController "1" o-- "0..*" FeatureSetRenderer : _featureSetRendererList
+
+Feature --> FeatureSetRenderer : FeatureSetParent
+
+FeatureTable "1" *-- "0..*" FeatureColumn : Column
+FeatureTable "1" *-- "0..*" FeatureRow : Rows
+FeatureTable ..> VoTable : <<created from>>
+
+FeatureMapping *-- Mapping
+Mapping *-- MapEntry
+
+FeatureSetRenderer ..> FeatureSetType
+FeatureSetManager ..> FeatureSetType
+FeatureMenuController ..> FeatureSetType
+FeatureSetRenderer ..> CoordTypes
+
+@enduml

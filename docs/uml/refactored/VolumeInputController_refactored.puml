@@ -1,0 +1,349 @@
+@startuml VolumeInputController_refactored
+title VolumeInputController — ISO/IEC 25010:2023 Refactored Design
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    BorderColor #444444
+    ArrowColor #444444
+}
+skinparam interface {
+    BackgroundColor #E8F4E8
+    BorderColor #2E7D32
+}
+skinparam package {
+    BackgroundColor #FAFAFA
+    BorderColor #999999
+}
+hide empty members
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Domain events — decouple SteamVR from domain logic
+' (ISO 25010: Modularity — hardware input is isolated behind events)
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Domain Events" #EEF4FF {
+
+    class GripEvent <<value>> {
+        + Source : InputSource
+        + IsGripped : bool
+    }
+
+    class PinchEvent <<value>> {
+        + Source : InputSource
+        + IsPinched : bool
+    }
+
+    class MenuButtonEvent <<value>> {
+        + Source : InputSource
+        + Direction : MenuDirection
+    }
+
+    enum InputSource {
+        LeftHand
+        RightHand
+    }
+
+    enum MenuDirection {
+        Up
+        Down
+        Left
+        Right
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Enumerations
+' ──────────────────────────────────────────────────────────────────────────────
+
+enum InteractionState {
+    IdleSelecting
+    IdlePainting
+    EditingSourceId
+    Creating
+    Editing
+    Painting
+    VideoCamPosRecording
+}
+
+enum InteractionEvent {
+    InteractionStarted
+    InteractionEnded
+    PaintModeEnabled
+    PaintModeDisabled
+    StartEditSource
+    EndEditSource
+    CancelEditSource
+    StartVideoRecording
+    EndVideoRecording
+}
+
+enum LocomotionState {
+    Idle
+    Moving
+    Scaling
+    EditingThresholdMin
+    EditingThresholdMax
+    EditingZAxis
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Interfaces (ISO 25010: Reusability, Modifiability)
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Interfaces" #E8F4E8 {
+
+    interface IVRInputBridge {
+        + PrimaryHand : InputSource
+        + <<event>> GripChanged : Action<GripEvent>
+        + <<event>> PinchChanged : Action<PinchEvent>
+        + <<event>> QuickMenuChanged : Action<bool>
+        + <<event>> MenuButtonPressed : Action<MenuButtonEvent>
+        + <<event>> MenuButtonReleased : Action<MenuButtonEvent>
+        + <<event>> PushToTalkPressed : Action
+        + <<event>> PushToTalkReleased : Action
+        + Vibrate(source : InputSource, duration : float, frequency : float, amplitude : float) : void
+        + GetHandTransform(source : InputSource) : Transform
+        + GetPointerOffset(source : InputSource) : Vector3
+    }
+
+    interface ILocomotionController {
+        + State : LocomotionState
+        + InPlaceScaling : bool
+        + ScalingEnabled : bool
+        + StartThresholdEditing(editingMax : bool) : void
+        + EndEditing() : void
+        + StartZAxisEditing() : void
+        + Teleport(boundsMin : Vector3, boundsMax : Vector3) : void
+        + TeleportToPosition(pos : Vector3, rotEulerAngles : Vector3) : void
+        + HandleGrip(e : GripEvent) : void
+        + HandlePinch(e : PinchEvent) : void
+        + Update(activeDataSet : VolumeDataSetRenderer) : void
+    }
+
+    interface IBrushController {
+        + BrushSize : int
+        + SourceId : short
+        + IsAdditive : bool
+        + IncreaseBrushSize() : void
+        + DecreaseBrushSize() : void
+        + ResetBrushSize() : void
+        + SetAdditive() : void
+        + SetSubtractive() : void
+        + Undo() : void
+        + Redo() : void
+        + UpdateCursor(activeDataSet : VolumeDataSetRenderer) : void
+    }
+
+    interface IInteractionController {
+        + State : InteractionState
+        + ShowCursorInfo : bool
+        + HasHoverAnchor : bool
+        + HasEditingAnchor : bool
+        + SetHoveredFeature(manager : FeatureSetManager, anchor : FeatureAnchor) : void
+        + ClearHoveredFeature(manager : FeatureSetManager, anchor : FeatureAnchor) : void
+        + AddNewSource() : void
+        + StartEditSourceId() : void
+        + UpdateSourceId() : void
+        + AddLocation(source : InputSource) : void
+        + ToggleCursorInfo() : void
+        + HandleMenuButton(e : MenuButtonEvent) : void
+        + Update(activeDataSet : VolumeDataSetRenderer) : void
+    }
+
+    interface IVignetteFeedback {
+        + FadeSpeed : float
+        + SetTarget(intensity : float) : void
+        + Update(deltaTime : float, activeDataSet : VolumeDataSetRenderer) : void
+    }
+
+    interface IVideoRecordingController {
+        + IsRecording : bool
+        + StartRecording() : void
+        + StopRecording() : void
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' SteamVR adapter — ALL SteamVR code lives here
+' (ISO 25010: Modularity — hardware SDK isolated in one class)
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "SteamVR Adapter" #FFE8E8 {
+
+    class SteamVRInputBridge <<service>> {
+        - _player : Player
+        - _hands : VRHand[]
+        - _handTransforms : Transform[]
+        - _grabGripAction : SteamVR_Action_Boolean
+        - _grabPinchAction : SteamVR_Action_Boolean
+        - _quickMenuAction : SteamVR_Action_Boolean
+        - _vrFamily : VRFamily
+        - {static} _pointerOffsetsLeft : Dictionary<VRFamily, Vector3>
+        - {static} _pointerOffsetsRight : Dictionary<VRFamily, Vector3>
+        + PrimaryHand : InputSource
+        + <<event>> GripChanged : Action<GripEvent>
+        + <<event>> PinchChanged : Action<PinchEvent>
+        + <<event>> QuickMenuChanged : Action<bool>
+        + <<event>> MenuButtonPressed : Action<MenuButtonEvent>
+        + <<event>> MenuButtonReleased : Action<MenuButtonEvent>
+        + <<event>> PushToTalkPressed : Action
+        + <<event>> PushToTalkReleased : Action
+        + Bind() : void
+        + Unbind() : void
+        + Vibrate(source : InputSource, duration : float, frequency : float, amplitude : float) : void
+        + GetHandTransform(source : InputSource) : Transform
+        + GetPointerOffset(source : InputSource) : Vector3
+        - {static} DetermineVRFamily() : VRFamily
+        - OnGripChanged(action : SteamVR_Action_Boolean, source : SteamVR_Input_Sources, state : bool) : void
+        - OnPinchChanged(action : SteamVR_Action_Boolean, source : SteamVR_Input_Sources, state : bool) : void
+        - OnQuickMenuChanged(action : SteamVR_Action_Boolean, source : SteamVR_Input_Sources, state : bool) : void
+        - OnMenuButtonChanged(action : SteamVR_Action_Boolean, source : SteamVR_Input_Sources, state : bool) : void
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Domain services (ISO 25010: Modularity, Testability)
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Domain Services" #FFF8E8 {
+
+    class LocomotionService <<service>> {
+        - _state : LocomotionState
+        - _startDataSetScales : float[]
+        - _currentGripPositions : Vector3[]
+        - _startGripSeparation : Vector3
+        - _rotationYawCumulative : float
+        - _rotationRollCumulative : float
+        + InPlaceScaling : bool
+        + ScalingEnabled : bool
+        + LocomotionService(inputBridge : IVRInputBridge)
+        + State : LocomotionState
+        + StartThresholdEditing(editingMax : bool) : void
+        + EndEditing() : void
+        + StartZAxisEditing() : void
+        + Teleport(boundsMin : Vector3, boundsMax : Vector3) : void
+        + TeleportToPosition(pos : Vector3, rotEulerAngles : Vector3) : void
+        + HandleGrip(e : GripEvent) : void
+        + HandlePinch(e : PinchEvent) : void
+        + Update(activeDataSet : VolumeDataSetRenderer) : void
+        - UpdateMoving() : void
+        - UpdateScaling() : void
+        - UpdateEditingThreshold(editingMax : bool) : void
+        - UpdateEditingZAxis() : void
+    }
+
+    class VignetteFeedbackService <<service>> {
+        - _currentIntensity : float
+        - _targetIntensity : float
+        + FadeSpeed : float
+        + SetTarget(intensity : float) : void
+        + Update(deltaTime : float, activeDataSet : VolumeDataSetRenderer) : void
+    }
+
+    class BrushControllerService <<service>> {
+        - _brushSize : int
+        - _isAdditive : bool
+        + SourceId : short
+        + BrushSize : int
+        + IsAdditive : bool
+        + IncreaseBrushSize() : void
+        + DecreaseBrushSize() : void
+        + ResetBrushSize() : void
+        + SetAdditive() : void
+        + SetSubtractive() : void
+        + Undo() : void
+        + Redo() : void
+        + UpdateCursor(activeDataSet : VolumeDataSetRenderer) : void
+    }
+
+    class InteractionStateMachineService <<service>> {
+        - _stateMachine : StateMachine<InteractionState, InteractionEvent>
+        - _hoveredFeature : Feature
+        - _editingFeature : Feature
+        - _selectionStopwatch : Stopwatch
+        + State : InteractionState
+        + ShowCursorInfo : bool
+        + HasHoverAnchor : bool
+        + HasEditingAnchor : bool
+        + InteractionStateMachineService(inputBridge : IVRInputBridge, brushController : IBrushController)
+        + SetHoveredFeature(manager : FeatureSetManager, anchor : FeatureAnchor) : void
+        + ClearHoveredFeature(manager : FeatureSetManager, anchor : FeatureAnchor) : void
+        + AddNewSource() : void
+        + StartEditSourceId() : void
+        + UpdateSourceId() : void
+        + AddLocation(source : InputSource) : void
+        + ToggleCursorInfo() : void
+        + HandleMenuButton(e : MenuButtonEvent) : void
+        + Update(activeDataSet : VolumeDataSetRenderer) : void
+        - BuildStateMachine() : void
+        - FormatCursorHUD(dataSet : VolumeDataSetRenderer) : string
+    }
+
+    class VideoRecordingService <<service>> {
+        - _recorder : VideoPosRecorder
+        - _debounceTimer : float
+        + IsRecording : bool
+        + StartRecording() : void
+        + StopRecording() : void
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Orchestrator — MonoBehaviour only wires Unity lifecycle to services
+' (ISO 25010: Modularity — zero game logic in the MonoBehaviour)
+' ──────────────────────────────────────────────────────────────────────────────
+
+class VolumeInputController <<MonoBehaviour>> {
+    - _inputBridge : IVRInputBridge
+    - _locomotion : ILocomotionController
+    - _vignette : IVignetteFeedback
+    - _brush : IBrushController
+    - _interaction : IInteractionController
+    - _videoRecording : IVideoRecordingController
+    .. Dataset references ..
+    + _volumeDataSets : VolumeDataSetRenderer[]
+    + volumeDatasetManager : GameObject
+    .. Unity lifecycle ..
+    - Awake() : void
+    - OnEnable() : void
+    - OnDisable() : void
+    - Start() : void
+    - Update() : void
+    - OnDestroy() : void
+    .. General ..
+    + UpdateDataSets() : void
+    + TakePicture() : void
+    + SaveSubCube() : void
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Realizations and dependencies
+' ──────────────────────────────────────────────────────────────────────────────
+
+SteamVRInputBridge             ..|> IVRInputBridge
+LocomotionService              ..|> ILocomotionController
+VignetteFeedbackService        ..|> IVignetteFeedback
+BrushControllerService         ..|> IBrushController
+InteractionStateMachineService ..|> IInteractionController
+VideoRecordingService          ..|> IVideoRecordingController
+
+VolumeInputController o-- IVRInputBridge
+VolumeInputController o-- ILocomotionController
+VolumeInputController o-- IVignetteFeedback
+VolumeInputController o-- IBrushController
+VolumeInputController o-- IInteractionController
+VolumeInputController o-- IVideoRecordingController
+
+LocomotionService              --> IVRInputBridge : subscribes to
+InteractionStateMachineService --> IVRInputBridge : subscribes to
+InteractionStateMachineService --> IBrushController : uses
+
+LocomotionService              --> LocomotionState : uses
+InteractionStateMachineService --> InteractionState : uses
+InteractionStateMachineService --> InteractionEvent : uses
+
+@enduml

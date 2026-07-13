@@ -1,0 +1,228 @@
+@startuml file-tab-before
+title File Tab — BEFORE refactoring\n(current state in Assets/Scripts/UI/CanvassDesktop.cs)
+
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor #FFFDE7
+    BorderColor #F57F17
+    ArrowColor #5D4037
+}
+skinparam note {
+    BackgroundColor #FFF9C4
+    BorderColor #F57F17
+}
+
+' ─────────────────────────────────────────
+' Unity runtime boundary (external, not owned)
+' ─────────────────────────────────────────
+package "Unity runtime — not owned" <<Rectangle>> #EDE7F6 {
+
+    class MonoBehaviour <<Unity>> {
+        +StartCoroutine(routine: IEnumerator)
+        +StopCoroutine(routine: Coroutine)
+        +FindObjectOfType<T>(): T
+    }
+
+    class GameObject <<Unity>> {
+        +transform: Transform
+        +SetActive(value: bool)
+        +GetComponent<T>(): T
+        +GetComponentsInChildren<T>(): T[]
+    }
+
+    class Transform <<Unity>> {
+        +Find(path: string): Transform
+        +GetComponent<T>(): T
+    }
+
+}
+
+note top of Transform
+  <b>Code smell:</b> CanvassDesktop navigates
+  scene hierarchy via long Find("A/B/C/...")
+  chains — fragile and untestable.
+end note
+
+' ─────────────────────────────────────────
+' Native plug-in wrapper (P/Invoke boundary)
+' ─────────────────────────────────────────
+class FitsReader <<static, P/Invoke>> #FCE4EC {
+    +{static} FitsOpenFile(fptr, filename, status, readOnly): int
+    +{static} FitsCloseFile(fptr, status): int
+    +{static} FitsGetHduCount(fptr, hdunum, status): int
+    +{static} FitsMovabsHdu(fptr, hdunum, hdutype, status): int
+    +{static} FitsReadKey(fptr, datatype, keyname, value, comm, status): int
+    +{static} FitsGetImageDims(fptr, dims, status): int
+    +{static} FitsGetImageSize(fptr, dims, naxes, status): int
+    +{static} FitsErrorMessage(status): string
+}
+
+note right of FitsReader
+  All public methods are [DllImport("idavie_native")]
+  — direct P/Invoke calls to the C shared library
+  made from within CanvassDesktop business logic.
+end note
+
+' ─────────────────────────────────────────
+' Third-party file-dialog library (SFB)
+' ─────────────────────────────────────────
+class StandaloneFileBrowser <<static, SFB>> #E8F5E9 {
+    +{static} OpenFilePanelAsync(title, path, extensions, multiSelect, callback): void
+}
+
+note right of StandaloneFileBrowser
+  SFB = UnityStandaloneFileBrowser,
+  a third-party OS file-dialog wrapper.
+  Callbacks are async; result is a string[].
+end note
+
+' ─────────────────────────────────────────
+' Volume data layer
+' ─────────────────────────────────────────
+class VolumeDataSetRenderer <<MonoBehaviour>> #E3F2FD {
+    +FileName: string
+    +MaskFileName: string
+    +SelectedHdu: int
+    +subsetBounds: int[]
+    +trueBounds: int[]
+    +CubeDepthAxis: int
+    +loadText: TextMeshProUGUI
+    +progressBar: Slider
+}
+
+class VolumeCommandController <<MonoBehaviour>> #E3F2FD {
+    ' Resolved at runtime via FindObjectOfType<>.
+    ' Full class diagram covered in Sub-team 1 scope.
+    +resetThreshold(): void
+    +setColorMap(colorMap: ColorMapEnum): void
+    +cropDataSet(): void
+    +Undo(): void
+    +Redo(): void
+    ' ... and 25+ further public methods
+}
+
+class VolumeInputController <<MonoBehaviour>> #E3F2FD {
+    ' Resolved at runtime via FindObjectOfType<>.
+    ' Full class diagram covered in Sub-team 4 scope.
+    +RedoBrushStroke(source: SteamVR_Input_Sources): void
+    +UndoBrushStroke(source: SteamVR_Input_Sources): void
+    +IncreaseBrushSize(): void
+    +DecreaseBrushSize(): void
+}
+
+class HistogramHelper <<MonoBehaviour>> #E3F2FD {
+    ' Resolved at runtime via FindObjectOfType<>.
+    +CurrentMin: float
+    +CurrentMax: float
+    +CreateHistogramImg(h: int[], binWidth: float, min: float, max: float, mean: float, stanDev: float): void
+}
+
+' ─────────────────────────────────────────
+' God class — File Tab responsibilities
+' ─────────────────────────────────────────
+class CanvassDesktop <<MonoBehaviour>> #FFCCBC {
+    ' ── Inspector-wired GameObjects ──────
+    +informationPanelContent: GameObject
+    +renderingPanelContent: GameObject
+    +mainCanvassDesktop: GameObject
+    +fileLoadCanvassDesktop: GameObject
+    +LoadingText: GameObject
+    +progressBar: GameObject
+    +WelcomeMenu: GameObject
+    +VolumePlayer: GameObject
+    +cubeprefab: GameObject
+
+    ' ── File-path state ──────────────────
+    -_imagePath: string
+    -_maskPath: string
+    -_sourcesPath: string
+    -_hduSelectionIndex: int
+
+    ' ── FITS metadata state ──────────────
+    -_imageNAxis: double
+    -_imageSize: double
+    -_maskNAxis: double
+    -_maskSize: double
+    -_axisSize: Dictionary<double,double>
+    -_maskAxisSize: Dictionary<double,double>
+
+    ' ── Subset bounds state ──────────────
+    -_subsetMin: int
+    -_subsetMax_X: int
+    -_subsetMax_Y: int
+    -_subsetMax_Z: int
+    -_subset: int[]
+    -_trueBounds: int[]
+
+    ' ── Runtime-resolved singletons ──────
+    -_volumeCommandController: VolumeCommandController
+    -_volumeInputController: VolumeInputController
+
+    ' ── Coroutine handles ────────────────
+    #_loadCubeCoroutine: Coroutine
+    #_showLoadDialogCoroutine: Coroutine
+
+    ' ── Scene-hierarchy UI components ────
+    ' (resolved via transform.Find chains in Start())
+    -_subsetToggle: Toggle
+    -_subset_XMin_input: TMP_InputField
+    -_subset_XMax_input: TMP_InputField
+    -_subset_YMin_input: TMP_InputField
+    -_subset_YMax_input: TMP_InputField
+    -_subset_ZMin_input: TMP_InputField
+    -_subset_ZMax_input: TMP_InputField
+    -_zAxisDropdown: TMP_Dropdown
+    -_minThreshold: Slider
+    -_maxThreshold: Slider
+
+    ' ── File-tab public entry points ─────
+    +BrowseImageFile(): void
+    +BrowseMaskFile(): void
+    +BrowseSourcesFile(): void
+    +LoadFileFromFileSystem(): void
+    +CheckMemSpaceForCubes(imagePath: string, maskPath: string): bool
+    +CheckImgMaskAxisSize(): void
+
+    ' ── Internal file-tab helpers ────────
+    -_browseImageFile(path: string): void
+    -_browseMaskFile(path: string): void
+    -IsLoadable(): bool
+    -UpdateHeaderFromFits(fptr: IntPtr): void
+    -setSubsetBounds(): void
+    -checkSubsetBounds(value: string): void
+    +LoadCubeCoroutine(imagePath: string, maskPath: string, hduSelection: int): IEnumerator
+    -postLoadFileFileSystem(): void
+}
+
+note bottom of CanvassDesktop
+  <b>Mixed concerns in one MonoBehaviour (1 899 lines):</b>
+  1. File-dialog orchestration (SFB callbacks)
+  2. Native FITS metadata reads (P/Invoke via FitsReader)
+  3. Subset-bounds arithmetic and validation
+  4. Scene-hierarchy UI manipulation (≥25 transform.Find call-sites)
+  5. Coroutine lifecycle management
+  6. Post-load panel wiring (tab buttons, dropdowns)
+  Violates SRP, OCP, and DIP; WMC >> 40.
+end note
+
+' ─────────────────────────────────────────
+' Relationships
+' ─────────────────────────────────────────
+
+MonoBehaviour <|-- CanvassDesktop : extends
+
+CanvassDesktop --> StandaloneFileBrowser : "BrowseImageFile()\nBrowseMaskFile()\nBrowseSourcesFile()\ncall OpenFilePanelAsync()"
+
+CanvassDesktop --> FitsReader : "_browseImageFile()/_browseMaskFile()\ncall FitsOpenFile, FitsGetHduCount,\nFitsReadKey, FitsGetImageDims, etc.\n(direct native P/Invoke)"
+
+CanvassDesktop --> VolumeDataSetRenderer : "LoadCubeCoroutine()\nsets FileName, MaskFileName,\nsubsetBounds, SelectedHdu"
+
+CanvassDesktop ..> VolumeCommandController : "<<FindObjectOfType>>\nresolved in Start()"
+
+CanvassDesktop ..> VolumeInputController : "<<FindObjectOfType>>\nresolved in Start()"
+
+CanvassDesktop ..> HistogramHelper : "<<FindObjectOfType>>\nresolved in Start()"
+
+CanvassDesktop --> GameObject : "postLoadFileFileSystem()\ntransform.Find(\"A/B/C/…\")\n.GetComponent<T>()\n(≥25 call-sites — see smell note)"
+
+@enduml

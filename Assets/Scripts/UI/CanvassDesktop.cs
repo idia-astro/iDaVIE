@@ -28,6 +28,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using DataFeatures;
+using iDaVIE.Infrastructure.Unity;
 using SFB;
 using TMPro;
 using UnityEngine;
@@ -1257,10 +1258,7 @@ public class CanvassDesktop : MonoBehaviour
 
     private void _browseSourcesFile(string path)
     {
-        var firstActiveRenderer = GetFirstActiveRenderer();
-        var featureDataSet = firstActiveRenderer.GetComponentInChildren<FeatureSetManager>();
         _sourcesPath = path;
-        featureDataSet.FeatureFileToLoad = path;
         sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("MappingSave_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
         sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = true;
         //activate load features button
@@ -1592,7 +1590,7 @@ public class CanvassDesktop : MonoBehaviour
             return;
         }
 
-        var featureSetManager = GetFirstActiveRenderer().GetComponentInChildren<FeatureSetManager>();
+        var featureVisualiser = GetFirstActiveRenderer().FeatureVisualiser;
         Dictionary<SourceMappingOptions, string> finalMapping = new Dictionary<SourceMappingOptions, string>();
         for (int i = 0; i < _sourceRowObjects.Length; i++)
         {
@@ -1602,9 +1600,9 @@ public class CanvassDesktop : MonoBehaviour
             columnsMask[i] = _sourceRowObjects[i].transform.Find("Import_toggle").gameObject.GetComponent<Toggle>().isOn;
         }
 
-        if (featureSetManager.FeatureFileToLoad != "")
+        if (_sourcesPath != "")
         {
-            featureSetManager.ImportFeatureSetFromTable(finalMapping, FeatureTable.GetFeatureTableFromFile(_sourcesPath), Path.GetFileName(_sourcesPath), columnsMask, excludeExternalSources);
+            featureVisualiser?.ImportFeatureSetFromTable(finalMapping, FeatureTable.GetFeatureTableFromFile(_sourcesPath), Path.GetFileName(_sourcesPath), columnsMask, excludeExternalSources);
         }
         loadingText.GetComponent<TextMeshProUGUI>().text = $"Successfully loaded sources from:{Environment.NewLine}{Path.GetFileName(_sourcesPath)}";
         sourcesPanelContent.gameObject.transform.Find("Lower_container").gameObject.transform.Find("SourcesLoad_container").gameObject.transform.Find("Button").GetComponent<Button>().interactable = false;

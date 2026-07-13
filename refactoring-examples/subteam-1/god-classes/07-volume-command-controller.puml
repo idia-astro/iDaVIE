@@ -1,0 +1,42 @@
+@startuml VolumeCommandController
+title VolumeCommandController — voice verb god class\n(685 LOC, Assets/Scripts/VolumeData/VolumeCommandController.cs)
+hide empty members
+
+class VolumeCommandController <<MonoBehaviour>> #lightyellow {
+  .. lifecycle ..
+  +IsVoiceRecognitionActive
+  +OnPushToTalkPressed()
+  +OnPushToTalkReleased()
+  .. dataset registry ..
+  +AddDataSet(VolumeDataSetRenderer)
+  +RemoveDataSet(VolumeDataSetRenderer)
+  .. threshold ..
+  +resetThreshold()
+  +startThresholdEditing(max:bool)
+  +endThresholdEditing()
+  .. axis / crop ..
+  +resetZAxis()
+  +startZAxisEditing() / endZAxisEditing()
+  +cropDataSet() / resetCropDataSet()
+  +resetTransform()
+  .. visualisation ..
+  +setColorMap(ColorMapEnum)
+  +stepDataSet(forwards:bool)
+  +setMask(MaskMode)
+  +setProjection(ProjectionMode)
+  +SetSamplingMode(maxMode:bool)
+  +teleportToSelection()
+}
+
+class KeywordRecognizer <<UnityEngine.Windows.Speech>> #mistyrose
+VolumeCommandController *-- KeywordRecognizer : _speechKeywordRecognizer
+
+class VolumeDataSetRenderer
+class ColorMapEnum     #palegreen
+class MaskMode         #palegreen
+class ProjectionMode   #palegreen
+VolumeCommandController o-- "0..n" VolumeDataSetRenderer
+VolumeCommandController ..> ColorMapEnum
+VolumeCommandController ..> MaskMode
+VolumeCommandController ..> ProjectionMode
+@enduml

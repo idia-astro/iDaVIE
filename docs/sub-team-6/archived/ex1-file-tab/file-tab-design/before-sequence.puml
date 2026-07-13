@@ -1,0 +1,199 @@
+@startuml file-tab-before-sequence
+title File Tab — BEFORE refactoring: "Open → file loaded → cube visible"\n(current path in Assets/Scripts/UI/CanvassDesktop.cs @ branch team6)
+
+skinparam sequence {
+    ArrowColor #5D4037
+    LifeLineBorderColor #F57F17
+    LifeLineBackgroundColor #FFF9C4
+    ParticipantBackgroundColor #FFFDE7
+    ParticipantBorderColor #F57F17
+    ActorBackgroundColor #E3F2FD
+    ActorBorderColor #1976D2
+    BoxBackgroundColor #FAFAFA
+    BoxBorderColor #BDBDBD
+}
+skinparam note {
+    BackgroundColor #FFF9C4
+    BorderColor #F57F17
+}
+
+' ── Lifelines ─────────────────────────────────────────────────────────────
+actor "Desktop\nUser" as User
+
+box "Unity scene (FileLoadCanvassDesktop / InformationPanel)" #FAFAFA
+    participant "Browse Image\nbutton" as BrowseBtn
+    participant "Load\nbutton" as LoadBtn
+end box
+
+box "CanvassDesktop.cs (1899-line MonoBehaviour)" #FFCCBC
+    participant "CanvassDesktop" as Canvas
+end box
+
+box "Third-party / native plug-ins" #FCE4EC
+    participant "StandaloneFileBrowser\n<<SFB>>" as SFB
+    participant "FitsReader\n<<P/Invoke wrapper>>" as FitsR
+    participant "idavie_native.dll\n<<C/C++>>" as Native
+end box
+
+box "Volume data layer" #E3F2FD
+    participant "VolumeCommandController" as VCC
+    participant "VolumeDataSetRenderer\n(instantiated from cubeprefab)" as VDR
+end box
+
+' ══════════════════════════════════════════════════════════════════════════
+== Phase A — User picks a file (metadata read, no cube yet) ==
+' ══════════════════════════════════════════════════════════════════════════
+
+User -> BrowseBtn ++ : click **Browse Image**\n(in ""informationPanelContent"")
+BrowseBtn -> Canvas ++ : ""onClick"" (Inspector-wired)\n""BrowseImageFile()""  //:306//
+deactivate BrowseBtn
+
+note right of Canvas
+  **S7** Button is wired in the Unity
+  Inspector, not in code — the entry point
+  cannot be exercised by an xUnit test.
+end note
+
+Canvas -> Canvas : ""PlayerPrefs.GetString(""LastPath"")""  //:309//
+Canvas -> SFB ++ : ""OpenFilePanelAsync(.., callback)""  //:317//
+return (async returns immediately)
+
+SFB -> User : native OS file picker appears
+User -> SFB : selects ""*.fits"" / ""*.fit""
+SFB -->> Canvas : callback(paths)  //:317–326//
+Canvas -> Canvas : ""_browseImageFile(paths[0])""  //:329//
+
+Canvas -> FitsR ++ : ""FitsOpenFile(out fptr, _imagePath, ..)""  //:349//
+FitsR -> Native ++ : ""[DllImport]"" ""FitsOpenFileReadOnly""\n//FitsReader.cs:199–211//
+
+note over FitsR, Native #FCE4EC
+  **S1** Direct ""[DllImport]"" call from the UI layer.
+  Violates DIP and the Section 4.2 ACL rule
+  (domain code must not depend on native types).
+end note
+
+return ""fptr"", ""status=0""
+return ""fptr"" (unmanaged handle leaks into\nMonoBehaviour scope)
+
+Canvas -> FitsR ++ : ""FitsGetHduCount(fptr, ..)""  //:358//
+FitsR -> Native ++ : ""[DllImport]""
+return ""hduNum""
+return ""hduNum""
+
+loop for each HDU  (""//:361–379//"")
+    Canvas -> FitsR ++ : ""FitsMovabsHdu"" + ""FitsReadKey""\n(""EXTNAME"" / ""HDUNAME"")
+    FitsR -> Native ++ : ""[DllImport]""
+    return key value
+    return name / type
+end
+
+Canvas -> Canvas : ""transform.Find("HeaderTitle_container/""\n""  Hdu_container/Hdu_dropdown")""\n"".options = .."" //:382–394//
+
+note right of Canvas
+  **S3** Scene-hierarchy hardwiring —
+  one of ~25 ""transform.Find"" chains
+  in this single class.
+end note
+
+Canvas -> Canvas : ""UpdateHeaderFromFits(fptr)""  //:405, 538–569//\n(further ""FitsReader"" keyword reads,\ncollapsed for readability)
+
+Canvas -> FitsR ++ : ""FitsCloseFile(fptr, ..)""  //:407//
+FitsR -> Native ++ : ""[DllImport]""
+return ""status=0""
+return done
+
+Canvas -> Canvas : ""IsLoadable()""  //:410, 431–532//\n  · validates ≥3 axes with size > 1\n  · computes ""_imageSize"", subset maxima\n  · rebuilds Z-axis dropdown options\n  · sets ""_showPopUp"" / ""_textPopUp""
+
+note right of Canvas
+  **S2** Cube-validity rule, axis arithmetic,
+  Z-axis dropdown rebuild, and popup state
+  bundled into one ~100-line method on a
+  MonoBehaviour. Untestable without a Unity scene.
+end note
+
+Canvas --> User : **Load** button becomes interactable;\n""SubsetSelection_container"" appears  //:412–423//
+deactivate Canvas
+
+== End of Phase A — file is open, metadata read, no cube yet ==
+
+' ══════════════════════════════════════════════════════════════════════════
+== Phase B — User confirms load, cube becomes visible ==
+' ══════════════════════════════════════════════════════════════════════════
+
+User -> LoadBtn ++ : click **Load**\n(""Loading_container/Button"")
+LoadBtn -> Canvas ++ : ""onClick"" (Inspector-wired)\n""LoadFileFromFileSystem()""  //:927//
+deactivate LoadBtn
+
+Canvas -> Canvas : ""StartCoroutine(LoadCubeCoroutine(..))""  //:929//
+Canvas -> Canvas : ""CheckMemSpaceForCubes(..)""  //:995–1013, 1017//\n(""SystemInfo.systemMemorySize"" +\n""FileInfo(_imagePath).Length"")
+
+Canvas -> VCC : ""RemoveDataSet(firstActiveRenderer)""  //:1050//
+
+note right of VCC
+  Resolved earlier via
+  ""FindObjectOfType<VolumeCommandController>()""
+  in ""Start()"" //:158//.
+  **S4** Implicit runtime singleton coupling
+  invisible to the static type graph.
+end note
+
+Canvas -> Canvas : ""VolumeInputController.SetActive(false/true)""  //:1054–1056//
+Canvas -> VCC : ""DisablePaintMode()""\n""endThresholdEditing()""\n""endZAxisEditing()""  //:1058–1060//
+Canvas -> Canvas : ""firstActiveRenderer.Data.CleanUp(..)""\n""Mask?.CleanUp(false)""\n""Destroy(firstActiveRenderer)""  //:1068–1070//
+
+Canvas -> VDR ++ : ""Instantiate(cubeprefab, ..)""  //:1078//
+Canvas -> VDR : ""FileName = _imagePath""\n""MaskFileName = _maskPath""\n""SelectedHdu, subsetBounds,""\n""trueBounds, CubeDepthAxis = ..""  //:1086–1094//
+
+note right of VDR
+  **S5** UI class pokes public mutable
+  fields on the renderer. No command,
+  no encapsulation, no validation seam.
+end note
+
+Canvas -> VCC : ""AddDataSet(volDSRender)""  //:1113//
+Canvas -> VDR : ""StartCoroutine(volDSRender._startFunc())""  //:1114//
+VDR -> VDR : texture upload, GPU resources\n//VolumeDataSetRenderer.cs:358//
+
+loop while ""!volDSRender.started""  //:1116–1119//
+    Canvas -> VDR : ""yield return new WaitForSeconds(0.1f)""
+end
+
+note right of Canvas
+  **S6** Busy-wait polling on a public bool —
+  async pretending to be synchronous.
+end note
+
+VDR -->> Canvas : ""started = true""\n//VolumeDataSetRenderer.cs:541//
+VDR -> User : cube renders in the scene
+deactivate VDR
+
+Canvas -> Canvas : ""postLoadFileFileSystem()""  //:935, 1131//\n  · hide ""LoadingText"", ""progressBar"", ""WelcomeMenu""\n  · enable ""Rendering_Button"" / ""Stats_Button"" /\n    ""Sources_Button"" / ""Paint_Button""  //:962–976//\n  · ""Stats_Button.onClick.Invoke()""  //:975–976//\n  · re-subscribe rest-frequency handlers  //:958–959//
+
+note right of Canvas #FFCDD2
+  **S8 + Anomaly 8 (scope §10)** — the rest-frequency
+  re-subscription at //:958–959// adds a handler to
+  the new renderer **without unsubscribing** the
+  previous one. Every reload accumulates one
+  subscription. A cross-tab leak introduced by
+  the File-tab path.
+end note
+
+Canvas --> User : ""WelcomeMenu"" disappears;\nRendering/Stats/Sources/Paint tabs go live;\nStats tab is auto-selected
+deactivate Canvas
+
+== End of Phase B — cube rendered, desktop in "loaded" state ==
+
+' ── Smell legend ───────────────────────────────────────────────────────────
+legend right
+  | **#** | Smell | Principle violated |
+  | S1 | Direct ""[DllImport]"" from UI class | DIP · ACL (§4.2 #3) |
+  | S2 | God-class — domain + UI in one MB | SRP |
+  | S3 | ""transform.Find"" hardwiring | OCP · testability |
+  | S4 | ""FindObjectOfType<>"" singletons | DIP · Information Hiding |
+  | S5 | Public mutable field pokes | Encapsulation · CQS |
+  | S6 | Busy-wait on ""started"" flag | Async hygiene |
+  | S7 | Inspector-wired entry points | Testability |
+  | S8 | Subscription leak on reload | Lifecycle ownership |
+endlegend
+
+@enduml

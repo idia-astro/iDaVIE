@@ -1,0 +1,330 @@
+@startuml client_server_component_refactored
+top to bottom direction
+title iDaVIE — Target Component Diagram\nClient–Server + Micro-Kernel + Layered + Versioned C ABI Plug-ins\n(per Assignment Spec §4 — Sub-team 1, Apaties I)
+
+skinparam componentStyle rectangle
+skinparam nodesep 15
+skinparam ranksep 25
+skinparam component {
+    BackgroundColor White
+    BorderColor #444444
+    ArrowColor #444444
+    FontSize 11
+}
+skinparam interface {
+    BackgroundColor #E8F4E8
+    BorderColor #2E7D32
+}
+skinparam package {
+    BackgroundColor #FAFAFA
+    BorderColor #999999
+    FontSize 12
+    FontStyle bold
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #F9A825
+}
+skinparam arrow {
+    Color #444444
+}
+
+' =================================================================
+' CLIENT  — Unity 6 process: rendering, input, presentation only.
+'           Domain logic and plug-in execution live on the SERVER.
+' =================================================================
+package "iDaVIE Client  (Unity 6 process)" #E8F0FF {
+
+    package "Desktop GUI Subsystem  [Sub-team 6 — MVVM]" #D8F0FF {
+        [CanvassDesktop View\n«Unity 6 UI Toolkit»]      as DesktopView
+        [Desktop ViewModel\n«pure C# — no Unity refs»]   as DesktopVM
+        [Menu ViewModels\nHistogram / Spectral / Moment /\nShape / Paint / Video] as MenuVMs
+    }
+
+    package "VR Interaction Subsystem  [Sub-team 4]" #D8F0FF {
+        [LocomotionState\n«pure C# state pattern»]       as LocState
+        [InteractionState\n«pure C# state pattern»]      as IntState
+        [VoiceCommandDispatcher\n«Command pattern»]      as VoiceDisp
+        interface "IInputProvider"     as IIP
+        interface "IPointer"           as IPtr
+        interface "IGripInput"         as IGrip
+        interface "IVoiceInput"        as IVI
+        interface "IHaptics"           as IH
+        interface "IVoiceRecogniser"   as IVR
+    }
+
+    package "VR Rendering Subsystem  [Sub-team 3]" #D8F0FF {
+        [VolumeMaterialBinder\n«pure C#»]               as VMB
+        [VolumeTextureManager]                          as VTM
+        [VolumeCameraDriver]                            as VCD
+        [FoveatedSamplingPolicy\n«pure C# Strategy»]    as FSP
+        [FeatureVisualiser\n«Unity-side adapter»]       as FVis
+        [CatalogVisualiser]                             as CVis
+        interface "IRenderPipeline"  as IRP
+        interface "IMaskMode\n(Apply / Inverse / Isolate)" as IMM
+    }
+
+    ' ─── Anti-Corruption Layer  (§4.1, ADR-007) ───────────────────
+    package "Anti-Corruption Layer  [Sub-team 1]" #C8E0FF {
+        [SteamVRInputAdapter\n«only file that imports SteamVR»]   as ACL_SVR
+        [UnityInputSystemAdapter\n«new Unity 6 Input System»]     as ACL_UIS
+        [UnityKeywordRecogniserAdapter\n«Windows Speech»]         as ACL_VR
+        [URP/HDRP RenderPipelineAdapter]                          as ACL_RP
+        [UIToolkitBridge\n«Unity 6 UI Toolkit binding»]           as ACL_UI
+    }
+
+    ' Internal client wiring (all dependencies cross interfaces)
+    DesktopView   --> DesktopVM            : data binding
+    DesktopView   --> MenuVMs              : panel binding
+    DesktopVM     --> ACL_UI               : presentation events
+    LocState      ..> IIP                  : reads
+    IntState      ..> IIP                  : reads
+    LocState      ..> IPtr
+    IntState      ..> IGrip
+    IntState      ..> IH
+    VoiceDisp     ..> IVR
+    LocState      --> VCD                  : camera state
+    IntState      --> VMB                  : mask / render cmd
+    VMB           ..> IRP
+    VMB           ..> IMM
+    VTM           ..> IRP
+    DesktopVM     --> VMB                  : colour map / threshold
+
+    ' Anti-corruption layer realises every Unity-touching interface
+    ACL_SVR ..|> IIP
+    ACL_SVR ..|> IPtr
+    ACL_SVR ..|> IGrip
+    ACL_SVR ..|> IH
+    ACL_UIS ..|> IIP
+    ACL_VR  ..|> IVR
+    ACL_RP  ..|> IRP
+}
+
+' =================================================================
+' CLIENT ↔ SERVER  contract  (the only seam across the wire)
+' =================================================================
+package "Service Gateway  [Sub-teams 1 + 6]" #DDEEFF {
+    [ServiceGateway (client proxy)\n«generated stub»]  as ClientGW
+    interface "Client Service Contract\n──────────────────────\nIVolumeLoader\nICoordinateSystem\nIStatisticsService\nITextureFactory\nIMaskEditor\nIDataExporter\nIFeatureCatalogClient\nIWorkspaceStoreClient" as IClientSvc
+    ClientGW ..|> IClientSvc
+}
+
+DesktopVM --> ClientGW : load / export / stats
+MenuVMs   --> ClientGW : analysis triggers
+VMB       --> ClientGW : request subcube / textures
+FVis      --> ClientGW : feature reads / edits
+VoiceDisp --> ClientGW : voice commands
+
+cloud "Transport\n──────────────────\n«ADR-001»\nJSON-RPC over named pipes (local)\ngRPC over TCP/TLS (remote)" as Wire
+ClientGW -down-> Wire : marshals
+
+' =================================================================
+' SERVER  — Micro-Kernel
+'   Strict downward layering:
+'     Domain  →  Application  →  Infrastructure  →  Plug-in Host
+'   (§4.1, §6.1, ADR-006)
+' =================================================================
+package "iDaVIE Server  (Micro-Kernel, Sub-team 1)" #FFF0E8 {
+
+    ' ───── Domain layer (no Unity, no SteamVR, no URP/HDRP) ─────
+    package "Domain Layer\n[no UnityEngine / SteamVR refs — §4.2.3]" #FFD8C0 {
+        [VolumeDataSet\n«aggregate root»]      as VDS
+        [VolumeDataCore\n«value object»]       as VDC
+        [Subcube\n«value object»]              as SubVO
+        [Mask\n«entity»]                       as MaskE
+        [WCSCoordinateSystem\n«value object»]  as WCSVO
+        [Feature\n«aggregate root» — Sub-team 5] as FeatE
+        [FeatureCatalog\n«domain service» — Sub-team 5] as FCat
+        [Workspace\n«aggregate root» — Sub-team 7] as WS
+
+        VDS *-- VDC
+        VDS *-- MaskE
+        VDS o-- WCSVO
+        FCat o-- FeatE
+        WS  o-- VDS
+        WS  o-- FCat
+    }
+
+    ' ───── Application layer (use cases / orchestration) ─────
+    package "Application Layer  [use cases]" #FFE8D8 {
+        [LoadFitsCubeUseCase]      as UC_Load
+        [RequestSubcubeUseCase]    as UC_Sub
+        [ExportMaskUseCase]        as UC_Exp
+        [ComputeStatisticsUseCase] as UC_Stats
+        [MomentMapUseCase]         as UC_Moment
+        [SpectralProfileUseCase]   as UC_Spec
+        [PaintMaskUseCase]         as UC_Paint
+        [FeatureSetService\n«Sub-team 5»] as UC_Feat
+        [WorkspaceService\n«Sub-team 7»]  as UC_WS
+    }
+
+    ' ───── Infrastructure layer (adapters, repositories, gateway) ─────
+    package "Infrastructure Layer" #FFE0D0 {
+        [ServiceGatewayEndpoint\n«JSON-RPC / gRPC server»] as ServerGW
+        [WorkspaceRepository]                             as WSRepo
+        [FeatureCatalogRepository]                        as FCRepo
+        [VolumeTextureFactoryImpl]                        as VTFImpl
+        [StructuredLoggingSink]                           as Logger
+        [ConfigStore]                                     as CfgStore
+    }
+    ServerGW ..|> IClientSvc
+
+    ' ───── Plug-in Host (kernel boundary) ─────
+    package "Plug-in Host  (kernel boundary)" #FFD8B8 {
+        [PluginRegistry\n«Service Locator»\nGRASP: Indirection, Protected Variations\n«ADR-008»] as Registry
+        [PluginLoader\n«hot-reload, fault-isolation»]    as Loader
+        interface "IPluginABI v1.x\n«C ABI — semver, ABI-stable»\n«ADR-002, ADR-003, ADR-004, ADR-005»" as IABI
+        Registry ..> IABI : resolves
+        Loader   --> Registry : registers
+    }
+
+    ' Strict downward dependencies (Application → Domain;
+    ' Infrastructure → Application/Domain; Plug-in Host below all)
+    ServerGW --> UC_Load
+    ServerGW --> UC_Sub
+    ServerGW --> UC_Exp
+    ServerGW --> UC_Stats
+    ServerGW --> UC_Moment
+    ServerGW --> UC_Spec
+    ServerGW --> UC_Paint
+    ServerGW --> UC_Feat
+    ServerGW --> UC_WS
+
+    UC_Load   --> VDS
+    UC_Sub    --> VDS
+    UC_Exp    --> VDS
+    UC_Stats  --> VDS
+    UC_Moment --> VDS
+    UC_Spec   --> VDS
+    UC_Paint  --> MaskE
+    UC_Feat   --> FCat
+    UC_WS     --> WS
+
+    UC_Load   --> WSRepo
+    UC_WS     --> WSRepo
+    UC_Feat   --> FCRepo
+    UC_Sub    --> VTFImpl
+
+    WSRepo  ..> WS    : persists
+    FCRepo  ..> FCat  : persists
+    VTFImpl ..> VDS   : reads voxels
+
+    ' Use cases resolve plug-ins through the registry (constructor-injected
+    ' inside the kernel; Service Locator only at the boundary).
+    UC_Load   ..> Registry : "fits-reader"
+    UC_Load   ..> Registry : "wcs-transform"
+    UC_Sub    ..> Registry : "downsampler"
+    UC_Stats  ..> Registry : "statistics"
+    UC_Exp    ..> Registry : "fits-writer"
+    UC_Feat   ..> Registry : "source-finder"
+}
+
+' =================================================================
+' PLUG-INS  — behind the versioned C ABI  (Sub-team 2)
+'   Split into data-format vs data-operation per §6.2,
+'   grouped together so they always render as one cluster.
+' =================================================================
+package "Plug-in Cluster  (loaded by the kernel through IPluginABI)" #FFE8D0 {
+
+    package "Data-Format Plug-ins  [Sub-team 2]" #FFE0CC {
+        [fits-reader.so / .dll]   as PFR
+        [fits-writer.so / .dll]   as PFW
+        [votable.so / .dll]       as PVO
+        [tiff.so / .dll]          as PTIFF
+    }
+
+    package "Data-Operation Plug-ins  [Sub-team 2]" #FFE0CC {
+        [wcs-transform.so / .dll] as PWCS
+        [statistics.so / .dll]    as PStats
+        [downsampler.so / .dll]   as PDS
+        [source-finder.so / .dll] as PSF
+    }
+
+    package "Third-Party C++ Libraries" #FFD0BB {
+        [CFITSIO]            as CFITSIO
+        [Starlink AST]       as SAST
+        [cminpack / OpenMP]  as CMINPACK
+    }
+}
+
+' Plug-ins realise the versioned C ABI
+PFR    ..|> IABI
+PFW    ..|> IABI
+PVO    ..|> IABI
+PTIFF  ..|> IABI
+PWCS   ..|> IABI
+PStats ..|> IABI
+PDS    ..|> IABI
+PSF    ..|> IABI
+
+' Plug-ins wrap third-party C++ libs
+PFR    --> CFITSIO
+PFW    --> CFITSIO
+PVO    --> CFITSIO
+PWCS   --> SAST
+PStats --> CMINPACK
+PDS    --> CMINPACK
+PSF    --> CMINPACK
+
+' Hidden layout hints — minimal: just anchor the major regions.
+'   Client (top)  →  Transport  →  Server  →  Plug-in Cluster (bottom)
+ClientGW -[hidden]down- Wire
+Wire     -[hidden]down- ServerGW
+Registry -[hidden]down- PFR
+PFR      -[hidden]down- CFITSIO
+
+' =================================================================
+' Architectural-rationale notes (anchor to spec sections + ADRs)
+' =================================================================
+note as N1
+  **Architectural style — Assignment spec §4**
+  • Client–server split at the system level (this diagram).
+  • Micro-kernel server with a versioned C ABI plug-in contract.
+  • Strict layered architecture inside the kernel:
+      Domain → Application → Infrastructure → Plug-in Host.
+  • Anti-Corruption Layer wraps every Unity 6 / SteamVR /
+    URP / HDRP / UI Toolkit type so domain logic stays
+    Unity-free and testable outside Unity.
+end note
+
+note as N2
+  **Mandatory constraints (§4.2) — how this diagram honours them**
+  1. **SOLID/GRASP**: every cross-component edge is an interface;
+     ISP-segregated VR inputs (IPointer/IGrip/IVoice/IHaptics);
+     Service Locator confined to the kernel boundary.
+  2. **No cycles**: every arrow either points downward through the
+     layer stack or across an interface boundary. Domain has
+     fan-in only.
+  3. **Domain Unity-free**: only the Anti-Corruption Layer and the
+     three Unity-side adapters (Visualisers, View, MonoBehaviour
+     bridges) import UnityEngine / SteamVR / URP / HDRP.
+  4. **Interface + test double at every boundary**: green lozenges
+     mark the contracts; each one has a fake/mock in the test suite.
+  5. **Versioned plug-in C ABI**: IPluginABI v1.x is semver-versioned
+     and ABI-stable within a major version (ADR-002 / 003 / 004 / 005).
+end note
+
+note as N3
+  **Transport contract — ADR-001**
+  • Local mode: JSON-RPC over a named pipe.
+    Same process today, separable tomorrow.
+  • Remote mode: gRPC over TCP/TLS, schema generated
+    from the shared .proto contract.
+  • The Service Gateway is the **only** seam across the wire;
+    no other component crosses client/server.
+end note
+
+note as N4
+  **Sub-team ownership — integration spine**
+  • **Sub-team 1 (Apaties I — us)**: kernel boundary, plug-in ABI,
+    Anti-Corruption Layer, layer-violation CI rules, Service Gateway.
+  • **Sub-team 2**: data-format + data-operation plug-ins.
+  • **Sub-team 3**: rendering subsystem + IRenderPipeline ACL.
+  • **Sub-team 4**: interaction subsystem + IInputProvider et al.
+  • **Sub-team 5**: Feature aggregate, FeatureCatalog,
+    FeatureSetService, FeatureVisualiser.
+  • **Sub-team 6**: Desktop GUI MVVM + client Service Gateway.
+  • **Sub-team 7**: Workspace aggregate + persistence repositories.
+end note
+
+@enduml

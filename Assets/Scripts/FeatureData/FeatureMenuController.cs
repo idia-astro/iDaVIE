@@ -24,6 +24,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using DataFeatures;
+using iDaVIE.Domain.Feature;
+using iDaVIE.Infrastructure.Unity;
 using PolyAndCode.UI;
 using TMPro;
 using UnityEngine;
@@ -45,16 +47,18 @@ public class FeatureMenuController : MonoBehaviour
     
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
-    
-    private FeatureSetManager _featureSetManager;
+
+    private FeatureVisualiser _featureVisualiser;
     private List<FeatureSetRenderer> _featureSetRendererList;
     private bool _isListInitialized = false;
+    private bool _needToRespawnMenuList = false;
+    private bool _needToUpdateInfo = false;
     
     //The type of feature list that this menu controller will display. Set from inspector.
     public FeatureSetType FeatureSetType;
 
     /// <summary>
-    /// When enabled, get the active VolumeDataSet and find its attached FeatureSetManager
+    /// When enabled, get the active VolumeDataSet and find its attached FeatureVisualiser
     /// </summary>
     void OnEnable() {
         if (volumeDatasetRendererObj != null)
@@ -62,81 +66,86 @@ public class FeatureMenuController : MonoBehaviour
 
         var firstActive = getFirstActiveDataSet();
         if (firstActive && _activeDataSet != firstActive)
-        {
             _activeDataSet = firstActive;
-        }
-        if (_activeDataSet != null)
-        {
-            _featureSetManager = _activeDataSet.GetComponentInChildren<FeatureSetManager>();
-        }
 
-        
+        if (_activeDataSet != null)
+            _featureVisualiser = _activeDataSet.FeatureVisualiser;
+
+        if (_featureVisualiser?.Service != null)
+            _featureVisualiser.Service.FeatureSelectionChanged += OnFeatureSelectionChanged;
+    }
+
+    private void OnFeatureSelectionChanged(Feature previous, Feature next)
+    {
+        _needToRespawnMenuList = true;
+        _needToUpdateInfo = true;
     }
 
     /// <summary>
-    /// When disabling, reset the active dataset and feature set manager variables to null
+    /// When disabling, reset the active dataset and feature visualiser variables to null
     /// </summary>
     private void OnDisable()
     {
+        if (_featureVisualiser?.Service != null)
+            _featureVisualiser.Service.FeatureSelectionChanged -= OnFeatureSelectionChanged;
         _activeDataSet = null;
         CurrentFeatureSetIndex = 0;
-        _featureSetManager = null;
+        _featureVisualiser = null;
         _featureSetRendererList = null;
         _dataSets = null;
     }
 
     void Update()
     {
-        //need to check if new FeatureSetManager is loaded
-        if (!_featureSetManager || _featureSetRendererList == null)
-        {
+        if (_featureVisualiser == null || _featureSetRendererList == null)
             _isListInitialized = false;
-        }
-        //if list is not initialized and featureSetManager is not null, reset the list
-        //TODO: check the initialization processes of these lists
-        if (!_isListInitialized && _featureSetManager)
+
+        if (!_isListInitialized && _featureVisualiser != null)
         {
             if (RecyclableScrollView)
             {
                 Destroy(RecyclableScrollView.gameObject);
                 RecyclableScrollView = null;
             }
-
             ListTitle.text = "";
-            
             switch (FeatureSetType)
             {
                 case FeatureSetType.Mask:
-                    _featureSetRendererList = _featureSetManager.MaskFeatureSetList;
+                    _featureSetRendererList = _featureVisualiser.GetComponentsInChildren<FeatureSetRenderer>()
+                        .Where(r => r.FeatureSetType == FeatureSetType.Mask).ToList();
                     break;
                 case FeatureSetType.Imported:
-                    _featureSetRendererList = _featureSetManager.ImportedFeatureSetList;
+                    _featureSetRendererList = _featureVisualiser.GetComponentsInChildren<FeatureSetRenderer>()
+                        .Where(r => r.FeatureSetType == FeatureSetType.Imported).ToList();
                     break;
                 case FeatureSetType.New:
-                    _featureSetRendererList = _featureSetManager.NewFeatureSetList;
+                    _featureSetRendererList = _featureVisualiser.GetComponentsInChildren<FeatureSetRenderer>()
+                        .Where(r => r.FeatureSetType == FeatureSetType.New).ToList();
                     break;
-            }            
+            }
             _isListInitialized = true;
         }
+
         if (!RecyclableScrollView && _featureSetRendererList != null && _featureSetRendererList.Count > 0)
         {
-            RecyclableScrollView =  Instantiate(RecyclableScrollViewPrefab, this.transform).GetComponent<RecyclableScrollRect>();
+            RecyclableScrollView = Instantiate(RecyclableScrollViewPrefab, this.transform).GetComponent<RecyclableScrollRect>();
             RecyclableScrollView.Initialize(_featureSetRendererList[0].FeatureMenuScrollerDataSource);
             ListTitle.text = _featureSetRendererList[CurrentFeatureSetIndex].name;
             RefreshListColor();
-            _featureSetManager.NeedToRespawnMenuList = true;
+            _needToRespawnMenuList = true;
         }
-        //TODO: clean up this a bit
-        if (_featureSetManager?.NeedToRespawnMenuList == true && RecyclableScrollView != null)
+
+        var selectedFeature = _featureVisualiser?.Service?.SelectedFeature;
+
+        if (_needToRespawnMenuList && RecyclableScrollView != null)
         {
-            if (_featureSetManager.SelectedFeature?.Index != null && _featureSetManager.SelectedFeature.Index != -1)
+            if (selectedFeature != null && selectedFeature.Index != -1)
             {
                 UpdateInfo();
-                //if the selected feature is in the displayed feature set list, display the set and jump to the selected feature
-                if (_featureSetRendererList.Contains(_featureSetManager.SelectedFeature.FeatureSetParent))
+                if (_featureSetRendererList.Contains(selectedFeature.FeatureSetParent))
                 {
-                    DisplaySet(_featureSetManager.SelectedFeature.FeatureSetParent.Index);
-                    RecyclableScrollView.JumpToCell(_featureSetManager.SelectedFeature.Index);
+                    DisplaySet(selectedFeature.FeatureSetParent.Index);
+                    RecyclableScrollView.JumpToCell(selectedFeature.Index);
                 }
                 else if (FeatureSetType == FeatureSetType.New)
                 {
@@ -145,12 +154,13 @@ public class FeatureMenuController : MonoBehaviour
             }
             else
                 RecyclableScrollView.ReloadData();
-            _featureSetManager.NeedToRespawnMenuList = false;
+            _needToRespawnMenuList = false;
         }
-        if (_featureSetManager?.NeedToUpdateInfo == true)
+
+        if (_needToUpdateInfo)
         {
             UpdateInfo();
-            _featureSetManager.NeedToUpdateInfo = false;
+            _needToUpdateInfo = false;
         }
     }
 
@@ -229,40 +239,32 @@ public class FeatureMenuController : MonoBehaviour
     /// </summary>
     public void ChangeColor()
     {
-        if (!FeatureSetManager.FeatureColors.Contains(_featureSetRendererList[CurrentFeatureSetIndex].FeatureColor))
-        {
-            _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor = FeatureSetManager.FeatureColors[0];
-        }
+        var allColors = FeatureCatalog.FeatureColors.Select(c => new Color(c.R, c.G, c.B, c.A)).ToArray();
+        Color currentColor = _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor;
+
+        if (!allColors.Contains(currentColor))
+            _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor = allColors[0];
+
         Color nextColor;
-        List<Color> forbiddenColors = new List<Color>();
-        foreach (var featureSetRenderer in _featureSetManager.ImportedFeatureSetList)
-        {
-            forbiddenColors.Add(featureSetRenderer.FeatureColor);
-        }
-        foreach (var featureSetRenderer in _featureSetManager.MaskFeatureSetList)
-        {
-            forbiddenColors.Add(featureSetRenderer.FeatureColor);
-        }
-        foreach (var featureSetRenderer in _featureSetManager.NewFeatureSetList)
-        {
-            forbiddenColors.Add(featureSetRenderer.FeatureColor);
-        }
-        
-        if (forbiddenColors.Count > FeatureSetManager.FeatureColors.Length)
+        var allRenderers = _featureVisualiser != null
+            ? _featureVisualiser.GetComponentsInChildren<FeatureSetRenderer>()
+            : System.Array.Empty<FeatureSetRenderer>();
+        List<Color> forbiddenColors = allRenderers.Select(r => r.FeatureColor).ToList();
+
+        if (forbiddenColors.Count > allColors.Length)
         {
             Debug.Log("All colors are used! Assigning new random color.");
             nextColor = new Color(UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f));
         }
         else
         {
-            int nextColorIndex = System.Array.IndexOf(FeatureSetManager.FeatureColors, _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor) + 1;
+            currentColor = _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor;
+            int nextColorIndex = System.Array.IndexOf(allColors, currentColor) + 1;
             do
             {
-                if (nextColorIndex >= FeatureSetManager.FeatureColors.Length)
-                {
-                    nextColorIndex  = 0;
-                }
-                nextColor = FeatureSetManager.FeatureColors[nextColorIndex];
+                if (nextColorIndex >= allColors.Length)
+                    nextColorIndex = 0;
+                nextColor = allColors[nextColorIndex];
                 nextColorIndex++;
             } while (forbiddenColors.Contains(nextColor));
         }
@@ -270,7 +272,7 @@ public class FeatureMenuController : MonoBehaviour
         _featureSetRendererList[CurrentFeatureSetIndex].UpdateColor();
         ListColorDisplay.color = _featureSetRendererList[CurrentFeatureSetIndex].FeatureColor;
         RefreshListColor();
-        }
+    }
 
 
     public void ToggleListVisibility()
@@ -302,7 +304,7 @@ public class FeatureMenuController : MonoBehaviour
     {
         if (InfoWindow.activeSelf)
             InfoWindow.SetActive(false);
-        else if (_featureSetManager.SelectedFeature != null)
+        else if (_featureVisualiser?.Service?.SelectedFeature != null)
             ShowInfo();
     }
 
@@ -313,45 +315,38 @@ public class FeatureMenuController : MonoBehaviour
         var textObject = InfoWindow.transform.Find("PanelContents").gameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport")
             .gameObject.transform.Find("Content").gameObject.transform.Find("SourceInfoText").gameObject;
         textObject.GetComponent<TMP_Text>().text = "";
-        if (_featureSetManager.SelectedFeature != null)
+        var selectedFeature = _featureVisualiser?.Service?.SelectedFeature;
+        if (selectedFeature != null)
         {
             textObject.GetComponent<TMP_Text>().text +=
-                $"Source # : {_featureSetManager.SelectedFeature.Id + 1}{Environment.NewLine}";
-            
-                double centerX, centerY, centerZ, ra, dec, physz, normR, normD, normZ;
-                
-                // if the selected feature is from a mask, get the centroid from the sourceStats dictionary
-                if (_featureSetManager.SelectedFeature.FeatureSetParent.FeatureSetType == FeatureSetType.Mask 
-                    && _featureSetManager.VolumeRenderer.SourceStatsDict != null)
-                {
-                    centerX = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cX;
-                    centerY = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cY;
-                    centerZ = _featureSetManager.VolumeRenderer.SourceStatsDict.ElementAt(_featureSetManager.SelectedFeature.Index).Value.cZ;
-                    textObject.GetComponent<TMP_Text>().text +=
-                        $"Centroid : {Environment.NewLine}";
-                    textObject.GetComponent<TMP_Text>().text +=
-                        $"  x : {centerX:F5}{Environment.NewLine}";
-                    textObject.GetComponent<TMP_Text>().text +=
-                        $"  y : {centerY:F5}{Environment.NewLine}";
-                    textObject.GetComponent<TMP_Text>().text +=
-                        $"  z : {centerZ:F5}{Environment.NewLine}";
-                }
-                // otherwise, use the center of the feature cuboid
-                else
-                {
-                    centerX = _featureSetManager.SelectedFeature.Center.x;
-                    centerY = _featureSetManager.SelectedFeature.Center.y;
-                    centerZ = _featureSetManager.SelectedFeature.Center.z;
-                    textObject.GetComponent<TMP_Text>().text +=
-                        $"Center : {Environment.NewLine}";
-                    textObject.GetComponent<TMP_Text>().text +=
-                        $"  x : {centerX}{Environment.NewLine}";
-                    textObject.GetComponent<TMP_Text>().text +=
-                        $"  y : {centerY}{Environment.NewLine}";
-                    textObject.GetComponent<TMP_Text>().text +=
-                        $"  z : {centerZ}{Environment.NewLine}";
-                }
-                
+                $"Source # : {selectedFeature.Id + 1}{Environment.NewLine}";
+
+            double centerX, centerY, centerZ, ra, dec, physz, normR, normD, normZ;
+
+            // if the selected feature is from a mask, get the centroid from the sourceStats dictionary
+            if (selectedFeature.FeatureSetParent.FeatureSetType == FeatureSetType.Mask
+                && _activeDataSet.SourceStatsDict != null)
+            {
+                centerX = _activeDataSet.SourceStatsDict.ElementAt(selectedFeature.Index).Value.cX;
+                centerY = _activeDataSet.SourceStatsDict.ElementAt(selectedFeature.Index).Value.cY;
+                centerZ = _activeDataSet.SourceStatsDict.ElementAt(selectedFeature.Index).Value.cZ;
+                textObject.GetComponent<TMP_Text>().text += $"Centroid : {Environment.NewLine}";
+                textObject.GetComponent<TMP_Text>().text += $"  x : {centerX:F5}{Environment.NewLine}";
+                textObject.GetComponent<TMP_Text>().text += $"  y : {centerY:F5}{Environment.NewLine}";
+                textObject.GetComponent<TMP_Text>().text += $"  z : {centerZ:F5}{Environment.NewLine}";
+            }
+            // otherwise, use the center of the feature cuboid
+            else
+            {
+                centerX = selectedFeature.Center.x;
+                centerY = selectedFeature.Center.y;
+                centerZ = selectedFeature.Center.z;
+                textObject.GetComponent<TMP_Text>().text += $"Center : {Environment.NewLine}";
+                textObject.GetComponent<TMP_Text>().text += $"  x : {centerX}{Environment.NewLine}";
+                textObject.GetComponent<TMP_Text>().text += $"  y : {centerY}{Environment.NewLine}";
+                textObject.GetComponent<TMP_Text>().text += $"  z : {centerZ}{Environment.NewLine}";
+            }
+
             // if there is an associated WCS, transform the designated center to RA, Dec, and physical z coords
             if (_activeDataSet.HasWCS)
             {
@@ -366,22 +361,22 @@ public class FeatureMenuController : MonoBehaviour
                 textObject.GetComponent<TMP_Text>().text +=
                     FormattableString.Invariant($"  {_activeDataSet.Data.GetAstAttribute("System(3)")} ({_activeDataSet.Data.GetAxisUnit(3)}) : {normZ:F3}{Environment.NewLine}");
             }
-            
+
             // if there are raw data associated with the feature, add to the info window
-            if (_featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys != null)
+            if (selectedFeature.FeatureSetParent.RawDataKeys != null)
             {
-                for (var i = 0; i < _featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys.Length; i++)
+                for (var i = 0; i < selectedFeature.FeatureSetParent.RawDataKeys.Length; i++)
                 {
-                    var key = _featureSetManager.SelectedFeature.FeatureSetParent.RawDataKeys[i];
-                    var dataToAdd = _featureSetManager.SelectedFeature.FeatureSetParent.RawDataTypes[i] == "float" ? FormattableString.Invariant($"{Convert.ToDouble(_featureSetManager.SelectedFeature.RawData[i]):F3}") : _featureSetManager.SelectedFeature.RawData[i];
-                    if (FeatureSetManager.UnitisedKeys.Contains(key.ToUpper()))
-                    {
-                        dataToAdd += $" {_activeDataSet.GetDataSet().GetPixelUnit()}";  
-                    }
+                    var key = selectedFeature.FeatureSetParent.RawDataKeys[i];
+                    var dataToAdd = selectedFeature.FeatureSetParent.RawDataTypes[i] == "float"
+                        ? FormattableString.Invariant($"{Convert.ToDouble(selectedFeature.RawData[i]):F3}")
+                        : selectedFeature.RawData[i];
+                    if (FeatureCatalog.UnitisedKeys.Contains(key.ToUpper()))
+                        dataToAdd += $" {_activeDataSet.GetDataSet().GetPixelUnit()}";
                     textObject.GetComponent<TMP_Text>().text += $"{key} : {dataToAdd}{Environment.NewLine}";
                 }
             }
-            var flag = _featureSetManager.SelectedFeature.Flag;
+            var flag = selectedFeature.Flag;
             if (flag.Equals(" ") || flag.Equals(""))
                 flag = "No flag";
             textObject.GetComponent<TMP_Text>().text += "Flag: " + flag + Environment.NewLine;
@@ -419,7 +414,7 @@ public class FeatureMenuController : MonoBehaviour
 
     public void AddSelectedFeatureToNewSet()
     {
-        _featureSetManager.AddSelectedFeatureToNewSet();
+        _featureVisualiser?.Service?.AddSelectedFeatureToUserSet();
     }
 
 }

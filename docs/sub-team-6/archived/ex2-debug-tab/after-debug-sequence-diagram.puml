@@ -1,0 +1,55 @@
+@startuml
+' WE2-3 | Debug tab AFTER sequence diagram
+' Log line to Desktop tab — refactored flow
+' Uses team-agreed interfaces from architecture.md:
+'   IDebugTabViewModel, ILogStream, ILogObserver
+' Owner: POL | Feeds: T4
+
+title WE2-3: Debug Tab (AFTER Refactor) — Log Line to Desktop Tab
+
+actor User
+participant "CanvassDesktop\n(View)" as View
+participant "IDebugTabViewModel" as VM
+participant "ILogStream" as LogStream
+participant "ILogObserver" as LogObserver
+participant "ServiceGateway\n(IServiceGateway)" as Gateway
+
+== User Opens Debug Tab ==
+User -> View : clicks Debug tab
+View -> VM : get LogEntries
+VM -> LogStream : Subscribe(this)
+LogStream --> VM : existing log history
+VM --> View : bind log entries to scroll list
+View --> User : Debug tab displays current log
+
+== System Emits a New Log Line ==
+note over Gateway
+  Any subsystem (file loader,
+  renderer, etc.) calls
+  ILogStream.Publish()
+end note
+
+Gateway -> LogStream : Publish(level, message)
+LogStream -> LogObserver : OnNext(LogEntry)
+LogObserver -> VM : AppendEntry(LogEntry)
+VM --> View : notify binding update
+View --> User : new log line appears in Debug tab
+
+== Key Design Points ==
+note over View, VM
+  View only binds to IDebugTabViewModel.
+  No direct reference to CanvassDesktop
+  internals or UnityEngine.Debug.Log.
+  Satisfies NFR-MOD-2 (ViewModel has
+  zero dependency on UnityEngine).
+end note
+
+note over LogStream, LogObserver
+  Observer pattern via ILogStream /
+  ILogObserver decouples producers
+  from the UI entirely.
+  ILogObserver is a test double target
+  for T4 (NFR-TST-1 >= 70% coverage).
+end note
+
+@enduml

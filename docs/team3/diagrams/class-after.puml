@@ -1,0 +1,416 @@
+@startuml class-after
+'
+' iDaVIE Sub-team 3 — Rendering Engine
+' Class diagram — AFTER (proposed target architecture)
+' Team Alpha | Cache Me If You Can | Sprint 2 | 2026-05-25
+' Companion to: diagrams/class-before.puml
+'
+
+title Rendering Engine — AFTER Refactoring\n(proposed target — all CK values are projections)
+
+skinparam linetype ortho
+skinparam defaultFontSize 11
+skinparam shadowing false
+
+skinparam class {
+  BackgroundColor                #D6EAF8
+  BorderColor                    #2471A3
+  BackgroundColor<<interface>>   #E8F8F5
+  BorderColor<<interface>>       #1ABC9C
+  BackgroundColor<<adapter>>     #FEF9E7
+  BorderColor<<adapter>>         #F39C12
+  BackgroundColor<<test>>        #F5EEF8
+  BorderColor<<test>>            #8E44AD
+  BackgroundColor<<crossteam>>   #FDEBD0
+  BorderColor<<crossteam>>       #E67E22
+  BackgroundColor<<external>>    #FDFEFE
+  BorderColor<<external>>        #BDC3C7
+}
+
+' ══════════════════════════════════════════════════════
+'  INTERFACES
+' ══════════════════════════════════════════════════════
+interface IRenderPipeline <<interface>> {
+  + AddCommandBuffer(evt : CameraEvent, buf : CommandBuffer)
+  + RemoveCommandBuffer(evt : CameraEvent, buf : CommandBuffer)
+  + SetPipelineKeyword(keyword : string, enabled : bool)
+  + DepthTextureAvailable() : bool
+  + Initialise()
+  + Dispose()
+}
+
+interface IMaskMode <<interface>> {
+  + Apply(material : Material, maskTex : Texture3D)
+  + ShaderKeyword : string
+}
+
+interface IGaze <<interface>> {
+  + GazeDirection : Vector3
+  + GazeFocusPoint : Vector2
+  + IsGazeAvailable : bool
+}
+
+interface IRawVolumeData <<interface>> {
+  + Width : int
+  + Height : int
+  + Depth : int
+  + VoxelFormat : VoxelFormat
+  + GetVoxelSlice(z : int) : NativeArray<short>
+}
+
+note top of IGaze
+  Provided by Sub-team 4 (Interaction)
+  Stub: StubGazeProvider
+  Blocker: ⏳ pending S2-CO08
+end note
+
+note top of IRawVolumeData
+  Provided by Sub-team 2 (Data I/O)
+  Stub: contract agreed via struct name
+  Blocker: ⏳ pending S2-CO09
+end note
+
+' ══════════════════════════════════════════════════════
+'  CORE — VolumeRenderCoordinator (thin MonoBehaviour shell)
+' ══════════════════════════════════════════════════════
+class VolumeRenderCoordinator {
+  ' ── Injected collaborators ─────────────────────────
+  - _materialBinder  : VolumeMaterialBinder
+  - _textureManager  : VolumeTextureManager
+  - _cameraDriver    : VolumeCameraDriver
+  - _foveatedPolicy  : FoveatedSamplingPolicy
+
+  ' ── Unity lifecycle (pure delegation — no domain logic) ─
+  + Start()       : void   ' delegates to _textureManager.Load()
+  + Update()      : void   ' delegates SyncShaderState + BindFrame
+  + OnDestroy()   : void   ' delegates Dispose()
+}
+
+note bottom of VolumeRenderCoordinator
+  <b>Projected CK Metrics</b>
+  ─────────────────────────────
+  WMC  ~ 3   (≤ 20 target ✅)
+  CBO  ~ 6   (≤ 25 orchestrator ✅)
+  RFC  ~ 12  (≤ 50 target ✅)
+  LCOM ~ 0.0 (≤ 0.5 target ✅)
+  LOC  ~ 40
+  ─────────────────────────────
+  T-02 trade-off: must extend
+  MonoBehaviour — unavoidable Unity
+  dependency. Mitigated: < 30 lines,
+  zero domain logic.
+end note
+
+' ══════════════════════════════════════════════════════
+'  CORE — VolumeMaterialBinder
+' ══════════════════════════════════════════════════════
+class VolumeMaterialBinder {
+  ' ── Dependencies (interface only — DIP) ────────────
+  - _renderPipeline  : IRenderPipeline
+  - _activeMaskMode  : IMaskMode
+
+  ' ── Material instances ─────────────────────────────
+  - _materialInstance     : Material
+  - _maskMaterialInstance : Material
+  - _ids                  : MaterialID   ' cached Shader.PropertyToID
+
+  ' ── Scaling / threshold state ──────────────────────
+  - _scalingType     : ScalingType
+  - _scalingBias     : float
+  - _scalingContrast : float
+  - _scalingAlpha    : float
+  - _thresholdMin    : float
+  - _thresholdMax    : float
+  - _colorMap        : ColorMapEnum
+
+  ' ── Public API ─────────────────────────────────────
+  + SyncShaderState() : void         ' replaces 25+ SetFloat calls in Update()
+  + SetMaskMode(mode : IMaskMode)    ' strategy swap — zero switch statements
+  + SetColourMap(map : ColorMapEnum)
+  + ShiftColourMap(delta : int)
+  + ResetThresholds()
+  + Dispose()
+}
+
+note bottom of VolumeMaterialBinder
+  <b>Projected CK Metrics</b>
+  ─────────────────────────────
+  WMC  ~ 8   (≤ 20 target ✅)
+  CBO  ~ 5   (≤ 14 domain ✅)
+  RFC  ~ 18  (≤ 50 target ✅)
+  LCOM ~ 0.0 (≤ 0.5 target ✅)
+  LOC  ~ 150
+  ─────────────────────────────
+  All SRP keyword calls proxied
+  through IRenderPipeline only.
+  No direct URP/HDRP imports.
+end note
+
+' ══════════════════════════════════════════════════════
+'  CORE — VolumeTextureManager
+' ══════════════════════════════════════════════════════
+class VolumeTextureManager {
+  ' ── Data source (interface only) ───────────────────
+  - _dataSource      : IRawVolumeData
+  - _maskDataSource  : IRawVolumeData
+
+  ' ── Budget enforcement ─────────────────────────────
+  - _budgetBytes     : long           ' default: 368 MB
+  - _maxTextureCap   : long           ' hard cap: 4 GB (Unity limit)
+
+  ' ── Texture state ──────────────────────────────────
+  - _dataCube   : Texture3D
+  - _maskCube   : Texture3D
+  - _filterMode : FilterMode          ' always Point (scientific invariant)
+
+  ' ── Public API ─────────────────────────────────────
+  + EnsureTextureReady() : Texture3D
+  + GenerateDownsampledCube()
+  + RegenerateCubes()
+  + Evict()
+  + Dispose()
+}
+
+note bottom of VolumeTextureManager
+  <b>Projected CK Metrics</b>
+  ─────────────────────────────
+  WMC  ~ 6   (≤ 20 target ✅)
+  CBO  ~ 4   (≤ 14 domain ✅)
+  RFC  ~ 14  (≤ 50 target ✅)
+  LCOM ~ 0.0 (≤ 0.5 target ✅)
+  LOC  ~ 130
+  ─────────────────────────────
+  Single enforcement point for:
+  • 4 GB Texture3D ceiling
+  • 368 MB default budget
+  • FilterMode.Point invariant
+end note
+
+' ══════════════════════════════════════════════════════
+'  CORE — VolumeCameraDriver
+' ══════════════════════════════════════════════════════
+class VolumeCameraDriver {
+  ' ── Pipeline dependency ────────────────────────────
+  - _renderPipeline : IRenderPipeline
+
+  ' ── Spatial state ──────────────────────────────────
+  - _cubeOutline    : CuboidLine
+  - _voxelOutline   : CuboidLine
+  - _regionOutline  : CuboidLine
+  - _cursorVoxel    : Vector3Int
+
+  ' ── Vignette state ─────────────────────────────────
+  - _vignetteFadeStart    : float
+  - _vignetteFadeEnd      : float
+  - _vignetteIntensity    : float
+
+  ' ── Public API ─────────────────────────────────────
+  + GetFrameParameters() : CameraParameters
+  + ConvertWorldToDataSpace(pos : Vector3) : Vector3
+  + GetVoxelPosition(worldPos : Vector3) : Vector3Int
+  + SetCursorPosition(cursor : Vector3, brushSize : int)
+  + TeleportToRegion(region : RegionBounds)
+  + UpdateOutlines()
+  + UpdateVignetteUniforms()
+}
+
+note bottom of VolumeCameraDriver
+  <b>Projected CK Metrics</b>
+  ─────────────────────────────
+  WMC  ~ 9   (≤ 20 target ✅)
+  CBO  ~ 4   (≤ 14 domain ✅)
+  RFC  ~ 20  (≤ 50 target ✅)
+  LCOM ~ 0.0 (≤ 0.5 target ✅)
+  LOC  ~ 160
+  ─────────────────────────────
+  Pure coordinate maths extracted
+  to VolumeCoordinateService
+  (pure C#, zero Unity types).
+end note
+
+' ══════════════════════════════════════════════════════
+'  CORE — FoveatedSamplingPolicy
+' ══════════════════════════════════════════════════════
+class FoveatedSamplingPolicy {
+  ' ── Gaze (injected interface — DIP) ───────────────
+  - _gaze : IGaze
+
+  ' ── Foveation parameters ──────────────────────────
+  - _foveatedRendering : bool
+  - _foveationStart    : float
+  - _foveationEnd      : float
+  - _stepsLow          : int
+  - _stepsHigh         : int
+  - _maxSteps          : int
+  - _jitter            : float
+
+  ' ── Public API ────────────────────────────────────
+  + ComputeSteps(radialDistance : float) : int
+  + GetSampleRate() : float
+}
+
+note bottom of FoveatedSamplingPolicy
+  <b>Projected CK Metrics</b>
+  ─────────────────────────────
+  WMC  ~ 3   (≤ 20 target ✅)
+  CBO  ~ 1   (≤ 14 domain ✅)
+  RFC  ~ 6   (≤ 50 target ✅)
+  LCOM ~ 0.0 (≤ 0.5 target ✅)
+  LOC  ~ 60
+  ─────────────────────────────
+  ⭐ ZERO UnityEngine dependencies.
+  Pure C# — fully unit-testable
+  in edit mode without a scene.
+  ─────────────────────────────
+  When FoveatedRendering=false:
+  ComputeSteps() returns _maxSteps
+  for all radii (flat rate).
+end note
+
+' ══════════════════════════════════════════════════════
+'  MASK MODE CONCRETE STRATEGIES
+' ══════════════════════════════════════════════════════
+class ApplyMaskMode {
+  + Apply(material, maskTex)
+  + ShaderKeyword : "_MASK_APPLY"
+  ──
+  WMC=2 · CBO=1 · LCOM=0.0
+}
+
+class InverseMaskMode {
+  + Apply(material, maskTex)
+  + ShaderKeyword : "_MASK_INVERSE"
+  ──
+  WMC=2 · CBO=1 · LCOM=0.0
+}
+
+class IsolateMaskMode {
+  + Apply(material, maskTex)
+  + ShaderKeyword : "_MASK_ISOLATE"
+  ──
+  WMC=2 · CBO=1 · LCOM=0.0
+}
+
+note right of IsolateMaskMode
+  Future: IsoSurfaceMaskMode
+  → new class only.
+  Zero edits to existing code.
+  (OCP satisfied)
+end note
+
+' ══════════════════════════════════════════════════════
+'  SRP ADAPTERS
+' ══════════════════════════════════════════════════════
+class UrpRenderPipeline <<adapter>> {
+  + AddCommandBuffer(evt, buf)
+  + RemoveCommandBuffer(evt, buf)
+  + SetPipelineKeyword(kw, enabled)
+  + DepthTextureAvailable() : bool
+  + Initialise()
+  + Dispose()
+  ──
+  Only class importing
+  UnityEngine.Rendering.Universal
+  ──
+  WMC ~ 6 · CBO ~ 3 (adapter)
+}
+
+class HdrpRenderPipeline <<adapter>> {
+  + AddCommandBuffer(evt, buf)
+  + RemoveCommandBuffer(evt, buf)
+  + SetPipelineKeyword(kw, enabled)
+  + DepthTextureAvailable() : bool
+  + Initialise()
+  + Dispose()
+  ──
+  Only class importing
+  UnityEngine.Rendering.HighDefinition
+  ──
+  WMC ~ 6 · CBO ~ 3 (adapter)
+}
+
+' ══════════════════════════════════════════════════════
+'  TEST DOUBLES
+' ══════════════════════════════════════════════════════
+class NullRenderPipeline <<test>> {
+  ' All methods are no-ops
+  + AddCommandBuffer(evt, buf)   ' no-op
+  + RemoveCommandBuffer(evt, buf) ' no-op
+  + SetPipelineKeyword(kw, e)    ' no-op
+  + DepthTextureAvailable() : false
+  + Initialise()                 ' no-op
+  + Dispose()                    ' no-op
+  ──
+  Namespace: iDaVIE.Rendering.Tests
+  Not shipped in production builds
+}
+
+class NullMaskMode <<test>> {
+  + Apply(material, maskTex)     ' no-op
+  + ShaderKeyword : ""
+  ──
+  Namespace: iDaVIE.Rendering.Tests
+}
+
+class StubGazeProvider <<test>> {
+  + GazeDirection  : Vector3 = (0,0,1)
+  + GazeFocusPoint : Vector2 = (0.5, 0.5)
+  + IsGazeAvailable : bool = true
+  ──
+  Fixed centred gaze for tests
+  Namespace: iDaVIE.Rendering.Tests
+}
+
+' ══════════════════════════════════════════════════════
+'  INHERITANCE / IMPLEMENTATION
+' ══════════════════════════════════════════════════════
+UrpRenderPipeline  ..|> IRenderPipeline
+HdrpRenderPipeline ..|> IRenderPipeline
+NullRenderPipeline ..|> IRenderPipeline
+
+ApplyMaskMode   ..|> IMaskMode
+InverseMaskMode ..|> IMaskMode
+IsolateMaskMode ..|> IMaskMode
+NullMaskMode    ..|> IMaskMode
+
+StubGazeProvider ..|> IGaze
+
+' ══════════════════════════════════════════════════════
+'  COMPOSITION (VolumeRenderCoordinator owns the four classes)
+' ══════════════════════════════════════════════════════
+VolumeRenderCoordinator *--> VolumeMaterialBinder   : owns
+VolumeRenderCoordinator *--> VolumeTextureManager   : owns
+VolumeRenderCoordinator *--> VolumeCameraDriver     : owns
+VolumeRenderCoordinator *--> FoveatedSamplingPolicy : owns
+
+' ══════════════════════════════════════════════════════
+'  DEPENDENCIES (all through interfaces — DIP enforced)
+' ══════════════════════════════════════════════════════
+VolumeMaterialBinder   ---> IRenderPipeline  : uses
+VolumeMaterialBinder   ---> IMaskMode        : uses
+VolumeCameraDriver     ---> IRenderPipeline  : uses
+FoveatedSamplingPolicy ---> IGaze    : uses
+VolumeTextureManager   ---> IRawVolumeData   : uses
+
+' ══════════════════════════════════════════════════════
+'  LEGEND
+' ══════════════════════════════════════════════════════
+legend right
+  |= Colour       |= Meaning                          |
+  | blue          | Rendering core domain classes     |
+  | green         | Interfaces (abstraction pts)      |
+  | yellow        | SRP adapters (URP / HDRP)         |
+  | purple        | Test doubles (not in production)  |
+  | orange        | Cross-team interface contracts    |
+  ────────────────────────────────────────────────────
+  All CK values are <b>projections</b>.
+  Day-13 measured values will be in
+  docs/metrics-worksheet.md (S2-S06).
+  ────────────────────────────────────────────────────
+  Companion diagrams:
+  • class-before.puml — as-is baseline
+  • architecture.puml — component view
+  • sequence-render-frame.puml — one frame
+endlegend
+
+@enduml

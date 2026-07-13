@@ -1,0 +1,72 @@
+@startuml concern-map
+' Concern map — CanvassDesktop.cs (current god MonoBehaviour) redistributed to its SRP homes.
+' Text-based source per spec Section 10.4 (supersedes archived/concern-map.png, which was binary-only).
+' Content source: architecture.md Section 5.1 (concerns) + 5.2 (target decomposition) + 5.3/5.4 (SOLID/GRASP rationale).
+
+title CanvassDesktop — eight entangled concerns redistributed to their SRP homes
+
+skinparam rectangle {
+  roundCorner 12
+  BackgroundColor<<god>> #FADBD8
+  BorderColor<<god>> #C0392B
+  BackgroundColor<<concern>> #FCF3CF
+  BorderColor<<concern>> #B7950B
+  BackgroundColor<<home>> #D4EFDF
+  BorderColor<<home>> #1E8449
+  BackgroundColor<<server>> #D6EAF8
+  BorderColor<<server>> #2471A3
+}
+
+rectangle "CanvassDesktop.cs\ncurrent MonoBehaviour\n~1899 lines | WMC~63 | CBO~47 | LCOM=0.955" <<god>> as GOD
+
+' ---- the eight concerns radiating from the god class (architecture.md Section 5.1) ----
+rectangle "1. Scene-hierarchy wiring\n(transform.Find chains)" <<concern>> as C1
+rectangle "2. FITS file I/O + HDU parsing" <<concern>> as C2
+rectangle "3. Rendering state sync\n(Update() per-frame poll)" <<concern>> as C3
+rectangle "4. Subset bounds validation" <<concern>> as C4
+rectangle "5. File-dialog orchestration" <<concern>> as C5
+rectangle "6. Coroutine lifecycle" <<concern>> as C6
+rectangle "7. Singleton hunting\n(FindObjectOfType)" <<concern>> as C7
+rectangle "8. Paint-mode state" <<concern>> as C8
+
+GOD -- C1
+GOD -- C2
+GOD -- C3
+GOD -- C4
+GOD -- C5
+GOD -- C6
+GOD -- C7
+GOD -- C8
+
+' ---- the new homes (architecture.md Section 5.2) ----
+rectangle "CanvassDesktopShell\ncomposition root | WMC=8 | CBO=4" <<home>> as SHELL
+rectangle "FileTabViewModel\nBrowseImage / BrowseMask / LoadCube commands" <<home>> as FILEVM
+rectangle "SubsetBoundsViewModel\nValidate() | IsLoadable" <<home>> as SUBVM
+rectangle "RenderingTabViewModel\nobservable binding (INPC)" <<home>> as RENDERVM
+rectangle "IFileDialogService\nACL adapter over StandaloneFileBrowser" <<home>> as DIALOG
+rectangle "Service Gateway -> IFitsService\nserver-side FITS parse (JSON-RPC)" <<server>> as GATEWAY
+
+' ---- each concern to its new home, arrow labelled by the principle (Section 5.3 / 5.4) ----
+C1 ..> SHELL    : Creator (shell wires panels)
+C7 ..> SHELL    : DIP (constructor injection)
+C5 ..> FILEVM   : Controller (command in VM)
+C6 ..> FILEVM   : async ICommand (Task)
+C4 ..> SUBVM    : Information Expert
+C3 ..> RENDERVM : SRP (push, not Update() poll)
+C8 ..> RENDERVM : SRP (coord. Sub-team 4)
+C2 ..> GATEWAY  : Indirection (IFitsService)
+
+FILEVM --> SUBVM   : owns
+FILEVM --> DIALOG  : delegates dialog (ACL)
+FILEVM --> GATEWAY : LoadCube via gateway
+
+legend left
+  red    = current god class (1 unit, 8 reasons to change)
+  yellow = the 8 concerns it conflates
+  green  = new client-side SRP homes
+  blue   = server-side (FITS I/O leaves the client)
+endlegend
+
+footer Source: architecture.md Section 5.1 / 5.2 / 5.4 -- supersedes archived/concern-map.png (Section 10.4 text-based requirement)
+
+@enduml

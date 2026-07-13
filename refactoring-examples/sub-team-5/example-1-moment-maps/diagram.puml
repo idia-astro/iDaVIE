@@ -1,0 +1,177 @@
+@startuml Moment-Map Generation — Before and After
+
+' ── Style ──────────────────────────────────────────────────────────────────
+skinparam classAttributeIconSize 0
+skinparam classFontName Arial
+skinparam classFontSize 11
+skinparam ArrowColor #444444
+skinparam ClassBackgroundColor #FAFAFA
+skinparam ClassBorderColor #AAAAAA
+skinparam PackageBackgroundColor #F0F4FA
+skinparam PackageBorderColor #2E4D87
+skinparam PackageFontStyle bold
+skinparam PackageFontColor #1F3864
+skinparam NoteBackgroundColor #FFFBDB
+skinparam NoteBorderColor #CCAA00
+
+' ═══════════════════════════════════════════════════════════════════════════
+' BEFORE
+' ═══════════════════════════════════════════════════════════════════════════
+package "BEFORE — VolumeData namespace\n(ADR-008 violation)" #FFE8E8 {
+
+    class MomentMapRenderer <<MonoBehaviour>> #FFD0D0 {
+        + Moment0Map : RenderTexture
+        + Moment1Map : RenderTexture
+        + MomentMapThreshold : float
+        + UseMask : bool
+        - _computeShader : ComputeShader
+        - _parentVolumeDataSetRenderer : VolumeDataSetRenderer
+        + Start() : void
+        + Update() : void
+        + CalculateMomentMaps(threshold) : bool
+        - GetBounds(momentMap) : Vector2
+        + UpdatePlotWindow() : void
+        - GetSpectrumBuffer() : ComputeBuffer
+    }
+
+    class VolumeDataSetRenderer <<MonoBehaviour>> {
+        + AstFrame : IntPtr
+        + CurrentCropMin : Vector3Int
+        + CurrentCropMax : Vector3Int
+        + HasWCS : bool
+    }
+
+    class Config <<singleton>> #FFDEDE {
+        + {static} Instance : Config
+        + momentMaps : MomentMapConfig
+    }
+
+    class AstTool <<static, DLL>> #FFDEDE {
+        + {static} Transform3D(frame : IntPtr, ...) : void
+    }
+}
+
+note top of MomentMapRenderer
+  <b>ADR violations</b>
+  [ADR-003] Config.Instance singleton in Start()
+  [ADR-002] ComputeShader, RenderTexture, Texture2D
+             throughout — no abstraction
+  [ADR-002] Direct AstTool.Transform3D call (IntPtr, DLL)
+  [ADR-006] Domain math + GPU dispatch + UI mixed in one class
+  [ADR-008] Namespace VolumeData (should be iDaVIE.*)
+  ──
+  <b>CK smells</b>
+  WMC ~ 18, CBO ~ 14, RFC ~ 32, LCOM ~ 0.55
+end note
+
+MomentMapRenderer --> VolumeDataSetRenderer : navigates (parent)
+MomentMapRenderer ..> Config                : Config.Instance (singleton)
+MomentMapRenderer ..> AstTool               : static DLL call (IntPtr)
+
+
+' ═══════════════════════════════════════════════════════════════════════════
+' AFTER — iDaVIE.Domain.Feature  (ADR-008 compliant)
+' ═══════════════════════════════════════════════════════════════════════════
+package "iDaVIE.Domain.Feature" #E8F4E8 {
+    class MomentMapCalculator <<static>> #C8E6C8 {
+        + {static} ComputeMinMaxBounds(pixels : float[]) : (float, float)
+        + {static} ComputeMoment0(data, w, h, d, threshold) : float[]
+        + {static} ComputeMoment1(data, spectrumZ, w, h, d, threshold) : float[]
+    }
+}
+
+note right of MomentMapCalculator
+  Pure math — no Unity dependency.
+  CBO = 0. Used as test ground truth
+  against GPU adapter output.
+end note
+
+' ═══════════════════════════════════════════════════════════════════════════
+' AFTER — iDaVIE.Application.Feature  (ADR-008 compliant)
+' ═══════════════════════════════════════════════════════════════════════════
+package "iDaVIE.Application.Feature" #EAF0FB {
+
+    interface IMomentMapService #C8D8F0 {
+        + GenerateMomentMaps(request : MomentMapRequest) : MomentMapResult
+    }
+
+    interface IMomentMapAdapter #C8D8F0 {
+        + Compute(request : MomentMapRequest) : (float[], float[])
+    }
+
+    class MomentMapService #B8CCE8 {
+        - _adapter : IMomentMapAdapter
+        + MomentMapService(adapter : IMomentMapAdapter)
+        + GenerateMomentMaps(request) : MomentMapResult
+    }
+
+    class MomentMapRequest <<value object>> {
+        + DataVoxels : float[]
+        + MaskVoxels : float[]
+        + SpectrumZ : float[]
+        + Width : int
+        + Height : int
+        + Depth : int
+        + Threshold : float
+        + UseMask : bool
+    }
+
+    class MomentMapResult <<value object>> {
+        + Moment0Pixels : float[]
+        + Moment1Pixels : float[]
+        + Width : int
+        + Height : int
+        + Moment0Min : float
+        + Moment0Max : float
+        + Moment1Min : float
+        + Moment1Max : float
+    }
+}
+
+' ═══════════════════════════════════════════════════════════════════════════
+' AFTER — iDaVIE.Infrastructure.Unity  (ADR-008 compliant)
+' ═══════════════════════════════════════════════════════════════════════════
+package "iDaVIE.Infrastructure.Unity\n(ONLY class with using UnityEngine)" #FFF8E8 {
+
+    class MomentMapRendererAdapter <<MonoBehaviour>> #FFF0C8 {
+        - _momentMapService : IMomentMapService
+        - _computeShader : ComputeShader
+        - _kernelIndex : int
+        - _kernelIndexMasked : int
+        - _threadGroupX : uint
+        - _threadGroupY : uint
+        - [SerializeField] _momentMapMenuController : MomentMapMenuController
+        + Awake() : void
+        + RefreshMomentMaps(...) : void
+        + Compute(request) : (float[], float[])
+        - ApplyResultToUI(result) : void
+        - CreateRenderTexture(w, h) : RenderTexture
+        - ReadbackTexture(rt, w, h) : float[]
+        - PixelsToTexture2D(pixels, w, h) : Texture2D
+        - ConvertFloatArrayToBytes(values) : byte[]
+    }
+}
+
+note bottom of MomentMapRendererAdapter
+  <b>ADR-006 compliant thin adapter</b>
+  Only UnityEngine import in Example 1.
+  Delegates ALL business logic to IMomentMapService.
+  GPU dispatch isolated here only.
+  ──
+  <b>Scene dependencies</b>
+  [RequireComponent] VolumeDataSetRenderer (on same GameObject)
+  _momentMapMenuController wired via Inspector [SerializeField]
+end note
+
+' ── Dependency arrows (after state) ──────────────────────────────────────────
+MomentMapService          ..|> IMomentMapService        : implements
+MomentMapRendererAdapter  ..|> IMomentMapAdapter        : implements
+MomentMapService          o--> IMomentMapAdapter        : <<inject>>
+MomentMapService          --> MomentMapCalculator       : calls (domain math)
+MomentMapService          --> MomentMapRequest          : reads
+MomentMapService          --> MomentMapResult           : creates
+MomentMapRendererAdapter  --> IMomentMapService         : <<creates in Awake>>\nnew MomentMapService(this)
+MomentMapRendererAdapter  --> MomentMapRequest          : creates
+MomentMapRendererAdapter  --> MomentMapResult           : reads (for UI)
+
+@enduml

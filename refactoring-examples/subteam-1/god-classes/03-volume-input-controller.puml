@@ -1,0 +1,65 @@
+@startuml VolumeInputController
+title VolumeInputController — VR input + state machines god class\n(1634 LOC, Assets/Scripts/VolumeData/VolumeInputController.cs)
+hide empty members
+
+class VolumeInputController <<MonoBehaviour>> #lightyellow {
+  .. enums ..
+  -VRFamily {Oculus, Vive, WMR, Unknown}
+  -LocomotionState
+  +InteractionState
+  +InteractionEvents
+  -RotationAxes
+  .. state machines (Stateless) ..
+  +InteractionStateMachine
+  -_locomotionState
+  .. SteamVR actions ..
+  -_grabGripAction
+  -_grabPinchAction
+  -_quickMenuAction
+  +PushToTalkButtonPressed : event
+  +PushToTalkButtonReleased : event
+  .. dataset ownership ..
+  +_volumeDataSets : VolumeDataSetRenderer[]
+  +ActiveDataSet
+  .. brush / paint ..
+  +AdditiveBrush
+  +BrushSize
+  +SourceId
+  .. feature anchor editing ..
+  -_hoveredFeature, _editingFeature
+  -_hoveredAnchor, _editingAnchor
+  +HasHoverAnchor, HasEditingAnchor
+  .. quick menu ..
+  +CanvassQuickMenu
+  -_isQuickMenu
+  .. video recording ..
+  +_videoPosRecorder
+}
+
+class StateMachine           <<Stateless>>                  #mistyrose
+class SteamVR_Action_Boolean <<Valve.VR>>                   #mistyrose
+class Hand                   <<Valve.VR.InteractionSystem>> #mistyrose
+class Player                 <<Valve.VR.InteractionSystem>> #mistyrose
+VolumeInputController ..> StateMachine
+VolumeInputController ..> SteamVR_Action_Boolean
+VolumeInputController --> Hand
+VolumeInputController --> Player
+
+class VolumeDataSetRenderer
+class VolumeDataSet         #palegreen
+class Feature               #palegreen
+class FeatureAnchor         #palegreen
+class FeatureSetRenderer
+class VideoPosRecorder
+class Config                #palegreen
+class CanvassQuickMenu      <<GameObject>>
+
+VolumeInputController o-- "0..n" VolumeDataSetRenderer : _volumeDataSets
+VolumeInputController ..> VolumeDataSet
+VolumeInputController ..> Feature
+VolumeInputController ..> FeatureAnchor
+VolumeInputController ..> FeatureSetRenderer
+VolumeInputController --> VideoPosRecorder
+VolumeInputController ..> Config
+VolumeInputController --> CanvassQuickMenu
+@enduml

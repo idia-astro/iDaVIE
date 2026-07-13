@@ -1,0 +1,45 @@
+@startuml WE1-2-before-dependency-graph
+title WE1-2 — File Tab: BEFORE dependency graph
+
+skinparam packageStyle rectangle
+skinparam component {
+    BackgroundColor White
+    BorderColor Black
+}
+skinparam arrow {
+    Color #444444
+}
+
+component "CanvassDesktop\n----\nGod-class (1899 lines)" as CanvassDesktop #OrangeRed
+component VolumeCommandController
+component VolumeInputController
+component HistogramHelper
+component VolumeDataSetRenderer
+
+package "External / Native" #FFF2CC {
+    component StandaloneFileBrowser
+    component FitsReader
+}
+
+package "Unity / SteamVR platform" #E1F5FE {
+    component UnityEngine
+    component "UnityEngine.UI" as UnityEngineUI
+    component TMPro
+    component "Valve.VR" as ValveVR
+}
+
+' Dependencies
+CanvassDesktop ..> VolumeCommandController : FindObjectOfType
+CanvassDesktop ..> VolumeInputController  : FindObjectOfType
+CanvassDesktop ..> HistogramHelper        : FindObjectOfType
+CanvassDesktop ..> VolumeDataSetRenderer  : GetComponentsInChildren
+CanvassDesktop ..> StandaloneFileBrowser  : static async call
+CanvassDesktop ..> FitsReader             : P/Invoke / static call
+CanvassDesktop --|> UnityEngine           : extends
+CanvassDesktop --> UnityEngineUI          : direct field access
+CanvassDesktop --> TMPro                  : direct field access
+CanvassDesktop ..> ValveVR               : type usage
+
+caption CanvassDesktop owns all file-tab responsibilities — UI traversal, file picking,\nFITS parsing, and cube loading — with no layer separation.
+
+@enduml

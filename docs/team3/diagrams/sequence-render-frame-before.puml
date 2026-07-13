@@ -1,0 +1,254 @@
+@startuml sequence-render-frame-before
+'
+' iDaVIE Sub-team 3 — Rendering Engine
+' Per-frame sequence diagram — BEFORE (monolith)
+' Team Alpha | Cache Me If You Can | Sprint 2 | 2026-06-02
+'
+' Source: VolumeDataSetRenderer.cs (before/) lines 1112–1290
+' Shows the actual call flow inside Update() and OnRenderObject()
+' as it exists in the monolith — all responsibilities tangled in one class.
+'
+
+title One Rendered Frame — BEFORE (Monolith)\n<size:10>VolumeDataSetRenderer.Update() lines 1112–1240  ·  OnRenderObject() lines 1276–1290</size>
+
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+skinparam participant {
+  BackgroundColor #FADBD8
+  BorderColor     #922B21
+  FontSize        10
+}
+skinparam actor {
+  BackgroundColor #FDFEFE
+  BorderColor     #BDC3C7
+}
+skinparam sequence {
+  ArrowColor               #922B21
+  LifeLineBorderColor      #E59866
+  GroupBorderColor         #E74C3C
+  GroupBodyBackgroundColor #FEF9E7
+  NoteBackgroundColor      #FEF5E7
+  NoteBorderColor          #E67E22
+}
+
+' ── PARTICIPANTS ────────────────────────────────────────────────────────────────
+actor "Unity\n(player loop)" as Unity
+
+participant "VolumeDataSetRenderer\n<size:9>[God Class · MonoBehaviour · 1402 lines]</size>\n<size:9>WMC ~74 · CBO ~31 · LCOM ~0.81</size>" as VDSR
+
+participant "_materialInstance\n<size:9>[Material — owned directly]</size>" as MAT
+
+participant "_maskMaterialInstance\n<size:9>[Material — owned directly]</size>" as MMAT
+
+participant "Shader\n<size:9>[global keywords]</size>" as SHD
+
+participant "_maskDataSet\n<size:9>[VolumeDataSet]</size>" as MDS
+
+participant "_dataSet\n<size:9>[VolumeDataSet]</size>" as DS
+
+participant "transform\n<size:9>[UnityEngine.Transform]</size>" as TRF
+
+participant "Graphics\n<size:9>[Legacy built-in RP API]</size>" as GFX
+
+' ── UPDATE ENTRY ────────────────────────────────────────────────────────────────
+Unity -> VDSR : Update()
+activate VDSR
+
+note right of VDSR #FADBD8
+  <b>[SRP] God Class — Update() does the work of 3+ classes:</b>
+  R3 Shader uniform binding  · R4 Foveated rendering decision
+  R5 Coordinate math          · R8 WCS update
+  All 9 responsibilities share this one method.
+end note
+
+' ── SAMPLING + COLOUR UNIFORMS (R3) ─────────────────────────────────────────────
+group Sampling & colour uniforms  <size:10>[R3 — 14 SetFloat/SetVector calls · lines 1124–1137]</size>
+  VDSR -> MAT : SetVector(SliceMin/Max)
+  VDSR -> MAT : SetFloat(ThresholdMin/Max)
+  VDSR -> MAT : SetFloat(Jitter), SetFloat(MaxSteps)
+  VDSR -> MAT : SetFloat(ColorMapIndex)
+  VDSR -> MAT : SetFloat(ScaleMax/Min), SetInt(ScaleType)
+  VDSR -> MAT : SetFloat(ScaleBias/Contrast/Alpha/Gamma)
+end group
+
+' ── FOVEATION UNIFORMS (R4) ──────────────────────────────────────────────────────
+VDSR -> MAT : SetFloat(FoveationStart), SetFloat(FoveationEnd)
+
+group Foveated rendering decision  <size:10>[R4 — if(FoveatedRendering) · lines 1155–1166]</size>
+  note left of VDSR #FEF5E7
+    <b>[DIP] No IGazeProvider abstraction.</b>
+    FoveatedRendering is a plain bool Inspector field.
+    Hardware presence is not checked at runtime —
+    the developer must remember to toggle it manually.
+    Adding eye-tracking hardware = edit this if/else.
+  end note
+  alt FoveatedRendering == true
+    VDSR -> MAT : SetFloat(FoveationJitter)
+    VDSR -> MAT : SetInt(FoveatedStepsLow = 64)
+    VDSR -> MAT : SetInt(FoveatedStepsHigh = 384)
+  else FoveatedRendering == false
+    VDSR -> MAT : SetInt(FoveatedStepsLow = MaxSteps)
+    VDSR -> MAT : SetInt(FoveatedStepsHigh = MaxSteps)
+  end
+end group
+
+' ── HIGHLIGHT / REGION UNIFORMS (R3 / R5) ────────────────────────────────────────
+group Region highlight  <size:10>[R3+R5 — if(_regionOutline.Active) · lines 1168–1189]</size>
+  note left of VDSR #FEF5E7
+    <b>[CBO + SRP]</b> Renderer directly reads
+    _regionOutline (CuboidLine) and
+    _dataSet.XDim/YDim/ZDim to compute
+    object-space highlight bounds inline.
+    Coordinate math belongs in VolumeCameraDriver.
+  end note
+  alt _regionOutline.Active == true
+    VDSR -> DS : XDim, YDim, ZDim  <size:9>(direct field read)</size>
+    activate DS
+    DS --> VDSR
+    deactivate DS
+    VDSR -> MAT : SetVector(HighlightMin/Max)
+    VDSR -> MAT : SetFloat(HighlightSaturateFactor)
+  else not active
+    VDSR -> MAT : SetFloat(HighlightSaturateFactor = 1.0)
+  end
+end group
+
+' ── MASK UNIFORMS (R3 + transform coupling) ─────────────────────────────────────
+group Mask uniforms  <size:10>[R3 — if(_maskDataSet != null) · lines 1191–1210]</size>
+  note left of VDSR #FEF5E7
+    <b>[DIP + OCP]</b>
+    MaskMode is an integer hash — AddhasCode() cast.
+    Adding a new mask mode requires editing:
+    MaskMode enum · Update() · BasicVolume.cginc · PaintMenuController.cs
+    (4 files for one new behaviour — V-04 OCP violation).
+    transform.localToWorldMatrix is called inline —
+    domain math directly coupled to UnityEngine.Transform (V-10 DIP).
+  end note
+  alt _maskDataSet != null
+    VDSR -> MAT  : SetInt(MaskMode, MaskMode.GetHashCode())
+    VDSR -> MMAT : SetFloat(MaskVoxelSize)
+    VDSR -> MMAT : SetColor(MaskVoxelColor)
+    VDSR -> MMAT : SetInt(HighlightedSource)
+    VDSR -> TRF  : localToWorldMatrix  <size:9>(direct Transform API call)</size>
+    activate TRF
+    TRF --> VDSR : Matrix4x4
+    deactivate TRF
+    VDSR -> VDSR : compute offsets[4] inline\n<size:9>modelMatrix.MultiplyVector(0.5f * MaskVoxelSize * ...)</size>
+    VDSR -> MMAT : SetVectorArray(MaskVoxelOffsets)
+    VDSR -> MMAT : SetMatrix(ModelMatrix)
+  else _maskDataSet == null
+    VDSR -> MAT  : SetInt(MaskMode, Disabled.GetHashCode())
+  end
+end group
+
+' ── PROJECTION MODE KEYWORD (OCP violation) ──────────────────────────────────────
+group Projection mode keyword  <size:10>[OCP violation O2 — if/else on enum · lines 1218–1221]</size>
+  note left of VDSR #FADBD8
+    <b>[OCP + DIP] Shader.EnableKeyword / DisableKeyword</b>
+    are GLOBAL — deprecated in URP (Unity 6).
+    URP requires per-material LocalKeyword.
+    This call silently breaks when migrating pipelines.
+    Binary if/else means adding MIP requires editing here.
+  end note
+  alt ProjectionMode == AverageIntensityProjection
+    VDSR -> SHD : EnableKeyword("SHADER_AIP")  <size:9>[GLOBAL — breaks URP]</size>
+    activate SHD
+    SHD --> VDSR
+    deactivate SHD
+  else ProjectionMode == MaximumIntensityProjection
+    VDSR -> SHD : DisableKeyword("SHADER_AIP")  <size:9>[GLOBAL — breaks URP]</size>
+    activate SHD
+    SHD --> VDSR
+    deactivate SHD
+  end
+end group
+
+' ── VIGNETTE UNIFORMS ────────────────────────────────────────────────────────────
+group Vignette uniforms  <size:10>[R3 · lines 1223–1226]</size>
+  VDSR -> MAT : SetFloat(VignetteFadeStart/End, VignetteIntensity)
+  VDSR -> MAT : SetColor(VignetteColor)
+end group
+
+' ── WCS UPDATE (R8 inside render loop) ──────────────────────────────────────────
+group WCS rest-frequency update  <size:10>[SRP violation — R8 inside per-frame render method · lines 1232–1238]</size>
+  note left of VDSR #FADBD8
+    <b>[SRP] WCS service logic inside a rendering method.</b>
+    _restFrequencyGHzChanged and HasWCS share
+    zero fields with the shader cluster above —
+    direct LCOM evidence. WCS belongs in WCSService.
+  end note
+  alt _restFrequencyGHzChanged && HasWCS
+    VDSR -> DS : RecreateFrameSet(RestFrequencyGHz)
+    activate DS
+    DS --> VDSR
+    deactivate DS
+    VDSR -> DS : CreateAltSpecFrame()
+    activate DS
+    DS --> VDSR
+    deactivate DS
+  end
+end group
+
+deactivate VDSR
+
+' ── ON RENDER OBJECT ────────────────────────────────────────────────────────────
+Unity -> VDSR : OnRenderObject()
+activate VDSR
+
+note right of VDSR #FADBD8
+  <b>[DIP + GRASP Prot. Variations]</b>
+  OnRenderObject is NOT invoked by the URP render loop.
+  This draw call silently does nothing in Unity 6 URP.
+  Graphics.DrawProceduralNow is a legacy built-in RP API.
+  Zero abstraction protects against the pipeline migration.
+end note
+
+group Mask point-cloud draw  <size:10>[lines 1276–1290 — legacy built-in RP API]</size>
+  alt IsFullResolution && DisplayMask && ExistingMaskBuffer != null
+    VDSR -> MMAT : SetBuffer(MaskEntries, ExistingMaskBuffer)
+    VDSR -> MMAT : SetPass(0)
+    VDSR -> GFX  : DrawProceduralNow(Points, bufferCount)  <size:9>[BREAKS IN URP]</size>
+    activate GFX
+    GFX --> VDSR
+    deactivate GFX
+  end
+  alt IsFullResolution && DisplayMask && AddedMaskBuffer != null && count > 0
+    VDSR -> MMAT : SetBuffer(MaskEntries, AddedMaskBuffer)
+    VDSR -> MMAT : SetPass(0)
+    VDSR -> GFX  : DrawProceduralNow(Points, AddedMaskEntryCount)  <size:9>[BREAKS IN URP]</size>
+    activate GFX
+    GFX --> VDSR
+    deactivate GFX
+  end
+end group
+
+deactivate VDSR
+
+' ── GPU EXECUTION ────────────────────────────────────────────────────────────────
+note over Unity, GFX #FEF5E7
+  <b>GPU executes VolumeRaymarch.shader</b>
+  Ray steps determined by FoveatedStepsLow / FoveatedStepsHigh uniforms pushed above.
+  Mask compositing via MaskMode integer uniform — integer cast of enum, no keyword dispatch.
+  Voxel sampling: FilterMode.Point (nearest-neighbour) — hardcoded on VolumeDataSet, not enforced architecturally.
+end note
+
+' ── VIOLATIONS SUMMARY ──────────────────────────────────────────────────────────
+note over VDSR, GFX
+  <b>CK metrics (Day 2 baseline)  —  ALL thresholds exceeded</b>
+  WMC ~74  (target ≤ 20)   ·  CBO ~31  (target ≤ 14)   ·  RFC ~89  (target ≤ 50)   ·  LCOM ~0.81  (target ≤ 0.5)
+
+  <b>SOLID/GRASP violations in this frame path alone:</b>
+  V-01 SRP  — Update() performs R3 shader binding + R4 foveation + R5 coord math + R8 WCS in one method
+  V-04 OCP  — MaskMode.GetHashCode() means adding a mask mode edits 4 files
+  V-07 DIP  — FoveatedRendering is a plain bool; no IGazeProvider interface; hardware absence is not detected at runtime
+  V-10 DIP  — transform.localToWorldMatrix called inline inside domain logic
+  V-14 GRASP Indirection  — OnRenderObject is a Unity lifecycle hook with direct legacy API calls; no render pipeline seam
+  V-15 GRASP Prot. Variations  — Shader.EnableKeyword (global) and Graphics.DrawProceduralNow both break silently in URP
+  V-16 GRASP Low Coupling  — VDSR reaches directly into Material, VolumeDataSet, Transform, Shader, Graphics in one method
+end note
+
+@enduml

@@ -1,0 +1,157 @@
+@startuml DesktopPaintController
+title DesktopPaintController — Proposed Decomposition
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    BorderColor #555555
+    ArrowColor #555555
+}
+skinparam package {
+    BackgroundColor #F5F5F5
+    BorderColor #AAAAAA
+}
+hide empty members
+
+' ─── Unity pointer interfaces ─────────────────────────────────────────────────
+
+interface IPointerDownHandler {
+    + OnPointerDown(eventData : PointerEventData) : void
+}
+
+interface IPointerUpHandler {
+    + OnPointerUp(eventData : PointerEventData) : void
+}
+
+interface IDragHandler {
+    + OnDrag(eventData : PointerEventData) : void
+}
+
+' ─── Slice view and camera management ────────────────────────────────────────
+
+package "Slice View" {
+
+    class SliceViewController {
+        - cameraX : CameraTransform
+        - cameraY : CameraTransform
+        - cameraZ : CameraTransform
+        - regionCube : Texture3D
+        - maskCube : Texture3D
+        - currentSliceIndex : int
+        - currentAxis : int
+        .. Setup ..
+        + SpawnCameras() : void
+        + SetCameraTransforms() : void
+        + ResetCamera() : void
+        .. Texture access ..
+        + StartRegionCubeTexture() : void
+        + UpdateTexture() : void
+        + GetSlice(texture3D : Texture3D, axis : int, sliceIndex : int) : Texture2D
+        + GetFloatSlice(texture3D : Texture3D, axis : int, sliceIndex : int) : float[,]
+        + HighlightMask() : void
+        + GetPrevMask() : void
+        .. Navigation ..
+        + PreviousSlice() : void
+        + NextSlice() : void
+        + ResetSlice() : void
+        + ChangeAxis(axisIndex : int) : void
+        + SliceSliderChanged() : void
+        - SetSliceSlider() : void
+    }
+
+    class SliceIndicatorOverlay {
+        + SpawnSliceIndicator() : void
+        + ResetSliceIndicator() : void
+        + SliderIndicatorChange() : void
+    }
+
+}
+
+' ─── Polygon selection ────────────────────────────────────────────────────────
+
+package "Polygon Selection" {
+
+    class PolygonSelectionTool {
+        - _selectionPoints : List<Vector2>
+        - _inPaintMode : bool
+        .. Pointer events (IPointerDownHandler, IPointerUpHandler, IDragHandler) ..
+        + OnPointerDown(eventData : PointerEventData) : void
+        + OnPointerUp(eventData : PointerEventData) : void
+        + OnDrag(eventData : PointerEventData) : void
+        - AddPoint(eventData : PointerEventData) : void
+        .. Point management ..
+        + AddPointToList(localPosition : Vector2, localPixel : Vector2) : void
+        + UndoPoint() : void
+        + UndoButton() : void
+        + RemoveMarkers() : void
+        + ResetSelectionButton() : void
+        + ClearAllButton() : void
+        .. Polygon geometry ..
+        + CheckForPolygonCompletion() : void
+        + CompletePolygon() : void
+        + IsPolygonClosed(points : List<Vector2>) : bool
+        + IsPointInPolygon(point : Vector2, polygon : List<Vector2>) : bool
+        + FillPolygon() : void
+        - SubtractiveSelection(update : bool) : void
+        - ClearSelectionPoly() : void
+        - IsMouseOverImage() : bool
+    }
+
+}
+
+' ─── Mask painting ────────────────────────────────────────────────────────────
+
+package "Mask Painting" {
+
+    class MaskPainter {
+        + StartPaintSelection() : void
+        + SelectionButton() : void
+        + OnToggleChanged() : void
+        + ApplyMask(update : bool) : void
+        + UpdateMaskVoxels(matchID : bool) : void
+        + UpdateLastMaskVoxels() : void
+        + SaveMask(overwrite : bool) : void
+        + ShowMessage(message : string, time : float) : IEnumerator
+    }
+
+}
+
+' ─── Source and color management ─────────────────────────────────────────────
+
+package "Source and Color" {
+
+    class SourceColorMapper {
+        + AddSource() : void
+        + UpdateMinValue(value : float) : void
+        + UpdateMaxValue(value : float) : void
+        + UpdateSourceColours() : void
+        + GetColorFromColormap(rowIndex : int, value : float) : Color
+        + ChangeColorMap() : void
+        + SetColorMap() : void
+        - OnDropDownFieldValueChanged(index : int) : void
+    }
+
+}
+
+' ─── Orchestrator ─────────────────────────────────────────────────────────────
+
+class DesktopPaintController <<MonoBehaviour>> {
+    + volumeDatasetManager : GameObject
+    - Awake() : void
+    - Update() : void
+}
+
+' ─── Relationships ────────────────────────────────────────────────────────────
+
+DesktopPaintController ..|> IPointerDownHandler
+DesktopPaintController ..|> IPointerUpHandler
+DesktopPaintController ..|> IDragHandler
+
+DesktopPaintController *-- SliceViewController
+DesktopPaintController *-- SliceIndicatorOverlay
+DesktopPaintController *-- PolygonSelectionTool
+DesktopPaintController *-- MaskPainter
+DesktopPaintController *-- SourceColorMapper
+
+DesktopPaintController --> VolumeDataSet : paints mask voxels
+
+@enduml

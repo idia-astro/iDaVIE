@@ -1,0 +1,174 @@
+@startuml overview_refactored
+title iDaVIE — ISO/IEC 25010:2023 Refactored Architecture Overview
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    BorderColor #444444
+    ArrowColor #444444
+}
+skinparam interface {
+    BackgroundColor #E8F4E8
+    BorderColor #2E7D32
+}
+skinparam package {
+    BackgroundColor #FAFAFA
+    BorderColor #999999
+}
+hide empty members
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Data layer
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Data Layer" #EEF4FF {
+
+    interface IVolumeLoader
+    interface ICoordinateSystem
+    interface IStatisticsService
+    interface ITextureFactory
+    interface IMaskEditor
+    interface IDataExporter
+
+    class VolumeDataCore <<value>> {
+        Dimensions
+        File reference
+        Header dictionary
+        Raw FITS pointers
+    }
+
+    class VolumeDataSet {
+        Facade over all\ndata services
+    }
+
+    VolumeDataSet *-- VolumeDataCore
+    VolumeDataSet o-- IVolumeLoader
+    VolumeDataSet o-- ICoordinateSystem
+    VolumeDataSet o-- IStatisticsService
+    VolumeDataSet o-- ITextureFactory
+    VolumeDataSet o-- IMaskEditor
+    VolumeDataSet o-- IDataExporter
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Rendering layer
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Rendering Layer" #FFF8E8 {
+
+    interface IVolumeRenderer
+    interface IMaskController
+    interface ICoordinateMapper
+    interface IRegionController
+    interface IRestFrequencyController
+    interface IVolumeDataExporter
+
+    class VolumeDataSetRenderer <<MonoBehaviour>> {
+        Thin Unity lifecycle\nwrapper only
+    }
+
+    VolumeDataSetRenderer o-- IVolumeRenderer
+    VolumeDataSetRenderer o-- IMaskController
+    VolumeDataSetRenderer o-- ICoordinateMapper
+    VolumeDataSetRenderer o-- IRegionController
+    VolumeDataSetRenderer o-- IRestFrequencyController
+    VolumeDataSetRenderer o-- IVolumeDataExporter
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' VR interaction layer
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "VR Interaction Layer" #FFE8F0 {
+
+    interface IVRInputBridge {
+        All SteamVR events\nas domain events
+    }
+    interface ILocomotionController
+    interface IBrushController
+    interface IInteractionController
+    interface IVignetteFeedback
+    interface IVideoRecordingController
+
+    class SteamVRInputBridge <<service>> {
+        Only class that\nimports SteamVR SDK
+    }
+
+    class VolumeInputController <<MonoBehaviour>> {
+        Thin Unity lifecycle\nwrapper only
+    }
+
+    SteamVRInputBridge ..|> IVRInputBridge
+    VolumeInputController o-- IVRInputBridge
+    VolumeInputController o-- ILocomotionController
+    VolumeInputController o-- IBrushController
+    VolumeInputController o-- IInteractionController
+    VolumeInputController o-- IVignetteFeedback
+    VolumeInputController o-- IVideoRecordingController
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Desktop UI layer — MVP pattern
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Desktop UI Layer" #F0F0FF {
+
+    package "Presenters (plain C#, testable)" {
+        class FileLoadPresenter <<service>>
+        class ColormapPresenter <<service>>
+        class ThresholdPresenter <<service>>
+        class RestFrequencyPresenter <<service>>
+        class StatisticsPresenter <<service>>
+        class SourceMappingPresenter <<service>>
+    }
+
+    class CanvassDesktop <<MonoBehaviour, View>> {
+        Implements all\nView interfaces\nNo business logic
+    }
+
+    class DesktopPaintController <<MonoBehaviour>> {
+        Owns PointerInputAdapter\nDelegates all logic\nto injected services
+    }
+
+    class PointerInputAdapter <<service>> {
+        Translates Unity\npointer events to\ndomain calls
+    }
+
+    CanvassDesktop *-- FileLoadPresenter
+    CanvassDesktop *-- ColormapPresenter
+    CanvassDesktop *-- ThresholdPresenter
+    CanvassDesktop *-- RestFrequencyPresenter
+    CanvassDesktop *-- StatisticsPresenter
+    CanvassDesktop *-- SourceMappingPresenter
+    DesktopPaintController *-- PointerInputAdapter
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Cross-layer dependencies
+' ──────────────────────────────────────────────────────────────────────────────
+
+VolumeDataSetRenderer --> VolumeDataSet : owns
+VolumeInputController --> VolumeDataSetRenderer : drives
+CanvassDesktop --> VolumeDataSetRenderer : configures via presenters
+CanvassDesktop --> VolumeDataSet : loads via presenters
+DesktopPaintController --> VolumeDataSet : paints mask voxels
+
+note bottom of SteamVRInputBridge
+  **ISO/IEC 25010:2023 — Modularity**
+  SteamVR SDK import is contained to
+  one class. Swapping to OpenXR touches
+  only SteamVRInputBridge.
+end note
+
+note bottom of CanvassDesktop
+  **ISO/IEC 25010:2023 — Testability**
+  Presenters have no UnityEngine dependency.
+  Test with mock IXxxView implementations.
+end note
+
+note right of VolumeDataSet
+  **ISO/IEC 25010:2023 — Reusability**
+  Each service is injectable and
+  independently replaceable via interface.
+end note
+
+@enduml

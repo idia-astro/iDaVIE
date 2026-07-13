@@ -1,0 +1,35 @@
+@startuml CatalogDataSetRenderer
+title CatalogDataSetRenderer — catalog rendering god class\n(694 LOC, Assets/Scripts/CatalogData/CatalogDataSetRenderer.cs)
+hide empty members
+
+class CatalogDataSetRenderer <<MonoBehaviour>> #lightyellow {
+  .. file & mapping ..
+  +TableFileName, MappingFileName
+  +LoadMetaColumns
+  +UpdateMappingColumns()
+  .. value cutoffs ..
+  +ValueCutoffMin, ValueCutoffMax
+  .. visuals ..
+  +ColorMapTexture, SpriteSheetTexture
+  +VignetteFadeStart / End
+  +VignetteIntensity
+  +GetInitialOpacity()
+  +SetOpacity() / SetVisibility()
+  .. transforms ..
+  +resetLocalPosition()
+}
+
+class CatalogDataSet                  #palegreen
+class CatalogDataSetRendererConfig    #palegreen
+CatalogDataSetRenderer *-- CatalogDataSet
+CatalogDataSetRenderer ..> CatalogDataSetRendererConfig
+
+class CatalogInputController
+class Material      <<UnityEngine>>   #mistyrose
+class Texture2D     <<UnityEngine>>   #mistyrose
+class ComputeBuffer <<UnityEngine>>   #mistyrose
+CatalogDataSetRenderer <.. CatalogInputController
+CatalogDataSetRenderer ..> Material
+CatalogDataSetRenderer ..> Texture2D
+CatalogDataSetRenderer ..> ComputeBuffer
+@enduml

@@ -560,8 +560,7 @@ namespace VolumeData
                         var boxMax = new Vector3(Math.Min(sourceStats.maxX, XDim), Math.Min(sourceStats.maxY, YDim), Math.Min(sourceStats.maxZ, ZDim));
                         feature.SetBounds(boxMin, boxMax);
                         feature.RawData = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
-                        _maskFeatureSet.FeatureManager.NeedToRespawnMenuList = true;
-                        
+                        // NeedToRespawnMenuList removed — FeatureMenuController reacts to FeatureSetService.FeatureSelectionChanged
                     }
                     else
                     {
@@ -581,7 +580,7 @@ namespace VolumeData
                     var feature = new Feature(boxMin, boxMax, _maskFeatureSet.FeatureColor, name, flag, _maskFeatureSet.FeatureList.Count, maskVal - 1, rawStrings, startVisible);
                     _maskFeatureSet.AddFeature(feature);
                     _maskFeatureSet.FeatureMenuScrollerDataSource.InitData();       // Reinitialize the data source to include the new feature
-                    _maskFeatureSet.FeatureManager.NeedToRespawnMenuList = true;
+                    // NeedToRespawnMenuList removed — FeatureMenuController reacts to FeatureSetService.FeatureSelectionChanged
                 }
             }
         }

@@ -1,0 +1,2267 @@
+diff --git a/Assets/Scripts/Persistence/Application/AutosaveService.cs b/Assets/Scripts/Persistence/Application/AutosaveService.cs
+new file mode 100644
+index 0000000..5796aab
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Application/AutosaveService.cs
+@@ -0,0 +1,84 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using System;
++using System.Threading;
++
++namespace iDaVIE.Persistence.Application
++{
++    /// <summary>
++    /// Fires a save cycle on a System.Threading.Timer every intervalSeconds seconds.
++    /// Fully Unity-independent. If a save is already running when the timer fires, that cycle is silently skipped.
++    /// A user-triggered save should call TriggerNow() which also resets the timer.
++    /// </summary>
++    public sealed class AutosaveService : IDisposable
++    {
++        private readonly SaveWorkspaceUseCase _saveUseCase;
++        private readonly int                 _intervalMs;
++        private Timer                        _timer;
++        private bool                         _disposed;
++
++        public event Action<bool> SaveCompleted; // arg: whether save was skipped
++
++        public AutosaveService(SaveWorkspaceUseCase saveUseCase, int intervalSeconds = 20)
++        {
++            _saveUseCase = saveUseCase;
++            _intervalMs  = intervalSeconds * 1000;
++        }
++
++        public void Start()
++        {
++            if (_timer != null) _timer.Dispose();
++            _timer = new Timer(OnTimerFired, null, _intervalMs, _intervalMs);
++        }
++
++        public void Stop()
++        {
++            if (_timer != null)
++                _timer.Change(Timeout.Infinite, Timeout.Infinite);
++        }
++
++        /// <summary>
++        /// Triggers an immediate save and resets the periodic timer.
++        /// Call from Unity main thread (Save button handler).
++        /// </summary>
++        public void TriggerNow()
++        {
++            bool saved = _saveUseCase.Execute();
++            if (SaveCompleted != null) SaveCompleted.Invoke(saved);
++            if (_timer != null) _timer.Change(_intervalMs, _intervalMs);
++        }
++
++        private void OnTimerFired(object state)
++        {
++            bool saved = _saveUseCase.Execute();
++            if (SaveCompleted != null) SaveCompleted.Invoke(saved);
++        }
++
++        public void Dispose()
++        {
++            if (_disposed) return;
++            _disposed = true;
++            if (_timer != null)
++            {
++                _timer.Dispose();
++                _timer = null;
++            }
++        }
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Application/CrashDetector.cs b/Assets/Scripts/Persistence/Application/CrashDetector.cs
+new file mode 100644
+index 0000000..12d2998
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Application/CrashDetector.cs
+@@ -0,0 +1,71 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using System;
++using System.IO;
++
++namespace iDaVIE.Persistence.Application
++{
++    /// <summary>
++    /// Manages a session lock file to detect unclean shutdowns (crashes).
++    ///
++    /// Protocol:
++    ///   On startup: check whether lock file exists.
++    ///     Present → previous session crashed → trigger crash recovery.
++    ///     Absent  → clean start.
++    ///   Write lock file immediately after decision.
++    ///   Delete lock file on clean shutdown (Dispose / explicit Release).
++    /// </summary>
++    public class CrashDetector : IDisposable
++    {
++        private readonly string _lockFilePath;
++        private bool _lockHeld;
++
++        public CrashDetector(string snapshotDirectory)
++        {
++            _lockFilePath = Path.Combine(snapshotDirectory, "session.lock");
++        }
++
++        /// <summary>
++        /// Returns true when a previous session lock file is present (crash detected).
++        /// Always writes a new lock file for this session after checking.
++        /// </summary>
++        public bool CheckAndAcquire()
++        {
++            bool crashed = File.Exists(_lockFilePath);
++
++            int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
++            File.WriteAllText(_lockFilePath,
++                $"pid={pid}\nstarted={DateTime.UtcNow:O}");
++            _lockHeld = true;
++
++            return crashed;
++        }
++
++        /// <summary>Deletes the lock file — call on clean shutdown.</summary>
++        public void Release()
++        {
++            if (!_lockHeld) return;
++            if (File.Exists(_lockFilePath))
++                File.Delete(_lockFilePath);
++            _lockHeld = false;
++        }
++
++        public void Dispose() => Release();
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Application/Interfaces/IDataIoStateAdapter.cs b/Assets/Scripts/Persistence/Application/Interfaces/IDataIoStateAdapter.cs
+new file mode 100644
+index 0000000..77fcfd7
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Application/Interfaces/IDataIoStateAdapter.cs
+@@ -0,0 +1,31 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using iDaVIE.Persistence.Domain.Dtos;
++
++namespace iDaVIE.Persistence.Application.Interfaces
++{
++    /// <summary>
++    /// Implemented in Assets/Scripts/Persistence/Adapters/DataIoStateAdapter.cs (Unity side).
++    /// </summary>
++    public interface IDataIoStateAdapter
++    {
++        DataIoStateDto Capture();
++        void Restore(DataIoStateDto dto);
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Application/Interfaces/IFeatureStateAdapter.cs b/Assets/Scripts/Persistence/Application/Interfaces/IFeatureStateAdapter.cs
+new file mode 100644
+index 0000000..972ae97
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Application/Interfaces/IFeatureStateAdapter.cs
+@@ -0,0 +1,32 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using iDaVIE.Persistence.Domain.Dtos;
++
++namespace iDaVIE.Persistence.Application.Interfaces
++{
++    /// <summary>
++    /// Implemented in Assets/Scripts/Persistence/Adapters/FeatureStateAdapter.cs (Unity side).
++    /// </summary>
++    public interface IFeatureStateAdapter
++    {
++        /// <summary>Returns null if no feature sets are currently loaded.</summary>
++        FeatureStateDto Capture();
++        void Restore(FeatureStateDto dto);
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Application/Interfaces/IGuiStateAdapter.cs b/Assets/Scripts/Persistence/Application/Interfaces/IGuiStateAdapter.cs
+new file mode 100644
+index 0000000..e1960c4
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Application/Interfaces/IGuiStateAdapter.cs
+@@ -0,0 +1,31 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using iDaVIE.Persistence.Domain.Dtos;
++
++namespace iDaVIE.Persistence.Application.Interfaces
++{
++    /// <summary>
++    /// Implemented in Assets/Scripts/Persistence/Adapters/GuiStateAdapter.cs (Unity side).
++    /// </summary>
++    public interface IGuiStateAdapter
++    {
++        GuiStateDto Capture();
++        void Restore(GuiStateDto dto);
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Application/Interfaces/IInteractionStateAdapter.cs b/Assets/Scripts/Persistence/Application/Interfaces/IInteractionStateAdapter.cs
+new file mode 100644
+index 0000000..28b2a9c
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Application/Interfaces/IInteractionStateAdapter.cs
+@@ -0,0 +1,31 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using iDaVIE.Persistence.Domain.Dtos;
++
++namespace iDaVIE.Persistence.Application.Interfaces
++{
++    /// <summary>
++    /// Implemented in Assets/Scripts/Persistence/Adapters/InteractionStateAdapter.cs (Unity side).
++    /// </summary>
++    public interface IInteractionStateAdapter
++    {
++        InteractionStateDto Capture();
++        void Restore(InteractionStateDto dto);
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Application/Interfaces/IRenderingStateAdapter.cs b/Assets/Scripts/Persistence/Application/Interfaces/IRenderingStateAdapter.cs
+new file mode 100644
+index 0000000..1deab63
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Application/Interfaces/IRenderingStateAdapter.cs
+@@ -0,0 +1,31 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using iDaVIE.Persistence.Domain.Dtos;
++
++namespace iDaVIE.Persistence.Application.Interfaces
++{
++    /// <summary>
++    /// Implemented in Assets/Scripts/Persistence/Adapters/RenderingStateAdapter.cs (Unity side).
++    /// </summary>
++    public interface IRenderingStateAdapter
++    {
++        RenderingStateDto Capture();
++        void Restore(RenderingStateDto dto);
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Application/Interfaces/IWorkspaceStateCollector.cs b/Assets/Scripts/Persistence/Application/Interfaces/IWorkspaceStateCollector.cs
+new file mode 100644
+index 0000000..afa44bc
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Application/Interfaces/IWorkspaceStateCollector.cs
+@@ -0,0 +1,31 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using iDaVIE.Persistence.Domain;
++
++namespace iDaVIE.Persistence.Application.Interfaces
++{
++    /// <summary>
++    /// Orchestrates all per-subsystem adapters to produce a complete WorkspaceAggregate.
++    /// The Unity-side implementation must call each adapter on the Unity main thread.
++    /// </summary>
++    public interface IWorkspaceStateCollector
++    {
++        WorkspaceAggregate Collect();
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Application/RestoreOrchestrator.cs b/Assets/Scripts/Persistence/Application/RestoreOrchestrator.cs
+new file mode 100644
+index 0000000..8d443fc
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Application/RestoreOrchestrator.cs
+@@ -0,0 +1,74 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using iDaVIE.Persistence.Application.Interfaces;
++using iDaVIE.Persistence.Domain;
++
++namespace iDaVIE.Persistence.Application
++{
++    /// <summary>
++    /// Enforces the strict subsystem restore ordering required to avoid dependency violations:
++    ///   1. Data I/O   — open FITS, validate SubsetBounds, init AST frames
++    ///   2. Rendering  — apply RenderingState
++    ///   3. Features   — restore identity fields, trigger async recomputation
++    ///   4. Interaction — apply after dataset validated
++    ///   5. GUI        — last (derives from domain state)
++    ///
++    /// All adapter Restore() methods must be called on the Unity main thread.
++    /// </summary>
++    public class RestoreOrchestrator
++    {
++        private readonly IDataIoStateAdapter      _dataIoAdapter;
++        private readonly IRenderingStateAdapter   _renderingAdapter;
++        private readonly IFeatureStateAdapter     _featureAdapter;
++        private readonly IInteractionStateAdapter _interactionAdapter;
++        private readonly IGuiStateAdapter         _guiAdapter;
++
++        public RestoreOrchestrator(
++            IDataIoStateAdapter      dataIoAdapter,
++            IRenderingStateAdapter   renderingAdapter,
++            IFeatureStateAdapter     featureAdapter,
++            IInteractionStateAdapter interactionAdapter,
++            IGuiStateAdapter         guiAdapter)
++        {
++            _dataIoAdapter      = dataIoAdapter;
++            _renderingAdapter   = renderingAdapter;
++            _featureAdapter     = featureAdapter;
++            _interactionAdapter = interactionAdapter;
++            _guiAdapter         = guiAdapter;
++        }
++
++        /// <summary>
++        /// Executes the full restore sequence. Throws if a critical sub-restore fails.
++        /// All steps must run on the Unity main thread.
++        /// </summary>
++        public void Restore(WorkspaceSnapshot snapshot)
++        {
++            _dataIoAdapter.Restore(snapshot.DataIo);
++            _renderingAdapter.Restore(snapshot.Rendering);
++
++            if (snapshot.Features != null)
++                _featureAdapter.Restore(snapshot.Features);
++
++            _interactionAdapter.Restore(snapshot.Interaction);
++
++            if (snapshot.Gui != null)
++                _guiAdapter.Restore(snapshot.Gui);
++        }
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Application/SaveWorkspaceUseCase.cs b/Assets/Scripts/Persistence/Application/SaveWorkspaceUseCase.cs
+new file mode 100644
+index 0000000..7635d90
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Application/SaveWorkspaceUseCase.cs
+@@ -0,0 +1,97 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using iDaVIE.Persistence.Application.Interfaces;
++using iDaVIE.Persistence.Domain;
++using iDaVIE.Persistence.Infrastructure;
++
++namespace iDaVIE.Persistence.Application
++{
++    /// <summary>
++    /// Orchestrates a complete save cycle: collect → stub → validate → serialize → ring-push.
++    /// Called by AutosaveService (timer) and by the UI Save button.
++    /// </summary>
++    public class SaveWorkspaceUseCase
++    {
++        private readonly IWorkspaceStateCollector _collector;
++        private readonly WorkspaceStubFactory     _stubFactory;
++        private readonly WorkspaceValidator       _validator;
++        private readonly SnapshotSerializer       _serializer;
++        private readonly SnapshotRing             _ring;
++
++        private volatile bool _saveInProgress;
++
++        public SaveWorkspaceUseCase(
++            IWorkspaceStateCollector collector,
++            WorkspaceStubFactory     stubFactory,
++            WorkspaceValidator       validator,
++            SnapshotSerializer       serializer,
++            SnapshotRing             ring)
++        {
++            _collector   = collector;
++            _stubFactory = stubFactory;
++            _validator   = validator;
++            _serializer  = serializer;
++            _ring        = ring;
++        }
++
++        /// <summary>
++        /// Executes one save cycle. Returns false (and does nothing) if a save is already running.
++        /// </summary>
++        public bool Execute()
++        {
++            if (_saveInProgress) return false;
++            _saveInProgress = true;
++            try
++            {
++                return RunSave();
++            }
++            finally
++            {
++                _saveInProgress = false;
++            }
++        }
++
++        private bool RunSave()
++        {
++            var aggregate = _collector.Collect();
++            var profile   = aggregate.InferProfile();
++            var snapshot  = _stubFactory.CreateStub(profile) with
++            {
++                Metadata    = WorkspaceMetadata.Now(profile),
++                DataIo      = aggregate.DataIo,
++                Rendering   = aggregate.Rendering,
++                Features    = aggregate.Features,
++                Interaction = aggregate.Interaction,
++                Gui         = aggregate.Gui,
++            };
++
++            var validationResult = _validator.Validate(snapshot);
++            if (validationResult.HasWarnings)
++            {
++                snapshot = snapshot with
++                {
++                    Metadata = snapshot.Metadata with { HasValidationWarnings = true }
++                };
++            }
++
++            _ring.Push(snapshot, _serializer);
++            return true;
++        }
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Application/WorkspaceValidator.cs b/Assets/Scripts/Persistence/Application/WorkspaceValidator.cs
+new file mode 100644
+index 0000000..b30c2a6
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Application/WorkspaceValidator.cs
+@@ -0,0 +1,264 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using System;
++using System.Collections.Generic;
++using iDaVIE.Persistence.Domain;
++using iDaVIE.Persistence.Domain.Dtos;
++using iDaVIE.Persistence.Domain.Serialization;
++
++namespace iDaVIE.Persistence.Application
++{
++    /// <summary>
++    /// All per-field validation, clamping, and default-application rules.
++    /// Applied during load before any subsystem adapter sees the data.
++    /// </summary>
++    public class WorkspaceValidator
++    {
++        public ValidationResult Validate(WorkspaceSnapshot snapshot)
++        {
++            var result = new ValidationResult();
++
++            ValidateDataIo(snapshot.DataIo, result);
++            ValidateRendering(snapshot.Rendering, result);
++            ValidateInteraction(snapshot.Interaction, result);
++            if (snapshot.Features != null)
++                ValidateFeatures(snapshot.Features, result);
++            if (snapshot.Gui != null)
++                ValidateGui(snapshot.Gui, result);
++
++            return result;
++        }
++
++        // ── Data I/O ────────────────────────────────────────────────────────────
++
++        private static void ValidateDataIo(DataIoStateDto dto, ValidationResult result)
++        {
++            if (string.IsNullOrEmpty(dto.FileName))
++            {
++                result.DatasetUnavailable = true;
++                result.AddWarning("DataIo.FileName is missing — entering disconnected mode.");
++            }
++
++            if (dto.SelectedHdu <= 0)
++            {
++                result.AddWarning($"DataIo.SelectedHdu ({dto.SelectedHdu}) invalid; reset to 1.");
++                dto.SelectedHdu = 1;
++            }
++
++            if (string.IsNullOrEmpty(dto.StandardOfRest))
++            {
++                result.AddWarning("DataIo.StandardOfRest missing; defaulting to 'Heliocentric'.");
++                dto.StandardOfRest = "Heliocentric";
++            }
++
++            if (dto.Index2.HasValue && dto.Index2 != 2 && dto.Index2 != 3)
++            {
++                result.AddWarning($"DataIo.Index2 ({dto.Index2}) invalid; cleared (must be 2 or 3).");
++                dto.Index2 = null;
++            }
++        }
++
++        // ── Rendering ───────────────────────────────────────────────────────────
++
++        private static void ValidateRendering(RenderingStateDto dto, ValidationResult result)
++        {
++            if (!IsValidEnumName<KnownColorMap>(dto.ColorMap))
++            {
++                result.AddWarning($"Rendering.ColorMap '{dto.ColorMap}' invalid; defaulting to 'Inferno'.");
++                dto.ColorMap = "Inferno";
++            }
++
++            if (!IsValidEnumName<KnownScalingType>(dto.ScalingType))
++            {
++                result.AddWarning($"Rendering.ScalingType '{dto.ScalingType}' invalid; defaulting to 'Linear'.");
++                dto.ScalingType = "Linear";
++            }
++
++            if (dto.ThresholdMin > dto.ThresholdMax)
++            {
++                result.AddWarning($"Rendering.ThresholdMin ({dto.ThresholdMin}) > ThresholdMax ({dto.ThresholdMax}); reset to [0,1].");
++                dto.ThresholdMin = 0f;
++                dto.ThresholdMax = 1f;
++            }
++
++            if (dto.MaxSteps < 16 || dto.MaxSteps > 512)
++            {
++                int clamped = Math.Max(16, Math.Min(512, dto.MaxSteps));
++                result.AddWarning($"Rendering.MaxSteps ({dto.MaxSteps}) outside [16,512]; clamped to {clamped}.");
++                dto.MaxSteps = clamped;
++            }
++
++            if (dto.Scale != null && dto.Scale.HasNonPositiveComponent())
++            {
++                result.AddWarning($"Rendering.Scale {dto.Scale} has non-positive component; reset to (1,1,1).");
++                dto.Scale = SerializableVector3.One;
++            }
++
++            if (dto.Rotation != null && dto.Rotation.IsNotNormalised())
++            {
++                result.AddWarning("Rendering.Rotation is not normalised; normalising.");
++                dto.Rotation = dto.Rotation.Normalised();
++            }
++
++            if (dto.Foveation == null)
++            {
++                dto.Foveation = new FoveationStateDto { FoveatedRendering = false };
++            }
++            else
++            {
++                dto.Foveation.FoveatedStepsLow  = Math.Max(16, Math.Min(512, dto.Foveation.FoveatedStepsLow));
++                dto.Foveation.FoveatedStepsHigh = Math.Max(16, Math.Min(512, dto.Foveation.FoveatedStepsHigh));
++            }
++
++            if (dto.Mask == null)
++            {
++                dto.Mask = new MaskStateDto { MaskMode = "Disabled", DisplayMask = false };
++            }
++        }
++
++        // ── Interaction ─────────────────────────────────────────────────────────
++
++        private static readonly HashSet<string> ValidInteractionModes = new HashSet<string>
++        {
++            "IdleSelecting", "IdlePainting", "EditingSourceId",
++            "Creating", "Editing", "Painting", "VideoCamPosRecording"
++        };
++
++        private static readonly HashSet<string> ValidLocomotionStates = new HashSet<string>
++        {
++            "Idle", "Moving", "Scaling", "EditingThresholdMin", "EditingThresholdMax", "EditingZAxis"
++        };
++
++        private static void ValidateInteraction(InteractionStateDto dto, ValidationResult result)
++        {
++            if (dto.ActiveInteractionMode == "VideoCamPosRecording")
++            {
++                result.AddWarning("Interaction.ActiveInteractionMode was 'VideoCamPosRecording'; reset to 'IdleSelecting'.");
++                dto.ActiveInteractionMode = "IdleSelecting";
++            }
++            else if (!ValidInteractionModes.Contains(dto.ActiveInteractionMode ?? ""))
++            {
++                result.AddWarning($"Interaction.ActiveInteractionMode '{dto.ActiveInteractionMode}' invalid; defaulting to 'IdleSelecting'.");
++                dto.ActiveInteractionMode = "IdleSelecting";
++            }
++
++            if (!ValidLocomotionStates.Contains(dto.LocomotionState ?? ""))
++            {
++                result.AddWarning($"Interaction.LocomotionState '{dto.LocomotionState}' invalid; defaulting to 'Idle'.");
++                dto.LocomotionState = "Idle";
++            }
++
++            if (dto.BrushSize < 1)
++            {
++                result.AddWarning($"Interaction.BrushSize ({dto.BrushSize}) < 1; clamped to 1.");
++                dto.BrushSize = 1;
++            }
++
++            if (dto.SourceId < -1)
++            {
++                result.AddWarning($"Interaction.SourceId ({dto.SourceId}) < -1; reset to -1.");
++                dto.SourceId = -1;
++            }
++
++            if (dto.VignetteFadeSpeed < 0.1f || dto.VignetteFadeSpeed > 5.0f)
++            {
++                float clamped = Math.Max(0.1f, Math.Min(5.0f, dto.VignetteFadeSpeed));
++                result.AddWarning($"Interaction.VignetteFadeSpeed ({dto.VignetteFadeSpeed}) outside [0.1,5.0]; clamped to {clamped}.");
++                dto.VignetteFadeSpeed = clamped;
++            }
++
++            if (dto.PrimaryHand != "LeftHand" && dto.PrimaryHand != "RightHand")
++            {
++                result.AddWarning($"Interaction.PrimaryHand '{dto.PrimaryHand}' invalid; defaulting to 'RightHand'.");
++                dto.PrimaryHand = "RightHand";
++            }
++
++            if (dto.RotationAxisCutoff <= 0f)
++            {
++                result.AddWarning($"Interaction.RotationAxisCutoff ({dto.RotationAxisCutoff}) <= 0; defaulting to 5.0.");
++                dto.RotationAxisCutoff = 5.0f;
++            }
++        }
++
++        // ── Features ─────────────────────────────────────────────────────────────
++
++        private static void ValidateFeatures(FeatureStateDto dto, ValidationResult result)
++        {
++            var setsToRemove = new List<FeatureSetDto>();
++
++            foreach (var set in dto.FeatureSets)
++            {
++                var toExclude = new List<FeatureDto>();
++                foreach (var feature in set.Features)
++                {
++                    bool hasMin = feature.CornerMin != null;
++                    bool hasMax = feature.CornerMax != null;
++
++                    // Temporary features in progress are allowed to have incomplete bounds.
++                    if (!feature.IsTemporary && hasMin != hasMax)
++                    {
++                        result.AddWarning($"Feature '{feature.Name}' (Id={feature.Id}) has incomplete CornerMin/Max pair; excluded.");
++                        toExclude.Add(feature);
++                        result.ExcludedFeatureIds.Add(feature.Id);
++                    }
++                }
++
++                foreach (var f in toExclude)
++                    set.Features.Remove(f);
++            }
++
++            foreach (var s in setsToRemove)
++                dto.FeatureSets.Remove(s);
++        }
++
++        // ── GUI ──────────────────────────────────────────────────────────────────
++
++        private static void ValidateGui(GuiStateDto dto, ValidationResult result)
++        {
++            if (dto.CubeDepthAxis < 0 || dto.CubeDepthAxis > 2)
++            {
++                result.AddWarning($"Gui.CubeDepthAxis ({dto.CubeDepthAxis}) outside [0,2]; defaulting to 2.");
++                dto.CubeDepthAxis = 2;
++            }
++        }
++
++        // ── Helpers ───────────────────────────────────────────────────────────────
++
++        private static bool IsValidEnumName<T>(string value) where T : struct
++        {
++            if (string.IsNullOrEmpty(value)) return false;
++            return Enum.IsDefined(typeof(T), value);
++        }
++
++        // Local mirror enums (must stay in sync with Unity ColorMapEnum and ScalingType)
++        private enum KnownColorMap { None, Inferno, Plasma, Turbo, Viridis, Magma, Greys, Hot, Rainbow, Jet, Coolwarm }
++        private enum KnownScalingType { Linear, Log, Sqrt, Square, Power, Gamma }
++    }
++
++    /// <summary>Result of a validation pass.</summary>
++    public class ValidationResult
++    {
++        public bool DatasetUnavailable { get; set; }
++        public List<string> Warnings { get; } = new List<string>();
++        public List<int> ExcludedFeatureIds { get; } = new List<int>();
++        public bool HasWarnings => Warnings.Count > 0;
++
++        public void AddWarning(string message) => Warnings.Add(message);
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Domain/Dtos/DataIoStateDto.cs b/Assets/Scripts/Persistence/Domain/Dtos/DataIoStateDto.cs
+new file mode 100644
+index 0000000..9ce0a02
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Domain/Dtos/DataIoStateDto.cs
+@@ -0,0 +1,75 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++namespace iDaVIE.Persistence.Domain.Dtos
++{
++    /// <summary>
++    /// Persistent state for the Data I/O sub-system.
++    /// Source fields: VolumeDataSet.FileName, SelectedHdu, subsetBounds, and AstFrameSet attributes.
++    /// NOT persisted: IntPtr handles (FitsData, FitsHeader, AstFrameSet, AstAltSpecSet) — rebuilt on restore.
++    /// </summary>
++    public class DataIoStateDto
++    {
++        /// <summary>Absolute path to the primary FITS image.</summary>
++        [PersistField]
++        public string FileName { get; set; }
++
++        /// <summary>Path to the mask FITS file, if any.</summary>
++        [PersistField(Optional = true)]
++        public string MaskFileName { get; set; }
++
++        /// <summary>User crop region [xMin, xMax, yMin, yMax, zMin, zMax] (1-indexed).</summary>
++        [PersistField]
++        public int[] SubsetBounds { get; set; }
++
++        /// <summary>FITS HDU index (1-indexed).</summary>
++        [PersistField]
++        public int SelectedHdu { get; set; } = 1;
++
++        /// <summary>For 4-D cubes: index of dimension shown on Z-axis (2 or 3).</summary>
++        [PersistField(Optional = true)]
++        public int? Index2 { get; set; }
++
++        /// <summary>For 4-D cubes: slice index within the 4th dimension.</summary>
++        [PersistField(Optional = true)]
++        public int? SliceDim { get; set; }
++
++        /// <summary>Primary AST spectral system (e.g. "FREQ", "VRAD").</summary>
++        [PersistField]
++        public string PrimarySpectralSystem { get; set; }
++
++        /// <summary>Target alternative spectral system.</summary>
++        [PersistField]
++        public string AlternativeSpectralTarget { get; set; }
++
++        /// <summary>Target alternative spectral unit (e.g. "km/s", "Hz").</summary>
++        [PersistField]
++        public string AlternativeSpectralUnit { get; set; }
++
++        /// <summary>AST rest-frame label (e.g. "Heliocentric").</summary>
++        [PersistField]
++        public string StandardOfRest { get; set; }
++
++        /// <summary>
++        /// Numeric transformed spectral coordinate.
++        /// Revalidated against the restored AST frame after load.
++        /// </summary>
++        [PersistField]
++        public double TransformedSpectralValue { get; set; }
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Domain/Dtos/FeatureStateDto.cs b/Assets/Scripts/Persistence/Domain/Dtos/FeatureStateDto.cs
+new file mode 100644
+index 0000000..f855fe3
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Domain/Dtos/FeatureStateDto.cs
+@@ -0,0 +1,76 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using System.Collections.Generic;
++using iDaVIE.Persistence.Domain.Serialization;
++
++namespace iDaVIE.Persistence.Domain.Dtos
++{
++    /// <summary>
++    /// Persistent state for all feature sets managed by FeatureSetManager.
++    /// NOT persisted: Selected, mask bounding boxes, mask statistics, GPU refs.
++    /// Recomputed on restore: mask bboxes/stats (DataAnalysis), imported RawData (catalog reader).
++    /// Temporary features ARE persisted so crash recovery can restore in-progress work.
++    /// </summary>
++    public class FeatureStateDto
++    {
++        [PersistField] public List<FeatureSetDto> FeatureSets { get; set; } = new List<FeatureSetDto>();
++    }
++
++    /// <summary>Persistent state for a single feature set (FeatureSetRenderer).</summary>
++    public class FeatureSetDto
++    {
++        /// <summary>FeatureSetType enum serialised as string (e.g. "Mask", "New", "Imported").</summary>
++        [PersistField] public string FeatureSetType { get; set; }
++
++        /// <summary>Name from featureSetRenderer.gameObject.name.</summary>
++        [PersistField] public string SetName { get; set; }
++
++        /// <summary>FeatureSetRenderer.FeatureColor — Unity Color → SerializableColor.</summary>
++        [PersistField] public SerializableColor FeatureColor { get; set; }
++
++        /// <summary>FeatureSetRenderer.featureSetVisible.</summary>
++        [PersistField] public bool FeatureVisibility { get; set; } = true;
++
++        // ── Imported sets only ──────────────────────────────────────────────────
++        [PersistField(Optional = true)] public string FileName { get; set; }
++
++        /// <summary>Column mapping: SourceMappingOptions.ToString() → catalog column name.</summary>
++        [PersistField(Optional = true)] public Dictionary<string, string> ColumnMapping { get; set; }
++
++        [PersistField(Optional = true)] public bool[] ColumnsMask     { get; set; }
++        [PersistField(Optional = true)] public bool   ExcludeExternal { get; set; }
++
++        [PersistField] public List<FeatureDto> Features { get; set; } = new List<FeatureDto>();
++    }
++
++    /// <summary>Persistent state for a single Feature.</summary>
++    public class FeatureDto
++    {
++        [PersistField] public int    Id      { get; set; }
++        [PersistField] public string Name    { get; set; }
++        [PersistField] public string Flag    { get; set; }
++        [PersistField(Optional = true)] public string Comment { get; set; }
++        [PersistField] public bool   Visible   { get; set; } = true;
++        [PersistField] public SerializableColor   CubeColor  { get; set; }
++        [PersistField(Optional = true)] public SerializableVector3 CornerMin { get; set; }
++        [PersistField(Optional = true)] public SerializableVector3 CornerMax { get; set; }
++        [PersistField(Optional = true)] public string[]            RawData   { get; set; }
++        [PersistField(Optional = true)] public bool                IsTemporary { get; set; } = false;
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Domain/Dtos/GuiStateDto.cs b/Assets/Scripts/Persistence/Domain/Dtos/GuiStateDto.cs
+new file mode 100644
+index 0000000..68ac680
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Domain/Dtos/GuiStateDto.cs
+@@ -0,0 +1,35 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++namespace iDaVIE.Persistence.Domain.Dtos
++{
++    /// <summary>
++    /// Minimal GUI-only persistent state.
++    /// All other "GUI" fields (FileName, SelectedHdu, SubsetBounds, MaskFileName, trueBounds)
++    /// are authoritative in DataIoStateDto and must not be duplicated here.
++    /// </summary>
++    public class GuiStateDto
++    {
++        /// <summary>
++        /// The axis used as the depth/Z axis in the cube view (0-indexed).
++        /// Default 2 = standard FITS Z axis. Clamped to [0,2] by WorkspaceValidator.
++        /// </summary>
++        [PersistField]
++        public int CubeDepthAxis { get; set; } = 2;
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Domain/Dtos/InteractionStateDto.cs b/Assets/Scripts/Persistence/Domain/Dtos/InteractionStateDto.cs
+new file mode 100644
+index 0000000..df34403
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Domain/Dtos/InteractionStateDto.cs
+@@ -0,0 +1,56 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++namespace iDaVIE.Persistence.Domain.Dtos
++{
++    /// <summary>
++    /// Persistent state for the VR interaction sub-system.
++    /// Source: VolumeInputController public fields + GetLocomotionStateString().
++    /// NOT persisted: SteamVR controller refs, grip positions, hovered/editing feature refs.
++    /// </summary>
++    public class InteractionStateDto
++    {
++        /// <summary>
++        /// VolumeInputController.InteractionState enum as string (e.g. "IdleSelecting", "IdlePainting").
++        /// WorkspaceValidator resets "VideoCamPosRecording" → "IdleSelecting" on load.
++        /// </summary>
++        [PersistField]
++        public string ActiveInteractionMode { get; set; } = "IdleSelecting";
++
++        /// <summary>VolumeInputController.LocomotionState (private enum) as string.</summary>
++        [PersistField]
++        public string LocomotionState { get; set; } = "Idle";
++
++        // ── Session state ────────────────────────────────────────────────────────
++        [PersistField] public bool  AdditiveBrush { get; set; } = true;
++        [PersistField] public int   BrushSize     { get; set; } = 1;
++        [PersistField] public short SourceId      { get; set; } = -1;
++
++        // ── User preferences ─────────────────────────────────────────────────────
++        /// <summary>"LeftHand" or "RightHand".</summary>
++        [PersistField] public string PrimaryHand      { get; set; } = "RightHand";
++        [PersistField] public bool   InPlaceScaling   { get; set; } = true;
++        [PersistField] public bool   ScalingEnabled   { get; set; } = true;
++
++        /// <summary>Range [0.1, 5.0] — clamped by WorkspaceValidator on load.</summary>
++        [PersistField] public float VignetteFadeSpeed    { get; set; } = 2.0f;
++
++        /// <summary>Must be > 0 to function as angle threshold.</summary>
++        [PersistField] public float RotationAxisCutoff  { get; set; } = 5.0f;
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Domain/Dtos/RenderingStateDto.cs b/Assets/Scripts/Persistence/Domain/Dtos/RenderingStateDto.cs
+new file mode 100644
+index 0000000..0a64beb
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Domain/Dtos/RenderingStateDto.cs
+@@ -0,0 +1,99 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using iDaVIE.Persistence.Domain.Serialization;
++
++namespace iDaVIE.Persistence.Domain.Dtos
++{
++    /// <summary>
++    /// Persistent state for the Rendering Engine.
++    /// Source: VolumeDataSetRenderer fields and MomentMapRenderer.
++    /// NOT persisted: XDim/YDim/ZDim, Min/Max/Mean/StdDev, Histogram, GPU textures/compute buffers.
++    /// </summary>
++    public class RenderingStateDto
++    {
++        // ── Ray-marching ────────────────────────────────────────────────────────
++        [PersistField] public int    MaxSteps       { get; set; } = 192;
++        [PersistField] public string ProjectionMode  { get; set; }
++        /// <summary>"Point" or "Bilinear".</summary>
++        [PersistField] public string TextureFilter   { get; set; }
++        [PersistField] public float  Jitter          { get; set; } = 1.0f;
++
++        // ── Thresholds ───────────────────────────────────────────────────────────
++        [PersistField] public float ThresholdMin { get; set; }
++        [PersistField] public float ThresholdMax { get; set; } = 1f;
++
++        // ── Colour mapping ───────────────────────────────────────────────────────
++        [PersistField] public string ColorMap              { get; set; }
++        [PersistField] public string ScalingType           { get; set; }
++        [PersistField] public float  ScalingBias           { get; set; }
++        [PersistField] public float  ScalingContrast       { get; set; } = 1f;
++        [PersistField] public float  ScalingAlpha          { get; set; } = 1000f;
++        [PersistField] public float  ScalingGamma          { get; set; } = 1f;
++        [PersistField] public float  SelectionSaturateFactor { get; set; } = 0.7f;
++
++        // ── Volume data state ────────────────────────────────────────────────────
++        [PersistField] public float ScaleMax { get; set; }
++        [PersistField] public float ScaleMin { get; set; }
++
++        // ── Spatial transform ────────────────────────────────────────────────────
++        [PersistField] public SerializableVector3    Position { get; set; }
++        [PersistField] public SerializableQuaternion Rotation { get; set; }
++        [PersistField] public SerializableVector3    Scale    { get; set; }
++
++        // ── Rest frequency override ──────────────────────────────────────────────
++        [PersistField]                  public bool    OverrideRestFrequency  { get; set; }
++        [PersistField(Optional = true)] public double? CustomRestFrequencyGHz { get; set; }
++
++        // ── Optional sub-sections ───────────────────────────────────────────────
++        [PersistField(Optional = true)] public FoveationStateDto  Foveation  { get; set; }
++        [PersistField(Optional = true)] public MaskStateDto       Mask       { get; set; }
++        [PersistField(Optional = true)] public MomentMapStateDto  MomentMaps { get; set; }
++    }
++
++    /// <summary>Foveated rendering configuration.</summary>
++    public class FoveationStateDto
++    {
++        [PersistField] public bool  FoveatedRendering  { get; set; }
++        [PersistField] public float FoveationStart     { get; set; } = 0.15f;
++        [PersistField] public float FoveationEnd       { get; set; } = 0.40f;
++        [PersistField] public float FoveationJitter    { get; set; }
++        [PersistField] public int   FoveatedStepsLow   { get; set; } = 64;
++        [PersistField] public int   FoveatedStepsHigh  { get; set; } = 384;
++    }
++
++    /// <summary>Mask rendering configuration.</summary>
++    public class MaskStateDto
++    {
++        [PersistField] public bool             DisplayMask    { get; set; }
++        [PersistField] public string           MaskMode       { get; set; }
++        [PersistField] public float            MaskVoxelSize  { get; set; } = 1f;
++        [PersistField] public SerializableColor MaskVoxelColor { get; set; }
++    }
++
++    /// <summary>Moment map rendering configuration.</summary>
++    public class MomentMapStateDto
++    {
++        [PersistField] public string ColorMapM0         { get; set; }
++        [PersistField] public string ColorMapM1         { get; set; }
++        [PersistField] public string ScalingTypeM0      { get; set; }
++        [PersistField] public string ScalingTypeM1      { get; set; }
++        [PersistField] public float  MomentMapThreshold { get; set; }
++        [PersistField] public bool   UseMask            { get; set; } = true;
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Domain/PersistFieldAttribute.cs b/Assets/Scripts/Persistence/Domain/PersistFieldAttribute.cs
+new file mode 100644
+index 0000000..e9b056c
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Domain/PersistFieldAttribute.cs
+@@ -0,0 +1,34 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using System;
++
++namespace iDaVIE.Persistence.Domain
++{
++    /// <summary>
++    /// Marks a DTO property as part of the persistence contract.
++    /// </summary>
++    [AttributeUsage(AttributeTargets.Property)]
++    public sealed class PersistFieldAttribute : Attribute
++    {
++        /// <summary>
++        /// When true, a missing/null value is accepted and no warning is raised.
++        /// </summary>
++        public bool Optional { get; init; }
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Domain/Serialization/SerializableColor.cs b/Assets/Scripts/Persistence/Domain/Serialization/SerializableColor.cs
+new file mode 100644
+index 0000000..f3905bc
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Domain/Serialization/SerializableColor.cs
+@@ -0,0 +1,43 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++namespace iDaVIE.Persistence.Domain.Serialization
++{
++    /// <summary>
++    /// Plain-C# replacement for UnityEngine.Color for use in persistence DTOs.
++    /// </summary>
++    public sealed class SerializableColor
++    {
++        public float R { get; set; }
++        public float G { get; set; }
++        public float B { get; set; }
++        public float A { get; set; } = 1f;
++
++        public SerializableColor() { }
++
++        public SerializableColor(float r, float g, float b, float a = 1f)
++        {
++            R = r; G = g; B = b; A = a;
++        }
++
++        public static SerializableColor White => new SerializableColor(1f, 1f, 1f);
++        public static SerializableColor Gray  => new SerializableColor(0.5f, 0.5f, 0.5f, 0.2f);
++
++        public override string ToString() => $"rgba({R:F3}, {G:F3}, {B:F3}, {A:F3})";
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Domain/Serialization/SerializableQuaternion.cs b/Assets/Scripts/Persistence/Domain/Serialization/SerializableQuaternion.cs
+new file mode 100644
+index 0000000..42e646d
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Domain/Serialization/SerializableQuaternion.cs
+@@ -0,0 +1,59 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using System;
++
++namespace iDaVIE.Persistence.Domain.Serialization
++{
++    /// <summary>
++    /// Plain-C# replacement for UnityEngine.Quaternion for use in persistence DTOs.
++    /// </summary>
++    public sealed class SerializableQuaternion
++    {
++        public float X { get; set; }
++        public float Y { get; set; }
++        public float Z { get; set; }
++        public float W { get; set; }
++
++        public SerializableQuaternion() { W = 1f; }
++
++        public SerializableQuaternion(float x, float y, float z, float w)
++        {
++            X = x; Y = y; Z = z; W = w;
++        }
++
++        public static SerializableQuaternion Identity => new SerializableQuaternion(0f, 0f, 0f, 1f);
++
++        /// <summary>Returns true if the quaternion magnitude is not approximately 1.</summary>
++        public bool IsNotNormalised()
++        {
++            float mag = MathF.Sqrt(X * X + Y * Y + Z * Z + W * W);
++            return MathF.Abs(mag - 1f) > 0.001f;
++        }
++
++        /// <summary>Returns a normalised copy, or Identity if the quaternion is zero-length.</summary>
++        public SerializableQuaternion Normalised()
++        {
++            float mag = MathF.Sqrt(X * X + Y * Y + Z * Z + W * W);
++            if (mag < 1e-6f) return Identity;
++            return new SerializableQuaternion(X / mag, Y / mag, Z / mag, W / mag);
++        }
++
++        public override string ToString() => $"({X}, {Y}, {Z}, {W})";
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Domain/Serialization/SerializableVector3.cs b/Assets/Scripts/Persistence/Domain/Serialization/SerializableVector3.cs
+new file mode 100644
+index 0000000..c99ac78
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Domain/Serialization/SerializableVector3.cs
+@@ -0,0 +1,44 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++namespace iDaVIE.Persistence.Domain.Serialization
++{
++    /// <summary>
++    /// Plain-C# replacement for UnityEngine.Vector3 for use in persistence DTOs.
++    /// </summary>
++    public sealed class SerializableVector3
++    {
++        public float X { get; set; }
++        public float Y { get; set; }
++        public float Z { get; set; }
++
++        public SerializableVector3() { }
++
++        public SerializableVector3(float x, float y, float z)
++        {
++            X = x; Y = y; Z = z;
++        }
++
++        public static SerializableVector3 One  => new SerializableVector3(1f, 1f, 1f);
++        public static SerializableVector3 Zero => new SerializableVector3(0f, 0f, 0f);
++
++        public bool HasNonPositiveComponent() => X <= 0f || Y <= 0f || Z <= 0f;
++
++        public override string ToString() => $"({X}, {Y}, {Z})";
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Domain/WorkspaceAggregate.cs b/Assets/Scripts/Persistence/Domain/WorkspaceAggregate.cs
+new file mode 100644
+index 0000000..dda3953
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Domain/WorkspaceAggregate.cs
+@@ -0,0 +1,66 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using iDaVIE.Persistence.Domain.Dtos;
++
++namespace iDaVIE.Persistence.Domain
++{
++    /// <summary>
++    /// Aggregate root that holds the live sub-DTOs during a session.
++    /// </summary>
++    public class WorkspaceAggregate
++    {
++        public DataIoStateDto      DataIo      { get; set; } = new DataIoStateDto();
++        public RenderingStateDto   Rendering   { get; set; } = new RenderingStateDto();
++        public FeatureStateDto     Features    { get; set; }
++        public InteractionStateDto Interaction { get; set; } = new InteractionStateDto();
++        public GuiStateDto         Gui         { get; set; }
++
++        /// <summary>
++        /// Infers the WorkspaceProfile from which sub-states are populated.
++        /// </summary>
++        public WorkspaceProfile InferProfile()
++        {
++            bool hasMask     = Rendering.Mask != null && Rendering.Mask.MaskMode != null && Rendering.Mask.MaskMode != "Disabled";
++            bool hasFeatures = Features != null && Features.FeatureSets != null && Features.FeatureSets.Count > 0;
++            bool hasFoveat   = Rendering.Foveation != null && Rendering.Foveation.FoveatedRendering == true;
++
++            if (hasMask && hasFeatures) return WorkspaceProfile.FullWorkspace;
++            if (hasFeatures)            return WorkspaceProfile.DataWithFeatures;
++            if (hasMask)                return WorkspaceProfile.DataWithMask;
++            return WorkspaceProfile.DataOnly;
++        }
++
++        /// <summary>
++        /// Produces an immutable snapshot from the current aggregate state.
++        /// </summary>
++        public WorkspaceSnapshot Capture(WorkspaceProfile? profileOverride = null)
++        {
++            var profile = profileOverride ?? InferProfile();
++            return new WorkspaceSnapshot
++            {
++                Metadata    = WorkspaceMetadata.Now(profile),
++                DataIo      = DataIo,
++                Rendering   = Rendering,
++                Features    = Features,
++                Interaction = Interaction,
++                Gui         = Gui,
++            };
++        }
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Domain/WorkspaceMetadata.cs b/Assets/Scripts/Persistence/Domain/WorkspaceMetadata.cs
+new file mode 100644
+index 0000000..3a9ce9f
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Domain/WorkspaceMetadata.cs
+@@ -0,0 +1,53 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using System;
++using System.Collections.Generic;
++
++namespace iDaVIE.Persistence.Domain
++{
++    /// <summary>
++    /// Envelope metadata written to the root of every snapshot JSON file.
++    /// Declared as a record so WorkspaceSnapshot `with` expressions can produce modified copies.
++    /// </summary>
++    public record WorkspaceMetadata
++    {
++        public string SchemaVersion { get; set; } = "1.0.0";
++        public DateTime SavedAt { get; set; }
++        public WorkspaceProfile Profile { get; set; }
++
++        /// <summary>Plugin versions at save time (e.g. "idavie_native" → "3.2.1").</summary>
++        public Dictionary<string, string> PluginVersions { get; set; } = new Dictionary<string, string>();
++
++        /// <summary>SHA-256 checksum over the JSON body (excluding this field).</summary>
++        public string Checksum { get; set; }
++
++        /// <summary>True when WorkspaceValidator found and auto-corrected issues at save time.</summary>
++        public bool HasValidationWarnings { get; set; }
++
++        /// <summary>True when not all sub-states could be recovered (partial restore).</summary>
++        public bool PartialRecovery { get; set; }
++
++        public static WorkspaceMetadata Now(WorkspaceProfile profile) => new WorkspaceMetadata
++        {
++            SchemaVersion = "1.0.0",
++            SavedAt       = DateTime.UtcNow,
++            Profile       = profile,
++        };
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Domain/WorkspaceProfile.cs b/Assets/Scripts/Persistence/Domain/WorkspaceProfile.cs
+new file mode 100644
+index 0000000..c8e051b
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Domain/WorkspaceProfile.cs
+@@ -0,0 +1,39 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++namespace iDaVIE.Persistence.Domain
++{
++    /// <summary>
++    /// Describes which sub-systems are active in the current session.
++    /// Inferred at save time; drives WorkspaceStubFactory to produce the minimal stub.
++    /// </summary>
++    public enum WorkspaceProfile
++    {
++        /// <summary>FITS cube loaded, no mask, no features.</summary>
++        DataOnly,
++
++        /// <summary>FITS cube + mask loaded.</summary>
++        DataWithMask,
++
++        /// <summary>FITS cube + feature sets (no mask rendering).</summary>
++        DataWithFeatures,
++
++        /// <summary>Full session: FITS cube, mask, features, foveation.</summary>
++        FullWorkspace,
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Domain/WorkspaceSnapshot.cs b/Assets/Scripts/Persistence/Domain/WorkspaceSnapshot.cs
+new file mode 100644
+index 0000000..a79bb23
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Domain/WorkspaceSnapshot.cs
+@@ -0,0 +1,37 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using iDaVIE.Persistence.Domain.Dtos;
++
++namespace iDaVIE.Persistence.Domain
++{
++    /// <summary>
++    /// Immutable point-in-time value object representing a complete workspace state.
++    /// Declared as a non-positional record so Newtonsoft.Json can deserialise via the
++    /// parameterless constructor + property setters, while still supporting `with` expressions.
++    /// </summary>
++    public sealed record WorkspaceSnapshot
++    {
++        public WorkspaceMetadata   Metadata    { get; set; } = new WorkspaceMetadata { Profile = WorkspaceProfile.DataOnly };
++        public DataIoStateDto      DataIo      { get; set; } = new DataIoStateDto();
++        public RenderingStateDto   Rendering   { get; set; } = new RenderingStateDto();
++        public FeatureStateDto     Features    { get; set; }
++        public InteractionStateDto Interaction { get; set; } = new InteractionStateDto();
++        public GuiStateDto         Gui         { get; set; }
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Infrastructure/SnapshotRing.cs b/Assets/Scripts/Persistence/Infrastructure/SnapshotRing.cs
+new file mode 100644
+index 0000000..4f3b85c
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Infrastructure/SnapshotRing.cs
+@@ -0,0 +1,151 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using System;
++using System.Collections.Generic;
++using System.IO;
++using iDaVIE.Persistence.Domain;
++using Valve.Newtonsoft.Json;
++
++namespace iDaVIE.Persistence.Infrastructure
++{
++    /// <summary>
++    /// A handle pointing at one ring slot on disk.
++    /// </summary>
++    public class SnapshotHandle
++    {
++        public int      SlotIndex { get; }
++        public string   FilePath  { get; }
++        public DateTime SavedAt   { get; }
++
++        public SnapshotHandle(int slotIndex, string filePath, DateTime savedAt)
++        {
++            SlotIndex = slotIndex;
++            FilePath  = filePath;
++            SavedAt   = savedAt;
++        }
++    }
++
++    internal class RingIndex
++    {
++        public int Head     { get; set; }
++        public int Count    { get; set; }
++        public int Capacity { get; set; } = 10;
++    }
++
++    /// <summary>
++    /// Manages a fixed-capacity FIFO ring buffer of snapshot files on disk.
++    ///
++    /// Layout:
++    ///   dir/ring.json          — index: { head, count, capacity }
++    ///   dir/snapshot_00.json   — slot 0
++    ///   ...
++    ///
++    /// Atomic write protocol (crash-safe):
++    ///   1. Write JSON to snapshot_XX.json.tmp
++    ///   2. Rename .tmp → .json  (atomic on NTFS/ext4)
++    ///   3. Update ring.json
++    /// </summary>
++    public class SnapshotRing
++    {
++        private readonly string _directory;
++        private readonly int    _capacity;
++        private readonly object _lock = new object();
++
++        public SnapshotRing(string directory, int capacity = 10)
++        {
++            _directory = directory;
++            _capacity  = capacity;
++            Directory.CreateDirectory(directory);
++        }
++
++        /// <summary>Serialises and atomically pushes a snapshot into the ring.</summary>
++        public void Push(WorkspaceSnapshot snapshot, SnapshotSerializer serializer)
++        {
++            lock (_lock)
++            {
++                var index = ReadIndex();
++
++                int    slot  = index.Head % _capacity;
++                string tmp   = SlotTmpPath(slot);
++                string final = SlotPath(slot);
++
++                string json = serializer.Serialize(snapshot);
++                File.WriteAllText(tmp, json, System.Text.Encoding.UTF8);
++
++                if (File.Exists(final)) File.Delete(final);
++                File.Move(tmp, final);
++
++                index.Head  = (index.Head + 1) % _capacity;
++                index.Count = Math.Min(index.Count + 1, _capacity);
++                WriteIndex(index);
++            }
++        }
++
++        /// <summary>Returns all occupied slot handles, newest-first.</summary>
++        public IReadOnlyList<SnapshotHandle> GetAllNewestFirst()
++        {
++            lock (_lock)
++            {
++                var index   = ReadIndex();
++                var handles = new List<SnapshotHandle>();
++
++                for (int i = 1; i <= index.Count; i++)
++                {
++                    int    slot = ((index.Head - i) % _capacity + _capacity) % _capacity;
++                    string path = SlotPath(slot);
++                    if (!File.Exists(path)) continue;
++
++                    var savedAt = File.GetLastWriteTimeUtc(path);
++                    handles.Add(new SnapshotHandle(slot, path, savedAt));
++                }
++                return handles;
++            }
++        }
++
++        /// <summary>Returns the most recent snapshot handle, or null if the ring is empty.</summary>
++        public SnapshotHandle Peek()
++        {
++            var all = GetAllNewestFirst();
++            return all.Count > 0 ? all[0] : null;
++        }
++
++        // ── Private helpers ───────────────────────────────────────────────────────
++
++        private string SlotPath(int slot)    => Path.Combine(_directory, $"snapshot_{slot:D2}.json");
++        private string SlotTmpPath(int slot) => Path.Combine(_directory, $"snapshot_{slot:D2}.json.tmp");
++        private string IndexPath             => Path.Combine(_directory, "ring.json");
++
++        private RingIndex ReadIndex()
++        {
++            if (!File.Exists(IndexPath))
++                return new RingIndex { Capacity = _capacity };
++            string json = File.ReadAllText(IndexPath);
++            return JsonConvert.DeserializeObject<RingIndex>(json) ?? new RingIndex { Capacity = _capacity };
++        }
++
++        private void WriteIndex(RingIndex index)
++        {
++            string json = JsonConvert.SerializeObject(index, Formatting.Indented);
++            string tmp  = IndexPath + ".tmp";
++            File.WriteAllText(tmp, json);
++            if (File.Exists(IndexPath)) File.Delete(IndexPath);
++            File.Move(tmp, IndexPath);
++        }
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Infrastructure/SnapshotSerializer.cs b/Assets/Scripts/Persistence/Infrastructure/SnapshotSerializer.cs
+new file mode 100644
+index 0000000..84104f5
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Infrastructure/SnapshotSerializer.cs
+@@ -0,0 +1,99 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using System;
++using System.IO;
++using System.Security.Cryptography;
++using System.Text;
++using iDaVIE.Persistence.Domain;
++using Valve.Newtonsoft.Json;
++using Valve.Newtonsoft.Json.Converters;
++using Valve.Newtonsoft.Json.Serialization;
++
++namespace iDaVIE.Persistence.Infrastructure
++{
++    /// <summary>
++    /// Serialises/deserialises WorkspaceSnapshot to/from JSON using Valve.Newtonsoft.Json
++    /// (bundled with SteamVR). Uses CamelCase property names and StringEnumConverter.
++    ///
++    /// Checksum protocol:
++    ///   Serialize → compute SHA-256 over body (with "checksum":null placeholder) →
++    ///   inject result into Metadata.Checksum → re-serialize final form.
++    ///   On deserialize: recompute checksum over body-minus-checksum → compare → reject on mismatch.
++    /// </summary>
++    public class SnapshotSerializer
++    {
++        private static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
++        {
++            Formatting         = Formatting.Indented,
++            NullValueHandling  = NullValueHandling.Ignore,
++            Converters         = { new StringEnumConverter() },
++            DateFormatHandling = DateFormatHandling.IsoDateFormat,
++            ContractResolver   = new CamelCasePropertyNamesContractResolver(),
++        };
++
++        public string Serialize(WorkspaceSnapshot snapshot)
++        {
++            // Two-pass: first with null checksum to get stable body, then inject hash.
++            var noChecksum = snapshot with
++            {
++                Metadata = snapshot.Metadata with { Checksum = null }
++            };
++            string body  = JsonConvert.SerializeObject(noChecksum, Settings);
++            string hash  = ComputeChecksum(body);
++            var withHash = snapshot with
++            {
++                Metadata = snapshot.Metadata with { Checksum = $"sha256:{hash}" }
++            };
++            return JsonConvert.SerializeObject(withHash, Settings);
++        }
++
++        public WorkspaceSnapshot Deserialize(string filePath)
++        {
++            string json = File.ReadAllText(filePath, Encoding.UTF8);
++
++            var snapshot = JsonConvert.DeserializeObject<WorkspaceSnapshot>(json, Settings);
++            if (snapshot == null)
++                throw new InvalidDataException("Deserialised snapshot is null.");
++
++            string storedChecksum = snapshot.Metadata.Checksum;
++            var noChecksum = snapshot with
++            {
++                Metadata = snapshot.Metadata with { Checksum = null }
++            };
++            string body     = JsonConvert.SerializeObject(noChecksum, Settings);
++            string expected = $"sha256:{ComputeChecksum(body)}";
++
++            if (!string.Equals(storedChecksum, expected, StringComparison.OrdinalIgnoreCase))
++                throw new InvalidDataException($"Checksum mismatch in '{filePath}': stored={storedChecksum}, expected={expected}");
++
++            return snapshot;
++        }
++
++        private static string ComputeChecksum(string body)
++        {
++            byte[] bytes = Encoding.UTF8.GetBytes(body);
++            byte[] hash;
++            using (var sha = SHA256.Create())
++            {
++                hash = sha.ComputeHash(bytes);
++            }
++            return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
++        }
++    }
++}
+diff --git a/Assets/Scripts/Persistence/Infrastructure/WorkspaceStubFactory.cs b/Assets/Scripts/Persistence/Infrastructure/WorkspaceStubFactory.cs
+new file mode 100644
+index 0000000..c298889
+--- /dev/null
++++ b/Assets/Scripts/Persistence/Infrastructure/WorkspaceStubFactory.cs
+@@ -0,0 +1,96 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using System;
++using iDaVIE.Persistence.Domain;
++using iDaVIE.Persistence.Domain.Dtos;
++
++namespace iDaVIE.Persistence.Infrastructure
++{
++    /// <summary>
++    /// Creates a minimal snapshot stub for the given session profile.
++    /// Only the sub-sections required by the profile are allocated.
++    /// </summary>
++    public class WorkspaceStubFactory
++    {
++        public WorkspaceSnapshot CreateStub(WorkspaceProfile profile)
++        {
++            var metadata    = WorkspaceMetadata.Now(profile);
++            var dataIo      = new DataIoStateDto();
++            var interaction = new InteractionStateDto();
++
++            switch (profile)
++            {
++                case WorkspaceProfile.DataOnly:
++                    return new WorkspaceSnapshot
++                    {
++                        Metadata    = metadata,
++                        DataIo      = dataIo,
++                        Rendering   = new RenderingStateDto(),
++                        Features    = null,
++                        Interaction = interaction,
++                        Gui         = null,
++                    };
++
++                case WorkspaceProfile.DataWithMask:
++                    return new WorkspaceSnapshot
++                    {
++                        Metadata    = metadata,
++                        DataIo      = dataIo,
++                        Rendering   = new RenderingStateDto
++                        {
++                            Mask = new MaskStateDto { MaskMode = "Enabled" }
++                        },
++                        Features    = null,
++                        Interaction = interaction,
++                        Gui         = null,
++                    };
++
++                case WorkspaceProfile.DataWithFeatures:
++                    return new WorkspaceSnapshot
++                    {
++                        Metadata    = metadata,
++                        DataIo      = dataIo,
++                        Rendering   = new RenderingStateDto(),
++                        Features    = new FeatureStateDto(),
++                        Interaction = interaction,
++                        Gui         = new GuiStateDto(),
++                    };
++
++                case WorkspaceProfile.FullWorkspace:
++                    return new WorkspaceSnapshot
++                    {
++                        Metadata    = metadata,
++                        DataIo      = dataIo,
++                        Rendering   = new RenderingStateDto
++                        {
++                            Mask       = new MaskStateDto { MaskMode = "Enabled" },
++                            Foveation  = new FoveationStateDto(),
++                            MomentMaps = new MomentMapStateDto(),
++                        },
++                        Features    = new FeatureStateDto(),
++                        Interaction = interaction,
++                        Gui         = new GuiStateDto(),
++                    };
++
++                default:
++                    throw new ArgumentOutOfRangeException(nameof(profile), profile, "Unknown WorkspaceProfile.");
++            }
++        }
++    }
++}
+diff --git a/Assets/Scripts/Persistence/PersistenceController.cs b/Assets/Scripts/Persistence/PersistenceController.cs
+new file mode 100644
+index 0000000..9051b7f
+--- /dev/null
++++ b/Assets/Scripts/Persistence/PersistenceController.cs
+@@ -0,0 +1,192 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using System;
++using System.Collections.Concurrent;
++using System.IO;
++using iDaVIE.Persistence.Application;
++using iDaVIE.Persistence.Application.Interfaces;
++using iDaVIE.Persistence.Domain;
++using iDaVIE.Persistence.Infrastructure;
++using iDaVIE.Persistence.Adapters;
++using UnityEngine;
++using VolumeData;
++
++namespace iDaVIE.Persistence
++{
++    /// <summary>
++    /// Bootstraps the persistence pipeline inside Unity.
++    ///
++    /// Wiring order:
++    ///   Awake  → resolve scene refs, build all services
++    ///   Start  → CrashDetector.CheckAndAcquire() → optional restore → AutosaveService.Start()
++    ///   Update → drain _pendingSaves queue (main-thread save execution)
++    ///   OnApplicationQuit / OnDestroy → release crash lock, dispose timer
++    /// </summary>
++    public class PersistenceController : MonoBehaviour
++    {
++        [Header("Scene References")]
++        [Tooltip("The VolumeDataSetRenderer in the scene.")]
++        public VolumeDataSetRenderer volumeRenderer;
++
++        [Tooltip("The VolumeInputController in the scene.")]
++        public VolumeInputController volumeInputController;
++
++        [Tooltip("The FeatureSetManager in the scene.")]
++        public FeatureData.FeatureSetManager featureSetManager;
++
++        // ── Services (built in Awake) ─────────────────────────────────────────
++        private AutosaveService      _autosaveService;
++        private CrashDetector        _crashDetector;
++        private RestoreOrchestrator  _restoreOrchestrator;
++        private SaveWorkspaceUseCase _saveUseCase;
++        private SnapshotRing         _ring;
++        private SnapshotSerializer   _serializer;
++
++        // Thread-safe queue: timer thread posts work items; Update() drains them
++        private readonly ConcurrentQueue<Action> _pendingSaves = new ConcurrentQueue<Action>();
++
++        // ── Unity lifecycle ───────────────────────────────────────────────────
++
++        private void Awake()
++        {
++            string snapshotDir = ResolveSnapshotDirectory();
++            Debug.Log($"[Persistence] Snapshot directory: {snapshotDir}");
++
++            _ring          = new SnapshotRing(snapshotDir, Config.Instance.snapshotCapacity);
++            _serializer    = new SnapshotSerializer();
++            _crashDetector = new CrashDetector(snapshotDir);
++
++            var dataIoAdapter      = new DataIoStateAdapter(volumeRenderer);
++            var renderingAdapter   = new RenderingStateAdapter(volumeRenderer);
++            var featureAdapter     = new FeatureStateAdapter(featureSetManager);
++            var interactionAdapter = new InteractionStateAdapter(volumeInputController);
++            var guiAdapter         = new GuiStateAdapter(volumeRenderer);
++
++            IWorkspaceStateCollector collector = new UnityWorkspaceStateCollector(
++                dataIoAdapter, renderingAdapter, featureAdapter, interactionAdapter, guiAdapter);
++
++            _saveUseCase = new SaveWorkspaceUseCase(
++                collector,
++                new WorkspaceStubFactory(),
++                new WorkspaceValidator(),
++                _serializer,
++                _ring);
++
++            _restoreOrchestrator = new RestoreOrchestrator(
++                dataIoAdapter, renderingAdapter, featureAdapter, interactionAdapter, guiAdapter);
++
++            _autosaveService = new AutosaveService(_saveUseCase, Config.Instance.autosaveIntervalSeconds);
++            _autosaveService.SaveCompleted += skipped =>
++                Debug.Log(skipped
++                    ? "[Persistence] Autosave cycle skipped (save already in progress)."
++                    : "[Persistence] Autosave snapshot written.");
++        }
++
++        private void Start()
++        {
++            bool crashed = _crashDetector.CheckAndAcquire();
++
++            if (crashed)
++            {
++                Debug.LogWarning("[Persistence] Crash detected — attempting recovery from last snapshot.");
++                TryRestore();
++            }
++            else
++            {
++                Debug.Log("[Persistence] Clean start — no crash detected.");
++            }
++
++            _autosaveService.Start();
++            Debug.Log($"[Persistence] Autosave started (interval = {Config.Instance.autosaveIntervalSeconds}s).");
++        }
++
++        private void Update()
++        {
++            Action action;
++            while (_pendingSaves.TryDequeue(out action))
++                action();
++        }
++
++        private void OnApplicationQuit()
++        {
++            CleanShutdown();
++        }
++
++        private void OnDestroy()
++        {
++            CleanShutdown();
++        }
++
++        // ── Public API ────────────────────────────────────────────────────────
++
++        /// <summary>
++        /// Triggers an immediate save and resets the autosave timer.
++        /// Call from a UI button handler on the main thread.
++        /// </summary>
++        public void SaveNow()
++        {
++            _autosaveService.TriggerNow();
++        }
++
++        // ── Private helpers ───────────────────────────────────────────────────
++
++        private void TryRestore()
++        {
++            try
++            {
++                var handle = _ring.Peek();
++                if (handle == null)
++                {
++                    Debug.LogWarning("[Persistence] No snapshot found — nothing to restore.");
++                    return;
++                }
++
++                Debug.Log($"[Persistence] Restoring from: {handle.FilePath} (saved {handle.SavedAt:u})");
++                var snapshot = _serializer.Deserialize(handle.FilePath);
++                _restoreOrchestrator.Restore(snapshot);
++            }
++            catch (Exception ex)
++            {
++                Debug.LogError($"[Persistence] Restore failed: {ex.Message}\n{ex.StackTrace}");
++            }
++        }
++
++        private void CleanShutdown()
++        {
++            if (_autosaveService != null)
++            {
++                _autosaveService.Stop();
++                _autosaveService.Dispose();
++            }
++            if (_crashDetector != null)
++                _crashDetector.Release();
++            Debug.Log("[Persistence] Clean shutdown — crash lock released.");
++        }
++
++        private static string ResolveSnapshotDirectory()
++        {
++            string dir = Config.Instance.workspaceSaveDirectory;
++            if (!string.IsNullOrEmpty(dir))
++                return dir;
++
++            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
++            return Path.Combine(appData, "iDaVIE", "workspaces", "default", "snapshots");
++        }
++    }
++}
+diff --git a/Assets/Scripts/Persistence/UnityWorkspaceStateCollector.cs b/Assets/Scripts/Persistence/UnityWorkspaceStateCollector.cs
+new file mode 100644
+index 0000000..c19c241
+--- /dev/null
++++ b/Assets/Scripts/Persistence/UnityWorkspaceStateCollector.cs
+@@ -0,0 +1,62 @@
++/*
++ * iDaVIE (immersive Data Visualisation Interactive Explorer)
++ * Copyright (C) 2024 IDIA, INAF-OACT
++ *
++ * This file is part of the iDaVIE project.
++ *
++ * iDaVIE is free software: you can redistribute it and/or modify it under the terms
++ * of the GNU Lesser General Public License (LGPL) as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later version.
++ *
++ * iDaVIE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
++ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License along with
++ * iDaVIE in the LICENSE file. If not, see <https://www.gnu.org/licenses/>.
++ */
++
++using iDaVIE.Persistence.Application.Interfaces;
++using iDaVIE.Persistence.Domain;
++
++namespace iDaVIE.Persistence
++{
++    /// <summary>
++    /// Aggregates all five adapter captures into a single WorkspaceAggregate.
++    /// Must be called on the Unity main thread.
++    /// </summary>
++    public class UnityWorkspaceStateCollector : IWorkspaceStateCollector
++    {
++        private readonly IDataIoStateAdapter      _dataIo;
++        private readonly IRenderingStateAdapter   _rendering;
++        private readonly IFeatureStateAdapter     _feature;
++        private readonly IInteractionStateAdapter _interaction;
++        private readonly IGuiStateAdapter         _gui;
++
++        public UnityWorkspaceStateCollector(
++            IDataIoStateAdapter      dataIo,
++            IRenderingStateAdapter   rendering,
++            IFeatureStateAdapter     feature,
++            IInteractionStateAdapter interaction,
++            IGuiStateAdapter         gui)
++        {
++            _dataIo      = dataIo;
++            _rendering   = rendering;
++            _feature     = feature;
++            _interaction = interaction;
++            _gui         = gui;
++        }
++
++        public WorkspaceAggregate Collect()
++        {
++            return new WorkspaceAggregate
++            {
++                DataIo      = _dataIo.Capture(),
++                Rendering   = _rendering.Capture(),
++                Features    = _feature.Capture(),
++                Interaction = _interaction.Capture(),
++                Gui         = _gui.Capture(),
++            };
++        }
++    }
++}

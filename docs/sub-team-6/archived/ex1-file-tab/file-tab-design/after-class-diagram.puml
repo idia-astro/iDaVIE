@@ -1,0 +1,255 @@
+@startuml file-tab-after
+title File Tab — AFTER refactoring\n(proposed MVVM design — design artefact only, not production code)
+
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+    ArrowColor #1B5E20
+}
+skinparam interface {
+    BackgroundColor #F3E5F5
+    BorderColor #7B1FA2
+    ArrowColor #4A148C
+}
+skinparam note {
+    BackgroundColor #FFF9C4
+    BorderColor #F57F17
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' View layer — Unity (thin MonoBehaviour adapter, allowed to use UnityEngine)
+' ─────────────────────────────────────────────────────────────────────────────
+package "View Layer — Unity MonoBehaviour (thin)" <<Rectangle>> #EDE7F6 {
+
+    class FileTabView <<MonoBehaviour>> {
+        -_vm: IFileTabViewModel
+        +BindTo(vm: IFileTabViewModel): void
+        -OnBrowseImageClicked(): void
+        -OnBrowseMaskClicked(): void
+        -OnLoadClicked(): void
+        -OnHduDropdownChanged(index: int): void
+        -OnSubsetToggleChanged(val: bool): void
+    }
+
+    note right of FileTabView
+      Knows ONLY IFileTabViewModel.
+      No transform.Find() chains.
+      No P/Invoke.
+      Registers bindings in OnEnable;
+      unregisters in OnDisable.
+    end note
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' ViewModel layer — pure C# (no UnityEngine / SteamVR allowed)
+' ─────────────────────────────────────────────────────────────────────────────
+package "ViewModel Layer — pure C# (no UnityEngine)" <<Rectangle>> #E8F5E9 {
+
+    interface IFileTabViewModel <<interface>> {
+        +ImagePath: string?
+        +MaskPath: string?
+        +HduOptions: IReadOnlyList<HduInfo>
+        +SelectedHduIndex: int
+        +ZAxisOptions: IReadOnlyList<string>
+        +SelectedZAxisIndex: int
+        +SubsetEnabled: bool
+        +Subset: SubsetBoundsViewModel
+        +RatioModeOptions: IReadOnlyList<string>
+        +RatioMode: RatioMode
+        +IsLoadable: bool
+        +HeaderText: string?
+        +IsLoading: bool
+        +ValidationMessage: string?
+        +BrowseImageCommand: IAsyncCommand
+        +BrowseMaskCommand: IAsyncCommand
+        +LoadCommand: IAsyncCommand
+        +ClearMaskCommand: ICommand
+    }
+
+    class FileTabViewModel {
+        -_fitsService: IFitsService
+        -_dialogService: IFileDialogService
+        -_volumeService: IVolumeService
+        -_memoryProbe: IMemoryProbe
+        -_currentImageInfo: FitsFileInfo?
+        -_currentMaskInfo: FitsFileInfo?
+        -_ratioMode: RatioMode
+        +IsLoadable: bool <<pure C# computed>>
+        -BrowseImageAsync(): Task
+        -BrowseMaskAsync(): Task
+        -LoadAsync(): Task
+        -ClearMask(): void
+        +Dispose(): void
+        -MaskAxesMatchImage(img, mask): bool <<static>>
+        -PopulateZAxisOptions(info): void
+        -UpdateZAxisMax(): void
+        -ComputeZScale(mode, info): float <<static>>
+        -BuildMemoryWarning(): string?
+    }
+
+    class SubsetBoundsViewModel {
+        +XMin, XMax: int
+        +YMin, YMax: int
+        +ZMin, ZMax: int
+        +MaxX, MaxY, MaxZ: int
+        +ResetToAxisMaxima(x, y, z: int): void
+        +UpdateZAxisMax(newMax: int): void
+        +ToDto(): SubsetBounds
+    }
+
+    note bottom of SubsetBoundsViewModel
+      Replaces three CanvassDesktop methods:
+      checkSubsetBounds() → per-property setters
+      setSubsetBounds()   → ResetToAxisMaxima()
+      updateSubsetZMax()  → UpdateZAxisMax()
+    end note
+
+    interface IFitsHandle <<interface>> {
+        +FilePath: string
+        +Dispose(): void
+    }
+
+    note right of IFitsHandle
+      Opaque handle to an open FITS file.
+      Carries the native IntPtr inside
+      FitsServiceAdapter.FitsHandle (sealed,
+      private nested class) — no IntPtr
+      escapes the adapter boundary.
+    end note
+
+    class FitsFileInfo <<DTO, IDisposable>> #FFF9C4 {
+        +Handle: IFitsHandle
+        +FilePath: string
+        +HduList: IReadOnlyList<HduInfo>
+        +NAxis: int
+        +AxisSizes: IReadOnlyDictionary<int,long>
+        +HeaderText: string
+        +EstimatedBytes: long
+        +Dispose(): void
+    }
+
+    class HduInfo <<record>> #FFF9C4 {
+        +Index: int
+        +Name: string
+        +HduType: string
+    }
+
+    class SubsetBounds <<DTO>> #FFF9C4 {
+        +XMin, XMax: int
+        +YMin, YMax: int
+        +ZMin, ZMax: int
+    }
+
+    class LoadCubeRequest <<DTO>> #FFF9C4 {
+        +ImagePath: string
+        +MaskPath: string?
+        +HduIndex: int
+        +Subset: SubsetBounds?
+        +ZAxisSelection: int
+        +ZScale: float
+    }
+
+    class CubeLoadedEventArgs <<DTO>> #FFF9C4 {
+        +ImagePath: string
+        +MaskPath: string?
+        +HasMask: bool
+        +HduIndex: int
+    }
+
+    enum RatioMode {
+        Isotropic
+        ProportionalZ
+    }
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' Service interfaces — ACL (Anti-Corruption Layer) boundary
+' ─────────────────────────────────────────────────────────────────────────────
+package "Service Interfaces — ACL boundary" <<Rectangle>> #FFF3E0 {
+
+    interface IFitsService <<interface>> {
+        +OpenImageAsync(path: string): Task<FitsFileInfo>
+        +OpenMaskAsync(path: string): Task<FitsFileInfo>
+        +GetHeaderTextAsync(handle: IFitsHandle, hdu: int): Task<string>
+    }
+
+    note right of IFitsService
+      GetHeaderTextAsync takes the open handle,
+      not a file path — reuses the existing
+      native file pointer across HDU reads.
+      Eliminates per-dropdown file-reopen
+      (CanvassDesktop.cs:1435 smell S2).
+    end note
+
+    interface IFileDialogService <<interface>> {
+        +PickFileAsync(title, dir, ext[]): Task<string?>
+    }
+
+    interface IVolumeService <<interface>> {
+        +IsCubeLoaded: bool
+        +LoadCubeAsync(request, progress, ct): Task
+        +CubeLoaded: event Action<CubeLoadedEventArgs>
+    }
+
+    interface IMemoryProbe <<interface>> {
+        +TotalSystemBytes: long
+    }
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' Adapters — Unity assembly (only here may UnityEngine / P/Invoke appear)
+' ─────────────────────────────────────────────────────────────────────────────
+package "Adapters — Unity assembly (UnityEngine allowed)" <<Rectangle>> #FFEBEE {
+
+    class FitsServiceAdapter <<Unity>> #FCE4EC {
+        ' Wraps FitsReader P/Invoke calls.
+        ' Private nested FitsHandle carries native IntPtr;
+        ' no IntPtr escapes beyond this class.
+    }
+
+    class FileDialogServiceAdapter <<Unity>> #FCE4EC {
+        ' Wraps StandaloneFileBrowser async callback into Task<string?>.
+        ' Persists last directory via PlayerPrefs.
+    }
+
+    class VolumeServiceAdapter <<Unity, MonoBehaviour>> #FCE4EC {
+        ' Wraps VolumeCommandController + coroutine lifecycle.
+        ' Raises CubeLoaded(DTO) once per successful load —
+        ' replaces postLoadFileFileSystem cross-tab cascade.
+        ' S6 (busy-wait) eliminated: yields renderer._startFunc directly.
+    }
+
+    class MemoryProbeAdapter #FCE4EC {
+        ' Plain C# object — no MonoBehaviour.
+        ' Wraps SystemInfo.systemMemorySize (returns bytes).
+        +TotalSystemBytes: long
+    }
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' Relationships
+' ─────────────────────────────────────────────────────────────────────────────
+
+FileTabView       ..>  IFileTabViewModel   : binds to
+FileTabViewModel  ..|> IFileTabViewModel   : implements
+FileTabViewModel  *--  SubsetBoundsViewModel
+FileTabViewModel  -->  IFitsService
+FileTabViewModel  -->  IFileDialogService
+FileTabViewModel  -->  IVolumeService
+FileTabViewModel  -->  IMemoryProbe
+
+FitsServiceAdapter          ..|> IFitsService         : implements
+FileDialogServiceAdapter    ..|> IFileDialogService   : implements
+VolumeServiceAdapter        ..|> IVolumeService       : implements
+MemoryProbeAdapter          ..|> IMemoryProbe         : implements
+FitsServiceAdapter          ..|> IFitsHandle          : private FitsHandle nested
+
+FitsFileInfo    -->  IFitsHandle                  : owns (IDisposable)
+FitsFileInfo    <..  FileTabViewModel             : "returned by\nIFitsService"
+LoadCubeRequest <..  FileTabViewModel             : "passed to\nIVolumeService"
+SubsetBounds    <..  SubsetBoundsViewModel        : "snapshot via ToDto()"
+HduInfo         --*  FitsFileInfo
+IVolumeService  ..>  CubeLoadedEventArgs          : "raises via\nCubeLoaded event"
+
+@enduml

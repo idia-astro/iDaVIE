@@ -1,0 +1,63 @@
+@startuml WE1-2-after-dependency-graph
+title WE1-2 — File Tab: AFTER dependency graph\n(proposed MVVM + ACL design)
+
+skinparam packageStyle rectangle
+skinparam component {
+    BackgroundColor White
+    BorderColor Black
+}
+skinparam arrow {
+    Color #444444
+}
+
+component "FileTabViewModel\n----\nWMC ≈ 27  CBO ≈ 9" as FTVM #90EE90
+component "SubsetBoundsViewModel\n----\nWMC ≈ 12  CBO ≈ 1" as SBVM #90EE90
+
+package "Service Interfaces (ACL boundary)" #FFF9C4 {
+    component IFitsService
+    component IFileDialogService
+    component IVolumeService
+    component IMemoryProbe
+}
+
+package "Adapters — Unity assembly" #FFE4E4 {
+    component "FitsServiceAdapter\n(UnityEngine allowed)" as FSA
+    component "FileDialogServiceAdapter\n(UnityEngine allowed)" as SFDA
+    component "VolumeServiceAdapter\n(UnityEngine allowed)" as VSA
+    component "MemoryProbeAdapter" as MPA
+}
+
+package "External / Native" #FFF2CC {
+    component StandaloneFileBrowser
+    component FitsReader
+    component SystemInfo
+}
+
+package "Unity / Sub-team 1 domain" #E1F5FE {
+    component UnityEngine
+    component VolumeCommandController
+}
+
+' ── ViewModel → interfaces only (no platform types on this side of the ACL) ──
+FTVM --> IFitsService
+FTVM --> IFileDialogService
+FTVM --> IVolumeService
+FTVM --> IMemoryProbe
+FTVM *-- SBVM
+
+' ── Adapters implement the interfaces ────────────────────────────────────────
+FSA  ..|> IFitsService        : implements
+SFDA ..|> IFileDialogService  : implements
+VSA  ..|> IVolumeService      : implements
+MPA  ..|> IMemoryProbe        : implements
+
+' ── Only adapters cross the ACL into platform code ───────────────────────────
+FSA  --> FitsReader
+SFDA --> StandaloneFileBrowser
+VSA  --> VolumeCommandController
+VSA  --> UnityEngine
+MPA  --> SystemInfo
+
+caption FileTabViewModel CBO drops from ~32 (CanvassDesktop) to ≈ 9 (domain target ≤ 14).\nUnityEngine and FitsReader are isolated inside adapters — domain code cannot transitively\ndepend on them (ADR-0003 satisfied). Adapters are the only code that crosses the ACL.
+
+@enduml

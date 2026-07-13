@@ -1,0 +1,54 @@
+@startuml CanvassDesktop
+title CanvassDesktop — desktop launcher god MonoBehaviour\n(1899 LOC, 62 public methods, Assets/Scripts/UI/CanvassDesktop.cs)
+hide empty members
+
+class CanvassDesktop <<MonoBehaviour>> #lightyellow {
+  .. file dialog / I/O ..
+  +BrowseImageFile() / BrowseMaskFile()
+  +BrowseSourcesFile() / BrowseMappingFile()
+  +SaveMappingFile() / LoadSourcesFile()
+  +LoadFileFromFileSystem()
+  +LoadCubeCoroutine()
+  .. HDU + subset ..
+  +ChangeHduSelection()
+  +onSubsetToggleSelected()
+  +setSubsetBounds() / checkSubsetBounds()
+  +updateSubsetZMax()
+  .. mask & memory ..
+  +CheckImgMaskAxisSize()
+  +CheckMemSpaceForCubes()
+  .. source mapping ..
+  +ChangeSourceMapping()
+  +OnRatioDropdownValueChanged()
+  +OnRestFrequencyDropdownValueChanged()
+  +OnRestFrequencyValueChanged()
+  .. visualisation defaults ..
+  +ChangeColorMap()
+  +UpdateSigma()
+  +RestoreDefaults()
+  .. app lifecycle ..
+  +DismissFileLoad()
+  +Exit()
+}
+
+' Frameworks (ACL boundary)
+class StandaloneFileBrowser <<SFB>>           #mistyrose
+class TMP_Dropdown          <<TMPro>>          #mistyrose
+class UnityUI               <<UnityEngine.UI>> #mistyrose
+CanvassDesktop ..> StandaloneFileBrowser
+CanvassDesktop ..> TMP_Dropdown
+CanvassDesktop ..> UnityUI
+
+' Domain collaborators
+class VolumeDataSet         #palegreen
+class VolumeDataSetRenderer
+class FeatureSetManager
+class FitsReader            <<P/Invoke>> #palegreen
+class SourceMappingOptions
+
+CanvassDesktop ..> VolumeDataSet
+CanvassDesktop ..> VolumeDataSetRenderer
+CanvassDesktop ..> FeatureSetManager
+CanvassDesktop ..> FitsReader
+CanvassDesktop ..> SourceMappingOptions
+@enduml

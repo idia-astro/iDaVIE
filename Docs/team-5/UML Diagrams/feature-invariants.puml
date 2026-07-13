@@ -1,0 +1,100 @@
+@startuml feature-invariants
+title Feature Class — Invariants List\n(iDaVIE — DataFeatures namespace)
+
+skinparam class {
+  BackgroundColor White
+  BorderColor #555
+  ArrowColor #333
+}
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #888
+}
+
+class Feature {
+  + Id : int
+  + Name : string
+  + Index : int
+  + Flag : string
+  + RawData : string[]
+  + Temporary : bool
+  + Metric : float
+  + Comment : string
+  + FeatureSetParent : FeatureSetRenderer
+  - _selected : bool
+  - _active : bool
+  - _corners : Vector3[2]
+  - _unityBounds : Bounds
+  ..
+  + CornerMin : Vector3 <<get>>
+  + CornerMax : Vector3 <<get>>
+  + Center : Vector3 <<get/set>>
+  + Size : Vector3 <<get/set>>
+  + Visible : bool <<get/set>>
+  + Selected : bool <<get/set>>
+  + UnityBounds : Bounds <<get>>
+}
+
+note top of Feature
+  <b>SPATIAL / GEOMETRIC</b>
+
+  INV-1: CornerMin.x <= CornerMax.x
+         CornerMin.y <= CornerMax.y
+         CornerMin.z <= CornerMax.z
+
+  INV-2: Size.x >= 1, Size.y >= 1, Size.z >= 1
+         (size is padded by one — bounding box
+         includes both the min and max voxels)
+
+  INV-3: Center == (CornerMin + CornerMax) / 2
+         must hold at all times
+
+  INV-4: UnityBounds.center == Center
+         UnityBounds.size == Size
+         must hold at all times
+end note
+
+note right of Feature
+  <b>IDENTITY</b>
+
+  INV-5: Id is assigned at construction
+         and never changes (get-only)
+
+  INV-6: Name is assigned at construction
+         and never changes (get-only)
+
+  INV-7: Index >= 0 whenever the feature
+         belongs to a FeatureSetRenderer
+end note
+
+note bottom of Feature
+  <b>STATE</b>
+
+  INV-8:  If Visible == false
+          then Selected must also == false
+          (cannot select an invisible feature)
+
+  INV-9:  If Temporary == true,
+          feature is hidden on deselect
+          and never persists to storage
+
+  INV-10: FeatureSetParent is either null
+          (unassigned) or a valid live
+          FeatureSetRenderer instance
+end note
+
+note left of Feature
+  <b>DATA</b>
+
+  INV-11: RawData is never null
+          (may be an empty array, never null)
+
+  INV-12: Flag is never null
+          (defaults to empty string "")
+
+  INV-13: Metric and Comment are only
+          meaningful when feature belongs
+          to the New (user-defined) feature set
+end note
+
+@enduml

@@ -1,0 +1,53 @@
+@startuml WE2-before-dependency-graph
+title WE2 — Debug Tab: BEFORE dependency graph
+
+skinparam packageStyle rectangle
+skinparam component {
+    BackgroundColor White
+    BorderColor Black
+}
+skinparam arrow {
+    Color #444444
+}
+
+package "Assembly-CSharp (Unity assembly — everything is here)" #FFF2CC {
+    component "DebugLogging\n----\n255 LOC · MonoBehaviour\nLCOM_HS = 0.95 · 4 disjoint concerns" as DebugLogging #OrangeRed
+    component "CanvassDesktop\n----\n40 Debug.Log* call sites" as CanvassDesktop
+    component "DataAnalysis\n----\n4 Debug.Log* call sites" as DataAnalysis
+    component "Config\n----\nsingleton" as Config
+}
+
+package "Unity / native platform" #E1F5FE {
+    component "UnityEngine.Application\n----\nstatic logMessageReceived event" as Application
+    component "UnityEngine.Debug\n+ UnityEngine.UI.Button / Scrollbar" as UnityEngine
+    component "UnityEngine.PlayerPrefs" as PlayerPrefs
+}
+
+package "External / Third-party" #FFF2CC {
+    component "TextMeshPro\nTMP_InputField" as TMPro
+    component "StandaloneFileBrowser\nSFB.*" as SFB
+}
+
+package "System BCL" #FFF2CC {
+    component "System.IO.StreamWriter\nSystem.Text.StringBuilder\nSystem.Collections.Queue" as BCL
+}
+
+' ── Producer side — every Debug.Log* call site goes through the static class ──
+CanvassDesktop --> UnityEngine : "Debug.Log* (×40)"
+DataAnalysis   --> UnityEngine : "Debug.Log* (×4)"
+UnityEngine    ..> Application : "fires globally\nlogMessageReceived"
+
+' ── Single global subscriber (the untestable hook) ────────────────────────────
+Application --> DebugLogging : "HandleLog(s, s, type)\n★ static event subscription"
+
+' ── DebugLogging's nine downstream collaborators ──────────────────────────────
+DebugLogging --> BCL          : "Queue.Enqueue\nStreamWriter open/Write/Close\nStringBuilder.Append"
+DebugLogging --> TMPro        : ".text = entire history"
+DebugLogging --> SFB          : "SaveFilePanelAsync"
+DebugLogging --> PlayerPrefs  : "LastDebugPath"
+DebugLogging --> Config       : "numberOfLogsToKeep"
+DebugLogging --> UnityEngine  : "Scrollbar / Button / Debug.Log\n(re-entrant on Start)"
+
+caption DebugLogging owns all debug-tab responsibilities — capture, storage, display, and export —\nwith no layer separation. The single seam between Unity's static log event and the consumer\nis Application.logMessageReceived itself, which exposes no interface and no test double.\nAll types compile only inside Assembly-CSharp; UnityEngine is a compile-time dependency.
+
+@enduml

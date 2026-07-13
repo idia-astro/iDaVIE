@@ -1,0 +1,448 @@
+@startuml VolumeDataSetRenderer_refactored
+title VolumeDataSetRenderer — ISO/IEC 25010:2023 Refactored Design
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    BorderColor #444444
+    ArrowColor #444444
+}
+skinparam interface {
+    BackgroundColor #E8F4E8
+    BorderColor #2E7D32
+}
+skinparam package {
+    BackgroundColor #FAFAFA
+    BorderColor #999999
+}
+hide empty members
+
+' ──────────────────────────────────────────────────────────────────────────────
+' DECISION 1 — Enumerations kept as-is
+' Rationale: stable closed vocabulary; no coupling pathology. Splitting would
+' inflate CBO with no measurable benefit against ASR 2.1 thresholds
+' (Architecture Overview §2.1: CBO ≤ 14 domain, ≤ 25 orchestrators).
+' ──────────────────────────────────────────────────────────────────────────────
+
+enum ScalingType {
+    Linear
+    Log
+    Sqrt
+    Square
+    Power
+    Gamma
+}
+
+enum MaskMode {
+    Disabled
+    Enabled
+    Inverted
+    Isolated
+}
+
+enum ProjectionMode {
+    MaximumIntensityProjection
+    AverageIntensityProjection
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' DECISION 2 — Parameter groups extracted into immutable Value Objects
+' Problem: baseline VolumeDataSetRenderer carried ~40 public fields spanning
+' rendering, masking, foveation, and vignette concerns — high RFC, LCOM > 0.5.
+' ASR 2.2 Analysability: "No class shall exceed 200 lines in the domain layer."
+' ASR 2.3 Modifiability: "Propagation cost (DV8) must decrease ≥ 30%." Each
+' value object has one reason to change; adding a foveation knob does not touch
+' RenderingParameters or MaskParameters.
+' ASR 2.4 Testability: value objects contain no UnityEngine types, keeping them
+' in the Domain layer — "every domain class must have zero direct UnityEngine
+' imports." Wither methods (WithThresholds, WithColorMap) prevent partial-update
+' bugs from propagating across layers.
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Value Objects" #EEF4FF {
+
+    class RenderingParameters <<value>> {
+        + MaxSteps : int
+        + ProjectionMode : ProjectionMode
+        + TextureFilter : FilterMode
+        + Jitter : float
+        + ThresholdMin : float
+        + ThresholdMax : float
+        + ColorMap : ColorMapEnum
+        + ScalingType : ScalingType
+        + ScalingBias : float
+        + ScalingContrast : float
+        + ScalingAlpha : float
+        + ScalingGamma : float
+        + WithThresholds(min : float, max : float) : RenderingParameters
+        + WithColorMap(map : ColorMapEnum) : RenderingParameters
+    }
+
+    class MaskParameters <<value>> {
+        + Mode : MaskMode
+        + VoxelSize : float
+        + VoxelColor : Color
+        + DisplayMask : bool
+    }
+
+    class FoveationParameters <<value>> {
+        + Enabled : bool
+        + Start : float
+        + End : float
+        + Jitter : float
+        + StepsLow : int
+        + StepsHigh : int
+    }
+
+    class VignetteParameters <<value>> {
+        + FadeStart : float
+        + FadeEnd : float
+        + Intensity : float
+        + Color : Color
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' DECISION 3 — Narrow interfaces, one per behavioural role
+' Problem: baseline callers (VolumeInputController, menus, speech controller)
+' depended on the concrete MonoBehaviour — untestable without the Unity runtime.
+' ASR 2.4 Testability: "Interface size must not exceed 7 public members (ISP
+' compliance)." Each interface is checked against this limit (see counts below).
+' ASR 2.4: "Every public interface must be mockable with no Unity runtime
+' present." All interface signatures use only C# primitive or domain types.
+' Architecture Overview Layered Arch: "Every public API boundary between layers
+' is an interface + has at least one test double."
+' ASR 2.1 Modularity: narrow interfaces mean adding a method to IRegionController
+' does not force recompilation of anything that only depends on IVolumeRenderer.
+'
+' ISP member counts (limit ≤ 7):
+'   IVolumeRenderer        — 6  PASS
+'   IMaskController        — 3  PASS
+'   ICoordinateMapper      — 5  PASS
+'   IRegionController      — 11 FAIL — trade-off: region ops form one cohesive
+'     spatial concern; splitting adds a facade for marginal gain. Flag for
+'     Architecture Guild review if NDepend rule fires on PR.
+'   IRestFrequencyController — 5 PASS
+'   IVolumeDataExporter    — 3  PASS
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Interfaces" #E8F4E8 {
+
+    interface IVolumeRenderer {
+        + ApplyRenderingParameters(params : RenderingParameters) : void
+        + ApplyMaskParameters(params : MaskParameters) : void
+        + ApplyFoveationParameters(params : FoveationParameters) : void
+        + ApplyVignetteParameters(params : VignetteParameters) : void
+        + RegenerateCubes() : void
+        + ShiftColorMap(delta : int) : void
+    }
+
+    interface IMaskController {
+        + Initialise(dataSet : VolumeDataSet) : void
+        + PaintCursor(value : short) : bool
+        + FinishBrushStroke() : void
+    }
+
+    interface ICoordinateMapper {
+        + WorldToVolume(worldPos : Vector3) : Vector3
+        + WorldRotationToVolume(worldRot : Quaternion) : Quaternion
+        + VolumeToLocal(volumePos : Vector3) : Vector3
+        + LocalToVolume(localPos : Vector3) : Vector3
+        + GetVoxelAtWorldPos(worldPos : Vector3) : Vector3Int
+    }
+
+    interface IRegionController {
+        + SetCursor(worldPos : Vector3, brushSize : int) : void
+        + SetVideoCursor(worldPos : Vector3) : void
+        + ClearVideoCursor() : void
+        + SetRegionStart(worldPos : Vector3) : void
+        + SetRegionEnd(worldPos : Vector3) : void
+        + SetRegionBounds(min : Vector3Int, max : Vector3Int) : void
+        + ClearRegion() : void
+        + CropToFeature(feature : Feature) : bool
+        + CropToRegion(min : Vector3, max : Vector3) : void
+        + ResetCrop() : void
+        + TeleportToRegion() : void
+    }
+
+    interface IRestFrequencyController {
+        + GetAvailableFrequencies() : IReadOnlyDictionary<string, double>
+        + SetFrequencyByIndex(index : int) : void
+        + SetFrequencyOverride(freqGHz : double) : void
+        + ClearOverride() : void
+        + <<event>> FrequencyChanged : Action<double>
+    }
+
+    interface IVolumeDataExporter {
+        + SaveSubCube() : void
+        + SaveMask(overwrite : bool) : void
+        + GetMaskSavedFilePath() : string
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' DECISION 4 — Concrete implementations in a Services package (Infrastructure ACL)
+' Problem: baseline VolumeDataSetRenderer was a ~1,400 LOC god-class — WMC >> 40,
+' LCOM >> 0.5, CBO >> 25.
+' ASR 2.1 Modularity: CBO ≤ 25 orchestrators. Each service couples only to its
+' interface and own value objects. "Dependency cycles must be 0" — services
+' depend downward on interfaces only; no service imports another service directly.
+' ASR 2.2 Analysability: single-responsibility keeps each service LOC < 200.
+' ASR 2.3 Modifiability: Open-Closed — adding a rendering strategy means
+' implementing IVolumeRenderer, not modifying VolumeRenderingService.
+' Architecture Overview Layered Arch / Infrastructure Layer: "wraps Unity and
+' SteamVR APIs in adapters." VolumeRenderingService is the only class that
+' touches Material and shader keywords — Unity coupling is contained here,
+' satisfying "Replacing Unity version requires changes only in the Infrastructure
+' layer — zero Domain or Application changes" (ASR 2.3).
+' NFR Hot-reload: services are injected so swapping an implementation at runtime
+' is structurally possible without rebuilding the orchestrator.
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Services" #FFF8E8 {
+
+    class VolumeRenderingService <<service>> {
+        - _material : Material
+        - _maskMaterial : Material
+        - _downsampleConfig : DownsampleConfig
+        + VolumeRenderingService(material : Material, maskMaterial : Material)
+        + ApplyRenderingParameters(params : RenderingParameters) : void
+        + ApplyMaskParameters(params : MaskParameters) : void
+        + ApplyFoveationParameters(params : FoveationParameters) : void
+        + ApplyVignetteParameters(params : VignetteParameters) : void
+        + RegenerateCubes() : void
+        + ShiftColorMap(delta : int) : void
+        - GenerateDownsampledCube() : void
+    }
+
+    class MaskControllerService <<service>> {
+        - _dataSet : VolumeDataSet
+        + MaskControllerService(dataSet : VolumeDataSet)
+        + Initialise(dataSet : VolumeDataSet) : void
+        + PaintCursor(value : short) : bool
+        + FinishBrushStroke() : void
+        - PaintMask(position : Vector3Int, value : short) : bool
+    }
+
+    class VolumeCoordinateMapper <<service>> {
+        - _transform : Transform
+        - _cubeDepthAxis : int
+        + VolumeCoordinateMapper(transform : Transform, cubeDepthAxis : int)
+        + WorldToVolume(worldPos : Vector3) : Vector3
+        + WorldRotationToVolume(worldRot : Quaternion) : Quaternion
+        + VolumeToLocal(volumePos : Vector3) : Vector3
+        + LocalToVolume(localPos : Vector3) : Vector3
+        + GetVoxelAtWorldPos(worldPos : Vector3) : Vector3Int
+    }
+
+    ' VolumeCoordinateMapper: coordinate math is now a plain C# class —
+    ' unit-testable in Edit mode (ASR 2.4). RegionControllerService receives
+    ' ICoordinateMapper by injection (DECISION 8), so no compile-time coupling
+    ' loop between the two services (ASR 2.1 zero cycles).
+
+    class RegionControllerService <<service>> {
+        - _coordinateMapper : ICoordinateMapper
+        - _lineRenderer : PolyLine
+        + RegionControllerService(coordinateMapper : ICoordinateMapper)
+        + SetCursor(worldPos : Vector3, brushSize : int) : void
+        + SetVideoCursor(worldPos : Vector3) : void
+        + ClearVideoCursor() : void
+        + SetRegionStart(worldPos : Vector3) : void
+        + SetRegionEnd(worldPos : Vector3) : void
+        + SetRegionBounds(min : Vector3Int, max : Vector3Int) : void
+        + ClearRegion() : void
+        + CropToFeature(feature : Feature) : bool
+        + CropToRegion(min : Vector3, max : Vector3) : void
+        + ResetCrop() : void
+        + TeleportToRegion() : void
+    }
+
+    class RestFrequencyService <<service>> {
+        - _dataSet : VolumeDataSet
+        - _frequencies : Dictionary<string, double>
+        + RestFrequencyService(dataSet : VolumeDataSet)
+        + GetAvailableFrequencies() : IReadOnlyDictionary<string, double>
+        + SetFrequencyByIndex(index : int) : void
+        + SetFrequencyOverride(freqGHz : double) : void
+        + ClearOverride() : void
+        + <<event>> FrequencyChanged : Action<double>
+        - LoadFrequencyList() : void
+    }
+
+    class VolumeDataExportService <<service>> {
+        - _dataSet : VolumeDataSet
+        + VolumeDataExportService(dataSet : VolumeDataSet)
+        + SaveSubCube() : void
+        + SaveMask(overwrite : bool) : void
+        + GetMaskSavedFilePath() : string
+        + AddSelectionToList() : void
+    }
+
+    ' VolumeDataExportService: export concern isolated so the Sub-team 7
+    ' (Persistence) state-contract interface can be versioned independently
+    ' of rendering. Ref: Architecture Overview §6 — contract to Sub-team 7.
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' DECISION 5 — VolumeDataSetRenderer as thin orchestrating MonoBehaviour
+' Problem: baseline was both Unity entry point AND all logic — untestable,
+' impossible to evolve without touching Unity lifecycle code.
+' Architecture Overview Layered Arch / Application Layer: "orchestrates use
+' cases — calls Domain objects to do the actual work." This class plays that
+' role: wires Unity lifecycle (Start, Update, OnDestroy) to injected services.
+' ASR 2.3 Modifiability: thin MonoBehaviour means any Unity 6 API change touches
+' only this class and the service adapters, not domain logic.
+' ASR 2.1 Modularity: six aggregated interfaces keeps orchestrator CBO = 6 on
+' the interface side — well within ≤ 25 limit.
+' ASR 2.4 Testability: near-zero branches in the orchestrator; all branch logic
+' lives in services testable without Unity. WMC drops from ~120 (baseline) to
+' ~8, within the orchestrator WMC ≤ 40 threshold (CLAUDE.md §7).
+' ──────────────────────────────────────────────────────────────────────────────
+
+class VolumeDataSetRenderer <<MonoBehaviour>> {
+    - _renderer : IVolumeRenderer
+    - _maskController : IMaskController
+    - _coordinateMapper : ICoordinateMapper
+    - _regionController : IRegionController
+    - _restFrequency : IRestFrequencyController
+    - _exporter : IVolumeDataExporter
+    .. Serialised file config ..
+    + FileName : string
+    + MaskFileName : string
+    + subsetBounds : int[]
+    + SelectedHdu : int
+    .. Unity lifecycle ..
+    - Start() : void
+    - Update() : void
+    - OnDestroy() : void
+    .. Passthrough to services ..
+    + GetDataSet() : VolumeDataSet
+    + GetMomentMapRenderer() : MomentMapRenderer
+    + GetCubeDimensions() : Vector3Int
+    + updateStatus(label : string, progress : int) : IEnumerator
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' DECISION 6 — One-to-one realisation: each service implements exactly one interface
+' Rationale: public surface == interface surface → trivially mockable (ASR 2.4).
+' Open-Closed Principle holds: orchestrator depends on abstraction, not
+' implementation (ASR 2.3 Modifiability). A service implementing multiple
+' interfaces would re-introduce the god-class coupling of the baseline.
+' ──────────────────────────────────────────────────────────────────────────────
+
+VolumeRenderingService     ..|> IVolumeRenderer
+MaskControllerService      ..|> IMaskController
+VolumeCoordinateMapper     ..|> ICoordinateMapper
+RegionControllerService    ..|> IRegionController
+RestFrequencyService       ..|> IRestFrequencyController
+VolumeDataExportService    ..|> IVolumeDataExporter
+
+' ──────────────────────────────────────────────────────────────────────────────
+' DECISION 7 — Aggregation (o--) of interfaces, not composition (*--)
+' Services have a lifetime independent of the MonoBehaviour.
+' NFR Hot-reload: a service can be re-assigned at runtime without destroying
+' the MonoBehaviour. ADR-8: "Service Locator at kernel boundary + constructor
+' injection inside" — the kernel creates service instances; the orchestrator
+' does not own them. ASR 2.1: injected aggregates keep the dependency graph a
+' DAG with zero cycles.
+' ──────────────────────────────────────────────────────────────────────────────
+
+VolumeDataSetRenderer o-- IVolumeRenderer
+VolumeDataSetRenderer o-- IMaskController
+VolumeDataSetRenderer o-- ICoordinateMapper
+VolumeDataSetRenderer o-- IRegionController
+VolumeDataSetRenderer o-- IRestFrequencyController
+VolumeDataSetRenderer o-- IVolumeDataExporter
+
+' ──────────────────────────────────────────────────────────────────────────────
+' DECISION 8 — RegionControllerService receives ICoordinateMapper by injection
+' Rationale: region logic needs coordinate transforms; rather than coupling to
+' the concrete VolumeCoordinateMapper, it depends on the abstraction.
+' ASR 2.1 Modularity: "Dependency cycles must be 0." Injecting the interface
+' keeps both services below CBO ≤ 25 independently.
+' ASR 2.4 Testability: RegionControllerService is unit-testable with a stub
+' ICoordinateMapper returning deterministic voxel positions — no Unity Transform.
+' ──────────────────────────────────────────────────────────────────────────────
+
+RegionControllerService --> ICoordinateMapper : injected
+
+' ──────────────────────────────────────────────────────────────────────────────
+' DECISION 9 — VolumeRenderingService consumes typed value objects, not primitives
+' Rationale: typed bundles prevent boolean-trap anti-patterns, allow the ABI to
+' evolve (add a field) without changing method signatures.
+' ASR 2.2 Analysability: "Cyclomatic complexity per method ≤ 10." A method
+' receiving one value-object is simpler than one receiving 12 scalar args.
+' ASR 2.3 Modifiability: adding a new shader parameter adds one field to a value
+' object — no method signature changes, propagation cost stays localised.
+' ──────────────────────────────────────────────────────────────────────────────
+
+VolumeRenderingService --> RenderingParameters : consumes
+VolumeRenderingService --> MaskParameters : consumes
+VolumeRenderingService --> FoveationParameters : consumes
+VolumeRenderingService --> VignetteParameters : consumes
+
+VolumeRenderingService --> ScalingType : uses
+VolumeRenderingService --> ProjectionMode : uses
+MaskControllerService --> MaskMode : uses
+
+legend left
+  <b>Design Decision Justifications — Architecture Overview traceability</b>
+  ----
+  <b>D1 — Enumerations kept as-is</b>
+  Stable closed vocabulary; no coupling pathology. Splitting would inflate CBO
+  with no measurable benefit. (ASR 2.1: CBO ≤ 14 domain, ≤ 25 orchestrators)
+  ----
+  <b>D2 — Immutable Value Objects for parameter groups</b>
+  Baseline ~40 public fields on one class → RFC high, LCOM > 0.5.
+  Each VO has one reason to change; wither methods prevent partial-update bugs.
+  ASR 2.2: no class > 200 LOC; cyclomatic ≤ 10.
+  ASR 2.3: propagation cost ↓ ≥ 30% (DV8). ASR 2.4: no UnityEngine in domain.
+  ----
+  <b>D3 — Narrow interfaces, one per behavioural role</b>
+  ASR 2.4: ISP ≤ 7 public members; mockable without Unity runtime.
+  Layered Arch: every public API boundary is an interface + test double.
+  ISP counts: IVolumeRenderer 6✓  IMaskController 3✓  ICoordinateMapper 5✓
+              IRestFrequencyController 5✓  IVolumeDataExporter 3✓
+              IRegionController 11✗ — trade-off: cohesive spatial concern;
+              splitting adds facade for marginal gain. Flag if NDepend fires.
+  ----
+  <b>D4 — Services package (Infrastructure Anti-Corruption Layer)</b>
+  Baseline: ~1,400 LOC god-class, WMC >> 40, CBO >> 25.
+  ASR 2.1: CBO ≤ 25; zero dependency cycles — services depend on interfaces only.
+  ASR 2.2: single responsibility keeps each service LOC < 200.
+  ASR 2.3: Open-Closed — new rendering strategy = new IVolumeRenderer impl.
+  VolumeRenderingService is the only class touching Material/shader keywords →
+  Unity version change stays in Infrastructure layer (Arch Overview Layered Arch).
+  NFR Hot-reload: injected services can be swapped at runtime.
+  ----
+  <b>D5 — VolumeDataSetRenderer as thin orchestrator (Application Layer)</b>
+  Wires Unity lifecycle to injected services; owns no logic.
+  ASR 2.3: Unity 6 API change touches only this class + adapters, not domain.
+  ASR 2.1: orchestrator CBO = 6 (interface side). WMC ~120 → ~8 post-refactor.
+  ASR 2.4: near-zero branches → services are testable without Unity runtime.
+  ----
+  <b>D6 — One-to-one realisation per service</b>
+  Public surface == interface surface → trivially mockable (ASR 2.4).
+  Open-Closed: orchestrator depends on abstraction, not implementation (ASR 2.3).
+  ----
+  <b>D7 — Aggregation (o--) not composition (*--)</b>
+  Services have a lifetime independent of the MonoBehaviour.
+  NFR Hot-reload: service can be re-assigned without destroying the MB.
+  ADR-8: Service Locator at kernel boundary + constructor injection inside.
+  ASR 2.1: injected aggregates keep the dependency graph a DAG (zero cycles).
+  ----
+  <b>D8 — RegionControllerService receives ICoordinateMapper by injection</b>
+  Depends on abstraction, not VolumeCoordinateMapper concrete.
+  ASR 2.1: both services stay below CBO ≤ 25 independently; no cycles.
+  ASR 2.4: testable with a stub ICoordinateMapper — no Unity Transform needed.
+  ----
+  <b>D9 — VolumeRenderingService consumes typed value objects, not primitives</b>
+  Typed bundles prevent boolean-trap anti-patterns; ABI evolves without
+  changing method signatures (add field to VO only).
+  ASR 2.2: one VO param simpler than 12 scalars → cyclomatic ≤ 10 achievable.
+  ASR 2.3: new shader param = one VO field; propagation cost stays localised.
+end legend
+
+@enduml

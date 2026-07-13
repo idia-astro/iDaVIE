@@ -1,0 +1,175 @@
+@startuml BNCH-4_Dependency_Graph_Before
+
+!define UNITY_COLOR #E8F4F8
+!define GODCLASS_COLOR #FFB6C6
+!define ADAPTER_COLOR #FFFACD
+!define DOMAIN_COLOR #E0FFE0
+
+skinparam linetype ortho
+skinparam arrow {
+  color #333333
+  thickness 2
+}
+
+' Core 8 classes
+package "Desktop GUI & Client Shell (8 classes)" {
+    class CanvassDesktop <<Orchestrator>> #FFB6C6 {
+        - _volumeDataSetRenderers[]
+        - _volumeInputController
+        - _volumeCommandController
+        - _histogramHelper
+        + MenuBarBehaviour
+        + paintMenuController
+        + _tabsManager
+        --
+        63 methods, CBO=47 🔴
+        Orchestrator - Coupling hub
+    }
+
+    class DesktopPaintController <<Adapter>> #FFFACD {
+        - canvassDesktop *
+        - dataRenderer: VolumeDataSetRenderer
+        --
+        57 methods, CBO=21
+        Adapter - Paint mode control
+    }
+
+    class PaintMenuController <<Orchestrator>> #FFFACD {
+        - _activeDataSet: VolumeDataSetRenderer
+        - _dataSets[]
+        - _volumeInputController
+        --
+        24 methods, CBO=9
+        Orchestrator - Paint menu UI
+    }
+
+    class VideoUiManager <<Adapter>> #FFFACD {
+        - _cameraController: VideoCameraController
+        --
+        17 methods, CBO=17
+        Adapter - Video UI (isolated)
+    }
+
+    class HistogramMenuController <<Adapter>> #FFFACD {
+        - dataSets[]
+        - histogramHelper
+        --
+        13 methods, CBO=12
+        Adapter - Histogram controls
+    }
+
+    class HistogramHelper <<Domain>> #E0FFE0 {
+        + histogramMenu
+        + canvassDesktop *
+        --
+        Small helper, CBO=13 (OxyPlot coupling)
+    }
+
+    class SourceRow <<Domain>> #E0FFE0 {
+        + CanvassDesktopParent *
+        --
+        3 methods, CBO=3
+        Domain helper - Source row UI
+    }
+
+    class TabsManager <<Domain>> #E0FFE0 {
+        + _canvasDesktop *
+        --
+        3 methods, CBO=4
+        Domain helper - Tab navigation
+    }
+}
+
+' External types (representative sample)
+package "External & Unity" {
+    class VolumeDataSetRenderer #UNITY_COLOR {
+        From VolumeData module
+    }
+
+    class VolumeInputController #UNITY_COLOR {
+        From VolumeData module
+    }
+
+    class VolumeCommandController #UNITY_COLOR {
+        From VolumeData module
+    }
+
+    class MenuBarBehaviour #UNITY_COLOR {
+        From Menu module
+    }
+
+    class VideoCameraController #UNITY_COLOR {
+        From VideoMaker module
+    }
+
+    note as UnityNote
+        Unity 5.x UI Toolkit, TMPro, UnityEngine
+        SFB (StandaloneFileBrowser)
+        System: IntPtr, StringBuilder, Marshal
+        Valve.VR: SteamVR, OpenVR
+        OxyPlot charting library
+    end note
+}
+
+' Dependencies (direct type references)
+
+' CanvassDesktop dependencies (fan-out = 7)
+CanvassDesktop --> VolumeDataSetRenderer : uses _volumeDataSetRenderers[]
+CanvassDesktop --> VolumeInputController : uses _volumeInputController
+CanvassDesktop --> VolumeCommandController : uses _volumeCommandController
+CanvassDesktop --> HistogramHelper : uses _histogramHelper
+CanvassDesktop --> MenuBarBehaviour : uses public field
+CanvassDesktop --> PaintMenuController : uses public field
+CanvassDesktop --> TabsManager : uses _tabsManager
+
+' DesktopPaintController dependencies (bidirectional with CanvassDesktop)
+DesktopPaintController --> CanvassDesktop : uses canvassDesktop (CYCLE 1) 🔴
+CanvassDesktop ..> DesktopPaintController : creates/wires
+DesktopPaintController --> VolumeDataSetRenderer : uses dataRenderer
+
+' PaintMenuController dependencies
+PaintMenuController --> CanvassDesktop : FindObjectOfType coupling (implicit)
+PaintMenuController --> VolumeDataSetRenderer : uses _dataSets[]
+PaintMenuController --> VolumeInputController : uses _volumeInputController
+
+' HistogramMenuController dependencies
+HistogramMenuController --> VolumeDataSetRenderer : uses dataSets[]
+HistogramMenuController --> HistogramHelper : uses histogramHelper
+
+' HistogramHelper dependencies (bidirectional with CanvassDesktop - CYCLE 2)
+HistogramHelper --> CanvassDesktop : uses public field (CYCLE 2) 🔴
+CanvassDesktop ..> HistogramHelper : instantiates/uses
+
+' SourceRow dependencies (bidirectional with CanvassDesktop)
+SourceRow --> CanvassDesktop : uses CanvassDesktopParent (CYCLE 3) 🔴
+CanvassDesktop ..> SourceRow : creates via prefab
+
+' TabsManager dependencies (bidirectional with CanvassDesktop)
+TabsManager --> CanvassDesktop : uses _canvasDesktop (CYCLE 4) 🔴
+CanvassDesktop ..> TabsManager : wires in inspector
+
+' VideoUiManager is isolated
+VideoUiManager --> VideoCameraController : uses _cameraController
+
+legend right
+    |= Color | Meaning |
+    |<#FFB6C6> God class (WMC/RFC/CBO violation) |
+    |<#FFFACD> Adapter or Menu controller |
+    |<#E0FFE0> Domain helper (small, cohesive) |
+    |<#E8F4F8> External (VolumeData, VideoCameraController, Unity) |
+    |
+    |<b>Notation| |
+    | --> | Direct static type dependency |
+    | ..> | Create/instantiate relationship |
+    | X* | Bidirectional (circular) dependency |
+end legend
+
+note as Stats
+    **Fan-out (CanvassDesktop):** 7 classes + VolumeData types + Unity types
+    **Fan-in (CanvassDesktop):** 6 classes (all others except VideoUiManager)
+    **Cycles:** 4 bidirectional edges (CanvassDesktop is participant in all 4)
+    **Propagation cost:** CanvassDesktop change → 87.5% of slice affected 🔴
+    **Stability (Instability):** All 8 classes I > 0.5 (unstable, no abstractions)
+end note
+
+@enduml

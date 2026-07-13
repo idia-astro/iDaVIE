@@ -26,6 +26,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using DataFeatures;
+using iDaVIE.Infrastructure.Unity;
 using LineRenderer;
 using TMPro;
 using UnityEngine;
@@ -198,12 +199,11 @@ namespace VolumeData
 
         [Range(0, 1)] public float SelectionSaturateFactor = 0.7f;
 
-        public FeatureSetManager FeatureSetManagerPrefab;
-
         private PolyLine _measuringLine;
         private CuboidLine _cubeOutline, _voxelOutline, _regionOutline, _videoCursorPositionOutline;
 
-        private FeatureSetManager _featureManager = null;
+        private FeatureVisualiser _featureVisualiser = null;
+        public FeatureVisualiser FeatureVisualiser => _featureVisualiser;
 
         private MeshRenderer _renderer;
         private Material _materialInstance;
@@ -379,9 +379,9 @@ namespace VolumeData
                 _dataSet = VolumeDataSet.LoadDataFromFitsFile(FileName, subsetBounds, trueBounds, IntPtr.Zero, CubeDepthAxis, CubeSlice, SelectedHdu);
 
             volumeInputController = FindObjectOfType<VolumeInputController>();
-            _featureManager = GetComponentInChildren<FeatureSetManager>();
-            if (_featureManager == null)
-                Debug.Log($"No FeatureManager attached to VolumeDataSetRenderer. Attach prefab for use of Features.");
+            _featureVisualiser = GetComponentInChildren<FeatureVisualiser>();
+            if (_featureVisualiser == null)
+                Debug.Log($"No FeatureVisualiser attached to VolumeDataSetRenderer. Attach prefab for use of Features.");
             GenerateDownsampledCube();
             _baseXFactor = _currentXFactor;
             _baseYFactor = _currentYFactor;
@@ -471,12 +471,12 @@ namespace VolumeData
                 Color = Color.white,
             };
 
-            if (_featureManager != null)
+            if (_featureVisualiser != null)
             {
-                _featureManager.CreateSelectionFeatureSet();
+                _featureVisualiser.CreateSelectionRendererSet();
                 if (_maskDataSet != null)
                 {
-                    var maskFeatureSet = _featureManager.CreateMaskFeatureSet();
+                    var maskFeatureSet = _featureVisualiser.CreateMaskRendererSet();
                     _maskDataSet?.FillFeatureSet(maskFeatureSet);
                 }
             }
@@ -876,30 +876,30 @@ namespace VolumeData
 
         public void SelectFeature(Vector3 cursor)
         {
-            if (_featureManager && _featureManager.SelectFeature(cursor))
+            if (_featureVisualiser && _featureVisualiser.SelectAtWorldPosition(cursor))
             {
-                Debug.Log($"Selected feature '{_featureManager.SelectedFeature.Name}'");
-                SetRegionBounds(Vector3Int.FloorToInt(_featureManager.SelectedFeature.GetMinBounds()), Vector3Int.FloorToInt(_featureManager.SelectedFeature.GetMaxBounds()), false);
+                var selected = _featureVisualiser.Service.SelectedFeature;
+                Debug.Log($"Selected feature '{selected.Name}'");
+                SetRegionBounds(Vector3Int.FloorToInt(selected.GetMinBounds()), Vector3Int.FloorToInt(selected.GetMaxBounds()), false);
             }
         }
 
         public void SelectFeature(Feature feature)
         {
-            if (_featureManager)
+            if (_featureVisualiser)
             {
-                _featureManager.SelectedFeature = feature;
-                Debug.Log($"Selected feature '{_featureManager.SelectedFeature.Name}'");
-                SetRegionBounds(Vector3Int.FloorToInt(_featureManager.SelectedFeature.GetMinBounds()), Vector3Int.FloorToInt(_featureManager.SelectedFeature.GetMaxBounds()), false);
+                _featureVisualiser.SelectFeature(feature);
+                Debug.Log($"Selected feature '{feature.Name}'");
+                SetRegionBounds(Vector3Int.FloorToInt(feature.GetMinBounds()), Vector3Int.FloorToInt(feature.GetMaxBounds()), false);
             }
         }
 
         public bool CropToFeature()
         {
-            if (_featureManager != null && _featureManager.SelectedFeature != null)
+            var selected = _featureVisualiser?.Service.SelectedFeature;
+            if (selected != null)
             {
-                var cornerMin = _featureManager.SelectedFeature.CornerMin;
-                var cornerMax = _featureManager.SelectedFeature.CornerMax;
-                CropToRegion(cornerMin, cornerMax);
+                CropToRegion(selected.CornerMin, selected.CornerMax);
                 return true;
             }
 
@@ -1010,11 +1010,10 @@ namespace VolumeData
 
         public void TeleportToRegion()
         {
-            if (volumeInputController && _featureManager && _featureManager.SelectedFeature != null)
+            var selected = _featureVisualiser?.Service.SelectedFeature;
+            if (volumeInputController && selected != null)
             {
-                var boundsMin = _featureManager.SelectedFeature.CornerMin;
-                var boundsMax = _featureManager.SelectedFeature.CornerMax;
-                volumeInputController.Teleport(boundsMin - (0.5f * Vector3.one), boundsMax + (0.5f * Vector3.one));
+                volumeInputController.Teleport(selected.CornerMin - (0.5f * Vector3.one), selected.CornerMax + (0.5f * Vector3.one));
             }
         }
 
@@ -1162,8 +1161,8 @@ namespace VolumeData
                 // Create a new mask dataset
                 _maskDataSet = _dataSet.GenerateEmptyMask();
                 IsMaskNew = true;
-                var maskFeatureSet = _featureManager.CreateMaskFeatureSet();
-                _maskDataSet?.FillFeatureSet(maskFeatureSet);
+                var maskFeatureSet = _featureVisualiser?.CreateMaskRendererSet();
+                if (maskFeatureSet != null) _maskDataSet?.FillFeatureSet(maskFeatureSet);
                 if (!FactorOverride)
                 {
                     _dataSet.FindDownsampleFactors(MaximumCubeSizeInMB, out XFactor, out YFactor, out ZFactor);
@@ -1261,10 +1260,11 @@ namespace VolumeData
         public void SaveSubCube()
         {
             Vector3Int cornerMin, cornerMax, cornerMinWorld, cornerMaxWorld, featureSize;
-            if (_featureManager.SelectedFeature != null)
+            var selected = _featureVisualiser?.Service.SelectedFeature;
+            if (selected != null)
             {
-                cornerMinWorld = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMin);
-                cornerMaxWorld = Vector3Int.FloorToInt(_featureManager.SelectedFeature.CornerMax);
+                cornerMinWorld = Vector3Int.FloorToInt(selected.CornerMin);
+                cornerMaxWorld = Vector3Int.FloorToInt(selected.CornerMax);
                 cornerMin = GetVoxelPositionDataSpace(cornerMinWorld);
                 cornerMax = GetVoxelPositionDataSpace(cornerMaxWorld);
             }
@@ -1384,7 +1384,7 @@ namespace VolumeData
 
         public void AddSelectionToList()
         {
-            _featureManager.AddSelectedFeatureToNewSet();
+            _featureVisualiser?.Service.AddSelectedFeatureToUserSet();
         }
 
         public void OnDestroy()

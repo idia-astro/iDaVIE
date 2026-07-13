@@ -1,0 +1,202 @@
+@startuml VolumeDataSet
+title VolumeDataSet — Proposed Decomposition
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    BorderColor #555555
+    ArrowColor #555555
+}
+skinparam package {
+    BackgroundColor #F5F5F5
+    BorderColor #AAAAAA
+}
+hide empty members
+
+' ─── Supporting value types ───────────────────────────────────────────────────
+
+class VoxelEntry <<struct>> {
+    + Index : int
+    + Value : int
+    + VoxelEntry(index : int, value : int)
+}
+
+class BrushStrokeTransaction <<struct>> {
+    + NewValue : int
+    + Voxels : List<VoxelEntry>
+    + ChangedSources : Dictionary<int, bool>
+    + Add(entry : VoxelEntry) : void
+}
+
+' ─── FITS loading ─────────────────────────────────────────────────────────────
+
+package "FITS Loading" {
+
+    class FitsLoader <<static>> {
+        + {static} LoadRandomFitsCube(min : float, max : float, xDim : int, yDim : int, zDim : int) : VolumeDataSet
+        + {static} LoadDataFromFitsFile(fileName : string, subBounds : int[], trueBounds : int[], imageDataPtr : IntPtr, index2 : int, sliceDim : int, selectedHdu : int) : VolumeDataSet
+        + GenerateEmptyMask() : VolumeDataSet
+    }
+
+}
+
+' ─── WCS / coordinate system ──────────────────────────────────────────────────
+
+package "WCS Coordinate System" {
+
+    class WCSCoordinateSystem {
+        + AstFrameSet : IntPtr
+        + AstAltSpecSet : IntPtr
+        + AstframeIsFreq : bool
+        + HasFitsRestFrequency : bool
+        + HasRestFrequency : bool
+        + FitsRestFrequency : double
+        + VelocityDirection : int
+        + VelDecimal : int
+        .. Frame management ..
+        + RecreateFrameSet(restFreq : double) : void
+        + CreateAltSpecFrame() : void
+        + ParseHeaderDict() : void
+        .. Coordinate transforms ..
+        + GetFitsCoordsAst(X : double, Y : double, Z : double, fitsX : double, fitsY : double, fitsZ : double) : void
+        + GetNormCoords(X : double, Y : double, Z : double, normX : double, normY : double, normZ : double) : void
+        + GetFitsLengthsAst(start : Vector3, end : Vector3, xLen : double, yLen : double, zLen : double, angle : double) : void
+        .. Formatting ..
+        + GetFormattedCoord(val : double, axis : int) : string
+        + GetFormattedAltCoord(val : double) : string
+        + GetConvertedDepth(zIn : double) : string
+        + GetAltSpecSystem() : string
+        + GetStdOfRest() : string
+        .. AST attribute access ..
+        + GetAstAttribute(attribute : string) : string
+        + GetAltAstAttribute(attribute : string) : string
+        + HasAstAttribute(attribute : string) : bool
+        + SetAstAttribute(attribute : string, value : string) : void
+        + SetAltAstAttribute(attribute : string, value : string) : void
+        .. Axis units ..
+        + GetAxisUnit(axis : int) : string
+        + GetAltAxisUnit(axis : int) : string
+        + SetAxisUnit(axis : int, unit : string) : void
+        + SetAltAxisUnit(axis : int, unit : string) : void
+        - GetAltSpecSystemWithUnit(system : string, unit : string) : void
+    }
+
+}
+
+' ─── Statistics and histograms ────────────────────────────────────────────────
+
+package "Statistics and Histograms" {
+
+    class VolumeHistogramStats {
+        + FullHistogram : int[]
+        + Histogram : int[]
+        + HistogramBinWidth : float
+        + MaxValue : float
+        + MinValue : float
+        + MeanValue : float
+        + StanDev : float
+        + PixelUnit : string
+        + SourceStatsDict : Dictionary<int, SourceStats>
+        + UpdateStats(maskVal : short) : void
+        + FillFeatureSet(featureSet : FeatureSetRenderer) : void
+        + {static} UpdateHistogram(volumeDataSet : VolumeDataSet, min : float, max : float) : void
+        - PrintStats(maskVal : short) : void
+    }
+
+}
+
+' ─── GPU texture generation ───────────────────────────────────────────────────
+
+package "GPU Texture Builder" {
+
+    class VolumeTextureBuilder {
+        + DataCube : Texture3D
+        + RegionCube : Texture3D
+        + ExistingMaskBuffer : ComputeBuffer
+        + AddedMaskBuffer : ComputeBuffer
+        + AddedMaskEntryCount : int
+        + GenerateVolumeTexture(textureFilter : FilterMode, xDownsample : int, yDownsample : int, zDownsample : int) : void
+        + GenerateCroppedVolumeTexture(textureFilter : FilterMode, cropStart : Vector3Int, cropEnd : Vector3Int, downsample : Vector3Int) : void
+        + FindDownsampleFactors(maxCubeSizeInMb : long, xFactor : int, yFactor : int, zFactor : int) : void
+        + ConsolidateDownsampledMask() : void
+        - VoxelActiveFaces(i : int, cubeSize : Vector3Int, voxels : short[]) : int
+    }
+
+}
+
+' ─── Mask edit history ────────────────────────────────────────────────────────
+
+package "Mask Edit History" {
+
+    class MaskEditHistory {
+        + CurrentBrushStroke : BrushStrokeTransaction
+        + BrushStrokeHistory : List<BrushStrokeTransaction>
+        + BrushStrokeRedoQueue : List<BrushStrokeTransaction>
+        + NewSourceId : short
+        - _regionMaskVoxels : short[]
+        - _dirtyMaskBounds : Bounds
+        + PaintMaskVoxel(coordsRegionSpace : Vector3Int, value : short, addToHistory : bool) : bool
+        + FlushBrushStroke() : void
+        + ConsolidateMaskEntries() : void
+        + UndoBrushStroke() : bool
+        + RedoBrushStroke() : bool
+    }
+
+}
+
+' ─── FITS export ──────────────────────────────────────────────────────────────
+
+package "FITS Export" {
+
+    class FitsExporter {
+        + SaveSubCubeFromOriginal(cornerMin : Vector3Int, cornerMax : Vector3Int, cornerMinWorld : Vector3Int, cornerMaxWorld : Vector3Int, maskDataSet : VolumeDataSet) : int
+        + SaveSubMask(filePath : string, cornerMinWorld : Vector3Int, cornerMaxWorld : Vector3Int, subCubeFitsPtr : IntPtr, maskDataSet : VolumeDataSet) : int
+        + SaveMask(cubeFitsPtr : IntPtr, filename : string, exporting : bool) : int
+    }
+
+}
+
+' ─── Core data container ──────────────────────────────────────────────────────
+
+class VolumeDataSet {
+    .. Dimensions ..
+    + XDim : long
+    + YDim : long
+    + ZDim : long
+    + NumPoints : long
+    + Dims : long[]
+    + cubeSize : long[]
+    + NAxis : double
+    .. File / header ..
+    + FileName : string
+    + SelectedHdu : int
+    + subsetBounds : int[]
+    + trueSize : int[]
+    + HeaderDictionary : IDictionary<string, string>
+    + FitsData : IntPtr
+    + FitsHeader : IntPtr
+    + NumberHeaderKeys : int
+    + RegionOffset : Vector3Int
+    + IsMask : bool
+    .. Coordinate utils ..
+    + GetDataValue(x : int, y : int, z : int) : float
+    + GetMaskValue(x : int, y : int, z : int) : Int16
+    + GetMaskValue2(x : int, y : int, z : int) : Int16
+    + IndexFromCoords(x : int, y : int, z : int) : int
+    + CoordsFromIndex(index : int) : Vector3Int
+    + isSubset() : bool
+    + CleanUp(randomCube : bool) : void
+}
+
+' ─── Relationships ────────────────────────────────────────────────────────────
+
+VolumeDataSet *-- FitsLoader
+VolumeDataSet *-- WCSCoordinateSystem
+VolumeDataSet *-- VolumeHistogramStats
+VolumeDataSet *-- VolumeTextureBuilder
+VolumeDataSet *-- MaskEditHistory
+VolumeDataSet *-- FitsExporter
+
+MaskEditHistory *-- BrushStrokeTransaction
+BrushStrokeTransaction *-- VoxelEntry
+
+@enduml

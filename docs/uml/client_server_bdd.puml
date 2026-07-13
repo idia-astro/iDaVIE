@@ -1,0 +1,338 @@
+@startuml client_server_bdd
+!pragma layout smetana
+title iDaVIE — SysML Block Definition Diagram (Client / Server Split)
+
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    BorderColor #444444
+    ArrowColor #444444
+    FontSize 10
+}
+skinparam package {
+    BackgroundColor #FAFAFA
+    BorderColor #999999
+    FontSize 12
+    FontStyle bold
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #F9A825
+}
+hide empty members
+
+' ═══════════════════════════════════════════════════════════
+' TOP-LEVEL SYSTEM BLOCK
+' ═══════════════════════════════════════════════════════════
+
+class "iDaVIESystem" <<block>> {
+    values
+    --
+    + version : String
+    + platform : Platform {Windows, Linux}
+    parts
+    --
+    + client  : iDaVIEClient [1]
+    + server  : iDaVIEServer [1]
+}
+
+' ═══════════════════════════════════════════════════════════
+' CLIENT BLOCK
+' ═══════════════════════════════════════════════════════════
+
+package "Client Blocks" #E8F0FF {
+
+    class "iDaVIEClient" <<block>> {
+        values
+        --
+        + vrFrameworkVersion : String
+        + targetHMD : HMDType
+        parts
+        --
+        + vrPresentation  : VRPresentationSubsystem [1]
+        + desktopUI       : DesktopUISubsystem [1]
+        + catalogVis      : CatalogVisualizationSubsystem [1]
+        flow ports
+        --
+        + «out» renderCommands : RenderCommand
+        + «in»  dataEvents     : DataEvent
+    }
+
+    class "VRPresentationSubsystem" <<block>> {
+        values
+        --
+        + renderScale    : Float
+        + foveationLevel : Int
+        parts
+        --
+        + renderer    : VolumeDataSetRenderer [1]
+        + inputCtrl   : VolumeInputController [1]
+        + steamVRBridge : SteamVRInputBridge [1]
+        + shaders     : ShaderSet [1]
+        operations
+        --
+        + Render(frame : FrameData) : void
+        + HandleInput(event : VRInputEvent) : void
+        references
+        --
+        + dataSetFacade : IVolumeDataFacade
+    }
+
+    class "DesktopUISubsystem" <<block>> {
+        values
+        --
+        + activePanels : Int
+        parts
+        --
+        + mainCanvas    : CanvassDesktop [1]
+        + paintCtrl     : DesktopPaintController [1]
+        + menus         : MenuSet [1]
+        operations
+        --
+        + LoadFile(path : String) : void
+        + ConfigureColormap(map : ColormapId) : void
+        + SetThresholds(min : Float, max : Float) : void
+        references
+        --
+        + dataSetFacade : IVolumeDataFacade
+    }
+
+    class "CatalogVisualizationSubsystem" <<block>> {
+        parts
+        --
+        + catalogRenderer : CatalogDataSetRenderer [1..n]
+        + featureRenderer : FeatureSetRenderer [1..n]
+        operations
+        --
+        + LoadCatalog(path : String) : void
+        + UpdateVisibility(filter : FilterSpec) : void
+    }
+
+    class "ShaderSet" <<block>> {
+        parts
+        --
+        + volumeShader   : BasicVolumeShader [1]
+        + maskShader     : VolumeMaskShader [1]
+        + catalogShader  : CatalogPointShader [1]
+        + vignetteShader : VignetteShader [1]
+    }
+
+    class "MenuSet" <<block>> {
+        parts
+        --
+        + histogram      : HistogramMenuController [1]
+        + spectralProfile : SpectralProfileMenuController [1]
+        + momentMap      : MomentMapMenuController [1]
+        + shape          : ShapeMenuController [1]
+        + paint          : PaintMenuController [1]
+        + videoRecord    : VideoRecordMenuController [1]
+    }
+}
+
+' ═══════════════════════════════════════════════════════════
+' INTERFACE BOUNDARY (SysML: interface blocks / flow specs)
+' ═══════════════════════════════════════════════════════════
+
+package "Interface Boundary (Service Contracts)" #E8F4E8 {
+
+    class "IVolumeDataFacade" <<interfaceBlock>> {
+        flow ports
+        --
+        + «in»  loadRequest   : LoadRequest
+        + «out» dataReadyEvent : DataReadyEvent
+        + «out» statsSnapshot  : VolumeStatisticsSnapshot
+        operations
+        --
+        + Load(fileName : String, subBounds : int[], hdu : int) : void
+        + GetCoordinates() : ICoordinateSystem
+        + GetStatistics() : IStatisticsService
+        + GetTextures() : ITextureFactory
+        + GetMaskEditor() : IMaskEditor
+        + GetExporter() : IDataExporter
+    }
+
+    class "IVolumeLoader"      <<interfaceBlock>>
+    class "ICoordinateSystem"  <<interfaceBlock>>
+    class "IStatisticsService" <<interfaceBlock>>
+    class "ITextureFactory"    <<interfaceBlock>>
+    class "IMaskEditor"        <<interfaceBlock>>
+    class "IDataExporter"      <<interfaceBlock>>
+}
+
+' ═══════════════════════════════════════════════════════════
+' SERVER BLOCK
+' ═══════════════════════════════════════════════════════════
+
+package "Server Blocks" #FFF0E8 {
+
+    class "iDaVIEServer" <<block>> {
+        values
+        --
+        + maxCubeMemoryMB : Long
+        + nativePluginPath : String
+        parts
+        --
+        + domainFacade   : VolumeDataSetFacade [1]
+        + dataServices   : DataServiceLayer [1]
+        + nativeLayer    : NativePluginLayer [1]
+        flow ports
+        --
+        + «in»  loadRequest    : LoadRequest
+        + «out» dataReadyEvent : DataReadyEvent
+    }
+
+    class "VolumeDataSetFacade" <<block>> {
+        ' Realises IVolumeDataFacade; composes all service interfaces
+        values
+        --
+        + isLoaded : Boolean
+        parts
+        --
+        + core : VolumeDataCore [0..1]
+        references
+        --
+        + loader      : IVolumeLoader
+        + coordinates : ICoordinateSystem
+        + statistics  : IStatisticsService
+        + textures    : ITextureFactory
+        + maskEditor  : IMaskEditor
+        + exporter    : IDataExporter
+        operations
+        --
+        + Load(fileName : String, subBounds : int[], hdu : int) : void
+        + Unload() : void
+    }
+
+    class "VolumeDataCore" <<valueType>> {
+        values
+        --
+        + xDim, yDim, zDim : long
+        + fileName  : String
+        + selectedHdu : int
+        + fitsDataPtr   : IntPtr
+        + fitsHeaderPtr : IntPtr
+        operations
+        --
+        + GetDataValue(x, y, z : int) : float
+        + GetMaskValue(x, y, z : int) : short
+    }
+
+    class "DataServiceLayer" <<block>> {
+        parts
+        --
+        + loader     : FitsVolumeLoader [1]
+        + coordinates : ASTCoordinateSystem [1]
+        + statistics : VolumeStatisticsService [1]
+        + textures   : VolumeTextureFactory [1]
+        + maskEditor : MaskEditorService [1]
+        + exporter   : FitsExportService [1]
+    }
+
+    class "FitsVolumeLoader"         <<block>>
+    class "ASTCoordinateSystem"      <<block>>
+    class "VolumeStatisticsService"  <<block>>
+    class "VolumeTextureFactory"     <<block>>
+    class "MaskEditorService"        <<block>>
+    class "FitsExportService"        <<block>>
+
+    class "NativePluginLayer" <<block>> {
+        values
+        --
+        + libraryName : String
+        + libraryPath : String
+        parts
+        --
+        + pluginLoader : NativePluginLoader [1]
+        + fitsReader   : FitsReaderBinding [1]
+        + astTool      : AstToolBinding [1]
+        + dataAnalysis : DataAnalysisBinding [1]
+    }
+
+    class "FitsReaderBinding"   <<block>>
+    class "AstToolBinding"      <<block>>
+    class "DataAnalysisBinding" <<block>>
+
+    class "NativePluginLayer" <<block>>
+
+    package "C++ Libraries (External)" #FFE0CC {
+        class "CFITSIO"          <<externalComponent>>
+        class "StarlinkAST"      <<externalComponent>>
+        class "cminpack\n+ OpenMP" <<externalComponent>>
+    }
+}
+
+' ═══════════════════════════════════════════════════════════
+' SYSTEM COMPOSITION
+' ═══════════════════════════════════════════════════════════
+
+"iDaVIESystem" *-- "iDaVIEClient"
+"iDaVIESystem" *-- "iDaVIEServer"
+
+' Client block composition
+"iDaVIEClient" *-- "VRPresentationSubsystem"
+"iDaVIEClient" *-- "DesktopUISubsystem"
+"iDaVIEClient" *-- "CatalogVisualizationSubsystem"
+"VRPresentationSubsystem" *-- "ShaderSet"
+"DesktopUISubsystem" *-- "MenuSet"
+
+' Server block composition
+"iDaVIEServer" *-- "VolumeDataSetFacade"
+"iDaVIEServer" *-- "DataServiceLayer"
+"iDaVIEServer" *-- "NativePluginLayer"
+"VolumeDataSetFacade" *-- "VolumeDataCore"
+"DataServiceLayer" *-- "FitsVolumeLoader"
+"DataServiceLayer" *-- "ASTCoordinateSystem"
+"DataServiceLayer" *-- "VolumeStatisticsService"
+"DataServiceLayer" *-- "VolumeTextureFactory"
+"DataServiceLayer" *-- "MaskEditorService"
+"DataServiceLayer" *-- "FitsExportService"
+"NativePluginLayer" *-- "FitsReaderBinding"
+"NativePluginLayer" *-- "AstToolBinding"
+"NativePluginLayer" *-- "DataAnalysisBinding"
+
+' Service realizations of boundary interfaces
+"VolumeDataSetFacade"      ..|> "IVolumeDataFacade"
+"FitsVolumeLoader"         ..|> "IVolumeLoader"
+"ASTCoordinateSystem"      ..|> "ICoordinateSystem"
+"VolumeStatisticsService"  ..|> "IStatisticsService"
+"VolumeTextureFactory"     ..|> "ITextureFactory"
+"MaskEditorService"        ..|> "IMaskEditor"
+"FitsExportService"        ..|> "IDataExporter"
+
+' Client uses facade
+"VRPresentationSubsystem" ..> "IVolumeDataFacade" : uses
+"DesktopUISubsystem"      ..> "IVolumeDataFacade" : uses
+
+' Native bindings → C++ libs
+"FitsReaderBinding"   --> "CFITSIO"     : DllImport
+"AstToolBinding"      --> "StarlinkAST" : DllImport
+"DataAnalysisBinding" --> "cminpack\n+ OpenMP" : DllImport
+
+' ═══════════════════════════════════════════════════════════
+' Notes
+' ═══════════════════════════════════════════════════════════
+
+note right of "IVolumeDataFacade"
+  The split boundary.
+  Today: in-process call.
+  Future: replace with
+  gRPC / named-pipe stub
+  without touching client blocks.
+end note
+
+note bottom of "NativePluginLayer"
+  NativePluginLoader uses reflection
+  (PluginAttr / PluginFunctionAttr) to
+  bind DllImport delegates at runtime.
+  Windows: idavie_native.dll
+  Linux:   libidavie_native.so
+end note
+
+note bottom of "VolumeDataCore"
+  Immutable after construction.
+  Holds raw IntPtr to native FITS
+  heap — ownership managed by
+  FitsVolumeLoader / FitsExportService.
+end note
+
+@enduml

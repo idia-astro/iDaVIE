@@ -1,0 +1,163 @@
+@startuml
+' WE2-1 | Debug tab BEFORE sequence diagram
+' Log line emitted → visible in Debug tab — current production path
+' Anchored to DebugLogging.cs (Assets/Scripts/Debuggers/DebugLogging.cs)
+' Smells S1–S9 annotated inline — feeds SOLID/GRASP audit and CK delta table
+' Owner: RoryH06 | Feeds: WE2-2 (after-state), T4 (test strategy)
+
+title WE2-1: Debug Tab (BEFORE Refactor) — Log Line to Debug Tab
+
+actor User
+participant "AnySubsystem\n(MonoBehaviour / static)" as Sub
+participant "UnityEngine.Debug\n(static)" as UnityDebug
+participant "Application\n(static event)" as AppEvent
+participant "DebugLogging\n(MonoBehaviour)" as DL
+participant "Queue\n(non-generic)" as Queue
+participant "StreamWriter\n(per-message)" as SW
+participant "TMP_InputField\n(logOutput)" as TMP
+participant "Scrollbar\n(debugScrollbar)" as Scroll
+
+== Phase A: Startup ==
+
+[-> DL : Start() [Unity lifecycle]\n(DebugLogging.cs:53)
+activate DL
+DL -> DL : build directoryPath, run log-rotation\n(DebugLogging.cs:55–109)
+DL -> DL : set autosavePath = iDaVIE_Log_0_{timestamp}.log\n(DebugLogging.cs:112)
+DL -> DL : saveButton.onClick.AddListener(saveToFileClick)\n(DebugLogging.cs:124)
+deactivate DL
+
+== Phase B: Subscription Wired (OnEnable) ==
+
+[-> DL : OnEnable() [Unity lifecycle]\n(DebugLogging.cs:147)
+activate DL
+
+note over DL, AppEvent #FFB3B3
+  **S1 — Dependency Inversion violation**
+  Subscribes to a STATIC Unity event.
+  No interface, no injection, no test double.
+  Any Debug.Log anywhere in the process
+  fires this handler (DebugLogging.cs:149).
+end note
+
+DL -> AppEvent : logMessageReceived += HandleLog\n(DebugLogging.cs:149)
+deactivate DL
+
+== Phase C: Log Line Emitted (repeats for every Debug.Log* call) ==
+
+note over Sub #FFE8B3
+  **S9 — ACL violation**
+  40+ call sites in CanvassDesktop alone.
+  All callers have a hidden transitive
+  dependency on UnityEngine (§4.2.3).
+end note
+
+Sub -> UnityDebug : Debug.Log(message)\n(e.g. CanvassDesktop.cs:351)
+
+note over UnityDebug, AppEvent #FFB3B3
+  **S2 — Information Expert violation**
+  Static event passes only (string, string, LogType).
+  No source class, no timestamp, no correlation ID.
+end note
+
+UnityDebug -> AppEvent : logMessageReceived.Invoke\n(logString, stackTrace, type)
+AppEvent -> DL : HandleLog(logString, stackTrace, type)\n(DebugLogging.cs:177)
+activate DL
+
+DL -> DL : logMessage = "[" + type + "] : " + logString\n(DebugLogging.cs:179)
+
+note over DL #FFE8B3
+  **S2 (cont.) — no structured record**
+  String concatenation only. Timestamp not
+  captured. Level not normalised.
+end note
+
+DL -> Queue : Enqueue(logMessage)\n(DebugLogging.cs:180)
+
+note over Queue #FFB3B3
+  **S3 — non-generic Queue (System.Collections.Queue)**
+  Stores object — no type safety, no capacity bound.
+  Unbounded memory growth under high-frequency
+  logging (e.g. per-frame Debug.Log calls).
+  (DebugLogging.cs:49, 180)
+end note
+
+DL -> SW : new StreamWriter(autosavePath, true)\n(DebugLogging.cs:250)
+
+note over SW #FFB3B3
+  **S4 — StreamWriter opened and closed per message**
+  New file handle + I/O syscall on the Unity main
+  thread on EVERY log event.
+  GC pressure + syscall overhead at high frequency.
+  (DebugLogging.cs:250–253)
+end note
+
+SW -> DL : writer.Write(logMessage + "\\n")\n(DebugLogging.cs:252)
+DL -> SW : writer.Close()\n(DebugLogging.cs:253)
+
+DL -> DL : foreach (var entry in debugLogQueue)\n  builder.Append(entry)\n(DebugLogging.cs:189–195)
+
+note over DL #FFB3B3
+  **S5 — O(N) full-queue rebuild per message**
+  With 1 000 entries, every new message
+  iterates all 1 000 previous entries.
+  Performance degrades linearly with
+  log history size. (DebugLogging.cs:189–195)
+end note
+
+DL -> TMP : logOutput.text = builder.ToString()\n(DebugLogging.cs:195)
+
+note over TMP #FFE8B3
+  **S6 — Entire TMP_InputField string replaced**
+  TextMesh Pro re-layouts the full string
+  on every log event — expensive for large logs.
+  View mutation embedded in the handler:
+  no model/view separation. (DebugLogging.cs:195)
+end note
+
+DL -> Scroll : debugScrollbar.value = 1.0f\n(DebugLogging.cs:196)
+
+note over Scroll #FFE8B3
+  **S7 — Scroll forced to bottom on every message**
+  User cannot scroll up while new messages arrive.
+  AutoScrollEnabled flag (in after-state
+  IDebugTabViewModel) resolves this.
+  (DebugLogging.cs:196)
+end note
+
+deactivate DL
+
+Scroll --> TMP : repositions view to bottom
+TMP --> User : new log line visible at bottom of Debug tab
+
+== Phase D: Manual Save ==
+
+User -> DL : clicks Save button\n[GUI WALK: confirm label & location]
+activate DL
+DL -> DL : saveToFileClick()\n(DebugLogging.cs:203)
+DL -> DL : PlayerPrefs.GetString("LastDebugPath")\n(DebugLogging.cs:205)
+
+note over DL #FFE8B3
+  Same PlayerPrefs global-state pattern
+  as CanvassDesktop (S in static-analysis-report).
+end note
+
+DL -> DL : StandaloneFileBrowser.SaveFilePanelAsync(...)\n(DebugLogging.cs:217)
+DL -> DL : SaveToFile(dest) — iterates queue,\nwrites to chosen path\n(DebugLogging.cs:232–242)
+deactivate DL
+DL --> User : log written to chosen path
+
+== Smell Summary ==
+
+note over Sub, Scroll #F0F0F0
+  **S1** Application.logMessageReceived static event — untestable, no interface (DI)
+  **S2** Unstructured (string, string, LogType) — no source, no timestamp (Info Expert)
+  **S3** Non-generic Queue — no type safety, unbounded memory (Robustness)
+  **S4** StreamWriter open+close per message — I/O syscall per log (SRP / Performance)
+  **S5** O(N) full-queue rebuild per message — degrades linearly (Performance)
+  **S6** TMP_InputField.text full replace — no model/view separation (Modularity)
+  **S7** Scroll forced bottom every message — user cannot read while logging (Usability)
+  **S8** DebugLogging: log capture + storage + display + export in one class (SRP)
+  **S9** 40+ UnityEngine.Debug callers — hidden transitive UnityEngine dependency (ACL §4.2.3)
+end note
+
+@enduml

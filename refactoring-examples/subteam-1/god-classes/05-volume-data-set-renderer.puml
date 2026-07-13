@@ -1,0 +1,118 @@
+@startuml VolumeDataSetRenderer
+title VolumeDataSetRenderer — canonical god class (CLAUDE.md §4 D5)\n(1402 LOC, 171 public members, Assets/Scripts/VolumeData/VolumeDataSetRenderer.cs)
+hide empty members
+
+class VolumeDataSetRenderer <<MonoBehaviour>> #lightyellow {
+  .. ray-march params ..
+  +MaxSteps, Jitter
+  +ScalingBias, ScalingContrast
+  +ScalingAlpha, ScalingGamma
+  +ThresholdMin, ThresholdMax
+  .. foveated rendering ..
+  +FoveatedRendering
+  +FoveationStart / End / Jitter
+  +FoveatedStepsLow / High
+  .. vignette ..
+  +VignetteFadeStart / End
+  +VignetteIntensity
+  .. file input ..
+  +FileName, MaskFileName
+  +SelectedHdu
+  +subsetBounds, trueBounds
+  .. mask + projection ..
+  +DisplayMask
+  +MaskVoxelSize
+  +MaskMode
+  +ProjectionMode
+  .. cursor readback ..
+  +CursorVoxel, CursorLocPos
+  +CursorPositionOutline
+  .. transforms ..
+  +CubeSpace, CenterCubeSpace
+  +CornerCubeSpace
+  .. lifecycle ..
+  +Awake() / Start() / Update()
+  +OnDestroy()
+}
+
+' Owned domain model
+class VolumeDataSet           #palegreen
+VolumeDataSetRenderer *-- "1" VolumeDataSet : DataSet
+
+' Owned sub-renderer
+class MomentMapRenderer
+VolumeDataSetRenderer *-- "1" MomentMapRenderer
+
+' Held-feature sets
+class FeatureSetManager
+class FeatureSetRenderer
+class Feature                 #palegreen
+VolumeDataSetRenderer o-- "1" FeatureSetManager
+VolumeDataSetRenderer ..> FeatureSetRenderer
+VolumeDataSetRenderer ..> Feature
+
+' Native plug-in
+class FitsReader              <<P/Invoke>> #palegreen
+class DataAnalysis            <<P/Invoke>> #palegreen
+VolumeDataSetRenderer ..> FitsReader
+VolumeDataSetRenderer ..> DataAnalysis
+
+' Config + colour
+class Config                  #palegreen
+class ColorMapEnum            #palegreen
+class ColorMapUtils           #palegreen
+VolumeDataSetRenderer ..> Config
+VolumeDataSetRenderer ..> ColorMapEnum
+VolumeDataSetRenderer ..> ColorMapUtils
+
+' Unity / TMP framework (ACL targets)
+class Material   <<UnityEngine>>     #mistyrose
+class Texture3D  <<UnityEngine>>     #mistyrose
+class Graphics   <<UnityEngine>>     #mistyrose
+class TMP_Text   <<TMPro>>           #mistyrose
+VolumeDataSetRenderer ..> Material
+VolumeDataSetRenderer ..> Texture3D
+VolumeDataSetRenderer ..> Graphics
+VolumeDataSetRenderer ..> TMP_Text
+
+' Line / debug overlays
+class WorldSpaceLineRenderer
+VolumeDataSetRenderer ..> WorldSpaceLineRenderer
+
+' Inbound clients (fan-in highlights how central this class is)
+class VolumeInputController
+class VolumeCommandController
+class CanvassDesktop
+class DesktopPaintController
+class RenderingController
+class OptionController
+class MomentMapMenuController
+class SpectralProfileMenuController
+class SpectralProfileHelper
+class ExitController
+class ShapesManager
+class BenchmarkManager
+class FeatureMenuController
+class FeatureMenuCell
+class VoiceCommandListCreator
+class ColourMapListCreator
+class FeatureSetManagerEditor <<UnityEditor>>
+
+VolumeInputController         ..> VolumeDataSetRenderer
+VolumeCommandController       ..> VolumeDataSetRenderer
+CanvassDesktop                ..> VolumeDataSetRenderer
+DesktopPaintController        ..> VolumeDataSetRenderer
+RenderingController           ..> VolumeDataSetRenderer
+OptionController              ..> VolumeDataSetRenderer
+MomentMapMenuController       ..> VolumeDataSetRenderer
+SpectralProfileMenuController ..> VolumeDataSetRenderer
+SpectralProfileHelper         ..> VolumeDataSetRenderer
+ExitController                ..> VolumeDataSetRenderer
+ShapesManager                 ..> VolumeDataSetRenderer
+BenchmarkManager              ..> VolumeDataSetRenderer
+FeatureMenuController         ..> VolumeDataSetRenderer
+FeatureMenuCell               ..> VolumeDataSetRenderer
+VoiceCommandListCreator       ..> VolumeDataSetRenderer
+ColourMapListCreator          ..> VolumeDataSetRenderer
+FeatureSetManagerEditor       ..> VolumeDataSetRenderer
+@enduml

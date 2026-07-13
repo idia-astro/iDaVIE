@@ -1,0 +1,120 @@
+@startuml IFeature
+' iDaVIE — IFeature interface diagram
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+hide empty members
+
+' ═══════════════════════════════════════════════════════════
+' SUPPORTING VALUE TYPES
+' ═══════════════════════════════════════════════════════════
+
+struct Vec3 {
+    + X : float
+    + Y : float
+    + Z : float
+}
+
+struct FeatureColor {
+    + R : float
+    + G : float
+    + B : float
+    + A : float
+}
+
+' ═══════════════════════════════════════════════════════════
+' THE INTERFACE
+' ═══════════════════════════════════════════════════════════
+
+interface IFeature {
+    .. Identity ..
+    + Index : int
+    + Id : int
+    + Name : string
+    .. Mutable State ..
+    + Flag : string
+    + RawData : string[]
+    + CubeColor : FeatureColor
+    + Visible : bool
+    + Selected : bool
+    .. Geometry ..
+    + CornerMin : Vec3
+    + CornerMax : Vec3
+    + Center : Vec3
+    + Size : Vec3
+    + Volume : float
+    .. Behaviour ..
+    + SetBounds(Vec3 cornerMin, Vec3 cornerMax)
+    + ContainsPoint(Vec3 point) : bool
+    + IsOutsideVolume(Vec3 volumeMin, Vec3 volumeMax) : bool
+}
+
+' ═══════════════════════════════════════════════════════════
+' CONCRETE IMPLEMENTATION
+' ═══════════════════════════════════════════════════════════
+
+class Feature {
+    + Temporary : bool
+    + Comment : string
+    + Metric : float
+    + StatusChanged : bool
+    + FeatureSetParent : FeatureSet
+    --
+    + SetParent(FeatureSet)
+    + ClearParent()
+    + BoundsContains(Vec3) : bool
+    + BoundsVolume() : float
+}
+
+Feature ..|> IFeature : implements
+
+' ═══════════════════════════════════════════════════════════
+' KEY CONSUMERS
+' ═══════════════════════════════════════════════════════════
+
+class FeatureSet {
+    + Name : string
+    + Index : int
+    + Color : FeatureColor
+    + Features : ReadOnlyCollection<Feature>
+    + event FeatureDirty : Action<int>
+    --
+    + Add(Feature)
+    + Remove(Feature) : bool
+    + Clear()
+    + NotifyDirty(int)
+}
+
+class FeatureSetService {
+    + SelectedFeature : Feature
+    --
+    + Select(Feature)
+    + Deselect()
+    + SelectAtPosition(Vec3) : bool
+    + GetStatistics(Feature) : FeatureStatistics
+}
+
+class VoTableExportService {
+    + Export(FeatureSet, ICoordinateTransformer) : string
+}
+
+class FeatureCatalog {
+    + AllSets() : IEnumerable<FeatureSet>
+    + AppendFeatureToSessionFile(Feature)
+}
+
+' ═══════════════════════════════════════════════════════════
+' RELATIONSHIPS
+' ═══════════════════════════════════════════════════════════
+
+IFeature --> FeatureColor : uses >
+IFeature --> Vec3         : uses >
+
+FeatureSet "1" o-- "0..*" Feature   : aggregates >
+Feature --> FeatureSet               : parent >
+
+FeatureSetService ..> IFeature      : operates on >
+FeatureCatalog    ..> IFeature      : persists >
+VoTableExportService ..> IFeature   : serialises >
+
+@enduml

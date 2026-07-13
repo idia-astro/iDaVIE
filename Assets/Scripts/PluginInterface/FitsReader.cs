@@ -392,23 +392,31 @@ public class FitsReader
         if (FitsCreateFile(out maskPtr, fileName, out status) != 0)
         {
             Debug.LogError($"Fits create file error {FitsErrorMessage(status)}");
+            Marshal.FreeHGlobal(naxes);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         if (FitsCopyHeader(cubeFitsPtr, maskPtr, out status) != 0)
         {
             Debug.LogError($"Fits copy header error {FitsErrorMessage(status)}");
+            Marshal.FreeHGlobal(naxes);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         Marshal.WriteInt32(keyValue, 16);
         if (FitsUpdateKey(maskPtr, 21, "BITPIX", keyValue, null, out status) != 0)
         {
             Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
+            Marshal.FreeHGlobal(naxes);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         Marshal.WriteInt32(keyValue, 3);
         if (FitsUpdateKey(maskPtr, 21, "NAXIS", keyValue, null, out status) != 0)   //Make sure new header has 3 dimensions
         {
             Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
+            Marshal.FreeHGlobal(naxes);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         if (FitsDeleteKey(maskPtr, "BUNIT", out status) != 0)
@@ -419,22 +427,30 @@ public class FitsReader
         if (FitsWriteImageInt16(maskPtr, 3, nelements, maskData, out status) != 0)
         {
             Debug.LogError("Fits write image error " + FitsErrorMessage(status));
+            Marshal.FreeHGlobal(naxes);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
         if (FitsWriteHistory(maskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
         {
             Debug.LogError("Error writing history!");
+            Marshal.FreeHGlobal(naxes);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         if (FitsFlushFile(maskPtr, out status) != 0)
         {
             Debug.LogError($"Fits flush file error {FitsErrorMessage(status)}");
+            Marshal.FreeHGlobal(naxes);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         if (FitsCloseFile(maskPtr, out status) != 0)
         {
             Debug.LogError($"Fits close file error {FitsErrorMessage(status)}");
+            Marshal.FreeHGlobal(naxes);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         if (keyValue != IntPtr.Zero)
@@ -442,6 +458,7 @@ public class FitsReader
             Marshal.FreeHGlobal(keyValue);
             keyValue = IntPtr.Zero;
         }
+        Marshal.FreeHGlobal(naxes);
         return status;
     }
 
@@ -497,23 +514,27 @@ public class FitsReader
         if (FitsCreateFile(out maskPtr, fileName, out status) != 0)
         {
             Debug.LogError($"Fits create file error {FitsErrorMessage(status)}");
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         if (FitsCopyHeader(cubeFitsPtr, maskPtr, out status) != 0)
         {
             Debug.LogError($"Fits copy file error {FitsErrorMessage(status)}");
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         Marshal.WriteInt32(keyValue, 16);
         if (FitsUpdateKey(maskPtr, 21, "BITPIX", keyValue, null, out status) != 0)
         {
             Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         Marshal.WriteInt32(keyValue, 3);
         if (FitsUpdateKey(maskPtr, 21, "NAXIS", keyValue, null, out status) != 0)   //Make sure new header has 3 dimensions
         {
             Debug.LogError($"Fits update key error {FitsErrorMessage(status)}");
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         if (FitsDeleteKey(maskPtr, "BUNIT", out status) != 0)
@@ -525,22 +546,26 @@ public class FitsReader
         {
             Debug.LogError("Fits write subset error " + FitsErrorMessage(status));
             FitsCloseFile(maskPtr, out status);
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         var historyTimeStamp = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
         if (FitsWriteHistory(maskPtr, $"Edited by iDaVIE at {historyTimeStamp}", out status) != 0)
         {
             Debug.LogError("Error writing history!");
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         if (FitsFlushFile(maskPtr, out status) != 0)
         {
             Debug.LogError($"Fits flush file error {FitsErrorMessage(status)}");
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         if (FitsCloseFile(maskPtr, out status) != 0)
         {
             Debug.LogError($"Fits close file error {FitsErrorMessage(status)}");
+            Marshal.FreeHGlobal(keyValue);
             return status;
         }
         if (keyValue != IntPtr.Zero)

@@ -1,0 +1,68 @@
+@startuml WE2-after-dependency-graph
+title WE2 — Debug Tab: AFTER dependency graph\n(proposed Observer + MVVM + ACL design)
+
+skinparam packageStyle rectangle
+skinparam component {
+    BackgroundColor White
+    BorderColor Black
+}
+skinparam arrow {
+    Color #444444
+}
+
+package "iDaVIE.Desktop.DebugTab (domain — pure C#)" #DFF0D8 {
+    component "DebugTabViewModel\n----\nWMC = 6  CBO = 3\nLCOM hs = 0" as DTVM #90EE90
+    component "LogStream\n----\nWMC = 3  CBO = 2\nLCOM hs = 0" as LS #90EE90
+    component "IDebugTabViewModel" as IDTVM
+    component "ILogStream" as ILS
+    component "ILogObserver" as ILO
+    component "LogEntry (record)\n+ LogLevel (enum)" as LE
+}
+
+package "iDaVIE.Desktop.Adapters.DebugTab (Unity assembly)" #FFE4E4 {
+    component "UnityLogStreamAdapter\n----\nWMC = 6  CBO = 4\nMonoBehaviour : ILogStream" as ULSA
+    component "DebugTabView\n----\nWMC = 3  CBO = 7\nMonoBehaviour" as DTV
+    component "DebugTabCompositionRoot\n----\nWMC = 2  CBO = 3\nMonoBehaviour" as DTCR
+}
+
+package "Existing producers (UNCHANGED — 44 call sites)" #FFF2CC {
+    component "CanvassDesktop\n40 sites" as CD
+    component "DataAnalysis\n4 sites" as DA
+}
+
+package "Unity / native platform" #E1F5FE {
+    component "UnityEngine.Application\nlogMessageReceived" as App
+    component "UnityEngine.Debug\nUnityEngine.UI\nTMPro" as UE
+}
+
+' ── Domain → Domain (allowed) ────────────────────────────────────────────────
+DTVM --> ILS  : Subscribe / Unsubscribe
+DTVM --> LE   : holds list (cap 2000)
+LS   --> ILO  : dispatches
+LS   ..> LE   : creates (with DateTime.UtcNow)
+IDTVM <.. DTVM : implements
+ILS  <.. LS   : implements
+ILO  <.. DTVM : implements (OnNext)
+
+' ── ACL — adapter implements domain interface (single direction) ─────────────
+ULSA ..|> ILS : implements (ACL)
+DTV  --> IDTVM : binds to interface
+
+' ── Adapter → Unity / external (allowed; this is what adapters are for) ──────
+ULSA --> App : subscribes\nlogMessageReceived
+DTV  --> UE  : TMP_Text / Scrollbar / Button
+DTCR --> UE  : Awake / OnDestroy
+
+' ── Existing producers reach Application via the unchanged static event ──────
+CD --> UE : "Debug.Log* (unchanged)"
+DA --> UE : "Debug.Log* (unchanged)"
+UE ..> App : "fires globally\n(unchanged)"
+
+' ── Composition root is the ONLY edge from Adapters to concrete Domain ───────
+DTCR --> DTVM : new + Dispose
+DTCR --> ULSA : [SerializeField]
+DTCR --> DTV  : [SerializeField]
+
+caption DebugTabViewModel CBO drops from ~10 (DebugLogging) to 3 — only ILogStream, LogEntry, IDisposable.\nUnityEngine, TMPro, System.IO, and StandaloneFileBrowser are isolated inside the Adapters assembly.\nDomain code cannot transitively depend on them (Section 4.2 satisfied — verified by dotnet build:\nDebugTabSkeleton.csproj has zero UnityEngine references). Adapters are the only code that crosses\nthe ACL. The 44 existing Debug.Log* call sites are captured automatically — none of them change.
+
+@enduml

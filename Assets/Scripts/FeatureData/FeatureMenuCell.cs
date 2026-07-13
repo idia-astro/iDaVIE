@@ -21,6 +21,7 @@
  */
 using System;
 using DataFeatures;
+using iDaVIE.Infrastructure.Unity;
 using PolyAndCode.UI;
 using TMPro;
 using UnityEngine;
@@ -49,7 +50,7 @@ public class FeatureMenuCell : MonoBehaviour, ICell
 
     private VolumeDataSetRenderer _activeDataSet;
     private VolumeDataSetRenderer[] _dataSets;
-    private FeatureSetManager _featureSetManager;
+    private FeatureVisualiser _featureVisualiser;
     
 
     private static readonly Color _lightGrey = new Color(0.4039216f, 0.5333334f, 0.5882353f, 1f);
@@ -71,7 +72,7 @@ public class FeatureMenuCell : MonoBehaviour, ICell
         }
         if (_activeDataSet != null)
         {
-            _featureSetManager = _activeDataSet.GetComponentInChildren<FeatureSetManager>();
+            _featureVisualiser = _activeDataSet.FeatureVisualiser;
         }
         CellHeight = GetComponent<RectTransform>().rect.height;
     }
@@ -215,18 +216,19 @@ public class FeatureMenuCell : MonoBehaviour, ICell
         else
             lbl = (f.Length > 1) ? f.Substring(0, 2) : (" " + f.Substring(0, 1));
         flagLabel.SetText(lbl);
-        if (_featureSetManager != null)
-            _featureSetManager.NeedToUpdateInfo = true;
+        // NeedToUpdateInfo no longer needs to be set; FeatureMenuController
+        // reacts to FeatureSetService.FeatureSelectionChanged instead of polling.
     }
 
     public void GoTo()
     {
-        Teleport(Feature.CornerMin, Feature.CornerMax);
+        Teleport(new Vector3(Feature.CornerMin.X, Feature.CornerMin.Y, Feature.CornerMin.Z),
+                 new Vector3(Feature.CornerMax.X, Feature.CornerMax.Y, Feature.CornerMax.Z));
     }
 
     public void Select()
     {
-        _featureSetManager.SelectFeature(Feature);
+        _featureVisualiser?.SelectFeature(Feature);
         int siblingCount = this.gameObject.transform.parent.childCount;
         for (int i = 0; i < siblingCount; i++)
         {
@@ -238,7 +240,6 @@ public class FeatureMenuCell : MonoBehaviour, ICell
             else if (cell.CellIndex%2!=1)
                 cell.GetComponent<Image>().color = _darkGrey;
         }
-        _featureSetManager.NeedToUpdateInfo = true;
     }
     
     public void Teleport(Vector3 boundsMin, Vector3 boundsMax)
@@ -268,19 +269,34 @@ public class FeatureMenuCell : MonoBehaviour, ICell
 
     public void AddToNewList()
     {
-        _featureSetManager.AddFeatureToNewSet(Feature, false);
+        if (_featureVisualiser == null) return;
+        // Find the first New-type renderer and add a duplicate of this cell's feature.
+        FeatureSetRenderer newSet = null;
+        foreach (var r in _featureVisualiser.GetComponentsInChildren<FeatureSetRenderer>())
+        {
+            if (r.FeatureSetType == FeatureSetType.New) { newSet = r; break; }
+        }
+        if (newSet == null)
+        {
+            _featureVisualiser.Service?.AddSelectedFeatureToUserSet();
+            return;
+        }
+        var duplicate = new Feature(Feature.CornerMin, Feature.CornerMax,
+            newSet.FeatureColor, Feature.Name, Feature.Flag,
+            newSet.FeatureList.Count, Feature.Id, new string[] { "" }, Feature.Visible) { Temporary = false };
+        newSet.AddFeature(duplicate);
+        newSet.FeatureMenuScrollerDataSource?.InitData();
     }
 
     public void RemoveFromList()
     {
         if (Feature.Selected)
         {
-            _featureSetManager.DeselectFeature();
-            _featureSetManager.NeedToUpdateInfo = true;
-            _featureSetManager.SelectNullFeature();
+            _featureVisualiser?.DeselectFeature();
         }
         Feature.FeatureSetParent.RemoveFeature(Feature);
-        _featureSetManager.NeedToRespawnMenuList = true;
+        // NeedToRespawnMenuList no longer polled; FeatureMenuController reacts
+        // to FeatureSetService.FeatureSelectionChanged.
     }
     
     private VolumeDataSetRenderer getFirstActiveDataSet()

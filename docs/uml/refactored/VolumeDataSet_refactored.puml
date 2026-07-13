@@ -1,0 +1,265 @@
+@startuml VolumeDataSet_refactored
+title VolumeDataSet — ISO/IEC 25010:2023 Refactored Design
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    BorderColor #444444
+    ArrowColor #444444
+}
+skinparam interface {
+    BackgroundColor #E8F4E8
+    BorderColor #2E7D32
+}
+skinparam package {
+    BackgroundColor #FAFAFA
+    BorderColor #999999
+}
+hide empty members
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Value objects — immutable, no behaviour (ISO 25010: Analysability)
+' Separating data from behaviour makes each independently readable and testable.
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Value Objects" #EEF4FF {
+
+    class VolumeDimensions <<value>> {
+        + XDim : long
+        + YDim : long
+        + ZDim : long
+        + SubsetBounds : int[]
+        + TrueSize : int[]
+        + NumPoints : long
+        + NAxis : double
+        + IndexFromCoords(x : int, y : int, z : int) : int
+        + CoordsFromIndex(index : int) : Vector3Int
+        + IsSubset() : bool
+    }
+
+    class VolumeStatisticsSnapshot <<value>> {
+        + Max : float
+        + Min : float
+        + Mean : float
+        + StdDev : float
+        + PixelUnit : string
+        + FullHistogram : IReadOnlyList<int>
+        + Histogram : IReadOnlyList<int>
+        + HistogramBinWidth : float
+    }
+
+    class BrushStroke <<value>> {
+        + NewValue : int
+        + Voxels : IReadOnlyList<VoxelEntry>
+        + ChangedSources : IReadOnlyDictionary<int, bool>
+    }
+
+    class VoxelEntry <<value>> {
+        + Index : int
+        + Value : int
+        + VoxelEntry(index : int, value : int)
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Interfaces (ISO 25010: Reusability, Modifiability)
+' Each interface owns exactly one axis of change.
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Interfaces" #E8F4E8 {
+
+    interface IVolumeLoader {
+        + Load(fileName : string, subBounds : int[], trueBounds : int[], hdu : int) : VolumeDataCore
+        + LoadRandom(min : float, max : float, x : int, y : int, z : int) : VolumeDataCore
+        + CreateEmptyMask(source : VolumeDataCore) : VolumeDataCore
+    }
+
+    interface ICoordinateSystem {
+        + Initialise(headerDict : IDictionary<string, string>, restFreqHz : double) : void
+        + RecreateFrameSet(restFreq : double) : void
+        + ToFitsCoords(x : double, y : double, z : double) : (double, double, double)
+        + ToNormalisedCoords(x : double, y : double, z : double) : (double, double, double)
+        + MeasureLength(start : Vector3, end : Vector3) : (double xLen, double yLen, double zLen, double angle)
+        + FormatCoord(val : double, axis : int) : string
+        + FormatDepth(z : double) : string
+        + GetAttribute(name : string) : string
+        + SetAttribute(name : string, value : string) : void
+        + HasAttribute(name : string) : bool
+        + GetAxisUnit(axis : int) : string
+        + SetAxisUnit(axis : int, unit : string) : void
+    }
+
+    interface IStatisticsService {
+        + ComputeStats(maskVal : short) : VolumeStatisticsSnapshot
+        + ComputeHistogram(min : float, max : float) : int[]
+        + FillFeatureSet(featureSet : FeatureSetRenderer) : void
+    }
+
+    interface ITextureFactory {
+        + BuildVolumeTexture(filter : FilterMode, xDS : int, yDS : int, zDS : int) : Texture3D
+        + BuildCroppedTexture(filter : FilterMode, start : Vector3Int, end : Vector3Int, ds : Vector3Int) : Texture3D
+        + BuildMaskBuffers(maskVoxels : short[]) : (ComputeBuffer existing, ComputeBuffer added)
+        + FindDownsampleFactors(maxSizeInMb : long) : (int x, int y, int z)
+        + ConsolidateDownsampledMask() : void
+    }
+
+    interface IMaskEditor {
+        + PaintVoxel(coordsRegionSpace : Vector3Int, value : short, addToHistory : bool) : bool
+        + CommitStroke() : void
+        + Undo() : bool
+        + Redo() : bool
+        + CanUndo : bool
+        + CanRedo : bool
+        + <<event>> StrokeCommitted : Action<BrushStroke>
+    }
+
+    interface IDataExporter {
+        + ExportSubCube(min : Vector3Int, max : Vector3Int, minWorld : Vector3Int, maxWorld : Vector3Int, mask : VolumeDataCore) : int
+        + ExportSubMask(path : string, minWorld : Vector3Int, maxWorld : Vector3Int, fitsPtr : IntPtr, mask : VolumeDataCore) : int
+        + ExportMask(fitsPtr : IntPtr, path : string, exporting : bool) : int
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Core data container — no behaviour, just raw data and identity
+' (ISO 25010: Modularity — data and behaviour separated)
+' ──────────────────────────────────────────────────────────────────────────────
+
+class VolumeDataCore {
+    + Dimensions : VolumeDimensions
+    + FileName : string
+    + SelectedHdu : int
+    + HeaderDictionary : IReadOnlyDictionary<string, string>
+    + FitsData : IntPtr
+    + FitsHeader : IntPtr
+    + NumberHeaderKeys : int
+    + RegionOffset : Vector3Int
+    + IsMask : bool
+    + GetDataValue(x : int, y : int, z : int) : float
+    + GetMaskValue(x : int, y : int, z : int) : short
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Services — one responsibility each (ISO 25010: Modularity, Testability)
+' All dependencies are injected; nothing is newed internally.
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Services" #FFF8E8 {
+
+    class FitsVolumeLoader <<service>> {
+        + Load(fileName : string, subBounds : int[], trueBounds : int[], hdu : int) : VolumeDataCore
+        + LoadRandom(min : float, max : float, x : int, y : int, z : int) : VolumeDataCore
+        + CreateEmptyMask(source : VolumeDataCore) : VolumeDataCore
+    }
+
+    class ASTCoordinateSystem <<service>> {
+        - _astFrameSet : IntPtr
+        - _astAltSpecSet : IntPtr
+        + ASTCoordinateSystem(core : VolumeDataCore)
+        + Initialise(headerDict : IDictionary<string, string>, restFreqHz : double) : void
+        + RecreateFrameSet(restFreq : double) : void
+        + ToFitsCoords(x : double, y : double, z : double) : (double, double, double)
+        + ToNormalisedCoords(x : double, y : double, z : double) : (double, double, double)
+        + MeasureLength(start : Vector3, end : Vector3) : (double, double, double, double)
+        + FormatCoord(val : double, axis : int) : string
+        + FormatDepth(z : double) : string
+        + GetAttribute(name : string) : string
+        + SetAttribute(name : string, value : string) : void
+        + HasAttribute(name : string) : bool
+        + GetAxisUnit(axis : int) : string
+        + SetAxisUnit(axis : int, unit : string) : void
+        - GetAltSpecSystemWithUnit(system : string, unit : string) : void
+    }
+
+    class VolumeStatisticsService <<service>> {
+        - _core : VolumeDataCore
+        + VolumeStatisticsService(core : VolumeDataCore)
+        + ComputeStats(maskVal : short) : VolumeStatisticsSnapshot
+        + ComputeHistogram(min : float, max : float) : int[]
+        + FillFeatureSet(featureSet : FeatureSetRenderer) : void
+        - PrintStats(maskVal : short) : void
+    }
+
+    class VolumeTextureFactory <<service>> {
+        - _core : VolumeDataCore
+        + VolumeTextureFactory(core : VolumeDataCore)
+        + BuildVolumeTexture(filter : FilterMode, xDS : int, yDS : int, zDS : int) : Texture3D
+        + BuildCroppedTexture(filter : FilterMode, start : Vector3Int, end : Vector3Int, ds : Vector3Int) : Texture3D
+        + BuildMaskBuffers(maskVoxels : short[]) : (ComputeBuffer, ComputeBuffer)
+        + FindDownsampleFactors(maxSizeInMb : long) : (int, int, int)
+        + ConsolidateDownsampledMask() : void
+        - VoxelActiveFaces(i : int, cubeSize : Vector3Int, voxels : short[]) : int
+    }
+
+    class MaskEditorService <<service>> {
+        - _core : VolumeDataCore
+        - _history : Stack<BrushStroke>
+        - _redoQueue : Stack<BrushStroke>
+        + MaskEditorService(core : VolumeDataCore)
+        + PaintVoxel(coordsRegionSpace : Vector3Int, value : short, addToHistory : bool) : bool
+        + CommitStroke() : void
+        + Undo() : bool
+        + Redo() : bool
+        + CanUndo : bool
+        + CanRedo : bool
+        + <<event>> StrokeCommitted : Action<BrushStroke>
+        + ConsolidateMaskEntries() : void
+    }
+
+    class FitsExportService <<service>> {
+        - _core : VolumeDataCore
+        + FitsExportService(core : VolumeDataCore)
+        + ExportSubCube(min : Vector3Int, max : Vector3Int, minWorld : Vector3Int, maxWorld : Vector3Int, mask : VolumeDataCore) : int
+        + ExportSubMask(path : string, minWorld : Vector3Int, maxWorld : Vector3Int, fitsPtr : IntPtr, mask : VolumeDataCore) : int
+        + ExportMask(fitsPtr : IntPtr, path : string, exporting : bool) : int
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' VolumeDataSet facade — composes services, single public API
+' (ISO 25010: Modularity — callers depend on one stable facade)
+' ──────────────────────────────────────────────────────────────────────────────
+
+class VolumeDataSet {
+    - _core : VolumeDataCore
+    - _loader : IVolumeLoader
+    - _coordinates : ICoordinateSystem
+    - _statistics : IStatisticsService
+    - _textures : ITextureFactory
+    - _maskEditor : IMaskEditor
+    - _exporter : IDataExporter
+    + VolumeDataSet(loader : IVolumeLoader, coordinates : ICoordinateSystem, statistics : IStatisticsService, textures : ITextureFactory, maskEditor : IMaskEditor, exporter : IDataExporter)
+    + Core : VolumeDataCore
+    + Coordinates : ICoordinateSystem
+    + Statistics : IStatisticsService
+    + Textures : ITextureFactory
+    + MaskEditor : IMaskEditor
+    + Exporter : IDataExporter
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Realizations and dependencies
+' ──────────────────────────────────────────────────────────────────────────────
+
+FitsVolumeLoader       ..|> IVolumeLoader
+ASTCoordinateSystem    ..|> ICoordinateSystem
+VolumeStatisticsService ..|> IStatisticsService
+VolumeTextureFactory   ..|> ITextureFactory
+MaskEditorService      ..|> IMaskEditor
+FitsExportService      ..|> IDataExporter
+
+VolumeDataSet *-- VolumeDataCore
+VolumeDataSet o-- IVolumeLoader
+VolumeDataSet o-- ICoordinateSystem
+VolumeDataSet o-- IStatisticsService
+VolumeDataSet o-- ITextureFactory
+VolumeDataSet o-- IMaskEditor
+VolumeDataSet o-- IDataExporter
+
+MaskEditorService *-- BrushStroke
+BrushStroke *-- VoxelEntry
+VolumeDataSet *-- VolumeDimensions
+
+@enduml

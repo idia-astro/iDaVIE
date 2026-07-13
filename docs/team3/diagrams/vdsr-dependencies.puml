@@ -1,0 +1,248 @@
+@startuml vdsr-dependencies
+'
+' iDaVIE Sub-team 3 — Rendering Engine
+' VolumeDataSetRenderer: Class-Level Dependency Map
+' Baseline commit: 1cd729f  |  Generated: 2026-05-25
+' Scope: full reachable graph (Ce + 2nd-hop Ce)
+' Confirmed metrics (Understand): CBO=28, WMC=97, RFC=97, LCOM=0.95, LOC=1403
+'
+
+title VolumeDataSetRenderer — Dependency Map\n(Understand tool  |  CBO=28 coupled classes  |  WMC=97  |  LCOM=0.95)
+
+skinparam linetype ortho
+skinparam defaultFontSize 11
+skinparam padding 5
+skinparam shadowing false
+skinparam ArrowThickness 1.5
+skinparam componentStyle rectangle
+
+skinparam component {
+  BackgroundColor<<VolumeData>>    #D6EAF8
+  BorderColor<<VolumeData>>        #2471A3
+  BackgroundColor<<DataFeatures>>  #D5F5E3
+  BorderColor<<DataFeatures>>      #1E8449
+  BackgroundColor<<LineRenderer>>  #FAD7A0
+  BorderColor<<LineRenderer>>      #CA6F1E
+  BackgroundColor<<Unity>>         #FEF9E7
+  BorderColor<<Unity>>             #F39C12
+  FontStyle<<Unity>>               bold
+  BackgroundColor<<SteamVR>>       #FDEBD0
+  BorderColor<<SteamVR>>           #E67E22
+  FontStyle<<SteamVR>>             bold
+  BackgroundColor<<iDaVIEUtil>>    #E8F8F5
+  BorderColor<<iDaVIEUtil>>        #148F77
+  BackgroundColor<<BCL>>           #F2F3F4
+  BorderColor<<BCL>>               #AAB7B8
+}
+
+' ══════════════════════════════════════════════════
+'  SUBJECT CLASS
+' ══════════════════════════════════════════════════
+package "VolumeData (namespace)" {
+
+  component "**VolumeDataSetRenderer**\n────────────────────────\nCBO = 28  (Understand)\nWMC = 97  |  RFC = 97  |  LCOM = 0.95\nLOC = 1403  |  Worst method: _startFunc (CC=28)\n────────────────────────\n⚠ God Class: 8+ responsibilities\n⚠ Inside 46-file dependency cycle" as VDR <<VolumeData>>
+
+  component "VolumeDataSet\n────────────\nCBO = est.\nHolds FITS data, 3D textures,\nmask buffers, WCS frame" as VDS <<VolumeData>>
+
+  component "VolumeInputController\n────────────\nCBO = est. (hub)\nVR hand / locomotion / interaction\n[mutual ref with VDR]" as VIC <<VolumeData>>
+
+  component "MomentMapRenderer\n────────────\nCBO = est.\nGPU moment-map compute\n[mutual ref with VDR]" as MMR <<VolumeData>>
+
+  component "VolumeCommandController\n────────────\nCBO = est.\nVoice + menu command dispatch\n[mutual ref with VDR]" as VCC <<VolumeData>>
+
+  component "Config\n────────────\nCBO = est.\nSingleton: runtime settings\n+ rest-frequency list\n[mutual ref with VDR]" as Cfg <<VolumeData>>
+}
+
+' ══════════════════════════════════════════════════
+'  DataFeatures package
+' ══════════════════════════════════════════════════
+package "DataFeatures (namespace)" {
+  component "FeatureSetManager\n────────────\nCBO = est.\nManages selection /\nmask feature sets" as FSM <<DataFeatures>>
+  component "Feature\n(static helpers)\n────────────\nFeature.SetCubeColors()" as Feat <<DataFeatures>>
+  component "ColorMapEnum\n(enum)\n────────────\nColorMapEnum.Inferno etc." as CME <<DataFeatures>>
+  component "ColorMapUtils\n(static)\n────────────\nNumColorMaps, FromHashCode()" as CMU <<DataFeatures>>
+  component "ColorMapDelegate\n(delegate)\n────────────\nOnColorMapChanged event type" as CMD <<DataFeatures>>
+}
+
+' ══════════════════════════════════════════════════
+'  LineRenderer package
+' ══════════════════════════════════════════════════
+package "LineRenderer (namespace)" {
+  component "PolyLine\n────────────\n_measuringLine" as PL <<LineRenderer>>
+  component "CuboidLine\n────────────\n_cubeOutline, _voxelOutline\n_regionOutline, _videoCursorPositionOutline" as CL <<LineRenderer>>
+}
+
+' ══════════════════════════════════════════════════
+'  Unity Engine  [⚠ Unity — testability boundary]
+' ══════════════════════════════════════════════════
+package "UnityEngine  ⚠ Unity" {
+  component "MonoBehaviour\n────────────\nBase class; provides Start,\nUpdate, OnDestroy, OnRenderObject,\nGetComponent*, FindObjectOfType" as MB <<Unity>>
+  component "Material\n────────────\nInstantiate(RayMarchingMaterial)\nInstantiate(MaskMaterial)\nSetTexture / SetFloat / SetInt\nSetVector / SetBuffer / SetPass" as Mat <<Unity>>
+  component "MeshRenderer\n────────────\nGetComponent<MeshRenderer>()\n_renderer.material = …" as MeshR <<Unity>>
+  component "Shader\n(static)\n────────────\nShader.PropertyToID()\nShader.WarmupAllShaders()\nShader.EnableKeyword()\nShader.DisableKeyword()" as Shdr <<Unity>>
+  component "Graphics\n(static)\n────────────\nGraphics.DrawProceduralNow()\nMeshTopology.Points" as Gfx <<Unity>>
+  component "ComputeBuffer\n────────────\nExistingMaskBuffer\nAddedMaskBuffer\nSetBuffer()" as CB <<Unity>>
+  component "RenderTexture\n────────────\n(via MomentMapRenderer\n2nd hop)" as RT <<Unity>>
+}
+
+package "UnityEngine.UI  ⚠ Unity" {
+  component "Slider\n────────────\nprogressBar field" as Sldr <<Unity>>
+}
+
+package "TMPro  ⚠ Unity (TextMesh Pro)" {
+  component "TextMeshProUGUI\n────────────\nloadText field" as TMP <<Unity>>
+}
+
+' ══════════════════════════════════════════════════
+'  SteamVR / Valve  [⚠ SteamVR — testability boundary]
+' ══════════════════════════════════════════════════
+package "Valve.VR + InteractionSystem  ⚠ SteamVR" {
+  component "SteamVR types\n────────────\nVRHand, Player, ISteamVR_Action_*\nHand, Stateless FSM\n(via VolumeInputController — 2nd hop)" as SVR <<SteamVR>>
+  component "Valve.Newtonsoft.Json\n────────────\nJsonProperty, JsonConverter\n(via Config — 2nd hop)" as VNJ <<SteamVR>>
+}
+
+' ══════════════════════════════════════════════════
+'  iDaVIE Utility classes
+' ══════════════════════════════════════════════════
+package "iDaVIE Utilities" {
+  component "FitsReader\n(static, P/Invoke)\n────────────\nFitsOpenFileReadOnly()\nFitsOpenFileReadWrite()\nFitsCloseFile()" as FR <<iDaVIEUtil>>
+  component "ToastNotification\n(static UI)\n────────────\nShowInfo() / ShowWarning()\nShowError() / ShowSuccess()" as TN <<iDaVIEUtil>>
+  component "DataAnalysis.SourceStats\n(struct)\n────────────\nSourceStatsDict property type\n(delegate to _maskDataSet)" as DAS <<iDaVIEUtil>>
+}
+
+' ══════════════════════════════════════════════════
+'  BCL
+' ══════════════════════════════════════════════════
+package "System.*  (BCL)" {
+  component "System.IO  ·  System.Linq\nSystem.Collections.Generic\nSystem.Text.RegularExpressions" as BCL <<BCL>>
+}
+
+' ══════════════════════════════════════════════════
+'  AFFERENT (Ca=28) — callers not shown individually
+' ══════════════════════════════════════════════════
+package "28 Afferent Callers  (Ca=28)" {
+  component "FeatureData · Menu · UI\nVideoMaker · Shapes · Tools\n+ VolumeData siblings\n────────────\nAll inside the 46-file\ndependency cycle" as Ca28
+}
+
+' ══════════════════════════════════════════════════
+'  EDGES: VolumeDataSetRenderer → direct Ce
+'  (solid blue, labelled with dependency type)
+' ══════════════════════════════════════════════════
+
+VDR -[#1A5276,bold]-> MB      : <<inherits>>
+VDR -[#1A5276]-> VDS          : <<uses>>\nfield: _dataSet,\n_maskDataSet\n(~92 refs in code)
+VDR -[#1A5276]-> VIC          : <<uses>>\nfield: volumeInputController\n+ FindObjectOfType
+VDR -[#1A5276]-> MMR          : <<instantiates>>\ngameObject.AddComponent\n(MomentMapRenderer)
+VDR -[#1A5276]-> Cfg          : <<uses>>\nConfig.Instance\n(singleton access)
+VDR -[#1A5276]-> VCC          : <<uses>>\nFindObjectOfType\n<VolumeCommandController>()
+VDR -[#1A5276]-> FSM          : <<uses>>\nGetComponentInChildren\n+ FeatureSetManagerPrefab field
+VDR -[#1A5276]-> Feat         : <<uses>>\nFeature.SetCubeColors()\n(static)
+VDR -[#1A5276]-> CME          : <<uses>>\nfield: ColorMap (ColorMapEnum)
+VDR -[#1A5276]-> CMU          : <<uses>>\nColorMapUtils.NumColorMaps\nColorMapUtils.FromHashCode()
+VDR -[#1A5276]-> CMD          : <<event>>\npublic ColorMapDelegate\nOnColorMapChanged
+VDR -[#1A5276]-> PL           : <<uses>>\nfield: _measuringLine (PolyLine)
+VDR -[#1A5276]-> CL           : <<uses>>\nfields: _cubeOutline\n_voxelOutline _regionOutline\n_videoCursorPositionOutline
+VDR -[#1A5276]-> TMP          : <<uses>>\nfield: loadText (TextMeshProUGUI)
+VDR -[#1A5276]-> Sldr         : <<uses>>\nfield: progressBar (Slider)
+VDR -[#1A5276]-> Mat          : <<instantiates>>\nInstantiate(RayMarchingMaterial)\nInstantiate(MaskMaterial)\nSets 20+ shader properties
+VDR -[#1A5276]-> MeshR        : <<uses>>\nGetComponent<MeshRenderer>()\n_renderer.material = …
+VDR -[#1A5276]-> Shdr         : <<uses>>\nShader.PropertyToID() (×30)\nWarmupAllShaders()\nEnable/DisableKeyword()
+VDR -[#1A5276]-> Gfx          : <<uses>>\nGraphics.DrawProceduralNow()\n(OnRenderObject mask draw)
+VDR -[#1A5276]-> CB           : <<uses>>\nComputeBuffer (mask buffers)\nSetBuffer() in material
+VDR -[#1A5276]-> FR           : <<uses>>\nFitsOpenFileReadOnly/Write()\nFitsCloseFile() in SaveMask()
+VDR -[#1A5276]-> TN           : <<uses>>\nToastNotification.Show*()\n(crop / save feedback)
+VDR -[#1A5276]-> DAS          : <<uses>>\nSourceStatsDict\n{ get { return _maskDataSet.SourceStatsDict; } }
+VDR -[#1A5276]-> BCL          : <<uses>>\nPath.GetDirectoryName/Filename\nRegex / DateTime / IntPtr / Math
+
+' ══════════════════════════════════════════════════
+'  MUTUAL REFERENCES  (red dashed — inside 46-file cycle)
+' ══════════════════════════════════════════════════
+
+VIC  -[#C0392B,dashed,thickness=2]-> VDR : <<uses>>\n[MUTUAL — cycle]
+MMR  -[#C0392B,dashed,thickness=2]-> VDR : <<uses>>\n[MUTUAL — cycle]
+VCC  -[#C0392B,dashed,thickness=2]-> VDR : <<uses>>\n[MUTUAL — cycle]
+Cfg  -[#C0392B,dashed,thickness=2]-> VDR : <<uses>>\n[MUTUAL — cycle]
+Ca28 -[#C0392B,dashed]-> VDR            : Ca=28 callers\n[inside same cycle]
+
+' ══════════════════════════════════════════════════
+'  2nd-HOP: VolumeDataSet Ce
+' ══════════════════════════════════════════════════
+
+VDS -[#2E86C1]-> MB   : <<inherits?>>
+VDS -[#2E86C1]-> FR   : <<uses>>\nP/Invoke FITS native DLL
+VDS -[#2E86C1]-> CME  : <<uses>>\ncolor map types
+VDS -[#2E86C1]-> CB   : <<uses>>\nGPU mask buffers
+VDS -[#2E86C1]-> BCL  : <<uses>>\nIO / Linq / Marshal
+
+' ══════════════════════════════════════════════════
+'  2nd-HOP: VolumeInputController Ce
+' ══════════════════════════════════════════════════
+
+VIC -[#2E86C1]-> MB   : <<inherits>>
+VIC -[#E67E22,bold]-> SVR : <<uses>>\n⚠ SteamVR types:\nVRHand, Player,\nISteamVR_Action_*
+VIC -[#2E86C1]-> FSM  : <<uses>>
+VIC -[#2E86C1]-> PL   : <<uses>>
+VIC -[#2E86C1]-> CL   : <<uses>>
+VIC -[#2E86C1]-> TMP  : <<uses>>
+
+' ══════════════════════════════════════════════════
+'  2nd-HOP: MomentMapRenderer Ce
+' ══════════════════════════════════════════════════
+
+MMR -[#2E86C1]-> MB   : <<inherits>>
+MMR -[#2E86C1]-> CB   : <<uses>>\nSpectrumBuffer (ComputeBuffer)
+MMR -[#2E86C1]-> RT   : <<uses>>\nMoment0/1Map, ImageOutput
+
+' ══════════════════════════════════════════════════
+'  2nd-HOP: VolumeCommandController Ce
+' ══════════════════════════════════════════════════
+
+VCC -[#2E86C1]-> MB   : <<inherits>>
+VCC -[#2E86C1]-> TMP  : <<uses>>
+VCC -[#2E86C1]-> Sldr : <<uses>>
+
+' ══════════════════════════════════════════════════
+'  2nd-HOP: Config Ce
+' ══════════════════════════════════════════════════
+
+Cfg -[#E67E22,bold]-> VNJ : <<uses>>\n⚠ Valve.Newtonsoft.Json\n(JSON deserialiser)
+Cfg -[#2E86C1]-> BCL      : <<uses>>\nSystem.IO, System.Collections
+
+' ══════════════════════════════════════════════════
+'  LEGEND
+' ══════════════════════════════════════════════════
+
+legend right
+  **VolumeDataSetRenderer — Dependency Map Legend**
+  ──────────────────────────────────────────────────
+  |= Arrow style         |= Meaning                                |
+  | solid blue (bold)    | VDR direct Ce — inherits                |
+  | solid blue           | VDR direct Ce — uses / instantiates / event |
+  | red dashed (bold)    | Mutual reference (bidirectional — ⚠ cycle) |
+  | blue thin            | 2nd-hop Ce (VolumeData siblings' outgoing) |
+  | orange               | SteamVR dependency (⚠ testability boundary) |
+  ──────────────────────────────────────────────────
+  |= Node color          |= Package                                |
+  | blue background      | VolumeData namespace                    |
+  | green background     | DataFeatures namespace                  |
+  | orange background    | LineRenderer namespace                  |
+  | yellow background    | UnityEngine (⚠ testability boundary)   |
+  | peach background     | SteamVR / Valve (⚠ testability boundary)|
+  | teal background      | iDaVIE utility classes                  |
+  | grey background      | System.* BCL                            |
+  ──────────────────────────────────────────────────
+  **CK Metrics (Understand tool — confirmed)**
+  CBO = 28  (Count of Coupled Classes)
+  WMC = 97  |  RFC = 97  |  LCOM = 0.95  |  DIT = 2
+  Worst method: _startFunc (CC=28, 185 LOC)
+  LOC = 1403  |  Comment density = 8.9%
+  Public members = 152  |  Mutable public fields = 14
+  ──────────────────────────────────────────────────
+  **Refactoring Target:** split into
+    VolumeRenderCoordinator + VolumeMaterialBinder
+    + VolumeTextureManager + VolumeCameraDriver
+    + FoveatedSamplingPolicy
+  Break cycle via IRenderPipeline + IGazeProvider
+endlegend
+
+@enduml

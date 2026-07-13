@@ -1,0 +1,25 @@
+name: Basic CI
+
+on:
+  push:
+    branches: [ team6 ]
+  pull_request:
+    branches: [ team6 ]
+
+jobs:
+  build-and-static-analysis:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build (placeholder)
+        run: |
+          echo "Build step would go here"
+          # For now we just echo so the step always succeeds
+
+      - name: Static analysis (placeholder)
+        run: |
+          echo "Static analysis step would go here"
+          # Again, placeholder so this always passes

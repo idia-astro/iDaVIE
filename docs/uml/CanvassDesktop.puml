@@ -1,0 +1,159 @@
+@startuml CanvassDesktop
+title CanvassDesktop — Proposed Decomposition
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    BorderColor #555555
+    ArrowColor #555555
+}
+skinparam package {
+    BackgroundColor #F5F5F5
+    BorderColor #AAAAAA
+}
+hide empty members
+
+' ─── File loading panel ───────────────────────────────────────────────────────
+
+package "File Loading" {
+
+    class CubeFilePanel {
+        .. Image file ..
+        + BrowseImageFile() : void
+        - _browseImageFile(path : string) : void
+        .. Mask file ..
+        + BrowseMaskFile() : void
+        - _browseMaskFile(path : string) : void
+        .. HDU selection ..
+        + ChangeHduSelection(dropdown : TMP_Dropdown) : void
+        .. Load / unload ..
+        + LoadFileFromFileSystem() : void
+        + LoadCubeCoroutine(imagePath : string, maskPath : string, hduSelection : int) : IEnumerator
+        + CheckMemSpaceForCubes(imagePath : string, maskPath : string) : bool
+        + CheckImgMaskAxisSize() : void
+        + DismissFileLoad() : void
+        + Exit() : void
+        - IsLoadable() : bool
+        - UpdateHeaderFromFits(fptr : IntPtr) : void
+        - postLoadFileFileSystem() : void
+    }
+
+}
+
+' ─── Subset selection panel ───────────────────────────────────────────────────
+
+package "Subset Selection" {
+
+    class SubsetSelectionPanel {
+        + SetInputIndex(newIndex : int) : void
+        + onSubsetToggleSelected(val : bool) : void
+        + setSubsetBounds() : void
+        + updateSubsetZMax(val : int) : void
+        + checkSubsetBounds(val1 : string) : void
+    }
+
+}
+
+' ─── Color map and scaling panel ─────────────────────────────────────────────
+
+package "Colormap and Scaling" {
+
+    class ColormapPanel {
+        + ChangeColorMap() : void
+        + OnRatioDropdownValueChanged(optionIndex : int) : void
+        + UpdateSigma(optionIndex : Int32) : void
+        + RestoreDefaults() : void
+        - populateColorMapDropdown() : void
+    }
+
+    class ThresholdPanel {
+        + UpdateThresholdMin(value : float) : void
+        + UpdateThresholdMax(value : float) : void
+        + ResetThresholds() : void
+        + UpdateScale(min : float, max : float) : void
+        + SetMaxMinPercentile(maxPercentile : float) : void
+        + UpdateScaleMin(minString : string) : void
+        + UpdateScaleMax(maxString : string) : void
+    }
+
+}
+
+' ─── Rest frequency panel ─────────────────────────────────────────────────────
+
+package "Rest Frequency" {
+
+    class RestFrequencyPanel {
+        + OnRestFrequencyDropdownValueChanged(optionIndex : int) : void
+        + OnRestFrequencyValueChanged(val : string) : void
+        - OnRestFrequencyIndexOfDatasetChanged() : void
+        - OnRestFrequencyOfDatasetChanged() : void
+        - SetRestFrequencyInputField(restFrequency : double) : void
+        - SetRestFrequencyDropdown(index : int) : void
+        - SetRestFrequencyInputInteractable(isInteractable : bool) : void
+        - PopulateRestfreqencyDropdown() : void
+    }
+
+}
+
+' ─── Statistics panel ─────────────────────────────────────────────────────────
+
+package "Statistics" {
+
+    class StatisticsPanel {
+        + UpdateUI(min : float, max : float, img : Sprite) : void
+        - populateStatsValue() : void
+    }
+
+}
+
+' ─── Source mapping panel ─────────────────────────────────────────────────────
+
+package "Source Mapping" {
+
+    class SourceMappingPanel {
+        .. File browsing ..
+        + BrowseSourcesFile() : void
+        - _browseSourcesFile(path : string) : void
+        + BrowseMappingFile() : void
+        - _browseMappingFile(path : string) : void
+        .. Mapping management ..
+        + ChangeSourceMapping(sourceIndex : int, option : SourceMappingOptions) : void
+        + LoadSourcesFile() : void
+        + SaveMappingFile() : void
+        - _saveMappingFile(path : string) : void
+        - AreMappingsIncompatible(option1 : SourceMappingOptions, option2 : SourceMappingOptions) : bool
+        - AreMinimalMappingsSet() : bool
+    }
+
+}
+
+' ─── Orchestrator ─────────────────────────────────────────────────────────────
+
+class CanvassDesktop <<MonoBehaviour>> {
+    .. Unity lifecycle ..
+    - Awake() : void
+    - OnDestroy() : void
+    - Update() : void
+    - CheckCubesDataSet() : void
+    .. Data access ..
+    + GetFirstActiveRenderer() : VolumeDataSetRenderer
+    + getActiveDataSet() : VolumeDataSet
+    + getActiveMaskSet() : VolumeDataSet
+    .. Tab navigation ..
+    + paintTabSelected() : void
+    + paintTabLeft() : void
+}
+
+' ─── Relationships ────────────────────────────────────────────────────────────
+
+CanvassDesktop *-- CubeFilePanel
+CanvassDesktop *-- SubsetSelectionPanel
+CanvassDesktop *-- ColormapPanel
+CanvassDesktop *-- ThresholdPanel
+CanvassDesktop *-- RestFrequencyPanel
+CanvassDesktop *-- StatisticsPanel
+CanvassDesktop *-- SourceMappingPanel
+
+CanvassDesktop --> VolumeDataSetRenderer : configures
+CanvassDesktop --> VolumeDataSet : loads
+
+@enduml

@@ -1,0 +1,259 @@
+@startuml sequence-render-frame
+'
+' iDaVIE Sub-team 3 — Rendering Engine
+' Sequence diagram: one rendered frame in the refactored architecture
+' Team Alpha | Cache Me If You Can | Sprint 2 | 2026-06-02
+'
+' Source: revised_design_document.md §4 + refactoring-examples/team3/
+' Participants match the AFTER classes — class-after.puml + VolumeRenderCoordinator.cs
+'
+' 8-step sequence: MB shell → camera → foveation → voxel offsets →
+'   state assembly → shader sync (mask + uniforms) → render pass → GPU
+'
+
+title One Rendered Frame — Refactored Architecture\n<size:10>(VolumeRendererBehaviour → VolumeRenderCoordinator.Update())</size>
+
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+skinparam participant {
+  BackgroundColor #D6EAF8
+  BorderColor     #2471A3
+}
+skinparam actor {
+  BackgroundColor #FDFEFE
+  BorderColor     #BDC3C7
+}
+skinparam sequence {
+  ArrowColor              #2471A3
+  LifeLineBorderColor     #7FB3D3
+  GroupBorderColor        #1ABC9C
+  GroupBodyBackgroundColor #F0FFFC
+  NoteBackgroundColor     #FEF9E7
+  NoteBorderColor         #F39C12
+}
+
+' ══════════════════════════════════════════════════
+'  PARTICIPANTS
+' ══════════════════════════════════════════════════
+actor "Unity Engine\n(player loop)" as Unity
+
+box "iDaVIE.Rendering — Unity adapter" #EBF5FB
+  participant "VolumeRenderer\nBehaviour\n<size:9>[MonoBehaviour shell]</size>" as VRB
+end box
+
+box "iDaVIE.Rendering — domain layer" #F0FFF4
+  participant "VolumeRender\nCoordinator" as VRC
+  participant "IVolumeCameraDriver\n<size:9>(VolumeCameraDriver)</size>" as VCD
+  participant "IFoveatedSamplingPolicy\n<size:9>(FoveatedSamplingPolicy)</size>" as FSP
+  participant "IVolumeTexture\nManager" as VTM
+  participant "IVolumeMaterial\nBinder\n<size:9>(VolumeMaterialBinder)</size>" as VMB
+  participant "IMaskMode\n<size:9>(active strategy)</size>" as MM
+end box
+
+box "Cross-team contracts" #FFF8F0
+  participant "IGazeProvider\n<size:9>[Sub-team 4]</size>" as GP
+  participant "IRenderPipeline\n<size:9>(UrpRenderPipeline /</size>\n<size:9>HdrpRenderPipeline)</size>" as RP
+end box
+
+' ══════════════════════════════════════════════════
+'  ENTRY — Unity calls VolumeRendererBehaviour
+' ══════════════════════════════════════════════════
+Unity -> VRB : Update()
+activate VRB
+
+note right of VRB
+  <b>T-02 trade-off:</b> VolumeRendererBehaviour
+  is the ONLY class permitted to extend
+  MonoBehaviour. Zero domain logic lives here —
+  it forwards the call immediately.
+end note
+
+VRB -> VRC : Update()
+activate VRC
+
+' ══════════════════════════════════════════════════
+'  STEP 1 — Camera state
+' ══════════════════════════════════════════════════
+note over VRC, VCD
+  <b>Step 1 — Camera state</b>
+  [FIXED V-10 DIP] Coordinator never calls transform or Camera APIs directly.
+  VolumeCameraDriver is the only class that reads UnityEngine.Camera.
+end note
+
+VRC -> VCD : ComputeFrame()
+activate VCD
+VCD --> VRC : CameraFrameState\n<size:9>(LocalToWorld, AverageIntensityProjection,\nFrustumPlanes, ProjectionMatrix)</size>
+deactivate VCD
+
+' ══════════════════════════════════════════════════
+'  STEP 2 — Foveated sampling parameters
+' ══════════════════════════════════════════════════
+note over VRC, FSP
+  <b>Step 2 — Foveated sampling parameters</b>
+  [FIXED V-07 DIP] No direct SteamVR call in the domain. FSP reads IGazeProvider
+  and returns a plain value struct — no hardware dependency escapes the policy class.
+end note
+
+VRC -> FSP : ComputeParameters()
+activate FSP
+
+  alt IGazeProvider.IsGazeAvailable == true
+    FSP -> GP : GetGazeDirection()
+    activate GP
+    GP --> FSP : Vector3 gazeDirection\n<size:9>(normalised world-space)</size>
+    deactivate GP
+    FSP --> VRC : FoveationParameters\n<size:9>(StepsLow, StepsHigh, InnerRadius,\nOuterRadius, Jitter, FoveationActive=true)</size>
+  else gaze unavailable <size:9>(HMD absent / init window / no eye-tracking)</size>
+    FSP --> VRC : FoveationParameters.Uniform\n<size:9>(UniformSampleStep — INV-01 preserved)</size>
+  end
+
+deactivate FSP
+
+' ══════════════════════════════════════════════════
+'  STEP 3 — Mask voxel offsets (private — no external call)
+' ══════════════════════════════════════════════════
+note over VRC
+  <b>Step 3 — ComputeMaskVoxelOffsets()</b> <i>[private — no external participant]</i>
+  Derives four voxel-corner world-space vectors from CameraFrameState.LocalToWorld.
+  [FIXED V-10 DIP] Uses the Matrix4x4 returned in Step 1; never calls transform.
+end note
+
+' ══════════════════════════════════════════════════
+'  STEP 4 — Assemble VolumeRenderState (private — no external call)
+' ══════════════════════════════════════════════════
+note over VRC
+  <b>Step 4 — BuildRenderState()</b> <i>[private — no external participant]</i>
+  Combines CameraFrameState + FoveationParameters + RendererParameters
+  into a single VolumeRenderState value struct.
+  Zero heap allocation — struct copy only. NFR-08 hot-path budget preserved.
+end note
+
+' ══════════════════════════════════════════════════
+'  STEP 5 — Texture rebind check
+' ══════════════════════════════════════════════════
+note over VRC, VTM
+  <b>Step 5 — Texture rebind check</b>
+  Textures are uploaded once at startup (or on crop / region load, not per frame).
+  Per-frame: coordinator checks for a pending rebind flag only.
+end note
+
+VRC -> VTM : CurrentDataTexture, CurrentMaskTexture
+activate VTM
+
+  alt texture rebind pending <size:9>(crop changed / first load)</size>
+    VTM -> VTM : GenerateCroppedVolumeTexture()\n<size:9>or GenerateVolumeTexture()\n— enforces 368 MB budget + FilterMode.Point (INV-03, INV-04)</size>
+    VTM --> VRC : Texture3D (dataCube), Texture3D (maskCube)\n<size:9>[updated — coordinator forwards to BindDataTexture / BindMaskTexture]</size>
+  else texture is current <size:9>(normal per-frame path)</size>
+    VTM --> VRC : Texture3D (dataCube), Texture3D (maskCube)\n<size:9>[cache hit — no GPU upload]</size>
+  end
+
+deactivate VTM
+
+' ══════════════════════════════════════════════════
+'  STEP 6 — Shader uniform sync (all property writes in one place)
+' ══════════════════════════════════════════════════
+note over VRC, VMB
+  <b>Step 6 — Shader uniform sync</b>
+  The ONLY call path in the architecture that writes Material properties.
+  Replaces 25+ scattered SetFloat/SetInt/SetVector calls in the monolith's Update().
+end note
+
+VRC -> VMB : Tick(in VolumeRenderState)
+activate VMB
+
+  '  6a — AIP keyword via pipeline adapter
+  VMB -> RP : SetPipelineKeyword("SHADER_AIP", aip)
+  activate RP
+  note right of RP
+    URP: per-material LocalKeyword
+    HDRP: equivalent local keyword
+    Domain never knows which.
+    [FIXED V-15 Prot. Variations]
+  end note
+  RP --> VMB
+  deactivate RP
+
+  '  6b — Scaling / colour-map uniforms
+  VMB -> VMB : PushScalingUniforms()\n<size:9>SetFloat ×6: bias, contrast, alpha, gamma, threshMin, threshMax</size>
+
+  '  6c — Foveation uniforms (values from FoveationParameters via VolumeRenderState)
+  VMB -> VMB : PushFoveationUniforms()\n<size:9>SetInt ×2: _StepsLow, _StepsHigh\nSetFloat ×3: _FovStart, _FovEnd, _FovJitter</size>
+
+  '  6d — Mask mode strategy  [replaces the if/else chain — OCP fix]
+  VMB -> MM : Apply(material, maskCube)
+  activate MM
+  note right of MM
+    <b>[FIXED V-04 OCP]</b>
+    ApplyMaskMode    → _MASK_APPLY,   α=1.0
+    InverseMaskMode  → _MASK_INVERSE, α=1.0
+    IsolateMaskMode  → _MASK_ISOLATE, α=0.15
+    DisabledMaskMode → no keyword,    α=0.0
+    New mode = new class; zero existing files change.
+  end note
+  MM --> VMB : <size:9>(keyword set, _MaskTex bound, _MaskAlpha pushed)</size>
+  deactivate MM
+
+  '  6e — Region highlight + vignette uniforms
+  VMB -> VMB : PushHighlightUniforms()\n<size:9>SetVector ×2: _HighlightMin/Max\nSetFloat: _SaturateFactor\nSetFloat ×3: vignette params</size>
+
+  VMB --> VRC : <size:9>(all uniforms synced, textures bound)</size>
+deactivate VMB
+
+' ══════════════════════════════════════════════════
+'  STEP 7 — Enqueue render pass
+' ══════════════════════════════════════════════════
+note over VRC, RP
+  <b>Step 7 — Enqueue render pass</b>
+  [FIXED V-14 GRASP Indirection] Replaces Graphics.DrawProceduralNow (line 1148/1154)
+  and OnRenderObject (line 1142) — both incompatible with URP.
+  Domain schedules via CommandBuffer; adapter chooses the injection point.
+end note
+
+VRC -> RP : AddCommandBuffer(camera, cameraEvent, commandBuffer)
+activate RP
+note right of RP
+  UrpRenderPipeline:
+    RenderPassEvent.BeforeRenderingOpaques
+    via ScriptableRenderFeature
+  HdrpRenderPipeline:
+    RenderPipelineManager.beginCameraRendering
+    via CustomPass injection
+  NullRenderPipeline (tests): no-op
+end note
+RP --> VRC : <size:9>(render pass enqueued)</size>
+deactivate RP
+
+deactivate VRC
+VRB --> Unity
+deactivate VRB
+
+' ══════════════════════════════════════════════════
+'  STEP 8 — GPU executes ray-march (outside domain code)
+' ══════════════════════════════════════════════════
+note over Unity
+  <b>Step 8 — GPU executes ray-march shader</b>
+  CommandBuffer dispatched by render pipeline at the registered camera event.
+  VolumeRaymarch.shader reads uniforms set in Step 6:
+    • ray steps determined by _StepsLow / _StepsHigh + _FovStart / _FovEnd
+    • voxel colours from dataCube Texture3D (FilterMode.Point — nearest-neighbour)
+    • masked voxels handled by active _MASK_* keyword
+  Pixels composited on screen.
+  <b>≥ 90 fps invariant (INV-01): steps 1–7 are O(1) CPU work.</b>
+  GPU workload is unchanged from before; only the CPU dispatch path changes.
+end note
+
+' ══════════════════════════════════════════════════
+'  PERFORMANCE CONTRACT
+' ══════════════════════════════════════════════════
+note over VRB, RP
+  <b>Performance contract</b>
+  Steps 1–7: CPU-side value-type copies and uniform pushes — O(1), no per-frame heap allocation.
+  Step 5 texture upload: triggered by data change only (not every frame); < 2 ms spike (CI gate).
+  Step 6 shader sync: single Tick() call replaces 25+ scattered SetFloat/SetInt calls in VDSR.Update().
+  CK improvement: WMC 97 → ≤ 12 per class; CBO 45 → ≤ 11 per domain class; LCOM 0.81 → ≤ 0.05.
+end note
+
+@enduml

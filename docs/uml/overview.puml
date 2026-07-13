@@ -1,0 +1,83 @@
+@startuml overview
+title iDaVIE God Class Overview
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    BorderColor #555555
+    ArrowColor #555555
+}
+skinparam package {
+    BackgroundColor #F0F4FF
+    BorderColor #8888CC
+}
+hide empty members
+
+package "Data Layer" {
+
+    class VolumeDataSet {
+        .. FITS loading ..
+        .. WCS coordinates ..
+        .. Statistics / histograms ..
+        .. GPU texture generation ..
+        .. Mask edit and undo ..
+        .. FITS export ..
+    }
+
+}
+
+package "Rendering Layer" {
+
+    class VolumeDataSetRenderer <<MonoBehaviour>> {
+        .. Rendering config ..
+        .. Mask rendering ..
+        .. Foveated rendering ..
+        .. Vignette config ..
+        .. Coordinate mapping ..
+        .. Region and cursor selection ..
+        .. Rest frequency management ..
+    }
+
+}
+
+package "VR Interaction Layer" {
+
+    class VolumeInputController <<MonoBehaviour>> {
+        .. SteamVR input wiring ..
+        .. VR locomotion and scaling ..
+        .. Vignette feedback ..
+        .. Brush painting ..
+        .. Interaction state machine ..
+        .. Feature and region editing ..
+        .. Video recording ..
+    }
+
+}
+
+package "Desktop UI Layer" {
+
+    class CanvassDesktop <<MonoBehaviour>> {
+        .. File loading ..
+        .. Subset selection ..
+        .. Colormap and scaling ..
+        .. Thresholds ..
+        .. Rest frequency ..
+        .. Statistics display ..
+        .. Source mapping ..
+    }
+
+    class DesktopPaintController <<MonoBehaviour>> {
+        .. Slice view and cameras ..
+        .. Polygon selection ..
+        .. Mask painting ..
+        .. Source and color mapping ..
+    }
+
+}
+
+VolumeDataSetRenderer --> VolumeDataSet : owns
+VolumeInputController --> VolumeDataSetRenderer : drives
+CanvassDesktop --> VolumeDataSetRenderer : configures
+CanvassDesktop --> VolumeDataSet : loads data into
+DesktopPaintController --> VolumeDataSet : paints mask voxels
+
+@enduml

@@ -1,0 +1,14 @@
+IMaskMode.cs — the interface with 3 members (ShaderModeIndex, RequiresPointCloudPass, Apply()) plus the 
+MaskRenderContext value object that carries the per-frame mask data
+
+MaskDisabled.cs — shader index 0, no point cloud, single SetInt call
+
+MaskEnabled.cs — shader index 1, full point cloud config, 5 material calls
+
+MaskInverted.cs — shader index 2, same config as Enabled, different index
+
+MaskIsolated.cs — shader index 3, point cloud is the primary visual
+
+IMaskModeTests.cs — 15 edit-mode unit tests, no Unity runtime required
+
+VolumeMaterialBinder_MaskStub.cs — shows how SetMaskMode() and SyncMaskState() replace the 12-line if/else block from VolumeDataSetRenderer.Update()

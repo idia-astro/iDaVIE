@@ -24,6 +24,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using iDaVIE.Domain.Feature;
+using iDaVIE.Infrastructure.Unity;
 using UnityEngine;
 using VolumeData;
 using VoTableReader;
@@ -44,7 +46,7 @@ namespace DataFeatures
         public FeatureVisibility Visibility;
     }
     
-    public class FeatureSetRenderer : MonoBehaviour
+    public class FeatureSetRenderer : MonoBehaviour, IFeatureRenderer
     {
         public enum CoordTypes {  cartesian,  freqz,  velz, redz   }
 
@@ -54,7 +56,6 @@ namespace DataFeatures
 
         public FeatureSetType FeatureSetType = FeatureSetType.Unassigned;
         public VolumeDataSetRenderer VolumeRenderer { get; private set; }
-        public FeatureSetManager FeatureManager { get; private set; }
         public string[] FeatureNames { get; private set; }
         public Vector3[] FeaturePositions { get; private set; }
         public Vector3[] BoxMinPositions { get; private set; }
@@ -101,10 +102,9 @@ namespace DataFeatures
             _materialInstance = Material.Instantiate(LineRenderingMaterial);
         }
 
-        public void Initialize()
+        public void Initialize(VolumeDataSetRenderer volumeRenderer)
         {
-            FeatureManager = GetComponentInParent<FeatureSetManager>();
-            VolumeRenderer = FeatureManager.VolumeRenderer;
+            VolumeRenderer = volumeRenderer;
         }
 
         /// <summary>
@@ -131,7 +131,7 @@ namespace DataFeatures
                     {
                         var feature = FeatureList[i];
                         FeatureVisibility visibility = feature.Visible ? (feature.Selected ? FeatureVisibility.Selected: FeatureVisibility.Visible) : FeatureVisibility.Hidden;
-                        MakeAxisAlignedCube(feature.Center, feature.Size, feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
+                        MakeAxisAlignedCube(ToVector3(feature.Center), ToVector3(feature.Size), feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
                     }
                 }
                 else
@@ -142,7 +142,7 @@ namespace DataFeatures
                         {
                             var feature = FeatureList[i];
                             FeatureVisibility visibility = feature.Visible ? (feature.Selected ? FeatureVisibility.Selected: FeatureVisibility.Visible) : FeatureVisibility.Hidden;
-                            MakeAxisAlignedCube(feature.Center, feature.Size, feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
+                            MakeAxisAlignedCube(ToVector3(feature.Center), ToVector3(feature.Size), feature.CubeColor, visibility, i * VerticesPerFeature, _vertices);
                         }
                     }
                 }
@@ -162,14 +162,13 @@ namespace DataFeatures
             obj.IdTextField = (FeatureList.Count).ToString();
             obj.SourceName = featureToAdd.Name;
             obj.Feature = featureToAdd;
-            featureToAdd.FeatureSetParent = this;
             SetFeatureAsDirty(featureToAdd.Index);
         }
 
         public void RemoveFeature(Feature featureToRemove)
         {
             FeatureList.Remove(featureToRemove);
-            FeatureMenuScrollerDataSource.InitData();
+            FeatureMenuScrollerDataSource?.InitData();
         }
 
         public void ClearFeatures()
@@ -244,9 +243,10 @@ namespace DataFeatures
 
         public void SelectFeature(Feature feature)
         {
-            if (FeatureManager)
+            var visualiser = GetComponentInParent<FeatureVisualiser>();
+            if (visualiser != null)
             {
-                FeatureManager.SelectedFeature = feature;
+                visualiser.SelectFeature(feature);
                 Debug.Log($"Selected feature '{feature.Name}'");
             }
         }
@@ -278,7 +278,7 @@ namespace DataFeatures
                 var rawStrings = new [] {$"{sourceStats.sum}", $"{sourceStats.peak}", $"{sourceStats.channelVsys}", $"{sourceStats.channelW20}", $"{sourceStats.veloVsys}", $"{sourceStats.veloW20}"};
                 AddFeature(new Feature(boxMin, boxMax, FeatureColor, featureName, flag, FeatureList.Count, item.Key - 1, rawStrings, false));
             }
-            FeatureMenuScrollerDataSource.InitData();
+            FeatureMenuScrollerDataSource?.InitData();
         }
 
         // Spawn Feature objects into world from FileName
@@ -392,7 +392,7 @@ namespace DataFeatures
             for (int row = 0; row < table.Rows.Count; row++)   // For each row (feature)...
             {
                 featureRawData[row] = new List<string>();
-                for (int i = 0; i < table.Columns.Count; i++)
+                for (int i = 0; i < table.Column.Count; i++)
                 {
                     if (columnsMask[i])
                         featureRawData[row].Add(table.Rows[row].ColumnData[i].ToString());
@@ -498,7 +498,6 @@ namespace DataFeatures
                     var flag = (importFlags) ? flags[i] : "";
                     var featureToAdd = new Feature(cornerMin, cornerMax, FeatureColor, featureNames[i], flag, i, i,
                         featureRawData[i].ToArray(), false);
-                    featureToAdd.FeatureSetParent = this;
                     if (!(excludeExternal && FeatureIsWithinVolume(featureToAdd, VolumeRenderer)))
                     {
                         FeatureList.Add(featureToAdd);
@@ -536,9 +535,9 @@ namespace DataFeatures
                     BoxMaxPositions = boxMaxPositions;
                 }
             }
-            FeatureMenuScrollerDataSource.InitData();
+            FeatureMenuScrollerDataSource?.InitData();
         }
-        
+
         /// <summary>
         /// Method checks if the given feature's center point is within the given volume's bounds
         /// </summary>
@@ -547,9 +546,9 @@ namespace DataFeatures
         /// <returns></returns>
         public static bool FeatureIsWithinVolume(Feature feature, VolumeDataSetRenderer volume)
         {
-            return (feature.Center.x < 0 || feature.Center.x > volume.Data.XDim ||
-                feature.Center.y < 0 || feature.Center.y > volume.Data.YDim || 
-                feature.Center.z < 0 || feature.Center.z > volume.Data.ZDim);
+            return (feature.Center.x >= 0 && feature.Center.x <= volume.Data.XDim &&
+                feature.Center.y >= 0 && feature.Center.y <= volume.Data.YDim &&
+                feature.Center.z >= 0 && feature.Center.z <= volume.Data.ZDim);
         }
         
         void OnRenderObject()
@@ -567,6 +566,8 @@ namespace DataFeatures
         {
             _computeBufferVertices.Release();
         }
+
+        static Vector3 ToVector3(Vec3 v) => new Vector3(v.X, v.Y, v.Z);
 
         static void MakeAxisAlignedCube(Vector3 position, Vector3 size, Color color, FeatureVisibility visibility, int offset, FeatureVertex[] list)
         {
@@ -612,6 +613,15 @@ namespace DataFeatures
         public void SaveAsVoTable(string filePath)
         {
             VoTableSaver.SaveFeatureSetAsVoTable(this, filePath);
+        }
+
+        // IFeatureRenderer explicit implementation.
+        // Converts between DataFeatures.FeatureColor (domain type, no Unity dep) and
+        // UnityEngine.Color (used internally) so the interface stays Unity-free.
+        FeatureColor IFeatureRenderer.FeatureColor
+        {
+            get => new FeatureColor(FeatureColor.r, FeatureColor.g, FeatureColor.b, FeatureColor.a);
+            set => FeatureColor = new Color(value.R, value.G, value.B, value.A);
         }
     }
 }

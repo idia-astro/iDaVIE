@@ -1,0 +1,57 @@
+{
+  "Mapping": {
+    "ID": {
+      "Source": ""
+    },
+    "X": {
+      "Source": "X1"
+    },
+    "Y": {
+      "Source": "Y1"
+    },
+    "Z": {
+      "Source": "Z1"
+    },
+    "RA": {
+      "Source": ""
+    },
+    "Dec": {
+      "Source": ""
+    },
+    "Vel": {
+      "Source": ""
+    },
+    "Freq": {
+      "Source": ""
+    },
+    "Redshift": {
+      "Source": ""
+    },
+    "XMin": {
+      "Source": ""
+    },
+    "XMax": {
+      "Source": ""
+    },
+    "YMin": {
+      "Source": ""
+    },
+    "YMax": {
+      "Source": ""
+    },
+    "ZMin": {
+      "Source": ""
+    },
+    "ZMax": {
+      "Source": ""
+    },
+    "Flag": {
+      "Source": ""
+    },
+    "ImportedColumns": [
+      "X1",
+      "Y1",
+      "Z1"
+    ]
+  }
+}

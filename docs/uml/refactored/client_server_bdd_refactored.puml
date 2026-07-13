@@ -1,0 +1,689 @@
+@startuml client_server_bdd_refactored
+top to bottom direction
+title iDaVIE — Target SysML Block Definition Diagram\nClient–Server + Micro-Kernel + Layered + Versioned C ABI Plug-ins\n(per Assignment Spec §4 — Sub-team 1, Apaties I)
+
+skinparam classAttributeIconSize 0
+skinparam nodesep 15
+skinparam ranksep 25
+skinparam class {
+    BackgroundColor White
+    BorderColor #444444
+    ArrowColor #444444
+    FontSize 10
+}
+skinparam package {
+    BackgroundColor #FAFAFA
+    BorderColor #999999
+    FontSize 12
+    FontStyle bold
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #F9A825
+}
+hide empty members
+
+' ═══════════════════════════════════════════════════════════
+' TOP-LEVEL SYSTEM BLOCK
+' ═══════════════════════════════════════════════════════════
+
+class "iDaVIESystem" <<block>> {
+    values
+    --
+    + version       : String
+    + platform      : Platform {Windows, Linux}
+    + mode          : DeploymentMode {Local, Remote}
+    parts
+    --
+    + client    : iDaVIEClient [1]
+    + transport : Transport    [1]
+    + server    : iDaVIEServer [1]
+    constraints
+    --
+    {layering}       Domain ↛ App ↛ Infra ↛ Plug-in Host  (downward only)
+    {acyclic}        no circular dependencies between top-level blocks
+    {unityFree}      Domain block has no UnityEngine / SteamVR references
+    {abiStable}      Plug-in ABI is ABI-stable within a major semver
+}
+
+' ═══════════════════════════════════════════════════════════
+' CLIENT BLOCKS  (Unity 6 process — rendering, input, presentation)
+' ═══════════════════════════════════════════════════════════
+
+package "Client Blocks  [Unity 6 process]" #E8F0FF {
+
+    class "iDaVIEClient" <<block>> {
+        values
+        --
+        + unityVersion     : String  = "6.x LTS"
+        + targetHMD        : HMDType
+        + uiToolkitVersion : String
+        parts
+        --
+        + desktopGui       : DesktopGuiSubsystem      [1]
+        + vrInteraction    : VRInteractionSubsystem   [1]
+        + vrRendering      : VRRenderingSubsystem     [1]
+        + acl              : AntiCorruptionLayer      [1]
+        + clientGateway    : ServiceGatewayClient     [1]
+        flow ports
+        --
+        + «out» rpcCall    : RpcRequest
+        + «in»  rpcResult  : RpcResponse
+        + «in»  rpcEvent   : RpcEvent
+    }
+
+    class "DesktopGuiSubsystem" <<block>> {
+        values
+        --
+        + activePanels : Int
+        parts
+        --
+        + view        : CanvassDesktopView        [1]
+        + viewModel   : DesktopViewModel          [1]
+        + menuVMs     : MenuViewModelSet          [1]
+        references
+        --
+        + gateway     : ServiceGatewayClient
+        operations
+        --
+        + LoadFile(path : String) : void
+        + ConfigureColormap(map : ColormapId) : void
+        + SetThresholds(min : Float, max : Float) : void
+    }
+
+    class "VRInteractionSubsystem" <<block>> {
+        values
+        --
+        + pushToTalk : Boolean
+        + locale     : String
+        parts
+        --
+        + locomotion : LocomotionStateMachine     [1]
+        + interaction: InteractionStateMachine    [1]
+        + voiceDisp  : VoiceCommandDispatcher     [1]
+        references
+        --
+        + input      : IInputProvider
+        + pointer    : IPointer
+        + grip       : IGripInput
+        + voiceIn    : IVoiceInput
+        + voiceRec   : IVoiceRecogniser
+        + haptics    : IHaptics
+    }
+
+    class "VRRenderingSubsystem" <<block>> {
+        values
+        --
+        + renderScale       : Float
+        + foveationLevel    : Int
+        + textureBudgetMB   : Int = 368
+        + targetFps         : Int = 90
+        parts
+        --
+        + materialBinder    : VolumeMaterialBinder     [1]
+        + textureMgr        : VolumeTextureManager     [1]
+        + cameraDriver      : VolumeCameraDriver       [1]
+        + foveation         : FoveatedSamplingPolicy   [1]
+        + featureVis        : FeatureVisualiser        [1]
+        + catalogVis        : CatalogVisualiser        [1]
+        references
+        --
+        + pipeline   : IRenderPipeline
+        + maskMode   : IMaskMode
+        + gateway    : ServiceGatewayClient
+    }
+
+    class "AntiCorruptionLayer" <<block>> {
+        ' Wraps every Unity 6 / SteamVR / URP / HDRP / UI Toolkit type
+        ' so the domain stays Unity-free.  (Spec §4.1, ADR-007)
+        parts
+        --
+        + steamVrAdapter   : SteamVRInputAdapter          [1]
+        + inputSysAdapter  : UnityInputSystemAdapter      [1]
+        + keywordAdapter   : UnityKeywordRecogniserAdapter[1]
+        + pipelineAdapter  : RenderPipelineAdapter        [1]
+        + uiToolkitBridge  : UIToolkitBridge              [1]
+    }
+
+    class "ServiceGatewayClient" <<block>> {
+        values
+        --
+        + endpoint  : Uri
+        + protocol  : Protocol {JsonRpcPipe, Grpc}
+        + timeoutMs : Int = 5000
+        operations
+        --
+        + Invoke<T>(method : String, args : object) : T
+        + Subscribe<T>(stream : String) : IObservable<T>
+    }
+
+    ' Leaf parts (concrete classes named for traceability)
+    class "CanvassDesktopView"         <<block, MonoBehaviour>>
+    class "DesktopViewModel"           <<block, pureCSharp>>
+    class "MenuViewModelSet"           <<block, pureCSharp>>
+    class "LocomotionStateMachine"     <<block, pureCSharp>>
+    class "InteractionStateMachine"    <<block, pureCSharp>>
+    class "VoiceCommandDispatcher"     <<block, Command>>
+    class "VolumeMaterialBinder"       <<block, pureCSharp>>
+    class "VolumeTextureManager"       <<block>>
+    class "VolumeCameraDriver"         <<block>>
+    class "FoveatedSamplingPolicy"     <<block, Strategy>>
+    class "FeatureVisualiser"          <<block, adapter>>
+    class "CatalogVisualiser"          <<block, adapter>>
+    class "SteamVRInputAdapter"        <<block, adapter>>
+    class "UnityInputSystemAdapter"    <<block, adapter>>
+    class "UnityKeywordRecogniserAdapter" <<block, adapter>>
+    class "RenderPipelineAdapter"      <<block, adapter>>
+    class "UIToolkitBridge"            <<block, adapter>>
+}
+
+' ═══════════════════════════════════════════════════════════
+' TRANSPORT BLOCK  (the only seam across the wire — ADR-001)
+' ═══════════════════════════════════════════════════════════
+
+package "Transport" #DDEEFF {
+    class "Transport" <<block>> {
+        values
+        --
+        + protocol  : Protocol {JsonRpcPipe, Grpc}
+        + tlsMode   : TlsMode  {Off, Mutual}
+        + framing   : String
+        parts
+        --
+        + jsonRpcChannel : JsonRpcOverNamedPipe [0..1]
+        + grpcChannel    : GrpcOverTcpTls       [0..1]
+        flow ports
+        --
+        + «in»  rpcCall    : RpcRequest
+        + «out» rpcResult  : RpcResponse
+        + «out» rpcEvent   : RpcEvent
+    }
+
+    class "JsonRpcOverNamedPipe" <<block>>
+    class "GrpcOverTcpTls"       <<block>>
+}
+
+' ═══════════════════════════════════════════════════════════
+' INTERFACE BOUNDARY  (Client Service Contract — green = SysML interfaceBlocks)
+' ═══════════════════════════════════════════════════════════
+
+package "Client Service Contract  (interfaceBlocks)" #E8F4E8 {
+    class "IVolumeLoader"           <<interfaceBlock>>
+    class "ICoordinateSystem"       <<interfaceBlock>>
+    class "IStatisticsService"      <<interfaceBlock>>
+    class "ITextureFactory"         <<interfaceBlock>>
+    class "IMaskEditor"             <<interfaceBlock>>
+    class "IDataExporter"           <<interfaceBlock>>
+    class "IFeatureCatalogClient"   <<interfaceBlock>>
+    class "IWorkspaceStoreClient"   <<interfaceBlock>>
+}
+
+package "Client-side Interfaces  (Anti-Corruption seams)" #E8F4E8 {
+    class "IInputProvider"      <<interfaceBlock>>
+    class "IPointer"            <<interfaceBlock>>
+    class "IGripInput"          <<interfaceBlock>>
+    class "IVoiceInput"         <<interfaceBlock>>
+    class "IVoiceRecogniser"    <<interfaceBlock>>
+    class "IHaptics"            <<interfaceBlock>>
+    class "IRenderPipeline"     <<interfaceBlock>>
+    class "IMaskMode"           <<interfaceBlock>>
+}
+
+' ═══════════════════════════════════════════════════════════
+' SERVER BLOCKS  (Micro-Kernel — strict 4-layer)
+' ═══════════════════════════════════════════════════════════
+
+package "Server Blocks  [Micro-Kernel, Sub-team 1]" #FFF0E8 {
+
+    class "iDaVIEServer" <<block>> {
+        values
+        --
+        + maxCubeMemoryMB : Long
+        + pluginSearchPath: String
+        + abiMajorVersion : Int = 1
+        parts
+        --
+        + domain       : DomainLayer         [1]
+        + application  : ApplicationLayer    [1]
+        + infrastructure : InfrastructureLayer [1]
+        + pluginHost   : PluginHost          [1]
+        flow ports
+        --
+        + «in»  rpcCall    : RpcRequest
+        + «out» rpcResult  : RpcResponse
+        + «out» rpcEvent   : RpcEvent
+    }
+
+    ' ── Plug-in Host (kernel boundary) ────────────────────────
+    class "PluginHost" <<block>> {
+        ' Service Locator at kernel boundary only (ADR-008).
+        parts
+        --
+        + registry     : PluginRegistry   [1]
+        + loader       : PluginLoader     [1]
+        operations
+        --
+        + Resolve(name : String, abi : SemVer) : IPlugin
+        + LoadAll(path : String) : void
+        + Reload(name : String) : void
+    }
+
+    class "PluginRegistry" <<block, ServiceLocator>>
+    class "PluginLoader"   <<block>> {
+        values
+        --
+        + isolationMode : IsolationMode {InProc, OutOfProc}
+    }
+
+    ' ── Infrastructure Layer (adapters, repositories, gateway) ──
+    class "InfrastructureLayer" <<block>> {
+        parts
+        --
+        + serverGateway   : ServiceGatewayEndpoint  [1]
+        + workspaceRepo   : WorkspaceRepository     [1]
+        + featureRepo     : FeatureCatalogRepository[1]
+        + textureFactory  : VolumeTextureFactoryImpl[1]
+        + logSink         : StructuredLoggingSink   [1]
+        + configStore     : ConfigStore             [1]
+    }
+
+    class "ServiceGatewayEndpoint" <<block>> {
+        ' Realises the entire Client Service Contract over JSON-RPC / gRPC.
+        operations
+        --
+        + Serve(transport : Transport) : void
+        + Dispatch(req : RpcRequest)   : RpcResponse
+    }
+    class "WorkspaceRepository"        <<block>>
+    class "FeatureCatalogRepository"   <<block>>
+    class "VolumeTextureFactoryImpl"   <<block>>
+    class "StructuredLoggingSink"      <<block>>
+    class "ConfigStore"                <<block>>
+
+    ' ── Application Layer (use cases) ─────────────────────────
+    class "ApplicationLayer" <<block>> {
+        parts
+        --
+        + loadFits   : LoadFitsCubeUseCase      [1]
+        + subcube    : RequestSubcubeUseCase    [1]
+        + exportMask : ExportMaskUseCase        [1]
+        + stats      : ComputeStatisticsUseCase [1]
+        + moment     : MomentMapUseCase         [1]
+        + spectral   : SpectralProfileUseCase   [1]
+        + paint      : PaintMaskUseCase         [1]
+        + features   : FeatureSetService        [1]
+        + workspace  : WorkspaceService         [1]
+    }
+
+    class "LoadFitsCubeUseCase"      <<block, useCase>>
+    class "RequestSubcubeUseCase"    <<block, useCase>>
+    class "ExportMaskUseCase"        <<block, useCase>>
+    class "ComputeStatisticsUseCase" <<block, useCase>>
+    class "MomentMapUseCase"         <<block, useCase>>
+    class "SpectralProfileUseCase"   <<block, useCase>>
+    class "PaintMaskUseCase"         <<block, useCase>>
+    class "FeatureSetService"        <<block, useCase>>
+    class "WorkspaceService"         <<block, useCase>>
+
+    ' ── Domain Layer (no Unity, no SteamVR) ───────────────────
+    class "DomainLayer" <<block>> {
+        constraints
+        --
+        {unityFree}  no transitive dependency on UnityEngine / SteamVR / URP / HDRP
+        parts
+        --
+        + volumeDataSet : VolumeDataSet      [0..n]
+        + featureCatalog: FeatureCatalog     [1]
+        + workspace     : Workspace          [0..1]
+    }
+
+    class "VolumeDataSet" <<block, aggregateRoot>> {
+        values
+        --
+        + isLoaded : Boolean
+        parts
+        --
+        + core      : VolumeDataCore        [1]
+        + mask      : Mask                  [0..1]
+        + subcubes  : Subcube               [0..n]
+        references
+        --
+        + wcs       : WCSCoordinateSystem
+        operations
+        --
+        + Load(file : String, sub : int[], hdu : int) : void
+        + Unload() : void
+        + CropSubcube(bounds : int[]) : Subcube
+    }
+
+    class "VolumeDataCore" <<valueType>> {
+        values
+        --
+        + xDim, yDim, zDim : long
+        + fileName         : String
+        + selectedHdu      : int
+        + voxelBuffer      : OwnedBuffer
+    }
+
+    class "Subcube" <<valueType>> {
+        values
+        --
+        + bounds  : int[6]
+        + dataRef : BufferRef
+    }
+
+    class "Mask" <<block, entity>> {
+        operations
+        --
+        + Paint(voxel : int[3], value : short) : void
+        + Apply(mode : IMaskMode) : void
+    }
+
+    class "WCSCoordinateSystem" <<valueType>>
+
+    class "Feature" <<block, aggregateRoot>> {
+        ' First-class domain aggregate, no Unity type (spec §6.5).
+        values
+        --
+        + id         : FeatureId
+        + flavour    : FeatureFlavour {Masked, Imported, UserDefined}
+        + voxelCount : long
+        + totalFlux  : double
+        + peakFlux   : double
+        + centroid   : double[3]
+        + w20        : double
+    }
+
+    class "FeatureCatalog" <<block, domainService>> {
+        operations
+        --
+        + Add(f : Feature) : void
+        + Remove(id : FeatureId) : void
+        + ExportVOTable(path : String) : void
+    }
+
+    class "Workspace" <<block, aggregateRoot>> {
+        values
+        --
+        + sessionId    : Uuid
+        + savedAt      : DateTime
+        + schemaVersion: SemVer
+        parts
+        --
+        + loadedCubes  : VolumeDataSet [0..n]
+        + features     : FeatureCatalog [1]
+        + viewState    : ViewState     [1]
+    }
+
+    class "ViewState" <<valueType>>
+}
+
+' ═══════════════════════════════════════════════════════════
+' PLUG-INS  (behind versioned C ABI — Sub-team 2)
+' ═══════════════════════════════════════════════════════════
+
+package "Plug-in Contract" #E8F4E8 {
+    class "IPluginABI" <<interfaceBlock>> {
+        values
+        --
+        + majorVersion : Int = 1
+        + minorVersion : Int = 0
+        + abiStability : Policy {SemverMajor}
+        operations
+        --
+        + plugin_init(host : HostHandle*)        : Status
+        + plugin_describe(out : Manifest*)       : Status
+        + plugin_invoke(call : Call*, out : Result*) : Status
+        + plugin_shutdown()                      : Status
+    }
+}
+
+package "Data-Format Plug-ins  [Sub-team 2]" #FFE0CC {
+    class "fits-reader"   <<plugin>>
+    class "fits-writer"   <<plugin>>
+    class "votable"       <<plugin>>
+    class "tiff"          <<plugin>>
+}
+
+package "Data-Operation Plug-ins  [Sub-team 2]" #FFE0CC {
+    class "wcs-transform" <<plugin>>
+    class "statistics"    <<plugin>>
+    class "downsampler"   <<plugin>>
+    class "source-finder" <<plugin>>
+}
+
+package "Third-Party C++ Libraries" #FFD0BB {
+    class "CFITSIO"            <<externalComponent>>
+    class "StarlinkAST"        <<externalComponent>>
+    class "cminpack + OpenMP"  <<externalComponent>>
+}
+
+' ═══════════════════════════════════════════════════════════
+' SYSTEM COMPOSITION  (part-of relationships)
+' ═══════════════════════════════════════════════════════════
+
+"iDaVIESystem" *-- "iDaVIEClient"
+"iDaVIESystem" *-- "Transport"
+"iDaVIESystem" *-- "iDaVIEServer"
+
+' Client decomposition
+"iDaVIEClient" *-- "DesktopGuiSubsystem"
+"iDaVIEClient" *-- "VRInteractionSubsystem"
+"iDaVIEClient" *-- "VRRenderingSubsystem"
+"iDaVIEClient" *-- "AntiCorruptionLayer"
+"iDaVIEClient" *-- "ServiceGatewayClient"
+
+"DesktopGuiSubsystem"   *-- "CanvassDesktopView"
+"DesktopGuiSubsystem"   *-- "DesktopViewModel"
+"DesktopGuiSubsystem"   *-- "MenuViewModelSet"
+"VRInteractionSubsystem" *-- "LocomotionStateMachine"
+"VRInteractionSubsystem" *-- "InteractionStateMachine"
+"VRInteractionSubsystem" *-- "VoiceCommandDispatcher"
+"VRRenderingSubsystem"  *-- "VolumeMaterialBinder"
+"VRRenderingSubsystem"  *-- "VolumeTextureManager"
+"VRRenderingSubsystem"  *-- "VolumeCameraDriver"
+"VRRenderingSubsystem"  *-- "FoveatedSamplingPolicy"
+"VRRenderingSubsystem"  *-- "FeatureVisualiser"
+"VRRenderingSubsystem"  *-- "CatalogVisualiser"
+"AntiCorruptionLayer"   *-- "SteamVRInputAdapter"
+"AntiCorruptionLayer"   *-- "UnityInputSystemAdapter"
+"AntiCorruptionLayer"   *-- "UnityKeywordRecogniserAdapter"
+"AntiCorruptionLayer"   *-- "RenderPipelineAdapter"
+"AntiCorruptionLayer"   *-- "UIToolkitBridge"
+
+' Transport decomposition
+"Transport" *-- "JsonRpcOverNamedPipe"
+"Transport" *-- "GrpcOverTcpTls"
+
+' Server decomposition (strict 4-layer)
+"iDaVIEServer" *-- "DomainLayer"
+"iDaVIEServer" *-- "ApplicationLayer"
+"iDaVIEServer" *-- "InfrastructureLayer"
+"iDaVIEServer" *-- "PluginHost"
+
+"DomainLayer"          *-- "VolumeDataSet"
+"DomainLayer"          *-- "FeatureCatalog"
+"DomainLayer"          *-- "Workspace"
+"VolumeDataSet"        *-- "VolumeDataCore"
+"VolumeDataSet"        *-- "Subcube"
+"VolumeDataSet"        *-- "Mask"
+"VolumeDataSet"        o-- "WCSCoordinateSystem"
+"FeatureCatalog"       o-- "Feature"
+"Workspace"            o-- "VolumeDataSet"
+"Workspace"            o-- "FeatureCatalog"
+"Workspace"            *-- "ViewState"
+
+"ApplicationLayer" *-- "LoadFitsCubeUseCase"
+"ApplicationLayer" *-- "RequestSubcubeUseCase"
+"ApplicationLayer" *-- "ExportMaskUseCase"
+"ApplicationLayer" *-- "ComputeStatisticsUseCase"
+"ApplicationLayer" *-- "MomentMapUseCase"
+"ApplicationLayer" *-- "SpectralProfileUseCase"
+"ApplicationLayer" *-- "PaintMaskUseCase"
+"ApplicationLayer" *-- "FeatureSetService"
+"ApplicationLayer" *-- "WorkspaceService"
+
+"InfrastructureLayer" *-- "ServiceGatewayEndpoint"
+"InfrastructureLayer" *-- "WorkspaceRepository"
+"InfrastructureLayer" *-- "FeatureCatalogRepository"
+"InfrastructureLayer" *-- "VolumeTextureFactoryImpl"
+"InfrastructureLayer" *-- "StructuredLoggingSink"
+"InfrastructureLayer" *-- "ConfigStore"
+
+"PluginHost" *-- "PluginRegistry"
+"PluginHost" *-- "PluginLoader"
+
+' ═══════════════════════════════════════════════════════════
+' INTERFACE REALIZATIONS  (..|>)  &  USAGE DEPENDENCIES  (..>)
+' ═══════════════════════════════════════════════════════════
+
+' Anti-Corruption Layer realises every Unity-touching interface
+"SteamVRInputAdapter"        ..|> "IInputProvider"
+"SteamVRInputAdapter"        ..|> "IPointer"
+"SteamVRInputAdapter"        ..|> "IGripInput"
+"SteamVRInputAdapter"        ..|> "IHaptics"
+"UnityInputSystemAdapter"    ..|> "IInputProvider"
+"UnityKeywordRecogniserAdapter" ..|> "IVoiceRecogniser"
+"RenderPipelineAdapter"      ..|> "IRenderPipeline"
+
+' Server-side gateway realises the Client Service Contract
+"ServiceGatewayEndpoint"     ..|> "IVolumeLoader"
+"ServiceGatewayEndpoint"     ..|> "ICoordinateSystem"
+"ServiceGatewayEndpoint"     ..|> "IStatisticsService"
+"ServiceGatewayEndpoint"     ..|> "ITextureFactory"
+"ServiceGatewayEndpoint"     ..|> "IMaskEditor"
+"ServiceGatewayEndpoint"     ..|> "IDataExporter"
+"ServiceGatewayEndpoint"     ..|> "IFeatureCatalogClient"
+"ServiceGatewayEndpoint"     ..|> "IWorkspaceStoreClient"
+
+' Client gateway is the proxy that consumes the contract
+"ServiceGatewayClient"       ..> "IVolumeLoader"          : proxies
+"ServiceGatewayClient"       ..> "IFeatureCatalogClient"  : proxies
+"ServiceGatewayClient"       ..> "IWorkspaceStoreClient"  : proxies
+
+' Plug-ins realise the versioned C ABI
+"fits-reader"   ..|> "IPluginABI"
+"fits-writer"   ..|> "IPluginABI"
+"votable"       ..|> "IPluginABI"
+"tiff"          ..|> "IPluginABI"
+"wcs-transform" ..|> "IPluginABI"
+"statistics"    ..|> "IPluginABI"
+"downsampler"   ..|> "IPluginABI"
+"source-finder" ..|> "IPluginABI"
+
+' Plug-ins wrap third-party libs
+"fits-reader"   --> "CFITSIO"            : DllImport
+"fits-writer"   --> "CFITSIO"            : DllImport
+"votable"       --> "CFITSIO"            : DllImport
+"wcs-transform" --> "StarlinkAST"        : DllImport
+"statistics"    --> "cminpack + OpenMP"  : DllImport
+"downsampler"   --> "cminpack + OpenMP"  : DllImport
+"source-finder" --> "cminpack + OpenMP"  : DllImport
+
+' Use cases reach the plug-in host through the registry
+"LoadFitsCubeUseCase"      ..> "PluginRegistry" : resolve "fits-reader"
+"RequestSubcubeUseCase"    ..> "PluginRegistry" : resolve "downsampler"
+"ExportMaskUseCase"        ..> "PluginRegistry" : resolve "fits-writer"
+"ComputeStatisticsUseCase" ..> "PluginRegistry" : resolve "statistics"
+"FeatureSetService"        ..> "PluginRegistry" : resolve "source-finder"
+"LoadFitsCubeUseCase"      ..> "PluginRegistry" : resolve "wcs-transform"
+
+' Downward layer dependencies (Application → Domain;
+'                              Infra → Application/Domain;
+'                              PluginHost is the lowest level)
+"ServiceGatewayEndpoint"     --> "ApplicationLayer" : dispatch
+"LoadFitsCubeUseCase"        --> "VolumeDataSet"
+"RequestSubcubeUseCase"      --> "VolumeDataSet"
+"ExportMaskUseCase"          --> "VolumeDataSet"
+"ComputeStatisticsUseCase"   --> "VolumeDataSet"
+"PaintMaskUseCase"           --> "Mask"
+"FeatureSetService"          --> "FeatureCatalog"
+"WorkspaceService"           --> "Workspace"
+"WorkspaceRepository"        ..> "Workspace"        : persists
+"FeatureCatalogRepository"   ..> "FeatureCatalog"   : persists
+
+' Client subsystems consume the gateway, never the server directly
+"DesktopGuiSubsystem"   ..> "ServiceGatewayClient" : uses
+"VRRenderingSubsystem"  ..> "ServiceGatewayClient" : uses
+"VRInteractionSubsystem" ..> "ServiceGatewayClient" : uses
+
+' Transport carries the gateway traffic
+"ServiceGatewayClient"   --> "Transport"               : sends
+"Transport"              --> "ServiceGatewayEndpoint"  : delivers
+
+' ═══════════════════════════════════════════════════════════
+' Hidden layout hints — strictly vertical flow:
+'   Client → Transport → Server → Plug-ins → Libs
+' ═══════════════════════════════════════════════════════════
+"iDaVIEClient"        -[hidden]down- "Transport"
+"Transport"           -[hidden]down- "iDaVIEServer"
+"iDaVIEServer"        -[hidden]down- "IPluginABI"
+"IPluginABI"          -[hidden]down- "fits-reader"
+"fits-reader"         -[hidden]down- "CFITSIO"
+"wcs-transform"       -[hidden]down- "StarlinkAST"
+
+' ═══════════════════════════════════════════════════════════
+' Architectural-rationale notes
+' ═══════════════════════════════════════════════════════════
+
+note right of "iDaVIESystem"
+  **Spec §4 — Target style**
+  • Client–server at system level (this BDD).
+  • Micro-kernel server with versioned C ABI.
+  • Strict downward layering inside the kernel:
+    Domain → Application → Infrastructure → Plug-in Host.
+  • Anti-Corruption Layer wraps all Unity 6 /
+    SteamVR / URP / HDRP / UI Toolkit types.
+end note
+
+note right of "Transport"
+  **ADR-001 — Transport contract**
+  • Local: JSON-RPC over named pipe.
+  • Remote: gRPC over TCP/TLS.
+  • The ServiceGateway is the **only** seam
+    crossing the client/server boundary.
+end note
+
+note bottom of "IPluginABI"
+  **ADR-002 / 003 / 004 / 005 — Plug-in C ABI**
+  • Semver-versioned; ABI-stable within a major.
+  • Structured error model (status codes + context).
+  • Kernel-owned threads; plug-ins must be re-entrant.
+  • Memory ownership: caller allocates output buffers,
+    callee fills; lifetime tokens for streaming results.
+end note
+
+note right of "DomainLayer"
+  **Spec §4.2.3 — Domain Unity-free**
+  Only the Anti-Corruption Layer and the three
+  Unity-side adapters (Visualisers, View,
+  MonoBehaviour bridges) may import UnityEngine /
+  SteamVR / URP / HDRP. Enforced by NDepend CQLinq
+  in CI (ADR-006).
+end note
+
+note right of "PluginHost"
+  **Spec §6.1, ADR-008 — Service Locator**
+  PluginRegistry is the **only** Service Locator
+  in the system; everywhere else inside the kernel
+  uses constructor injection.
+  GRASP: Indirection + Protected Variations.
+end note
+
+note left of "Feature"
+  **Spec §6.5 — Sub-team 5**
+  Feature is a first-class domain aggregate.
+  Three flavours (Masked, Imported, UserDefined)
+  substitutable behind one IFeature interface (LSP).
+  Statistics are GRASP Information-Expert methods
+  on the aggregate itself.
+end note
+
+note left of "Workspace"
+  **Spec §6.7 — Sub-team 7**
+  Workspace owns the lifecycle of a user session.
+  State contracts with every other sub-team are
+  signed off by the Architecture Guild on Day 9.
+end note
+
+@enduml

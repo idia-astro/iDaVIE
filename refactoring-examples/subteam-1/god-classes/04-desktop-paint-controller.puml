@@ -1,0 +1,49 @@
+@startuml DesktopPaintController
+title DesktopPaintController — paint UI + math + cameras god class\n(1558 LOC, Assets/Scripts/UI/DesktopPaintController.cs)
+hide empty members
+
+class DesktopPaintController <<MonoBehaviour>> #lightyellow {
+  .. canvas / colour map ..
+  +colormapWidth, colormapHeight, colorMapRowHeight
+  +zoomSpeed, minZoom, maxZoom
+  +UpdateMinValue() / UpdateMaxValue()
+  +UpdateSourceColours()
+  .. selection / sources ..
+  +StartPaintSelection()
+  +AddSource()
+  .. region cube + texture ..
+  +StartRegionCubeTexture()
+  +UpdateTexture()
+  +GetFloatSlice(Texture3D, axis, slice) : float[,]
+  .. mask interaction ..
+  +HighlightMask()
+  +GetPrevMask()
+  .. camera management ..
+  +SpawnCameras()
+  +SetCameraTransforms()
+  +SpawnSliceIndicator()
+  .. UnityEngine.EventSystems ..
+  +OnPointerDown(PointerEventData)
+  +OnPointerUp(PointerEventData)
+  +OnDrag(PointerEventData)
+}
+
+interface IPointerDownHandler <<UnityEngine.EventSystems>> #mistyrose
+interface IPointerUpHandler   <<UnityEngine.EventSystems>> #mistyrose
+interface IDragHandler        <<UnityEngine.EventSystems>> #mistyrose
+DesktopPaintController ..|> IPointerDownHandler
+DesktopPaintController ..|> IPointerUpHandler
+DesktopPaintController ..|> IDragHandler
+
+class Texture3D <<UnityEngine>> #mistyrose
+class Camera    <<UnityEngine>> #mistyrose
+DesktopPaintController ..> Texture3D
+DesktopPaintController o-- "n" Camera
+
+class VolumeDataSet            #palegreen
+class VolumeDataSetRenderer
+class FeatureSetManager
+DesktopPaintController ..> VolumeDataSet
+DesktopPaintController ..> VolumeDataSetRenderer
+DesktopPaintController ..> FeatureSetManager
+@enduml

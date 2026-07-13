@@ -1,0 +1,278 @@
+@startuml CanvassDesktop_refactored
+title CanvassDesktop — ISO/IEC 25010:2023 Refactored Design (MVP)
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    BorderColor #444444
+    ArrowColor #444444
+}
+skinparam interface {
+    BackgroundColor #E8F4E8
+    BorderColor #2E7D32
+}
+skinparam package {
+    BackgroundColor #FAFAFA
+    BorderColor #999999
+}
+hide empty members
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Pattern: Model-View-Presenter
+' - View  (MonoBehaviour): knows only Unity UI widgets, no business logic
+' - Presenter (plain C#): mediates between View and Model, fully unit-testable
+' - Model: VolumeDataSetRenderer and VolumeDataSet (unchanged)
+'
+' ISO 25010:2023 Testability — Presenters are plain C# with no Unity dependency
+' ISO 25010:2023 Modifiability — UI layout changes touch only the View
+' ISO 25010:2023 Modularity — each panel is a self-contained Presenter
+' ──────────────────────────────────────────────────────────────────────────────
+
+' ──────────────────────────────────────────────────────────────────────────────
+' View interfaces — allow Presenters to drive the UI without importing UnityEngine
+' (ISO 25010: Testability — Presenters tested against mock views)
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "View Interfaces" #EEF4FF {
+
+    interface IFileLoadView {
+        + SetLoadButtonEnabled(enabled : bool) : void
+        + SetImagePath(path : string) : void
+        + SetMaskPath(path : string) : void
+        + SetHduOptions(options : IList<string>, selectedIndex : int) : void
+        + ShowProgress(label : string, value : float) : void
+        + HideProgress() : void
+        + <<event>> ImageBrowseRequested : Action
+        + <<event>> MaskBrowseRequested : Action
+        + <<event>> LoadRequested : Action
+        + <<event>> HduChanged : Action<int>
+    }
+
+    interface ISubsetView {
+        + SetSubsetEnabled(enabled : bool) : void
+        + SetBounds(xMin : int, xMax : int, yMin : int, yMax : int, zMin : int, zMax : int) : void
+        + ShowBoundsError(message : string) : void
+        + <<event>> SubsetToggled : Action<bool>
+        + <<event>> BoundsChanged : Action
+    }
+
+    interface IColormapView {
+        + SetColormapOptions(options : IList<string>, selectedIndex : int) : void
+        + SetSigmaOptions(options : IList<string>, selectedIndex : int) : void
+        + <<event>> ColormapChanged : Action<int>
+        + <<event>> SigmaChanged : Action<int>
+        + <<event>> RestoreDefaultsRequested : Action
+    }
+
+    interface IThresholdView {
+        + SetThresholdMin(value : float) : void
+        + SetThresholdMax(value : float) : void
+        + SetScaleRange(min : float, max : float) : void
+        + <<event>> ThresholdMinChanged : Action<float>
+        + <<event>> ThresholdMaxChanged : Action<float>
+        + <<event>> ScaleMinChanged : Action<string>
+        + <<event>> ScaleMaxChanged : Action<string>
+        + <<event>> ResetRequested : Action
+    }
+
+    interface IRestFrequencyView {
+        + SetFrequencyOptions(options : IList<string>, selectedIndex : int) : void
+        + SetFrequencyInputValue(freqGHz : double) : void
+        + SetFrequencyInputEnabled(enabled : bool) : void
+        + <<event>> FrequencyIndexChanged : Action<int>
+        + <<event>> FrequencyValueChanged : Action<string>
+    }
+
+    interface IStatisticsView {
+        + DisplayStats(snapshot : VolumeStatisticsSnapshot) : void
+        + DisplayHistogramImage(img : Sprite) : void
+    }
+
+    interface ISourceMappingView {
+        + SetSourceRows(rows : IList<SourceRowData>) : void
+        + SetMappingOptions(options : IList<string>) : void
+        + <<event>> SourcesBrowseRequested : Action
+        + <<event>> MappingBrowseRequested : Action
+        + <<event>> MappingSaveRequested : Action
+        + <<event>> SourceMappingChanged : Action<int, SourceMappingOptions>
+        + <<event>> LoadSourcesRequested : Action
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Presenter interfaces (ISO 25010: Reusability — testable without Unity)
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Presenter Interfaces" #E8F4E8 {
+
+    interface IFileLoadPresenter {
+        + Bind(view : IFileLoadView) : void
+        + CheckMemorySpace() : bool
+        + IsLoadable() : bool
+    }
+
+    interface IColormapPresenter {
+        + Bind(view : IColormapView) : void
+        + ApplyColormap(index : int) : void
+        + ApplySigma(index : int) : void
+        + RestoreDefaults() : void
+    }
+
+    interface IThresholdPresenter {
+        + Bind(view : IThresholdView) : void
+        + SetPercentileRange(maxPercentile : float) : void
+        + ResetToDefaults() : void
+    }
+
+    interface IRestFrequencyPresenter {
+        + Bind(view : IRestFrequencyView) : void
+        + RefreshOptions() : void
+    }
+
+    interface IStatisticsPresenter {
+        + Bind(view : IStatisticsView) : void
+        + Refresh(min : float, max : float, img : Sprite) : void
+    }
+
+    interface ISourceMappingPresenter {
+        + Bind(view : ISourceMappingView) : void
+        + LoadSources(path : string) : void
+        + SaveMapping(path : string) : void
+        + ValidateMappings() : bool
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Presenters — plain C#, no MonoBehaviour, no UnityEngine import
+' (ISO 25010: Testability — can be unit-tested with mock views and mock models)
+' ──────────────────────────────────────────────────────────────────────────────
+
+package "Presenters" #FFF8E8 {
+
+    class FileLoadPresenter <<service>> {
+        - _renderer : VolumeDataSetRenderer
+        - _view : IFileLoadView
+        + FileLoadPresenter(renderer : VolumeDataSetRenderer)
+        + Bind(view : IFileLoadView) : void
+        + CheckMemorySpace() : bool
+        + IsLoadable() : bool
+        - OnLoadRequested() : void
+        - OnHduChanged(index : int) : void
+        - UpdateHeaderFromFits(fptr : IntPtr) : void
+    }
+
+    class SubsetPresenter <<service>> {
+        - _renderer : VolumeDataSetRenderer
+        - _view : ISubsetView
+        + SubsetPresenter(renderer : VolumeDataSetRenderer)
+        + Bind(view : ISubsetView) : void
+        - OnBoundsChanged() : void
+        - ValidateBounds() : bool
+    }
+
+    class ColormapPresenter <<service>> {
+        - _renderer : VolumeDataSetRenderer
+        - _view : IColormapView
+        + ColormapPresenter(renderer : VolumeDataSetRenderer)
+        + Bind(view : IColormapView) : void
+        + ApplyColormap(index : int) : void
+        + ApplySigma(index : int) : void
+        + RestoreDefaults() : void
+        - PopulateOptions() : void
+    }
+
+    class ThresholdPresenter <<service>> {
+        - _renderer : VolumeDataSetRenderer
+        - _view : IThresholdView
+        + ThresholdPresenter(renderer : VolumeDataSetRenderer)
+        + Bind(view : IThresholdView) : void
+        + SetPercentileRange(maxPercentile : float) : void
+        + ResetToDefaults() : void
+    }
+
+    class RestFrequencyPresenter <<service>> {
+        - _renderer : VolumeDataSetRenderer
+        - _view : IRestFrequencyView
+        + RestFrequencyPresenter(renderer : VolumeDataSetRenderer)
+        + Bind(view : IRestFrequencyView) : void
+        + RefreshOptions() : void
+        - OnFrequencyIndexChanged(index : int) : void
+        - OnFrequencyValueChanged(value : string) : void
+    }
+
+    class StatisticsPresenter <<service>> {
+        - _dataSet : VolumeDataSet
+        - _view : IStatisticsView
+        + StatisticsPresenter(dataSet : VolumeDataSet)
+        + Bind(view : IStatisticsView) : void
+        + Refresh(min : float, max : float, img : Sprite) : void
+    }
+
+    class SourceMappingPresenter <<service>> {
+        - _renderer : VolumeDataSetRenderer
+        - _view : ISourceMappingView
+        + SourceMappingPresenter(renderer : VolumeDataSetRenderer)
+        + Bind(view : ISourceMappingView) : void
+        + LoadSources(path : string) : void
+        + SaveMapping(path : string) : void
+        + ValidateMappings() : bool
+        - AreMappingsIncompatible(a : SourceMappingOptions, b : SourceMappingOptions) : bool
+        - AreMinimalMappingsSet() : bool
+    }
+
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' View — MonoBehaviour, zero business logic, only Unity UI wiring
+' (ISO 25010: Modifiability — UI changes here do not touch presenters or model)
+' ──────────────────────────────────────────────────────────────────────────────
+
+class CanvassDesktop <<MonoBehaviour, View>> {
+    - _fileLoadPresenter : IFileLoadPresenter
+    - _subsetPresenter : SubsetPresenter
+    - _colormapPresenter : IColormapPresenter
+    - _thresholdPresenter : IThresholdPresenter
+    - _restFreqPresenter : IRestFrequencyPresenter
+    - _statisticsPresenter : IStatisticsPresenter
+    - _sourceMappingPresenter : ISourceMappingPresenter
+    .. Unity lifecycle ..
+    - Awake() : void
+    - OnDestroy() : void
+    - Update() : void
+    .. Data access (passthrough) ..
+    + GetFirstActiveRenderer() : VolumeDataSetRenderer
+    + getActiveDataSet() : VolumeDataSet
+    .. View interface implementations ..
+    + paintTabSelected() : void
+    + paintTabLeft() : void
+}
+
+' ──────────────────────────────────────────────────────────────────────────────
+' Realizations and dependencies
+' ──────────────────────────────────────────────────────────────────────────────
+
+FileLoadPresenter       ..|> IFileLoadPresenter
+ColormapPresenter       ..|> IColormapPresenter
+ThresholdPresenter      ..|> IThresholdPresenter
+RestFrequencyPresenter  ..|> IRestFrequencyPresenter
+StatisticsPresenter     ..|> IStatisticsPresenter
+SourceMappingPresenter  ..|> ISourceMappingPresenter
+
+CanvassDesktop o-- IFileLoadPresenter
+CanvassDesktop *-- SubsetPresenter
+CanvassDesktop o-- IColormapPresenter
+CanvassDesktop o-- IThresholdPresenter
+CanvassDesktop o-- IRestFrequencyPresenter
+CanvassDesktop o-- IStatisticsPresenter
+CanvassDesktop o-- ISourceMappingPresenter
+
+CanvassDesktop ..|> IFileLoadView
+CanvassDesktop ..|> ISubsetView
+CanvassDesktop ..|> IColormapView
+CanvassDesktop ..|> IThresholdView
+CanvassDesktop ..|> IRestFrequencyView
+CanvassDesktop ..|> IStatisticsView
+CanvassDesktop ..|> ISourceMappingView
+
+@enduml

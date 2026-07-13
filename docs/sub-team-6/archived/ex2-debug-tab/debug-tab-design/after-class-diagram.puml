@@ -1,0 +1,212 @@
+@startuml debug-tab-after
+title Debug Tab — AFTER refactoring\n(proposed Observer + MVVM design — design artefact only, not production code)
+
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+    ArrowColor #1B5E20
+}
+skinparam interface {
+    BackgroundColor #F3E5F5
+    BorderColor #7B1FA2
+    ArrowColor #4A148C
+}
+skinparam note {
+    BackgroundColor #FFF9C4
+    BorderColor #F57F17
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' View layer — Unity (thin MonoBehaviour adapter, allowed to use UnityEngine)
+' ─────────────────────────────────────────────────────────────────────────────
+package "View Layer — Unity MonoBehaviour (thin)" <<Rectangle>> #EDE7F6 {
+
+    class DebugTabView <<MonoBehaviour>> {
+        -_logText: TMP_Text
+        -_scrollbar: Scrollbar
+        -_clearButton: Button
+        -_vm: IDebugTabViewModel?
+        -MaxDisplayLines: int = 500
+        +BindTo(vm: IDebugTabViewModel): void
+        +OnDestroy(): void
+        -OnEntriesChanged(): void
+    }
+
+    class DebugTabCompositionRoot <<MonoBehaviour>> {
+        -_view: DebugTabView
+        -_logStreamAdapter: UnityLogStreamAdapter
+        -_vm: DebugTabViewModel?
+        +Awake(): void
+        +OnDestroy(): void
+    }
+
+    note right of DebugTabView
+      Knows ONLY ""IDebugTabViewModel"".
+      No ""transform.Find()"" chains.
+      No ""Application.logMessageReceived"" subscription.
+      TMP rebuild capped at ""MaxDisplayLines = 500"" —
+      O(N) contained, not eliminated (see ""ck-metrics.md"" S5/S6).
+    end note
+
+    note right of DebugTabCompositionRoot
+      The <b>only</b> class permitted to reference both
+      ""Domain"" and ""Adapter"" concrete types.
+      Pure-DI / Composition-Root pattern.
+      ""Awake"" constructs the VM, calls ""BindTo"";
+      ""OnDestroy"" disposes the VM (symmetric lifetime).
+    end note
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' ViewModel & Domain layer — pure C# (no UnityEngine / SteamVR allowed)
+' ─────────────────────────────────────────────────────────────────────────────
+package "ViewModel & Domain Layer — pure C# (no UnityEngine)" <<Rectangle>> #E8F5E9 {
+
+    interface IDebugTabViewModel <<interface>> {
+        +LogEntries: IReadOnlyList<LogEntry>
+        +AppendEntry(entry: LogEntry): void
+        +ClearEntries(): void
+        +event EntriesChanged
+    }
+
+    class DebugTabViewModel {
+        -_logStream: ILogStream
+        -_entries: List<LogEntry>
+        -_disposed: bool
+        -MaxEntries: int = 2000
+        +<<ctor>>(logStream: ILogStream)
+        +LogEntries: IReadOnlyList<LogEntry>
+        +AppendEntry(entry: LogEntry): void
+        +ClearEntries(): void
+        +OnNext(entry: LogEntry): void <<ILogObserver>>
+        +Dispose(): void
+        +event EntriesChanged
+    }
+
+    note bottom of DebugTabViewModel
+      77 LOC · 6 methods · pure C#.
+      ""IDisposable"" — unsubscribes from ""ILogStream"" in ""Dispose"".
+      Backing list capped at ""MaxEntries"" (2000) — eliminates the
+      unbounded non-generic ""Queue"" smell (S3).
+      Fully unit-testable: <b>29 NUnit tests pass without Unity</b>
+      (see ""refactoring-examples/sub-team-6/debug-tab/tests/"").
+    end note
+
+    interface ILogObserver <<interface>> {
+        +OnNext(entry: LogEntry): void
+    }
+
+    class LogStream {
+        -_observers: List<ILogObserver>
+        -_lock: object
+        +Subscribe(observer: ILogObserver): void
+        +Unsubscribe(observer: ILogObserver): void
+        +Publish(level: LogLevel, message: string): void
+    }
+
+    note bottom of LogStream
+      43 LOC · thread-safe.
+      Observer list under ""lock""; iteration over array
+      snapshot so a subscriber can ""Unsubscribe"" inside
+      its own ""OnNext"" without corrupting dispatch.
+      Captures ""DateTime.UtcNow"" at the moment of ""Publish""
+      — eliminates the timestamp gap (S2 partial).
+    end note
+
+    class LogEntry <<record, DTO>> #FFF9C4 {
+        +Level: LogLevel
+        +Message: string
+        +Timestamp: DateTime
+    }
+
+    enum LogLevel {
+        Info
+        Warning
+        Error
+    }
+
+    note right of LogEntry
+      Immutable ""record"" — crosses every layer
+      boundary; behaviour does not. ""Source"" field
+      deliberately deferred (see ""after-trace.md"" →
+      Open question: source field).
+    end note
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' Service interfaces — ACL (Anti-Corruption Layer) boundary
+' ─────────────────────────────────────────────────────────────────────────────
+package "Service Interfaces — ACL boundary" <<Rectangle>> #FFF3E0 {
+
+    interface ILogStream <<interface>> {
+        +Subscribe(observer: ILogObserver): void
+        +Unsubscribe(observer: ILogObserver): void
+        +Publish(level: LogLevel, message: string): void
+    }
+
+    note right of ILogStream
+      The single contract between the producer side
+      (Unity's static log event, or future structured
+      ""Publish"" callers) and the consumer side
+      (the VM, plus any future ""FileLogObserver"",
+      ""TelemetryLogObserver"", etc.).
+      Implemented by both the pure-C# ""LogStream""
+      (for direct calls) and the Unity-side
+      ""UnityLogStreamAdapter"" (for legacy capture).
+    end note
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' Adapters — Unity assembly (only here may UnityEngine appear)
+' ─────────────────────────────────────────────────────────────────────────────
+package "Adapters — Unity assembly (UnityEngine allowed)" <<Rectangle>> #FFEBEE {
+
+    class UnityLogStreamAdapter <<MonoBehaviour>> #FCE4EC {
+        -_inner: LogStream
+        +OnEnable(): void
+        +OnDisable(): void
+        +OnUnityLog(message: string, stackTrace: string, type: LogType): void
+        +Subscribe(observer: ILogObserver): void
+        +Unsubscribe(observer: ILogObserver): void
+        +Publish(level: LogLevel, message: string): void
+    }
+
+    note right of UnityLogStreamAdapter
+      53 LOC · ""MonoBehaviour : ILogStream"".
+      The <b>only</b> class that touches
+      ""Application.logMessageReceived"".
+      ""LogType → LogLevel"" normalisation lives
+      here — keeps the enum out of the domain.
+      The 44 existing ""Debug.Log*"" call sites are
+      captured automatically; <b>none of them change</b>.
+    end note
+}
+
+' ─────────────────────────────────────────────────────────────────────────────
+' Relationships
+' ─────────────────────────────────────────────────────────────────────────────
+
+' View binds to interface, never to concrete VM
+DebugTabView                   ..>  IDebugTabViewModel  : binds to
+DebugTabViewModel              ..|> IDebugTabViewModel  : implements
+DebugTabViewModel              ..|> ILogObserver        : implements (OnNext)
+DebugTabViewModel              -->  ILogStream          : Subscribe / Unsubscribe
+DebugTabViewModel              -->  LogEntry            : holds list
+
+' LogStream produces entries and dispatches
+LogStream                      ..|> ILogStream          : implements
+LogStream                      -->  ILogObserver        : dispatches
+LogStream                      ..>  LogEntry            : creates (with DateTime.UtcNow)
+LogEntry                       -->  LogLevel
+
+' ACL — adapter implements domain interface (single direction)
+UnityLogStreamAdapter          ..|> ILogStream          : implements (ACL)
+UnityLogStreamAdapter          o--  LogStream           : inner (composition)
+
+' Composition root wires everything once
+DebugTabCompositionRoot        -->  DebugTabViewModel       : new + Dispose
+DebugTabCompositionRoot        -->  UnityLogStreamAdapter   : [SerializeField]
+DebugTabCompositionRoot        -->  DebugTabView            : [SerializeField]
+
+@enduml

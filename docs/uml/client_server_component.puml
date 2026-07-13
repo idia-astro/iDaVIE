@@ -1,0 +1,168 @@
+@startuml client_server_component
+!pragma layout smetana
+title iDaVIE — Top-Level Component Diagram (Client / Server Split)
+
+skinparam component {
+    BackgroundColor White
+    BorderColor #444444
+    ArrowColor #444444
+    FontSize 11
+}
+skinparam interface {
+    BackgroundColor #E8F4E8
+    BorderColor #2E7D32
+}
+skinparam package {
+    BackgroundColor #FAFAFA
+    BorderColor #999999
+    FontSize 12
+    FontStyle bold
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #F9A825
+}
+skinparam arrow {
+    Color #444444
+}
+
+' ─────────────────────────────────────────────────────────
+' CLIENT — Unity process running on the operator workstation
+' ─────────────────────────────────────────────────────────
+
+package "iDaVIE Client  (Unity Process)" #E8F0FF {
+
+    package "VR Presentation Subsystem" #D0E8FF {
+        [VolumeDataSetRenderer] as VDSRend
+        [VolumeInputController] as VIC
+        [SteamVRInputBridge] as SVR
+        [GLSL Shaders\n(Ray-march / Mask / Catalog)] as Shaders
+        [CatalogDataSetRenderer] as CatRend
+        [FeatureSetRenderer] as FeatRend
+    }
+
+    package "Desktop UI Subsystem" #D8F0FF {
+        [CanvassDesktop\n(View + Presenters)] as CD
+        [DesktopPaintController] as DPC
+        [Menu Controllers\n(Histogram / Spectral / Moment\nShape / Paint / Video)] as Menus
+    }
+
+    ' Internal client wiring
+    VIC --> VDSRend : drives
+    SVR --> VIC : SteamVR events
+    VDSRend --> Shaders : GPU textures\n+ uniforms
+    CD --> VDSRend : configures\nvia Presenters
+    DPC --> VDSRend : slice cameras
+    Menus --> VDSRend : analysis triggers
+
+}
+
+' ─────────────────────────────────────────────────────────
+' BOUNDARY — the interface contracts crossing the split
+' ─────────────────────────────────────────────────────────
+
+interface "IVolumeLoader"         as IVL
+interface "ICoordinateSystem"     as ICS
+interface "IStatisticsService"    as ISS
+interface "ITextureFactory"       as ITF
+interface "IMaskEditor"           as IME
+interface "IDataExporter"         as IDE
+
+' Client depends on the service interfaces
+VDSRend ..> ITF : requests GPU\ntextures
+VDSRend ..> ICS : coordinate\nmapping
+CD      ..> IVL : load / open file
+CD      ..> ISS : statistics display
+DPC     ..> IME : paint mask voxels
+Menus   ..> ISS : histogram /\nspectral data
+CD      ..> IDE : FITS export
+
+' ─────────────────────────────────────────────────────────
+' SERVER — data and analysis backend (same process today;
+'          interface contracts allow future process split)
+' ─────────────────────────────────────────────────────────
+
+package "iDaVIE Server  (Data & Analysis Backend)" #FFF0E8 {
+
+    package "Domain Facade" #FFE8D8 {
+        [VolumeDataSet\n«facade»] as VDS
+        [VolumeDataCore\n«value»] as VDC
+        VDS *-- VDC
+    }
+
+    package "Data Services" #FFF4EC {
+        [FitsVolumeLoader\n«service»]        as FVL
+        [ASTCoordinateSystem\n«service»]     as ASTCS
+        [VolumeStatisticsService\n«service»] as VSS
+        [VolumeTextureFactory\n«service»]    as VTF
+        [MaskEditorService\n«service»]       as MES
+        [FitsExportService\n«service»]       as FES
+    }
+
+    package "Native Plugin Boundary" #FFEEDD {
+        [NativePluginLoader\n«singleton»] as NPL
+
+        package "idavie_native  (.dll / .so)" #FFE0CC {
+            [FitsReader\n«P/Invoke»]    as FR
+            [AstTool\n«P/Invoke»]      as AT
+            [DataAnalysis\n«P/Invoke»] as DA
+        }
+
+        package "Third-Party C++ Libraries" #FFD0BB {
+            [CFITSIO]         as CFITSIO
+            [Starlink AST]    as SAST
+            [cminpack / OpenMP] as CMINPACK
+        }
+    }
+
+    ' Service realizations of the boundary interfaces
+    FVL   ..|> IVL
+    ASTCS ..|> ICS
+    VSS   ..|> ISS
+    VTF   ..|> ITF
+    MES   ..|> IME
+    FES   ..|> IDE
+
+    ' Facade composes services
+    VDS o-- FVL
+    VDS o-- ASTCS
+    VDS o-- VSS
+    VDS o-- VTF
+    VDS o-- MES
+    VDS o-- FES
+
+    ' Services → native plugin calls
+    FVL   --> FR   : file I/O
+    ASTCS --> AT   : WCS transforms
+    VSS   --> DA   : statistics /\nhistograms
+    VTF   --> DA   : downsample /\ntexture data
+    MES   --> VDC  : voxel r/w
+
+    ' Native plugins → C++ libs
+    NPL --> FR
+    NPL --> AT
+    NPL --> DA
+    FR  --> CFITSIO
+    AT  --> SAST
+    DA  --> CMINPACK
+}
+
+' ─────────────────────────────────────────────────────────
+' Notes
+' ─────────────────────────────────────────────────────────
+
+note as N1
+  Today both sides share one Unity process.
+  The interface layer (IVolumeLoader, ICoordinateSystem, …)
+  is the seam for a future out-of-process split
+  (e.g., gRPC data service, remote FITS server).
+end note
+
+note as N2
+  NativePluginLoader uses DllImport reflection
+  to bind at runtime.
+  Windows: idavie_native.dll
+  Linux:   libidavie_native.so
+end note
+
+@enduml

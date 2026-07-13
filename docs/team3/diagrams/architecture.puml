@@ -1,0 +1,261 @@
+@startuml architecture
+'
+' iDaVIE Sub-team 3 — Rendering Engine
+' High-level component / package diagram — PROPOSED target architecture
+' Team Alpha | Cache Me If You Can | Sprint 2 | 2026-05-25
+'
+
+title iDaVIE Rendering Engine — Target Architecture\n(Sub-team 3 proposal)
+
+skinparam linetype polyline
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam packageBorderThickness 1.5
+skinparam arrowThickness 1.2
+
+skinparam package {
+  BackgroundColor<<core>>      #D6EAF8
+  BorderColor<<core>>          #2471A3
+  BackgroundColor<<interface>> #E8F8F5
+  BorderColor<<interface>>     #1ABC9C
+  BackgroundColor<<adapter>>   #FEF9E7
+  BorderColor<<adapter>>       #F39C12
+  BackgroundColor<<test>>      #F5EEF8
+  BorderColor<<test>>          #8E44AD
+  BackgroundColor<<external>>  #FDFEFE
+  BorderColor<<external>>      #BDC3C7
+  BackgroundColor<<crossteam>> #FDEBD0
+  BorderColor<<crossteam>>     #E67E22
+}
+
+' ══════════════════════════════════════════════════════
+'  LAYER 0 — Unity runtime / external
+' ══════════════════════════════════════════════════════
+package "Unity Engine\n(UnityEngine.*)" <<external>> as UE {
+  class MonoBehaviour {}
+  class MaterialShaderTexture3D <<(C,white) Material / Shader / Texture3D>> {}
+  class CommandBufferRenderTexture <<(C,white) CommandBuffer / RenderTexture>> {}
+}
+
+package "SRP Implementations" <<external>> as SRP {
+  class URP_comp <<(C,white) UnityEngine.Rendering.Universal\n(URP)>> {}
+  class HDRP_comp <<(C,white) UnityEngine.Rendering.HighDefinition\n(HDRP)>> {}
+}
+
+' ══════════════════════════════════════════════════════
+'  LAYER 1 — Render-pipeline abstraction (our interface)
+' ══════════════════════════════════════════════════════
+package "Render Pipeline Abstraction\niDaVIE.Rendering.Pipeline" <<interface>> as PipelineAbstraction {
+  interface IRenderPipeline {
+    AddCommandBuffer(evt, buf)
+    RemoveCommandBuffer(evt, buf)
+    SetPipelineKeyword(kw, enabled)
+    DepthTextureAvailable() : bool
+    Initialise()
+    Dispose()
+  }
+}
+
+package "SRP Adapters\niDaVIE.Rendering.Pipeline.Adapters" <<adapter>> as Adapters {
+  class UrpRenderPipeline {
+    implements IRenderPipeline
+    --
+    Only class that imports\nUnityEngine.Rendering.Universal
+  }
+  class HdrpRenderPipeline {
+    implements IRenderPipeline
+    --
+    Only class that imports\nUnityEngine.Rendering.HighDefinition
+  }
+}
+
+' ══════════════════════════════════════════════════════
+'  LAYER 2 — Mask mode abstraction (our interface)
+' ══════════════════════════════════════════════════════
+package "Mask Mode Abstraction\niDaVIE.Rendering.Masks" <<interface>> as MaskAbstraction {
+  interface IMaskMode {
+    Apply(material, maskTex)
+    ShaderKeyword : string
+  }
+  class ApplyMaskMode {}
+  class InverseMaskMode {}
+  class IsolateMaskMode {}
+  note bottom of IMaskMode
+    OCP: new mask mode =
+    new class, zero edits
+    to existing code
+  end note
+}
+
+' ══════════════════════════════════════════════════════
+'  LAYER 3 — Cross-team interface contracts (stubs)
+' ══════════════════════════════════════════════════════
+package "Cross-team Interface Contracts\niDaVIE.Rendering.Contracts" <<crossteam>> as Contracts {
+  interface IGaze {
+    GazeDirection : Vector3
+    GazeFocusPoint : Vector2
+    IsGazeAvailable : bool
+    --
+    [Provided by Sub-team 4]
+  }
+  interface IRawVolumeData {
+    Width, Height, Depth : int
+    VoxelFormat : VoxelFormat
+    GetVoxelSlice(z) : NativeArray<short>
+    --
+    [Provided by Sub-team 2]
+  }
+}
+
+' ══════════════════════════════════════════════════════
+'  LAYER 4 — Core rendering domain classes (our work)
+' ══════════════════════════════════════════════════════
+package "Rendering Core\niDaVIE.Rendering" <<core>> as RenderingCore {
+
+  class VolumeRenderCoordinator {
+    -- MonoBehaviour shell --
+    Start() : delegates to managers
+    Update() : orchestrates frame
+    OnDestroy() : disposal
+    --
+    WMC ~< 10 · CBO <= 6 (all interfaces)
+    No domain logic — pure wiring
+  }
+
+  class VolumeMaterialBinder {
+    -- Shader / material property mgmt --
+    SyncShaderState() each frame
+    SetMaskMode(IMaskMode)
+    SetColourMap(map)
+    ResetThresholds()
+    --
+    WMC ~ 8 · CBO ~ 5 · LCOM ~ 0.0
+    Depends: IRenderPipeline, IMaskMode
+  }
+
+  class VolumeTextureManager {
+    -- 3D texture upload + caching --
+    EnsureTextureReady() : Texture3D
+    GenerateDownsampledCube()
+    RegenerateCubes()
+    Evict()
+    --
+    WMC ~ 6 · CBO ~ 4 · LCOM ~ 0.0
+    Enforces 4 GB limit (single point)
+    Depends: IRawVolumeData
+  }
+
+  class VolumeCameraDriver {
+    -- Spatial / coordinate transforms --
+    GetFrameParameters() : CameraParameters
+    ConvertWorldToDataSpace()
+    SetCursorPosition()
+    TeleportToRegion()
+    --
+    WMC ~ 9 · CBO ~ 4 · LCOM ~ 0.0
+    Depends: IRenderPipeline (cmd buffers)
+  }
+
+  class FoveatedSamplingPolicy {
+    -- Ray-march step rate decisions --
+    ComputeSteps(radialDist) : int
+    GetSampleRate() : float
+    --
+    WMC ~ 3 · CBO ~ 1 · LCOM ~ 0.0
+    ZERO UnityEngine dependencies
+    Pure C# — fully unit-testable
+    Depends: IGaze
+  }
+
+}
+
+' ══════════════════════════════════════════════════════
+'  LAYER 5 — Test doubles (not shipped in production)
+' ══════════════════════════════════════════════════════
+package "Test Doubles\niDaVIE.Rendering.Tests" <<test>> as TestDoubles {
+  class NullRenderPipeline {
+    implements IRenderPipeline
+    --
+    No-op stubs — all methods empty
+    Enables edit-mode tests without GPU
+  }
+  class NullMaskMode {
+    implements IMaskMode
+    --
+    Apply() : no-op
+    ShaderKeyword : ""
+  }
+  class StubGazeProvider {
+    implements IGaze
+    --
+    Fixed GazeFocusPoint (0.5, 0.5)
+    Simulates centred gaze
+  }
+}
+
+' ══════════════════════════════════════════════════════
+'  RELATIONSHIPS
+' ══════════════════════════════════════════════════════
+
+' Adapters implement IRenderPipeline
+UrpRenderPipeline  ..|> IRenderPipeline
+HdrpRenderPipeline ..|> IRenderPipeline
+
+' Adapters import SRP namespaces (only adapters cross this boundary)
+UrpRenderPipeline  ..> URP_comp  : imports
+HdrpRenderPipeline ..> HDRP_comp : imports
+
+' Test doubles implement interfaces
+NullRenderPipeline ..|> IRenderPipeline
+NullMaskMode       ..|> IMaskMode
+StubGazeProvider   ..|> IGaze
+
+' Mask mode concrete classes
+ApplyMaskMode   ..|> IMaskMode
+InverseMaskMode ..|> IMaskMode
+IsolateMaskMode ..|> IMaskMode
+
+' Core coordinator owns four classes (composition)
+VolumeRenderCoordinator *--> VolumeMaterialBinder   : owns
+VolumeRenderCoordinator *--> VolumeTextureManager   : owns
+VolumeRenderCoordinator *--> VolumeCameraDriver     : owns
+VolumeRenderCoordinator *--> FoveatedSamplingPolicy : owns
+
+' Core classes depend on interfaces only (DIP)
+VolumeMaterialBinder  ---> IRenderPipeline  : uses
+VolumeMaterialBinder  ---> IMaskMode        : uses
+VolumeCameraDriver    ---> IRenderPipeline  : uses
+FoveatedSamplingPolicy --> IGaze    : uses
+VolumeTextureManager  ---> IRawVolumeData   : uses
+
+' Coordinator inherits MonoBehaviour (class, not component)
+VolumeRenderCoordinator --|> MonoBehaviour
+
+' Core classes use Unity material/texture (but NOT SRP directly)
+VolumeMaterialBinder ---> MaterialShaderTexture3D : uses
+VolumeTextureManager ---> MaterialShaderTexture3D : uses
+
+' CommandBuffer / RenderTexture used by pipeline adapters via IRenderPipeline
+UrpRenderPipeline  ---> CommandBufferRenderTexture : uses
+HdrpRenderPipeline ---> CommandBufferRenderTexture : uses
+
+' ══════════════════════════════════════════════════════
+'  LEGEND
+' ══════════════════════════════════════════════════════
+legend right
+  |= Package colour     |= Layer                               |
+  | blue                | Rendering core domain classes        |
+  | green               | Interfaces (abstraction boundaries)  |
+  | yellow              | SRP adapters (URP / HDRP)            |
+  | purple              | Test doubles (not in production)     |
+  | orange              | Cross-team interface contracts       |
+  | grey                | Unity Engine / external              |
+
+  DIP enforced: core depends on interfaces, not SRP types.
+  Only adapters import UnityEngine.Rendering.Universal/HDRP.
+  Test doubles enable edit-mode unit tests without a scene.
+
+  CK targets: WMC <= 20 · CBO <= 14 · RFC <= 50 · LCOM <= 0.5
+endlegend
+
+@enduml

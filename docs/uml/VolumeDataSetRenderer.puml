@@ -1,0 +1,221 @@
+@startuml VolumeDataSetRenderer
+title VolumeDataSetRenderer — Proposed Decomposition
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    BorderColor #555555
+    ArrowColor #555555
+}
+skinparam package {
+    BackgroundColor #F5F5F5
+    BorderColor #AAAAAA
+}
+hide empty members
+
+' ─── Enumerations ─────────────────────────────────────────────────────────────
+
+enum ScalingType {
+    Linear
+    Log
+    Sqrt
+    Square
+    Power
+    Gamma
+}
+
+enum MaskMode {
+    Disabled
+    Enabled
+    Inverted
+    Isolated
+}
+
+enum ProjectionMode {
+    MaximumIntensityProjection
+    AverageIntensityProjection
+}
+
+' ─── Rendering parameters ─────────────────────────────────────────────────────
+
+package "Rendering Config" {
+
+    class VolumeRenderingConfig {
+        + MaxSteps : int
+        + ProjectionMode : ProjectionMode
+        + TextureFilter : FilterMode
+        + Jitter : float
+        + ThresholdMin : float
+        + ThresholdMax : float
+        + InitialThresholdMin : float
+        + InitialThresholdMax : float
+        + ColorMap : ColorMapEnum
+        + ScalingType : ScalingType
+        + ScalingBias : float
+        + ScalingContrast : float
+        + ScalingAlpha : float
+        + ScalingGamma : float
+        + ScaleMin : float
+        + ScaleMax : float
+        + RayMarchingMaterial : Material
+        + <<event>> OnColorMapChanged
+        + ShiftColorMap(delta : int) : void
+        + ResetThresholds() : void
+    }
+
+    class MaskRenderingController {
+        + DisplayMask : bool
+        + MaskMode : MaskMode
+        + MaskVoxelSize : float
+        + MaskVoxelColor : Color
+        + MaskMaterial : Material
+        + SelectionSaturateFactor : float
+        + InitialiseMask() : void
+        + PaintCursor(value : short) : bool
+        + FinishBrushStroke() : void
+        - PaintMask(position : Vector3Int, value : short) : bool
+    }
+
+    class FoveatedRenderingConfig {
+        + FoveatedRendering : bool
+        + FoveationStart : float
+        + FoveationEnd : float
+        + FoveationJitter : float
+        + FoveatedStepsLow : int
+        + FoveatedStepsHigh : int
+    }
+
+    class VignetteRenderingConfig {
+        + VignetteFadeStart : float
+        + VignetteFadeEnd : float
+        + VignetteIntensity : float
+        + VignetteColor : Color
+    }
+
+}
+
+' ─── Spatial / coordinate concerns ───────────────────────────────────────────
+
+package "Spatial" {
+
+    class VolumeCoordinateMapper {
+        + CubeDepthAxis : int
+        + CubeSlice : int
+        + SliceMin : Vector3
+        + SliceMax : Vector3
+        + ConvertWorldPositionToDataCubePosition(worldLoc : Vector3) : Vector3
+        + ConvertWorldRotationToDatacubeRotation(worldRot : Quaternion) : Quaternion
+        + GetVoxelPositionDataSpace() : Vector3Int
+        + GetVoxelPositionDataSpace(worldSpacePos : Vector3) : Vector3Int
+        + GetVoxelPositionWorldSpace(cursorPosWorldSpace : Vector3) : Vector3Int
+        + VolumePositionToLocalPosition(volumePosition : Vector3) : Vector3
+        + LocalPositionToVolumePosition(localPosition : Vector3) : Vector3
+    }
+
+    class VolumeRegionSelector {
+        + CursorVoxel : Vector3Int
+        + CursorValue : float
+        + CursorSource : Int16
+        + HighlightedSource : Int16
+        + RegionStartVoxel : Vector3Int
+        + RegionEndVoxel : Vector3Int
+        + ShowMeasuringLine : bool
+        + SetCursorPosition(cursor : Vector3, brushSize : int) : void
+        + SetVideoCursorLocPosition(pos : Vector3) : void
+        + DeactivateVideoCursorLocPosition() : void
+        + SetRegionPosition(cursor : Vector3, start : bool) : void
+        + SetRegionBounds(min : Vector3Int, max : Vector3Int, draw : bool) : void
+        + ClearRegion() : void
+        + ClearMeasure() : void
+        + SelectFeature(cursor : Vector3) : void
+        + CropToFeature() : bool
+        + CropToRegion(cornerMin : Vector3, cornerMax : Vector3) : void
+        + ResetCrop() : void
+        + LoadRegionData(startVoxel : Vector3Int, endVoxel : Vector3Int) : void
+        + TeleportToRegion() : void
+        - UpdateRegionBounds() : void
+    }
+
+}
+
+' ─── Rest frequency ───────────────────────────────────────────────────────────
+
+package "Rest Frequency" {
+
+    class RestFrequencyManager {
+        + OverrideRestFrequency : bool
+        + RestFrequencyGHz : double
+        + RestFrequencyGHzListIndex : int
+        + RestFrequencyGHzList : Dictionary<string, double>
+        - _restFrequencyGHzChanged : bool
+        + <<event>> RestFrequencyGHzChanged
+        + <<event>> RestFrequencyGHzListIndexChanged
+        + ResetRestFrequency() : void
+        - PopulateRestFrequenyList() : void
+    }
+
+}
+
+' ─── Downsampling debug ───────────────────────────────────────────────────────
+
+package "Debug / Downsampling" {
+
+    class DownsampleConfig {
+        + FactorOverride : bool
+        + XFactor : int
+        + YFactor : int
+        + ZFactor : int
+        + ZAxisMaxFactor : float
+        + ZAxisMinFactor : float
+    }
+
+}
+
+' ─── Orchestrator ─────────────────────────────────────────────────────────────
+
+class VolumeDataSetRenderer <<MonoBehaviour>> {
+    + FileName : string
+    + MaskFileName : string
+    + subsetBounds : int[]
+    + SelectedHdu : int
+    + trueBounds : int[]
+    + InitialPosition : Vector3
+    + InitialRotation : Quaternion
+    + InitialScale : Vector3
+    + loadText : TextMeshProUGUI
+    + progressBar : Slider
+    .. Unity lifecycle ..
+    + Start() : void
+    + Update() : void
+    + OnDestroy() : void
+    .. Data access ..
+    + GetDataSet() : VolumeDataSet
+    + GetMomentMapRenderer() : MomentMapRenderer
+    + GetCubeDimensions() : Vector3Int
+    + RegenerateCubes() : void
+    .. File I/O ..
+    + SaveSubCube() : void
+    + SaveMask(overwrite : bool) : void
+    + GetMaskSavedFilePath() : string
+    + AddSelectionToList() : void
+    .. Status ..
+    + updateStatus(label : string, progress : int) : IEnumerator
+    - GenerateDownsampledCube() : void
+    - _startFunc() : IEnumerator
+}
+
+' ─── Relationships ────────────────────────────────────────────────────────────
+
+VolumeDataSetRenderer *-- VolumeRenderingConfig
+VolumeDataSetRenderer *-- MaskRenderingController
+VolumeDataSetRenderer *-- FoveatedRenderingConfig
+VolumeDataSetRenderer *-- VignetteRenderingConfig
+VolumeDataSetRenderer *-- VolumeCoordinateMapper
+VolumeDataSetRenderer *-- VolumeRegionSelector
+VolumeDataSetRenderer *-- RestFrequencyManager
+VolumeDataSetRenderer *-- DownsampleConfig
+
+VolumeRenderingConfig --> ScalingType : uses
+VolumeRenderingConfig --> ProjectionMode : uses
+MaskRenderingController --> MaskMode : uses
+
+@enduml
