@@ -1,0 +1,79 @@
+# Video settings
+Height : 720
+Width : 720
+FrameRate : 25
+LogoPos : BR
+
+# List of positions:
+# Takes the form:
+#    <alias> is {<location>, <direction>}
+# Alias can be any combination of characters, excluding whitespace.
+# Both location and direction are Vector3, printed in the form `(x, y, z)`,
+# and are relative to the datacube's normalised position and rotation.
+
+center is {(0,0,0), (0,0,0)} #cursor
+
+# y is up, views from all around
+front is {(0, 0, -2), (0, 0, 0)} #head
+right is {(2, 0, 0), (0, 270, 0)} #head
+back is {(0, 0, 2), (0, 180, 0)} #head
+left is {(-2, 0, 0), (0, 90, 0)} #head
+
+# up-and-over turn-table views
+over_top is {(0, 2, 0), (90, 0, 0)} #head
+over_back is {(0, 0, 2), (0, 180, 180)} #head
+over_bottom is {(0, -2, 0), (270, 180, 180)} #head
+
+#sideways x is up, views from all around
+x_up_front is {(0, 0, -2), (0, 0, 270)} #head
+x_up_right is {(0, -2, 0), (270, 90, 180)} #head
+x_up_back is {(0, 0, 2), (0, 180, 90)} #head
+x_up_left is {(0, 2, 0), (90, 90, 0)} #head
+
+# Script:
+# Accepted commands (see documentation for details):
+#    - Start at <alias>
+#    - Wait <n> seconds
+#    - Move in <METHOD> to <alias> over <n> seconds
+#        - Methods allowed: (LINE, ARC)
+#    - Rotate around <alias> <n> times
+
+Start at front
+
+Wait 0.5 seconds
+
+#Simple turntable using Rotate
+Rotate around center 1 times turn 0 seconds orbit 8 seconds
+
+Wait 1 seconds
+
+#Using ARCs for turntable
+Move in ARC to right over 2 seconds
+Move in ARC to back over 2 seconds
+Move in ARC to left over 2 seconds
+Move in ARC to front over 2 seconds
+
+Wait 1 seconds
+
+
+#Using ARCs for up-and-over turntable
+Move in ARC to over_top over 2 seconds
+Move in ARC to over_back over 2 seconds
+Move in ARC to over_bottom over 2 seconds
+Move in ARC to front over 2 seconds
+
+Wait 1 seconds
+
+#Re-orientating for x-up
+Move in LINE to x_up_front over 2 seconds
+
+#Using ARCs for x-up turntable
+Move in ARC to x_up_right over 2 seconds
+Move in ARC to x_up_back over 2 seconds
+Move in ARC to x_up_left over 2 seconds
+Move in ARC to x_up_front over 2 seconds
+
+Wait 1 seconds
+
+#Re-orientating back to normal front view
+Move in LINE to front over 2 seconds

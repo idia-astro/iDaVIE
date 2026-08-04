@@ -1,0 +1,31 @@
+# Video settings
+Height : 720
+Width : 720
+FrameRate : 25
+LogoPos : BR
+
+# List of positions:
+# Takes the form:
+#    <alias> is {<location>, <direction>}
+# Alias can be any combination of characters, excluding whitespace.
+# Both location and direction are Vector3, printed in the form `(x, y, z)`,
+# and are relative to the datacube's normalised position and rotation.
+
+center is {(0,0,0), (0,0,0)} #cursor
+
+# Script:
+# Accepted commands (see documentation for details):
+#    - Start at <alias>
+#    - Wait <n> seconds
+#    - Move in <METHOD> to <alias> over <n> seconds
+#        - Methods allowed: (LINE, ARC)
+#    - Rotate around <alias> <n> times
+
+Start at front
+
+Wait 0.5 seconds
+
+#Simple turntable using Rotate
+Rotate around center 1 times turn 0 seconds orbit 8 seconds
+
+Wait 1 seconds
