@@ -12,6 +12,7 @@ LogoPos : BR
 # and are relative to the datacube's normalised position and rotation.
 
 center is {(0,0,0), (0,0,0)} #cursor
+front is {(0, 0, -2), (0, 0, 0)} #head
 
 # Script:
 # Accepted commands (see documentation for details):
