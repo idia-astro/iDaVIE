@@ -7,9 +7,14 @@ LogoPos : BR
 # List of positions:
 # Takes the form:
 #    <alias> is {<location>, <direction>}
-# Alias can be any combination of characters, excluding whitespace.
+# Alias can contain letters, digits and underscores only (no spaces or other symbols).
 # Both location and direction are Vector3, printed in the form `(x, y, z)`,
 # and are relative to the datacube's normalised position and rotation.
+# Positions exported from VR end with a comment saying how they were recorded:
+#    #head   - headset position and viewing direction (a camera viewpoint).
+#    #cursor - controller position only; direction is always (0, 0, 0),
+#              so it is best used as a point to Rotate around.
+# These tags are just comments and have no effect on the video.
 
 center is {(0,0,0), (0,0,0)} #cursor
 
@@ -36,7 +41,9 @@ x_up_left is {(0, 2, 0), (90, 90, 0)} #head
 #    - Wait <n> seconds
 #    - Move in <METHOD> to <alias> over <n> seconds
 #        - Methods allowed: (LINE, ARC)
-#    - Rotate around <alias> <n> times
+#    - Rotate around <alias> <n> times [turn <n> seconds] [orbit <n> seconds]
+#        - turn: seconds spent turning to face <alias> first (default 5)
+#        - orbit: seconds for each full orbit (default 10)
 
 Start at front
 
