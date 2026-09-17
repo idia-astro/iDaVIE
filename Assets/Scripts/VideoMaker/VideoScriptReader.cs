@@ -132,9 +132,19 @@ namespace VideoMaker
             List<DirectionAction> directionActions = new List<DirectionAction>();
             List<DirectionAction> upDirectionActions = new List<DirectionAction>();
             
-            VideoLocation locationPrevious = ((StartCommand)commands[0])?.position ?? DefaultLocation;
-            
-            for (int i = 1; i < commands.Count; i++)
+            VideoLocation locationPrevious = DefaultLocation;
+            int firstCommand = 0;
+            if (commands[0] is StartCommand startCommand)
+            {
+                locationPrevious = startCommand.position;
+                firstCommand = 1;
+            }
+            else
+            {
+                UnityEngine.Debug.LogWarning($"Video script {filePath} does not begin with a valid Start command; starting at the cube centre.");
+            }
+
+            for (int i = firstCommand; i < commands.Count; i++)
             {
                 switch (commands[i])
                 {
@@ -157,20 +167,33 @@ namespace VideoMaker
                                 Vector3 end = command.destination.position;
                                 Vector3 endDir = command.destination.forward;
                                 
-                                //Determining closest points along start and end directions
                                 float dirDot = Vector3.Dot(startDir, endDir);
+                                float denominator = 1 - dirDot * dirDot;
 
-                                float endL = Vector3.Dot(dirDot * startDir - endDir, end - start) /
-                                             (1 - dirDot * dirDot);
-                                float startL = endL * dirDot + Vector3.Dot(startDir, end - start);
-                                
-                                //Use closest points to determine the control point for the quad-bezier curve:
-                                // - Take halfway (chosen to reduce "sharpness" of curve) to midpoint between closest points
-                                // - Use oposite of this point as the control point
+                                Vector3 controlPoint;
+                                if (denominator < 1e-3f)
+                                {
+                                    // Start and end directions are (anti)parallel, so there are no unique closest points to curve around.
+                                    // Use the midpoint as the control point, giving a straight path.
+                                    UnityEngine.Debug.LogWarning("ARC move between parallel directions; using a straight path instead.");
+                                    controlPoint = 0.5f * (start + end);
+                                }
+                                else
+                                {
+                                    //Determining closest points along start and end directions
+                                    float endL = Vector3.Dot(dirDot * startDir - endDir, end - start) / denominator;
+                                    float startL = endL * dirDot + Vector3.Dot(startDir, end - start);
+
+                                    //Use closest points to determine the control point for the quad-bezier curve:
+                                    // - Take halfway (chosen to reduce "sharpness" of curve) to midpoint between closest points
+                                    // - Use oposite of this point as the control point
+                                    controlPoint = 0.5f * (start + end) - 0.25f * (endL * endDir + startL * startDir);
+                                }
+
                                 path = new QuadraticBezierPath(
                                     start: start,
                                     end: end,
-                                    controlPoint: 0.5f * ( start + end) - 0.25f *(endL * endDir + startL * startDir)
+                                    controlPoint: controlPoint
                                 ){Easing = EasingIO};
                                 
                                 break;
