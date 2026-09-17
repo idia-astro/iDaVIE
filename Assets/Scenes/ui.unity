@@ -22735,7 +22735,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "iDaVIE 1.0.0 (C) 2024 IDIA, INAF\n\n<b>About iDaVIE</b>\r\n\r\niDaVIE
+  m_text: "iDaVIE {version} (C) 2026 IDIA, INAF\n\n<b>About iDaVIE</b>\r\n\r\niDaVIE
     (the immersive Data Visualisation Interactive Explorer) was conceived by and
     is being developed under the custody of the IDIA Visualisation Laboratory. It
     provides a Virtual Reality experience for data cube exploration. It visualises
@@ -22771,7 +22771,7 @@ MonoBehaviour:
     plug-in\r\n\r\nCFITSIO\r\n\r\nStarlink AST Library\r\n\r\nWorld-wide Telescope
     VOTable\r\n\r\n\r\nSee our NOTICE file in the source code for full licence information
     of the third-party libraries we use.\r\n\r\n\r\n<b>Copyright and Licence</b>\r\n\r\nCopyright
-    (C) 2024 IDIA, INAF. This program is free software; you can redistribute it and/or
+    (C) 2026 IDIA, INAF. This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public License (LGPL) version
     3 as published by the Free Software Foundation."
   m_isRightToLeft: 0
@@ -61067,6 +61067,7 @@ MonoBehaviour:
   LoadingText: {fileID: 499592097}
   loadTextLabel: {fileID: 499592099}
   versionText: {fileID: 1619505343}
+  aboutText: {fileID: 462594867}
   progressBar: {fileID: 2053111952}
   inputFields:
   - {fileID: 831990095}
