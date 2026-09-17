@@ -22747,12 +22747,13 @@ MonoBehaviour:
     Astrofisico di Catania, Istituto Nazionale di Astrofisica (INAF-OACT)\r\nOsservatorio
     Astronomico di Cagliari, Istituto Nazionale di Astrofisica (INAF-OACA) \u2013
     testing\r\n\r\n\r\n<b>Software citation</b>\r\n\r\nPlease use the following DOI
-    as a citation when using iDaVIE for publications:\r\n\r\nhttps://zenodo.org/records/4614116\r\n\r\n\r\nOther
+    as a citation when using iDaVIE for publications:\r\n\r\nhttps://doi.org/10.5281/zenodo.4614115\r\n\r\n\r\nOther
     relevant references are:\r\n\r\n\u201CExploring and Interrogating Astrophysical
     Data in Virtual Reality\u201D, Jarrett et al. 2021\r\n\r\n\u201CiDaVIE: immersive
     Data Visualisation Interactive Explorer for volumetric rendering\u201D, Marchetti
     et al. 2021\r\n\r\n\u201CVirtual Reality and Immersive Collaborative Environments:
-    the New Frontier for Big Data Visualisation\u201D, Sivitilli et al. 2021\r\n\r\n\r\n<b>Acknowledgements</b>\r\n\r\nThe
+    the New Frontier for Big Data Visualisation\u201D, Sivitilli et al. 2021\r\n\r\n\u201CiDaVIE v1.0: A virtual reality tool for interactive
+    analysis of astronomical data cubes\u201D, Sivitilli et al. 2026\r\n\r\n\r\n<b>Acknowledgements</b>\r\n\r\nThe
     Inter-University Institute for Data Intensive Astronomy is a partnership of the
     University of Cape Town, the University of Pretoria, and the University of the
     Western Cape.\r\n\r\nThis project received support from the National Research
