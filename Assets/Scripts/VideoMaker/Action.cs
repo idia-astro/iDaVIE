@@ -124,26 +124,83 @@ namespace VideoMaker
     }
 
     /// <summary>
-    /// Used to rotate from one defined direction to another with an optional easing.
+    /// Used to rotate from one defined direction to another with an optional easing and rotation axis.
     /// </summary>
     public class DirectionActionTween : DirectionAction
     {
+        public enum RotationDirection
+        {
+            Axis,
+            SmallAngle,
+            None
+        }
+
+        private RotationDirection _rotationDirection;
+        
         private Vector3 _directionFrom;
         private Vector3 _directionTo;
         private Easing _easing;
 
+        private Vector3 _axis;
+        private Vector3 _basis1;
+        private Vector3 _basis2;
+        private float _altAngleFrom;
+        private float _altAngleTo;
+        private float _azAngle;
+
         public DirectionActionTween(Vector3 directionFrom, Vector3 directionTo, Easing easing = null)
         {
-            _directionFrom = directionFrom;
-            _directionTo = directionTo;
+            _directionFrom = directionFrom.normalized;
+            _directionTo = directionTo.normalized;
             _easing = easing;
+            _rotationDirection = RotationDirection.None;
+        }
+
+        public DirectionActionTween(
+            Vector3 directionFrom, Vector3 directionTo, 
+            Vector3 axis, RotationDirection rotationDirection = RotationDirection.Axis, 
+            Easing easing = null)
+        {
+            _directionFrom = directionFrom.normalized;
+            _directionTo = directionTo.normalized;
+            _easing = easing;
+            _rotationDirection = rotationDirection;
+
+            if (_rotationDirection == RotationDirection.None)
+            {
+                return;
+            }
+
+            _axis = axis;
+            _basis2 = Vector3.Cross(directionFrom, axis).normalized;
+            _basis1 = Vector3.Cross(axis, _basis2).normalized;
+
+            Vector3 basisTo = (_directionTo - Vector3.Dot(_directionTo, _axis) * _axis).normalized; //-Vector3.Cross(axis, Vector3.Cross(directionTo, axis)).normalized;
+            
+            _altAngleFrom = Mathf.Acos(Vector3.Dot(_directionFrom, _axis));
+            _altAngleTo = Mathf.Acos(Vector3.Dot(_directionTo, _axis));
+            
+            _azAngle = Mathf.Acos(Vector3.Dot(_basis1, basisTo));
+
+            if (rotationDirection != RotationDirection.SmallAngle && Vector3.Dot(_directionTo, _basis2) < 0)
+            {
+                _azAngle = 2 * Mathf.PI - _azAngle;
+            }
         }
 
         protected override Vector3 OnGetDirection(float time, Vector3 position, Vector3 pathForward, Vector3 pathUp)
         {
             time = _easing is null? time : _easing.GetValue(time);
 
-            return Vector3.Slerp(_directionFrom, _directionTo, time).normalized;
+            if (_rotationDirection == RotationDirection.None)
+            {
+                return Vector3.Slerp(_directionFrom, _directionTo, time).normalized;
+            }
+
+            float altAngle = Mathf.LerpAngle(_altAngleFrom, _altAngleTo, time);
+            float azAngle = time * _azAngle;
+
+            return Mathf.Sin(altAngle) * (Mathf.Cos(azAngle) * _basis1 + Mathf.Sin(azAngle) * _basis2) + Mathf.Cos(altAngle) * _axis;
         }
     }
     
