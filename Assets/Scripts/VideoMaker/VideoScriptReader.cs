@@ -132,9 +132,19 @@ namespace VideoMaker
             List<DirectionAction> directionActions = new List<DirectionAction>();
             List<DirectionAction> upDirectionActions = new List<DirectionAction>();
             
-            VideoLocation locationPrevious = ((StartCommand)commands[0])?.position ?? DefaultLocation;
-            
-            for (int i = 1; i < commands.Count; i++)
+            VideoLocation locationPrevious = DefaultLocation;
+            int firstCommand = 0;
+            if (commands[0] is StartCommand startCommand)
+            {
+                locationPrevious = startCommand.position;
+                firstCommand = 1;
+            }
+            else
+            {
+                UnityEngine.Debug.LogWarning($"Video script {filePath} does not begin with a valid Start command; starting at the cube centre.");
+            }
+
+            for (int i = firstCommand; i < commands.Count; i++)
             {
                 switch (commands[i])
                 {
@@ -146,6 +156,8 @@ namespace VideoMaker
                         break;
                     case MoveCommand command:
                         Path path;
+                        DirectionActionTween.RotationDirection rotationDirection = DirectionActionTween.RotationDirection.None;
+                        Vector3 rotationAxis = Vector3.up;
                         switch (command.method)
                         {
                             case MovementMethod.Line:
@@ -157,31 +169,58 @@ namespace VideoMaker
                                 Vector3 end = command.destination.position;
                                 Vector3 endDir = command.destination.forward;
                                 
-                                //Determining closest points along start and end directions
                                 float dirDot = Vector3.Dot(startDir, endDir);
-
-                                float endL = Vector3.Dot(dirDot * startDir - endDir, end - start) /
-                                             (1 - dirDot * dirDot);
-                                float startL = endL * dirDot + Vector3.Dot(startDir, end - start);
+                                float denominator = 1 - dirDot * dirDot;
                                 
-                                //Use closest points to determine the control point for the quad-bezier curve:
-                                // - Take halfway (chosen to reduce "sharpness" of curve) to midpoint between closest points
-                                // - Use oposite of this point as the control point
-                                path = new QuadraticBezierPath(
-                                    start: start,
-                                    end: end,
-                                    controlPoint: 0.5f * ( start + end) - 0.25f *(endL * endDir + startL * startDir)
-                                ){Easing = EasingIO};
-                                
+                                Vector3 center;
+                                if (denominator < 1e-3f && dirDot <= 0f)
+                                {
+                                    // Start and end directions are anti-parallel, so there are no unique closest points
+                                    // Following from behavior before this limit, use the midpoint between the start and end points as the center of the circle
+                                    path = new CirclePath(
+                                        start: start,
+                                        end: end,
+                                        center: 0.5f * (start + end)
+                                    ){Easing = EasingIO};
+                                    rotationAxis = ((CirclePath)path).axis;
+                                    rotationDirection = DirectionActionTween.RotationDirection.Axis;
+                                }
+                                else if (denominator < 1e-3f && dirDot > 0f)
+                                {
+                                    // Start and end directions are anti-parallel, so there are no unique closest points
+                                    // The center of the circle is effectively at infinity, so the circle segment is effectively as straight line
+                                    path = new LinePath(start: start, end: end) { Easing = EasingIO };
+                                }
+                                else
+                                {
+                                    //Determining closest points along start and end directions
+                                    float startL = Vector3.Dot(startDir - dirDot * endDir, end - start) / denominator;
+                                    float endL = Vector3.Dot(dirDot * startDir - endDir, end - start) / denominator;
+                                    
+                                    //Use closest point as (approximate) circle center
+                                    path = new CirclePath(
+                                        start: start,
+                                        end: end,
+                                        center: 0.5f * (start + startDir * startL + end + endDir * endL)
+                                    ) { Easing = EasingIO };
+                                    rotationAxis = ((CirclePath)path).axis;
+                                    rotationDirection = DirectionActionTween.RotationDirection.Axis;
+                                }
                                 break;
                             default:
                                 continue;
                         }
                         positionActions.Add(new PositionActionPath(path){Duration = command.duration});
                         directionActions.Add(new DirectionActionTween(
-                            locationPrevious.forward, command.destination.forward, easing: EasingIO){Duration = command.duration});
+                            directionFrom: locationPrevious.forward, 
+                            directionTo: command.destination.forward, 
+                            easing: EasingIO,
+                            rotationDirection: rotationDirection,
+                            axis: rotationAxis
+                        	){Duration = command.duration});
                         upDirectionActions.Add(new DirectionActionTween(
-                            locationPrevious.up, command.destination.up, easing: EasingIO){Duration = command.duration});
+                            locationPrevious.up, command.destination.up, easing: EasingIO
+							){Duration = command.duration});
                         locationPrevious = command.destination;
                         data.Duration += command.duration;
                         break;
@@ -202,8 +241,10 @@ namespace VideoMaker
                         //Turn to face center location
                         positionActions.Add(new PositionActionHold(locationPrevious.position){Duration = command.turnDuration});
                         directionActions.Add(new DirectionActionTween(
-                                locationPrevious.forward, 
+                                locationPrevious.forward,
                                 (command.centrePoint.position - locationPrevious.position),
+								axis: axis,
+								rotationDirection: DirectionActionTween.RotationDirection.SmallAngle,
                                 easing: EasingIO
                             ){Duration = command.turnDuration});
                         upDirectionActions.Add(new DirectionActionTween(
