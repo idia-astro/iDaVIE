@@ -124,26 +124,106 @@ namespace VideoMaker
     }
 
     /// <summary>
-    /// Used to rotate from one defined direction to another with an optional easing.
+    /// Used to rotate from one defined direction to another with an optional easing and rotation axis.
     /// </summary>
     public class DirectionActionTween : DirectionAction
     {
+        public enum RotationDirection
+        {
+            Axis,
+            SmallAngle,
+            None
+        }
+
+        private RotationDirection _rotationDirection;
+        
         private Vector3 _directionFrom;
         private Vector3 _directionTo;
         private Easing _easing;
 
+        private Vector3 _axis;
+        private Vector3 _basis1;
+        private Vector3 _basis2;
+        private float _altAngleFrom;
+        private float _altAngleTo;
+        private float _azAngle;
+		
+		/// <summary>
+        /// Simple constructor used when no rotational axis is needed. The action will use slerp to rotate the direction. 
+        /// </summary>
+        /// <param name="directionFrom">Initial direction.</param>
+        /// <param name="directionTo">Final direction that directionFrom rotates to.</param>
+		/// <param name="easing">Easing parameter to re-scale time.</param>
+        /// <returns></returns>
         public DirectionActionTween(Vector3 directionFrom, Vector3 directionTo, Easing easing = null)
         {
-            _directionFrom = directionFrom;
-            _directionTo = directionTo;
+            _directionFrom = directionFrom.normalized;
+            _directionTo = directionTo.normalized;
             _easing = easing;
+            _rotationDirection = RotationDirection.None;
+        }
+		
+		/// <summary>
+        /// Constructor with additional arguments for a rotation axis.
+		/// With this, the action will use a custom rotation instead of slerp.
+		/// This custom rotation uses a combined linear interpolation of the altitude and azimuth angles of the initial direction to the final directions with respect to the rotational axis. 
+        /// </summary>
+        /// <param name="directionFrom">Initial direction.</param>
+        /// <param name="directionTo">Final direction that directionFrom rotates to.</param>
+        /// <param name="axis">Rotational axis.</param>
+        /// <param name="rotationDirection">
+		/// Determines rotational behaviour. 
+		/// If set to RotationDirection.None the rotational axis won't be used. 
+		/// If set to RotationDirection.Axis the direction of the rotation will follow a right-hand rotation about the axis.
+		/// If set to RotationDirection.SmallAngle the direction of the rotation will follow the smallest azimuth angle change.
+		/// </param>
+		/// <param name="easing">Easing parameter to re-scale time.</param>
+        /// <returns></returns>
+        public DirectionActionTween(
+            Vector3 directionFrom, Vector3 directionTo, 
+            Vector3 axis, RotationDirection rotationDirection = RotationDirection.Axis, 
+            Easing easing = null)
+        {
+            _directionFrom = directionFrom.normalized;
+            _directionTo = directionTo.normalized;
+            _easing = easing;
+            _rotationDirection = rotationDirection;
+
+            if (_rotationDirection == RotationDirection.None)
+            {
+                return;
+            }
+
+            _axis = axis;
+            _basis2 = Vector3.Cross(directionFrom, axis).normalized;
+            _basis1 = Vector3.Cross(axis, _basis2).normalized;
+
+            Vector3 basisTo = (_directionTo - Vector3.Dot(_directionTo, _axis) * _axis).normalized;
+            
+            _altAngleFrom = Mathf.Acos(Vector3.Dot(_directionFrom, _axis));
+            _altAngleTo = Mathf.Acos(Vector3.Dot(_directionTo, _axis));
+            
+            _azAngle = Mathf.Acos(Vector3.Dot(_basis1, basisTo));
+
+            if (rotationDirection == RotationDirection.Axis && Vector3.Dot(basisTo, _basis2) < 0)
+            {
+                _azAngle = 2 * Mathf.PI - _azAngle;
+            }
         }
 
         protected override Vector3 OnGetDirection(float time, Vector3 position, Vector3 pathForward, Vector3 pathUp)
         {
             time = _easing is null? time : _easing.GetValue(time);
 
-            return Vector3.Slerp(_directionFrom, _directionTo, time).normalized;
+            if (_rotationDirection == RotationDirection.None)
+            {
+                return Vector3.Slerp(_directionFrom, _directionTo, time).normalized;
+            }
+
+            float altAngle = Mathf.LerpAngle(_altAngleFrom, _altAngleTo, time);
+            float azAngle = time * _azAngle;
+
+            return Mathf.Sin(altAngle) * (Mathf.Cos(azAngle) * _basis1 + Mathf.Sin(azAngle) * _basis2) + Mathf.Cos(altAngle) * _axis;
         }
     }
     

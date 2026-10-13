@@ -56,6 +56,7 @@ public class CanvassDesktop : MonoBehaviour
     public TextMeshProUGUI loadTextLabel;
 
     public TMP_Text versionText;
+    public TMP_Text aboutText;
 
     public GameObject progressBar;
 
@@ -205,6 +206,7 @@ public class CanvassDesktop : MonoBehaviour
         _subset[5] = _subsetMax_Z;
 
         versionText.SetText(Application.version);
+        aboutText.text = aboutText.text.Replace("{version}", Application.version);
     }
 
     private void PopulateRestfreqencyDropdown()

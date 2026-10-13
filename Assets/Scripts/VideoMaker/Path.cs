@@ -76,7 +76,21 @@ namespace VideoMaker
             None
         }
 
+        public Vector3 center
+        {
+            get { return _center; }
+        }
+        public Vector3 axis
+        {
+            get { return _axis; }
+        }
+        public float radius
+        {
+            get { return _radius; }
+        }
+        
         private Vector3 _center;
+        private Vector3 _axis;
         private Vector3 _basis1;
         private Vector3 _basis2;
         private float _radius;
@@ -99,19 +113,23 @@ namespace VideoMaker
         /// </param>
         public CirclePath(Vector3 start, Vector3 end, Vector3 center, int rotations = 1)
         {
-            //TODO move center to preserve radius instead of moving end point
-            _center = center;
+            //Point and normal of plane containing viable circle centers
+            Vector3 point = 0.5f * (start + end);
+            Vector3 norm = end - start;
+            
+            //Closest viable center to suggested center
+            _center = center - norm * Vector3.Dot(norm, center - point) / norm.sqrMagnitude;
 
-            Vector3 relStart = start - center;
-            Vector3 relEnd = end - center;
+            Vector3 relStart = start - _center;
+            Vector3 relEnd = end - _center;
 
             _radius = relStart.magnitude;
 
-            Vector3 axis = Vector3.Cross(relEnd, relStart);
-            if (axis.magnitude == 0)
+            _axis = Vector3.Cross(relEnd, relStart);
+            if (_axis.magnitude == 0)
             {
                 //Start, center and end are co-linear, so use a default axis
-                axis = Vector3.up;
+                _axis = Vector3.up;
             }
 
             _basis1 = relStart / _radius;
@@ -151,6 +169,7 @@ namespace VideoMaker
             _basis2 = Vector3.Cross(_basis1, axis).normalized;
 
             _rotations = rotations;
+            _axis = axis;
         }
 
         //TODO test this more
@@ -183,26 +202,32 @@ namespace VideoMaker
                 case AxisDirection.Up:
                     _basis1 = new(sin, 0, -cos);
                     _basis2 = new(cos, 0, sin);
+                    _axis = Vector3.up;
                     break;
                 case AxisDirection.Down:
                     _basis1 = new(-sin, 0, -cos);
                     _basis2 = new(-cos, 0, sin);
+                    _axis = Vector3.down;
                     break;
                 case AxisDirection.Left:
                     _basis1 = new(0, cos, sin);
                     _basis2 = new(0, -sin, cos);
+                    _axis = Vector3.left;
                     break;
                 case AxisDirection.Right:
                     _basis1 = new(0, cos, -sin);
                     _basis2 = new(0, -sin, -cos);
+                    _axis = Vector3.right;
                     break;
                 case AxisDirection.Back:
                     _basis1 = new(cos, sin, 0);
                     _basis2 = new(-sin, cos, 0);
+                    _axis = Vector3.back;
                     break;
                 case AxisDirection.Forward:
                     _basis1 = new(cos, -sin, 0);
                     _basis2 = new(-sin, -cos, 0);
+                    _axis = Vector3.forward;
                     break;
             }
         }
