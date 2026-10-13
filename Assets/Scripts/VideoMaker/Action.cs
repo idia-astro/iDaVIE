@@ -147,7 +147,14 @@ namespace VideoMaker
         private float _altAngleFrom;
         private float _altAngleTo;
         private float _azAngle;
-
+		
+		/// <summary>
+        /// Simple constructor used when no rotational axis is needed. The action will use slerp to rotate the direction. 
+        /// </summary>
+        /// <param name="directionFrom">Initial direction.</param>
+        /// <param name="directionTo">Final direction that directionFrom rotates to.</param>
+		/// <param name="easing">Easing parameter to re-scale time.</param>
+        /// <returns></returns>
         public DirectionActionTween(Vector3 directionFrom, Vector3 directionTo, Easing easing = null)
         {
             _directionFrom = directionFrom.normalized;
@@ -155,7 +162,23 @@ namespace VideoMaker
             _easing = easing;
             _rotationDirection = RotationDirection.None;
         }
-
+		
+		/// <summary>
+        /// Constructor with additional arguments for a rotation axis.
+		/// With this, the action will use a custom rotation instead of slerp.
+		/// This custom rotation uses a combined linear interpolation of the altitude and azimuth angles of the initial direction to the final directions with respect to the rotational axis. 
+        /// </summary>
+        /// <param name="directionFrom">Initial direction.</param>
+        /// <param name="directionTo">Final direction that directionFrom rotates to.</param>
+        /// <param name="axis">Rotational axis.</param>
+        /// <param name="rotationDirection">
+		/// Determines rotational behaviour. 
+		/// If set to RotationDirection.None the rotational axis won't be used. 
+		/// If set to RotationDirection.Axis the direction of the rotation will follow a right-hand rotation about the axis.
+		/// If set to RotationDirection.SmallAngle the direction of the rotation will follow the smallest azimuth angle change.
+		/// </param>
+		/// <param name="easing">Easing parameter to re-scale time.</param>
+        /// <returns></returns>
         public DirectionActionTween(
             Vector3 directionFrom, Vector3 directionTo, 
             Vector3 axis, RotationDirection rotationDirection = RotationDirection.Axis, 
@@ -175,14 +198,14 @@ namespace VideoMaker
             _basis2 = Vector3.Cross(directionFrom, axis).normalized;
             _basis1 = Vector3.Cross(axis, _basis2).normalized;
 
-            Vector3 basisTo = (_directionTo - Vector3.Dot(_directionTo, _axis) * _axis).normalized; //-Vector3.Cross(axis, Vector3.Cross(directionTo, axis)).normalized;
+            Vector3 basisTo = (_directionTo - Vector3.Dot(_directionTo, _axis) * _axis).normalized;
             
             _altAngleFrom = Mathf.Acos(Vector3.Dot(_directionFrom, _axis));
             _altAngleTo = Mathf.Acos(Vector3.Dot(_directionTo, _axis));
             
             _azAngle = Mathf.Acos(Vector3.Dot(_basis1, basisTo));
 
-            if (rotationDirection != RotationDirection.SmallAngle && Vector3.Dot(_directionTo, _basis2) < 0)
+            if (rotationDirection == RotationDirection.Axis && Vector3.Dot(basisTo, _basis2) < 0)
             {
                 _azAngle = 2 * Mathf.PI - _azAngle;
             }

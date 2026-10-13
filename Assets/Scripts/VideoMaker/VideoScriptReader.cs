@@ -187,7 +187,7 @@ namespace VideoMaker
                                 }
                                 else if (denominator < 1e-3f && dirDot > 0f)
                                 {
-                                    // Start and end directions are anti-parallel, so there are no unique closest points
+                                    // Start and end directions are parallel, so there are no unique closest points
                                     // The center of the circle is effectively at infinity, so the circle segment is effectively as straight line
                                     path = new LinePath(start: start, end: end) { Easing = EasingIO };
                                 }
