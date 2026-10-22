@@ -189,21 +189,39 @@ namespace VideoMaker
             _easing = easing;
             _rotationDirection = rotationDirection;
 
+            if (axis == Vector3.zero)
+            {
+                _rotationDirection = RotationDirection.None;
+            }
+            
             if (_rotationDirection == RotationDirection.None)
             {
                 return;
             }
 
-            _axis = axis;
-            _basis2 = Vector3.Cross(directionFrom, axis).normalized;
-            _basis1 = Vector3.Cross(axis, _basis2).normalized;
+            _axis = axis.normalized;
+            
+            _altAngleFrom = Mathf.Deg2Rad * Vector3.Angle(_directionFrom, _axis);
+            _altAngleTo = Mathf.Deg2Rad * Vector3.Angle(_directionTo, _axis);
+            
+            //Check if directions align with rotation axis
+            //Should I be checking something like Vector3.Dot(direction, axis) > 0.999 instead?
+            if (
+                Mathf.Abs(Vector3.Dot(_directionFrom, _axis)) >= 1f || 
+                Mathf.Abs(Vector3.Dot(_directionTo, _axis)) >= 1f
+                )
+            {
+                //There may be a change in altitude, but azimuth is meaningless so use slerp
+                _rotationDirection = RotationDirection.None;
+                return;
+            }
+            
+            _basis2 = Vector3.Cross(directionFrom, _axis).normalized;
+            _basis1 = Vector3.Cross(_axis, _basis2).normalized;
 
             Vector3 basisTo = (_directionTo - Vector3.Dot(_directionTo, _axis) * _axis).normalized;
             
-            _altAngleFrom = Mathf.Acos(Vector3.Dot(_directionFrom, _axis));
-            _altAngleTo = Mathf.Acos(Vector3.Dot(_directionTo, _axis));
-            
-            _azAngle = Mathf.Acos(Vector3.Dot(_basis1, basisTo));
+            _azAngle = Mathf.Deg2Rad * Vector3.Angle(_basis1, basisTo);
 
             if (rotationDirection == RotationDirection.Axis && Vector3.Dot(basisTo, _basis2) < 0)
             {
@@ -220,7 +238,7 @@ namespace VideoMaker
                 return Vector3.Slerp(_directionFrom, _directionTo, time).normalized;
             }
 
-            float altAngle = Mathf.LerpAngle(_altAngleFrom, _altAngleTo, time);
+            float altAngle = Mathf.Lerp(_altAngleFrom, _altAngleTo, time);
             float azAngle = time * _azAngle;
 
             return Mathf.Sin(altAngle) * (Mathf.Cos(azAngle) * _basis1 + Mathf.Sin(azAngle) * _basis2) + Mathf.Cos(altAngle) * _axis;
