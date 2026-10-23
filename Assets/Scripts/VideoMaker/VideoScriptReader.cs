@@ -205,6 +205,12 @@ namespace VideoMaker
                                     ) { Easing = EasingIO };
                                     rotationAxis = ((CirclePath)path).axis;
                                     rotationDirection = DirectionActionTween.RotationDirection.Axis;
+
+                                    if (startL * endL < 0)
+                                    {
+                                        //In this case rotating with the circle path doesn't make sense
+                                        rotationDirection = DirectionActionTween.RotationDirection.None;
+                                    } 
                                 }
                                 break;
                             default:

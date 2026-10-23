@@ -126,14 +126,17 @@ namespace VideoMaker
             _radius = relStart.magnitude;
 
             _axis = Vector3.Cross(relEnd, relStart);
-            if (_axis.magnitude == 0)
+            if (_axis.sqrMagnitude == 0)
             {
                 //Start, center and end are co-linear, so use a default axis
                 _axis = Vector3.up;
-            }
-
+            } 
+			else {
+				_axis = _axis.normalized;
+			}
+			
             _basis1 = relStart / _radius;
-            _basis2 = Vector3.Cross(_basis1, axis).normalized;
+            _basis2 = Vector3.Cross(_basis1, _axis).normalized;
 
             float angle = Vector3.Angle(relStart, relEnd) / 360f;
 
@@ -157,8 +160,9 @@ namespace VideoMaker
         /// <param name="rotations">Number of rotations around the circle that the path takes. May be fractional.</param>
         public CirclePath(Vector3 start, Vector3 center, Vector3 axis, float rotations)
         {
+			_axis = axis.normalized;
             //Move center so that start and axis are preserved
-            center += Vector3.Project(start - center, axis); //Vector3.Dot(start - center, axis) * axis;
+            center += Vector3.Project(start - center, _axis); //Vector3.Dot(start - center, axis) * axis;
             _center = center;
 
             Vector3 relStart = start - center;
@@ -166,10 +170,9 @@ namespace VideoMaker
             _radius = relStart.magnitude;
 
             _basis1 = relStart / _radius;
-            _basis2 = Vector3.Cross(_basis1, axis).normalized;
+            _basis2 = Vector3.Cross(_basis1, _axis).normalized;
 
             _rotations = rotations;
-            _axis = axis;
         }
 
         //TODO test this more

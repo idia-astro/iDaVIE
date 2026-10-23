@@ -198,11 +198,8 @@ namespace VideoMaker
             {
                 return;
             }
-
+			
             _axis = axis.normalized;
-            
-            _altAngleFrom = Mathf.Deg2Rad * Vector3.Angle(_directionFrom, _axis);
-            _altAngleTo = Mathf.Deg2Rad * Vector3.Angle(_directionTo, _axis);
             
             //Check if directions align with rotation axis
             //Should I be checking something like Vector3.Dot(direction, axis) > 0.999 instead?
@@ -216,13 +213,16 @@ namespace VideoMaker
                 return;
             }
             
+			_altAngleFrom = Mathf.Deg2Rad * Vector3.Angle(_directionFrom, _axis);
+            _altAngleTo = Mathf.Deg2Rad * Vector3.Angle(_directionTo, _axis);
+			
             _basis2 = Vector3.Cross(directionFrom, _axis).normalized;
             _basis1 = Vector3.Cross(_axis, _basis2).normalized;
-
+			
             Vector3 basisTo = (_directionTo - Vector3.Dot(_directionTo, _axis) * _axis).normalized;
             
             _azAngle = Mathf.Deg2Rad * Vector3.Angle(_basis1, basisTo);
-
+			
             if (rotationDirection == RotationDirection.Axis && Vector3.Dot(basisTo, _basis2) < 0)
             {
                 _azAngle = 2 * Mathf.PI - _azAngle;
