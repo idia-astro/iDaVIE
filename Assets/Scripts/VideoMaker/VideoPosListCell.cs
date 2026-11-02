@@ -46,7 +46,7 @@ public class VideoPosListCell : MonoBehaviour, ICell
         _videoPosRecorder = vidPosRec;
         _volumeInputController = volInController;
 
-        indexText.SetText($"p{index.ToString()}");
+        indexText.SetText($"p{(index+1).ToString()}");
         locText.SetText(_location.ToString());
         if (_location.rotation == Vector3.zero)
         {

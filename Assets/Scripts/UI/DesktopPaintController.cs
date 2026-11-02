@@ -364,7 +364,7 @@ public class DesktopPaintController : MonoBehaviour, IPointerDownHandler, IPoint
         currentRegionSlice = GetSlice(regionCube, axis, sliceIndex);
         currentMaskSlice = GetFloatSlice(maskCube, axis, sliceIndex);
         rawImage.texture = currentRegionSlice;
-        if (currentRegionSlice is null)
+        if (currentRegionSlice is not null && currentMaskSlice is not null)
         {
             HighlightMask();
             sliceText.text = "" + (sliceIndex + 1); //+1 so it does not start on 0
